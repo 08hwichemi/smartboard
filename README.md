@@ -28,7 +28,9 @@
 ```
 .
 ├── index.html    화면 전체 (위젯 스타일 + 데이터 불러오기 스크립트가 한 파일에 있습니다)
-└── docs/이어서-작업하기.md    다른 곳에서 이어 작업할 때 먼저 읽는 문서
+└── docs/
+    ├── 이어서-작업하기.md              다른 곳에서 이어 작업할 때 먼저 읽는 문서
+    └── NEIS-시간표-연동-설계.md        나이스 학급 시간표 연동 설계 + 진행 상황
 ```
 
 ### 고칠 곳 찾기
@@ -38,6 +40,8 @@
 | 공지·시간표·감독표를 서버에서 가져오는 방식 바꾸기 | `index.html` 안 `gasGetDuty`/`gasSetDuty`/`gasGetNotice`/`gasGetSchedule` 등 `gas` 로 시작하는 함수들 |
 | 화면 모양(위젯 배치·색) 바꾸기 | `index.html` 안 `<style>` |
 | 날씨·급식·학사일정 API 바꾸기 | `fetchWeather()`, `updateMeal()`, `renderHalfCalendar()`/`renderBigCalendar()` |
+| 전체 선생님 시간표 엑셀 업로드 양식 바꾸기 | `index.html` 안 `parseTimetableWorkbook()` (요일 셀과 "N교시" 글자 위치를 스스로 찾아서 읽습니다) |
+| 나이스 학급 시간표 연동 | `index.html` 안 `NEIS_TIMETABLE_SVC`/`gasFetchNeisClassTimetable` 등 `neis` 로 시작하는 함수들, 자세한 설계는 `docs/NEIS-시간표-연동-설계.md` |
 
 ### ⚠️ 스크립트는 일반 `<script>` 입니다 — `type="module"` 로 바꾸지 마세요
 
@@ -54,6 +58,7 @@
 | `notices` | 공지사항 | 좋아요·하트는 `bump_reaction()` 함수로 원자적으로 더하고 뺍니다 |
 | `timetable` | 선생님 시간표 | `teacher_name` 유니크, `cells`는 35칸(월~금 × 1~7교시) jsonb 배열 |
 | `duty_roster` | 야자·급식·아침 감독표 세 개를 한 표로 | `board` 컬럼으로 구분(`'야자감독'`/`'급식감독'`/`'아침감독'`), `col_index`로 몇 번째 이름칸인지 |
+| `neis_timetable_snapshot` | 나이스 학급 시간표를 조회한 기록(스냅샷) | 아직 시험 조회 화면에서만 씀, 자세한 내용은 `docs/NEIS-시간표-연동-설계.md` |
 
 로그인이 없는 화면이라 **RLS가 `anon`에게 모두 열려 있습니다** (읽기·쓰기·수정·삭제). 확인 방법:
 

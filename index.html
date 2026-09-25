@@ -213,7 +213,12 @@
   <div class="modal-box" style="width: 900px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
       <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
-      <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
+      <div style="display:flex; gap:8px;">
+        <input type="file" id="tt-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFile(event)">
+        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('tt-excel-input').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러옵니다">📥 엑셀로 가져오기</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="openNeisCheckModal()" title="나이스에서 학급 시간표를 가져올 수 있는지 시험 조회">🛰️ 나이스 확인(시험)</button>
+        <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
+      </div>
     </div>
 
     <div id="schedule-select-row" style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
@@ -232,6 +237,41 @@
     <div style="display:flex; gap:10px; margin-top: 15px;">
       <button class="top-btn accent" id="schedule-save-btn" style="flex:1; padding:8px; display:none;" onclick="saveScheduleGrid()">💾 저장</button>
       <button class="top-btn" style="flex:1; padding:8px;" onclick="closeScheduleModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="neis-check-overlay">
+  <div class="modal-box" style="width: 760px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 6px;">🛰️ 나이스 학급 시간표 확인 (시험 조회)</div>
+    <div style="font-size:12px; color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
+      나이스 개방포털에서 이 학교의 학급 시간표를 실제로 가져올 수 있는지 확인하는 화면입니다.
+      교사 이름은 나이스에 없어서 여기서는 <b>학년·반 기준 시간표</b>만 보여줍니다.
+      먼저 한 번 조회해서 응답이 잘 오는지 확인한 뒤, "스냅샷으로 저장"을 누르면 다음에 같은 학년·반을
+      다시 조회했을 때 무엇이 바뀌었는지 비교해 보여줍니다.
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+      <label style="font-size:12px; color:var(--text-sub);">학년
+        <select id="neis-check-grade" class="mini-select" style="margin-left:4px;">
+          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+        </select>
+      </label>
+      <label style="font-size:12px; color:var(--text-sub);">반
+        <input type="number" id="neis-check-class" value="1" min="1" max="20" style="width:56px; margin-left:4px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px;">
+      </label>
+      <label style="font-size:12px; color:var(--text-sub);">시작일
+        <input type="date" id="neis-check-from" style="margin-left:4px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px;">
+      </label>
+      <label style="font-size:12px; color:var(--text-sub);">종료일
+        <input type="date" id="neis-check-to" style="margin-left:4px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px;">
+      </label>
+      <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="runNeisTimetableCheck()">조회</button>
+    </div>
+    <div id="neis-check-status" style="font-size:12px; color:var(--text-sub); margin-bottom:8px;"></div>
+    <div id="neis-check-result" style="flex:1; overflow-y:auto; font-size:12px; border:1px solid var(--border-color); border-radius:8px; padding:10px; background:var(--tt-bg);"></div>
+    <div style="display:flex; gap:10px; margin-top: 15px;">
+      <button class="top-btn accent" id="neis-check-save-btn" style="flex:1; padding:8px; display:none;" onclick="saveNeisSnapshot()">💾 스냅샷으로 저장</button>
+      <button class="top-btn" style="flex:1; padding:8px;" onclick="closeNeisCheckModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -591,6 +631,7 @@
         <div id="todo-stu" style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;"></div>
       </div>
     </div> </div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
   // ===== Supabase 연결 (구글 앱스크립트를 대신합니다) =====
   // anon key는 공개되어도 안전합니다 — 실제 읽기/쓰기 권한은 Supabase RLS 정책이 정합니다.
@@ -680,6 +721,193 @@
 
   const NEIS_KEY = '0cf49e69fe4a426089a5484684533ea8';
   const EDU_CODE = 'E10'; const SCH_CODE = '7310046';
+
+  // ===== 🛰️ 나이스 학급 시간표 시험 조회 =====
+  // 나이스 시간표 API는 학교급마다 서비스 이름이 다르다(초 elsTimetable / 중 misTimetable / 고 hisTimetable /
+  // 특수 spsTimetable). 부광고는 고등학교라 hisTimetable로 넣어뒀는데, 만약 "가져온 게 없다"고 나오면
+  // 이 값을 바꿔서 다시 시도해봐야 한다. 그리고 나이스는 교사 이름을 안 주기 때문에(학년·반·교시·과목만 줌),
+  // 여기서는 교사 시간표를 자동으로 채우지 않고, "학급 시간표가 실제로 잘 오는지"와 "지난번과 뭐가
+  // 달라졌는지"만 확인한다. 정식 자동 반영은 이 화면으로 실제 응답을 먼저 본 뒤에 이어서 만들어야 한다
+  // (docs/NEIS 시간표 연동 설계 참고).
+  const NEIS_TIMETABLE_SVC = 'hisTimetable';
+  const NEIS_TIMETABLE_FIELD_CANDIDATES = {
+    date: ['ALL_TI_YMD', 'TI_YMD', 'CLASS_DT'],
+    period: ['PERIO', 'PERIOD'],
+    subject: ['ITRT_CNTNT', 'SUBJECT_NM', 'SUBJECT']
+  };
+
+  function neisSchoolYearSem(dateStr) {
+    const d = new Date(dateStr);
+    const y = d.getFullYear(); const m = d.getMonth() + 1;
+    return { ay: m >= 3 ? y : y - 1, sem: (m >= 3 && m <= 8) ? 1 : 2 };
+  }
+
+  function neisYmdCompact(dateStr) { return String(dateStr).replace(/-/g, ''); }
+
+  function neisDateToIso(v) {
+    const s = String(v || '').replace(/-/g, '');
+    if (/^\d{8}$/.test(s)) return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8);
+    return String(v || '');
+  }
+
+  function neisPickField(row, candidates) {
+    for (let i = 0; i < candidates.length; i++) { if (row[candidates[i]] !== undefined) return row[candidates[i]]; }
+    return undefined;
+  }
+
+  async function gasFetchNeisClassTimetable(grade, classNo, fromDate, toDate) {
+    const sy = neisSchoolYearSem(fromDate);
+    const url = 'https://open.neis.go.kr/hub/' + NEIS_TIMETABLE_SVC +
+      '?KEY=' + NEIS_KEY + '&Type=json&pIndex=1&pSize=100' +
+      '&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE +
+      '&AY=' + sy.ay + '&SEM=' + sy.sem + '&GRADE=' + grade + '&CLASS_NM=' + classNo +
+      '&TI_FROM_YMD=' + neisYmdCompact(fromDate) + '&TI_TO_YMD=' + neisYmdCompact(toDate);
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  function neisExtractRows(json) {
+    const body = json && json[NEIS_TIMETABLE_SVC];
+    if (!Array.isArray(body)) return { rows: [], resultMsg: (json && json.RESULT && json.RESULT.MESSAGE) || null };
+    const rowBlock = body.filter(function(b) { return b && Array.isArray(b.row); })[0];
+    return { rows: rowBlock ? rowBlock.row : [], resultMsg: null };
+  }
+
+  async function gasGetLatestNeisSnapshot(grade, classNo, from, to) {
+    const { data, error } = await sb.from('neis_timetable_snapshot')
+      .select('class_date, period, subject, fetched_at')
+      .eq('grade', grade).eq('class_no', classNo)
+      .gte('class_date', from).lte('class_date', to)
+      .order('fetched_at', { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) return [];
+    const latest = data[0].fetched_at;
+    return data.filter(function(r) { return r.fetched_at === latest; });
+  }
+
+  function buildNeisDiffHtml(prevRows, currRows) {
+    const prevMap = {};
+    prevRows.forEach(function(r) { prevMap[r.class_date + '_' + r.period] = r.subject; });
+    const currMap = {};
+    currRows.forEach(function(r) { currMap[neisDateToIso(r.date) + '_' + String(r.period)] = String(r.subject || ''); });
+    const changedKeys = Object.keys(currMap).filter(function(k) { return prevMap.hasOwnProperty(k) && prevMap[k] !== currMap[k]; });
+    if (changedKeys.length === 0) return '<div style="margin-bottom:10px; color:var(--text-sub);">이전에 저장한 스냅샷과 비교했을 때 바뀐 칸이 없습니다.</div>';
+    let html = '<div style="margin-bottom:10px;"><b>⚠️ 이전 스냅샷과 비교해 바뀐 칸 ' + changedKeys.length + '개</b>' +
+      '<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;">' +
+      '<tr style="text-align:left; color:var(--text-sub);"><th style="padding:4px;">날짜_교시</th><th style="padding:4px;">이전</th><th style="padding:4px;">지금</th></tr>';
+    changedKeys.forEach(function(k) {
+      html += '<tr style="border-top:1px solid var(--border-color);"><td style="padding:4px;">' + escapeHtmlAttr(k) +
+        '</td><td style="padding:4px;">' + escapeHtmlAttr(prevMap[k]) +
+        '</td><td style="padding:4px; color:var(--accent-color); font-weight:700;">' + escapeHtmlAttr(currMap[k]) + '</td></tr>';
+    });
+    html += '</table></div>';
+    return html;
+  }
+
+  function openNeisCheckModal() {
+    document.getElementById('neis-check-overlay').style.display = 'flex';
+    document.getElementById('neis-check-status').innerText = '';
+    document.getElementById('neis-check-result').innerHTML = '';
+    document.getElementById('neis-check-save-btn').style.display = 'none';
+    const fromEl = document.getElementById('neis-check-from');
+    const toEl = document.getElementById('neis-check-to');
+    if (!fromEl.value) {
+      const today = new Date();
+      const plus6 = new Date(today.getTime() + 6 * 86400000);
+      fromEl.value = today.toISOString().slice(0, 10);
+      toEl.value = plus6.toISOString().slice(0, 10);
+    }
+  }
+
+  function closeNeisCheckModal() { document.getElementById('neis-check-overlay').style.display = 'none'; }
+
+  async function runNeisTimetableCheck() {
+    const grade = document.getElementById('neis-check-grade').value;
+    const classNo = document.getElementById('neis-check-class').value;
+    const from = document.getElementById('neis-check-from').value;
+    const to = document.getElementById('neis-check-to').value;
+    const statusEl = document.getElementById('neis-check-status');
+    const resultEl = document.getElementById('neis-check-result');
+    document.getElementById('neis-check-save-btn').style.display = 'none';
+    if (!from || !to) { statusEl.innerText = '시작일과 종료일을 입력해주세요.'; return; }
+
+    statusEl.innerText = '나이스에 조회 중...';
+    resultEl.innerHTML = '';
+    window.__neisCheckRows = [];
+    window.__neisCheckMeta = null;
+
+    try {
+      const json = await gasFetchNeisClassTimetable(grade, classNo, from, to);
+      const extracted = neisExtractRows(json);
+      const rows = extracted.rows;
+
+      if (extracted.resultMsg) statusEl.innerText = '나이스 응답: ' + extracted.resultMsg;
+      else statusEl.innerText = rows.length + '건을 가져왔습니다.';
+
+      if (rows.length === 0) {
+        resultEl.innerHTML = '<div style="color:var(--text-sub); margin-bottom:8px;">가져온 수업이 없습니다. 아래는 나이스가 실제로 준 원본 응답입니다 — 학년도/학기/학교급 서비스 이름이 맞는지 확인해보세요.</div>' +
+          '<pre style="white-space:pre-wrap; word-break:break-all;">' + escapeHtmlAttr(JSON.stringify(json, null, 2)) + '</pre>';
+        return;
+      }
+
+      const parsed = rows.map(function(row) {
+        return {
+          date: neisPickField(row, NEIS_TIMETABLE_FIELD_CANDIDATES.date),
+          period: neisPickField(row, NEIS_TIMETABLE_FIELD_CANDIDATES.period),
+          subject: neisPickField(row, NEIS_TIMETABLE_FIELD_CANDIDATES.subject),
+          raw: row
+        };
+      });
+      window.__neisCheckRows = parsed;
+      window.__neisCheckMeta = { grade: grade, classNo: classNo, from: from, to: to };
+
+      let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">' +
+        '<tr style="text-align:left; color:var(--text-sub);"><th style="padding:4px;">날짜</th><th style="padding:4px;">교시</th><th style="padding:4px;">과목</th></tr>';
+      parsed.forEach(function(p) {
+        html += '<tr style="border-top:1px solid var(--border-color);"><td style="padding:4px;">' + escapeHtmlAttr(neisDateToIso(p.date)) +
+          '</td><td style="padding:4px;">' + escapeHtmlAttr(String(p.period || '')) +
+          '</td><td style="padding:4px;">' + escapeHtmlAttr(String(p.subject || '')) + '</td></tr>';
+      });
+      html += '</table>' +
+        '<details style="margin-top:10px;"><summary style="cursor:pointer; color:var(--text-sub);">원본 응답 보기 (표에 날짜·교시·과목이 비어있으면 필드 이름이 다른 것이니 이걸 보고 코드를 고쳐야 합니다)</summary>' +
+        '<pre style="white-space:pre-wrap; word-break:break-all;">' + escapeHtmlAttr(JSON.stringify(rows.slice(0, 3), null, 2)) + '</pre></details>';
+
+      const prev = await gasGetLatestNeisSnapshot(grade, classNo, from, to);
+      resultEl.innerHTML = (prev.length > 0 ? buildNeisDiffHtml(prev, parsed) : '') + html;
+
+      document.getElementById('neis-check-save-btn').style.display = 'block';
+    } catch (e) {
+      statusEl.innerText = '조회 실패: ' + (e && e.message ? e.message : e);
+    }
+  }
+
+  async function saveNeisSnapshot() {
+    const rows = window.__neisCheckRows || [];
+    const meta = window.__neisCheckMeta;
+    if (!rows.length || !meta) return;
+
+    const valid = rows.filter(function(r) { return r.date && r.period !== undefined && r.period !== ''; });
+    const skipped = rows.length - valid.length;
+    if (valid.length === 0) { customAlert('저장할 수 있는 행이 없습니다. 원본 응답을 보고 날짜·교시 필드 이름을 확인해주세요.'); return; }
+
+    try {
+      const records = valid.map(function(r) {
+        return {
+          class_date: neisDateToIso(r.date),
+          grade: parseInt(meta.grade, 10),
+          class_no: parseInt(meta.classNo, 10),
+          period: parseInt(r.period, 10),
+          subject: String(r.subject || ''),
+          raw: r.raw
+        };
+      });
+      const { error } = await sb.from('neis_timetable_snapshot').insert(records);
+      if (error) throw error;
+      customAlert(records.length + '건을 스냅샷으로 저장했습니다.' + (skipped ? (' (' + skipped + '건은 날짜·교시를 몰라 건너뛰었습니다)') : ''));
+    } catch (e) {
+      customAlert('저장 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
 
   const DEFAULT_TIMES = [
     { s: '08:50', e: '09:40' }, { s: '09:50', e: '10:40' }, { s: '10:50', e: '11:40' },
@@ -2013,6 +2241,126 @@
         document.getElementById('schedule-edit-grid').innerHTML = buildScheduleEditGridHTML();
       }
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
+  }
+
+  // ===== 📥 전체 선생님 시간표 엑셀 업로드 =====
+  // "2026학년도 2학기 전체 선생님 시간표" 양식(요일이 셀 병합, 그 아래 1~7교시, 칸 안에 과목명과
+  // 교실이 줄바꿈으로 나뉜 형식)을 그대로 읽어서 선생님별 시간표로 바꾼다. 요일별 교시 개수가
+  // 학기마다 달라질 수 있어서, 열 번호를 고정하지 않고 "월/화/수/목/금" 글자와 "N교시" 글자를
+  // 찾아서 위치를 스스로 계산한다.
+  function parseTimetableWorkbook(wb) {
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+    const DAYS = ['월', '화', '수', '목', '금'];
+
+    let dayRowIdx = -1;
+    for (let r = 0; r < Math.min(grid.length, 15); r++) {
+      const row = grid[r] || [];
+      const hitCount = row.filter(function(v) { return DAYS.indexOf(String(v).trim()) !== -1; }).length;
+      if (hitCount >= 3) { dayRowIdx = r; break; }
+    }
+    if (dayRowIdx === -1) throw new Error('요일(월/화/수/목/금) 헤더 행을 찾을 수 없습니다.');
+
+    const dayRow = grid[dayRowIdx];
+    const segments = [];
+    for (let c = 0; c < dayRow.length; c++) {
+      const v = String(dayRow[c] || '').trim();
+      if (DAYS.indexOf(v) !== -1) segments.push({ day: v, startCol: c });
+    }
+    segments.sort(function(a, b) { return a.startCol - b.startCol; });
+    for (let i = 0; i < segments.length; i++) {
+      segments[i].endCol = (i + 1 < segments.length ? segments[i + 1].startCol : dayRow.length) - 1;
+    }
+    if (DAYS.some(function(d) { return !segments.some(function(s) { return s.day === d; }); })) {
+      throw new Error('월~금 다섯 개 요일을 모두 찾지 못했습니다.');
+    }
+
+    let periodRowIdx = -1;
+    for (let r = dayRowIdx + 1; r < Math.min(dayRowIdx + 5, grid.length); r++) {
+      const row = grid[r] || [];
+      if (row.some(function(v) { return /\d+\s*교시/.test(String(v)); })) { periodRowIdx = r; break; }
+    }
+    if (periodRowIdx === -1) throw new Error('1교시/2교시 같은 교시 행을 찾을 수 없습니다.');
+
+    const periodRow = grid[periodRowIdx];
+    segments.forEach(function(seg) {
+      seg.periods = {};
+      for (let c = seg.startCol; c <= seg.endCol; c++) {
+        const m = /(\d+)\s*교시/.exec(String(periodRow[c] || ''));
+        if (m) seg.periods[parseInt(m[1], 10)] = c;
+      }
+    });
+
+    const nameCol = Math.max(0, segments[0].startCol - 1);
+
+    const teachers = {};
+    for (let r = periodRowIdx + 1; r < grid.length; r++) {
+      const row = grid[r] || [];
+      const name = String(row[nameCol] || '').trim();
+      if (!name) continue;
+      const cells = [];
+      for (let d = 0; d < DAYS.length; d++) {
+        const seg = segments.filter(function(s) { return s.day === DAYS[d]; })[0];
+        for (let p = 1; p <= 7; p++) {
+          let subj = '', room = '';
+          const col = seg.periods[p];
+          if (col !== undefined) {
+            let raw = String(row[col] || '').trim();
+            if (raw === 'Ⅹ' || raw.toUpperCase() === 'X') raw = '';
+            const lines = raw.split(/\r?\n/);
+            subj = (lines[0] || '').trim();
+            room = (lines[1] || '').trim();
+          }
+          cells.push(subj + String.fromCharCode(10) + room);
+        }
+      }
+      teachers[name] = cells;
+    }
+    return teachers;
+  }
+
+  async function handleTimetableExcelFile(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    let teachers;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      teachers = parseTimetableWorkbook(wb);
+    } catch (e) {
+      customAlert('엑셀 파일을 읽지 못했습니다. 양식을 확인해주세요.\n(' + (e && e.message ? e.message : e) + ')');
+      return;
+    }
+
+    const names = Object.keys(teachers);
+    if (names.length === 0) { customAlert('엑셀에서 선생님 시간표를 찾지 못했습니다.'); return; }
+
+    const ok = await customConfirm(
+      '엑셀에서 ' + names.length + '명 선생님의 시간표를 찾았습니다.\n\n' +
+      '이 내용으로 저장할까요? (엑셀에 있는 선생님은 새 내용으로 바뀌고, 엑셀에 없는 기존 선생님은 그대로 남습니다)'
+    );
+    if (!ok) return;
+
+    let okCount = 0;
+    const failNames = [];
+    for (const name of names) {
+      try { await gasSetSchedule(name, teachers[name]); okCount++; }
+      catch (e) { failNames.push(name); }
+    }
+
+    await fetchSchedule();
+    populateScheduleTeacherSelect();
+    if (currentScheduleTeacherName && window.allSchedules[currentScheduleTeacherName]) {
+      selectTeacherForSchedule(currentScheduleTeacherName);
+    }
+
+    if (failNames.length) {
+      customAlert(okCount + '명 저장 완료, ' + failNames.length + '명은 실패했습니다: ' + failNames.join(', '));
+    } else {
+      customAlert(okCount + '명 선생님의 시간표를 모두 불러왔습니다.');
+    }
   }
 
   function renderSearchTimetable(init = false) {
