@@ -4,36 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>부광고 통합 대시보드 - Chrome App Edition</title>
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <style>
     :root {
-      --bg-color: #F5F6FA; --card-bg: #FFFFFF; --text-main: #23262F; --text-sub: #6E7180; --border-color: #E6E8F0; --accent-color: #5046E5; --tt-bg: #EFF0F7;
+      --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
+      --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --fz-tt: 13px; --fz-noti: 11px; --fz-todo-w: 13px; --fz-todo-s: 13px; --fz-cal: 11px; --fz-halfcal: 9px;
     }
-    [data-theme="milky"] { --bg-color: #F7F0E6; --card-bg: #FFFFFF; --text-main: #5B4636; --text-sub: #A78B6F; --border-color: #E8D9C3; --accent-color: #B0592A; --tt-bg: #FBF6EF; }
-    [data-theme="mint"] { --bg-color: #E8F6F3; --card-bg: #FFFFFF; --text-main: #1B4B43; --text-sub: #6B9C93; --border-color: #C9E8E0; --accent-color: #0A7F70; --tt-bg: #F1FAF8; }
-    [data-theme="dark"] { --bg-color: #14161A; --card-bg: #1E2128; --text-main: #EDEEF0; --text-sub: #9096A2; --border-color: #2E323B; --accent-color: #3773D6; --tt-bg: #262A32; }
+    [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996; }
+    [data-theme="mint"] { --bg-color: #F2F7F6; --card-bg: #FFFFFF; --text-main: #1B3B36; --text-sub: #6E8B85; --border-color: #DCEAE7; --accent-color: #1F6E5C; --tt-bg: #E9F2F0; --accent-soft: #E3F1ED; --alert: #A5471F; --alert-bg: #FBEDE5; --alert-border: #E9BBA0; }
+    [data-theme="dark"] { --bg-color: #14161B; --card-bg: #1B1E24; --text-main: #E7E9ED; --text-sub: #8A8F9C; --border-color: #2A2D35; --accent-color: #4C8DC2; --tt-bg: #1E212A; --accent-soft: #1E2A38; --alert: #E08469; --alert-bg: #2B1B17; --alert-border: #5C2E22; }
 
-    body { margin: 0; padding: 68px 30px 30px 30px; background-color: var(--bg-color); font-family: 'Pretendard', sans-serif; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: 0.3s; }
+    body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
 
-    .top-bar-row { position: absolute; top: 15px; left: 30px; right: 30px; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; column-gap: 20px; z-index: 100; }
-    .top-bar-left { display: grid; grid-template-columns: 1fr 1fr; align-items: center; column-gap: 20px; min-width: 0; }
-    .top-header { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
-    .top-bar-right { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; }
-    .main-title { font-size: 26px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* ===== 왼쪽 아이콘 레일 ===== */
+    #app-shell { display: flex; height: 100vh; overflow: hidden; }
+    #app-rail { width: 68px; flex: 0 0 auto; background: var(--card-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 5px; box-sizing: border-box; }
+    #app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .rail-logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent-color); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; margin-bottom: 8px; }
+    .rail-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 48px; padding: 9px 0; border-radius: 12px; cursor: pointer; color: var(--text-sub); text-decoration: none; }
+    .rail-item:hover { background: var(--bg-color); color: var(--text-main); }
+    .rail-item.active { background: var(--accent-soft); color: var(--accent-color); }
+    .rail-ico { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+    .rail-label { font-size: 9.5px; font-weight: 700; }
+
+    /* ===== 상단 바 ===== */
+    .top-bar-row { flex: 0 0 auto; height: 70px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); }
+    .main-title { font-size: 15px; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px; white-space: nowrap; }
     .credit-badge { padding: 4px 10px; border-radius: 12px; background: var(--text-main); color: var(--card-bg); font-size: 11px; font-weight: 700; letter-spacing: 0.2px;}
 
     .top-center-bar {
       position: relative;
-      background: var(--card-bg); border-radius: 30px; border: 1px solid var(--border-color);
-      display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 25px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03); white-space: nowrap; overflow: hidden;
+      display: flex; align-items: baseline; gap: 12px;
       font-variant-numeric: tabular-nums;
     }
-    .top-center-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-color); transition: width 1s ease-in-out; width: 0%; }
-    .tc-label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
-    .tc-main { font-size: 16px; font-weight: 800; color: var(--text-main); }
-    .tc-time { font-size: 11px; font-weight: 600; color: var(--accent-color); opacity: 0.9;}
+    .top-center-progress-track { position: relative; width: 128px; height: 9px; background: var(--accent-soft); border-radius: 999px; margin-left: 2px; }
+    .top-center-progress { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, var(--accent-soft), var(--accent-color)); border-radius: 999px; transition: width 1s ease-in-out; width: 0%; }
+    .top-center-progress-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--accent-color); border: 3px solid var(--card-bg); box-shadow: 0 2px 5px rgba(0,0,0,.28); transition: left 1s ease-in-out; left: 0%; }
+    .tc-label { font-size: 11.5px; font-weight: 700; color: var(--text-sub); }
+    .tc-main { font-size: 32px; font-weight: 800; color: var(--accent-color); letter-spacing: -0.5px; }
+    .tc-time { font-size: 14.5px; font-weight: 700; color: var(--text-sub); }
+
+    /* ===== 관리 바로가기 + 감독알림 줄 ===== */
+    .quick-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 8px 22px; border-bottom: 1px solid var(--border-color); gap: 10px; background: var(--card-bg); }
+    .qbtn { font-size: 11px; font-weight: 700; color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; }
+    .qbtn:hover { filter: brightness(0.97); }
+    .qbtn svg { flex: 0 0 auto; }
 
     @keyframes pulse-red {
       0% { box-shadow: 0 0 0 0 rgba(240, 113, 120, 0.7); }
@@ -50,11 +66,16 @@
     .top-btn.theme-active { background: var(--card-bg); color: var(--accent-color); font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
     .top-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
     
-    .dashboard { display: flex; gap: 20px; height: 100%; min-height: 0; transition: 0.4s; }
-    
+    .dashboard { display: grid; grid-template-columns: 1.15fr 1.15fr 0.85fr 0.85fr; gap: 12px; height: 100%; min-height: 0; padding: 12px; box-sizing: border-box; transition: 0.4s; }
+    .dash-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+
     /* 💡 여기가 폭 삐뚤어짐을 해결한 마법의 코드입니다! box-sizing: border-box 추가 */
-    .widget { background-color: var(--card-bg); border-radius: 20px; padding: 15px 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); display: flex; flex-direction: column; position: relative; min-height: 0; box-sizing: border-box; }
-    .widget-title { font-size: 14px; font-weight: 600; color: var(--text-sub); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto;}
+    .widget { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px 14px; box-shadow: none; display: flex; flex-direction: column; position: relative; min-height: 0; box-sizing: border-box; }
+    .widget-title { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 6px;}
+    .w-chip { width: 24px; height: 24px; border-radius: 7px; background: var(--accent-soft); color: var(--accent-color); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .w-chip svg { display: block; }
+    .w-ico-btn { width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-sub); background: var(--bg-color); cursor: pointer; flex: 0 0 auto; }
+    .w-ico-btn:hover { color: var(--accent-color); }
     
     .editable { outline: none; transition: background 0.2s; cursor: text; border-radius: 4px; }
     .editable:hover, .editable:focus { background: rgba(0,0,0,0.05); }
@@ -124,7 +145,7 @@
     .notice-popup { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: #F07178; color: white; padding: 15px 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(240,113,120,0.4); font-weight: 700; z-index: 1000; display: flex; gap: 15px; align-items: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; font-size: 15px;}
     .notice-popup.show { top: 30px; opacity: 1; }
 
-    .tab-switch { display: flex; background: var(--tt-bg); border-radius: 20px; padding: 2px; border: 1px solid var(--border-color); overflow: hidden; }
+    .tab-switch { display: flex; flex-shrink: 0; background: var(--tt-bg); border-radius: 20px; padding: 2px; border: 1px solid var(--border-color); overflow: hidden; }
     .tab-btn { padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--text-sub); background: transparent; border: none; border-radius: 18px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .tab-btn.active { background: var(--card-bg); color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     
@@ -150,6 +171,31 @@
     #tour-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 3000; }
     #tour-spotlight { position: fixed; z-index: 3001; border-radius: 14px; box-shadow: 0 0 0 4px var(--accent-color), 0 0 0 9999px rgba(0,0,0,0.55); pointer-events: none; transition: top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease; }
     #tour-card { position: fixed; right: 24px; bottom: 24px; z-index: 3002; background: var(--card-bg); border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); width: 320px; max-width: 88vw; }
+
+    /* ===== 즐겨찾기 8칸 ===== */
+    .fav-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 4px; min-height: 0; }
+    .fav-cell { background: var(--bg-color); border-radius: 7px; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 10px; font-weight: 700; text-align: center; cursor: pointer; overflow: hidden; text-decoration: none; color: var(--text-main); }
+    .fav-cell:hover { filter: brightness(0.96); }
+    .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
+    .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
+
+    /* ===== D-DAY 좌우 반반 ===== */
+    .dday-row { flex: 0 0 56px; display: flex; align-items: center; }
+    .dday-half { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dday-half .dday-text { font-size: 20px; font-weight: 800; color: var(--accent-color); }
+    .dday-half .dday-desc { font-size: 11px; color: var(--text-sub); font-weight: 600; margin-left: 4px; }
+    .dday-divider { width: 1px; height: 26px; background: var(--border-color); flex: 0 0 auto; }
+
+    /* ===== 사용자 메뉴 드롭다운 ===== */
+    .user-chip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-color); border-radius: 18px; padding: 4px 9px 4px 4px; cursor: pointer; background: var(--card-bg); position: relative; }
+    .user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-color); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    #user-menu-dropdown { display: none; position: absolute; top: 42px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 10px; width: 220px; z-index: 200; }
+    #user-menu-dropdown .um-section-label { font-size: 10px; font-weight: 700; color: var(--text-sub); padding: 4px 4px; }
+    #user-menu-dropdown .um-theme-row { display: flex; gap: 4px; margin-bottom: 8px; }
+    #user-menu-dropdown .um-theme-btn { flex: 1; padding: 6px 0; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); font-size: 15px; cursor: pointer; text-align: center; }
+    #user-menu-dropdown .um-theme-btn.theme-active { border-color: var(--accent-color); background: var(--accent-soft); }
+    #user-menu-dropdown .um-btn { display: block; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
+    #user-menu-dropdown .um-btn:hover { background: var(--bg-color); }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -193,6 +239,21 @@
       </div>
 
       <div style="margin-bottom:20px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🔗 즐겨찾기 고정 링크 (모두에게 같게 보임)</div>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
+          <input type="text" id="fixed-bm-name-0" placeholder="이름 (예: 업무포탈)">
+          <input type="text" id="fixed-bm-url-0" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-1" placeholder="이름 (예: 리로스쿨)">
+          <input type="text" id="fixed-bm-url-1" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-2" placeholder="이름 (예: 학교홈피)">
+          <input type="text" id="fixed-bm-url-2" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-3" placeholder="이름 (예: 정보AS)">
+          <input type="text" id="fixed-bm-url-3" placeholder="주소 (URL)">
+        </div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveFixedBookmarks()">고정 링크 저장</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📋 감독표</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="top-btn" style="font-size:12px; padding:6px 12px;" onclick="openDutyFromSettings('야자감독', '🌙')">🌙 야자 감독표</button>
@@ -230,47 +291,97 @@
   </div>
 </div>
 
-<div class="top-bar-row">
-  <div class="top-bar-left">
-    <div class="top-header">
-      <div class="main-title">🏫 부광고등학교 SMART DASHBOARD</div>
+<div id="app-shell">
+  <div id="app-rail">
+    <div class="rail-logo">부광</div>
+    <div class="rail-item active" title="홈">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
+      <div class="rail-label">홈</div>
     </div>
+    <div class="rail-item" title="명렬표 (준비 중)" onclick="railComingSoon('명렬표')">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
+      <div class="rail-label">명렬표</div>
+    </div>
+    <div class="rail-item" title="학급표 (준비 중)" onclick="railComingSoon('학급표')">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
+      <div class="rail-label">학급표</div>
+    </div>
+    <div class="rail-item" title="월간일정표 (준비 중)" onclick="railComingSoon('월간일정표')">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
+      <div class="rail-label">월간일정표</div>
+    </div>
+    <div class="rail-item" title="좌석표 (준비 중)" onclick="railComingSoon('좌석표')">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
+      <div class="rail-label">좌석표</div>
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="rail-item" id="rail-add-btn" style="display:none;" title="새 페이지 추가 (관리자, 준비 중)" onclick="railComingSoon('레일 추가')">
+      <div class="rail-ico" style="border: 1.5px dashed var(--border-color); border-radius: 7px; width: 20px; height: 20px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="rail-label" style="font-weight: 600;">추가</div>
+    </div>
+  </div>
 
-    <div class="top-center-bar">
-      <div style="display: flex; align-items: baseline; gap: 8px;">
+  <div id="app-main">
+    <div class="top-bar-row">
+      <div class="main-title">🏫 부광고 스마트보드</div>
+
+      <div class="top-center-bar">
         <span class="tc-label">지금 이 시간</span>
         <span class="tc-main" id="tc-period-main">계산 중...</span>
         <span class="tc-time" id="tc-period-time">00:00 - 00:00</span>
+        <div class="top-center-progress-track">
+          <div class="top-center-progress" id="tc-period-progress"></div>
+          <div class="top-center-progress-dot" id="tc-period-dot"></div>
+        </div>
       </div>
-      <div class="top-center-progress" id="tc-period-progress"></div>
-    </div>
-  </div>
 
-  <div class="top-bar-right">
-    <div id="duty-alert-pill" style="display:flex; align-items:center; gap:6px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 6px 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex-shrink: 0; white-space: nowrap;">
-      <span style="font-size:11px; font-weight:700; color:var(--text-sub); white-space:nowrap;">🔔 감독 알림</span>
-      <div id="duty-badge-container" style="display:flex; gap:4px; align-items:center; white-space:nowrap;"></div>
-    </div>
+      <div style="display:flex; align-items:center; gap:9px;">
+        <div style="display:flex; gap:5px;">
+          <button class="qbtn" id="btn-notice" onclick="openNoticeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>공지</button>
+          <button class="qbtn" id="btn-backup" onclick="document.getElementById('backup-overlay').style.display='flex'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>백업</button>
+          <button class="qbtn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>사용법</button>
+        </div>
+        <div style="width:1px; height:20px; background:var(--border-color); margin:0 2px;"></div>
+        <div class="user-chip" id="user-chip" onclick="toggleUserMenu()">
+          <div class="user-avatar" id="user-avatar-initial">-</div>
+          <span style="font-size:12px; font-weight:700;" id="user-chip-name">-</span>
+          <span id="user-chip-admin-badge" style="display:none; font-size:9.5px; color:var(--text-sub); font-weight:700; background:var(--bg-color); padding:2px 6px; border-radius:9px;">관리자</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--text-sub);"><path d="M6 9.5 12 15l6-5.5"/></svg>
 
-    <div class="top-controls">
-      <div class="top-btn-cluster">
-        <button class="top-btn" id="btn-backup" onclick="document.getElementById('backup-overlay').style.display='flex'">💾 백업</button>
-        <button class="top-btn accent" id="btn-notice" onclick="openNoticeModal()">📢 공지</button>
-        <button class="top-btn" onclick="openTour()">❓ 사용법</button>
-        <button class="top-btn" id="btn-admin-settings" style="display:none;" onclick="openAdminSettingsModal()">⚙️ 설정</button>
-        <button class="top-btn" id="btn-logout" style="display:none;" onclick="logout()">🚪 로그아웃</button>
+          <div id="user-menu-dropdown">
+            <div class="um-section-label">테마</div>
+            <div class="um-theme-row" id="theme-btn-group">
+              <button class="theme-select-btn um-theme-btn" id="theme-btn-default" onclick="event.stopPropagation(); changeTheme('default')" title="기본">⚪</button>
+              <button class="theme-select-btn um-theme-btn" id="theme-btn-milky" onclick="event.stopPropagation(); changeTheme('milky')" title="베이지">☕</button>
+              <button class="theme-select-btn um-theme-btn" id="theme-btn-mint" onclick="event.stopPropagation(); changeTheme('mint')" title="민트">🌿</button>
+              <button class="theme-select-btn um-theme-btn" id="theme-btn-dark" onclick="event.stopPropagation(); changeTheme('dark')" title="다크">🌙</button>
+            </div>
+            <button class="um-btn" id="btn-admin-settings" style="display:none;" onclick="event.stopPropagation(); openAdminSettingsModal()">⚙️ 관리자 설정</button>
+            <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()">🚪 로그아웃</button>
+          </div>
+        </div>
       </div>
-      <div class="top-btn-cluster" id="theme-btn-group">
-        <button class="top-btn theme-select-btn" id="theme-btn-default" onclick="changeTheme('default')">⚪ 기본</button>
-        <button class="top-btn theme-select-btn" id="theme-btn-milky" onclick="changeTheme('milky')">☕ 베이지</button>
-        <button class="top-btn theme-select-btn" id="theme-btn-mint" onclick="changeTheme('mint')">🌿 민트</button>
-        <button class="top-btn theme-select-btn" id="theme-btn-dark" onclick="changeTheme('dark')">🌙 다크</button>
+    </div>
+
+    <div class="quick-row">
+      <div style="display:flex; gap:7px; flex-wrap:wrap;">
+        <button class="qbtn" onclick="openScheduleModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg>시간표 관리</button>
+        <button class="qbtn" onclick="openDutyModal('야자감독', '🌙')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>야자 감독표</button>
+        <button class="qbtn" onclick="openDutyModal('급식감독', '🍱')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>급식 감독표</button>
+        <button class="qbtn" onclick="openDutyModal('아침감독', '☀️')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>아침 감독표</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:7px; color:var(--text-sub); min-width:0; overflow:hidden;">
+        <div class="w-chip" style="width:20px; height:20px; border-radius:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
+        <span style="font-size:11px; font-weight:700; white-space:nowrap;">다가오는 학사일정</span>
+        <span id="upcoming-schedule-teaser" style="font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">불러오는 중...</span>
+      </div>
+
+      <div id="duty-alert-pill" style="display:flex; align-items:center; gap:7px; flex-shrink: 0; white-space: nowrap;">
+        <span style="font-size:10.5px; font-weight:700; color:var(--text-sub); white-space:nowrap;">🔔 감독 알림</span>
+        <div id="duty-badge-container" style="display:flex; gap:5px; align-items:center; white-space:nowrap;"></div>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="credit-badge" style="position: fixed; bottom: 4px; right: 12px; z-index: 50; font-size: 9px; padding: 2px 8px;">ⓒ 2026. 이용휘 All rights reserved.</div>
 
 <div class="overlay" id="duty-overlay">
   <div class="modal-box" style="width: 380px; max-height: 80vh; display: flex; flex-direction: column;">
@@ -484,150 +595,149 @@
 </div>
 
 <div class="dashboard" id="main-dashboard">
-  
-  <div style="flex: 1.2; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 160px; flex: 0 0 160px;">
-      
-      <div class="widget" style="padding: 0; display: flex; flex-direction: column; min-width: 0;">
-        <div style="display: flex; flex: 1; border-bottom: 1px dashed var(--border-color); min-height: 0;">
-          <div id="favorites-panel" style="flex: 1.1; padding: 12px; border-right: 1px dashed var(--border-color); display: flex; flex-direction: column;">
-            <div class="widget-title" style="margin-bottom: 6px;">🔗 즐겨찾기 <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="openBookmarkSettings()">⚙️</button></div>
-            <div id="bookmark-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1;"></div>
+
+  <div class="dash-col" style="flex: 1.15;">
+    <div style="flex: 0 0 172px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="widget" style="flex: 1; min-height: 0; padding: 9px 10px;">
+        <div id="favorites-panel" style="display: flex; flex-direction: column; height: 100%;">
+          <div class="widget-title" style="font-size: 11px; margin-bottom: 5px; padding-bottom: 0; border-bottom: none;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3.5L6 20V4a1 1 0 0 1 1-1z"/></svg></div>
+              즐겨찾기
+            </div>
+            <button class="w-ico-btn" style="width:20px; height:20px; border-radius:6px;" onclick="openBookmarkSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button>
           </div>
-          <div id="dday-panel" style="flex: 1; position: relative; display: flex; flex-direction: column; padding: 12px;">
-            <div style="width: 100%; display: flex; justify-content: space-between; position: absolute; top: 12px; left: 12px; right: 12px; padding-right: 24px; box-sizing: border-box; z-index: 2;">
-              <span style="font-size:12px; font-weight:700; color:var(--text-sub);">⏳ D-DAY</span>
-            </div>
-            <div style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; padding-top: 12px; box-sizing: border-box;">
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s;" onclick="toggleDdaySettings(1)" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
-                <div class="dday-text" id="dday1-num" style="font-size: 22px; font-weight: 800;">D-0</div>
-                <div class="dday-desc" id="dday1-desc" style="font-size: 11px; font-weight: 600; color: var(--text-main); margin-top: 2px; text-align: center; word-break: keep-all;">설정(클릭)</div>
-              </div>
-              <div style="width: 1px; height: 40%; background: var(--border-color); margin: 0 5px;"></div>
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s;" onclick="toggleDdaySettings(2)" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
-                <div class="dday-text" id="dday2-num" style="font-size: 22px; font-weight: 800;">D-0</div>
-                <div class="dday-desc" id="dday2-desc" style="font-size: 11px; font-weight: 600; color: var(--text-main); margin-top: 2px; text-align: center; word-break: keep-all;">설정(클릭)</div>
-              </div>
-            </div>
-            <div class="dday-settings" id="dday-settings" style="display: none; position: absolute; top: 35px; right: 5px; background: var(--card-bg); padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index: 10; width: 160px;">
-              <input type="hidden" id="dday-target-id">
-              <input type="date" id="dday-input-date" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
-              <input type="text" id="dday-input-desc" placeholder="예: 1차고사" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
-              <button onclick="saveDday()" class="top-btn accent" style="width:100%;">저장</button>
-            </div>
-          </div>
-        </div>
-        <div id="feature-buttons-row" style="flex: 0 0 45px; display: flex; justify-content: space-evenly; align-items: center; background: var(--tt-bg); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; padding: 0 10px;">
-          <button class="top-btn accent" style="border-radius:20px; font-size:11px; padding:4px 10px;" onclick="openScheduleModal()">🗓️ 시간표 관리</button>
-          <button class="top-btn accent" style="border-radius:20px; font-size:11px; padding:4px 10px;" onclick="openDutyModal('야자감독', '🌙')">🌙 야자 감독표</button>
-          <button class="top-btn accent" style="border-radius:20px; font-size:11px; padding:4px 10px;" onclick="openDutyModal('급식감독', '🍱')">🍱 급식 감독표</button>
-          <button class="top-btn accent" style="border-radius:20px; font-size:11px; padding:4px 10px;" onclick="openDutyModal('아침감독', '☀️')">☀️ 아침 감독표</button>
+          <div id="bookmark-grid" class="fav-grid"></div>
         </div>
       </div>
-
-      <div class="widget top-bar-widget" style="min-width: 0;">
-        <div class="time-group">
-          <div class="time-display" id="clock">00:00<span class="clock-sec" id="clock-sec">00</span></div>
-          <div class="date-display"><span id="date-text">...</span> <span class="badge-today" id="day-text">...</span></div>
-          <div id="lunar-text" style="font-size:11px; color:var(--text-sub); margin-top:4px; font-weight:600; letter-spacing:-0.5px;">🌙 음력 계산 중...</div>
-        </div>
-
-        <div style="border-right: 1px dashed var(--border-color); height: 110px;"></div>
-
-        <div class="timer-group">
-          <div style="font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:2px;">⏳ 타이머</div>
-          <div class="timer-display" id="timer-text">00:00</div>
-          <div class="timer-buttons">
-            <button class="timer-btn" onclick="addTimer(300)">+5분</button>
-            <button class="timer-btn" onclick="addTimer(60)">+1분</button>
-            <button class="timer-btn" id="timer-play-btn" onclick="toggleTimer()" style="background:var(--text-main); color:white; border:none;">▶</button>
-            <button class="timer-btn" onclick="resetTimer()">↺</button>
+      <div class="widget" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
+        <div class="dday-row">
+          <div class="dday-half" onclick="toggleDdaySettings(1)">
+            <span class="dday-text" id="dday1-num">D-0</span>
+            <span class="dday-desc" id="dday1-desc">설정(클릭)</span>
+          </div>
+          <div class="dday-divider"></div>
+          <div class="dday-half" onclick="toggleDdaySettings(2)">
+            <span class="dday-text" id="dday2-num">D-0</span>
+            <span class="dday-desc" id="dday2-desc">설정(클릭)</span>
           </div>
         </div>
-
-        <div style="border-right: 1px dashed var(--border-color); height: 110px;"></div>
-
-        <div class="weather-group">
-          <div style="font-size: 10px; color: var(--text-sub); cursor:pointer; display:flex; align-items:center; gap:2px; margin-bottom:2px;" onclick="toggleWeatherSettings()">⚙️ 위치 설정</div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size: 34px;" id="weather-icon">⛅</span>
-            <span style="font-size: 32px; font-weight: 800;" id="weather-temp">--°</span>
-          </div>
-          <div id="weather-dust" style="font-size:16px; font-weight:700; color:var(--text-sub); margin-top:4px; text-align:right;">😷 미세먼지<br><span style="font-size:40px;">--</span></div>
-          <div class="weather-setting-modal" id="weather-setting-modal">
-            <div style="font-size:11px; font-weight:bold; margin-bottom:5px; text-align:left;">위도/경도 입력</div>
-            <input type="text" id="w-lat" placeholder="위도 (예: 37.495)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-            <input type="text" id="w-lon" placeholder="경도 (예: 126.722)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-            <button onclick="saveWeatherLocation()" class="top-btn accent" style="width:100%;">저장</button>
-          </div>
-        </div>
-      </div>
-    </div> <div id="left-bottom-tt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
-      <div id="my-tt-widget" class="widget timetable-widget" style="min-width: 0;">
-        <div class="widget-title" style="height: auto; min-height: 32px; margin-bottom: 8px; flex-wrap: wrap; row-gap: 6px;">
-          <div style="display:flex; align-items:center;">
-            ⭐ 내 시간표 <span id="my-tt-name" style="font-size:14px; font-weight:800; color:var(--accent-color); margin-left:4px;">(미설정)</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:2px;">
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(-1)">◀</button>
-            <select id="search-select" onchange="renderSearchTimetable()" class="mini-select" style="width:88px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><option value="">로딩중...</option></select>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(1)">▶</button>
-            <button onclick="setMyTimetable()" class="top-btn accent" style="padding:4px 8px; font-size:11px;">⭐ 지정</button>
-          </div>
-          <div style="display:flex; gap:4px;">
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openTimeSettings()">⚙️</button>
-          </div>
-        </div>
-        <div class="timetable-grid" id="my-timetable-grid"></div>
-      </div>
-      
-      <div id="search-tt-widget" class="widget timetable-widget" style="min-width: 0;">
-        <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
-          <div class="tab-switch">
-            <button class="tab-btn active" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
-            <button class="tab-btn" id="tab-cal" onclick="switchMainTab('cal')">📅 캘린더</button>
-            <button class="tab-btn" id="tab-halfcal" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2캘린더</button>
-          </div>
-          <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
-            <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
-          </div>
-        </div>
-        <div class="timetable-grid" id="search-timetable-grid"></div>
-        <div class="half-cal-wrapper" id="half-cal-wrapper">
-          <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:9px; font-weight:800; color:var(--text-sub); padding-bottom:3px; margin-bottom:3px; border-bottom:1px solid var(--border-color); flex:0 0 auto;">
-            <div>월</div><div>화</div><div>수</div><div>목</div><div>금</div>
-          </div>
-          <div class="half-cal-grid" id="half-cal-grid"></div>
+        <div class="dday-settings" id="dday-settings" style="display: none; position: absolute; top: 45px; right: 5px; background: var(--card-bg); padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index: 10; width: 160px;">
+          <input type="hidden" id="dday-target-id">
+          <input type="date" id="dday-input-date" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
+          <input type="text" id="dday-input-desc" placeholder="예: 1차고사" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
+          <button onclick="saveDday()" class="top-btn accent" style="width:100%;">저장</button>
         </div>
       </div>
     </div>
 
-    <div id="left-bottom-cal" class="widget timetable-widget" style="display: none; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
-      <div class="widget-title" style="height: 32px; margin-bottom: 8px; display: flex; padding: 0;">
-        
-        <div style="width: calc(50% + 30px);"></div>
+    <div id="my-tt-widget" class="widget timetable-widget" style="min-width: 0;">
+      <div class="widget-title">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.7 14.7 9l7 .6-5.3 4.6 1.6 6.9L12 17.3l-6 3.8 1.6-6.9L2.3 9.6l7-.6z"/></svg></div>
+          내 시간표 <span id="my-tt-name" style="font-size:13px; font-weight:800; color:var(--accent-color);">(미설정)</span>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openTimeSettings()">⚙️</button>
+        </div>
+      </div>
+      <div class="timetable-grid" id="my-timetable-grid"></div>
+    </div>
+  </div>
 
-        <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-          <div class="tab-switch">
-            <button class="tab-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
-            <button class="tab-btn active" onclick="switchMainTab('cal')">📅 캘린더</button>
-            <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2캘린더</button>
+  <div class="dash-col" style="flex: 1.15;">
+    <div class="widget top-bar-widget" style="flex: 0 0 172px; padding: 0 16px; position: relative;">
+      <div onclick="toggleWeatherSettings()" style="position: absolute; top: 9px; right: 11px; cursor: pointer; color: var(--text-sub); z-index: 3;" title="날씨 위치 설정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
+      <div class="time-group" style="flex: 1; align-items: center; text-align: center;">
+        <div class="time-display" id="clock" style="font-size: 38px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
+        <div class="date-display" style="justify-content: center;"><span id="date-text">...</span> <span class="badge-today" id="day-text">...</span></div>
+        <div id="lunar-text" style="font-size:11px; color:var(--text-sub); margin-top:5px; font-weight:600;">🌙 음력 계산 중...</div>
+      </div>
+
+      <div style="border-right: 1px dashed var(--border-color); height: 130px;"></div>
+
+      <div class="weather-group" style="flex: 1; align-items: stretch; justify-content: center; gap: 8px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size: 30px;" id="weather-icon">⛅</span>
+            <span style="font-size: 26px; font-weight: 800;" id="weather-temp">--°</span>
           </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
-            <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 2px;"></div>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(-1)">◀</button>
-            <span id="big-cal-month-label" style="font-size:14px; font-weight:800; min-width:65px; text-align:center;">0000. 00</span>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(1)">▶</button>
+          <div style="text-align:center; background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:8px; padding:3px 9px;">
+            <div style="font-size:8px; color:var(--alert); font-weight:700; opacity:.85;">미세먼지</div>
+            <div style="font-size:11px; color:var(--alert); font-weight:800; white-space:nowrap;" id="weather-dust-val">--</div>
           </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding-top:7px; border-top:1px dashed var(--border-color);">
+          <div style="text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">내일</div>
+            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-0">-</div>
+            <div style="font-size:11px; font-weight:800;" id="wf-temp-0">--</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">모레</div>
+            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-1">-</div>
+            <div style="font-size:11px; font-weight:800;" id="wf-temp-1">--</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">글피</div>
+            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-2">-</div>
+            <div style="font-size:11px; font-weight:800;" id="wf-temp-2">--</div>
+          </div>
+        </div>
+        <div class="weather-setting-modal" id="weather-setting-modal">
+          <div style="font-size:11px; font-weight:bold; margin-bottom:5px; text-align:left;">위도/경도 입력</div>
+          <input type="text" id="w-lat" placeholder="위도 (예: 37.495)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
+          <input type="text" id="w-lon" placeholder="경도 (예: 126.722)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
+          <button onclick="saveWeatherLocation()" class="top-btn accent" style="width:100%;">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="search-tt-widget" class="widget timetable-widget" style="min-width: 0;">
+      <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
+        <div class="tab-switch">
+          <button class="tab-btn active" id="tab-tt" style="padding:5px 8px;" title="시간표" onclick="switchMainTab('tt')">🔍</button>
+          <button class="tab-btn" id="tab-cal" style="padding:5px 8px;" title="캘린더" onclick="switchMainTab('cal')">📅</button>
+          <button class="tab-btn" id="tab-halfcal" style="padding:5px 8px;" title="1/2캘린더" onclick="switchMainTab('halfcal')">🗓️</button>
+        </div>
+        <div id="search-teacher-picker" style="display:flex; align-items:center; gap:2px;">
+          <button class="top-btn" style="padding:2px 5px;" onclick="moveTeacher(-1)">◀</button>
+          <select id="search-select" onchange="renderSearchTimetable()" class="mini-select" style="width:76px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><option value="">로딩중...</option></select>
+          <button class="top-btn" style="padding:2px 5px;" onclick="moveTeacher(1)">▶</button>
+        </div>
+        <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
+          <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
+          <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
+          <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
+          <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
+          <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
+        </div>
+      </div>
+      <div class="timetable-grid" id="search-timetable-grid"></div>
+      <div class="half-cal-wrapper" id="half-cal-wrapper">
+        <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:9px; font-weight:800; color:var(--text-sub); padding-bottom:3px; margin-bottom:3px; border-bottom:1px solid var(--border-color); flex:0 0 auto;">
+          <div>월</div><div>화</div><div>수</div><div>목</div><div>금</div>
+        </div>
+        <div class="half-cal-grid" id="half-cal-grid"></div>
+      </div>
+    </div>
+
+    <div id="left-bottom-cal" class="widget timetable-widget" style="display: none; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
+      <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
+        <div class="tab-switch">
+          <button class="tab-btn" style="padding:5px 8px;" title="시간표" onclick="switchMainTab('tt')">🔍</button>
+          <button class="tab-btn active" style="padding:5px 8px;" title="캘린더" onclick="switchMainTab('cal')">📅</button>
+          <button class="tab-btn" style="padding:5px 8px;" title="1/2캘린더" onclick="switchMainTab('halfcal')">🗓️</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
+          <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 2px;"></div>
+          <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(-1)">◀</button>
+          <span id="big-cal-month-label" style="font-size:14px; font-weight:800; min-width:65px; text-align:center;">0000. 00</span>
+          <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(1)">▶</button>
         </div>
       </div>
       <div class="big-cal-wrapper" id="big-calendar-wrapper" style="display: flex;">
@@ -637,84 +747,88 @@
         <div class="big-cal-grid" id="big-cal-grid"></div>
       </div>
     </div>
+  </div>
 
-  </div> <div style="flex: 1; display: flex; gap: 20px; min-height: 0;">
-    
-    <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
-      <div class="widget photo-widget" id="photo-widget-container" style="flex: 0 0 calc(53% - 10px); display: flex; flex-direction: column; min-height: 0;">
-        <div class="widget-title" style="margin-bottom: 10px; padding: 0;">
-          <div style="display:flex; align-items:center;">
-            <span id="title-photo">📷 우리 반 사진</span>
-            <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-photo')">⚙️</button>
-          </div>
-          <button class="top-btn" id="photo-toggle-btn" style="padding:2px 8px; font-size:11px;" onclick="togglePhoto()">숨기기</button>
+  <div class="dash-col" style="flex: 0.85;">
+    <div id="notice-widget" class="widget" style="flex: 1; min-height: 0;">
+      <div class="widget-title" style="font-size:12.5px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
+          공지 &amp; 소담소담❤️ <span style="font-size:10px; font-weight:500;">(최근 15개)</span>
         </div>
-        <div class="photo-frame" id="photo-frame" onclick="document.getElementById('photo-input').click()">
-          <img id="class-photo" src="" style="display:none;">
-          <div id="photo-empty" style="color:var(--text-sub); font-size:12px; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:100%;">📷 클릭하여 사진 선택<br>(저장됨)</div>
+        <div style="display:flex; gap:2px;">
+          <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', -1)">A-</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', 1)">A+</button>
         </div>
-        <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
       </div>
+      <ul class="recent-notices" id="recent-notice-list">
+        <li style="color:var(--text-sub); text-align:center; padding:10px;">불러오는 중...</li>
+      </ul>
+    </div>
 
-      <div id="todo-work-widget" class="widget todo-widget" style="flex: 1; display:flex; flex-direction:column; min-height: 0;">
-        <div class="widget-title" style="flex: 0 0 auto;">
-          <div style="display:flex; align-items:center;">
-            <span id="title-todo-work">💼 업무 할 일</span>
-            <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-todo-work')">⚙️</button>
-          </div>
-          <div style="display:flex; gap:4px;">
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('todo-w', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('todo-w', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="clearCheckedTodo('work')">✔️ Del</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="clearTodo('work')">🗑️ ALL</button>
-          </div>
+    <div class="widget photo-widget" id="photo-widget-container" style="flex: 0 0 30%; min-height: 0;">
+      <div class="widget-title" style="margin-bottom: 6px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3.2l1.8-2.5h6l1.8 2.5H20a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg></div>
+          <span id="title-photo" style="font-size:11px; font-weight:800;">우리 반 사진</span>
+          <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-photo')">⚙️</button>
         </div>
+        <button class="top-btn" id="photo-toggle-btn" style="padding:2px 8px; font-size:11px;" onclick="togglePhoto()">숨기기</button>
+      </div>
+      <div class="photo-frame" id="photo-frame" onclick="document.getElementById('photo-input').click()">
+        <img id="class-photo" src="" style="display:none;">
+        <div id="photo-empty" style="color:var(--text-sub); font-size:12px; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:100%;">📷 클릭하여 사진 선택<br>(저장됨)</div>
+      </div>
+      <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
+    </div>
+
+    <div id="meal-widget" class="widget" style="flex: 0 0 78px; min-height: 0; justify-content: center;">
+      <div class="widget-title" style="font-size:11px; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg></div>
+          급식(<span id="meal-date-label">오늘</span>)
+        </div>
+        <div style="display:flex; gap:4px; align-items:center;">
+          <span id="meal-kcal" style="font-size:10px; color:var(--text-sub);"></span>
+          <button class="top-btn" style="padding:0 4px; font-size:10px;" onclick="moveMeal(-1)">◀</button>
+          <button class="top-btn" style="padding:0 4px; font-size:10px;" onclick="moveMeal(1)">▶</button>
+        </div>
+      </div>
+      <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
+    </div>
+  </div>
+
+  <div class="dash-col" style="flex: 0.85;">
+    <div id="todo-work-widget" class="widget todo-widget" style="flex: 1; min-height: 0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div class="tab-switch">
+          <button class="tab-btn active" id="todo-tab-work" onclick="switchTodoTab('work')"><span id="title-todo-work">💼 업무</span></button>
+          <button class="tab-btn" id="todo-tab-stu" onclick="switchTodoTab('stu')"><span id="title-todo-stu">👩‍🎓 학생·상담</span></button>
+        </div>
+        <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="제목 바꾸기" onclick="renameTitle(currentTodoTab === 'work' ? 'title-todo-work' : 'title-todo-stu')">⚙️</button>
+      </div>
+      <div class="widget-title" style="padding-bottom: 8px; justify-content: flex-end;">
+        <div style="display:flex; gap:2px;">
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="글씨 작게" onclick="changeFontSize(currentTodoTab === 'work' ? 'todo-w' : 'todo-s', -1)">A-</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="글씨 크게" onclick="changeFontSize(currentTodoTab === 'work' ? 'todo-w' : 'todo-s', 1)">A+</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="완료 항목만 지우기" onclick="clearCheckedTodo(currentTodoTab)">✔️ Del</button>
+          <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="전체 지우기" onclick="clearTodo(currentTodoTab)">🗑️ ALL</button>
+        </div>
+      </div>
+      <div id="todo-work-panel" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
         <div id="todo-work" style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;"></div>
       </div>
-    </div> <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
-      <div style="flex: 0 0 calc(53% - 10px); display: flex; flex-direction: column; gap: 15px; min-height: 0;">
-        <div id="notice-widget" class="widget" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-        <div class="widget-title" style="font-size:13px; margin-bottom:8px; display:flex; justify-content:space-between;">
-        <div>📢 공지 & 소담소담❤️ <span style="font-size:10px; font-weight:500; margin-left:2px;">(최근 15개)</span></div>
-            <div style="display:flex; gap:2px;">
-              <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', -1)">A-</button>
-              <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', 1)">A+</button>
-            </div>
-          </div>
-          <ul class="recent-notices" id="recent-notice-list">
-            <li style="color:var(--text-sub); text-align:center; padding:10px;">불러오는 중...</li>
-          </ul>
-        </div>
-
-        <div id="meal-widget" class="widget" style="flex: 0 0 120px; display: flex; flex-direction: column; min-height: 0;">
-          <div class="widget-title" style="font-size:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>🍽 급식(<span id="meal-date-label">오늘</span>)</span>
-            <div style="display:flex; gap:2px; align-items:center;">
-              <span id="meal-kcal" style="font-size:10px; color:var(--text-sub); margin-right:5px;"></span>
-              <button class="top-btn" style="padding:0 3px; font-size:10px;" onclick="moveMeal(-1)">◀</button>
-              <button class="top-btn" style="padding:0 3px; font-size:10px;" onclick="moveMeal(1)">▶</button>
-            </div>
-          </div>
-          <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
-        </div>
-      </div>
-
-      <div id="todo-stu-widget" class="widget todo-widget" style="flex: 1; display:flex; flex-direction:column; min-height: 0;">
-        <div class="widget-title" style="flex: 0 0 auto;">
-          <div style="display:flex; align-items:center;">
-            <span id="title-todo-stu">👩‍🎓 학생 / 상담 기록</span>
-            <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-todo-stu')">⚙️</button>
-          </div>
-          <div style="display:flex; gap:4px;">
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('todo-s', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('todo-s', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="clearCheckedTodo('stu')">✔️ Del</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="clearTodo('stu')">🗑️ ALL</button>
-          </div>
-        </div>
+      <div id="todo-stu-widget" style="display: none; flex: 1; min-height: 0; flex-direction: column;">
         <div id="todo-stu" style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;"></div>
       </div>
-    </div> </div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    </div>
+  </div>
+
+</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
   // ===== Supabase 연결 (구글 앱스크립트를 대신합니다) =====
@@ -795,6 +909,11 @@
     document.getElementById('btn-admin-settings').style.display = data.is_admin ? 'inline-flex' : 'none';
     document.getElementById('admin-settings-current-name').innerText = data.name + ' 님' + (data.is_admin ? ' (관리자)' : '');
 
+    document.getElementById('user-avatar-initial').innerText = data.name.slice(0, 2);
+    document.getElementById('user-chip-name').innerText = data.name;
+    document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
+    document.getElementById('rail-add-btn').style.display = data.is_admin ? 'flex' : 'none';
+
     if (data.must_change_password) {
       document.getElementById('force-password-overlay').style.display = 'flex';
       setTimeout(function() { document.getElementById('force-pw-input1').focus(); }, 50);
@@ -833,11 +952,63 @@
   function openAdminSettingsModal() {
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
     document.getElementById('admin-settings-overlay').style.display = 'flex';
+    document.getElementById('user-menu-dropdown').style.display = 'none';
     loadTeacherAccountList();
+    loadFixedBookmarks();
   }
 
   function closeAdminSettingsModal() {
     document.getElementById('admin-settings-overlay').style.display = 'none';
+  }
+
+  function toggleUserMenu() {
+    const dd = document.getElementById('user-menu-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+  }
+
+  document.addEventListener('click', function(e) {
+    const chip = document.getElementById('user-chip');
+    const dd = document.getElementById('user-menu-dropdown');
+    if (dd && dd.style.display === 'block' && chip && !chip.contains(e.target)) {
+      dd.style.display = 'none';
+    }
+  });
+
+  function railComingSoon(name) {
+    customAlert('📋 ' + name + '\n\n곧 추가될 예정인 페이지예요. 조금만 기다려주세요!');
+  }
+
+  let currentTodoTab = 'work';
+  function switchTodoTab(tab) {
+    currentTodoTab = tab;
+    document.getElementById('todo-tab-work').classList.toggle('active', tab === 'work');
+    document.getElementById('todo-tab-stu').classList.toggle('active', tab === 'stu');
+    document.getElementById('todo-work-panel').style.display = tab === 'work' ? 'flex' : 'none';
+    document.getElementById('todo-stu-widget').style.display = tab === 'stu' ? 'flex' : 'none';
+  }
+
+  async function loadUpcomingScheduleTeaser() {
+    const teaserEl = document.getElementById('upcoming-schedule-teaser');
+    if (!teaserEl) return;
+    try {
+      const today = new Date();
+      const to = new Date(today); to.setDate(to.getDate() + 90);
+      const fmt = function(d) { return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); };
+      const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + fmt(today) + '&AA_TO_YMD=' + fmt(to);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.SchoolSchedule) { teaserEl.innerText = '없음'; return; }
+      const days = ['일','월','화','수','목','금','토'];
+      const items = data.SchoolSchedule[1].row
+        .filter(function(r) { return r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일'; })
+        .slice(0, 3)
+        .map(function(r) {
+          const y = r.AA_YMD.slice(0,4), mo = parseInt(r.AA_YMD.slice(4,6)), da = parseInt(r.AA_YMD.slice(6,8));
+          const dObj = new Date(y, mo-1, da);
+          return mo + '/' + da + '(' + days[dObj.getDay()] + ') ' + r.EVENT_NM;
+        });
+      teaserEl.innerText = items.length ? items.join(' · ') : '없음';
+    } catch(e) { teaserEl.innerText = '불러오기 실패'; }
   }
 
   function openDutyFromSettings(name, icon) {
@@ -993,15 +1164,16 @@
 
   // ----- 공지사항 -----
   async function gasGetNotice() {
-    const { data, error } = await sb.from('notices').select('id, created_at, msg, likes, hearts').order('created_at', { ascending: false }).limit(15);
+    const { data, error } = await sb.from('notices').select('id, created_at, msg, likes, hearts, author').order('created_at', { ascending: false }).limit(15);
     if (error) throw error;
     return (data || []).map(function(row) {
-      return { id: row.id, time: formatKST(row.created_at), msg: row.msg, likes: row.likes || 0, hearts: row.hearts || 0 };
+      return { id: row.id, time: formatKST(row.created_at), msg: row.msg, likes: row.likes || 0, hearts: row.hearts || 0, author: row.author || '' };
     });
   }
 
   async function gasSetNotice(msg) {
-    const { error } = await sb.from('notices').insert({ msg: msg });
+    const author = (window.currentTeacher && window.currentTeacher.name) || '';
+    const { error } = await sb.from('notices').insert({ msg: msg, author: author });
     if (error) throw error;
   }
 
@@ -1313,27 +1485,25 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   const tourSteps = [
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
-    { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '⭐ 내 시간표를 지정해두면, 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
+    { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
-    { selector: '#theme-btn-group', title: '🎨 테마', desc: '화면 전체 색상 테마를 4가지 중 하나로 바꿀 수 있어요. 지금 선택된 테마는 버튼에 테두리로 표시돼요.' },
-    { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '⚙️를 눌러서 자주 쓰는 사이트 주소 4개를 직접 등록해두면, 버튼 클릭 한 번으로 바로 이동할 수 있어요.' },
+    { selector: '#theme-btn-group', title: '🎨 테마', desc: '화면 전체 색상 테마를 4가지 중 하나로 바꿀 수 있어요. 지금 선택된 테마는 버튼에 테두리로 표시돼요. 오른쪽 위 내 이름을 누르면 이 메뉴가 열려요.', modal: function() { document.getElementById('user-menu-dropdown').style.display = 'block'; } },
+    { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
     { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
     { selector: '#schedule-overlay .modal-box', title: '🗓️ 시간표 관리', desc: '이 버튼을 누르면 이렇게 모달이 열려요. 위에서 선생님을 고른 뒤 "✏️ 수정"을 누르면 그 선생님 시간표를 직접 고칠 수 있고, "+ 새 선생님 추가"로 새 시간표를 만들 수도 있어요.', modal: function() { openScheduleModal(); } },
     { selector: '#duty-overlay .modal-box', title: '🌙 야자 감독표', desc: '이렇게 감독표가 열려요. 기본은 보기 전용이고, "✏️ 수정 모드"를 눌러야 편집·추가·삭제 버튼이 나타나요(실수 방지를 위해서예요).', modal: function() { openDutyModal('야자감독', '🌙'); } },
     { selector: '#duty-overlay .modal-box', title: '🍱 급식 감독표', desc: '같은 방식으로 급식 감독 일정도 확인·수정할 수 있어요.', modal: function() { openDutyModal('급식감독', '🍱'); } },
     { selector: '#duty-overlay .modal-box', title: '☀️ 아침 감독표', desc: '아침 감독표도 마찬가지 방식이에요.', modal: function() { openDutyModal('아침감독', '☀️'); } },
     { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여줘요.' },
-    { selector: '.timer-group', title: '⏳ 타이머', desc: '+5분/+1분 버튼으로 시간을 더하고 ▶로 시작, ↺로 초기화할 수 있어요. 수업이나 활동 시간 재는 용도로 쓰기 좋아요.' },
-    { selector: '.weather-group', title: '🌤️ 날씨', desc: '⚙️ 위치 설정에서 위도/경도를 입력하면 그 지역의 날씨와 미세먼지 정보를 보여줘요.' },
-    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 내 이름을 찾은 뒤 "⭐ 지정"을 누르면, 이 칸에 내 시간표가 고정돼요. 감독 알림도 이렇게 지정해둔 이름을 기준으로 동작해요.' },
-    { selector: '#search-tt-widget', title: '🔍 시간표', desc: '오른쪽 칸에서 다른 선생님 시간표를 검색해서 볼 수 있어요. ◀▶ 버튼으로 이름을 넘기다가 필요하면 "⭐ 지정"으로 내 시간표로 고정할 수도 있어요.', tab: 'tt' },
+    { selector: '.weather-group', title: '🌤️ 날씨', desc: '⚙️ 아이콘을 눌러 위도/경도를 입력하면 그 지역의 날씨·미세먼지와 함께, 내일부터 3일간의 예보도 보여줘요.' },
+    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를, ⚙️로 일과 시간을 바꿀 수 있어요.' },
+    { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
     { selector: '#photo-widget-container', title: '📷 우리 반 사진', desc: '클릭해서 사진을 올리면 자동으로 저장돼요. "숨기기"를 누르면 사진 없이 할 일 칸을 더 넓게 쓸 수 있어요.' },
-    { selector: '#todo-work-widget', title: '💼 업무 할 일', desc: '체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요. ⚙️로 위젯 제목도 바꿀 수 있어요.' },
-    { selector: '#todo-stu-widget', title: '👩‍🎓 학생 / 상담 기록', desc: '업무 할 일과 똑같은 방식으로 쓸 수 있는 별도의 칸이에요. 학생 상담 내용 등을 따로 정리할 때 쓰면 좋아요.' },
-    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 최근 15개까지 여기 남아요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
+    { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
+    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 최근 15개까지 여기 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
     { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' }
   ];
   let tourIndex = 0;
@@ -1344,6 +1514,7 @@
   function tourResetTransient() {
     document.getElementById('schedule-overlay').style.display = 'none';
     document.getElementById('duty-overlay').style.display = 'none';
+    document.getElementById('user-menu-dropdown').style.display = 'none';
   }
 
   function openTour() {
@@ -1429,6 +1600,7 @@
     checkNotice(); setInterval(checkNotice, 120000);
     checkAllDuties();
     renderBigCalendar();
+    loadUpcomingScheduleTeaser();
 
     setInterval(maybeAutoBackup, 43200000);
   }
@@ -1504,11 +1676,12 @@
   }
 
   function switchMainTab(tab) {
-    const ttPanel = document.getElementById('left-bottom-tt');
+    const searchWidget = document.getElementById('search-tt-widget');
     const calPanel = document.getElementById('left-bottom-cal');
     const searchGrid = document.getElementById('search-timetable-grid');
     const halfCalWrapper = document.getElementById('half-cal-wrapper');
     const halfCalNav = document.getElementById('half-cal-nav');
+    const teacherPicker = document.getElementById('search-teacher-picker');
 
     document.getElementById('tab-tt').classList.remove('active');
     document.getElementById('tab-cal').classList.remove('active');
@@ -1517,46 +1690,28 @@
     currentMainTab = tab;
 
     if (tab === 'cal') {
-      ttPanel.style.display = 'none';
+      searchWidget.style.display = 'none';
       calPanel.style.display = 'flex';
       document.getElementById('tab-cal').classList.add('active');
       renderBigCalendar();
     } else if (tab === 'halfcal') {
-      ttPanel.style.display = 'grid';
+      searchWidget.style.display = 'flex';
       calPanel.style.display = 'none';
       searchGrid.style.display = 'none';
       halfCalWrapper.style.display = 'flex';
       halfCalNav.style.display = 'flex';
+      teacherPicker.style.display = 'none';
       document.getElementById('tab-halfcal').classList.add('active');
       renderHalfCalendar();
-      hideMyTtRevertBtn();
-      loadMyTimetable();
     } else {
-      ttPanel.style.display = 'grid';
+      searchWidget.style.display = 'flex';
       calPanel.style.display = 'none';
       searchGrid.style.display = '';
       halfCalWrapper.style.display = 'none';
       halfCalNav.style.display = 'none';
+      teacherPicker.style.display = 'flex';
       document.getElementById('tab-tt').classList.add('active');
-      hideMyTtRevertBtn();
-      loadMyTimetable();
       syncSearchGridToSelection();
-    }
-  }
-
-  function hideMyTtRevertBtn() {
-    const btn = document.getElementById('my-tt-revert-btn');
-    if (btn) btn.style.display = 'none';
-  }
-
-  function showMyTimetable() {
-    hideMyTtRevertBtn();
-    loadMyTimetable();
-    const my = localStorage.getItem('my-n');
-    const sel = document.getElementById('search-select');
-    if (my && sel && window.allSchedules[my]) {
-      sel.value = my;
-      localStorage.setItem('last-search', my);
     }
   }
 
@@ -2147,37 +2302,86 @@
     } else {
       frame.style.display = 'block';
       btn.innerText = '숨기기';
-      widget.style.flex = '1.15'; 
+      widget.style.flex = '0 0 30%';
     }
     localStorage.setItem('photo-hidden', photoHidden);
   }
 
   function loadBookmarks() {
     let bms = JSON.parse(localStorage.getItem('bookmarks'));
-    if (!bms || bms.length !== 4) bms = defaultBookmarks;
+    if (!bms || bms.length !== 4) bms = [{name:'',url:''},{name:'',url:''},{name:'',url:''},{name:'',url:''}];
+    const fixed = (window.fixedBookmarks && window.fixedBookmarks.length === 4) ? window.fixedBookmarks : defaultBookmarks;
 
     const grid = document.getElementById('bookmark-grid');
     grid.innerHTML = '';
-    bms.forEach(function(b, i) {
-      grid.innerHTML += '<a href="' + b.url + '" target="_blank" class="top-btn" style="text-align:center; padding: 6px 2px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + b.name + '</a>';
-      document.getElementById('bm-name-' + i).value = b.name;
-      document.getElementById('bm-url-' + i).value = b.url;
+    fixed.forEach(function(b) {
+      if (b && b.name && b.url) {
+        grid.innerHTML += '<a href="' + b.url + '" target="_blank" class="fav-cell"><span class="fav-tag">고정</span>' + b.name + '</a>';
+      } else {
+        grid.innerHTML += '<div class="fav-cell empty">-</div>';
+      }
     });
+    bms.forEach(function(b, i) {
+      if (b && b.name && b.url) {
+        grid.innerHTML += '<a href="' + b.url + '" target="_blank" class="fav-cell">' + b.name + '</a>';
+      } else {
+        grid.innerHTML += '<div class="fav-cell empty" onclick="openBookmarkSettings()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>';
+      }
+      document.getElementById('bm-name-' + i).value = (b && b.name) || '';
+      document.getElementById('bm-url-' + i).value = (b && b.url) || '';
+    });
+  }
+
+  async function gasGetFixedBookmarks() {
+    try {
+      const { data, error } = await sb.from('app_settings').select('value').eq('key', 'fixed_bookmarks').maybeSingle();
+      if (!error && data && Array.isArray(data.value) && data.value.length === 4) return data.value;
+    } catch(e) {}
+    return defaultBookmarks;
+  }
+
+  async function loadFixedBookmarks() {
+    window.fixedBookmarks = await gasGetFixedBookmarks();
+    for (let i=0; i<4; i++) {
+      const b = window.fixedBookmarks[i] || {name:'',url:''};
+      const nameEl = document.getElementById('fixed-bm-name-' + i);
+      const urlEl = document.getElementById('fixed-bm-url-' + i);
+      if (nameEl) nameEl.value = b.name || '';
+      if (urlEl) urlEl.value = b.url || '';
+    }
+    loadBookmarks();
+  }
+
+  async function saveFixedBookmarks() {
+    const bms = [];
+    for (let i=0; i<4; i++) {
+      bms.push({
+        name: document.getElementById('fixed-bm-name-' + i).value || '',
+        url: document.getElementById('fixed-bm-url-' + i).value || ''
+      });
+    }
+    try {
+      const { error } = await sb.from('app_settings').upsert({ key: 'fixed_bookmarks', value: bms });
+      if (error) throw error;
+      window.fixedBookmarks = bms;
+      loadBookmarks();
+      customAlert('고정 링크를 저장했습니다.');
+    } catch(e) { customAlert('저장 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
   function openBookmarkSettings() { document.getElementById('bookmark-overlay').style.display = 'flex'; }
   function closeBookmarkSettings() { document.getElementById('bookmark-overlay').style.display = 'none'; }
-  
+
   function saveBookmarks() {
     const bms = [];
     for(let i=0; i<4; i++) {
       bms.push({
-        name: document.getElementById('bm-name-' + i).value || '이름 없음',
-        url: document.getElementById('bm-url-' + i).value || '#'
+        name: document.getElementById('bm-name-' + i).value || '',
+        url: document.getElementById('bm-url-' + i).value || ''
       });
     }
     localStorage.setItem('bookmarks', JSON.stringify(bms));
-    loadBookmarks(); 
+    loadBookmarks();
     closeBookmarkSettings();
   }
 
@@ -2218,7 +2422,8 @@
           const likeStyle = isLiked ? 'background:var(--accent-color); color:white;' : 'background:var(--tt-bg); color:var(--text-main);';
           const heartStyle = isHearted ? 'background:var(--accent-color); color:white;' : 'background:var(--tt-bg); color:var(--text-main);';
           
-          listEl.innerHTML += '<li><div style="display:flex; justify-content:space-between; align-items:center;"><span class="time">' + item.time + '</span><div style="display:flex; gap:4px;"><button class="top-btn" style="padding:2px 6px; font-size:10px; border-radius:10px; opacity:0.9; ' + likeStyle + '" onclick="toggleReaction(' + item.id + ', \'like\', this)">👍 <span class="cnt">' + likes + '</span></button><button class="top-btn" style="padding:2px 6px; font-size:10px; border-radius:10px; opacity:0.9; ' + heartStyle + '" onclick="toggleReaction(' + item.id + ', \'heart\', this)">❤️ <span class="cnt">' + hearts + '</span></button></div></div><span class="msg">' + item.msg + '</span></li>';
+          const authorHtml = item.author ? '<span style="color:var(--accent-color); font-weight:800;">' + item.author + '</span> · ' : '';
+          listEl.innerHTML += '<li><div style="display:flex; justify-content:space-between; align-items:center;"><span class="time">' + authorHtml + item.time + '</span><div style="display:flex; gap:4px;"><button class="top-btn" style="padding:2px 6px; font-size:10px; border-radius:10px; opacity:0.9; ' + likeStyle + '" onclick="toggleReaction(' + item.id + ', \'like\', this)">👍 <span class="cnt">' + likes + '</span></button><button class="top-btn" style="padding:2px 6px; font-size:10px; border-radius:10px; opacity:0.9; ' + heartStyle + '" onclick="toggleReaction(' + item.id + ', \'heart\', this)">❤️ <span class="cnt">' + hearts + '</span></button></div></div><span class="msg">' + item.msg + '</span></li>';
         });
       } 
     } catch(e) {}
@@ -2259,29 +2464,46 @@
     toggleWeatherSettings(); fetchWeather();
   }
   
+  function weatherIconFor(code) {
+    if(code===0) return '☀️'; if(code<=3) return '⛅'; if(code<=67) return '☔'; if(code<=77) return '❄️'; return '☁️';
+  }
+  function weatherCondTextFor(code) {
+    if(code===0) return '맑음'; if(code<=3) return '구름조금'; if(code<=48) return '흐림'; if(code<=67) return '비'; if(code<=77) return '눈'; if(code<=82) return '소나기'; return '흐림';
+  }
+
   async function fetchWeather() {
     const lat = localStorage.getItem('w-lat') || '37.495';
     const lon = localStorage.getItem('w-lon') || '126.722';
     document.getElementById('w-lat').value = lat; document.getElementById('w-lon').value = lon;
     try {
-      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true');
+      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=4');
       const data = await res.json();
       if(data.current_weather) {
         document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature) + '°';
-        const code = data.current_weather.weathercode;
-        let icon = '☁️'; if(code===0) icon='☀️'; else if(code<=3) icon='⛅'; else if(code<=67) icon='☔'; else if(code<=77) icon='❄️';
-        document.getElementById('weather-icon').innerText = icon;
+        document.getElementById('weather-icon').innerText = weatherIconFor(data.current_weather.weathercode);
       }
-      
+      if(data.daily && data.daily.time) {
+        for(let i=0; i<3; i++) {
+          const idx = i+1;
+          const condEl = document.getElementById('wf-cond-' + i);
+          const tempEl = document.getElementById('wf-temp-' + i);
+          if(!condEl || !tempEl || data.daily.weathercode[idx] === undefined) continue;
+          condEl.innerText = weatherCondTextFor(data.daily.weathercode[idx]);
+          const hi = Math.round(data.daily.temperature_2m_max[idx]);
+          const lo = Math.round(data.daily.temperature_2m_min[idx]);
+          tempEl.innerHTML = hi + '°<span style="color:var(--text-sub); font-weight:600; font-size:9.5px;">/' + lo + '°</span>';
+        }
+      }
+
       const resAir = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + lat + '&longitude=' + lon + '&current=pm10');
       const dataAir = await resAir.json();
       if(dataAir.current && dataAir.current.pm10 !== undefined) {
         const pm10 = dataAir.current.pm10;
-        let status = '좋음', color = '#3182F6';
-        if(pm10 > 150) { status = '매우나쁨'; color = '#F07178'; }
-        else if(pm10 > 80) { status = '나쁨'; color = '#FF8A65'; }
-        else if(pm10 > 30) { status = '보통'; color = '#AED581'; }
-        document.getElementById('weather-dust').innerHTML = '😷 미세먼지<br><span style="color:' + color + '; font-size:14px; font-weight:800;">' + pm10 + ' (' + status + ')</span>';
+        let status = '좋음';
+        if(pm10 > 150) status = '매우나쁨';
+        else if(pm10 > 80) status = '나쁨';
+        else if(pm10 > 30) status = '보통';
+        document.getElementById('weather-dust-val').innerText = pm10 + ' · ' + status;
       }
     } catch(e) { }
   }
@@ -2329,9 +2551,7 @@
   }
 
   function buildGridHTML(prefix) {
-    let html = prefix === 'my-tt'
-      ? '<div class="cal-header" style="display:flex; align-items:center; justify-content:center; padding:0;"><button id="my-tt-revert-btn" class="top-btn accent" style="display:none; align-items:center; justify-content:center; width:100%; height:100%; padding:0; margin:0; font-size:9px; line-height:1; border-radius:6px; white-space:nowrap;" title="지정된 내 시간표로 돌아가기" onclick="showMyTimetable()">⭐ 보기</button></div>'
-      : '<div class="cal-header"></div>';
+    let html = '<div class="cal-header"></div>';
     var days = ['월','화','수','목','금'];
     for(var d=0; d<days.length; d++) {
       html += '<div class="tt-header">' + days[d] + '</div>';
@@ -2707,14 +2927,6 @@
     if(!init) localStorage.setItem('last-search', n);
     const s = window.allSchedules[n];
 
-    if (currentMainTab === 'halfcal') {
-      // 1/2캘린더 탭에서는 오른쪽 미리보기 칸이 없으므로 내 시간표 칸에 임시로 보여주고, 원래 내 시간표로 돌아가는 버튼을 노출한다.
-      applyScheduleToGrid('my-tt', s);
-      const revertBtn = document.getElementById('my-tt-revert-btn');
-      if (revertBtn) revertBtn.style.display = 'flex';
-      return;
-    }
-
     applyScheduleToGrid('search-tt', s);
     saveAllData();
   }
@@ -2807,8 +3019,8 @@
     scheduleBackupWrite();
   }
   
-  function loadAllData() { 
-    loadBookmarks();
+  function loadAllData() {
+    loadFixedBookmarks();
 
     ['title-photo', 'title-todo-work', 'title-todo-stu'].forEach(function(id) {
       if(localStorage.getItem(id)) document.getElementById(id).innerText = localStorage.getItem(id);
@@ -2906,7 +3118,10 @@
     }
     document.getElementById('tc-period-main').innerText = status; document.getElementById('tc-period-time').innerText = startStr + ' - ' + endStr;
     const sMin = Number(startStr.split(':')[0])*60 + Number(startStr.split(':')[1]); const eMin = Number(endStr.split(':')[0])*60 + Number(endStr.split(':')[1]);
-    document.getElementById('tc-period-progress').style.width = Math.max(0, Math.min(100, ((curM-sMin)/(eMin-sMin))*100)) + '%';
+    const pct = Math.max(0, Math.min(100, ((curM-sMin)/(eMin-sMin))*100));
+    document.getElementById('tc-period-progress').style.width = pct + '%';
+    const dotEl = document.getElementById('tc-period-dot');
+    if (dotEl) dotEl.style.left = pct + '%';
   }
 
   function handlePhoto(input) { 
@@ -2948,7 +3163,6 @@
     saveAllData();
   }
   
-  let tInt; let tLeft = 0; function addTimer(s) { tLeft += s; updateTDisp(); } function updateTDisp() { const m = Math.floor(tLeft/60), s = tLeft%60; document.getElementById('timer-text').innerText = m.toString().padStart(2,'0') + ':' + s.toString().padStart(2,'0'); } function resetTimer() { clearInterval(tInt); tLeft=0; updateTDisp(); tInt=null; document.getElementById('timer-play-btn').innerText = '▶'; } function toggleTimer() { if(tInt) { clearInterval(tInt); tInt=null; document.getElementById('timer-play-btn').innerText = '▶'; } else { tInt = setInterval(function(){ if(tLeft>0){tLeft--; updateTDisp();} else {resetTimer(); customAlert('타이머가 종료되었습니다!');}}, 1000); document.getElementById('timer-play-btn').innerText = '⏸'; } }
 </script>
 </body>
 </html>
