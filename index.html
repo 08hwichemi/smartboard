@@ -56,7 +56,7 @@
       70% { box-shadow: 0 0 0 6px rgba(240, 113, 120, 0); }
       100% { box-shadow: 0 0 0 0 rgba(240, 113, 120, 0); }
     }
-    .yaja-badge { color: white; padding: 4px 10px; border-radius: 14px; font-weight: 800; font-size: 11px; display: none; margin-left: 4px; white-space: nowrap; flex-shrink: 0; }
+    .yaja-badge { color: white; padding: 4px 10px; border-radius: 14px; font-weight: 800; font-size: 11px; display: none; align-items: center; gap: 5px; margin-left: 4px; white-space: nowrap; flex-shrink: 0; }
 
     .top-controls { display: flex; gap: 6px; flex-shrink: 0; }
     .top-btn { padding: 5px 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; white-space: nowrap; text-decoration: none;}
@@ -189,13 +189,13 @@
     /* ===== 사용자 메뉴 드롭다운 ===== */
     .user-chip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-color); border-radius: 18px; padding: 4px 9px 4px 4px; cursor: pointer; background: var(--card-bg); position: relative; }
     .user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-color); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
-    #user-menu-dropdown { display: none; position: absolute; top: 42px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 10px; width: 220px; z-index: 200; }
-    #user-menu-dropdown .um-section-label { font-size: 10px; font-weight: 700; color: var(--text-sub); padding: 4px 4px; }
-    #user-menu-dropdown .um-theme-row { display: flex; gap: 4px; margin-bottom: 8px; }
-    #user-menu-dropdown .um-theme-btn { flex: 1; padding: 6px 0; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); font-size: 15px; cursor: pointer; text-align: center; }
-    #user-menu-dropdown .um-theme-btn.theme-active { border-color: var(--accent-color); background: var(--accent-soft); }
-    #user-menu-dropdown .um-btn { display: block; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
+    #user-menu-dropdown { display: none; position: absolute; top: 42px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 6px; width: 170px; z-index: 200; }
+    #user-menu-dropdown .um-btn { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
     #user-menu-dropdown .um-btn:hover { background: var(--bg-color); }
+
+    .theme-swatch-row { display: flex; gap: 6px; align-items: center; }
+    .theme-swatch { width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer; padding: 0; box-sizing: border-box; }
+    .theme-swatch.theme-active { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -342,6 +342,13 @@
           <button class="qbtn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>사용법</button>
         </div>
         <div style="width:1px; height:20px; background:var(--border-color); margin:0 2px;"></div>
+        <div class="theme-swatch-row" id="theme-btn-group" title="테마 선택">
+          <button class="theme-select-btn theme-swatch" id="theme-btn-default" style="background:#1F3A5F;" onclick="changeTheme('default')" title="기본"></button>
+          <button class="theme-select-btn theme-swatch" id="theme-btn-milky" style="background:#9A5B2E;" onclick="changeTheme('milky')" title="베이지"></button>
+          <button class="theme-select-btn theme-swatch" id="theme-btn-mint" style="background:#1F6E5C;" onclick="changeTheme('mint')" title="민트"></button>
+          <button class="theme-select-btn theme-swatch" id="theme-btn-dark" style="background:#14161B;" onclick="changeTheme('dark')" title="다크"></button>
+        </div>
+        <div style="width:1px; height:20px; background:var(--border-color); margin:0 2px;"></div>
         <div class="user-chip" id="user-chip" onclick="toggleUserMenu()">
           <div class="user-avatar" id="user-avatar-initial">-</div>
           <span style="font-size:12px; font-weight:700;" id="user-chip-name">-</span>
@@ -349,15 +356,8 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--text-sub);"><path d="M6 9.5 12 15l6-5.5"/></svg>
 
           <div id="user-menu-dropdown">
-            <div class="um-section-label">테마</div>
-            <div class="um-theme-row" id="theme-btn-group">
-              <button class="theme-select-btn um-theme-btn" id="theme-btn-default" onclick="event.stopPropagation(); changeTheme('default')" title="기본">⚪</button>
-              <button class="theme-select-btn um-theme-btn" id="theme-btn-milky" onclick="event.stopPropagation(); changeTheme('milky')" title="베이지">☕</button>
-              <button class="theme-select-btn um-theme-btn" id="theme-btn-mint" onclick="event.stopPropagation(); changeTheme('mint')" title="민트">🌿</button>
-              <button class="theme-select-btn um-theme-btn" id="theme-btn-dark" onclick="event.stopPropagation(); changeTheme('dark')" title="다크">🌙</button>
-            </div>
-            <button class="um-btn" id="btn-admin-settings" style="display:none;" onclick="event.stopPropagation(); openAdminSettingsModal()">⚙️ 관리자 설정</button>
-            <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()">🚪 로그아웃</button>
+            <button class="um-btn" id="btn-admin-settings" style="display:none;" onclick="event.stopPropagation(); openAdminSettingsModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>관리자 설정</button>
+            <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h9"/><path d="M11 12h9M17 8l4 4-4 4"/></svg>로그아웃</button>
           </div>
         </div>
       </div>
@@ -378,7 +378,7 @@
       </div>
 
       <div id="duty-alert-pill" style="display:flex; align-items:center; gap:7px; flex-shrink: 0; white-space: nowrap;">
-        <span style="font-size:10.5px; font-weight:700; color:var(--text-sub); white-space:nowrap;">🔔 감독 알림</span>
+        <span style="display:flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; color:var(--text-sub); white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 5.5-2 7-2 7h16s-2-1.5-2-7"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>감독 알림</span>
         <div id="duty-badge-container" style="display:flex; gap:5px; align-items:center; white-space:nowrap;"></div>
       </div>
     </div>
@@ -596,148 +596,153 @@
 
 <div class="dashboard" id="main-dashboard">
 
-  <div class="dash-col" style="flex: 1.15;">
-    <div style="flex: 0 0 172px; display: flex; flex-direction: column; gap: 8px;">
-      <div class="widget" style="flex: 1; min-height: 0; padding: 9px 10px;">
-        <div id="favorites-panel" style="display: flex; flex-direction: column; height: 100%;">
-          <div class="widget-title" style="font-size: 11px; margin-bottom: 5px; padding-bottom: 0; border-bottom: none;">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3.5L6 20V4a1 1 0 0 1 1-1z"/></svg></div>
-              즐겨찾기
+  <div class="dash-col" style="grid-column: span 2;">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 0 0 172px;">
+      <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+        <div class="widget" style="flex: 1; min-height: 0; padding: 9px 10px;">
+          <div id="favorites-panel" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="widget-title" style="font-size: 11px; margin-bottom: 5px; padding-bottom: 0; border-bottom: none;">
+              <div style="display:flex; align-items:center; gap:5px;">
+                <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3.5L6 20V4a1 1 0 0 1 1-1z"/></svg></div>
+                즐겨찾기
+              </div>
+              <button class="w-ico-btn" style="width:20px; height:20px; border-radius:6px;" onclick="openBookmarkSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button>
             </div>
-            <button class="w-ico-btn" style="width:20px; height:20px; border-radius:6px;" onclick="openBookmarkSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button>
+            <div id="bookmark-grid" class="fav-grid"></div>
           </div>
-          <div id="bookmark-grid" class="fav-grid"></div>
+        </div>
+        <div class="widget" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
+          <div class="dday-row">
+            <div class="dday-half" onclick="toggleDdaySettings(1)">
+              <span class="dday-text" id="dday1-num">D-0</span>
+              <span class="dday-desc" id="dday1-desc">설정(클릭)</span>
+            </div>
+            <div class="dday-divider"></div>
+            <div class="dday-half" onclick="toggleDdaySettings(2)">
+              <span class="dday-text" id="dday2-num">D-0</span>
+              <span class="dday-desc" id="dday2-desc">설정(클릭)</span>
+            </div>
+          </div>
+          <div class="dday-settings" id="dday-settings" style="display: none; position: absolute; top: 45px; right: 5px; background: var(--card-bg); padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index: 10; width: 160px;">
+            <input type="hidden" id="dday-target-id">
+            <input type="date" id="dday-input-date" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
+            <input type="text" id="dday-input-desc" placeholder="예: 1차고사" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
+            <button onclick="saveDday()" class="top-btn accent" style="width:100%;">저장</button>
+          </div>
         </div>
       </div>
-      <div class="widget" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
-        <div class="dday-row">
-          <div class="dday-half" onclick="toggleDdaySettings(1)">
-            <span class="dday-text" id="dday1-num">D-0</span>
-            <span class="dday-desc" id="dday1-desc">설정(클릭)</span>
-          </div>
-          <div class="dday-divider"></div>
-          <div class="dday-half" onclick="toggleDdaySettings(2)">
-            <span class="dday-text" id="dday2-num">D-0</span>
-            <span class="dday-desc" id="dday2-desc">설정(클릭)</span>
-          </div>
+
+      <div class="widget top-bar-widget" style="padding: 0 16px; position: relative; min-width: 0;">
+        <div onclick="toggleWeatherSettings()" style="position: absolute; top: 9px; right: 11px; cursor: pointer; color: var(--text-sub); z-index: 3;" title="날씨 위치 설정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
+        <div class="time-group" style="flex: 1; align-items: center; text-align: center;">
+          <div class="time-display" id="clock" style="font-size: 38px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
+          <div class="date-display" style="justify-content: center;"><span id="date-text">...</span> <span class="badge-today" id="day-text">...</span></div>
+          <div id="lunar-text" style="font-size:11px; color:var(--text-sub); margin-top:5px; font-weight:600;">🌙 음력 계산 중...</div>
         </div>
-        <div class="dday-settings" id="dday-settings" style="display: none; position: absolute; top: 45px; right: 5px; background: var(--card-bg); padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index: 10; width: 160px;">
-          <input type="hidden" id="dday-target-id">
-          <input type="date" id="dday-input-date" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
-          <input type="text" id="dday-input-desc" placeholder="예: 1차고사" style="width:100%; margin-bottom:5px; padding:4px; box-sizing: border-box;">
-          <button onclick="saveDday()" class="top-btn accent" style="width:100%;">저장</button>
+
+        <div style="border-right: 1px dashed var(--border-color); height: 130px;"></div>
+
+        <div class="weather-group" style="flex: 1; align-items: center; justify-content: center; gap: 10px;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:16px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size: 30px;" id="weather-icon">⛅</span>
+              <span style="font-size: 26px; font-weight: 800;" id="weather-temp">--°</span>
+            </div>
+            <div style="text-align:center; background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:8px; padding:3px 9px; flex-shrink:0;">
+              <div style="font-size:8px; color:var(--alert); font-weight:700; opacity:.85;">미세먼지</div>
+              <div style="font-size:11px; color:var(--alert); font-weight:800; white-space:nowrap;" id="weather-dust-val">--</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; gap:18px; padding-top:9px; border-top:1px dashed var(--border-color); width:100%; box-sizing:border-box;">
+            <div style="text-align:center;">
+              <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">내일</div>
+              <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-0">-</div>
+              <div style="font-size:11px; font-weight:800;" id="wf-temp-0">--</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">모레</div>
+              <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-1">-</div>
+              <div style="font-size:11px; font-weight:800;" id="wf-temp-1">--</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">글피</div>
+              <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-2">-</div>
+              <div style="font-size:11px; font-weight:800;" id="wf-temp-2">--</div>
+            </div>
+          </div>
+          <div class="weather-setting-modal" id="weather-setting-modal">
+            <div style="font-size:11px; font-weight:bold; margin-bottom:5px; text-align:left;">위도/경도 입력</div>
+            <input type="text" id="w-lat" placeholder="위도 (예: 37.495)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
+            <input type="text" id="w-lon" placeholder="경도 (예: 126.722)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
+            <button onclick="saveWeatherLocation()" class="top-btn accent" style="width:100%;">저장</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="my-tt-widget" class="widget timetable-widget" style="min-width: 0;">
-      <div class="widget-title">
-        <div style="display:flex; align-items:center; gap:7px;">
-          <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.7 14.7 9l7 .6-5.3 4.6 1.6 6.9L12 17.3l-6 3.8 1.6-6.9L2.3 9.6l7-.6z"/></svg></div>
-          내 시간표 <span id="my-tt-name" style="font-size:13px; font-weight:800; color:var(--accent-color);">(미설정)</span>
+    <div id="left-bottom-tt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
+      <div id="my-tt-widget" class="widget timetable-widget" style="min-width: 0;">
+        <div class="widget-title" style="height: auto; min-height: 32px; flex-wrap: wrap; row-gap: 6px;">
+          <div style="display:flex; align-items:center; gap:7px;">
+            <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.7 14.7 9l7 .6-5.3 4.6 1.6 6.9L12 17.3l-6 3.8 1.6-6.9L2.3 9.6l7-.6z"/></svg></div>
+            내 시간표 <span id="my-tt-name" style="font-size:13px; font-weight:800; color:var(--accent-color);">(미설정)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:2px;">
+            <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(-1)">◀</button>
+            <select id="search-select" onchange="renderSearchTimetable()" class="mini-select" style="width:88px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><option value="">로딩중...</option></select>
+            <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(1)">▶</button>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openTimeSettings()">⚙️</button>
+          </div>
         </div>
-        <div style="display:flex; gap:4px;">
-          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
-          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
-          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openTimeSettings()">⚙️</button>
-        </div>
-      </div>
-      <div class="timetable-grid" id="my-timetable-grid"></div>
-    </div>
-  </div>
-
-  <div class="dash-col" style="flex: 1.15;">
-    <div class="widget top-bar-widget" style="flex: 0 0 172px; padding: 0 16px; position: relative;">
-      <div onclick="toggleWeatherSettings()" style="position: absolute; top: 9px; right: 11px; cursor: pointer; color: var(--text-sub); z-index: 3;" title="날씨 위치 설정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
-      <div class="time-group" style="flex: 1; align-items: center; text-align: center;">
-        <div class="time-display" id="clock" style="font-size: 38px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
-        <div class="date-display" style="justify-content: center;"><span id="date-text">...</span> <span class="badge-today" id="day-text">...</span></div>
-        <div id="lunar-text" style="font-size:11px; color:var(--text-sub); margin-top:5px; font-weight:600;">🌙 음력 계산 중...</div>
+        <div class="timetable-grid" id="my-timetable-grid"></div>
       </div>
 
-      <div style="border-right: 1px dashed var(--border-color); height: 130px;"></div>
-
-      <div class="weather-group" style="flex: 1; align-items: stretch; justify-content: center; gap: 8px;">
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size: 30px;" id="weather-icon">⛅</span>
-            <span style="font-size: 26px; font-weight: 800;" id="weather-temp">--°</span>
+      <div id="search-tt-widget" class="widget timetable-widget" style="min-width: 0;">
+        <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
+          <div class="tab-switch">
+            <button class="tab-btn active" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
+            <button class="tab-btn" id="tab-cal" onclick="switchMainTab('cal')">📅 캘린더</button>
+            <button class="tab-btn" id="tab-halfcal" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2</button>
           </div>
-          <div style="text-align:center; background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:8px; padding:3px 9px;">
-            <div style="font-size:8px; color:var(--alert); font-weight:700; opacity:.85;">미세먼지</div>
-            <div style="font-size:11px; color:var(--alert); font-weight:800; white-space:nowrap;" id="weather-dust-val">--</div>
-          </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; padding-top:7px; border-top:1px dashed var(--border-color);">
-          <div style="text-align:center;">
-            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">내일</div>
-            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-0">-</div>
-            <div style="font-size:11px; font-weight:800;" id="wf-temp-0">--</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">모레</div>
-            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-1">-</div>
-            <div style="font-size:11px; font-weight:800;" id="wf-temp-1">--</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9.5px; color:var(--text-sub); font-weight:700;">글피</div>
-            <div style="font-size:8.5px; color:var(--text-sub); font-weight:600; margin:1px 0;" id="wf-cond-2">-</div>
-            <div style="font-size:11px; font-weight:800;" id="wf-temp-2">--</div>
+          <div id="half-cal-nav" style="display:none; align-items:center; gap:2px;">
+            <button class="top-btn" style="padding:1px 3px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
+            <button class="top-btn" style="padding:1px 3px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
+            <button class="top-btn" style="padding:2px 5px;" onclick="moveHalfCal(-1)">◀</button>
+            <span id="half-cal-month-label" style="font-size:11px; font-weight:800; min-width:36px; text-align:center;">0000.00</span>
+            <button class="top-btn" style="padding:2px 5px;" onclick="moveHalfCal(1)">▶</button>
           </div>
         </div>
-        <div class="weather-setting-modal" id="weather-setting-modal">
-          <div style="font-size:11px; font-weight:bold; margin-bottom:5px; text-align:left;">위도/경도 입력</div>
-          <input type="text" id="w-lat" placeholder="위도 (예: 37.495)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-          <input type="text" id="w-lon" placeholder="경도 (예: 126.722)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-          <button onclick="saveWeatherLocation()" class="top-btn accent" style="width:100%;">저장</button>
+        <div class="timetable-grid" id="search-timetable-grid"></div>
+        <div class="half-cal-wrapper" id="half-cal-wrapper">
+          <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:9px; font-weight:800; color:var(--text-sub); padding-bottom:3px; margin-bottom:3px; border-bottom:1px solid var(--border-color); flex:0 0 auto;">
+            <div>월</div><div>화</div><div>수</div><div>목</div><div>금</div>
+          </div>
+          <div class="half-cal-grid" id="half-cal-grid"></div>
         </div>
-      </div>
-    </div>
-
-    <div id="search-tt-widget" class="widget timetable-widget" style="min-width: 0;">
-      <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
-        <div class="tab-switch">
-          <button class="tab-btn active" id="tab-tt" style="padding:5px 8px;" title="시간표" onclick="switchMainTab('tt')">🔍</button>
-          <button class="tab-btn" id="tab-cal" style="padding:5px 8px;" title="캘린더" onclick="switchMainTab('cal')">📅</button>
-          <button class="tab-btn" id="tab-halfcal" style="padding:5px 8px;" title="1/2캘린더" onclick="switchMainTab('halfcal')">🗓️</button>
-        </div>
-        <div id="search-teacher-picker" style="display:flex; align-items:center; gap:2px;">
-          <button class="top-btn" style="padding:2px 5px;" onclick="moveTeacher(-1)">◀</button>
-          <select id="search-select" onchange="renderSearchTimetable()" class="mini-select" style="width:76px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><option value="">로딩중...</option></select>
-          <button class="top-btn" style="padding:2px 5px;" onclick="moveTeacher(1)">▶</button>
-        </div>
-        <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
-          <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
-          <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
-          <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
-          <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
-          <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
-        </div>
-      </div>
-      <div class="timetable-grid" id="search-timetable-grid"></div>
-      <div class="half-cal-wrapper" id="half-cal-wrapper">
-        <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:9px; font-weight:800; color:var(--text-sub); padding-bottom:3px; margin-bottom:3px; border-bottom:1px solid var(--border-color); flex:0 0 auto;">
-          <div>월</div><div>화</div><div>수</div><div>목</div><div>금</div>
-        </div>
-        <div class="half-cal-grid" id="half-cal-grid"></div>
       </div>
     </div>
 
     <div id="left-bottom-cal" class="widget timetable-widget" style="display: none; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
-      <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
-        <div class="tab-switch">
-          <button class="tab-btn" style="padding:5px 8px;" title="시간표" onclick="switchMainTab('tt')">🔍</button>
-          <button class="tab-btn active" style="padding:5px 8px;" title="캘린더" onclick="switchMainTab('cal')">📅</button>
-          <button class="tab-btn" style="padding:5px 8px;" title="1/2캘린더" onclick="switchMainTab('halfcal')">🗓️</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
-          <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
-          <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 2px;"></div>
-          <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(-1)">◀</button>
-          <span id="big-cal-month-label" style="font-size:14px; font-weight:800; min-width:65px; text-align:center;">0000. 00</span>
-          <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(1)">▶</button>
+      <div class="widget-title" style="height: 32px; margin-bottom: 8px; display: flex; padding: 0;">
+        <div style="width: calc(50% + 6px);"></div>
+        <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+          <div class="tab-switch">
+            <button class="tab-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
+            <button class="tab-btn active" onclick="switchMainTab('cal')">📅 캘린더</button>
+            <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
+            <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 2px;"></div>
+            <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(-1)">◀</button>
+            <span id="big-cal-month-label" style="font-size:14px; font-weight:800; min-width:65px; text-align:center;">0000. 00</span>
+            <button class="top-btn" style="padding:2px 6px;" onclick="moveBigCal(1)">▶</button>
+          </div>
         </div>
       </div>
       <div class="big-cal-wrapper" id="big-calendar-wrapper" style="display: flex;">
@@ -750,7 +755,7 @@
   </div>
 
   <div class="dash-col" style="flex: 0.85;">
-    <div id="notice-widget" class="widget" style="flex: 1; min-height: 0;">
+    <div id="notice-widget" class="widget" style="flex: 1.3; min-height: 0;">
       <div class="widget-title" style="font-size:12.5px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
@@ -766,7 +771,7 @@
       </ul>
     </div>
 
-    <div class="widget photo-widget" id="photo-widget-container" style="flex: 0 0 30%; min-height: 0;">
+    <div class="widget photo-widget" id="photo-widget-container" style="flex: 1.5; min-height: 0;">
       <div class="widget-title" style="margin-bottom: 6px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3.2l1.8-2.5h6l1.8 2.5H20a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg></div>
@@ -782,7 +787,7 @@
       <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
     </div>
 
-    <div id="meal-widget" class="widget" style="flex: 0 0 78px; min-height: 0; justify-content: center;">
+    <div id="meal-widget" class="widget" style="flex: 0 0 118px; min-height: 0; justify-content: center;">
       <div class="widget-title" style="font-size:11px; margin-bottom:6px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg></div>
@@ -802,8 +807,8 @@
     <div id="todo-work-widget" class="widget todo-widget" style="flex: 1; min-height: 0;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
         <div class="tab-switch">
-          <button class="tab-btn active" id="todo-tab-work" onclick="switchTodoTab('work')"><span id="title-todo-work">💼 업무</span></button>
-          <button class="tab-btn" id="todo-tab-stu" onclick="switchTodoTab('stu')"><span id="title-todo-stu">👩‍🎓 학생·상담</span></button>
+          <button class="tab-btn active" id="todo-tab-work" onclick="switchTodoTab('work')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12.2 2.6 2.6 5-5.6"/></svg><span id="title-todo-work">업무</span></button>
+          <button class="tab-btn" id="todo-tab-stu" onclick="switchTodoTab('stu')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8"/><circle cx="17" cy="9" r="2.3"/><path d="M15 20c.2-2.3 1.7-4.2 3.7-4.7"/></svg><span id="title-todo-stu">학생·상담</span></button>
         </div>
         <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="제목 바꾸기" onclick="renameTitle(currentTodoTab === 'work' ? 'title-todo-work' : 'title-todo-stu')">⚙️</button>
       </div>
@@ -1488,7 +1493,7 @@
     { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
-    { selector: '#theme-btn-group', title: '🎨 테마', desc: '화면 전체 색상 테마를 4가지 중 하나로 바꿀 수 있어요. 지금 선택된 테마는 버튼에 테두리로 표시돼요. 오른쪽 위 내 이름을 누르면 이 메뉴가 열려요.', modal: function() { document.getElementById('user-menu-dropdown').style.display = 'block'; } },
+    { selector: '#theme-btn-group', title: '🎨 테마', desc: '화면 전체 색상 테마를 4가지 중 하나로 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.' },
     { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
     { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
     { selector: '#schedule-overlay .modal-box', title: '🗓️ 시간표 관리', desc: '이 버튼을 누르면 이렇게 모달이 열려요. 위에서 선생님을 고른 뒤 "✏️ 수정"을 누르면 그 선생님 시간표를 직접 고칠 수 있고, "+ 새 선생님 추가"로 새 시간표를 만들 수도 있어요.', modal: function() { openScheduleModal(); } },
@@ -1676,12 +1681,11 @@
   }
 
   function switchMainTab(tab) {
-    const searchWidget = document.getElementById('search-tt-widget');
+    const ttPanel = document.getElementById('left-bottom-tt');
     const calPanel = document.getElementById('left-bottom-cal');
     const searchGrid = document.getElementById('search-timetable-grid');
     const halfCalWrapper = document.getElementById('half-cal-wrapper');
     const halfCalNav = document.getElementById('half-cal-nav');
-    const teacherPicker = document.getElementById('search-teacher-picker');
 
     document.getElementById('tab-tt').classList.remove('active');
     document.getElementById('tab-cal').classList.remove('active');
@@ -1690,28 +1694,46 @@
     currentMainTab = tab;
 
     if (tab === 'cal') {
-      searchWidget.style.display = 'none';
+      ttPanel.style.display = 'none';
       calPanel.style.display = 'flex';
       document.getElementById('tab-cal').classList.add('active');
       renderBigCalendar();
     } else if (tab === 'halfcal') {
-      searchWidget.style.display = 'flex';
+      ttPanel.style.display = 'grid';
       calPanel.style.display = 'none';
       searchGrid.style.display = 'none';
       halfCalWrapper.style.display = 'flex';
       halfCalNav.style.display = 'flex';
-      teacherPicker.style.display = 'none';
       document.getElementById('tab-halfcal').classList.add('active');
       renderHalfCalendar();
+      hideMyTtRevertBtn();
+      loadMyTimetable();
     } else {
-      searchWidget.style.display = 'flex';
+      ttPanel.style.display = 'grid';
       calPanel.style.display = 'none';
       searchGrid.style.display = '';
       halfCalWrapper.style.display = 'none';
       halfCalNav.style.display = 'none';
-      teacherPicker.style.display = 'flex';
       document.getElementById('tab-tt').classList.add('active');
+      hideMyTtRevertBtn();
+      loadMyTimetable();
       syncSearchGridToSelection();
+    }
+  }
+
+  function hideMyTtRevertBtn() {
+    const btn = document.getElementById('my-tt-revert-btn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  function showMyTimetable() {
+    hideMyTtRevertBtn();
+    loadMyTimetable();
+    const my = localStorage.getItem('my-n');
+    const sel = document.getElementById('search-select');
+    if (my && sel && window.allSchedules[my]) {
+      sel.value = my;
+      localStorage.setItem('last-search', my);
     }
   }
 
@@ -1995,35 +2017,47 @@
     const tmrwStr = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth()+1).padStart(2,'0') + '-' + String(tomorrow.getDate()).padStart(2,'0');
 
     const duties = [
-      { name: '야자감독', label: '야자', icon: '🌙', color: '#F07178' },
-      { name: '급식감독', label: '급식', icon: '🍱', color: '#FF8A65' },
-      { name: '아침감독', label: '아침', icon: '☀️', color: '#4DB6AC' }
+      { name: '야자감독', label: '야자', svg: '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>', color: '#F07178' },
+      { name: '급식감독', label: '급식', svg: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>', color: '#FF8A65' },
+      { name: '아침감독', label: '아침', svg: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>', color: '#4DB6AC' }
     ];
 
     const nextDayLabel = (todayDow === 5 || todayDow === 6) ? '월요일' : '내일';
 
     container.innerHTML = '';
-    
+    let foundAny = false;
+
     // 3가지 감독 시트를 모두 순회하며 오늘/내일 여부를 체크합니다.
-    duties.forEach(async function(duty) {
+    const results = await Promise.all(duties.map(async function(duty) {
       try {
         const data = await gasGetDuty(duty.name);
+        let html = '';
 
         // 1. 오늘 감독인지 확인
         const todayDuty = data.find(function(r){ return r.date === tStr; });
         if(todayDuty && todayDuty.names.includes(myName)) {
            // 오늘 감독은 원래 지정된 색상으로 표시
-           container.innerHTML += '<div class="yaja-badge" style="display:block; background:' + duty.color + '; box-shadow: 0 4px 10px ' + duty.color + '40; animation: pulse-red 2s infinite;">' + duty.icon + ' 오늘 ' + duty.label + ' 감독!</div>';
+           html += '<div class="yaja-badge" style="display:inline-flex; background:' + duty.color + '; box-shadow: 0 4px 10px ' + duty.color + '40; animation: pulse-red 2s infinite;">' + duty.svg + ' 오늘 ' + duty.label + ' 감독!</div>';
         }
 
         // 2. 내일 감독인지 확인 (야자, 급식, 아침 모두 체크)
         const tomorrowDuty = data.find(function(r){ return r.date === tmrwStr; });
         if(tomorrowDuty && tomorrowDuty.names.includes(myName)) {
            // 내일 감독은 주의를 환기하기 위해 '주황색(#FFB74D)'으로 통일해서 표시
-           container.innerHTML += '<div class="yaja-badge" style="display:block; background:#FFB74D; color:#333D4B; box-shadow: 0 4px 10px #FFB74D40; animation: pulse-red 2s infinite;">' + duty.icon + ' ' + nextDayLabel + ' ' + duty.label + ' 감독!</div>';
+           html += '<div class="yaja-badge" style="display:inline-flex; background:#FFB74D; color:#333D4B; box-shadow: 0 4px 10px #FFB74D40; animation: pulse-red 2s infinite;">' + duty.svg + ' ' + nextDayLabel + ' ' + duty.label + ' 감독!</div>';
         }
-      } catch(e) {}
-    });
+        return html;
+      } catch(e) { return ''; }
+    }));
+
+    const combined = results.join('');
+    if (combined) {
+      container.innerHTML = combined;
+      foundAny = true;
+    } else {
+      container.innerHTML = '<span style="font-size:10.5px; color:var(--text-sub); font-weight:600;">오늘·' + nextDayLabel + ' 감독 없음</span>';
+    }
+    return foundAny;
   }
 
   let currentDutySheetName = null;
@@ -2302,7 +2336,7 @@
     } else {
       frame.style.display = 'block';
       btn.innerText = '숨기기';
-      widget.style.flex = '0 0 30%';
+      widget.style.flex = '1.5';
     }
     localStorage.setItem('photo-hidden', photoHidden);
   }
@@ -2551,7 +2585,9 @@
   }
 
   function buildGridHTML(prefix) {
-    let html = '<div class="cal-header"></div>';
+    let html = prefix === 'my-tt'
+      ? '<div class="cal-header" style="display:flex; align-items:center; justify-content:center; padding:0;"><button id="my-tt-revert-btn" class="top-btn accent" style="display:none; align-items:center; justify-content:center; width:100%; height:100%; padding:0; margin:0; font-size:9px; line-height:1; border-radius:6px; white-space:nowrap;" title="지정된 내 시간표로 돌아가기" onclick="showMyTimetable()">⭐ 보기</button></div>'
+      : '<div class="cal-header"></div>';
     var days = ['월','화','수','목','금'];
     for(var d=0; d<days.length; d++) {
       html += '<div class="tt-header">' + days[d] + '</div>';
