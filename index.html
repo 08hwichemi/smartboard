@@ -152,7 +152,83 @@
     #tour-card { position: fixed; right: 24px; bottom: 24px; z-index: 3002; background: var(--card-bg); border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); width: 320px; max-width: 88vw; }
   </style>
 </head>
-<body onload="init()">
+<body onload="bootAuth()">
+
+<div class="overlay" id="login-gate-overlay" style="display:flex; z-index:9999;">
+  <div class="modal-box" style="width: 340px;">
+    <div style="font-weight: 800; font-size: 18px; text-align:center; margin-bottom: 4px;">🏫 부광고 스마트보드</div>
+    <div style="font-size:12px; color:var(--text-sub); text-align:center; margin-bottom:18px;">아이디(선생님 성함)와 비밀번호로 로그인하세요</div>
+    <input type="text" id="login-name-input" placeholder="아이디 (이름)" autocomplete="username" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+    <input type="password" id="login-pw-input" placeholder="비밀번호" autocomplete="current-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+    <div id="login-error" style="color:#E5484D; font-size:12px; min-height:16px; margin-bottom:8px;"></div>
+    <button class="top-btn accent" id="login-submit-btn" style="width:100%; padding:10px;" onclick="submitLogin()">로그인</button>
+    <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-top:14px;">처음 로그인하는 선생님의 초기 비밀번호는 123456입니다.</div>
+  </div>
+</div>
+
+<div class="overlay" id="force-password-overlay">
+  <div class="modal-box" style="width: 340px;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 6px;">🔒 비밀번호를 바꿔주세요</div>
+    <div style="font-size:12px; color:var(--text-sub); margin-bottom:16px; line-height:1.5;">처음 로그인했거나 관리자가 비밀번호를 초기화했습니다. 계속 쓰려면 숫자 6자리로 새 비밀번호를 정해주세요.</div>
+    <input type="password" id="force-pw-input1" placeholder="새 비밀번호 (숫자 6자리)" inputmode="numeric" maxlength="6" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+    <input type="password" id="force-pw-input2" placeholder="새 비밀번호 확인" inputmode="numeric" maxlength="6" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+    <div id="force-pw-error" style="color:#E5484D; font-size:12px; min-height:16px; margin-bottom:8px;"></div>
+    <button class="top-btn accent" style="width:100%; padding:10px;" onclick="submitForcePasswordChange()">비밀번호 바꾸고 시작하기</button>
+  </div>
+</div>
+
+<div class="overlay" id="admin-settings-overlay">
+  <div class="modal-box" style="width: 760px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px;">
+      <div style="font-weight: 800; font-size: 16px;">⚙️ 관리자 설정</div>
+      <div id="admin-settings-current-name" style="font-size:12px; color:var(--text-sub);"></div>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding-right:4px;">
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🗓️ 교사 시간표</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="closeAdminSettingsModal(); openScheduleModal();">시간표 관리 열기 (엑셀 업로드 포함)</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📋 감독표</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="top-btn" style="font-size:12px; padding:6px 12px;" onclick="openDutyFromSettings('야자감독', '🌙')">🌙 야자 감독표</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px;" onclick="openDutyFromSettings('급식감독', '🍱')">🍱 급식 감독표</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px;" onclick="openDutyFromSettings('아침감독', '☀️')">☀️ 아침 감독표</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-weight:700; font-size:13px;">👤 아이디 관리</div>
+          <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="addTeacherAccountUI()">+ 계정 추가</button>
+        </div>
+        <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:8px; max-height:220px; overflow-y:auto;"></div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#E5484D;">🧹 학기별 초기화</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학기가 바뀌어 선생님 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI()">시간표 전체 삭제</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🛠️ 앱 설정</div>
+        <div style="font-size:12px; color:var(--text-sub);">추후 추가 예정입니다.</div>
+      </div>
+
+    </div>
+    <div style="display:flex; gap:10px; margin-top: 15px;">
+      <button class="top-btn" style="flex:1; padding:8px;" onclick="closeAdminSettingsModal()">닫기</button>
+    </div>
+  </div>
+</div>
 
 <div class="top-bar-row">
   <div class="top-bar-left">
@@ -181,6 +257,8 @@
         <button class="top-btn" id="btn-backup" onclick="document.getElementById('backup-overlay').style.display='flex'">💾 백업</button>
         <button class="top-btn accent" id="btn-notice" onclick="openNoticeModal()">📢 공지</button>
         <button class="top-btn" onclick="openTour()">❓ 사용법</button>
+        <button class="top-btn" id="btn-admin-settings" style="display:none;" onclick="openAdminSettingsModal()">⚙️ 설정</button>
+        <button class="top-btn" id="btn-logout" style="display:none;" onclick="logout()">🚪 로그아웃</button>
       </div>
       <div class="top-btn-cluster" id="theme-btn-group">
         <button class="top-btn theme-select-btn" id="theme-btn-default" onclick="changeTheme('default')">⚪ 기본</button>
@@ -213,9 +291,15 @@
   <div class="modal-box" style="width: 900px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
       <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
-      <div style="display:flex; gap:8px;">
-        <input type="file" id="tt-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFile(event)">
-        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('tt-excel-input').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러옵니다">📥 엑셀로 가져오기</button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span id="schedule-admin-only-tools" style="display:none; gap:8px; align-items:center;">
+          <select id="tt-excel-semester" class="mini-select" style="font-size:11px;" title="이 업로드가 몇 학기 것인지 표시용으로만 씁니다">
+            <option value="1학기">1학기</option>
+            <option value="2학기">2학기</option>
+          </select>
+          <input type="file" id="tt-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFile(event)">
+          <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('tt-excel-input').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러오고, 없는 선생님은 로그인 계정도 같이 만듭니다">📥 엑셀로 가져오기</button>
+        </span>
         <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="openNeisCheckModal()" title="나이스에서 학급 시간표를 가져올 수 있는지 시험 조회">🛰️ 나이스 확인(시험)</button>
         <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
       </div>
@@ -638,6 +722,237 @@
   const SUPABASE_URL = 'https://pqreeimkjnphupqqwiqo.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_3LTnOme1yT3sNFka2PhUHQ_MWuTPYK1';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ===== 🔐 로그인 =====
+  // 아이디는 선생님 이름 그대로지만, Supabase Auth는 이메일 형식이 필요해서
+  // 화면에는 안 보이게 "이름@smartboard.local"이라는 이메일로 속에서만 바꿔서 로그인한다.
+  window.currentTeacher = null; // { id, name, is_admin, must_change_password }
+
+  function loginEmailFor(name) {
+    return String(name || '').trim().toLowerCase() + '@smartboard.local';
+  }
+
+  async function bootAuth() {
+    document.getElementById('login-pw-input').onkeydown = function(e) { if (e.key === 'Enter') submitLogin(); };
+    document.getElementById('login-name-input').onkeydown = function(e) { if (e.key === 'Enter') document.getElementById('login-pw-input').focus(); };
+    document.getElementById('force-pw-input2').onkeydown = function(e) { if (e.key === 'Enter') submitForcePasswordChange(); };
+
+    const { data } = await sb.auth.getSession();
+    if (data && data.session) {
+      await handleAuthedSession(data.session);
+    } else {
+      showLoginGate();
+    }
+  }
+
+  function showLoginGate(message) {
+    document.getElementById('login-gate-overlay').style.display = 'flex';
+    document.getElementById('force-password-overlay').style.display = 'none';
+    document.getElementById('login-error').innerText = message || '';
+    document.getElementById('login-submit-btn').disabled = false;
+    setTimeout(function() { document.getElementById('login-name-input').focus(); }, 50);
+  }
+
+  function hideLoginGate() {
+    document.getElementById('login-gate-overlay').style.display = 'none';
+  }
+
+  async function submitLogin() {
+    const name = document.getElementById('login-name-input').value.trim();
+    const pw = document.getElementById('login-pw-input').value;
+    const errEl = document.getElementById('login-error');
+    errEl.innerText = '';
+    if (!name || !pw) { errEl.innerText = '아이디와 비밀번호를 입력하세요.'; return; }
+
+    document.getElementById('login-submit-btn').disabled = true;
+    const { data, error } = await sb.auth.signInWithPassword({ email: loginEmailFor(name), password: pw });
+    document.getElementById('login-submit-btn').disabled = false;
+
+    if (error) {
+      errEl.innerText = '아이디 또는 비밀번호가 올바르지 않습니다.';
+      return;
+    }
+    await handleAuthedSession(data.session);
+  }
+
+  async function logout() {
+    if (!await customConfirm('로그아웃할까요?')) return;
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  async function handleAuthedSession(session) {
+    const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password').eq('id', session.user.id).single();
+    if (error || !data) {
+      await sb.auth.signOut();
+      showLoginGate('계정 정보를 불러오지 못했습니다. 다시 로그인해주세요.');
+      return;
+    }
+    window.currentTeacher = data;
+    hideLoginGate();
+
+    document.getElementById('btn-logout').style.display = 'inline-flex';
+    document.getElementById('btn-admin-settings').style.display = data.is_admin ? 'inline-flex' : 'none';
+    document.getElementById('admin-settings-current-name').innerText = data.name + ' 님' + (data.is_admin ? ' (관리자)' : '');
+
+    if (data.must_change_password) {
+      document.getElementById('force-password-overlay').style.display = 'flex';
+      setTimeout(function() { document.getElementById('force-pw-input1').focus(); }, 50);
+      return;
+    }
+
+    startAppFor(data);
+  }
+
+  function startAppFor(teacher) {
+    localStorage.setItem('my-n', teacher.name);
+    init();
+  }
+
+  async function submitForcePasswordChange() {
+    const pw1 = document.getElementById('force-pw-input1').value;
+    const pw2 = document.getElementById('force-pw-input2').value;
+    const errEl = document.getElementById('force-pw-error');
+    errEl.innerText = '';
+
+    if (!/^[0-9]{6}$/.test(pw1)) { errEl.innerText = '숫자 6자리로 입력해주세요.'; return; }
+    if (pw1 !== pw2) { errEl.innerText = '두 번 입력한 비밀번호가 서로 다릅니다.'; return; }
+
+    try {
+      const { error } = await sb.rpc('set_my_password', { p_new_password: pw1 });
+      if (error) throw error;
+      window.currentTeacher.must_change_password = false;
+      document.getElementById('force-password-overlay').style.display = 'none';
+      startAppFor(window.currentTeacher);
+    } catch (e) {
+      errEl.innerText = '변경 실패: ' + (e && e.message ? e.message : e);
+    }
+  }
+
+  // ===== ⚙️ 관리자 설정 =====
+  function openAdminSettingsModal() {
+    if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
+    document.getElementById('admin-settings-overlay').style.display = 'flex';
+    loadTeacherAccountList();
+  }
+
+  function closeAdminSettingsModal() {
+    document.getElementById('admin-settings-overlay').style.display = 'none';
+  }
+
+  function openDutyFromSettings(name, icon) {
+    closeAdminSettingsModal();
+    openDutyModal(name, icon);
+  }
+
+  async function loadTeacherAccountList() {
+    const listEl = document.getElementById('teacher-account-list');
+    listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--text-sub);">불러오는 중...</div>';
+    try {
+      const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password').order('name');
+      if (error) throw error;
+      window.__teacherAccounts = data || [];
+      renderTeacherAccountList();
+    } catch (e) {
+      listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:#E5484D;">불러오기 실패: ' + escapeHtmlAttr(e && e.message ? e.message : e) + '</div>';
+    }
+  }
+
+  function renderTeacherAccountList() {
+    const listEl = document.getElementById('teacher-account-list');
+    const accounts = window.__teacherAccounts || [];
+    if (accounts.length === 0) { listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--text-sub);">계정이 없습니다.</div>'; return; }
+
+    let html = '';
+    accounts.forEach(function(t) {
+      const isMe = t.id === window.currentTeacher.id;
+      html += '<div style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border-color); font-size:12px;">' +
+        '<div style="flex:1; font-weight:700;">' + escapeHtmlAttr(t.name) + (isMe ? ' (나)' : '') + '</div>' +
+        '<div style="color:var(--text-sub); min-width:70px;">' + (t.is_admin ? '👑 관리자' : '일반 교사') + '</div>' +
+        '<div style="color:var(--text-sub); min-width:80px;">' + (t.must_change_password ? '⏳ 초기 비번' : '설정 완료') + '</div>' +
+        '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="toggleTeacherAdminUI(\'' + t.id + '\', ' + (!t.is_admin) + ')"' + (isMe ? ' disabled' : '') + '>' + (t.is_admin ? '관리자 해제' : '관리자 지정') + '</button>' +
+        '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="resetTeacherPasswordUI(\'' + t.id + '\', \'' + escapeHtmlAttr(t.name) + '\')">비번 초기화</button>' +
+        '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="deleteTeacherUI(\'' + t.id + '\', \'' + escapeHtmlAttr(t.name) + '\')"' + (isMe ? ' disabled' : '') + '>삭제</button>' +
+        '</div>';
+    });
+    listEl.innerHTML = html;
+  }
+
+  async function addTeacherAccountUI() {
+    const name = await customPrompt('새로 만들 선생님 이름을 입력하세요.', '');
+    if (!name || !name.trim()) return;
+    try {
+      const { data, error } = await sb.rpc('admin_ensure_teacher_account', { p_name: name.trim(), p_is_admin: false });
+      if (error) throw error;
+      if (data && data.created) {
+        customAlert(name.trim() + ' 계정을 만들었습니다. 초기 비밀번호는 123456입니다.');
+      } else {
+        customAlert('이미 있는 이름이라 그대로 두었습니다: ' + name.trim());
+      }
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('계정 생성 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function toggleTeacherAdminUI(id, newIsAdmin) {
+    try {
+      const { error } = await sb.rpc('admin_set_teacher_admin', { p_teacher_id: id, p_is_admin: newIsAdmin });
+      if (error) throw error;
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function resetTeacherPasswordUI(id, name) {
+    if (!await customConfirm(name + ' 선생님의 비밀번호를 123456으로 초기화할까요?')) return;
+    try {
+      const { error } = await sb.rpc('admin_reset_teacher_password', { p_teacher_id: id });
+      if (error) throw error;
+      customAlert(name + ' 선생님의 비밀번호를 123456으로 초기화했습니다. 다음 로그인 때 새 비밀번호를 정하게 됩니다.');
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function deleteTeacherUI(id, name) {
+    if (!await customConfirm(name + ' 선생님 계정을 완전히 삭제할까요? 되돌릴 수 없습니다.')) return;
+    try {
+      const { error } = await sb.rpc('admin_delete_teacher', { p_teacher_id: id });
+      if (error) throw error;
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function resetAllTeachersUI() {
+    if (!await customConfirm('본인 계정을 뺀 모든 선생님 계정을 정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+    if (!await customConfirm('한 번 더 확인합니다 — 정말로 전체 삭제할까요?')) return;
+    try {
+      const { data, error } = await sb.rpc('admin_reset_all_teachers');
+      if (error) throw error;
+      customAlert((data && data.deleted != null ? data.deleted : 0) + '개 계정을 삭제했습니다.');
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function resetTimetableUI() {
+    if (!await customConfirm('시간표 전체를 정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+    if (!await customConfirm('한 번 더 확인합니다 — 정말로 시간표를 전부 지울까요?')) return;
+    try {
+      const { error } = await sb.rpc('admin_reset_timetable');
+      if (error) throw error;
+      customAlert('시간표를 전부 지웠습니다.');
+      await fetchSchedule();
+    } catch (e) {
+      customAlert('실패: ' + (e && e.message ? e.message : e));
+    }
+  }
 
   // 감독표별 이름칸 개수 (급식감독만 2학년/3학년 두 칸, 나머지는 한 칸)
   const DUTY_BOARD_COLS = { '야자감독': 1, '급식감독': 2, '아침감독': 1 };
@@ -2115,6 +2430,7 @@
 
   function openScheduleModal() {
     document.getElementById('schedule-overlay').style.display = 'flex';
+    document.getElementById('schedule-admin-only-tools').style.display = (window.currentTeacher && window.currentTeacher.is_admin) ? 'flex' : 'none';
     scheduleEditMode = false;
     scheduleNewTeacherMode = false;
     currentScheduleTeacherName = null;
@@ -2345,9 +2661,28 @@
 
     let okCount = 0;
     const failNames = [];
+    const newAccountNames = [];
+    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
+
     for (const name of names) {
-      try { await gasSetSchedule(name, teachers[name]); okCount++; }
-      catch (e) { failNames.push(name); }
+      try {
+        await gasSetSchedule(name, teachers[name]);
+        okCount++;
+      } catch (e) {
+        failNames.push(name);
+        continue;
+      }
+      if (isAdmin) {
+        try {
+          const { data } = await sb.rpc('admin_ensure_teacher_account', { p_name: name, p_is_admin: false });
+          if (data && data.created) newAccountNames.push(name);
+        } catch (e) { /* 계정 생성이 실패해도 시간표 저장 자체는 그대로 둔다 */ }
+      }
+    }
+
+    const semesterEl = document.getElementById('tt-excel-semester');
+    if (semesterEl) {
+      try { await sb.from('app_settings').upsert({ key: 'current_semester', value: { label: semesterEl.value } }); } catch (e) {}
     }
 
     await fetchSchedule();
@@ -2356,7 +2691,10 @@
       selectTeacherForSchedule(currentScheduleTeacherName);
     }
 
-    if (failNames.length) {
+    if (newAccountNames.length) {
+      customAlert(okCount + '명 저장 완료. 이 중 ' + newAccountNames.length + '명은 로그인 계정도 새로 만들었습니다 (초기 비밀번호 123456): ' + newAccountNames.join(', ') +
+        (failNames.length ? ('\n\n실패 ' + failNames.length + '명: ' + failNames.join(', ')) : ''));
+    } else if (failNames.length) {
       customAlert(okCount + '명 저장 완료, ' + failNames.length + '명은 실패했습니다: ' + failNames.join(', '));
     } else {
       customAlert(okCount + '명 선생님의 시간표를 모두 불러왔습니다.');
