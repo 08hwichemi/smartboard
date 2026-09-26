@@ -196,9 +196,23 @@
     .theme-swatch-row { display: flex; gap: 6px; align-items: center; }
     .theme-swatch { width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer; padding: 0; box-sizing: border-box; }
     .theme-swatch.theme-active { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+    /* ===== 새 버전 알림 띠 ===== */
+    .updatebar { position: fixed; top: 0; left: 0; right: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: var(--accent-color); color: var(--on-accent); font-size: 12.5px; font-weight: 700; text-align: center; }
+    .updatebar[hidden] { display: none; }
+    .updatebar button { flex: 0 0 auto; border: 1px solid rgba(255,255,255,.4); background: transparent; color: var(--on-accent); font-family: inherit; font-weight: 700; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+    .updatebar .updatebar-x { border: 0; padding: 2px 6px; font-size: 17px; line-height: 1; opacity: .75; }
+    .updatebar .updatebar-x:hover { opacity: 1; }
+    body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
   </style>
 </head>
 <body onload="bootAuth()">
+
+<div id="updateBar" class="updatebar" hidden>
+  <span>🔄 새 버전이 있습니다. 새로고침해서 최신 화면으로 보세요.</span>
+  <button type="button" id="updateReload">새로고침</button>
+  <button type="button" id="updateClose" class="updatebar-x" aria-label="닫기">&times;</button>
+</div>
 
 <div class="overlay" id="login-gate-overlay" style="display:flex; z-index:9999;">
   <div class="modal-box" style="width: 340px;">
@@ -358,6 +372,7 @@
           <div id="user-menu-dropdown">
             <button class="um-btn" id="btn-admin-settings" style="display:none;" onclick="event.stopPropagation(); openAdminSettingsModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>관리자 설정</button>
             <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h9"/><path d="M11 12h9M17 8l4 4-4 4"/></svg>로그아웃</button>
+            <div style="border-top:1px solid var(--border-color); margin:4px 6px; padding-top:6px; font-size:10px; color:var(--text-sub); text-align:center;">버전 v<span id="app-version">-</span></div>
           </div>
         </div>
       </div>
@@ -842,6 +857,90 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_3LTnOme1yT3sNFka2PhUHQ_MWuTPYK1';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // ===== 🔄 새 버전 알림 =====
+  // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
+  // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
+  // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
+  // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
+  var BUILD_ID = '2026-09-26.1';
+  var UPDATE_SHOWN = false;
+  var SERVER_VERSION = null;
+
+  function sizeUpdateBar() {
+    var bar = document.getElementById('updateBar');
+    if (!bar || bar.hidden) return;
+    var h = Math.ceil(bar.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--updatebar-h', h + 'px');
+  }
+
+  function showUpdateBar() {
+    if (UPDATE_SHOWN) return;
+    var bar = document.getElementById('updateBar');
+    if (!bar) return;
+    UPDATE_SHOWN = true;
+    bar.hidden = false;
+    document.body.classList.add('has-update');
+    sizeUpdateBar();
+  }
+
+  function hideUpdateBar() {
+    var bar = document.getElementById('updateBar');
+    if (bar) bar.hidden = true;
+    document.body.classList.remove('has-update');
+    document.documentElement.style.removeProperty('--updatebar-h');
+  }
+
+  // 새로고침을 눌러 ?v=판번호로 다시 열었는데도 판 번호가 그대로면 서버(또는 중간
+  // 캐시)가 아직 옛 화면을 주고 있는 것이다. 그때 또 뛰우면 눌러도 안 사라지는
+  // 것처럼 보이므로 한 번으로 끝낸다.
+  function alreadyTriedVersion(v) {
+    try { return new URLSearchParams(location.search).get('v') === v; } catch (e) { return false; }
+  }
+
+  function checkForUpdate() {
+    if (UPDATE_SHOWN || !window.fetch) return;
+    fetch('version.txt?_=' + Date.now(), { cache: 'no-store' })
+      .then(function(r) { return r.ok ? r.text() : null; })
+      .then(function(t) {
+        if (t === null) return;
+        t = String(t).trim();
+        if (!t || t.length > 40 || /[<>]/.test(t)) return;
+        if (t !== BUILD_ID) {
+          if (alreadyTriedVersion(t)) return;
+          SERVER_VERSION = t;
+          showUpdateBar();
+        }
+      })
+      .catch(function() {});
+  }
+
+  function paintVersion() {
+    var el = document.getElementById('app-version');
+    if (el) el.textContent = BUILD_ID;
+  }
+
+  // 그냥 location.reload()는 브라우저가 쥐고 있던 캐시를 그대로 다시 쓸 수 있어서,
+  // 주소에 ?v=를 붙여 다시 열어 새 파일을 받게 한다.
+  function reloadFresh() {
+    var base = location.href.split('?')[0].split('#')[0];
+    location.replace(base + '?v=' + encodeURIComponent(SERVER_VERSION || String(Date.now())));
+  }
+
+  function initUpdateChecker() {
+    paintVersion();
+    const rb = document.getElementById('updateReload');
+    if (rb) rb.addEventListener('click', reloadFresh);
+    const xb = document.getElementById('updateClose');
+    if (xb) xb.addEventListener('click', hideUpdateBar);
+    window.addEventListener('resize', sizeUpdateBar);
+
+    checkForUpdate();
+    setInterval(checkForUpdate, 3 * 60 * 1000);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') checkForUpdate();
+    });
+  }
+
   // ===== 🔐 로그인 =====
   // 아이디는 선생님 이름 그대로지만, Supabase Auth는 이메일 형식이 필요해서
   // 화면에는 안 보이게 "이름@smartboard.local"이라는 이메일로 속에서만 바꿔서 로그인한다.
@@ -852,6 +951,7 @@
   }
 
   async function bootAuth() {
+    initUpdateChecker();
     document.getElementById('login-pw-input').onkeydown = function(e) { if (e.key === 'Enter') submitLogin(); };
     document.getElementById('login-name-input').onkeydown = function(e) { if (e.key === 'Enter') document.getElementById('login-pw-input').focus(); };
     document.getElementById('force-pw-input2').onkeydown = function(e) { if (e.key === 'Enter') submitForcePasswordChange(); };
