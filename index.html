@@ -15,7 +15,7 @@
     :root {
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
-      --fz-tt: 13px; --fz-noti: 16px; --fz-meal: 12px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px;
+      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996; }
     [data-theme="mint"] { --bg-color: #F2F7F6; --card-bg: #FFFFFF; --text-main: #1B3B36; --text-sub: #6E8B85; --border-color: #DCEAE7; --accent-color: #1F6E5C; --tt-bg: #E9F2F0; --accent-soft: #E3F1ED; --alert: #A5471F; --alert-bg: #FBEDE5; --alert-border: #E9BBA0; }
@@ -145,7 +145,7 @@
     .recent-notices li .msg { font-weight: 600; word-break: break-all; white-space: pre-wrap; color: var(--text-main); font-size: var(--fz-noti);}
     
     .meal-tags { flex: 1 1 auto; overflow-y: auto; list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; min-height: 0;}
-    .meal-tags li { background: var(--tt-bg); border: 1px solid var(--border-color); padding: 4px 9px; border-radius: 8px; font-size: var(--fz-meal); font-weight: 600; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+    .meal-tags li { background: var(--tt-bg); border: 1px solid var(--border-color); padding: 4px 9px; border-radius: 8px; font-size: var(--fz-noti); font-weight: 600; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
     .meal-tags li::before { content: none; } 
 
     ::-webkit-scrollbar { width: 6px; }
@@ -193,8 +193,8 @@
     .half-cal-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 2px; flex: 1; min-height: 0; }
     .half-cal-cell { background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 5px; padding: 2px; display: flex; flex-direction: column; overflow: hidden; }
     .half-cal-date { font-size: 10px; font-weight: 800; display: flex; align-items: center; padding: 1px; flex: 0 0 auto; }
-    .half-cal-neis { font-size: calc(var(--fz-halfcal) - 1px); color: var(--accent-color); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; padding: 0 1px; flex: 0 0 auto; }
-    .half-cal-memo { flex: 1; font-size: var(--fz-halfcal); color: var(--text-main); padding: 1px; line-height: 1.2; overflow-y: auto; outline: none; cursor: text; word-break: break-all; white-space: pre-wrap; }
+    .half-cal-neis { font-size: calc(var(--fz-cal) - 3px); color: var(--accent-color); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; padding: 0 1px; flex: 0 0 auto; }
+    .half-cal-memo { flex: 1; font-size: calc(var(--fz-cal) - 2px); color: var(--text-main); padding: 1px; line-height: 1.2; overflow-y: auto; outline: none; cursor: text; word-break: break-all; white-space: pre-wrap; }
     .half-cal-memo:hover, .half-cal-memo:focus { background: rgba(0,0,0,0.03); border-radius: 3px; }
 
     #tour-overlay { display: none; }
@@ -280,9 +280,9 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
-    <div class="rail-item" title="학급표 (준비 중)" onclick="railComingSoon('학급표')">
+    <div class="rail-item" title="학급시간표 (준비 중)" onclick="railComingSoon('학급시간표')">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
-      <div class="rail-label">학급표</div>
+      <div class="rail-label">학급시간표</div>
     </div>
     <div class="rail-item" title="월간일정표 (준비 중)" onclick="railComingSoon('월간일정표')">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
@@ -293,7 +293,7 @@
       <div class="rail-label">좌석표</div>
     </div>
     <div style="flex: 1;"></div>
-    <div style="text-align:center; font-size:9px; font-weight:700; color:var(--text-sub); padding-bottom:6px;">v<span id="app-version">-</span></div>
+    <div style="text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding-bottom:8px; line-height:1.4;" id="app-version">-</div>
     <div class="rail-item" id="rail-settings-btn" style="display:none;" title="관리자 설정" onclick="showSettingsPage()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
       <div class="rail-label">설정</div>
@@ -702,8 +702,8 @@
             <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(1)">▶</button>
           </div>
           <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
+            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('cal', -1)">A-</button>
+            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('cal', 1)">A+</button>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
             <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
@@ -878,7 +878,7 @@
 
       <div class="admin-tab-pane" data-tab="classes" style="display:none;">
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🏫 학급 구성</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년 수와 학년별 반 개수를 정해두면, 담임 지정이나 학급표 같은 기능에서 그대로 씁니다.</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년 수와 학년별 반 개수를 정해두면, 담임 지정이나 학급시간표 같은 기능에서 그대로 씁니다.</div>
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
           <span style="font-size:12px; font-weight:700;">학년 수</span>
           <select id="class-grade-count" class="mini-select" onchange="renderClassCountInputs()">
@@ -969,7 +969,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.25';
+  var BUILD_ID = '2026-09-26.26';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1023,7 +1023,9 @@
 
   function paintVersion() {
     var el = document.getElementById('app-version');
-    if (el) el.textContent = BUILD_ID;
+    if (!el) return;
+    var m = /^(\d{4})-(\d{2})-(\d{2})\.(\d+)$/.exec(BUILD_ID);
+    el.innerHTML = m ? (m[1] + '<br>' + m[2] + '.' + m[3] + '<br>Ver.' + m[4]) : ('v' + BUILD_ID);
   }
 
   // 그냥 location.reload()는 브라우저가 쥐고 있던 캐시를 그대로 다시 쓸 수 있어서,
@@ -2940,7 +2942,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
@@ -3075,7 +3077,7 @@
     } catch(e) { customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
   }
 
-  // ===== 🏫 학급 구성 (학년 수 + 학년별 반 개수) — 나중에 담임 지정·학급표에서 재사용할 기초 데이터 =====
+  // ===== 🏫 학급 구성 (학년 수 + 학년별 반 개수) — 나중에 담임 지정·학급시간표에서 재사용할 기초 데이터 =====
   async function ensureClassStructureLoaded() {
     if (window.classStructure) return window.classStructure;
     try {
