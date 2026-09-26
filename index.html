@@ -996,12 +996,11 @@
     <div class="widget w-accent-a" id="websearch-widget" style="flex: 0 0 auto; min-height: 0;">
       <div class="widget-title" style="margin-bottom: 6px;">
         <div style="display:flex; align-items:center; gap:5px;">
-          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></div>
           🔍 웹 검색
         </div>
       </div>
       <form onsubmit="return submitGoogleSearch(event)" style="display:flex; gap:5px;">
-        <input type="text" id="google-search-input" placeholder="구글에서 검색 (뉴스 검색 아님)" style="flex:1; min-width:0; padding:5px 9px; font-size:11.5px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none;">
+        <input type="text" id="google-search-input" placeholder="구글에서 검색" autocomplete="off" style="flex:1; min-width:0; padding:5px 9px; font-size:11.5px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none;">
         <button type="submit" class="top-btn" style="padding:5px 10px; font-size:11.5px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></button>
       </form>
     </div>
@@ -1230,7 +1229,7 @@
           <button class="top-btn sc-btn-mode" id="sc-btn-fix" onclick="scToggleMode('fix')">고정석 지정 📌</button>
           <button class="top-btn sc-btn-mode" id="sc-btn-exclude" onclick="scToggleMode('exclude')">제외석 지정 🚫</button>
         </div>
-        <div class="sc-help" id="sc-help-text">👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.</div>
+        <div class="sc-help" id="sc-help-text" style="display:none;"></div>
       </div>
 
       <div class="sc-section" id="sc-arrange-section">
@@ -1536,7 +1535,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.43';
+  var BUILD_ID = '2026-09-26.44';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4925,6 +4924,10 @@
     document.getElementById('main-dashboard').style.display = 'none';
     const settingsPage = document.getElementById('settings-page');
     if (settingsPage) settingsPage.style.display = 'none';
+    const monthlyPage = document.getElementById('monthly-page');
+    if (monthlyPage) monthlyPage.style.display = 'none';
+    const railMonthlyBtnOff = document.getElementById('rail-monthly-btn');
+    if (railMonthlyBtnOff) railMonthlyBtnOff.classList.remove('active');
     document.getElementById('seatchart-page').style.display = 'flex';
     document.body.setAttribute('data-print-target', 'seatchart');
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -4945,12 +4948,19 @@
     }
     requestAnimationFrame(scScalePaper);
 
+    if (!window.__scAutoSaveBound) {
+      window.__scAutoSaveBound = true;
+      const scPage = document.getElementById('seatchart-page');
+      ['input', 'click', 'change'].forEach(function(evt) { scPage.addEventListener(evt, scScheduleAutoSave); });
+      scPage.addEventListener('blur', scScheduleAutoSave, true);
+    }
+
     const t = window.currentTeacher;
     if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
       gradeSel.value = String(t.homeroom_grade);
       document.getElementById('sc-class-select').innerHTML = classOptionsHtml(t.homeroom_grade, t.homeroom_class);
       document.getElementById('sc-class-select').value = String(t.homeroom_class);
-      await scLoadRosterFromDB(t.homeroom_grade, t.homeroom_class);
+      await scLoadOrRestoreClass(t.homeroom_grade, t.homeroom_class);
     } else {
       document.getElementById('sc-roster-status').textContent = '학년과 반을 선택하세요.';
     }
@@ -4978,7 +4988,7 @@
     const grade = parseInt(document.getElementById('sc-grade-select').value);
     const classNo = parseInt(document.getElementById('sc-class-select').value);
     if (!grade || !classNo) return;
-    await scLoadRosterFromDB(grade, classNo);
+    await scLoadOrRestoreClass(grade, classNo);
   }
 
   async function scLoadRosterFromDB(grade, classNo) {
@@ -5037,14 +5047,19 @@
     scChangeStyleVars();
   }
 
+  // 기본 모드에서는 이 안내를 아예 숨겨서 패널 세로 공간을 아낀다(설명서 투어가 이미
+  // 같은 내용을 알려줌) — 고정석/제외석처럼 실제로 지금 어떤 모드인지 계속 기억해야
+  // 하는 특수 모드일 때만 상태 안내로 잠깐 보여준다.
   function scUpdateHelpText(mode) {
     const helpEl = document.getElementById('sc-help-text');
     if (mode === 'fix') {
+      helpEl.style.display = 'block';
       helpEl.innerHTML = '📌 <b>[고정석 지정 중]</b><br>자리를 클릭하면 빨간 테두리가 생깁니다.<br>랜덤 배치를 돌려도 <b>이 자리의 학생은 이동하지 않습니다.</b><br>다 하셨으면 위 버튼을 다시 눌러 완료하세요.';
     } else if (mode === 'exclude') {
+      helpEl.style.display = 'block';
       helpEl.innerHTML = '🚫 <b>[제외석 지정 중]</b><br>클릭하면 점선으로 바뀌며 빈 자리가 됩니다.<br><b>다시 누르면 원상복구</b>됩니다.<br>다 하셨으면 위 버튼을 다시 눌러 완료하세요.';
     } else {
-      helpEl.innerHTML = '👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.';
+      helpEl.style.display = 'none';
     }
   }
 
@@ -5350,10 +5365,9 @@
     reader.readAsText(file); event.target.value = '';
   }
 
-  async function scSaveArrangement() {
-    const grid = document.getElementById('sc-seat-grid');
-    if (grid.innerHTML.trim() === '') { await customAlert('저장할 좌석배치표가 없습니다. 먼저 구조를 그리고 배치를 완료해주세요.'); return; }
-
+  // 지금 화면의 배치 결과 전체(구조/좌석/디자인/문구)를 하나의 데이터 객체로 모은다 —
+  // 파일 저장(scSaveArrangement)과 개인 서버 자동저장(scAutoSave)이 같이 쓴다.
+  function scCollectArrangement() {
     const desks = Array.from(document.querySelectorAll('.sc-desk'));
     const seatData = desks.map(function(desk) {
       return {
@@ -5365,7 +5379,7 @@
       };
     });
 
-    const fullData = {
+    return {
       grade: document.getElementById('sc-grade-select').value,
       classNo: document.getElementById('sc-class-select').value,
       rows: document.getElementById('sc-cfg-rows').value,
@@ -5392,12 +5406,66 @@
       sideTextRight: document.querySelectorAll('.sc-side-text')[1].value,
       inverted: document.getElementById('sc-a4-paper').classList.contains('sc-inverted')
     };
+  }
 
+  async function scSaveArrangement() {
+    const grid = document.getElementById('sc-seat-grid');
+    if (grid.innerHTML.trim() === '') { await customAlert('저장할 좌석배치표가 없습니다. 먼저 구조를 그리고 배치를 완료해주세요.'); return; }
+    const fullData = scCollectArrangement();
     const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = '좌석배치_' + (fullData.grade || '') + '학년' + (fullData.classNo || '') + '반.json';
     a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // 데이터 객체를 화면에 반영한다 — 파일 불러오기(scLoadArrangement)와 서버에서 복원할
+  // 때(openSeatChart/scOnClassChange에서 이 학년·반에 저장된 게 있으면 자동 복원) 둘 다 쓴다.
+  async function scApplyArrangement(data) {
+    if (!data.seatData) throw new Error('Invalid format');
+
+    scApplyThemeSettingsObj(data);
+
+    if (data.footerText1 !== undefined) document.getElementById('sc-footer-1').value = data.footerText1;
+    if (data.footerText2 !== undefined) document.getElementById('sc-footer-2').value = data.footerText2;
+    if (data.sideTextLeft) document.querySelectorAll('.sc-side-text')[0].value = data.sideTextLeft;
+    if (data.sideTextRight) document.querySelectorAll('.sc-side-text')[1].value = data.sideTextRight;
+    if (data.excludeNums !== undefined) document.getElementById('sc-exclude-nums').value = data.excludeNums;
+
+    document.getElementById('sc-a4-paper').classList.toggle('sc-inverted', !!data.inverted);
+
+    if (data.grade && data.classNo) {
+      await ensureClassStructureLoaded();
+      const gradeSel = document.getElementById('sc-grade-select');
+      gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(parseInt(data.grade));
+      document.getElementById('sc-class-select').innerHTML = classOptionsHtml(parseInt(data.grade), parseInt(data.classNo));
+      await scLoadRosterFromDB(parseInt(data.grade), parseInt(data.classNo));
+    }
+    // scLoadRosterFromDB가 제목을 "OO학년 OO반 좌석배치표 ✨" 기본값으로 다시 채워버리므로,
+    // 저장해둔 제목이 있으면 그 뒤에 다시 덮어써서 살린다(원래 결과로드 기능에 있던
+    // 버그이기도 함 — 자동 복원을 붙이면서 같이 고침).
+    if (data.displayTitle) document.getElementById('sc-display-title').value = data.displayTitle;
+
+    const rows = parseInt(data.rows) || 1, groups = parseInt(data.groups) || 1, seats = parseInt(data.seats) || 1;
+    document.getElementById('sc-cfg-rows').value = rows;
+    document.getElementById('sc-cfg-groups').value = groups;
+    document.getElementById('sc-cfg-seats').value = seats;
+    scBuildSeatGrid(rows, groups, seats);
+
+    const desks = document.querySelectorAll('.sc-desk');
+    data.seatData.forEach(function(savedDesk) {
+      const targetDesk = Array.from(desks).find(function(d) { return d.dataset.row === savedDesk.row && d.dataset.col === savedDesk.col; });
+      if (targetDesk) {
+        targetDesk.querySelector('.sc-desk-num').innerText = savedDesk.num;
+        targetDesk.querySelector('.sc-desk-name').innerText = savedDesk.name;
+        if (savedDesk.isFixed) targetDesk.classList.add('sc-fixed');
+        if (savedDesk.isExcluded) {
+          targetDesk.classList.add('sc-excluded');
+          targetDesk.querySelector('.sc-desk-num').innerText = '';
+          targetDesk.querySelector('.sc-desk-name').innerText = '';
+        }
+      }
+    });
   }
 
   async function scLoadArrangement(event) {
@@ -5406,53 +5474,48 @@
     reader.onload = async function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        if (!data.seatData) throw new Error('Invalid format');
-
-        scApplyThemeSettingsObj(data);
-
-        if (data.displayTitle) document.getElementById('sc-display-title').value = data.displayTitle;
-        if (data.footerText1 !== undefined) document.getElementById('sc-footer-1').value = data.footerText1;
-        if (data.footerText2 !== undefined) document.getElementById('sc-footer-2').value = data.footerText2;
-        if (data.sideTextLeft) document.querySelectorAll('.sc-side-text')[0].value = data.sideTextLeft;
-        if (data.sideTextRight) document.querySelectorAll('.sc-side-text')[1].value = data.sideTextRight;
-        if (data.excludeNums !== undefined) document.getElementById('sc-exclude-nums').value = data.excludeNums;
-
-        document.getElementById('sc-a4-paper').classList.toggle('sc-inverted', !!data.inverted);
-
-        if (data.grade && data.classNo) {
-          await ensureClassStructureLoaded();
-          const gradeSel = document.getElementById('sc-grade-select');
-          gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(parseInt(data.grade));
-          document.getElementById('sc-class-select').innerHTML = classOptionsHtml(parseInt(data.grade), parseInt(data.classNo));
-          await scLoadRosterFromDB(parseInt(data.grade), parseInt(data.classNo));
-        }
-
-        const rows = parseInt(data.rows) || 1, groups = parseInt(data.groups) || 1, seats = parseInt(data.seats) || 1;
-        document.getElementById('sc-cfg-rows').value = rows;
-        document.getElementById('sc-cfg-groups').value = groups;
-        document.getElementById('sc-cfg-seats').value = seats;
-        scBuildSeatGrid(rows, groups, seats);
-
-        const desks = document.querySelectorAll('.sc-desk');
-        data.seatData.forEach(function(savedDesk) {
-          const targetDesk = Array.from(desks).find(function(d) { return d.dataset.row === savedDesk.row && d.dataset.col === savedDesk.col; });
-          if (targetDesk) {
-            targetDesk.querySelector('.sc-desk-num').innerText = savedDesk.num;
-            targetDesk.querySelector('.sc-desk-name').innerText = savedDesk.name;
-            if (savedDesk.isFixed) targetDesk.classList.add('sc-fixed');
-            if (savedDesk.isExcluded) {
-              targetDesk.classList.add('sc-excluded');
-              targetDesk.querySelector('.sc-desk-num').innerText = '';
-              targetDesk.querySelector('.sc-desk-name').innerText = '';
-            }
-          }
-        });
+        await scApplyArrangement(data);
         await customAlert('저장된 배치 결과를 불러왔습니다! 🎉');
       } catch (err) {
         await customAlert("파일을 읽는 데 실패했습니다. 올바른 '좌석배치' 결과 파일인지 확인해주세요.");
       }
     };
     reader.readAsText(file); event.target.value = '';
+  }
+
+  // 편집할 때마다(아래 openSeatChart에서 seatchart-page 전체에 이벤트 위임으로 걸어둔
+  // input/click/change/blur가 800ms 디바운스로 호출) 지금 학년·반 기준으로 localStorage에
+  // 저장해두고, 개인별 서버 백업 동기화(scheduleBackupWrite)에 그대로 얹는다 — 월간일정표와
+  // 같은 방식. 학년·반이 아직 안 정해졌으면(예: 페이지 막 열었을 때) 저장할 대상이 없으므로
+  // 건너뛴다. 파일로 저장/불러오기는 그대로 남겨서 다른 반/다른 사람과 공유할 수 있게 한다.
+  let scAutoSaveTimer = null;
+  function scScheduleAutoSave() {
+    if (scAutoSaveTimer) clearTimeout(scAutoSaveTimer);
+    scAutoSaveTimer = setTimeout(scAutoSave, 800);
+  }
+  function scAutoSave() {
+    const grade = document.getElementById('sc-grade-select').value;
+    const classNo = document.getElementById('sc-class-select').value;
+    if (!grade || !classNo) return;
+    const grid = document.getElementById('sc-seat-grid');
+    if (!grid || grid.innerHTML.trim() === '') return;
+    try { localStorage.setItem('sc-data-' + grade + '-' + classNo, JSON.stringify(scCollectArrangement())); } catch (e) { return; }
+    scheduleBackupWrite();
+  }
+
+  // 이 학년·반에 저장해둔 배치가 있으면 그걸 복원하고, 없으면 명렬표만 새로 불러온다.
+  // openSeatChart(처음 진입)와 scOnClassChange(반 직접 바꿀 때) 둘 다 이 함수를 쓴다.
+  async function scLoadOrRestoreClass(grade, classNo) {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem('sc-data-' + grade + '-' + classNo);
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) { saved = null; }
+    if (saved && saved.seatData) {
+      await scApplyArrangement(saved);
+    } else {
+      await scLoadRosterFromDB(grade, classNo);
+    }
   }
 
   // ===== 🗓️ 월간일정표 =====
@@ -5476,6 +5539,10 @@
     document.getElementById('main-dashboard').style.display = 'none';
     const settingsPage = document.getElementById('settings-page');
     if (settingsPage) settingsPage.style.display = 'none';
+    const seatchartPage = document.getElementById('seatchart-page');
+    if (seatchartPage) seatchartPage.style.display = 'none';
+    const railSeatchartBtnOff = document.getElementById('rail-seatchart-btn');
+    if (railSeatchartBtnOff) railSeatchartBtnOff.classList.remove('active');
     document.getElementById('monthly-page').style.display = 'flex';
     document.body.setAttribute('data-print-target', 'monthly');
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -5494,6 +5561,13 @@
       msInitTable(15);
       msRenderCategories();
       document.getElementById('ms-table-body').addEventListener('paste', msHandlePaste);
+
+      // 이 계정으로 전에 저장해둔 내용이 있으면(이 브라우저든, 서버에서 막 복원해온
+      // 것이든 restoreUserBackupIfNeeded가 localStorage에 채워준 것) 자동으로 불러온다.
+      try {
+        const saved = localStorage.getItem('ms-data');
+        if (saved) msApplyData(JSON.parse(saved));
+      } catch (e) { /* 저장된 내용이 손상됐으면 그냥 빈 상태로 시작 */ }
     }
 
     if (!window.__msResizeBound) {
@@ -5880,6 +5954,8 @@
       }
       grid.appendChild(cell);
     }
+
+    msAutoSave();
   }
 
   function msChangeMonth(dir) {
@@ -5890,7 +5966,9 @@
   }
 
   /* --- 파일로 저장/불러오기 (좌석배치표와 같은 방식: 서버 저장 아님) --- */
-  function msExportData() {
+  // 지금 화면의 설정·일정을 하나의 데이터 객체로 모은다 — 파일 저장(msExportData)과
+  // 개인 서버 자동저장(msAutoSave)이 이 함수를 같이 쓴다.
+  function msCollectData() {
     const data = {
       school: document.getElementById('ms-cfg-school').value,
       grade: document.getElementById('ms-cfg-grade').value,
@@ -5921,6 +5999,66 @@
       });
     });
 
+    return data;
+  }
+
+  // 데이터 객체를 화면에 반영한다 — 파일 불러오기(msImportData)와 서버에서 복원할 때
+  // (openMonthlySchedule 최초 진입 시 localStorage 자동 복원) 둘 다 이 함수를 쓴다.
+  function msApplyData(data) {
+    if (data.school !== undefined) document.getElementById('ms-cfg-school').value = data.school;
+    if (data.grade !== undefined) document.getElementById('ms-cfg-grade').value = data.grade;
+    if (data.title !== undefined) document.getElementById('ms-cfg-title').value = data.title;
+    if (data.showNeis !== undefined) document.getElementById('ms-cfg-show-neis').checked = data.showNeis;
+    if (data.logo) msSchoolLogoBase64 = data.logo;
+    if (data.font) { document.getElementById('ms-cfg-font').value = data.font; msChangeGlobalFont(); }
+
+    if (data.ddays && data.ddays.length === 5) {
+      for (let i = 0; i < 5; i++) {
+        document.getElementById('ms-dd-name-' + i).value = data.ddays[i].name;
+        document.getElementById('ms-dd-date-' + i).value = data.ddays[i].date;
+        document.getElementById('ms-dd-color-' + i).value = data.ddays[i].color;
+        document.getElementById('ms-dd-show-' + i).checked = data.ddays[i].show !== false;
+        if (i < 4 && data.ddays[i].days) document.getElementById('ms-dd-days-' + i).value = data.ddays[i].days;
+      }
+    }
+
+    if (data.categories) msCategories = data.categories;
+
+    if (data.table) {
+      const tbody = document.getElementById('ms-table-body');
+      Array.from(tbody.children).forEach(function(tr) { if (!tr.classList.contains('ms-example-row')) tr.remove(); });
+
+      data.table.forEach(function(row) {
+        const tr = document.createElement('tr');
+        const contentHtml = row.c ? row.c.replace(/\n/g, '<br>') : '';
+        tr.innerHTML =
+          '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + row.d + '</div></td>' +
+          '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + contentHtml + '</div></td>' +
+          '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
+          '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
+        tbody.appendChild(tr);
+      });
+
+      msUpdateSelectOptions();
+      const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
+      data.table.forEach(function(row, idx) { rows[idx].querySelector('select').value = row.catId; });
+    }
+
+    msRenderCategories();
+  }
+
+  // 편집할 때마다(msRenderCalendar 끝에서 호출) 이 브라우저의 localStorage에 저장해두고,
+  // 기존에 만들어둔 개인별 서버 백업 동기화(scheduleBackupWrite)에 그대로 얹는다 —
+  // 새 서버 테이블을 따로 만들 필요 없이, 로그인 계정 기준으로 다른 기기에서도 이어서
+  // 쓸 수 있게 됨. 파일로 저장/불러오기(msExportData/msImportData)는 그대로 남겨둬서
+  // 다른 반·다른 사람에게 공유하거나 별도 보관하고 싶을 때 쓸 수 있다.
+  function msAutoSave() {
+    try { localStorage.setItem('ms-data', JSON.stringify(msCollectData())); } catch (e) { return; }
+    scheduleBackupWrite();
+  }
+
+  function msExportData() {
+    const data = msCollectData();
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -5936,47 +6074,8 @@
     reader.onload = function(ev) {
       try {
         const data = JSON.parse(ev.target.result);
-
-        if (data.school !== undefined) document.getElementById('ms-cfg-school').value = data.school;
-        if (data.grade !== undefined) document.getElementById('ms-cfg-grade').value = data.grade;
-        if (data.title !== undefined) document.getElementById('ms-cfg-title').value = data.title;
-        if (data.showNeis !== undefined) document.getElementById('ms-cfg-show-neis').checked = data.showNeis;
-        if (data.logo) msSchoolLogoBase64 = data.logo;
-        if (data.font) { document.getElementById('ms-cfg-font').value = data.font; msChangeGlobalFont(); }
-
-        if (data.ddays && data.ddays.length === 5) {
-          for (let i = 0; i < 5; i++) {
-            document.getElementById('ms-dd-name-' + i).value = data.ddays[i].name;
-            document.getElementById('ms-dd-date-' + i).value = data.ddays[i].date;
-            document.getElementById('ms-dd-color-' + i).value = data.ddays[i].color;
-            document.getElementById('ms-dd-show-' + i).checked = data.ddays[i].show !== false;
-            if (i < 4 && data.ddays[i].days) document.getElementById('ms-dd-days-' + i).value = data.ddays[i].days;
-          }
-        }
-
-        if (data.categories) msCategories = data.categories;
-
-        if (data.table) {
-          const tbody = document.getElementById('ms-table-body');
-          Array.from(tbody.children).forEach(function(tr) { if (!tr.classList.contains('ms-example-row')) tr.remove(); });
-
-          data.table.forEach(function(row) {
-            const tr = document.createElement('tr');
-            const contentHtml = row.c ? row.c.replace(/\n/g, '<br>') : '';
-            tr.innerHTML =
-              '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + row.d + '</div></td>' +
-              '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + contentHtml + '</div></td>' +
-              '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
-              '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
-            tbody.appendChild(tr);
-          });
-
-          msUpdateSelectOptions();
-          const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
-          data.table.forEach(function(row, idx) { rows[idx].querySelector('select').value = row.catId; });
-        }
-
-        msRenderCategories();
+        msApplyData(data);
+        msRenderCalendar();
         customAlert('데이터를 성공적으로 불러왔습니다! 🎉');
       } catch (err) {
         customAlert('파일을 읽는 데 실패했습니다. 올바른 월간일정표 파일인지 확인해주세요.');
