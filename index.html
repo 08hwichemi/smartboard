@@ -251,8 +251,13 @@
 
       <div style="margin-bottom:20px;">
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🗓️ 교사 시간표</div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+          <select id="tt-excel-semester-admin" class="mini-select" style="font-size:11px;" title="이 엑셀을 어느 학기로 저장할지 고릅니다"></select>
+          <input type="file" id="tt-excel-input-admin" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFileAdmin(event)">
+          <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="document.getElementById('tt-excel-input-admin').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러오고, 없는 선생님은 로그인 계정도 같이 만듭니다">📥 엑셀로 시간표 올리기</button>
+        </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="closeAdminSettingsModal(); openScheduleModal();">시간표 관리 열기 (엑셀 업로드 포함)</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px;" onclick="closeAdminSettingsModal(); openScheduleModal();">시간표 하나씩 편집 열기 (선생님별 수정·추가·삭제)</button>
         </div>
       </div>
 
@@ -460,15 +465,16 @@
           <input type="file" id="tt-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFile(event)">
           <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('tt-excel-input').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러오고, 없는 선생님은 로그인 계정도 같이 만듭니다">📥 엑셀로 가져오기</button>
         </span>
-        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="openNeisCheckModal()" title="나이스에서 학급 시간표를 가져올 수 있는지 시험 조회">🛰️ 나이스 확인(시험)</button>
-        <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
+        <button class="top-btn" id="schedule-neis-check-btn" style="font-size:11px; padding:4px 10px;" onclick="openNeisCheckModal()" title="나이스에서 학급 시간표를 가져올 수 있는지 시험 조회">🛰️ 나이스 확인(시험)</button>
+        <button class="top-btn accent" id="schedule-new-teacher-btn" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
       </div>
     </div>
 
     <div id="schedule-select-row" style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
       <select id="schedule-teacher-select" class="mini-select" style="flex:1;" onchange="selectTeacherForSchedule(this.value)"></select>
+      <span id="schedule-my-name-label" style="display:none; flex:1; font-weight:700; font-size:13px;"></span>
       <button class="top-btn" id="schedule-edit-toggle" style="font-size:11px; padding:4px 10px;" onclick="toggleScheduleEditMode()">✏️ 수정</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="deleteScheduleTeacher()" title="이 선생님 시간표 삭제">🗑 삭제</button>
+      <button class="top-btn" id="schedule-delete-btn" style="font-size:11px; padding:4px 10px;" onclick="deleteScheduleTeacher()" title="이 선생님 시간표 삭제">🗑 삭제</button>
     </div>
 
     <div id="schedule-newname-row" style="display:none; align-items:center; gap:8px; margin-bottom: 12px;">
@@ -898,7 +904,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.6';
+  var BUILD_ID = '2026-09-26.7';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1090,13 +1096,19 @@
   }
 
   // ===== ⚙️ 관리자 설정 =====
-  function openAdminSettingsModal() {
+  async function openAdminSettingsModal() {
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
     document.getElementById('admin-settings-overlay').style.display = 'flex';
     document.getElementById('user-menu-dropdown').style.display = 'none';
     loadTeacherAccountList();
     loadFixedBookmarks();
     loadSemesterRangesUI();
+    await ensureSemesterRangesLoaded();
+    const sel = document.getElementById('tt-excel-semester-admin');
+    if (sel) {
+      sel.innerHTML = '<option value="1학기">1학기</option><option value="2학기">2학기</option>';
+      sel.value = window.currentActiveSemester || getActiveSemester();
+    }
   }
 
   function closeAdminSettingsModal() {
@@ -2395,6 +2407,7 @@
     const container = document.getElementById('duty-list-container');
     const data = currentDutyRows;
     const myName = localStorage.getItem('my-n');
+    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
 
     const now = new Date();
     const tStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
@@ -2444,11 +2457,12 @@
     }
 
     // 테이블 헤더 (고정 영역 안에 포함시켜서 같이 천장에 붙어있게 만듦)
-    const rowCols = dutyEditMode ? '1fr 1.5fr 24px' : '1fr 1.5fr';
-    html += '<div style="display:grid; grid-template-columns: ' + rowCols + '; gap: 4px; font-weight: bold; color: var(--text-sub); text-align: center; font-size: 13px;"><div>날짜</div><div>감독 교사</div>' + (dutyEditMode ? '<div></div>' : '') + '</div>';
+    const rowCols = (dutyEditMode && isAdmin) ? '1fr 1.5fr 24px' : '1fr 1.5fr';
+    html += '<div style="display:grid; grid-template-columns: ' + rowCols + '; gap: 4px; font-weight: bold; color: var(--text-sub); text-align: center; font-size: 13px;"><div>날짜</div><div>감독 교사</div>' + ((dutyEditMode && isAdmin) ? '<div></div>' : '') + '</div>';
 
-    // 📅 학사일정으로 평일 채우기: 기간 안 평일(방학·휴업일 제외)을 빈 줄로 한 번에 깔아준다.
-    if (dutyEditMode) {
+    // 📅 학사일정으로 평일 채우기 / "+ 한 줄 추가": 날짜 줄 자체를 새로 만들거나 지우는 건 구조적인
+    // 작업이라 관리자만 할 수 있게 함. 일반 교사는 이미 있는 날짜의 이름 칸만 채우면 됨.
+    if (dutyEditMode && isAdmin) {
       html += '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:8px; padding:7px; background:var(--tt-bg); border-radius:8px;">' +
         '<span style="font-size:10px; color:var(--text-sub); width:100%;">학사일정에서 방학·휴업일을 뺀 평일을 빈 줄로 깔아줍니다 (이미 있는 날짜는 건너뜀). 감독이 없는 날은 이름을 비워두면 저장 때 자동으로 빠져요.</span>' +
         '<input type="date" value="' + dutyFillFrom + '" style="flex:1; min-width:0; font-size:11px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);" onchange="setDutyFillFrom(this.value)">' +
@@ -2456,14 +2470,13 @@
         '<input type="date" value="' + dutyFillTo + '" style="flex:1; min-width:0; font-size:11px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);" onchange="setDutyFillTo(this.value)">' +
         '<button class="top-btn" style="flex:0 0 100%; padding:5px; font-size:11px;" onclick="fillDutyRowsFromAcademicCalendar(\'' + sheetName + '\')">📅 학사일정으로 평일 채우기</button>' +
       '</div>';
-    }
 
-    // "한 줄 추가" 버튼: 누를 때마다 아래에 빈 줄이 생기고, 원하는 만큼 만든 뒤 한 번에 저장한다.
-    if (dutyEditMode) {
       html += '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;">' +
         '<span style="font-size:10px; color:var(--text-sub);">한 줄씩 직접 넣으려면 이걸 여러 번 눌러 줄을 만든 뒤 마지막에 저장하세요.</span>' +
         '<button class="top-btn" style="padding:4px 8px; font-size:11px; flex-shrink:0;" onclick="addBlankDutyRow(\'' + sheetName + '\')">+ 한 줄 추가</button>' +
       '</div>';
+    } else if (dutyEditMode && !isAdmin) {
+      html += '<div style="font-size:10px; color:var(--text-sub); margin-top:8px;">이미 있는 날짜의 이름 칸을 눌러 입력·수정할 수 있어요. 날짜를 새로 추가하거나 지우는 건 관리자만 할 수 있습니다.</div>';
     }
 
     html += '</div>'; // 상단 고정 영역 끝!
@@ -2515,9 +2528,9 @@
             return '<input type="text" value="' + escapeHtmlAttr(colVal) + '" style="width:100%; box-sizing:border-box; font-size:12px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:inherit; font-weight:inherit;" onblur="saveDutyCell(\'' + sheetName + '\', \'' + row.date + '\', ' + (idx + 1) + ', this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">';
           }).join('') + '</div>';
 
-          html += '<div ' + rowId + ' style="' + rowStyle + '">' + dateCell + nameCellHtml +
-            '<button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="deleteDutyRow(\'' + sheetName + '\', \'' + row.date + '\')" title="이 날짜 전체 삭제">🗑</button>' +
-          '</div>';
+          const deleteBtnHtml = isAdmin ? ('<button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="deleteDutyRow(\'' + sheetName + '\', \'' + row.date + '\')" title="이 날짜 전체 삭제">🗑</button>') : '';
+
+          html += '<div ' + rowId + ' style="' + rowStyle + '">' + dateCell + nameCellHtml + deleteBtnHtml + '</div>';
         }
       });
     }
@@ -3022,7 +3035,14 @@
 
   async function openScheduleModal() {
     document.getElementById('schedule-overlay').style.display = 'flex';
-    document.getElementById('schedule-admin-only-tools').style.display = (window.currentTeacher && window.currentTeacher.is_admin) ? 'flex' : 'none';
+    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
+    document.getElementById('schedule-admin-only-tools').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('schedule-semester-switch').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('schedule-neis-check-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+    document.getElementById('schedule-new-teacher-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+    document.getElementById('schedule-delete-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+    document.getElementById('schedule-teacher-select').style.display = isAdmin ? '' : 'none';
+    document.getElementById('schedule-my-name-label').style.display = isAdmin ? 'none' : 'flex';
     scheduleEditMode = false;
     scheduleNewTeacherMode = false;
     currentScheduleTeacherName = null;
@@ -3059,11 +3079,21 @@
   }
 
   async function loadScheduleModalData() {
+    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
     const sel = document.getElementById('schedule-teacher-select');
     sel.innerHTML = '<option value="">불러오는 중...</option>';
     try {
       window.modalSchedules = await gasGetSchedule(scheduleModalSemester);
     } catch(e) { window.modalSchedules = {}; }
+
+    if (!isAdmin) {
+      const myName = window.currentTeacher && window.currentTeacher.name;
+      document.getElementById('schedule-my-name-label').innerText = myName ? (myName + ' 선생님') : '';
+      currentScheduleTeacherName = myName || null;
+      selectTeacherForSchedule(myName);
+      return;
+    }
+
     populateScheduleTeacherSelect();
     currentScheduleTeacherName = null;
     if (sel.options.length > 0) {
@@ -3269,11 +3299,8 @@
     return teachers;
   }
 
-  async function handleTimetableExcelFile(event) {
-    const file = event.target.files && event.target.files[0];
-    event.target.value = '';
-    if (!file) return;
-
+  // 시간표 관리 모달의 엑셀 업로드, 관리자 설정의 엑셀 업로드가 같이 쓰는 핵심 로직.
+  async function handleTimetableExcelFileCore(file, targetSemester) {
     let teachers;
     try {
       const buf = await file.arrayBuffer();
@@ -3286,9 +3313,6 @@
 
     const names = Object.keys(teachers);
     if (names.length === 0) { customAlert('엑셀에서 선생님 시간표를 찾지 못했습니다.'); return; }
-
-    const semesterEl = document.getElementById('tt-excel-semester');
-    const targetSemester = (semesterEl && semesterEl.value) || scheduleModalSemester;
 
     const ok = await customConfirm(
       '엑셀에서 ' + names.length + '명 선생님의 ' + targetSemester + ' 시간표를 찾았습니다.\n\n' +
@@ -3319,7 +3343,7 @@
 
     scheduleModalSemester = targetSemester;
     updateScheduleSemesterButtons();
-    await loadScheduleModalData();
+    if (document.getElementById('schedule-overlay').style.display === 'flex') await loadScheduleModalData();
     if (targetSemester === window.currentActiveSemester) fetchSchedule();
 
     if (newAccountNames.length) {
@@ -3330,6 +3354,25 @@
     } else {
       customAlert(okCount + '명 선생님의 ' + targetSemester + ' 시간표를 모두 불러왔습니다.');
     }
+  }
+
+  async function handleTimetableExcelFile(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const semesterEl = document.getElementById('tt-excel-semester');
+    const targetSemester = (semesterEl && semesterEl.value) || scheduleModalSemester;
+    await handleTimetableExcelFileCore(file, targetSemester);
+  }
+
+  // 관리자 설정 화면에서 바로 올리는 경우 — 시간표 관리 모달을 열지 않고도 엑셀만 바로 반영한다.
+  async function handleTimetableExcelFileAdmin(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const semesterEl = document.getElementById('tt-excel-semester-admin');
+    const targetSemester = (semesterEl && semesterEl.value) || window.currentActiveSemester || getActiveSemester();
+    await handleTimetableExcelFileCore(file, targetSemester);
   }
 
   function renderSearchTimetable(init = false) {
