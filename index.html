@@ -257,6 +257,26 @@
       </div>
 
       <div style="margin-bottom:20px;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 날짜 설정</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 기간으로 화면이 지금 몇 학기인지 자동으로 판단합니다(시간표 화면 전환, 감독표 자동 채우기에 같이 쓰입니다).</div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="width:40px; font-weight:700;">1학기</span>
+            <input type="date" id="sem1-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+            <span>~</span>
+            <input type="date" id="sem1-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="width:40px; font-weight:700;">2학기</span>
+            <input type="date" id="sem2-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+            <span>~</span>
+            <input type="date" id="sem2-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+          </div>
+        </div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveSemesterRanges()">학기 날짜 저장</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🔗 즐겨찾기 고정 링크 (모두에게 같게 보임)</div>
         <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
           <input type="text" id="fixed-bm-name-0" placeholder="이름 (예: 업무포탈)">
@@ -293,7 +313,8 @@
         <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학기가 바뀌어 선생님 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
-          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI()">시간표 전체 삭제</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('1학기')">1학기 시간표 삭제</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('2학기')">2학기 시간표 삭제</button>
         </div>
       </div>
 
@@ -406,7 +427,7 @@
     </div>
 
 <div class="overlay" id="duty-overlay">
-  <div class="modal-box" style="width: 380px; max-height: 80vh; display: flex; flex-direction: column;">
+  <div class="modal-box" style="width: 420px; max-width: 92vw; max-height: 80vh; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 15px;">
       <div id="duty-modal-title" style="font-weight: 800; font-size: 16px;">🌙 야자 감독표</div>
       <button class="top-btn" id="duty-edit-toggle" style="font-size:11px; padding:4px 8px;" onclick="toggleDutyEditMode()">✏️ 수정 모드</button>
@@ -422,11 +443,17 @@
 
 <div class="overlay" id="schedule-overlay">
   <div class="modal-box" style="width: 900px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
-      <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap:10px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
+        <div class="tab-switch" id="schedule-semester-switch">
+          <button class="tab-btn" id="sched-sem-1" onclick="switchScheduleModalSemester('1학기')">1학기</button>
+          <button class="tab-btn" id="sched-sem-2" onclick="switchScheduleModalSemester('2학기')">2학기</button>
+        </div>
+      </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <span id="schedule-admin-only-tools" style="display:none; gap:8px; align-items:center;">
-          <select id="tt-excel-semester" class="mini-select" style="font-size:11px;" title="이 업로드가 몇 학기 것인지 표시용으로만 씁니다">
+          <select id="tt-excel-semester" class="mini-select" style="font-size:11px;" title="이 엑셀을 어느 학기로 저장할지 고릅니다 (위 학기 탭과 같이 움직입니다)">
             <option value="1학기">1학기</option>
             <option value="2학기">2학기</option>
           </select>
@@ -708,6 +735,7 @@
           <div style="display:flex; align-items:center; gap:7px;">
             <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.7 14.7 9l7 .6-5.3 4.6 1.6 6.9L12 17.3l-6 3.8 1.6-6.9L2.3 9.6l7-.6z"/></svg></div>
             내 시간표 <span id="my-tt-name" style="font-size:13px; font-weight:800; color:var(--accent-color);">(미설정)</span>
+            <span id="active-semester-label" style="font-size:10px; font-weight:700; color:var(--text-sub); background:var(--tt-bg); padding:2px 6px; border-radius:6px;"></span>
           </div>
           <div style="display:flex; gap:4px;">
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
@@ -870,7 +898,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.5';
+  var BUILD_ID = '2026-09-26.6';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1068,6 +1096,7 @@
     document.getElementById('user-menu-dropdown').style.display = 'none';
     loadTeacherAccountList();
     loadFixedBookmarks();
+    loadSemesterRangesUI();
   }
 
   function closeAdminSettingsModal() {
@@ -1225,14 +1254,14 @@
     }
   }
 
-  async function resetTimetableUI() {
-    if (!await customConfirm('시간표 전체를 정말 삭제할까요? 되돌릴 수 없습니다.')) return;
-    if (!await customConfirm('한 번 더 확인합니다 — 정말로 시간표를 전부 지울까요?')) return;
+  async function resetTimetableUI(semester) {
+    if (!await customConfirm(semester + ' 시간표를 정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+    if (!await customConfirm('한 번 더 확인합니다 — 정말로 ' + semester + ' 시간표를 전부 지울까요?')) return;
     try {
-      const { error } = await sb.rpc('admin_reset_timetable');
+      const { error } = await sb.rpc('admin_reset_timetable', { p_semester: semester });
       if (error) throw error;
-      customAlert('시간표를 전부 지웠습니다.');
-      await fetchSchedule();
+      customAlert(semester + ' 시간표를 전부 지웠습니다.');
+      if (semester === window.currentActiveSemester) await fetchSchedule();
     } catch (e) {
       customAlert('실패: ' + (e && e.message ? e.message : e));
     }
@@ -1311,21 +1340,21 @@
   }
 
   // ----- 시간표 -----
-  async function gasGetSchedule() {
-    const { data, error } = await sb.from('timetable').select('teacher_name, cells');
+  async function gasGetSchedule(semester) {
+    const { data, error } = await sb.from('timetable').select('teacher_name, cells').eq('semester', semester);
     if (error) throw error;
     const result = {};
     (data || []).forEach(function(row) { result[row.teacher_name] = row.cells; });
     return result;
   }
 
-  async function gasSetSchedule(name, schedule) {
-    const { error } = await sb.from('timetable').upsert({ teacher_name: name, cells: schedule }, { onConflict: 'teacher_name' });
+  async function gasSetSchedule(name, schedule, semester) {
+    const { error } = await sb.from('timetable').upsert({ teacher_name: name, cells: schedule, semester: semester }, { onConflict: 'teacher_name,semester' });
     if (error) throw error;
   }
 
-  async function gasDeleteSchedule(name) {
-    const { error } = await sb.from('timetable').delete().eq('teacher_name', name);
+  async function gasDeleteSchedule(name, semester) {
+    const { error } = await sb.from('timetable').delete().eq('teacher_name', name).eq('semester', semester);
     if (error) throw error;
   }
 
@@ -2188,13 +2217,20 @@
   let currentDutyRows = [];
   let pendingNewDutyRows = [];
   let dutyRowIdCounter = 0;
+  let dutyFillFrom = '';
+  let dutyFillTo = '';
 
-  function openDutyModal(sheetName, icon) {
+  async function openDutyModal(sheetName, icon) {
     document.getElementById('duty-modal-title').innerText = icon + ' ' + sheetName + '표';
     document.getElementById('duty-overlay').style.display = 'flex';
     currentDutySheetName = sheetName;
     dutyEditMode = false;
     pendingNewDutyRows = [];
+    await ensureSemesterRangesLoaded();
+    const activeSem = window.currentActiveSemester || getActiveSemester();
+    const r = (window.semesterRanges || {})[activeSem] || {};
+    dutyFillFrom = r.start || '';
+    dutyFillTo = r.end || '';
     updateDutyEditToggleBtn();
     fetchDutyData(sheetName, true);
   }
@@ -2262,14 +2298,86 @@
     if (p) p.names[idx] = value;
   }
 
+  function setDutyFillFrom(value) { dutyFillFrom = value; }
+  function setDutyFillTo(value) { dutyFillTo = value; }
+
+  // NEIS 학사일정에서 "방학/휴업/휴일"로 표시된 날짜만 뽑아 돌려준다 — 평일 채우기에서 뺄 날짜.
+  // (달력 화면에서 날짜를 빨갛게 표시할 때 쓰는 필터와 달리 "기념일"은 넣지 않는다 — 기념일이어도
+  // 보통 등교하는 평일이라 감독은 그대로 필요할 수 있어서.)
+  async function fetchAcademicVacationDates(fromDash, toDash) {
+    const from = fromDash.replace(/-/g, '');
+    const to = toDash.replace(/-/g, '');
+    const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&pIndex=1&pSize=1000' +
+      '&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + from + '&AA_TO_YMD=' + to;
+    const res = await fetch(url);
+    const data = await res.json();
+    const out = {};
+    if (data.SchoolSchedule && data.SchoolSchedule[1] && data.SchoolSchedule[1].row) {
+      data.SchoolSchedule[1].row.forEach(function(r) {
+        const ev = r.EVENT_NM || '';
+        if (ev.includes('휴업') || ev.includes('방학') || ev.includes('휴일')) {
+          out[neisDateToIso(r.AA_YMD)] = true;
+        }
+      });
+    }
+    return out;
+  }
+
+  async function fillDutyRowsFromAcademicCalendar(sheetName) {
+    const from = dutyFillFrom, to = dutyFillTo;
+    if (!from || !to) return customAlert('시작일과 종료일을 먼저 입력해주세요.');
+    if (from > to) return customAlert('시작일이 종료일보다 늦을 수 없습니다.');
+
+    const fromD = new Date(from + 'T00:00:00');
+    const toD = new Date(to + 'T00:00:00');
+    if ((toD - fromD) / 86400000 > 400) return customAlert('한 번에 채울 수 있는 기간은 400일 이내입니다.');
+
+    let vacationDates;
+    try {
+      vacationDates = await fetchAcademicVacationDates(from, to);
+    } catch(e) {
+      customAlert('학사일정을 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
+      return;
+    }
+
+    const existingDates = {};
+    currentDutyRows.forEach(function(r) { existingDates[r.date] = true; });
+    pendingNewDutyRows.forEach(function(p) { if (p.date) existingDates[p.date] = true; });
+
+    const cols = DUTY_BOARD_COLS[sheetName] || 1;
+    let added = 0, skippedExisting = 0, skippedVacation = 0;
+
+    for (let d = new Date(fromD); d <= toD; d.setDate(d.getDate() + 1)) {
+      const wd = d.getDay();
+      if (wd === 0 || wd === 6) continue; // 평일만
+      const dStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      if (existingDates[dStr]) { skippedExisting++; continue; }
+      if (vacationDates[dStr]) { skippedVacation++; continue; }
+      dutyRowIdCounter++;
+      pendingNewDutyRows.push({ id: dutyRowIdCounter, date: dStr, names: new Array(cols).fill('') });
+      existingDates[dStr] = true;
+      added++;
+    }
+
+    pendingNewDutyRows.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+    renderDutyModal(sheetName);
+
+    customAlert(from + ' ~ ' + to + ' 사이 평일 중 ' + added + '일을 빈 줄로 추가했습니다.' +
+      (skippedVacation ? ('\n(방학·휴업일 등 ' + skippedVacation + '일은 제외)') : '') +
+      (skippedExisting ? ('\n(이미 등록된 ' + skippedExisting + '일은 건너뜀)') : '') +
+      (added ? '\n\n감독이 있는 날짜만 이름을 채우고, 없는 날은 비워둔 채 저장하면 자동으로 빠집니다.' : ''));
+  }
+
   async function saveAllPendingDutyRows(sheetName) {
-    const invalid = pendingNewDutyRows.some(function(p) {
-      return !p.date || !p.names.some(function(v) { return v.trim() !== ''; });
-    });
-    if (invalid) { customAlert('모든 줄에 날짜와 이름을 하나 이상 입력해주세요.'); return; }
+    const missingDate = pendingNewDutyRows.some(function(p) { return !p.date; });
+    if (missingDate) { customAlert('날짜가 비어 있는 줄이 있습니다. 날짜를 입력하거나 그 줄을 지워주세요.'); return; }
+
+    const rowsToSave = pendingNewDutyRows.filter(function(p) { return p.names.some(function(v) { return v.trim() !== ''; }); });
+    const skipped = pendingNewDutyRows.length - rowsToSave.length;
+    if (rowsToSave.length === 0) { customAlert('저장할 내용이 없습니다 — 이름을 하나 이상 입력해주세요.'); return; }
 
     try {
-      for (const p of pendingNewDutyRows) {
+      for (const p of rowsToSave) {
         for (let idx = 0; idx < p.names.length; idx++) {
           const v = p.names[idx].trim();
           if (v === '') continue;
@@ -2279,6 +2387,7 @@
       pendingNewDutyRows = [];
       fetchDutyData(sheetName);
       checkAllDuties();
+      if (skipped > 0) customAlert(rowsToSave.length + '개 저장했습니다. (이름 없는 ' + skipped + '개 줄은 건너뛰었습니다)');
     } catch(e) { customAlert('저장 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
@@ -2338,10 +2447,21 @@
     const rowCols = dutyEditMode ? '1fr 1.5fr 24px' : '1fr 1.5fr';
     html += '<div style="display:grid; grid-template-columns: ' + rowCols + '; gap: 4px; font-weight: bold; color: var(--text-sub); text-align: center; font-size: 13px;"><div>날짜</div><div>감독 교사</div>' + (dutyEditMode ? '<div></div>' : '') + '</div>';
 
+    // 📅 학사일정으로 평일 채우기: 기간 안 평일(방학·휴업일 제외)을 빈 줄로 한 번에 깔아준다.
+    if (dutyEditMode) {
+      html += '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:8px; padding:7px; background:var(--tt-bg); border-radius:8px;">' +
+        '<span style="font-size:10px; color:var(--text-sub); width:100%;">학사일정에서 방학·휴업일을 뺀 평일을 빈 줄로 깔아줍니다 (이미 있는 날짜는 건너뜀). 감독이 없는 날은 이름을 비워두면 저장 때 자동으로 빠져요.</span>' +
+        '<input type="date" value="' + dutyFillFrom + '" style="flex:1; min-width:0; font-size:11px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);" onchange="setDutyFillFrom(this.value)">' +
+        '<span style="font-size:11px;">~</span>' +
+        '<input type="date" value="' + dutyFillTo + '" style="flex:1; min-width:0; font-size:11px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);" onchange="setDutyFillTo(this.value)">' +
+        '<button class="top-btn" style="flex:0 0 100%; padding:5px; font-size:11px;" onclick="fillDutyRowsFromAcademicCalendar(\'' + sheetName + '\')">📅 학사일정으로 평일 채우기</button>' +
+      '</div>';
+    }
+
     // "한 줄 추가" 버튼: 누를 때마다 아래에 빈 줄이 생기고, 원하는 만큼 만든 뒤 한 번에 저장한다.
     if (dutyEditMode) {
       html += '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;">' +
-        '<span style="font-size:10px; color:var(--text-sub);">여러 명을 추가하려면 "+ 한 줄 추가"를 여러 번 눌러 줄을 만든 뒤 마지막에 저장하세요.</span>' +
+        '<span style="font-size:10px; color:var(--text-sub);">한 줄씩 직접 넣으려면 이걸 여러 번 눌러 줄을 만든 뒤 마지막에 저장하세요.</span>' +
         '<button class="top-btn" style="padding:4px 8px; font-size:11px; flex-shrink:0;" onclick="addBlankDutyRow(\'' + sheetName + '\')">+ 한 줄 추가</button>' +
       '</div>';
     }
@@ -2524,6 +2644,70 @@
       loadBookmarks();
       customAlert('고정 링크를 저장했습니다.');
     } catch(e) { customAlert('저장 실패. 인터넷 연결을 확인해주세요.'); }
+  }
+
+  // ===== 📅 학기 날짜 설정 (시간표 자동 전환 + 감독표 자동 채우기가 같이 씀) =====
+  function todayYmdDash() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  async function gasGetSemesterRanges() {
+    try {
+      const { data, error } = await sb.from('app_settings').select('value').eq('key', 'semester_ranges').maybeSingle();
+      if (!error && data && data.value) return data.value;
+    } catch(e) {}
+    return {};
+  }
+
+  async function ensureSemesterRangesLoaded() {
+    if (!window.semesterRanges) window.semesterRanges = await gasGetSemesterRanges();
+    return window.semesterRanges;
+  }
+
+  // 오늘 날짜가 등록된 학기 기간 중 어디에 속하는지로 "지금 학기"를 정한다.
+  // 기간 밖(방학 중이거나 아직 날짜를 안 정한 경우)이면, 이미 시작한 학기 중 가장 최근 걸 쓴다.
+  function getActiveSemester() {
+    const ranges = window.semesterRanges || {};
+    const today = todayYmdDash();
+    const r1 = ranges['1학기'], r2 = ranges['2학기'];
+    if (r1 && r1.start && r1.end && today >= r1.start && today <= r1.end) return '1학기';
+    if (r2 && r2.start && r2.end && today >= r2.start && today <= r2.end) return '2학기';
+    const candidates = [];
+    if (r1 && r1.start) candidates.push({ sem: '1학기', start: r1.start });
+    if (r2 && r2.start) candidates.push({ sem: '2학기', start: r2.start });
+    candidates.sort(function(a, b) { return a.start < b.start ? -1 : 1; });
+    let chosen = '1학기';
+    candidates.forEach(function(c) { if (c.start <= today) chosen = c.sem; });
+    return chosen;
+  }
+
+  async function loadSemesterRangesUI() {
+    await ensureSemesterRangesLoaded();
+    const r = window.semesterRanges || {};
+    const r1 = r['1학기'] || {}; const r2 = r['2학기'] || {};
+    const s1 = document.getElementById('sem1-start'); if (s1) s1.value = r1.start || '';
+    const e1 = document.getElementById('sem1-end'); if (e1) e1.value = r1.end || '';
+    const s2 = document.getElementById('sem2-start'); if (s2) s2.value = r2.start || '';
+    const e2 = document.getElementById('sem2-end'); if (e2) e2.value = r2.end || '';
+  }
+
+  async function saveSemesterRanges() {
+    const s1 = document.getElementById('sem1-start').value;
+    const e1 = document.getElementById('sem1-end').value;
+    const s2 = document.getElementById('sem2-start').value;
+    const e2 = document.getElementById('sem2-end').value;
+    if ((s1 && e1 && s1 > e1) || (s2 && e2 && s2 > e2)) {
+      return customAlert('시작일이 종료일보다 늦을 수 없습니다.');
+    }
+    const value = { '1학기': { start: s1, end: e1 }, '2학기': { start: s2, end: e2 } };
+    try {
+      const { error } = await sb.from('app_settings').upsert({ key: 'semester_ranges', value: value });
+      if (error) throw error;
+      window.semesterRanges = value;
+      customAlert('학기 날짜를 저장했습니다.');
+      await fetchSchedule();
+    } catch(e) { customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
   }
 
   function openBookmarkSettings() { document.getElementById('bookmark-overlay').style.display = 'flex'; }
@@ -2765,7 +2949,11 @@
 
   async function fetchSchedule() {
     try {
-      const data = await gasGetSchedule();
+      await ensureSemesterRangesLoaded();
+      window.currentActiveSemester = getActiveSemester();
+      const semLabelEl = document.getElementById('active-semester-label');
+      if (semLabelEl) semLabelEl.innerText = window.currentActiveSemester;
+      const data = await gasGetSchedule(window.currentActiveSemester);
       const sel = document.getElementById('search-select');
       sel.innerHTML = '<option value="">선택</option>';
       
@@ -2814,6 +3002,7 @@
   let scheduleEditMode = false;
   let scheduleNewTeacherMode = false;
   let currentScheduleTeacherName = null;
+  let scheduleModalSemester = '1학기';
 
   function buildScheduleEditGridHTML() {
     let html = '<div class="cal-header"></div>';
@@ -2831,7 +3020,7 @@
     return html;
   }
 
-  function openScheduleModal() {
+  async function openScheduleModal() {
     document.getElementById('schedule-overlay').style.display = 'flex';
     document.getElementById('schedule-admin-only-tools').style.display = (window.currentTeacher && window.currentTeacher.is_admin) ? 'flex' : 'none';
     scheduleEditMode = false;
@@ -2840,19 +3029,58 @@
     document.getElementById('schedule-newname-row').style.display = 'none';
     document.getElementById('schedule-select-row').style.display = 'flex';
     document.getElementById('schedule-edit-grid').innerHTML = buildScheduleEditGridHTML();
-    populateScheduleTeacherSelect();
-    const sel = document.getElementById('schedule-teacher-select');
-    if (sel.value) selectTeacherForSchedule(sel.value);
+    await ensureSemesterRangesLoaded();
+    scheduleModalSemester = window.currentActiveSemester || getActiveSemester();
+    updateScheduleSemesterButtons();
+    await loadScheduleModalData();
     updateScheduleEditToggleBtn();
     document.getElementById('schedule-save-btn').style.display = 'none';
   }
 
   function closeScheduleModal() { document.getElementById('schedule-overlay').style.display = 'none'; }
 
+  function updateScheduleSemesterButtons() {
+    const b1 = document.getElementById('sched-sem-1');
+    const b2 = document.getElementById('sched-sem-2');
+    if (b1) b1.classList.toggle('active', scheduleModalSemester === '1학기');
+    if (b2) b2.classList.toggle('active', scheduleModalSemester === '2학기');
+    const semesterEl = document.getElementById('tt-excel-semester');
+    if (semesterEl) semesterEl.value = scheduleModalSemester;
+  }
+
+  async function switchScheduleModalSemester(sem) {
+    if (scheduleModalSemester === sem) return;
+    scheduleModalSemester = sem;
+    updateScheduleSemesterButtons();
+    scheduleNewTeacherMode = false;
+    document.getElementById('schedule-newname-row').style.display = 'none';
+    document.getElementById('schedule-select-row').style.display = 'flex';
+    await loadScheduleModalData();
+  }
+
+  async function loadScheduleModalData() {
+    const sel = document.getElementById('schedule-teacher-select');
+    sel.innerHTML = '<option value="">불러오는 중...</option>';
+    try {
+      window.modalSchedules = await gasGetSchedule(scheduleModalSemester);
+    } catch(e) { window.modalSchedules = {}; }
+    populateScheduleTeacherSelect();
+    currentScheduleTeacherName = null;
+    if (sel.options.length > 0) {
+      sel.selectedIndex = 0;
+      selectTeacherForSchedule(sel.value);
+    } else {
+      scheduleEditMode = false;
+      updateScheduleEditToggleBtn();
+      document.getElementById('schedule-save-btn').style.display = 'none';
+      document.getElementById('schedule-edit-grid').innerHTML = buildScheduleEditGridHTML();
+    }
+  }
+
   function populateScheduleTeacherSelect() {
     const sel = document.getElementById('schedule-teacher-select');
     sel.innerHTML = '';
-    Object.keys(window.allSchedules).sort().forEach(function(name) {
+    Object.keys(window.modalSchedules || {}).sort().forEach(function(name) {
       sel.innerHTML += '<option value="' + name + '">' + name + '</option>';
     });
   }
@@ -2863,7 +3091,7 @@
     updateScheduleEditToggleBtn();
     setScheduleGridEditable(false);
     document.getElementById('schedule-save-btn').style.display = 'none';
-    const schedule = window.allSchedules[name];
+    const schedule = (window.modalSchedules || {})[name];
     if (schedule) applyScheduleToGrid('sched-edit', schedule);
   }
 
@@ -2926,9 +3154,11 @@
     }
 
     try {
-      await gasSetSchedule(name, schedule);
-      customAlert(name + ' 선생님의 시간표가 저장되었습니다.');
-      await fetchSchedule();
+      await gasSetSchedule(name, schedule, scheduleModalSemester);
+      customAlert(name + ' 선생님의 ' + scheduleModalSemester + ' 시간표가 저장되었습니다.');
+      if (!window.modalSchedules) window.modalSchedules = {};
+      window.modalSchedules[name] = schedule;
+      if (scheduleModalSemester === window.currentActiveSemester) fetchSchedule();
       scheduleNewTeacherMode = false;
       document.getElementById('schedule-newname-row').style.display = 'none';
       document.getElementById('schedule-select-row').style.display = 'flex';
@@ -2941,12 +3171,13 @@
   async function deleteScheduleTeacher() {
     const name = currentScheduleTeacherName;
     if (!name) return customAlert('삭제할 선생님을 먼저 선택하세요.');
-    if (!await customConfirm(name + ' 선생님의 시간표 행 전체를 삭제할까요? 되돌릴 수 없습니다.')) return;
+    if (!await customConfirm(name + ' 선생님의 ' + scheduleModalSemester + ' 시간표를 삭제할까요? 되돌릴 수 없습니다.')) return;
 
     try {
-      await gasDeleteSchedule(name);
-      customAlert(name + ' 선생님의 시간표가 삭제되었습니다.');
-      await fetchSchedule();
+      await gasDeleteSchedule(name, scheduleModalSemester);
+      customAlert(name + ' 선생님의 ' + scheduleModalSemester + ' 시간표가 삭제되었습니다.');
+      if (window.modalSchedules) delete window.modalSchedules[name];
+      if (scheduleModalSemester === window.currentActiveSemester) fetchSchedule();
       populateScheduleTeacherSelect();
       const sel = document.getElementById('schedule-teacher-select');
       if (sel.options.length > 0) {
@@ -3056,8 +3287,11 @@
     const names = Object.keys(teachers);
     if (names.length === 0) { customAlert('엑셀에서 선생님 시간표를 찾지 못했습니다.'); return; }
 
+    const semesterEl = document.getElementById('tt-excel-semester');
+    const targetSemester = (semesterEl && semesterEl.value) || scheduleModalSemester;
+
     const ok = await customConfirm(
-      '엑셀에서 ' + names.length + '명 선생님의 시간표를 찾았습니다.\n\n' +
+      '엑셀에서 ' + names.length + '명 선생님의 ' + targetSemester + ' 시간표를 찾았습니다.\n\n' +
       '이 내용으로 저장할까요? (엑셀에 있는 선생님은 새 내용으로 바뀌고, 엑셀에 없는 기존 선생님은 그대로 남습니다)'
     );
     if (!ok) return;
@@ -3069,7 +3303,7 @@
 
     for (const name of names) {
       try {
-        await gasSetSchedule(name, teachers[name]);
+        await gasSetSchedule(name, teachers[name], targetSemester);
         okCount++;
       } catch (e) {
         failNames.push(name);
@@ -3083,16 +3317,10 @@
       }
     }
 
-    const semesterEl = document.getElementById('tt-excel-semester');
-    if (semesterEl) {
-      try { await sb.from('app_settings').upsert({ key: 'current_semester', value: { label: semesterEl.value } }); } catch (e) {}
-    }
-
-    await fetchSchedule();
-    populateScheduleTeacherSelect();
-    if (currentScheduleTeacherName && window.allSchedules[currentScheduleTeacherName]) {
-      selectTeacherForSchedule(currentScheduleTeacherName);
-    }
+    scheduleModalSemester = targetSemester;
+    updateScheduleSemesterButtons();
+    await loadScheduleModalData();
+    if (targetSemester === window.currentActiveSemester) fetchSchedule();
 
     if (newAccountNames.length) {
       customAlert(okCount + '명 저장 완료. 이 중 ' + newAccountNames.length + '명은 로그인 계정도 새로 만들었습니다 (초기 비밀번호 123456): ' + newAccountNames.join(', ') +
@@ -3100,7 +3328,7 @@
     } else if (failNames.length) {
       customAlert(okCount + '명 저장 완료, ' + failNames.length + '명은 실패했습니다: ' + failNames.join(', '));
     } else {
-      customAlert(okCount + '명 선생님의 시간표를 모두 불러왔습니다.');
+      customAlert(okCount + '명 선생님의 ' + targetSemester + ' 시간표를 모두 불러왔습니다.');
     }
   }
 
