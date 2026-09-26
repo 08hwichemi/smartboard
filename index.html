@@ -125,11 +125,6 @@
     .tt-cell { border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background-color: var(--tt-bg); border: 1px solid var(--border-color); transition: background-color 0.3s; }
     .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; padding: 2px; }
     .tt-room { flex: 1; display: flex; align-items: center; justify-content: center; font-size: calc(var(--fz-tt) - 2px); font-weight: 600; background: rgba(0,0,0,0.06); text-align: center; }
-    /* 수업 변경(교환/보강)이 이번 주 실제 날짜에 걸리면 시간표 칸 위에 덧붙는 표시 */
-    .ttc-moved { color: var(--text-sub); font-style: italic; font-size: 0.85em; }
-    .ttc-badge { display: block; font-size: 9px; font-weight: 800; margin-top: 2px; padding: 1px 4px; border-radius: 4px; line-height: 1.3; }
-    .ttc-badge.ttc-exchange { background: var(--accent-secondary-soft); color: var(--accent-secondary-text); }
-    .ttc-badge.ttc-makeup { background: var(--alert-bg); color: var(--alert); }
     .tt-time { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--text-main); }
     .tt-time div { font-size: 12px; opacity: 0.9; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; line-height: 1.2; text-align: center;}
 
@@ -944,7 +939,7 @@
           <div style="display:flex; gap:4px;">
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁</button>
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
           </div>
         </div>
         <div class="timetable-grid" id="my-timetable-grid"></div>
@@ -1582,7 +1577,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.45';
+  var BUILD_ID = '2026-09-26.46';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4729,6 +4724,7 @@
 
     applyScheduleToGrid('search-tt', s);
     applyChangeOverlayToGrid('search-tt', n);
+    updateCellColors('search-tt');
     saveAllData();
   }
 
@@ -4802,51 +4798,50 @@
     } catch (e) { window.scheduleChangesRaw = []; }
   }
 
+  // 어떤 안내 문구나 뱃지도 없이, 실제로 그 요일에 무슨 수업이 있는지 "결과만" 보여준다.
+  // 원래 그 교시의 주인이었던 사람 칸은 빈 시간처럼 비우고, 지금 실제로 그 시간에
+  // 가르치는(또는 가르칠) 사람의 칸에 그 수업 내용을 평범한 시간표 칸처럼 그대로 넣는다.
   function applyChangeOverlayToGrid(prefix, teacherName) {
     if (!teacherName || !window.scheduleChangesRaw) return;
     const weekDates = getCurrentWeekDates();
     const changes = window.scheduleChangesRaw.filter(function(c) { return c.teacher_a === teacherName || c.teacher_b === teacherName; });
     if (changes.length === 0) return;
 
+    function clearCell(period, d) {
+      const subjEl = document.getElementById(prefix + '-' + period + '-' + d + '-s');
+      const roomEl = document.getElementById(prefix + '-' + period + '-' + d + '-r');
+      if (subjEl) subjEl.innerHTML = '';
+      if (roomEl) roomEl.innerText = '';
+    }
+    function fillCell(period, d, sourceTeacher, sourcePeriod, sourceDay) {
+      const schedule = window.allSchedules[sourceTeacher];
+      if (!schedule) return;
+      const j = (sourceDay - 1) * 7 + (sourcePeriod - 1);
+      const parts = (schedule[j] || '').split(String.fromCharCode(10));
+      const subjEl = document.getElementById(prefix + '-' + period + '-' + d + '-s');
+      const roomEl = document.getElementById(prefix + '-' + period + '-' + d + '-r');
+      if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '');
+      if (roomEl) roomEl.innerText = parts[1] || '';
+    }
+
     changes.forEach(function(c) {
       const dayIdx = weekDates.indexOf(c.change_date);
       if (dayIdx === -1) return;
       const d = dayIdx + 1;
 
-      if (c.type === 'exchange') {
-        const isA = c.teacher_a === teacherName;
-        const myPeriod = isA ? c.period_a : c.period_b;
-        const otherName = isA ? c.teacher_b : c.teacher_a;
-        const otherPeriod = isA ? c.period_b : c.period_a;
-
-        const origSubjEl = document.getElementById(prefix + '-' + myPeriod + '-' + d + '-s');
-        const origRoomEl = document.getElementById(prefix + '-' + myPeriod + '-' + d + '-r');
-        if (origSubjEl) origSubjEl.innerHTML = '<span class="ttc-moved">' + otherPeriod + '교시로 이동</span>';
-        if (origRoomEl) origRoomEl.innerText = '';
-
-        const mySchedule = window.allSchedules[teacherName];
-        if (mySchedule) {
-          const j = (d - 1) * 7 + (myPeriod - 1);
-          const parts = (mySchedule[j] || '').split(String.fromCharCode(10));
-          const subjEl = document.getElementById(prefix + '-' + otherPeriod + '-' + d + '-s');
-          const roomEl = document.getElementById(prefix + '-' + otherPeriod + '-' + d + '-r');
-          if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '') + '<span class="ttc-badge ttc-exchange">🔄 ' + otherName + '쌤과 교환(원래 ' + myPeriod + '교시)</span>';
-          if (roomEl) roomEl.innerText = parts[1] || '';
-        }
-      } else if (c.type === 'makeup') {
-        if (c.teacher_a === teacherName) {
-          const subjEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-s');
-          if (subjEl) subjEl.innerHTML += '<span class="ttc-badge ttc-makeup">🔁 ' + c.teacher_b + '쌤이 보강</span>';
-        } else if (c.teacher_b === teacherName) {
-          const otherSchedule = window.allSchedules[c.teacher_a];
-          if (otherSchedule) {
-            const j = (d - 1) * 7 + (c.period_a - 1);
-            const parts = (otherSchedule[j] || '').split(String.fromCharCode(10));
-            const subjEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-s');
-            const roomEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-r');
-            if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '') + '<span class="ttc-badge ttc-makeup">🔁 ' + c.teacher_a + '쌤 보강</span>';
-            if (roomEl) roomEl.innerText = parts[1] || '';
-          }
+      if (teacherName === c.teacher_a) {
+        // 원래 이 교시의 주인 — 오늘은 여기서 안 가르치므로 빈 시간으로 표시
+        clearCell(c.period_a, d);
+        // 교환이면 내 원래 수업을 상대방 교시(내 시간표 기준) 자리로 그대로 옮겨서 보여준다
+        if (c.type === 'exchange') fillCell(c.period_b, d, c.teacher_a, c.period_a, d);
+      }
+      if (teacherName === c.teacher_b) {
+        if (c.type === 'exchange') {
+          clearCell(c.period_b, d);
+          fillCell(c.period_a, d, c.teacher_b, c.period_b, d);
+        } else {
+          // 보강 — 상대방의 원래 수업을 내 시간표 같은 교시에 그대로 추가
+          fillCell(c.period_a, d, c.teacher_a, c.period_a, d);
         }
       }
     });
