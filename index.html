@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>부광고 통합 대시보드 - Chrome App Edition</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
   <style>
     :root {
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
@@ -15,7 +17,7 @@
     [data-theme="mint"] { --bg-color: #F2F7F6; --card-bg: #FFFFFF; --text-main: #1B3B36; --text-sub: #6E8B85; --border-color: #DCEAE7; --accent-color: #1F6E5C; --tt-bg: #E9F2F0; --accent-soft: #E3F1ED; --alert: #A5471F; --alert-bg: #FBEDE5; --alert-border: #E9BBA0; }
     [data-theme="dark"] { --bg-color: #14161B; --card-bg: #1B1E24; --text-main: #E7E9ED; --text-sub: #8A8F9C; --border-color: #2A2D35; --accent-color: #4C8DC2; --tt-bg: #1E212A; --accent-soft: #1E2A38; --alert: #E08469; --alert-bg: #2B1B17; --alert-border: #5C2E22; }
 
-    body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+    body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
 
     /* ===== 왼쪽 아이콘 레일 ===== */
     #app-shell { display: flex; height: 100vh; overflow: hidden; }
@@ -868,7 +870,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.4';
+  var BUILD_ID = '2026-09-26.5';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
