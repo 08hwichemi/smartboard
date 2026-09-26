@@ -17,7 +17,7 @@
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
-      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px;
+      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
       --accent-secondary: #2E8F8F; --accent-secondary-soft: #E3F3F3; --accent-secondary-text: #1F6B6B; --on-accent-secondary: #FFFFFF; }
@@ -212,8 +212,8 @@
     .half-cal-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 2px; flex: 1; min-height: 0; }
     .half-cal-cell { background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 5px; padding: 2px; display: flex; flex-direction: column; overflow: hidden; }
     .half-cal-date { font-size: 10px; font-weight: 800; display: flex; align-items: center; padding: 1px; flex: 0 0 auto; }
-    .half-cal-neis { font-size: calc(var(--fz-cal) - 3px); color: var(--accent-color); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; padding: 0 1px; flex: 0 0 auto; }
-    .half-cal-memo { flex: 1; font-size: calc(var(--fz-cal) - 2px); color: var(--text-main); padding: 1px; line-height: 1.2; overflow-y: auto; outline: none; cursor: text; word-break: break-all; white-space: pre-wrap; }
+    .half-cal-neis { font-size: calc(var(--fz-halfcal) - 1px); color: var(--accent-color); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; padding: 0 1px; flex: 0 0 auto; }
+    .half-cal-memo { flex: 1; font-size: var(--fz-halfcal); color: var(--text-main); padding: 1px; line-height: 1.2; overflow-y: auto; outline: none; cursor: text; word-break: break-all; white-space: pre-wrap; }
     .half-cal-memo:hover, .half-cal-memo:focus { background: rgba(0,0,0,0.03); border-radius: 3px; }
 
     #tour-overlay { display: none; }
@@ -829,8 +829,8 @@
             <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(1)">▶</button>
           </div>
           <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('cal', -1)">A-</button>
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('cal', 1)">A+</button>
+            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
+            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
             <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
@@ -1265,7 +1265,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.37';
+  var BUILD_ID = '2026-09-26.38';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3261,7 +3261,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
