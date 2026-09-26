@@ -922,7 +922,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.13';
+  var BUILD_ID = '2026-09-26.14';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1261,17 +1261,52 @@
   });
 
 
+  const TEACHER_ROLES = ['담임', '부장', '교감', '교장', '실무자'];
+
   async function loadTeacherAccountList() {
     const listEl = document.getElementById('teacher-account-list');
     listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--text-sub);">불러오는 중...</div>';
     try {
-      const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password').order('name');
+      await ensureClassStructureLoaded();
+      const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class').order('name');
       if (error) throw error;
       window.__teacherAccounts = data || [];
       renderTeacherAccountList();
     } catch (e) {
       listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:#E5484D;">불러오기 실패: ' + escapeHtmlAttr(e && e.message ? e.message : e) + '</div>';
     }
+  }
+
+  function gradeOptionsHtml(selectedGrade) {
+    const cs = window.classStructure || { gradeCount: 3 };
+    let html = '';
+    for (let g = 1; g <= cs.gradeCount; g++) {
+      html += '<option value="' + g + '"' + (selectedGrade === g ? ' selected' : '') + '>' + g + '학년</option>';
+    }
+    return html;
+  }
+
+  function classOptionsHtml(grade, selectedClass) {
+    const cs = window.classStructure || { classCounts: [] };
+    const count = (cs.classCounts && cs.classCounts[grade - 1]) || 1;
+    let html = '';
+    for (let c = 1; c <= count; c++) {
+      html += '<option value="' + c + '"' + (selectedClass === c ? ' selected' : '') + '>' + c + '반</option>';
+    }
+    return html;
+  }
+
+  function onHomeroomGradeChange(id) {
+    const gradeSel = document.getElementById('role-grade-' + id);
+    const classSel = document.getElementById('role-class-' + id);
+    const grade = parseInt(gradeSel.value) || 1;
+    classSel.innerHTML = classOptionsHtml(grade, null);
+  }
+
+  function onTeacherRoleChange(id) {
+    const roleSel = document.getElementById('role-select-' + id);
+    const wrap = document.getElementById('role-homeroom-wrap-' + id);
+    wrap.style.display = roleSel.value === '담임' ? 'inline-flex' : 'none';
   }
 
   function renderTeacherAccountList() {
@@ -1282,16 +1317,47 @@
     let html = '';
     accounts.forEach(function(t) {
       const isMe = t.id === window.currentTeacher.id;
-      html += '<div style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border-color); font-size:12px;">' +
+      const isHomeroom = t.role === '담임';
+      let roleOptions = '<option value="">미지정</option>';
+      TEACHER_ROLES.forEach(function(r) { roleOptions += '<option value="' + r + '"' + (t.role === r ? ' selected' : '') + '>' + r + '</option>'; });
+      html += '<div style="padding:8px 10px; border-bottom:1px solid var(--border-color); font-size:12px;">' +
+        '<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">' +
         '<div style="flex:1; font-weight:700;">' + escapeHtmlAttr(t.name) + (isMe ? ' (나)' : '') + '</div>' +
         '<div style="color:var(--text-sub); min-width:70px;">' + (t.is_admin ? '👑 관리자' : '일반 교사') + '</div>' +
         '<div style="color:var(--text-sub); min-width:80px;">' + (t.must_change_password ? '⏳ 초기 비번' : '설정 완료') + '</div>' +
         '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="toggleTeacherAdminUI(\'' + t.id + '\', ' + (!t.is_admin) + ')"' + (isMe ? ' disabled' : '') + '>' + (t.is_admin ? '관리자 해제' : '관리자 지정') + '</button>' +
         '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="resetTeacherPasswordUI(\'' + t.id + '\', \'' + escapeHtmlAttr(t.name) + '\')">비번 초기화</button>' +
         '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="deleteTeacherUI(\'' + t.id + '\', \'' + escapeHtmlAttr(t.name) + '\')"' + (isMe ? ' disabled' : '') + '>삭제</button>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:6px; padding-left:2px;">' +
+        '<span style="color:var(--text-sub); font-size:11px;">역할</span>' +
+        '<select id="role-select-' + t.id + '" class="mini-select" style="font-size:11px;" onchange="onTeacherRoleChange(\'' + t.id + '\')">' + roleOptions + '</select>' +
+        '<span id="role-homeroom-wrap-' + t.id + '" style="display:' + (isHomeroom ? 'inline-flex' : 'none') + '; gap:6px;">' +
+        '<select id="role-grade-' + t.id + '" class="mini-select" style="font-size:11px;" onchange="onHomeroomGradeChange(\'' + t.id + '\')">' + gradeOptionsHtml(t.homeroom_grade) + '</select>' +
+        '<select id="role-class-' + t.id + '" class="mini-select" style="font-size:11px;">' + classOptionsHtml(t.homeroom_grade || 1, t.homeroom_class) + '</select>' +
+        '</span>' +
+        '<button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="saveTeacherRoleUI(\'' + t.id + '\')">역할 저장</button>' +
+        '</div>' +
         '</div>';
     });
     listEl.innerHTML = html;
+  }
+
+  async function saveTeacherRoleUI(id) {
+    const roleSel = document.getElementById('role-select-' + id);
+    const role = roleSel.value || null;
+    let grade = null, cls = null;
+    if (role === '담임') {
+      grade = parseInt(document.getElementById('role-grade-' + id).value) || null;
+      cls = parseInt(document.getElementById('role-class-' + id).value) || null;
+    }
+    try {
+      const { error } = await sb.rpc('admin_set_teacher_role', { p_teacher_id: id, p_role: role, p_grade: grade, p_class: cls });
+      if (error) throw error;
+      loadTeacherAccountList();
+    } catch (e) {
+      customAlert('역할 저장 실패: ' + (e && e.message ? e.message : e));
+    }
   }
 
   async function addTeacherAccountUI() {
