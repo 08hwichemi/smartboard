@@ -106,7 +106,7 @@
     .timetable-grid { display: grid; grid-template-columns: 65px repeat(5, 1fr); grid-template-rows: 20px repeat(7, 1fr); gap: 4px; height: 100%; min-height: 0;}
     .tt-header { font-size: 13px; color: var(--text-main); text-align: center; font-weight: 700; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;}
     .tt-cell { border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background-color: var(--tt-bg); border: 1px solid var(--border-color); transition: background-color 0.3s; }
-    .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: break-all; line-height: 1.2; padding: 2px; }
+    .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; padding: 2px; }
     .tt-room { flex: 1; display: flex; align-items: center; justify-content: center; font-size: calc(var(--fz-tt) - 2px); font-weight: 600; background: rgba(0,0,0,0.06); text-align: center; }
     .tt-time { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--text-main); }
     .tt-time div { font-size: 12px; opacity: 0.9; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; line-height: 1.2; text-align: center;}
@@ -175,8 +175,7 @@
     .admin-tab-btn:hover { background: var(--bg-color); color: var(--text-main); }
     .admin-tab-btn.active { background: var(--accent-soft); color: var(--accent-color); }
 
-    .big-cal-wrapper { flex-direction: column; height: 100%; min-height: 0; animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .big-cal-wrapper { flex-direction: column; height: 100%; min-height: 0; }
 
     .schedule-marquee-wrap { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
     .schedule-marquee-track { display: inline-block; padding-left: 100%; animation: schedule-marquee 32s linear infinite; }
@@ -451,14 +450,14 @@
 
     <div class="quick-row">
       <div style="display:flex; gap:7px; flex-wrap:wrap;">
-        <button class="qbtn" onclick="openScheduleModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg>시간표 관리</button>
-        <button class="qbtn" onclick="openDutyModal('야자감독', '🌙')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>야자 감독표</button>
-        <button class="qbtn" onclick="openDutyModal('급식감독', '🍱')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>급식 감독표</button>
-        <button class="qbtn" onclick="openDutyModal('아침감독', '☀️')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>아침 감독표</button>
+        <button class="qbtn" style="border-bottom: 3px solid var(--accent-color);" onclick="openScheduleModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-color);"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg>시간표 관리</button>
+        <button class="qbtn" style="border-bottom: 3px solid #F07178;" onclick="openDutyModal('야자감독', '🌙')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#F07178;"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>야자 감독표</button>
+        <button class="qbtn" style="border-bottom: 3px solid #FF8A65;" onclick="openDutyModal('급식감독', '🍱')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#FF8A65;"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>급식 감독표</button>
+        <button class="qbtn" style="border-bottom: 3px solid #4DB6AC;" onclick="openDutyModal('아침감독', '☀️')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#4DB6AC;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>아침 감독표</button>
       </div>
 
-      <div style="display:flex; align-items:center; gap:7px; color:var(--text-sub); min-width:0; overflow:hidden;">
-        <div class="w-chip" style="width:20px; height:20px; border-radius:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
+      <div style="display:flex; align-items:center; gap:7px; color:var(--text-sub); min-width:0; overflow:hidden; background:var(--tt-bg); padding:5px 12px 5px 8px; border-radius:20px;">
+        <div class="w-chip" style="width:20px; height:20px; border-radius:6px; color:#8B7FE8;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
         <span style="font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;">다가오는 학사일정</span>
         <div class="schedule-marquee-wrap" id="upcoming-schedule-wrap">
           <span id="upcoming-schedule-teaser" class="schedule-marquee-track" style="font-size:11px; font-weight:600;">불러오는 중...</span>
@@ -491,8 +490,8 @@
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
         <div style="font-weight: 800; font-size: 15px; white-space:nowrap; flex:0 0 auto;">🧑‍🎓 명렬표</div>
-        <select id="roster-grade-select" class="mini-select" style="width:58px; flex:0 0 auto;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
-        <select id="roster-class-select" class="mini-select" style="width:58px; flex:0 0 auto;" onchange="onRosterClassChange()"><option value="">반</option></select>
+        <select id="roster-grade-select" class="mini-select" style="width:70px; flex:0 0 auto;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
+        <select id="roster-class-select" class="mini-select" style="width:62px; flex:0 0 auto;" onchange="onRosterClassChange()"><option value="">반</option></select>
       </div>
       <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px; flex:0 0 auto;" onclick="toggleRosterEditMode()">✏️ 수정</button>
     </div>
@@ -773,7 +772,7 @@
       </div>
     </div>
 
-    <div id="left-bottom-tt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
+    <div id="left-bottom-tt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; min-height: 0;">
       <div id="my-tt-widget" class="widget timetable-widget" style="min-width: 0;">
         <div class="widget-title">
           <div style="display:flex; align-items:center; gap:7px;">
@@ -820,7 +819,7 @@
       </div>
     </div>
 
-    <div id="left-bottom-cal" class="widget timetable-widget" style="display: none; flex: 1; min-height: 0; animation: fadeIn 0.3s ease-out;">
+    <div id="left-bottom-cal" class="widget timetable-widget" style="display: none; flex: 1; min-height: 0;">
       <div style="display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; flex: 0 0 auto; margin-bottom: 8px;">
         <div></div>
         <div class="widget-title" style="height: 32px; margin-bottom: 0; padding-left: 15px;">
@@ -1230,7 +1229,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.30';
+  var BUILD_ID = '2026-09-26.31';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1571,8 +1570,9 @@
     if (!teaserEl || !wrapEl) return;
     teaserEl.classList.remove('no-scroll');
     requestAnimationFrame(function() {
-      const textWidth = teaserEl.scrollWidth - wrapEl.clientWidth;
-      if (textWidth <= wrapEl.clientWidth) teaserEl.classList.add('no-scroll');
+      // 예전엔 "넘치는 양이 칸 너비보다 커야만"(즉 내용이 칸의 2배 이상 길어야만) 움직였다 —
+      // 그래서 항목이 몇 개 안 되면 넘치는데도 "고정"으로 보였다. 이제 조금이라도 넘치면 움직인다.
+      if (teaserEl.scrollWidth <= wrapEl.clientWidth) teaserEl.classList.add('no-scroll');
     });
   }
   let scheduleMarqueeResizeTimer = null;
