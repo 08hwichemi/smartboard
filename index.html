@@ -714,7 +714,7 @@
       <div class="widget-title" style="font-size:12.5px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
-          공지 &amp; 소담소담❤️ <span style="font-size:10px; font-weight:500;">(최근 15개)</span>
+          공지 &amp; 소담소담❤️
         </div>
         <div style="display:flex; gap:2px;">
           <button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', -1)">A-</button>
@@ -922,7 +922,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.14';
+  var BUILD_ID = '2026-09-26.15';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1261,7 +1261,7 @@
   });
 
 
-  const TEACHER_ROLES = ['담임', '부장', '교감', '교장', '실무자'];
+  const TEACHER_ROLES = ['담임', '교사', '교감', '교장', '실무자'];
 
   async function loadTeacherAccountList() {
     const listEl = document.getElementById('teacher-account-list');
@@ -1475,7 +1475,7 @@
 
   // ----- 공지사항 -----
   async function gasGetNotice() {
-    const { data, error } = await sb.from('notices').select('id, created_at, msg, likes, hearts, author').order('created_at', { ascending: false }).limit(15);
+    const { data, error } = await sb.from('notices').select('id, created_at, msg, likes, hearts, author').order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map(function(row) {
       return { id: row.id, time: formatKST(row.created_at), msg: row.msg, likes: row.likes || 0, hearts: row.hearts || 0, author: row.author || '' };
@@ -1824,7 +1824,7 @@
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
     { selector: '#photo-widget-container', title: '📷 우리 반 사진', desc: '클릭해서 사진을 올리면 자동으로 저장돼요.' },
     { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
-    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 최근 15개까지 여기 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
+    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 여기 전부 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
     { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' }
   ];
   let tourIndex = 0;
