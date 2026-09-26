@@ -810,7 +810,6 @@
           <div style="display:flex; gap:4px;">
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openTimeSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button>
           </div>
         </div>
         <div class="timetable-grid" id="my-timetable-grid"></div>
@@ -1049,6 +1048,11 @@
           </div>
         </div>
         <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveSemesterRanges()">학기 날짜 저장</button>
+
+        <div style="border-top:1px solid var(--border-color); margin:18px 0 12px;"></div>
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">⏰ 일과 시간 (교시별 시작·종료)</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 시간이 모든 선생님의 시간표 화면에 공통으로 적용됩니다.</div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="openTimeSettings()">일과 시간 설정</button>
       </div>
 
       <div class="admin-tab-pane" data-tab="bookmarks" style="display:none;">
@@ -1265,7 +1269,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.41';
+  var BUILD_ID = '2026-09-26.42';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1436,7 +1440,7 @@
   async function startAppFor(teacher) {
     localStorage.setItem('my-n', teacher.name);
     await restoreUserBackupIfNeeded(teacher.id);
-    init();
+    await init();
   }
 
   // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등, localStorage 전체)를 계정별로 서버에도
@@ -2131,7 +2135,7 @@
     { s: '11:50', e: '12:40' }, { s: '13:40', e: '14:30' }, { s: '14:40', e: '15:30' }, { s: '15:45', e: '16:35' }
   ];
   
-  let currentTimes = JSON.parse(localStorage.getItem('class-times')) || DEFAULT_TIMES;
+  let currentTimes = DEFAULT_TIMES;
 
   let mealOffset = 0; let currentNoticeId = 0;
   let bigCalOffset = 0;
@@ -2227,7 +2231,7 @@
     { selector: '#duty-overlay .modal-box', title: '☀️ 아침 감독표', desc: '아침 감독표도 마찬가지 방식이에요.', modal: function() { openDutyModal('아침감독', '☀️'); } },
     { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여줘요.' },
     { selector: '.weather-group', title: '🌤️ 날씨', desc: '현재 날씨·미세먼지와 최고/최저 기온, 앞으로 몇 시간의 시간별 예보를 보여줘요.' },
-    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를, ⚙️로 일과 시간을 바꿀 수 있어요.' },
+    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를 바꿀 수 있어요. (일과 시간은 관리자 설정에서 학교 전체에 공통으로 적용돼요.)' },
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
@@ -2324,7 +2328,8 @@
     if (tourIndex > 0) { tourIndex--; showTourStep(); }
   }
 
-  function init() {
+  async function init() {
+    await ensureClassTimesLoaded();
     document.getElementById('my-timetable-grid').innerHTML = buildGridHTML('my-tt');
     document.getElementById('search-timetable-grid').innerHTML = buildGridHTML('search-tt');
 
@@ -2412,6 +2417,12 @@
         const data = JSON.parse(e.target.result);
         localStorage.clear();
         Object.keys(data).forEach(function(k) { localStorage.setItem(k, data[k]); });
+        // 복원한 내용을 지금 로그인한 계정 것으로 확정하고, 다음 편집을 기다리지 않고
+        // 바로 서버에도 올려서 다른 기기에서 로그인해도 곧장 보이게 함.
+        if (window.currentTeacher && window.currentTeacher.id) {
+          localStorage.setItem('backup-owner-teacher-id', window.currentTeacher.id);
+          await syncUserBackupToServer();
+        }
         await customAlert('복원이 완료되었습니다. 페이지를 새로고침합니다.');
         location.reload();
       } catch(err) { customAlert('백업 파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인해주세요.'); }
@@ -2715,7 +2726,7 @@
 
   function closeTimeSettings() { document.getElementById('time-setting-overlay').style.display = 'none'; }
 
-  function saveTimeSettings() {
+  async function saveTimeSettings() {
     const newTimes = [];
     for(let i=1; i<=7; i++) {
       const sH = document.getElementById('time-s-h-' + i).value;
@@ -2724,14 +2735,20 @@
       const eM = document.getElementById('time-e-m-' + i).value;
       newTimes.push({ s: sH + ':' + sM, e: eH + ':' + eM });
     }
+    try {
+      const { error } = await sb.from('app_settings').upsert({ key: 'class_times', value: newTimes });
+      if (error) throw error;
+    } catch(e) { return customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
+
     currentTimes = newTimes;
-    localStorage.setItem('class-times', JSON.stringify(currentTimes));
+    window.classTimes = newTimes;
     closeTimeSettings();
     document.getElementById('my-timetable-grid').innerHTML = buildGridHTML('my-tt');
     document.getElementById('search-timetable-grid').innerHTML = buildGridHTML('search-tt');
     loadMyTimetable();
     renderSearchTimetable(true);
     updateTime();
+    customAlert('일과 시간을 저장했습니다. (다른 선생님 화면은 새로고침하면 반영됩니다)');
   }
 
   async function renameTitle(id) {
@@ -3450,6 +3467,18 @@
     } catch(e) {}
     window.classStructure = { gradeCount: 3, classCounts: [6, 6, 6] };
     return window.classStructure;
+  }
+
+  // ===== ⏰ 일과 시간(교시별 시작·종료) — 개인 설정이 아니라 관리자가 정하는 학교 공통 설정 =====
+  async function ensureClassTimesLoaded() {
+    if (window.classTimes) { currentTimes = window.classTimes; return window.classTimes; }
+    try {
+      const { data, error } = await sb.from('app_settings').select('value').eq('key', 'class_times').maybeSingle();
+      if (!error && data && data.value) { window.classTimes = data.value; currentTimes = window.classTimes; return window.classTimes; }
+    } catch(e) {}
+    window.classTimes = DEFAULT_TIMES;
+    currentTimes = window.classTimes;
+    return window.classTimes;
   }
 
   async function loadClassStructureUI() {
