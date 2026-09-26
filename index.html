@@ -272,18 +272,16 @@
         </div>
 
         <div class="admin-tab-pane" data-tab="duty" style="display:none; height:100%; flex-direction:column;">
-          <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학사일정으로 평일 자리 한 번에 만들기</div>
-          <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">방학·휴업일을 뺀 평일 날짜를, 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(어차피 평일 계산은 감독 종류와 상관없이 같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
-          <div style="display:flex; gap:16px; margin-bottom:8px; font-size:12px; font-weight:600;">
+          <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 평일 자리 한 번에 만들기</div>
+          <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">"학기 날짜" 탭에 등록해둔 학기 시작~종료일 그대로, 방학·휴업일을 뺀 평일 날짜를 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(감독 종류와 상관없이 평일 계산은 똑같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
+          <div style="display:flex; gap:16px; margin-bottom:10px; font-size:12px; font-weight:600;">
             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-야자감독" checked><span>🌙 야자 감독</span></label>
             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-급식감독" checked><span>🍱 급식 감독</span></label>
             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-아침감독" checked><span>☀️ 아침 감독</span></label>
           </div>
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
-            <input type="date" id="admin-duty-fill-from" style="padding:5px 7px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main); font-size:12px;">
-            <span>~</span>
-            <input type="date" id="admin-duty-fill-to" style="padding:5px 7px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main); font-size:12px;">
-            <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsMultiBoard()">📅 빈 자리 만들기</button>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+            <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('1학기')">📅 1학기 빈 자리 만들기</button>
+            <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('2학기')">📅 2학기 빈 자리 만들기</button>
           </div>
 
           <div style="border-top:1px solid var(--border-color); margin-bottom:14px;"></div>
@@ -480,7 +478,6 @@
           <input type="file" id="tt-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTimetableExcelFile(event)">
           <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('tt-excel-input').click()" title="전체 선생님 시간표 엑셀 파일을 올리면 한 번에 불러오고, 없는 선생님은 로그인 계정도 같이 만듭니다 (위에서 고른 학기로 저장됩니다)">📥 엑셀로 가져오기</button>
         </span>
-        <button class="top-btn" id="schedule-neis-check-btn" style="font-size:11px; padding:4px 10px;" onclick="openNeisCheckModal()" title="나이스에서 학급 시간표를 가져올 수 있는지 시험 조회">🛰️ 나이스 확인(시험)</button>
         <button class="top-btn accent" id="schedule-new-teacher-btn" style="font-size:11px; padding:4px 10px;" onclick="startNewTeacherSchedule()">+ 새 선생님 추가</button>
       </div>
     </div>
@@ -919,7 +916,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.8';
+  var BUILD_ID = '2026-09-26.9';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1157,7 +1154,11 @@
     adminSettingsActiveTab = tabId;
     document.querySelectorAll('.admin-tab-btn').forEach(function(el) { el.classList.toggle('active', el.dataset.tab === tabId); });
     document.querySelectorAll('.admin-tab-pane').forEach(function(el) {
-      el.style.display = (el.dataset.tab === tabId) ? 'flex' : 'none';
+      if (el.dataset.tab !== tabId) { el.style.display = 'none'; return; }
+      // tt/duty 탭만 안에 꽉 채워야 하는 임베드 콘텐츠(시간표 그리드, 감독표 목록)가 있어서 flex-column,
+      // 나머지(학기 날짜/즐겨찾기/계정/초기화)는 원래 그대로 위에서 아래로 쌓이는 block이어야 한다 —
+      // 여기를 flex로 잘못 켜뒀던 게 라벨이 세로로 쪼개지고 저장 버튼이 세로로 길게 늘어나던 버그였다.
+      el.style.display = (tabId === 'tt' || tabId === 'duty') ? 'flex' : 'block';
     });
     if (tabId === 'tt') {
       mountBox(document.getElementById('schedule-modal-box'), document.getElementById('admin-tt-slot'), true);
@@ -2397,11 +2398,20 @@
     return out;
   }
 
-  // 관리자 설정 "감독표" 탭의 공용 버튼 — 평일 계산(방학 제외)은 감독 종류와 상관없이 똑같으므로
-  // 체크한 감독표들(야자/급식/아침)에 한 번에 빈 자리(이름 없는 행)를 만든다.
-  async function fillDutyRowsMultiBoard() {
-    const from = document.getElementById('admin-duty-fill-from').value;
-    const to = document.getElementById('admin-duty-fill-to').value;
+  // "1학기/2학기 빈 자리 만들기" 버튼 — 학기 날짜 탭에 등록해둔 기간을 그대로 쓴다.
+  // 따로 날짜를 다시 입력할 필요가 없게(이미 한 번 등록한 걸 또 치는 게 아니라).
+  async function fillDutyRowsForSemester(sem) {
+    await ensureSemesterRangesLoaded();
+    const r = (window.semesterRanges || {})[sem];
+    if (!r || !r.start || !r.end) {
+      return customAlert(sem + ' 날짜가 아직 등록되지 않았습니다. "학기 날짜" 탭에서 먼저 등록해주세요.');
+    }
+    await fillDutyRowsMultiBoard(r.start, r.end, sem);
+  }
+
+  // 평일 계산(방학 제외)은 감독 종류와 상관없이 똑같으므로 체크한 감독표들(야자/급식/아침)에
+  // 한 번에 빈 자리(이름 없는 행)를 만든다.
+  async function fillDutyRowsMultiBoard(from, to, semLabel) {
     if (!from || !to) return customAlert('시작일과 종료일을 먼저 입력해주세요.');
     if (from > to) return customAlert('시작일이 종료일보다 늦을 수 없습니다.');
 
@@ -2432,8 +2442,9 @@
       weekdayDates.push(dStr);
     }
 
+    const rangeLabel = (semLabel ? semLabel + '(' + from + ' ~ ' + to + ')' : (from + ' ~ ' + to));
     const ok = await customConfirm(
-      from + ' ~ ' + to + ' 사이 평일 ' + weekdayDates.length + '일을 ' + boards.join(', ') + '에 이름 없는 빈 자리로 등록할까요?\n(이미 등록된 날짜는 건너뜁니다)'
+      rangeLabel + ' 사이 평일 ' + weekdayDates.length + '일을 ' + boards.join(', ') + '에 이름 없는 빈 자리로 등록할까요?\n(이미 등록된 날짜는 건너뜁니다)'
     );
     if (!ok) return;
 
@@ -3127,7 +3138,6 @@
     const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
     document.getElementById('schedule-admin-only-tools').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('schedule-semester-switch').style.display = isAdmin ? 'flex' : 'none';
-    document.getElementById('schedule-neis-check-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     document.getElementById('schedule-new-teacher-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     document.getElementById('schedule-delete-btn').style.display = isAdmin ? 'inline-flex' : 'none';
     document.getElementById('schedule-teacher-select').style.display = isAdmin ? '' : 'none';
