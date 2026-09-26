@@ -869,10 +869,8 @@
 
       <div class="admin-tab-pane" data-tab="students" style="display:none;">
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🧑‍🎓 명렬표 엑셀 업로드</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀을 올리면 학년별로 자동 인식해서 저장합니다. 같은 학년 파일을 다시 올리면 그 학년 명단이 새 내용으로 통째로 바뀝니다(다른 학년은 그대로 남습니다).</div>
-        <input type="file" id="student-excel-input" accept=".xlsx,.xls" hidden onchange="handleStudentExcelFile(this.files[0]); this.value='';">
-        <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="document.getElementById('student-excel-input').click()">📥 엑셀 업로드</button>
-        <div id="student-upload-status" style="font-size:11.5px; color:var(--text-sub); margin-top:10px;"></div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀을 학년별로 각각 올려주세요. 그 학년 파일을 다시 올리면 명단이 새 내용으로 통째로 바뀝니다(다른 학년은 그대로 남습니다).</div>
+        <div id="student-upload-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
 
       <div class="admin-tab-pane" data-tab="semester" style="display:none;">
@@ -949,7 +947,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.16';
+  var BUILD_ID = '2026-09-26.17';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1217,6 +1215,8 @@
       await initScheduleModalBody();
     } else if (tabId === 'duty') {
       await selectAdminDutyBoard(currentDutySheetName || '야자감독', currentDutyIcon || '🌙');
+    } else if (tabId === 'students') {
+      await renderStudentUploadRows();
     }
   }
 
@@ -3788,9 +3788,25 @@
     return byGrade;
   }
 
-  async function handleStudentExcelFile(file) {
+  async function renderStudentUploadRows() {
+    await ensureClassStructureLoaded();
+    const cs = window.classStructure || { gradeCount: 3 };
+    const container = document.getElementById('student-upload-rows');
+    let html = '';
+    for (let g = 1; g <= cs.gradeCount; g++) {
+      html += '<div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px;">' +
+        '<div style="font-weight:700; font-size:12.5px; min-width:48px;">' + g + '학년</div>' +
+        '<input type="file" id="student-excel-input-' + g + '" accept=".xlsx,.xls" hidden onchange="handleStudentExcelFileForGrade(this.files[0], ' + g + '); this.value=\'\';">' +
+        '<button class="top-btn accent" style="font-size:11.5px; padding:5px 10px;" onclick="document.getElementById(\'student-excel-input-' + g + '\').click()">📥 엑셀 업로드</button>' +
+        '<div id="student-upload-status-' + g + '" style="font-size:11px; color:var(--text-sub); flex:1;"></div>' +
+        '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  async function handleStudentExcelFileForGrade(file, grade) {
     if (!file) return;
-    const statusEl = document.getElementById('student-upload-status');
+    const statusEl = document.getElementById('student-upload-status-' + grade);
     let byGrade;
     try {
       const buf = await file.arrayBuffer();
@@ -3801,24 +3817,26 @@
       return;
     }
 
-    const grades = Object.keys(byGrade).map(Number).sort();
-    if (grades.length === 0) { customAlert('엑셀에서 학생 명단을 찾지 못했습니다.'); return; }
+    const rows = byGrade[grade] || [];
+    if (rows.length === 0) {
+      customAlert('이 파일에서 ' + grade + '학년 학생을 찾지 못했습니다. (학번이 ' + grade + '학년 형식인지 확인해주세요)');
+      return;
+    }
 
-    const summary = grades.map(function(g) { return g + '학년 ' + byGrade[g].length + '명'; }).join(', ');
-    const ok = await customConfirm(
-      '엑셀에서 ' + summary + '을(를) 찾았습니다.\n\n' +
-      '이 내용으로 저장할까요? (같은 학년의 기존 명단은 통째로 새 내용으로 바뀝니다)'
-    );
+    const otherGrades = Object.keys(byGrade).map(Number).filter(function(g) { return g !== grade; });
+    let msg = '엑셀에서 ' + grade + '학년 ' + rows.length + '명을 찾았습니다.\n\n' +
+      '이 내용으로 저장할까요? (기존 ' + grade + '학년 명단은 통째로 새 내용으로 바뀝니다)';
+    if (otherGrades.length) {
+      msg += '\n\n(참고: 이 파일에 ' + otherGrades.join(', ') + '학년 데이터도 섞여 있어서, 이번엔 ' + grade + '학년만 저장하고 나머지는 무시합니다. 다른 학년은 그 학년 칸에 따로 올려주세요.)';
+    }
+    const ok = await customConfirm(msg);
     if (!ok) return;
 
     statusEl.innerText = '저장 중...';
     try {
-      for (const g of grades) {
-        const { error } = await sb.rpc('admin_replace_students_for_grade', { p_grade: g, p_rows: byGrade[g] });
-        if (error) throw error;
-      }
-      statusEl.innerText = summary + ' 저장 완료 (' + new Date().toLocaleTimeString('ko-KR') + ')';
-      customAlert(summary + ' 저장을 완료했습니다.');
+      const { error } = await sb.rpc('admin_replace_students_for_grade', { p_grade: grade, p_rows: rows });
+      if (error) throw error;
+      statusEl.innerText = rows.length + '명 저장 완료 (' + new Date().toLocaleTimeString('ko-KR') + ')';
     } catch (e) {
       statusEl.innerText = '';
       customAlert('저장 실패: ' + (e && e.message ? e.message : e));
