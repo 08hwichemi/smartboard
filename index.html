@@ -216,6 +216,7 @@
     .updatebar .updatebar-x { border: 0; padding: 2px 6px; font-size: 17px; line-height: 1; opacity: .75; }
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
+    body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -366,19 +367,20 @@
   </div>
 </div>
 
-<div class="overlay" id="roster-overlay">
-  <div class="modal-box" id="roster-modal-box" style="width: 560px; max-width: 92vw; max-height: 85vh; display: none; flex-direction: column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap:10px; flex-wrap:wrap;">
-      <div style="font-weight: 800; font-size: 16px;">🧑‍🎓 명렬표</div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <select id="roster-grade-select" class="mini-select" onchange="onRosterGradeChange()"><option value="">학년</option></select>
-        <select id="roster-class-select" class="mini-select" onchange="onRosterClassChange()"><option value="">반</option></select>
-      </div>
+<div class="overlay" id="roster-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);">
+  <div class="modal-box" id="roster-modal-box" style="width: 360px; max-width: 86vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); display: none; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px; flex-wrap:wrap;">
+      <div style="font-weight: 800; font-size: 15px;">🧑‍🎓 명렬표</div>
+      <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px;" onclick="toggleRosterEditMode()">✏️ 수정 모드</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom: 10px;">
+      <select id="roster-grade-select" class="mini-select" style="flex:1;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
+      <select id="roster-class-select" class="mini-select" style="flex:1;" onchange="onRosterClassChange()"><option value="">반</option></select>
     </div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 200px;" id="roster-list-container">
       <div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>
     </div>
-    <div style="display: flex; margin-top: 15px;">
+    <div style="display: flex; margin-top: 12px;">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeStudentRoster()">닫기</button>
     </div>
   </div>
@@ -947,7 +949,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.17';
+  var BUILD_ID = '2026-09-26.18';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2450,8 +2452,29 @@
   function closeDutyModal() { document.getElementById('duty-overlay').style.display = 'none'; }
 
   // ----- 명렬표 -----
+  let rosterEditMode = false;
+
+  function updateRosterEditToggleBtn() {
+    const btn = document.getElementById('roster-edit-toggle');
+    if (rosterEditMode) {
+      btn.innerText = '👁 보기 모드로';
+      btn.classList.add('accent');
+    } else {
+      btn.innerText = '✏️ 수정 모드';
+      btn.classList.remove('accent');
+    }
+  }
+
+  function toggleRosterEditMode() {
+    rosterEditMode = !rosterEditMode;
+    updateRosterEditToggleBtn();
+    renderStudentRosterList(window.__rosterRows || []);
+  }
+
   async function openStudentRoster() {
     await ensureClassStructureLoaded();
+    rosterEditMode = false;
+    updateRosterEditToggleBtn();
     const gradeSel = document.getElementById('roster-grade-select');
     gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
     document.getElementById('roster-class-select').innerHTML = '<option value="">반</option>';
@@ -2504,27 +2527,30 @@
     window.__rosterRows = rows;
     if (rows.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">등록된 학생이 없습니다.</div>'; return; }
 
-    let html = '<div style="display:grid; grid-template-columns: 36px 64px 1fr 1fr 44px; gap:6px; padding:6px 4px; font-size:10.5px; font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
-      '<div>번호</div><div>이름</div><div>전화번호</div><div>부모님전화번호</div><div></div></div>';
+    const cols = rosterEditMode ? '26px 42px 1fr 1fr 30px' : '26px 42px 1fr 1fr';
+    let html = '<div style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:10px; font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
+      '<div>번호</div><div>이름</div><div>학생전화</div><div>부모님</div>' + (rosterEditMode ? '<div></div>' : '') + '</div>';
     rows.forEach(function(r) {
-      html += '<div id="roster-row-' + r.id + '" style="display:grid; grid-template-columns: 36px 64px 1fr 1fr 44px; gap:6px; padding:7px 4px; font-size:12px; align-items:center; border-bottom:1px dashed var(--border-color);">' +
-        '<div>' + r.number + '번</div>' +
-        '<div style="font-weight:700;">' + escapeHtmlAttr(r.name) + '</div>' +
-        '<div id="roster-view-student-' + r.id + '">' + escapeHtmlAttr(r.student_phone || '-') + '</div>' +
-        '<div id="roster-view-parent-' + r.id + '">' + escapeHtmlAttr(parentPhoneFor(r) || '-') + '</div>' +
-        '<button class="top-btn" style="font-size:10.5px; padding:2px 6px;" onclick="toggleStudentEditUI(' + r.id + ')">수정</button>' +
-        '</div>' +
-        '<div id="roster-edit-' + r.id + '" style="display:none; grid-column: 1 / -1; gap:6px; padding:6px 4px 10px; border-bottom:1px dashed var(--border-color); font-size:11px;">' +
-        '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">' +
-        '<input type="text" id="roster-edit-student-' + r.id + '" value="' + escapeHtmlAttr(r.student_phone || '') + '" placeholder="학생 전화번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
-        '<input type="text" id="roster-edit-mother-' + r.id + '" value="' + escapeHtmlAttr(r.mother_phone || '') + '" placeholder="어머니 번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
-        '<input type="text" id="roster-edit-father-' + r.id + '" value="' + escapeHtmlAttr(r.father_phone || '') + '" placeholder="아버지 번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
-        '</div>' +
-        '<div style="display:flex; gap:6px; margin-top:6px;">' +
-        '<button class="top-btn accent" style="font-size:11px; padding:3px 10px;" onclick="saveStudentPhoneUI(' + r.id + ')">저장</button>' +
-        '<button class="top-btn" style="font-size:11px; padding:3px 10px;" onclick="toggleStudentEditUI(' + r.id + ')">취소</button>' +
-        '</div>' +
+      html += '<div id="roster-row-' + r.id + '" style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:11px; align-items:center; border-bottom:1px dashed var(--border-color);">' +
+        '<div>' + r.number + '</div>' +
+        '<div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtmlAttr(r.name) + '</div>' +
+        '<div id="roster-view-student-' + r.id + '" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtmlAttr(r.student_phone || '-') + '</div>' +
+        '<div id="roster-view-parent-' + r.id + '" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtmlAttr(parentPhoneFor(r) || '-') + '</div>' +
+        (rosterEditMode ? '<button class="top-btn" style="font-size:10px; padding:2px 4px;" onclick="toggleStudentEditUI(' + r.id + ')">✎</button>' : '') +
         '</div>';
+      if (rosterEditMode) {
+        html += '<div id="roster-edit-' + r.id + '" style="display:none; flex-direction:column; grid-column: 1 / -1; gap:6px; padding:6px 4px 10px; border-bottom:1px dashed var(--border-color); font-size:11px;">' +
+          '<div style="display:flex; flex-direction:column; gap:6px;">' +
+          '<input type="text" id="roster-edit-student-' + r.id + '" value="' + escapeHtmlAttr(r.student_phone || '') + '" placeholder="학생 전화번호" style="padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+          '<input type="text" id="roster-edit-mother-' + r.id + '" value="' + escapeHtmlAttr(r.mother_phone || '') + '" placeholder="어머니 번호" style="padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+          '<input type="text" id="roster-edit-father-' + r.id + '" value="' + escapeHtmlAttr(r.father_phone || '') + '" placeholder="아버지 번호" style="padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+          '</div>' +
+          '<div style="display:flex; gap:6px; margin-top:6px;">' +
+          '<button class="top-btn accent" style="font-size:11px; padding:3px 10px; flex:1;" onclick="saveStudentPhoneUI(' + r.id + ')">저장</button>' +
+          '<button class="top-btn" style="font-size:11px; padding:3px 10px; flex:1;" onclick="toggleStudentEditUI(' + r.id + ')">취소</button>' +
+          '</div>' +
+          '</div>';
+      }
     });
     listEl.innerHTML = html;
   }
