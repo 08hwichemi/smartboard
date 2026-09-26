@@ -93,7 +93,7 @@
 
     /* 💡 여기가 폭 삐뚤어짐을 해결한 마법의 코드입니다! box-sizing: border-box 추가 */
     .widget { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; box-shadow: none; display: flex; flex-direction: column; position: relative; min-height: 0; box-sizing: border-box; }
-    .widget-title { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 6px;}
+    .widget-title { font-size: 14px; font-weight: 800; color: var(--text-main); margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 6px;}
     .w-chip { width: 17px; height: 17px; background: none; color: var(--text-sub); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
     .w-chip svg { display: block; }
     .w-ico-btn { width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-sub); background: var(--bg-color); cursor: pointer; flex: 0 0 auto; }
@@ -179,9 +179,10 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
     .schedule-marquee-wrap { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
-    .schedule-marquee-track { display: inline-block; padding-left: 100%; animation: schedule-marquee 26s linear infinite; }
+    .schedule-marquee-track { display: inline-block; padding-left: 100%; animation: schedule-marquee 32s linear infinite; }
     .schedule-marquee-track.no-scroll { padding-left: 0; animation: none; }
     @keyframes schedule-marquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+    .upcoming-schedule-chip { display: inline-block; background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px 10px; margin-right: 10px; }
 
     .big-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 4px; flex: 1; min-height: 0; }
     .big-cal-cell { background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; overflow: hidden; transition: 0.2s; }
@@ -271,9 +272,7 @@
     .sc-font-nav:hover { filter: brightness(0.95); }
     #seatchart-page input[type="range"] { width: 100%; accent-color: var(--accent-color); box-sizing: border-box; }
 
-    #sc-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; flex-direction: column; padding: 14px 20px 20px; box-sizing: border-box; gap: 10px; }
-    #sc-paper-toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; flex: 0 0 auto; }
-    #sc-paper-stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    #sc-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
     #sc-paper-wrapper { position: relative; transform-origin: center; }
 
     .sc-a4-paper, .sc-a4-paper * { font-family: var(--sc-main-font); box-sizing: border-box; margin: 0; padding: 0; }
@@ -326,8 +325,8 @@
     .sc-student-item.sc-used { opacity: 0.4; pointer-events: none; }
 
     @media print {
-      #app-rail, .updatebar, #sc-panel, #sc-page-header, #sc-paper-toolbar { display: none !important; }
-      body, #app-shell, #app-main, #seatchart-page, #sc-body, #sc-paper-stage { display: block !important; height: auto !important; overflow: visible !important; }
+      #app-rail, .updatebar, #sc-panel, #sc-page-header { display: none !important; }
+      body, #app-shell, #app-main, #seatchart-page, #sc-body { display: block !important; height: auto !important; overflow: visible !important; }
       #sc-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
       #sc-paper-wrapper { transform: none !important; margin: 0 auto !important; }
       .sc-a4-paper { box-shadow: none !important; border-radius: 0 !important; }
@@ -382,6 +381,10 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
+    <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="openSeatChart()">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
+      <div class="rail-label">좌석배치표</div>
+    </div>
     <div class="rail-item" title="학급시간표 (준비 중)" onclick="railComingSoon('학급시간표')">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
       <div class="rail-label">학급시간표</div>
@@ -389,10 +392,6 @@
     <div class="rail-item" title="월간일정표 (준비 중)" onclick="railComingSoon('월간일정표')">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
       <div class="rail-label">월간일정표</div>
-    </div>
-    <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="openSeatChart()">
-      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
-      <div class="rail-label">좌석배치표</div>
     </div>
     <div style="flex: 1;"></div>
     <div style="text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding-bottom:8px; line-height:1.4;" id="app-version">-</div>
@@ -490,12 +489,12 @@
 <div class="overlay" id="roster-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);">
   <div class="modal-box" id="roster-modal-box" style="width: 360px; max-width: 86vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: none; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px; flex-wrap:wrap;">
-      <div style="font-weight: 800; font-size: 15px;">🧑‍🎓 명렬표</div>
-      <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px;" onclick="toggleRosterEditMode()">✏️ 수정 모드</button>
-    </div>
-    <div style="display:flex; align-items:center; gap:6px; margin-bottom: 10px;">
-      <select id="roster-grade-select" class="mini-select" style="flex:1;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
-      <select id="roster-class-select" class="mini-select" style="flex:1;" onchange="onRosterClassChange()"><option value="">반</option></select>
+      <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+        <div style="font-weight: 800; font-size: 15px; white-space:nowrap; flex:0 0 auto;">🧑‍🎓 명렬표</div>
+        <select id="roster-grade-select" class="mini-select" style="width:58px; flex:0 0 auto;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
+        <select id="roster-class-select" class="mini-select" style="width:58px; flex:0 0 auto;" onchange="onRosterClassChange()"><option value="">반</option></select>
+      </div>
+      <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px; flex:0 0 auto;" onclick="toggleRosterEditMode()">✏️ 수정</button>
     </div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="roster-list-container">
       <div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>
@@ -711,7 +710,7 @@
       <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0;">
         <div class="widget" style="flex: 1; min-height: 0; padding: 9px 10px;">
           <div id="favorites-panel" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="widget-title" style="font-size: 11px; margin-bottom: 5px; padding-bottom: 0; border-bottom: none;">
+            <div class="widget-title" style="margin-bottom: 5px; padding-bottom: 0; border-bottom: none;">
               <div style="display:flex; align-items:center; gap:5px;">
                 <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3.5L6 20V4a1 1 0 0 1 1-1z"/></svg></div>
                 즐겨찾기
@@ -796,7 +795,7 @@
           <div class="tab-switch">
             <button class="tab-btn active" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
             <button class="tab-btn" id="tab-cal" onclick="switchMainTab('cal')">📅 캘린더</button>
-            <button class="tab-btn" id="tab-halfcal" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2</button>
+            <button class="tab-btn" id="tab-halfcal" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2 캘린더</button>
           </div>
           <div id="search-teacher-picker" style="display:flex; align-items:center; gap:2px;">
             <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(-1)">◀</button>
@@ -813,7 +812,7 @@
         </div>
         <div class="timetable-grid" id="search-timetable-grid"></div>
         <div class="half-cal-wrapper" id="half-cal-wrapper">
-          <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:9px; font-weight:800; color:var(--text-sub); padding-bottom:3px; margin-bottom:3px; border-bottom:1px solid var(--border-color); flex:0 0 auto;">
+          <div style="display:grid; grid-template-columns: repeat(5,1fr); text-align:center; font-size:12px; font-weight:800; color:var(--text-sub); padding-bottom:6px; margin-bottom:4px; border-bottom:2px solid var(--border-color); flex:0 0 auto;">
             <div>월</div><div>화</div><div>수</div><div>목</div><div>금</div>
           </div>
           <div class="half-cal-grid" id="half-cal-grid"></div>
@@ -828,7 +827,7 @@
           <div class="tab-switch">
             <button class="tab-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
             <button class="tab-btn active" onclick="switchMainTab('cal')">📅 캘린더</button>
-            <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2</button>
+            <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2 캘린더</button>
           </div>
           <div style="display:flex; align-items:center; gap:3px;">
             <button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
@@ -851,7 +850,7 @@
 
   <div class="dash-col" style="flex: 0.85;">
     <div id="notice-widget" class="widget" style="flex: 0.7; min-height: 0;">
-      <div class="widget-title" style="font-size:12.5px;">
+      <div class="widget-title">
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
           공지 &amp; 소담소담❤️
@@ -867,7 +866,7 @@
     </div>
 
     <div id="meal-widget" class="widget" style="flex: 0 0 136px; min-height: 0;">
-      <div class="widget-title" style="font-size:11px; margin-bottom:6px;">
+      <div class="widget-title" style="margin-bottom:6px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg></div>
           급식(<span id="meal-date-label">오늘</span>)
@@ -1107,6 +1106,18 @@
         <div class="sc-help" id="sc-help-text">👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.</div>
       </div>
 
+      <div class="sc-section" id="sc-arrange-section">
+        <div class="sc-section-title">🪄 자리 채우기</div>
+        <div class="sc-btn-grid" style="margin-bottom:6px;">
+          <button class="top-btn" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
+          <button class="top-btn" onclick="scArrangeSeats('random')" title="빈 자리를 랜덤으로 섞습니다">🎲 랜덤배치</button>
+        </div>
+        <div class="sc-btn-grid">
+          <button class="top-btn" onclick="scClearContent()" title="배정된 학생을 모두 지웁니다">🧹 초기화</button>
+          <button class="top-btn" onclick="scToggleTeacherView()" title="교탁에서 바라본 시점으로 상하좌우를 반전합니다">🔄 위치반전</button>
+        </div>
+      </div>
+
       <div class="sc-section" id="sc-design-section">
         <div class="sc-section-title">🎨 종이 디자인</div>
         <div class="sc-theme-grid">
@@ -1175,23 +1186,15 @@
     </div>
 
     <div id="sc-preview">
-      <div id="sc-paper-toolbar">
-        <button class="top-btn" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
-        <button class="top-btn" onclick="scArrangeSeats('random')" title="빈 자리를 랜덤으로 섞습니다">🎲 랜덤배치</button>
-        <button class="top-btn" onclick="scClearContent()" title="배정된 학생을 모두 지웁니다">🧹 초기화</button>
-        <button class="top-btn" onclick="scToggleTeacherView()" title="교탁에서 바라본 시점으로 상하좌우를 반전합니다">🔄 위치반전</button>
-      </div>
-      <div id="sc-paper-stage">
-        <div id="sc-paper-wrapper">
-          <div class="sc-a4-paper" id="sc-a4-paper">
-            <div id="sc-curtain"><div id="sc-countdown-text">3</div></div>
-            <div class="sc-title-wrapper"><input type="text" class="sc-doc-title-input" id="sc-display-title" value="🏫 좌석배치표 ✨"></div>
-            <div class="sc-top-row"><input type="text" class="sc-side-text" value="창 가"><div class="sc-podium">교 탁</div><input type="text" class="sc-side-text" value="복 도"></div>
-            <div class="sc-center-area"><div id="sc-seat-grid"></div></div>
-            <div class="sc-footer-box">
-              <input type="text" class="sc-footer-input" id="sc-footer-1" value="[지정좌석제] 자리를 마음대로 바꿀 수 없습니다.">
-              <input type="text" class="sc-footer-input-sub" id="sc-footer-2" value="">
-            </div>
+      <div id="sc-paper-wrapper">
+        <div class="sc-a4-paper" id="sc-a4-paper">
+          <div id="sc-curtain"><div id="sc-countdown-text">3</div></div>
+          <div class="sc-title-wrapper"><input type="text" class="sc-doc-title-input" id="sc-display-title" value="🏫 좌석배치표 ✨"></div>
+          <div class="sc-top-row"><input type="text" class="sc-side-text" value="창 가"><div class="sc-podium">교 탁</div><input type="text" class="sc-side-text" value="복 도"></div>
+          <div class="sc-center-area"><div id="sc-seat-grid"></div></div>
+          <div class="sc-footer-box">
+            <input type="text" class="sc-footer-input" id="sc-footer-1" value="[지정좌석제] 자리를 마음대로 바꿀 수 없습니다.">
+            <input type="text" class="sc-footer-input-sub" id="sc-footer-2" value="">
           </div>
         </div>
       </div>
@@ -1227,7 +1230,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.29';
+  var BUILD_ID = '2026-09-26.30';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1557,7 +1560,7 @@
           const dObj = new Date(y, mo-1, da);
           return mo + '/' + da + '(' + days[dObj.getDay()] + ') ' + r.EVENT_NM;
         });
-      teaserEl.innerText = items.length ? items.join('   ·   ') : '없음';
+      teaserEl.innerHTML = items.length ? items.map(function(t) { return '<span class="upcoming-schedule-chip">' + escapeHtmlAttr(t) + '</span>'; }).join('') : '없음';
       updateScheduleMarqueeState();
     } catch(e) { teaserEl.innerText = '불러오기 실패'; }
   }
@@ -2715,14 +2718,10 @@
   let pendingNewDutyRows = [];
   let dutyRowIdCounter = 0;
 
-  // 일반 교사는 원래대로 독립 팝업(기존 날짜의 이름 칸만 수정), 관리자는 설정의
-  // "감독표" 탭으로 바로 이동 — schedule과 같은 방식(mountBox로 이 모달의 DOM을 옮김).
+  // 관리자여도 홈에서 누르면 이 모달이 그대로 떠야 한다 — "✏️ 수정 모드"를 켜면
+  // 관리자든 아니든 편집·추가·삭제를 할 수 있다. 관리자 설정 페이지의 "📋 감독표"
+  // 탭은 별도 진입점(showSettingsPage)으로 계속 열 수 있다.
   async function openDutyModal(sheetName, icon) {
-    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
-    if (isAdmin) {
-      await openAdminSettingsModal('duty');
-      return;
-    }
     mountBox(document.getElementById('duty-modal-box'), document.getElementById('duty-overlay'), false);
     document.getElementById('duty-overlay').style.display = 'flex';
     document.getElementById('duty-close-row').style.display = 'flex';
@@ -2755,10 +2754,10 @@
   function updateRosterEditToggleBtn() {
     const btn = document.getElementById('roster-edit-toggle');
     if (rosterEditMode) {
-      btn.innerText = '👁 보기 모드로';
+      btn.innerText = '👁 보기';
       btn.classList.add('accent');
     } else {
-      btn.innerText = '✏️ 수정 모드';
+      btn.innerText = '✏️ 수정';
       btn.classList.remove('accent');
     }
   }
@@ -3805,11 +3804,9 @@
   // 관리자가 누르면 팝업을 새로 띄우지 않고 관리자 설정의 "시간표" 탭으로 바로 간다
   // (switchAdminTab('tt')가 mountBox로 이 모달의 DOM을 설정 창 슬롯 안으로 옮겨서 보여줌).
   async function openScheduleModal() {
-    const isAdmin = !!(window.currentTeacher && window.currentTeacher.is_admin);
-    if (isAdmin) {
-      await openAdminSettingsModal('tt');
-      return;
-    }
+    // 관리자여도 홈에서 누르면 이 모달이 그대로 떠야 한다(관리자 전용 도구는
+    // initScheduleModalBody가 isAdmin을 보고 안에서 따로 보여준다). 관리자 설정
+    // 페이지의 "🗓️ 시간표" 탭은 별도 진입점(showSettingsPage)으로 계속 열 수 있다.
     mountBox(document.getElementById('schedule-modal-box'), document.getElementById('schedule-overlay'), false);
     document.getElementById('schedule-overlay').style.display = 'flex';
     document.getElementById('schedule-close-row').style.display = 'flex';
@@ -4531,11 +4528,11 @@
   }
 
   function scScalePaper() {
-    const container = document.getElementById('sc-paper-stage');
+    const container = document.getElementById('sc-preview');
     const wrapper = document.getElementById('sc-paper-wrapper');
     if (!container || !wrapper || container.clientWidth === 0) return;
-    const availableHeight = container.clientHeight - 20;
-    const availableWidth = container.clientWidth - 20;
+    const availableHeight = container.clientHeight - 40;
+    const availableWidth = container.clientWidth - 40;
     let scale = Math.min(availableWidth / 794, availableHeight / 1123, 1);
     if (scale < 0.25) scale = 0.25;
     wrapper.style.transform = 'scale(' + scale + ')';
@@ -4739,7 +4736,7 @@
     { selector: '#sc-structure-grid', title: '3단계. 반 구조 정하기', desc: '분단(세로줄) 수, 가로(줄) 수, 짝꿍이 몇 명씩 앉을지(짝꿍 수)를 숫자로 입력하세요.' },
     { selector: '#sc-build-btn', title: '이 버튼을 눌러보세요', desc: '입력한 숫자대로 오른쪽 종이에 빈 책상이 쫙 그려져요. 구조를 바꾸고 싶으면 숫자를 고치고 이 버튼을 다시 누르면 됩니다.' },
     { selector: '#sc-special-seat-row', title: '4단계. 고정석 / 제외석 (선택)', desc: '📌 고정석: 미리 정해두면 랜덤 배치를 돌려도 그 자리 학생은 움직이지 않아요.\n🚫 제외석: 책상이 없거나 비워둘 자리를 표시할 때 써요.\n필요 없으면 건너뛰어도 괜찮아요.' },
-    { selector: '#sc-paper-toolbar', title: '5단계. 자리 채우기', desc: '🔢 번호순: 앞에서부터 번호 순서대로 채워요.\n🎲 랜덤배치: 카운트다운 후 무작위로 섞어서 채워요(고정석·제외 번호는 그대로 유지돼요).\n🧹 초기화: 배정만 지우고 고정·제외 표시는 남겨요.\n🔄 위치반전: 인쇄할 때 교탁이 보는 방향으로 뒤집어요.' },
+    { selector: '#sc-arrange-section', title: '5단계. 자리 채우기', desc: '🔢 번호순: 앞에서부터 번호 순서대로 채워요.\n🎲 랜덤배치: 카운트다운 후 무작위로 섞어서 채워요(고정석·제외 번호는 그대로 유지돼요).\n🧹 초기화: 배정만 지우고 고정·제외 표시는 남겨요.\n🔄 위치반전: 인쇄할 때 교탁이 보는 방향으로 뒤집어요.' },
     { selector: '#sc-a4-paper', title: '6단계. 직접 클릭해서 배정하기', desc: '자리 하나를 클릭하면 학생을 직접 골라 앉힐 수 있어요. 제목, "창가"/"복도", 맨 아래 문구도 모두 클릭해서 바로 고칠 수 있습니다.' },
     { selector: '#sc-design-section', title: '7단계. 종이 디자인 꾸미기', desc: '색 테마, 글꼴(30여 종), 글씨 크기와 여백 등을 자유롭게 바꿔서 우리 반만의 좌석표를 만들어보세요.' },
     { selector: '#sc-header-save-group', title: '8단계. 저장하기', desc: '💾 디자인저장/로드: 지금 폰트·색·크기 설정을 파일로 저장했다가 다른 반에도 똑같이 적용할 수 있어요.\n📝 결과저장/로드: 완성한 배치 결과 전체를 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
