@@ -245,117 +245,11 @@
   </div>
 </div>
 
-<div class="overlay" id="admin-settings-overlay">
-  <div class="modal-box" style="width: 1200px; max-width: 96vw; height: 88vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding: 14px 18px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto;">
-      <div style="font-weight: 800; font-size: 16px;">⚙️ 관리자 설정</div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div id="admin-settings-current-name" style="font-size:12px; color:var(--text-sub);"></div>
-        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="closeAdminSettingsModal()">닫기</button>
-      </div>
-    </div>
-
-    <div style="display:flex; flex:1; min-height:0;">
-      <div style="width:150px; flex:0 0 auto; border-right:1px solid var(--border-color); padding:10px 8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;">
-        <button class="admin-tab-btn" data-tab="tt" onclick="switchAdminTab('tt')">🗓️ 시간표</button>
-        <button class="admin-tab-btn" data-tab="duty" onclick="switchAdminTab('duty')">📋 감독표</button>
-        <button class="admin-tab-btn" data-tab="semester" onclick="switchAdminTab('semester')">📅 학기 날짜</button>
-        <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기</button>
-        <button class="admin-tab-btn" data-tab="accounts" onclick="switchAdminTab('accounts')">👤 계정 관리</button>
-        <button class="admin-tab-btn" data-tab="danger" onclick="switchAdminTab('danger')">🧹 초기화</button>
-      </div>
-
-      <div style="flex:1; min-width:0; overflow-y:auto; padding:16px 20px;">
-
-        <div class="admin-tab-pane" data-tab="tt" style="display:none; height:100%; flex-direction:column;">
-          <div id="admin-tt-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
-        </div>
-
-        <div class="admin-tab-pane" data-tab="duty" style="display:none; height:100%; flex-direction:column;">
-          <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 평일 자리 한 번에 만들기</div>
-          <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">"학기 날짜" 탭에 등록해둔 학기 시작~종료일 그대로, 방학·휴업일을 뺀 평일 날짜를 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(감독 종류와 상관없이 평일 계산은 똑같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
-          <div style="display:flex; gap:16px; margin-bottom:10px; font-size:12px; font-weight:600;">
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-야자감독" checked><span>🌙 야자 감독</span></label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-급식감독" checked><span>🍱 급식 감독</span></label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-아침감독" checked><span>☀️ 아침 감독</span></label>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
-            <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('1학기')">📅 1학기 빈 자리 만들기</button>
-            <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('2학기')">📅 2학기 빈 자리 만들기</button>
-          </div>
-
-          <div style="border-top:1px solid var(--border-color); margin-bottom:14px;"></div>
-
-          <div class="tab-switch" id="admin-duty-board-switch" style="align-self:flex-start; margin-bottom:10px;">
-            <button class="tab-btn admin-duty-board-btn" data-board="야자감독" onclick="selectAdminDutyBoard('야자감독','🌙')">🌙 야자</button>
-            <button class="tab-btn admin-duty-board-btn" data-board="급식감독" onclick="selectAdminDutyBoard('급식감독','🍱')">🍱 급식</button>
-            <button class="tab-btn admin-duty-board-btn" data-board="아침감독" onclick="selectAdminDutyBoard('아침감독','☀️')">☀️ 아침</button>
-          </div>
-          <div id="admin-duty-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
-        </div>
-
-        <div class="admin-tab-pane" data-tab="semester" style="display:none;">
-          <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 날짜 설정</div>
-          <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 기간으로 화면이 지금 몇 학기인지 자동으로 판단합니다(시간표 화면 전환, 감독표 자동 채우기에 같이 쓰입니다).</div>
-          <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="width:40px; font-weight:700;">1학기</span>
-              <input type="date" id="sem1-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-              <span>~</span>
-              <input type="date" id="sem1-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="width:40px; font-weight:700;">2학기</span>
-              <input type="date" id="sem2-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-              <span>~</span>
-              <input type="date" id="sem2-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-            </div>
-          </div>
-          <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveSemesterRanges()">학기 날짜 저장</button>
-        </div>
-
-        <div class="admin-tab-pane" data-tab="bookmarks" style="display:none;">
-          <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🔗 즐겨찾기 고정 링크 (모두에게 같게 보임)</div>
-          <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
-            <input type="text" id="fixed-bm-name-0" placeholder="이름 (예: 업무포탈)">
-            <input type="text" id="fixed-bm-url-0" placeholder="주소 (URL)">
-            <input type="text" id="fixed-bm-name-1" placeholder="이름 (예: 리로스쿨)">
-            <input type="text" id="fixed-bm-url-1" placeholder="주소 (URL)">
-            <input type="text" id="fixed-bm-name-2" placeholder="이름 (예: 학교홈피)">
-            <input type="text" id="fixed-bm-url-2" placeholder="주소 (URL)">
-            <input type="text" id="fixed-bm-name-3" placeholder="이름 (예: 정보AS)">
-            <input type="text" id="fixed-bm-url-3" placeholder="주소 (URL)">
-          </div>
-          <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveFixedBookmarks()">고정 링크 저장</button>
-        </div>
-
-        <div class="admin-tab-pane" data-tab="accounts" style="display:none;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <div style="font-weight:700; font-size:13px;">👤 아이디 관리</div>
-            <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="addTeacherAccountUI()">+ 계정 추가</button>
-          </div>
-          <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:8px; max-height:420px; overflow-y:auto;"></div>
-        </div>
-
-        <div class="admin-tab-pane" data-tab="danger" style="display:none;">
-          <div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#E5484D;">🧹 학기별 초기화</div>
-          <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학기가 바뀌어 선생님 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
-            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('1학기')">1학기 시간표 삭제</button>
-            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('2학기')">2학기 시간표 삭제</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
 
 <div id="app-shell">
   <div id="app-rail">
     <div class="rail-logo">부광</div>
-    <div class="rail-item active" title="홈">
+    <div class="rail-item active" id="rail-home-btn" title="홈" onclick="goHome()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
     </div>
@@ -377,6 +271,10 @@
     </div>
     <div style="flex: 1;"></div>
     <div style="text-align:center; font-size:9px; font-weight:700; color:var(--text-sub); padding-bottom:6px;">v<span id="app-version">-</span></div>
+    <div class="rail-item" id="rail-settings-btn" style="display:none;" title="관리자 설정" onclick="showSettingsPage()">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
+      <div class="rail-label">설정</div>
+    </div>
     <div class="rail-item" id="rail-add-btn" style="display:none;" title="새 페이지 추가 (관리자, 준비 중)" onclick="railComingSoon('레일 추가')">
       <div class="rail-ico" style="border: 1.5px dashed var(--border-color); border-radius: 7px; width: 20px; height: 20px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
       <div class="rail-label" style="font-weight: 600;">추가</div>
@@ -899,6 +797,126 @@
   </div>
 
 </div>
+
+<div id="settings-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">⚙️ 관리자 설정</div>
+    </div>
+    <div id="admin-settings-current-name" style="font-size:12px; color:var(--text-sub);"></div>
+  </div>
+
+  <div style="display:flex; flex:1; min-height:0;">
+    <div style="width:160px; flex:0 0 auto; border-right:1px solid var(--border-color); padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;">
+      <button class="admin-tab-btn" data-tab="tt" onclick="switchAdminTab('tt')">🗓️ 시간표</button>
+      <button class="admin-tab-btn" data-tab="duty" onclick="switchAdminTab('duty')">📋 감독표</button>
+      <button class="admin-tab-btn" data-tab="classes" onclick="switchAdminTab('classes')">🏫 학급 구성</button>
+      <button class="admin-tab-btn" data-tab="semester" onclick="switchAdminTab('semester')">📅 학기 날짜</button>
+      <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기</button>
+      <button class="admin-tab-btn" data-tab="accounts" onclick="switchAdminTab('accounts')">👤 계정 관리</button>
+      <button class="admin-tab-btn" data-tab="danger" onclick="switchAdminTab('danger')">🧹 초기화</button>
+    </div>
+
+    <div style="flex:1; min-width:0; overflow-y:auto; padding:20px 26px;">
+
+      <div class="admin-tab-pane" data-tab="tt" style="display:none; height:100%; flex-direction:column;">
+        <div id="admin-tt-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="duty" style="display:none; height:100%; flex-direction:column;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 평일 자리 한 번에 만들기</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">"학기 날짜" 탭에 등록해둔 학기 시작~종료일 그대로, 방학·휴업일을 뺀 평일 날짜를 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(감독 종류와 상관없이 평일 계산은 똑같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
+        <div style="display:flex; gap:16px; margin-bottom:10px; font-size:12px; font-weight:600;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-야자감독" checked><span>🌙 야자 감독</span></label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-급식감독" checked><span>🍱 급식 감독</span></label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-아침감독" checked><span>☀️ 아침 감독</span></label>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+          <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('1학기')">📅 1학기 빈 자리 만들기</button>
+          <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('2학기')">📅 2학기 빈 자리 만들기</button>
+        </div>
+
+        <div style="border-top:1px solid var(--border-color); margin-bottom:14px;"></div>
+
+        <div class="tab-switch" id="admin-duty-board-switch" style="align-self:flex-start; margin-bottom:10px;">
+          <button class="tab-btn admin-duty-board-btn" data-board="야자감독" onclick="selectAdminDutyBoard('야자감독','🌙')">🌙 야자</button>
+          <button class="tab-btn admin-duty-board-btn" data-board="급식감독" onclick="selectAdminDutyBoard('급식감독','🍱')">🍱 급식</button>
+          <button class="tab-btn admin-duty-board-btn" data-board="아침감독" onclick="selectAdminDutyBoard('아침감독','☀️')">☀️ 아침</button>
+        </div>
+        <div id="admin-duty-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="classes" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🏫 학급 구성</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년 수와 학년별 반 개수를 정해두면, 담임 지정이나 학급표 같은 기능에서 그대로 씁니다.</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+          <span style="font-size:12px; font-weight:700;">학년 수</span>
+          <select id="class-grade-count" class="mini-select" onchange="renderClassCountInputs()">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          </select>
+        </div>
+        <div id="class-count-rows" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="saveClassStructure()">학급 구성 저장</button>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="semester" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 날짜 설정</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 기간으로 화면이 지금 몇 학기인지 자동으로 판단합니다(시간표 화면 전환, 감독표 자동 채우기에 같이 쓰입니다).</div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="width:40px; font-weight:700;">1학기</span>
+            <input type="date" id="sem1-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+            <span>~</span>
+            <input type="date" id="sem1-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="width:40px; font-weight:700;">2학기</span>
+            <input type="date" id="sem2-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+            <span>~</span>
+            <input type="date" id="sem2-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
+          </div>
+        </div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveSemesterRanges()">학기 날짜 저장</button>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="bookmarks" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🔗 즐겨찾기 고정 링크 (모두에게 같게 보임)</div>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
+          <input type="text" id="fixed-bm-name-0" placeholder="이름 (예: 업무포탈)">
+          <input type="text" id="fixed-bm-url-0" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-1" placeholder="이름 (예: 리로스쿨)">
+          <input type="text" id="fixed-bm-url-1" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-2" placeholder="이름 (예: 학교홈피)">
+          <input type="text" id="fixed-bm-url-2" placeholder="주소 (URL)">
+          <input type="text" id="fixed-bm-name-3" placeholder="이름 (예: 정보AS)">
+          <input type="text" id="fixed-bm-url-3" placeholder="주소 (URL)">
+        </div>
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveFixedBookmarks()">고정 링크 저장</button>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="accounts" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-weight:700; font-size:13px;">👤 아이디 관리</div>
+          <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="addTeacherAccountUI()">+ 계정 추가</button>
+        </div>
+        <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:8px; max-height:calc(100vh - 260px); overflow-y:auto;"></div>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="danger" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#E5484D;">🧹 학기별 초기화</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학기가 바뀌어 선생님 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('1학기')">1학기 시간표 삭제</button>
+          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('2학기')">2학기 시간표 삭제</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -916,7 +934,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.9';
+  var BUILD_ID = '2026-09-26.10';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1072,6 +1090,7 @@
     document.getElementById('user-chip-name').innerText = data.name;
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
     document.getElementById('rail-add-btn').style.display = data.is_admin ? 'flex' : 'none';
+    document.getElementById('rail-settings-btn').style.display = data.is_admin ? 'flex' : 'none';
 
     if (data.must_change_password) {
       document.getElementById('force-password-overlay').style.display = 'flex';
@@ -1107,8 +1126,7 @@
     }
   }
 
-  // ===== ⚙️ 관리자 설정 =====
-  // ===== ⚙️ 관리자 설정 — 탭형 콘솔 =====
+  // ===== ⚙️ 관리자 설정 — 탭형 콘솔(홈 화면 자리를 바꿔서 보여주는 페이지) =====
   // 시간표/감독표는 별도 팝업을 새로 띄우지 않고, 그 모달의 실제 DOM(modal-box)을
   // 설정 창 안의 슬롯으로 옮겨와 그대로 렌더링한다(mountBox). 그래서 관리자 입장에선
   // "설정 창을 벗어나지 않고 그 안에서 다 된다"— 로직은 원래 모달의 함수를 그대로 쓴다.
@@ -1136,19 +1154,34 @@
     }
   }
 
-  async function openAdminSettingsModal(startTab) {
+  // 설정을 모달 팝업이 아니라 왼쪽 아이콘 레일에서 들어가는 "페이지"로 바꿨다
+  // (사용자 요청: 숨겨져 있고 창이 작아서 불편하다 — 홈 화면 자리를 통째로 설정으로 바꾸는 게 낫다).
+  // 그래서 #main-dashboard ↔ #settings-page를 스위치하고, 왼쪽 레일의 활성 표시도 같이 옮긴다.
+  async function showSettingsPage(startTab) {
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
-    document.getElementById('admin-settings-overlay').style.display = 'flex';
+    document.getElementById('main-dashboard').style.display = 'none';
+    document.getElementById('settings-page').style.display = 'flex';
+    document.getElementById('rail-home-btn').classList.remove('active');
+    document.getElementById('rail-settings-btn').classList.add('active');
     document.getElementById('user-menu-dropdown').style.display = 'none';
     loadTeacherAccountList();
     loadFixedBookmarks();
     loadSemesterRangesUI();
+    loadClassStructureUI();
     await switchAdminTab(startTab || adminSettingsActiveTab || 'tt');
   }
 
-  function closeAdminSettingsModal() {
-    document.getElementById('admin-settings-overlay').style.display = 'none';
+  function goHome() {
+    document.getElementById('settings-page').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'grid';
+    document.getElementById('rail-settings-btn').classList.remove('active');
+    document.getElementById('rail-home-btn').classList.add('active');
   }
+
+  // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
+  // 사용자 메뉴의 "관리자 설정" 버튼)를 그대로 두기 위해 이름은 유지하고 안만 페이지 전환으로 바꿨다.
+  async function openAdminSettingsModal(startTab) { await showSettingsPage(startTab); }
+  function closeAdminSettingsModal() { goHome(); }
 
   async function switchAdminTab(tabId) {
     adminSettingsActiveTab = tabId;
@@ -1156,7 +1189,7 @@
     document.querySelectorAll('.admin-tab-pane').forEach(function(el) {
       if (el.dataset.tab !== tabId) { el.style.display = 'none'; return; }
       // tt/duty 탭만 안에 꽉 채워야 하는 임베드 콘텐츠(시간표 그리드, 감독표 목록)가 있어서 flex-column,
-      // 나머지(학기 날짜/즐겨찾기/계정/초기화)는 원래 그대로 위에서 아래로 쌓이는 block이어야 한다 —
+      // 나머지(학급 구성/학기 날짜/즐겨찾기/계정/초기화)는 원래 그대로 위에서 아래로 쌓이는 block이어야 한다 —
       // 여기를 flex로 잘못 켜뒀던 게 라벨이 세로로 쪼개지고 저장 버튼이 세로로 길게 늘어나던 버그였다.
       el.style.display = (tabId === 'tt' || tabId === 'duty') ? 'flex' : 'block';
     });
@@ -2806,6 +2839,55 @@
       window.semesterRanges = value;
       customAlert('학기 날짜를 저장했습니다.');
       await fetchSchedule();
+    } catch(e) { customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
+  }
+
+  // ===== 🏫 학급 구성 (학년 수 + 학년별 반 개수) — 나중에 담임 지정·학급표에서 재사용할 기초 데이터 =====
+  async function ensureClassStructureLoaded() {
+    if (window.classStructure) return window.classStructure;
+    try {
+      const { data, error } = await sb.from('app_settings').select('value').eq('key', 'class_structure').maybeSingle();
+      if (!error && data && data.value) { window.classStructure = data.value; return window.classStructure; }
+    } catch(e) {}
+    window.classStructure = { gradeCount: 3, classCounts: [6, 6, 6] };
+    return window.classStructure;
+  }
+
+  async function loadClassStructureUI() {
+    const cs = await ensureClassStructureLoaded();
+    const sel = document.getElementById('class-grade-count');
+    if (sel) sel.value = cs.gradeCount || 3;
+    renderClassCountInputs(cs.classCounts);
+  }
+
+  function renderClassCountInputs(existingCounts) {
+    const gradeCount = parseInt(document.getElementById('class-grade-count').value) || 3;
+    const counts = existingCounts || (window.classStructure && window.classStructure.classCounts) || [];
+    const rows = document.getElementById('class-count-rows');
+    let html = '';
+    for (let g = 1; g <= gradeCount; g++) {
+      const val = counts[g - 1] != null ? counts[g - 1] : 6;
+      html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px;">' +
+        '<span style="width:50px; font-weight:700;">' + g + '학년</span>' +
+        '<input type="number" min="1" max="20" value="' + val + '" id="class-count-' + g + '" style="width:64px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);"> 반' +
+      '</div>';
+    }
+    rows.innerHTML = html;
+  }
+
+  async function saveClassStructure() {
+    const gradeCount = parseInt(document.getElementById('class-grade-count').value) || 3;
+    const classCounts = [];
+    for (let g = 1; g <= gradeCount; g++) {
+      const el = document.getElementById('class-count-' + g);
+      classCounts.push(Math.max(1, parseInt(el.value) || 1));
+    }
+    const value = { gradeCount: gradeCount, classCounts: classCounts };
+    try {
+      const { error } = await sb.from('app_settings').upsert({ key: 'class_structure', value: value });
+      if (error) throw error;
+      window.classStructure = value;
+      customAlert('학급 구성을 저장했습니다.');
     } catch(e) { customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
   }
 
