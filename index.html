@@ -1265,7 +1265,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.35';
+  var BUILD_ID = '2026-09-26.36';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3815,10 +3815,38 @@
     for(let j=0; j<35; j++) {
       const p = (j%7)+1; const d = Math.floor(j/7)+1;
       const parts = schedule[j].split(String.fromCharCode(10));
-      document.getElementById(prefix + '-' + p + '-' + d + '-s').innerText = parts[0] || '';
+      document.getElementById(prefix + '-' + p + '-' + d + '-s').innerHTML = subjDisplayHtml(parts[0] || '');
       document.getElementById(prefix + '-' + p + '-' + d + '-r').innerText = parts[1] || '';
     }
     updateCellColors(prefix);
+  }
+
+  // 띄어쓰기 없이 긴 과목명이 시간표 칸에서 이상한 위치(글자 하나만 남는 등)에서 줄바꿈되는 것을 막기 위한
+  // 자연스러운 줄바꿈 지점 힌트. 알려진 과목명은 의미 단위로 끊고, 목록에 없는 긴 이름은 가운데쯤에서 끊는다.
+  // <wbr>은 화면 표시에서만 줄바꿈 기회를 주는 태그라 innerText로 읽으면 원래 글자만 그대로 남는다.
+  const SUBJ_BREAK_HINTS = {
+    '과학탐구실험': 4,
+    '세계문제와미래사회': 5,
+    '세계문화와영어': 5,
+    '세포와물질대사': 3,
+    '사회문제탐구': 4,
+    '지구시스템과학': 5,
+    '스포츠경기체력': 5
+  };
+  function escapeHtmlText(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function subjDisplayHtml(text) {
+    text = text || '';
+    if (!text) return '';
+    let breakAt = SUBJ_BREAK_HINTS[text];
+    if (breakAt === undefined && !/\s/.test(text) && text.length >= 5) {
+      breakAt = Math.ceil(text.length / 2);
+    }
+    if (breakAt) {
+      return escapeHtmlText(text.slice(0, breakAt)) + '<wbr>' + escapeHtmlText(text.slice(breakAt));
+    }
+    return escapeHtmlText(text);
   }
 
   function syncSearchGridToSelection() {
@@ -4333,7 +4361,7 @@
     for(let j=0; j<35; j++) { 
       const p = (j%7)+1; const d = Math.floor(j/7)+1; 
       const parts = s[j].split(String.fromCharCode(10)); 
-      document.getElementById('my-tt-' + p + '-' + d + '-s').innerText = parts[0] || ''; 
+      document.getElementById('my-tt-' + p + '-' + d + '-s').innerHTML = subjDisplayHtml(parts[0] || '');
       document.getElementById('my-tt-' + p + '-' + d + '-r').innerText = parts[1] || ''; 
     } 
     updateCellColors('my-tt'); 
