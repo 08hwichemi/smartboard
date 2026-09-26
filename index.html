@@ -108,9 +108,10 @@
 
     .weather-group { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 8px; position: relative; min-width: 0; }
 
-    .photo-widget { display: flex; flex-direction: column; min-height: 0; transition: 0.4s ease-in-out; }
-    .photo-frame { flex: 1; width: 100%; background: #D1D6DB; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; min-height: 0;}
-    .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .news-tab-btn { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-sub); cursor: pointer; white-space: nowrap; }
+    .news-tab-btn.active { background: var(--accent-color); color: var(--on-accent); border-color: var(--accent-color); }
+    .news-item-link { color: inherit; text-decoration: none; display: block; }
+    .news-item-link:hover .msg { text-decoration: underline; }
 
     .todo-widget { display: flex; flex-direction: column; }
     .todo-item { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border-color); }
@@ -761,19 +762,17 @@
       <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
     </div>
 
-    <div class="widget photo-widget" id="photo-widget-container" style="flex: 1; min-height: 0;">
-      <div class="widget-title" style="margin-bottom: 6px;">
+    <div class="widget" id="news-widget" style="flex: 1; min-height: 0; display:flex; flex-direction:column;">
+      <div class="widget-title" style="margin-bottom: 4px;">
         <div style="display:flex; align-items:center; gap:5px;">
-          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3.2l1.8-2.5h6l1.8 2.5H20a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg></div>
-          <span id="title-photo" style="font-size:11px; font-weight:800;">우리 반 사진</span>
-          <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-photo')">⚙️</button>
+          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 0 1 8-8"/><path d="M4 11a8 8 0 0 0 8 8"/><circle cx="12" cy="11" r="2.2"/><path d="M12 3v1.5M12 17.5V19M20 11h-1.5M5.5 11H4"/></svg></div>
+          뉴스
         </div>
       </div>
-      <div class="photo-frame" id="photo-frame" onclick="document.getElementById('photo-input').click()">
-        <img id="class-photo" src="" style="display:none;">
-        <div id="photo-empty" style="color:var(--text-sub); font-size:12px; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:100%;">📷 클릭하여 사진 선택<br>(저장됨)</div>
-      </div>
-      <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
+      <div id="news-tab-switch" style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:6px;"></div>
+      <ul class="recent-notices" id="news-list">
+        <li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">불러오는 중...</li>
+      </ul>
     </div>
   </div>
 
@@ -949,7 +948,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.20';
+  var BUILD_ID = '2026-09-26.21';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1851,7 +1850,7 @@
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
-    { selector: '#photo-widget-container', title: '📷 우리 반 사진', desc: '클릭해서 사진을 올리면 자동으로 저장돼요.' },
+    { selector: '#news-widget', title: '📰 뉴스', desc: '탭을 눌러 종합/정치·사회/경제/IT·과학/스포츠 뉴스를 볼 수 있어요. 제목을 클릭하면 기사로 이동해요.' },
     { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
     { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 여기 전부 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
     { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' }
@@ -1948,6 +1947,7 @@
     updateMeal(); loadAllData();
     setInterval(updateTime, 1000); updateTime();
     fetchWeather(); setInterval(fetchWeather, 1800000);
+    renderNewsTabs(); fetchNews(); setInterval(fetchNews, 1800000);
 
     checkNotice(); setInterval(checkNotice, 120000);
     checkAllDuties();
@@ -1964,7 +1964,6 @@
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key === 'photo') continue;
       data[key] = localStorage.getItem(key);
     }
     return data;
@@ -2015,10 +2014,8 @@
     reader.onload = async function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        const keptPhoto = localStorage.getItem('photo');
         localStorage.clear();
         Object.keys(data).forEach(function(k) { localStorage.setItem(k, data[k]); });
-        if (keptPhoto) localStorage.setItem('photo', keptPhoto);
         await customAlert('복원이 완료되었습니다. 페이지를 새로고침합니다.');
         location.reload();
       } catch(err) { customAlert('백업 파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인해주세요.'); }
@@ -3276,6 +3273,74 @@
     } catch(e) { }
   }
 
+  const NEWS_CATEGORIES = [
+    { key: '종합', label: '종합' },
+    { key: '정치_사회', label: '정치·사회' },
+    { key: '경제', label: '경제' },
+    { key: 'IT_과학', label: 'IT·과학' },
+    { key: '스포츠', label: '스포츠' },
+  ];
+  let newsData = null;
+  let currentNewsTab = '종합';
+
+  function renderNewsTabs() {
+    const wrap = document.getElementById('news-tab-switch');
+    if (!wrap || wrap.childElementCount) return;
+    wrap.innerHTML = NEWS_CATEGORIES.map(function(c) {
+      return '<button class="news-tab-btn' + (c.key === currentNewsTab ? ' active' : '') + '" data-cat="' + c.key + '" onclick="switchNewsTab(\'' + c.key + '\')">' + c.label + '</button>';
+    }).join('');
+  }
+
+  function switchNewsTab(key) {
+    currentNewsTab = key;
+    document.querySelectorAll('#news-tab-switch .news-tab-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.cat === key);
+    });
+    renderNewsList();
+  }
+
+  function formatNewsTime(pubDate) {
+    if (!pubDate) return '';
+    const d = new Date(pubDate);
+    if (isNaN(d.getTime())) return '';
+    const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (diffMin < 1) return '방금';
+    if (diffMin < 60) return diffMin + '분 전';
+    if (diffMin < 1440) return Math.floor(diffMin / 60) + '시간 전';
+    return Math.floor(diffMin / 1440) + '일 전';
+  }
+
+  function renderNewsList() {
+    const listEl = document.getElementById('news-list');
+    if (!listEl) return;
+    const items = newsData && newsData[currentNewsTab];
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      listEl.innerHTML = '<li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">뉴스가 없습니다.</li>';
+      return;
+    }
+    listEl.innerHTML = items.map(function(item) {
+      const timeText = formatNewsTime(item.pubDate);
+      const sourceHtml = item.source ? '<span style="color:var(--accent-color); font-weight:800;">' + escapeHtmlAttr(item.source) + '</span> · ' : '';
+      return '<li><a class="news-item-link" href="' + escapeHtmlAttr(item.link) + '" target="_blank" rel="noopener">' +
+        '<span class="time">' + sourceHtml + timeText + '</span>' +
+        '<span class="msg">' + escapeHtmlAttr(item.title) + '</span>' +
+        '</a></li>';
+    }).join('');
+  }
+
+  async function fetchNews() {
+    try {
+      const { data, error } = await sb.functions.invoke('news');
+      if (error) throw error;
+      newsData = (data && data.categories) || null;
+      renderNewsTabs();
+      renderNewsList();
+    } catch (e) {
+      const listEl = document.getElementById('news-list');
+      if (listEl && !newsData) listEl.innerHTML = '<li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">뉴스를 불러오지 못했습니다.</li>';
+    }
+  }
+
   function toggleDdaySettings(id) {
     const s = document.getElementById('dday-settings');
     if (s.style.display === 'block' && document.getElementById('dday-target-id').value == id) {
@@ -3987,7 +4052,7 @@
   function loadAllData() {
     loadFixedBookmarks();
 
-    ['title-photo', 'title-todo-work', 'title-todo-stu'].forEach(function(id) {
+    ['title-todo-work', 'title-todo-stu'].forEach(function(id) {
       if(localStorage.getItem(id)) document.getElementById(id).innerText = localStorage.getItem(id);
     });
 
@@ -4012,9 +4077,8 @@
       let saved = localStorage.getItem(el.id);
       if(saved) el.innerHTML = saved;
     });
-    document.querySelectorAll('input[type="checkbox"]').forEach(function(el) { if(localStorage.getItem(el.id)==='true') el.checked = true; el.onchange = saveAllData; }); 
-    const ph = localStorage.getItem('photo'); if(ph) { document.getElementById('class-photo').src = ph; document.getElementById('class-photo').style.display='block'; document.getElementById('photo-empty').style.display='none'; } 
-    changeTheme(localStorage.getItem('theme') || 'default'); 
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(el) { if(localStorage.getItem(el.id)==='true') el.checked = true; el.onchange = saveAllData; });
+    changeTheme(localStorage.getItem('theme') || 'default');
     calcDday(); 
     updateCellColors('my-tt'); updateCellColors('search-tt');
   }
@@ -4091,37 +4155,6 @@
     document.getElementById('tc-period-progress').style.width = pct + '%';
     const dotEl = document.getElementById('tc-period-dot');
     if (dotEl) dotEl.style.left = pct + '%';
-  }
-
-  function handlePhoto(input) { 
-    const f = input.files[0]; 
-    if (f) { 
-      const r = new FileReader(); 
-      r.onload = function(e) { 
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let w = img.width; let h = img.height;
-          const max_size = 1000;
-          if(w > max_size || h > max_size) {
-            if(w > h) { h = Math.round(h * max_size / w); w = max_size; }
-            else { w = Math.round(w * max_size / h); h = max_size; }
-          }
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          
-          document.getElementById('class-photo').src = dataUrl; 
-          document.getElementById('class-photo').style.display = 'block'; 
-          document.getElementById('photo-empty').style.display = 'none'; 
-          
-          try { localStorage.setItem('photo', dataUrl); scheduleBackupWrite(); } catch(err) { customAlert('압축 후에도 사진 용량이 너무 큽니다. 더 작은 사진을 사용해주세요.'); }
-        };
-        img.src = e.target.result;
-      }; 
-      r.readAsDataURL(f); 
-    } 
   }
 
   function changeTheme(t) {
