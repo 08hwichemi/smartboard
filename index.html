@@ -257,7 +257,7 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
     </div>
-    <div class="rail-item" title="명렬표 (준비 중)" onclick="railComingSoon('명렬표')">
+    <div class="rail-item" title="명렬표" onclick="openStudentRoster()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
@@ -362,6 +362,24 @@
     </div>
     <div style="display: flex; margin-top: 15px;" id="duty-close-row">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeDutyModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="roster-overlay">
+  <div class="modal-box" id="roster-modal-box" style="width: 560px; max-width: 92vw; max-height: 85vh; display: none; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap:10px; flex-wrap:wrap;">
+      <div style="font-weight: 800; font-size: 16px;">🧑‍🎓 명렬표</div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <select id="roster-grade-select" class="mini-select" onchange="onRosterGradeChange()"><option value="">학년</option></select>
+        <select id="roster-class-select" class="mini-select" onchange="onRosterClassChange()"><option value="">반</option></select>
+      </div>
+    </div>
+    <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 200px;" id="roster-list-container">
+      <div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>
+    </div>
+    <div style="display: flex; margin-top: 15px;">
+      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeStudentRoster()">닫기</button>
     </div>
   </div>
 </div>
@@ -800,6 +818,7 @@
       <button class="admin-tab-btn" data-tab="tt" onclick="switchAdminTab('tt')">🗓️ 시간표</button>
       <button class="admin-tab-btn" data-tab="duty" onclick="switchAdminTab('duty')">📋 감독표</button>
       <button class="admin-tab-btn" data-tab="classes" onclick="switchAdminTab('classes')">🏫 학급 구성</button>
+      <button class="admin-tab-btn" data-tab="students" onclick="switchAdminTab('students')">🧑‍🎓 명렬표</button>
       <button class="admin-tab-btn" data-tab="semester" onclick="switchAdminTab('semester')">📅 학기 날짜</button>
       <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기</button>
       <button class="admin-tab-btn" data-tab="accounts" onclick="switchAdminTab('accounts')">👤 계정 관리</button>
@@ -846,6 +865,14 @@
         </div>
         <div id="class-count-rows" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
         <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="saveClassStructure()">학급 구성 저장</button>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="students" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🧑‍🎓 명렬표 엑셀 업로드</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀을 올리면 학년별로 자동 인식해서 저장합니다. 같은 학년 파일을 다시 올리면 그 학년 명단이 새 내용으로 통째로 바뀝니다(다른 학년은 그대로 남습니다).</div>
+        <input type="file" id="student-excel-input" accept=".xlsx,.xls" hidden onchange="handleStudentExcelFile(this.files[0]); this.value='';">
+        <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="document.getElementById('student-excel-input').click()">📥 엑셀 업로드</button>
+        <div id="student-upload-status" style="font-size:11.5px; color:var(--text-sub); margin-top:10px;"></div>
       </div>
 
       <div class="admin-tab-pane" data-tab="semester" style="display:none;">
@@ -922,7 +949,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.15';
+  var BUILD_ID = '2026-09-26.16';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1061,7 +1088,7 @@
   }
 
   async function handleAuthedSession(session) {
-    const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password').eq('id', session.user.id).single();
+    const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class').eq('id', session.user.id).single();
     if (error || !data) {
       await sb.auth.signOut();
       showLoginGate('계정 정보를 불러오지 못했습니다. 다시 로그인해주세요.');
@@ -2422,6 +2449,106 @@
 
   function closeDutyModal() { document.getElementById('duty-overlay').style.display = 'none'; }
 
+  // ----- 명렬표 -----
+  async function openStudentRoster() {
+    await ensureClassStructureLoaded();
+    const gradeSel = document.getElementById('roster-grade-select');
+    gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
+    document.getElementById('roster-class-select').innerHTML = '<option value="">반</option>';
+    document.getElementById('roster-overlay').style.display = 'flex';
+    document.getElementById('roster-modal-box').style.display = 'flex';
+
+    const t = window.currentTeacher;
+    if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
+      gradeSel.value = String(t.homeroom_grade);
+      document.getElementById('roster-class-select').innerHTML = classOptionsHtml(t.homeroom_grade, t.homeroom_class);
+      document.getElementById('roster-class-select').value = String(t.homeroom_class);
+      loadStudentRoster(t.homeroom_grade, t.homeroom_class);
+    } else {
+      document.getElementById('roster-list-container').innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>';
+    }
+  }
+
+  function closeStudentRoster() { document.getElementById('roster-overlay').style.display = 'none'; }
+
+  function onRosterGradeChange() {
+    const grade = parseInt(document.getElementById('roster-grade-select').value);
+    const classSel = document.getElementById('roster-class-select');
+    if (!grade) { classSel.innerHTML = '<option value="">반</option>'; document.getElementById('roster-list-container').innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>'; return; }
+    classSel.innerHTML = '<option value="">반</option>' + classOptionsHtml(grade, null);
+  }
+
+  function onRosterClassChange() {
+    const grade = parseInt(document.getElementById('roster-grade-select').value);
+    const classNo = parseInt(document.getElementById('roster-class-select').value);
+    if (!grade || !classNo) return;
+    loadStudentRoster(grade, classNo);
+  }
+
+  async function loadStudentRoster(grade, classNo) {
+    const listEl = document.getElementById('roster-list-container');
+    listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">불러오는 중...</div>';
+    try {
+      const { data, error } = await sb.from('students').select('*').eq('grade', grade).eq('class_no', classNo).order('number');
+      if (error) throw error;
+      renderStudentRosterList(data || []);
+    } catch (e) {
+      listEl.innerHTML = '<div style="text-align:center; color:#E5484D; font-size: 12px; padding: 20px;">불러오기 실패: ' + escapeHtmlAttr(e && e.message ? e.message : e) + '</div>';
+    }
+  }
+
+  function parentPhoneFor(row) { return row.mother_phone || row.father_phone || ''; }
+
+  function renderStudentRosterList(rows) {
+    const listEl = document.getElementById('roster-list-container');
+    window.__rosterRows = rows;
+    if (rows.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">등록된 학생이 없습니다.</div>'; return; }
+
+    let html = '<div style="display:grid; grid-template-columns: 36px 64px 1fr 1fr 44px; gap:6px; padding:6px 4px; font-size:10.5px; font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
+      '<div>번호</div><div>이름</div><div>전화번호</div><div>부모님전화번호</div><div></div></div>';
+    rows.forEach(function(r) {
+      html += '<div id="roster-row-' + r.id + '" style="display:grid; grid-template-columns: 36px 64px 1fr 1fr 44px; gap:6px; padding:7px 4px; font-size:12px; align-items:center; border-bottom:1px dashed var(--border-color);">' +
+        '<div>' + r.number + '번</div>' +
+        '<div style="font-weight:700;">' + escapeHtmlAttr(r.name) + '</div>' +
+        '<div id="roster-view-student-' + r.id + '">' + escapeHtmlAttr(r.student_phone || '-') + '</div>' +
+        '<div id="roster-view-parent-' + r.id + '">' + escapeHtmlAttr(parentPhoneFor(r) || '-') + '</div>' +
+        '<button class="top-btn" style="font-size:10.5px; padding:2px 6px;" onclick="toggleStudentEditUI(' + r.id + ')">수정</button>' +
+        '</div>' +
+        '<div id="roster-edit-' + r.id + '" style="display:none; grid-column: 1 / -1; gap:6px; padding:6px 4px 10px; border-bottom:1px dashed var(--border-color); font-size:11px;">' +
+        '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">' +
+        '<input type="text" id="roster-edit-student-' + r.id + '" value="' + escapeHtmlAttr(r.student_phone || '') + '" placeholder="학생 전화번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+        '<input type="text" id="roster-edit-mother-' + r.id + '" value="' + escapeHtmlAttr(r.mother_phone || '') + '" placeholder="어머니 번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+        '<input type="text" id="roster-edit-father-' + r.id + '" value="' + escapeHtmlAttr(r.father_phone || '') + '" placeholder="아버지 번호" style="flex:1; min-width:110px; padding:4px 6px; font-size:11px; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">' +
+        '</div>' +
+        '<div style="display:flex; gap:6px; margin-top:6px;">' +
+        '<button class="top-btn accent" style="font-size:11px; padding:3px 10px;" onclick="saveStudentPhoneUI(' + r.id + ')">저장</button>' +
+        '<button class="top-btn" style="font-size:11px; padding:3px 10px;" onclick="toggleStudentEditUI(' + r.id + ')">취소</button>' +
+        '</div>' +
+        '</div>';
+    });
+    listEl.innerHTML = html;
+  }
+
+  function toggleStudentEditUI(id) {
+    const editEl = document.getElementById('roster-edit-' + id);
+    editEl.style.display = editEl.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  async function saveStudentPhoneUI(id) {
+    const studentPhone = document.getElementById('roster-edit-student-' + id).value.trim();
+    const motherPhone = document.getElementById('roster-edit-mother-' + id).value.trim();
+    const fatherPhone = document.getElementById('roster-edit-father-' + id).value.trim();
+    try {
+      const { error } = await sb.rpc('update_student_phone', { p_student_id: id, p_student_phone: studentPhone, p_mother_phone: motherPhone, p_father_phone: fatherPhone });
+      if (error) throw error;
+      document.getElementById('roster-view-student-' + id).innerText = studentPhone || '-';
+      document.getElementById('roster-view-parent-' + id).innerText = (motherPhone || fatherPhone || '-');
+      toggleStudentEditUI(id);
+    } catch (e) {
+      customAlert('저장 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
   function updateDutyEditToggleBtn() {
     const btn = document.getElementById('duty-edit-toggle');
     if (dutyEditMode) {
@@ -3605,6 +3732,97 @@
     event.target.value = '';
     if (!file) return;
     await handleTimetableExcelFileCore(file, scheduleModalSemester);
+  }
+
+  // ----- 명렬표 엑셀 업로드 -----
+  // 엑셀 형식: '학번'(예: 30202 = 3학년 02반 02번), '이름', '학생번호'(학생 본인 전화번호),
+  // '어머니번호', '아버지번호' 열을 헤더 텍스트로 찾아서 읽는다. 헤더 행이 몇 번째 줄에
+  // 있는지는 파일마다 다를 수 있어서(제목 줄이 있거나 없거나) 위 5줄 안에서 '학번'과
+  // '이름'이 같이 있는 줄을 찾는 방식으로 유연하게 처리한다.
+  function parseStudentWorkbook(wb) {
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+
+    let headerIdx = -1, col = {};
+    for (let i = 0; i < Math.min(rows.length, 6); i++) {
+      const row = rows[i].map(function(v) { return String(v || '').trim(); });
+      const idxNo = row.indexOf('학번');
+      const idxName = row.indexOf('이름');
+      if (idxNo !== -1 && idxName !== -1) {
+        headerIdx = i;
+        col = {
+          no: idxNo, name: idxName,
+          studentPhone: row.indexOf('학생번호'),
+          motherPhone: row.indexOf('어머니번호'),
+          fatherPhone: row.indexOf('아버지번호'),
+        };
+        break;
+      }
+    }
+    if (headerIdx === -1) {
+      throw new Error("'학번'과 '이름' 열을 찾지 못했습니다. 양식을 확인해주세요.");
+    }
+
+    const byGrade = {};
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rawNo = row[col.no];
+      const studentNo = parseInt(String(rawNo).replace(/[^0-9]/g, ''), 10);
+      const name = String(row[col.name] || '').trim();
+      if (!studentNo || !name) continue;
+
+      const grade = Math.floor(studentNo / 10000);
+      const rem = studentNo % 10000;
+      const classNo = Math.floor(rem / 100);
+      const number = rem % 100;
+      if (!grade || !classNo || !number) continue;
+
+      const entry = {
+        class_no: classNo, number: number, name: name,
+        student_phone: col.studentPhone !== -1 ? String(row[col.studentPhone] || '').trim() : '',
+        mother_phone: col.motherPhone !== -1 ? String(row[col.motherPhone] || '').trim() : '',
+        father_phone: col.fatherPhone !== -1 ? String(row[col.fatherPhone] || '').trim() : '',
+      };
+      (byGrade[grade] = byGrade[grade] || []).push(entry);
+    }
+    return byGrade;
+  }
+
+  async function handleStudentExcelFile(file) {
+    if (!file) return;
+    const statusEl = document.getElementById('student-upload-status');
+    let byGrade;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      byGrade = parseStudentWorkbook(wb);
+    } catch (e) {
+      customAlert('엑셀 파일을 읽지 못했습니다. 양식을 확인해주세요.\n(' + (e && e.message ? e.message : e) + ')');
+      return;
+    }
+
+    const grades = Object.keys(byGrade).map(Number).sort();
+    if (grades.length === 0) { customAlert('엑셀에서 학생 명단을 찾지 못했습니다.'); return; }
+
+    const summary = grades.map(function(g) { return g + '학년 ' + byGrade[g].length + '명'; }).join(', ');
+    const ok = await customConfirm(
+      '엑셀에서 ' + summary + '을(를) 찾았습니다.\n\n' +
+      '이 내용으로 저장할까요? (같은 학년의 기존 명단은 통째로 새 내용으로 바뀝니다)'
+    );
+    if (!ok) return;
+
+    statusEl.innerText = '저장 중...';
+    try {
+      for (const g of grades) {
+        const { error } = await sb.rpc('admin_replace_students_for_grade', { p_grade: g, p_rows: byGrade[g] });
+        if (error) throw error;
+      }
+      statusEl.innerText = summary + ' 저장 완료 (' + new Date().toLocaleTimeString('ko-KR') + ')';
+      customAlert(summary + ' 저장을 완료했습니다.');
+    } catch (e) {
+      statusEl.innerText = '';
+      customAlert('저장 실패: ' + (e && e.message ? e.message : e));
+    }
   }
 
   function renderSearchTimetable(init = false) {
