@@ -106,9 +106,8 @@
     .timer-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; }
     .timer-btn { padding: 4px 0; font-size: 11px; border: 1px solid var(--border-color); background: var(--tt-bg); border-radius: 6px; color: var(--text-main); cursor: pointer; font-weight: 600; white-space: nowrap; width: 100%; box-sizing: border-box;}
 
-    .weather-group { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; position: relative; flex-shrink: 0; min-width: 100px;}
-    .weather-setting-modal { display: none; position: absolute; top: 50px; right: 0; background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index: 10; width: 160px;}
-    
+    .weather-group { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 8px; position: relative; min-width: 0; }
+
     .photo-widget { display: flex; flex-direction: column; min-height: 0; transition: 0.4s ease-in-out; }
     .photo-frame { flex: 1; width: 100%; background: #D1D6DB; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; min-height: 0;}
     .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
@@ -319,7 +318,6 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--text-sub);"><path d="M6 9.5 12 15l6-5.5"/></svg>
 
           <div id="user-menu-dropdown">
-            <button class="um-btn" id="btn-admin-settings" style="display:none;" onclick="event.stopPropagation(); openAdminSettingsModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>관리자 설정</button>
             <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h9"/><path d="M11 12h9M17 8l4 4-4 4"/></svg>로그아웃</button>
           </div>
         </div>
@@ -598,49 +596,33 @@
       </div>
 
       <div class="widget top-bar-widget" style="padding: 0 16px; position: relative; min-width: 0;">
-        <div onclick="toggleWeatherSettings()" style="position: absolute; top: 9px; right: 11px; cursor: pointer; color: var(--text-sub); z-index: 3;" title="날씨 위치 설정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
-        <div class="time-group" style="flex: 1; align-items: center; text-align: center;">
-          <div class="time-display" id="clock" style="font-size: 54px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
-          <div class="date-display" style="justify-content: center; font-size:16px; margin-top:4px;"><span id="date-text">...</span> <span class="badge-today" id="day-text" style="font-size:13px; padding:4px 10px;">...</span></div>
+        <div class="time-group" style="flex: 4; align-items: center; text-align: center;">
+          <div class="time-display" id="clock" style="font-size: 48px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
+          <div class="date-display" style="justify-content: center; font-size:15px; margin-top:4px;"><span id="date-text">...</span> <span class="badge-today" id="day-text" style="font-size:13px; padding:4px 10px;">...</span></div>
           <div id="lunar-text" style="font-size:13px; color:var(--text-sub); margin-top:7px; font-weight:600;">🌙 음력 계산 중...</div>
         </div>
 
         <div style="border-right: 1px dashed var(--border-color); height: 140px;"></div>
 
-        <div class="weather-group" style="flex: 1; align-items: center; justify-content: center; gap: 14px;">
-          <div style="display:flex; align-items:center; justify-content:center; gap:18px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size: 44px;" id="weather-icon">⛅</span>
-              <span style="font-size: 38px; font-weight: 800;" id="weather-temp">--°</span>
+        <div class="weather-group" style="flex: 6; padding-left: 16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <span style="font-size:11px; font-weight:800; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">🌤️ 날씨 · <span id="weather-location-label">부광고</span></span>
+            <span style="font-size:9.5px; font-weight:700; color:var(--alert); background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:6px; padding:1px 6px; white-space:nowrap; flex-shrink:0;">미세먼지 <span id="weather-dust-val">--</span></span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+              <span style="font-size:28px; flex-shrink:0;" id="weather-icon">⛅</span>
+              <div style="min-width:0;">
+                <div style="font-size:21px; font-weight:800; line-height:1;" id="weather-temp">--°</div>
+                <div style="font-size:10px; color:var(--text-sub); font-weight:700; white-space:nowrap;" id="weather-cond-text">-</div>
+              </div>
             </div>
-            <div style="text-align:center; background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:10px; padding:5px 12px; flex-shrink:0;">
-              <div style="font-size:10.5px; color:var(--alert); font-weight:700; opacity:.85;">미세먼지</div>
-              <div style="font-size:15px; color:var(--alert); font-weight:800; white-space:nowrap;" id="weather-dust-val">--</div>
+            <div style="text-align:right; font-size:10px; color:var(--text-sub); font-weight:700; white-space:nowrap; line-height:1.6; flex-shrink:0;">
+              <div>최고 <span style="color:var(--text-main);" id="weather-hi">--°</span></div>
+              <div>최저 <span style="color:var(--text-main);" id="weather-lo">--°</span></div>
             </div>
           </div>
-          <div style="display:flex; justify-content:center; gap:24px; padding-top:12px; border-top:1px dashed var(--border-color); width:100%; box-sizing:border-box;">
-            <div style="text-align:center;">
-              <div style="font-size:12px; color:var(--text-sub); font-weight:700;">내일</div>
-              <div style="font-size:10.5px; color:var(--text-sub); font-weight:600; margin:2px 0;" id="wf-cond-0">-</div>
-              <div style="font-size:14px; font-weight:800;" id="wf-temp-0">--</div>
-            </div>
-            <div style="text-align:center;">
-              <div style="font-size:12px; color:var(--text-sub); font-weight:700;">모레</div>
-              <div style="font-size:10.5px; color:var(--text-sub); font-weight:600; margin:2px 0;" id="wf-cond-1">-</div>
-              <div style="font-size:14px; font-weight:800;" id="wf-temp-1">--</div>
-            </div>
-            <div style="text-align:center;">
-              <div style="font-size:12px; color:var(--text-sub); font-weight:700;">글피</div>
-              <div style="font-size:10.5px; color:var(--text-sub); font-weight:600; margin:2px 0;" id="wf-cond-2">-</div>
-              <div style="font-size:14px; font-weight:800;" id="wf-temp-2">--</div>
-            </div>
-          </div>
-          <div class="weather-setting-modal" id="weather-setting-modal">
-            <div style="font-size:11px; font-weight:bold; margin-bottom:5px; text-align:left;">위도/경도 입력</div>
-            <input type="text" id="w-lat" placeholder="위도 (예: 37.495)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-            <input type="text" id="w-lon" placeholder="경도 (예: 126.722)" style="width:100%; margin-bottom:5px; font-size:11px; padding: 4px; box-sizing: border-box;">
-            <button onclick="saveWeatherLocation()" class="top-btn accent" style="width:100%;">저장</button>
-          </div>
+          <div id="weather-hourly-strip" style="display:flex; justify-content:space-between; gap:4px; padding-top:6px; border-top:1px dashed var(--border-color); width:100%; box-sizing:border-box;"></div>
         </div>
       </div>
     </div>
@@ -737,23 +719,7 @@
       </ul>
     </div>
 
-    <div class="widget photo-widget" id="photo-widget-container" style="flex: 1.5; min-height: 0;">
-      <div class="widget-title" style="margin-bottom: 6px;">
-        <div style="display:flex; align-items:center; gap:5px;">
-          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3.2l1.8-2.5h6l1.8 2.5H20a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg></div>
-          <span id="title-photo" style="font-size:11px; font-weight:800;">우리 반 사진</span>
-          <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-photo')">⚙️</button>
-        </div>
-        <button class="top-btn" id="photo-toggle-btn" style="padding:2px 8px; font-size:11px;" onclick="togglePhoto()">숨기기</button>
-      </div>
-      <div class="photo-frame" id="photo-frame" onclick="document.getElementById('photo-input').click()">
-        <img id="class-photo" src="" style="display:none;">
-        <div id="photo-empty" style="color:var(--text-sub); font-size:12px; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:100%;">📷 클릭하여 사진 선택<br>(저장됨)</div>
-      </div>
-      <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
-    </div>
-
-    <div id="meal-widget" class="widget" style="flex: 0 0 118px; min-height: 0; justify-content: center;">
+    <div id="meal-widget" class="widget" style="flex: 1.4; min-height: 0;">
       <div class="widget-title" style="font-size:11px; margin-bottom:6px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg></div>
@@ -766,6 +732,21 @@
         </div>
       </div>
       <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
+    </div>
+
+    <div class="widget photo-widget" id="photo-widget-container" style="flex: 1; min-height: 0;">
+      <div class="widget-title" style="margin-bottom: 6px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3.2l1.8-2.5h6l1.8 2.5H20a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg></div>
+          <span id="title-photo" style="font-size:11px; font-weight:800;">우리 반 사진</span>
+          <button class="top-btn" style="padding:0 4px; font-size:10px; border:none; background:transparent;" onclick="renameTitle('title-photo')">⚙️</button>
+        </div>
+      </div>
+      <div class="photo-frame" id="photo-frame" onclick="document.getElementById('photo-input').click()">
+        <img id="class-photo" src="" style="display:none;">
+        <div id="photo-empty" style="color:var(--text-sub); font-size:12px; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:100%;">📷 클릭하여 사진 선택<br>(저장됨)</div>
+      </div>
+      <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhoto(this)">
     </div>
   </div>
 
@@ -934,7 +915,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.10';
+  var BUILD_ID = '2026-09-26.11';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1083,7 +1064,6 @@
     hideLoginGate();
 
     document.getElementById('btn-logout').style.display = 'inline-flex';
-    document.getElementById('btn-admin-settings').style.display = data.is_admin ? 'inline-flex' : 'none';
     document.getElementById('admin-settings-current-name').innerText = data.name + ' 님' + (data.is_admin ? ' (관리자)' : '');
 
     document.getElementById('user-avatar-initial').innerText = data.name.slice(0, 2);
@@ -1159,6 +1139,8 @@
   // 그래서 #main-dashboard ↔ #settings-page를 스위치하고, 왼쪽 레일의 활성 표시도 같이 옮긴다.
   async function showSettingsPage(startTab) {
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
     document.getElementById('main-dashboard').style.display = 'none';
     document.getElementById('settings-page').style.display = 'flex';
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -1173,6 +1155,8 @@
 
   function goHome() {
     document.getElementById('settings-page').style.display = 'none';
+    document.querySelector('.top-bar-row').style.display = 'flex';
+    document.querySelector('.quick-row').style.display = 'flex';
     document.getElementById('main-dashboard').style.display = 'grid';
     document.getElementById('rail-settings-btn').classList.remove('active');
     document.getElementById('rail-home-btn').classList.add('active');
@@ -1743,12 +1727,12 @@
     { selector: '#duty-overlay .modal-box', title: '🍱 급식 감독표', desc: '같은 방식으로 급식 감독 일정도 확인·수정할 수 있어요.', modal: function() { openDutyModal('급식감독', '🍱'); } },
     { selector: '#duty-overlay .modal-box', title: '☀️ 아침 감독표', desc: '아침 감독표도 마찬가지 방식이에요.', modal: function() { openDutyModal('아침감독', '☀️'); } },
     { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여줘요.' },
-    { selector: '.weather-group', title: '🌤️ 날씨', desc: '⚙️ 아이콘을 눌러 위도/경도를 입력하면 그 지역의 날씨·미세먼지와 함께, 내일부터 3일간의 예보도 보여줘요.' },
+    { selector: '.weather-group', title: '🌤️ 날씨', desc: '현재 날씨·미세먼지와 최고/최저 기온, 앞으로 몇 시간의 시간별 예보를 보여줘요.' },
     { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를, ⚙️로 일과 시간을 바꿀 수 있어요.' },
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
-    { selector: '#photo-widget-container', title: '📷 우리 반 사진', desc: '클릭해서 사진을 올리면 자동으로 저장돼요. "숨기기"를 누르면 사진 없이 할 일 칸을 더 넓게 쓸 수 있어요.' },
+    { selector: '#photo-widget-container', title: '📷 우리 반 사진', desc: '클릭해서 사진을 올리면 자동으로 저장돼요.' },
     { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
     { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 최근 15개까지 여기 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
     { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' }
@@ -2697,25 +2681,6 @@
     localStorage.setItem('fz-' + target, fontSizes[target]);
   }
 
-  let photoHidden = false;
-  
-  function togglePhoto() {
-    photoHidden = !photoHidden;
-    const frame = document.getElementById('photo-frame');
-    const btn = document.getElementById('photo-toggle-btn');
-    const widget = document.getElementById('photo-widget-container');
-    if(photoHidden) {
-      frame.style.display = 'none';
-      btn.innerText = '사진 보기';
-      widget.style.flex = '0 0 auto'; 
-    } else {
-      frame.style.display = 'block';
-      btn.innerText = '숨기기';
-      widget.style.flex = '1.5';
-    }
-    localStorage.setItem('photo-hidden', photoHidden);
-  }
-
   function loadBookmarks() {
     let bms = JSON.parse(localStorage.getItem('bookmarks'));
     if (!bms || bms.length !== 4) bms = [{name:'',url:''},{name:'',url:''},{name:'',url:''},{name:'',url:''}];
@@ -3000,16 +2965,6 @@
 
   function dismissNotice() { document.getElementById('notice-popup').classList.remove('show'); localStorage.setItem('last-notice-id-v2', currentNoticeId); }
 
-  function toggleWeatherSettings() {
-    const s = document.getElementById('weather-setting-modal');
-    s.style.display = s.style.display === 'block' ? 'none' : 'block';
-  }
-  function saveWeatherLocation() {
-    localStorage.setItem('w-lat', document.getElementById('w-lat').value);
-    localStorage.setItem('w-lon', document.getElementById('w-lon').value);
-    toggleWeatherSettings(); fetchWeather();
-  }
-  
   function weatherIconFor(code) {
     if(code===0) return '☀️'; if(code<=3) return '⛅'; if(code<=67) return '☔'; if(code<=77) return '❄️'; return '☁️';
   }
@@ -3017,31 +2972,45 @@
     if(code===0) return '맑음'; if(code<=3) return '구름조금'; if(code<=48) return '흐림'; if(code<=67) return '비'; if(code<=77) return '눈'; if(code<=82) return '소나기'; return '흐림';
   }
 
+  const WEATHER_LAT = '37.495';
+  const WEATHER_LON = '126.722';
+
   async function fetchWeather() {
-    const lat = localStorage.getItem('w-lat') || '37.495';
-    const lon = localStorage.getItem('w-lon') || '126.722';
-    document.getElementById('w-lat').value = lat; document.getElementById('w-lon').value = lon;
     try {
-      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=4');
+      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + WEATHER_LAT + '&longitude=' + WEATHER_LON + '&current_weather=true&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weathercode&timezone=auto&forecast_days=2');
       const data = await res.json();
       if(data.current_weather) {
         document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature) + '°';
         document.getElementById('weather-icon').innerText = weatherIconFor(data.current_weather.weathercode);
+        document.getElementById('weather-cond-text').innerText = weatherCondTextFor(data.current_weather.weathercode);
       }
-      if(data.daily && data.daily.time) {
-        for(let i=0; i<3; i++) {
-          const idx = i+1;
-          const condEl = document.getElementById('wf-cond-' + i);
-          const tempEl = document.getElementById('wf-temp-' + i);
-          if(!condEl || !tempEl || data.daily.weathercode[idx] === undefined) continue;
-          condEl.innerText = weatherCondTextFor(data.daily.weathercode[idx]);
-          const hi = Math.round(data.daily.temperature_2m_max[idx]);
-          const lo = Math.round(data.daily.temperature_2m_min[idx]);
-          tempEl.innerHTML = hi + '°<span style="color:var(--text-sub); font-weight:600; font-size:9.5px;">/' + lo + '°</span>';
+      if(data.daily && data.daily.temperature_2m_max) {
+        document.getElementById('weather-hi').innerText = Math.round(data.daily.temperature_2m_max[0]) + '°';
+        document.getElementById('weather-lo').innerText = Math.round(data.daily.temperature_2m_min[0]) + '°';
+      }
+      if(data.hourly && data.hourly.time) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const nowKey = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours());
+        let startIdx = data.hourly.time.findIndex(t => t.startsWith(nowKey));
+        if(startIdx === -1) startIdx = 0;
+        let html = '';
+        for(let i = 1; i <= 5; i++) {
+          const idx = startIdx + i * 2;
+          if(data.hourly.time[idx] === undefined) break;
+          const hour = new Date(data.hourly.time[idx]).getHours();
+          const temp = Math.round(data.hourly.temperature_2m[idx]);
+          const icon = weatherIconFor(data.hourly.weathercode[idx]);
+          html += '<div style="text-align:center; flex:1;">' +
+            '<div style="font-size:10.5px; color:var(--text-sub); font-weight:700;">' + hour + '시</div>' +
+            '<div style="font-size:17px; margin:3px 0;">' + icon + '</div>' +
+            '<div style="font-size:12px; font-weight:800;">' + temp + '°</div>' +
+          '</div>';
         }
+        document.getElementById('weather-hourly-strip').innerHTML = html;
       }
 
-      const resAir = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + lat + '&longitude=' + lon + '&current=pm10');
+      const resAir = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + WEATHER_LAT + '&longitude=' + WEATHER_LON + '&current=pm10');
       const dataAir = await resAir.json();
       if(dataAir.current && dataAir.current.pm10 !== undefined) {
         const pm10 = dataAir.current.pm10;
@@ -3676,11 +3645,6 @@
         document.documentElement.style.setProperty('--fz-' + k, fontSizes[k] + 'px');
       }
     });
-
-    if(localStorage.getItem('photo-hidden') === 'true') {
-      photoHidden = false; 
-      togglePhoto();
-    }
 
     document.querySelectorAll('.editable').forEach(function(el) {
       let saved = localStorage.getItem(el.id);
