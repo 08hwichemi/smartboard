@@ -744,7 +744,7 @@
   </div>
 
   <div class="dash-col" style="flex: 0.85;">
-    <div id="notice-widget" class="widget" style="flex: 1.3; min-height: 0;">
+    <div id="notice-widget" class="widget" style="flex: 1; min-height: 0;">
       <div class="widget-title" style="font-size:12.5px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
@@ -775,7 +775,7 @@
       <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
     </div>
 
-    <div class="widget" id="news-widget" style="flex: 1; min-height: 0; display:flex; flex-direction:column;">
+    <div class="widget" id="news-widget" style="flex: 1.3; min-height: 0; display:flex; flex-direction:column;">
       <div class="widget-title" style="margin-bottom: 6px; flex-wrap:wrap; row-gap:4px;">
         <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 0 1 8-8"/><path d="M4 11a8 8 0 0 0 8 8"/><circle cx="12" cy="11" r="2.2"/><path d="M12 3v1.5M12 17.5V19M20 11h-1.5M5.5 11H4"/></svg></div>
@@ -961,7 +961,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.22';
+  var BUILD_ID = '2026-09-26.23';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
