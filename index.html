@@ -1265,7 +1265,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.38';
+  var BUILD_ID = '2026-09-26.39';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1430,12 +1430,54 @@
       return;
     }
 
-    startAppFor(data);
+    await startAppFor(data);
   }
 
-  function startAppFor(teacher) {
+  async function startAppFor(teacher) {
     localStorage.setItem('my-n', teacher.name);
+    await restoreUserBackupIfNeeded(teacher.id);
     init();
+  }
+
+  // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등, localStorage 전체)를 계정별로 서버에도
+  // 저장해서 다른 기기·브라우저에서 로그인해도 본인 데이터가 보이게 하는 로직.
+  // - 이 브라우저가 지금 로그인한 계정 것으로 이미 "귀속"되어 있으면(같은 teacher_id) 아무것도
+  //   안 하고 로컬 내용을 그대로 유지한다(막 편집한 내용을 서버 값으로 덮어쓰지 않기 위함).
+  // - 이 기능이 생기기 전부터 있던 로컬 데이터(귀속 기록이 아예 없음)는 지우지 않고 지금
+  //   로그인한 계정 것으로 그대로 인정한다 — 그래야 배포 시점에 기존 사용자들의 데이터가
+  //   갑자기 사라지지 않고, 그 다음 저장부터 자동으로 서버에 이 계정 백업으로 올라간다.
+  // - 이 브라우저가 이전에 "다른" 계정으로 귀속되어 있었던 경우에만(공용 PC에서 계정을 바꿔
+  //   로그인하는 경우) 로컬을 비우고 지금 계정의 서버 백업으로 교체한다.
+  async function restoreUserBackupIfNeeded(teacherId) {
+    const ownerKey = 'backup-owner-teacher-id';
+    const prevOwner = localStorage.getItem(ownerKey);
+    if (prevOwner === teacherId) return;
+
+    if (prevOwner === null) {
+      localStorage.setItem(ownerKey, teacherId);
+      return;
+    }
+
+    try {
+      const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
+      localStorage.clear();
+      if (!error && data && data.data && typeof data.data === 'object') {
+        Object.keys(data.data).forEach(function(k) { localStorage.setItem(k, data.data[k]); });
+      }
+    } catch (e) {
+      localStorage.clear();
+    }
+    localStorage.setItem(ownerKey, teacherId);
+  }
+
+  async function syncUserBackupToServer() {
+    if (!window.currentTeacher || !window.currentTeacher.id) return;
+    try {
+      await sb.from('user_backups').upsert(
+        { teacher_id: window.currentTeacher.id, data: collectBackupData(), updated_at: new Date().toISOString() },
+        { onConflict: 'teacher_id' }
+      );
+    } catch (e) { }
   }
 
   async function submitForcePasswordChange() {
@@ -1452,7 +1494,7 @@
       if (error) throw error;
       window.currentTeacher.must_change_password = false;
       document.getElementById('force-password-overlay').style.display = 'none';
-      startAppFor(window.currentTeacher);
+      await startAppFor(window.currentTeacher);
     } catch (e) {
       errEl.innerText = '변경 실패: ' + (e && e.message ? e.message : e);
     }
@@ -2335,7 +2377,10 @@
 
   function scheduleBackupWrite() {
     if (backupWriteTimer) clearTimeout(backupWriteTimer);
-    backupWriteTimer = setTimeout(maybeAutoBackup, 1500);
+    backupWriteTimer = setTimeout(function() {
+      maybeAutoBackup();
+      syncUserBackupToServer();
+    }, 1500);
   }
 
   function maybeAutoBackup() {
