@@ -125,6 +125,11 @@
     .tt-cell { border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background-color: var(--tt-bg); border: 1px solid var(--border-color); transition: background-color 0.3s; }
     .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; padding: 2px; }
     .tt-room { flex: 1; display: flex; align-items: center; justify-content: center; font-size: calc(var(--fz-tt) - 2px); font-weight: 600; background: rgba(0,0,0,0.06); text-align: center; }
+    /* 수업 변경(교환/보강)이 이번 주 실제 날짜에 걸리면 시간표 칸 위에 덧붙는 표시 */
+    .ttc-moved { color: var(--text-sub); font-style: italic; font-size: 0.85em; }
+    .ttc-badge { display: block; font-size: 9px; font-weight: 800; margin-top: 2px; padding: 1px 4px; border-radius: 4px; line-height: 1.3; }
+    .ttc-badge.ttc-exchange { background: var(--accent-secondary-soft); color: var(--accent-secondary-text); }
+    .ttc-badge.ttc-makeup { background: var(--alert-bg); color: var(--alert); }
     .tt-time { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--text-main); }
     .tt-time div { font-size: 12px; opacity: 0.9; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; line-height: 1.2; text-align: center;}
 
@@ -708,6 +713,47 @@
   </div>
 </div>
 
+<div class="overlay" id="schedule-change-overlay">
+  <div class="modal-box" style="width: 420px;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 15px; text-align: center;">🔁 수업 변경 (교환/보강)</div>
+
+    <div class="tab-switch" style="margin-bottom: 14px;">
+      <button class="tab-btn active" id="scc-type-exchange-btn" onclick="sccSetType('exchange')">🔄 교환</button>
+      <button class="tab-btn" id="scc-type-makeup-btn" onclick="sccSetType('makeup')">🔁 보강</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;">날짜</label>
+        <input type="date" id="scc-date" class="mini-select" style="flex:1;" onchange="sccUpdatePreview()">
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;">내 교시</label>
+        <select id="scc-my-period" class="mini-select" style="flex:1;" onchange="sccUpdatePreview()"></select>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-partner-label">상대방 선생님</label>
+        <select id="scc-partner" class="mini-select" style="flex:1;" onchange="sccUpdatePreview()"><option value="">선택</option></select>
+      </div>
+      <div id="scc-partner-period-row" style="display:flex; align-items:center; gap:8px;">
+        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;">상대방 교시</label>
+        <select id="scc-partner-period" class="mini-select" style="flex:1;" onchange="sccUpdatePreview()"></select>
+      </div>
+    </div>
+
+    <div id="scc-preview" style="font-size:11.5px; color:var(--text-sub); background:var(--bg-color); border:1px dashed var(--border-color); border-radius:8px; padding:8px; margin-bottom:14px; line-height:1.5; white-space:pre-line;"></div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="top-btn" style="flex: 1; padding:8px;" onclick="closeScheduleChangeModal()">취소</button>
+      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="sccSave()">등록하기</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border-color); margin:16px 0 10px;"></div>
+    <div style="font-size:12px; font-weight:800; margin-bottom:8px;">이번 주 등록된 내 변경 내역</div>
+    <div id="scc-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; font-size:11.5px;"></div>
+  </div>
+</div>
+
 <div class="overlay" id="notice-overlay">
   <div class="modal-box" style="width: 300px;">
     <div style="font-weight: 800; font-size: 16px;">📢 전체 교사 공지 전송</div>
@@ -898,6 +944,7 @@
           <div style="display:flex; gap:4px;">
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
+            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁</button>
           </div>
         </div>
         <div class="timetable-grid" id="my-timetable-grid"></div>
@@ -1535,7 +1582,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.44';
+  var BUILD_ID = '2026-09-26.45';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4139,15 +4186,16 @@
           sel.innerHTML += '<option value="' + name + '">' + name + '</option>'; 
         }
       }); 
-      window.allSchedules = data; 
-      
+      window.allSchedules = data;
+      await fetchScheduleChanges();
+
       const lastSearch = localStorage.getItem('last-search');
-      if(lastSearch && window.allSchedules[lastSearch]) { 
-        sel.value = lastSearch; 
-        renderSearchTimetable(true); 
+      if(lastSearch && window.allSchedules[lastSearch]) {
+        sel.value = lastSearch;
+        renderSearchTimetable(true);
       }
       loadMyTimetable();
-    } catch(e) { } 
+    } catch(e) { }
   }
 
   function moveTeacher(direction) {
@@ -4680,6 +4728,7 @@
     const s = window.allSchedules[n];
 
     applyScheduleToGrid('search-tt', s);
+    applyChangeOverlayToGrid('search-tt', n);
     saveAllData();
   }
 
@@ -4712,9 +4761,252 @@
       const parts = s[j].split(String.fromCharCode(10)); 
       document.getElementById('my-tt-' + p + '-' + d + '-s').innerHTML = subjDisplayHtml(parts[0] || '');
       document.getElementById('my-tt-' + p + '-' + d + '-r').innerText = parts[1] || ''; 
-    } 
-    updateCellColors('my-tt'); 
-    saveAllData(); 
+    }
+    applyChangeOverlayToGrid('my-tt', my);
+    updateCellColors('my-tt');
+    saveAllData();
+  }
+
+  // ===== 🔁 수업 변경(교환/보강) =====
+  // 시간표 자체(매주 반복되는 정규 패턴)는 건드리지 않고, "이 날짜엔 이 교시가 이렇게
+  // 바뀐다"는 기록을 schedule_changes 테이블에 따로 쌓아둔다. 시간표를 그릴 때(내 시간표/
+  // 검색 시간표) 지금 보여주는 주(이번 주 월~금 실제 날짜)에 해당하는 기록이 있으면
+  // 그 칸 위에 겹쳐서 보여준다 — 다음 주가 되면 그 날짜가 더 이상 "이번 주"가 아니게 되므로
+  // 자동으로 원래 시간표로 돌아간다(시간표알리미와 같은 방식).
+  //
+  // 교환: 나(교시A)와 상대방(교시B)이 자리를 맞바꾼다 — 내 원래 교시A 내용이 상대방의
+  //   교시B 자리로 옮겨가고, 상대방의 원래 교시B 내용이 내 교시A 자리로 옮겨간다. 즉
+  //   각자 자기 과목을 그대로 들고 시간만 옮기는 것(내용을 서로 맞바꾸는 게 아님).
+  // 보강: 내(원래 담당)가 교시A에 수업을 못 해서 상대방이 대신 가르쳐준다 — 상대방의
+  //   시간표에 내 교시A 수업이 그대로 추가되고, 내 시간표엔 "보강" 표시만 얹힌다.
+  function getCurrentWeekDates() {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    const dates = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+      dates.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+    }
+    return dates; // [월, 화, 수, 목, 금]
+  }
+
+  async function fetchScheduleChanges() {
+    try {
+      const weekDates = getCurrentWeekDates();
+      const { data, error } = await sb.from('schedule_changes').select('*')
+        .gte('change_date', weekDates[0]).lte('change_date', weekDates[4]);
+      if (error) throw error;
+      window.scheduleChangesRaw = data || [];
+    } catch (e) { window.scheduleChangesRaw = []; }
+  }
+
+  function applyChangeOverlayToGrid(prefix, teacherName) {
+    if (!teacherName || !window.scheduleChangesRaw) return;
+    const weekDates = getCurrentWeekDates();
+    const changes = window.scheduleChangesRaw.filter(function(c) { return c.teacher_a === teacherName || c.teacher_b === teacherName; });
+    if (changes.length === 0) return;
+
+    changes.forEach(function(c) {
+      const dayIdx = weekDates.indexOf(c.change_date);
+      if (dayIdx === -1) return;
+      const d = dayIdx + 1;
+
+      if (c.type === 'exchange') {
+        const isA = c.teacher_a === teacherName;
+        const myPeriod = isA ? c.period_a : c.period_b;
+        const otherName = isA ? c.teacher_b : c.teacher_a;
+        const otherPeriod = isA ? c.period_b : c.period_a;
+
+        const origSubjEl = document.getElementById(prefix + '-' + myPeriod + '-' + d + '-s');
+        const origRoomEl = document.getElementById(prefix + '-' + myPeriod + '-' + d + '-r');
+        if (origSubjEl) origSubjEl.innerHTML = '<span class="ttc-moved">' + otherPeriod + '교시로 이동</span>';
+        if (origRoomEl) origRoomEl.innerText = '';
+
+        const mySchedule = window.allSchedules[teacherName];
+        if (mySchedule) {
+          const j = (d - 1) * 7 + (myPeriod - 1);
+          const parts = (mySchedule[j] || '').split(String.fromCharCode(10));
+          const subjEl = document.getElementById(prefix + '-' + otherPeriod + '-' + d + '-s');
+          const roomEl = document.getElementById(prefix + '-' + otherPeriod + '-' + d + '-r');
+          if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '') + '<span class="ttc-badge ttc-exchange">🔄 ' + otherName + '쌤과 교환(원래 ' + myPeriod + '교시)</span>';
+          if (roomEl) roomEl.innerText = parts[1] || '';
+        }
+      } else if (c.type === 'makeup') {
+        if (c.teacher_a === teacherName) {
+          const subjEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-s');
+          if (subjEl) subjEl.innerHTML += '<span class="ttc-badge ttc-makeup">🔁 ' + c.teacher_b + '쌤이 보강</span>';
+        } else if (c.teacher_b === teacherName) {
+          const otherSchedule = window.allSchedules[c.teacher_a];
+          if (otherSchedule) {
+            const j = (d - 1) * 7 + (c.period_a - 1);
+            const parts = (otherSchedule[j] || '').split(String.fromCharCode(10));
+            const subjEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-s');
+            const roomEl = document.getElementById(prefix + '-' + c.period_a + '-' + d + '-r');
+            if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '') + '<span class="ttc-badge ttc-makeup">🔁 ' + c.teacher_a + '쌤 보강</span>';
+            if (roomEl) roomEl.innerText = parts[1] || '';
+          }
+        }
+      }
+    });
+  }
+
+  function sccPeriodOptionsHtml() {
+    let html = '';
+    for (let i = 1; i <= 7; i++) html += '<option value="' + i + '">' + i + '교시</option>';
+    return html;
+  }
+
+  let sccCurrentType = 'exchange';
+
+  function openScheduleChangeModal() {
+    const myName = localStorage.getItem('my-n');
+    if (!myName || !window.allSchedules[myName]) { customAlert('먼저 "내 시간표"에 본인 시간표를 지정해주세요.'); return; }
+
+    sccCurrentType = 'exchange';
+    document.getElementById('scc-type-exchange-btn').classList.add('active');
+    document.getElementById('scc-type-makeup-btn').classList.remove('active');
+    document.getElementById('scc-partner-period-row').style.display = 'flex';
+    document.getElementById('scc-partner-label').innerText = '상대방 선생님';
+
+    document.getElementById('scc-my-period').innerHTML = sccPeriodOptionsHtml();
+    document.getElementById('scc-partner-period').innerHTML = sccPeriodOptionsHtml();
+
+    const weekDates = getCurrentWeekDates();
+    const dateInput = document.getElementById('scc-date');
+    dateInput.min = weekDates[0];
+    dateInput.max = weekDates[4];
+    dateInput.value = weekDates[0];
+
+    const partnerSel = document.getElementById('scc-partner');
+    partnerSel.innerHTML = '<option value="">선택</option>' + Object.keys(window.allSchedules).sort()
+      .filter(function(n) { return n !== myName && n !== '선생님' && n.trim() !== ''; })
+      .map(function(n) { return '<option value="' + n + '">' + n + '</option>'; }).join('');
+
+    sccUpdatePreview();
+    sccRenderList();
+    document.getElementById('schedule-change-overlay').style.display = 'flex';
+  }
+
+  function closeScheduleChangeModal() {
+    document.getElementById('schedule-change-overlay').style.display = 'none';
+  }
+
+  function sccSetType(type) {
+    sccCurrentType = type;
+    document.getElementById('scc-type-exchange-btn').classList.toggle('active', type === 'exchange');
+    document.getElementById('scc-type-makeup-btn').classList.toggle('active', type === 'makeup');
+    document.getElementById('scc-partner-period-row').style.display = type === 'exchange' ? 'flex' : 'none';
+    document.getElementById('scc-partner-label').innerText = type === 'exchange' ? '상대방 선생님' : '보강해줄 선생님';
+    sccUpdatePreview();
+  }
+
+  function sccSubjectAt(teacherName, weekday, period) {
+    const s = window.allSchedules[teacherName];
+    if (!s) return '(시간표 없음)';
+    const j = (weekday - 1) * 7 + (period - 1);
+    const parts = (s[j] || '').split(String.fromCharCode(10));
+    return parts[0] || '(빈 시간)';
+  }
+
+  function sccUpdatePreview() {
+    const myName = localStorage.getItem('my-n');
+    const dateStr = document.getElementById('scc-date').value;
+    const myPeriod = parseInt(document.getElementById('scc-my-period').value);
+    const partner = document.getElementById('scc-partner').value;
+    const partnerPeriod = parseInt(document.getElementById('scc-partner-period').value);
+    const previewEl = document.getElementById('scc-preview');
+    if (!dateStr || !partner) { previewEl.innerText = '날짜와 선생님을 선택하면 미리보기가 보여요.'; return; }
+
+    const weekDates = getCurrentWeekDates();
+    const dayIdx = weekDates.indexOf(dateStr);
+    if (dayIdx === -1) { previewEl.innerText = '이번 주(월~금) 날짜만 고를 수 있어요.'; return; }
+    const weekday = dayIdx + 1;
+    const days = ['월', '화', '수', '목', '금'];
+
+    const mySubj = sccSubjectAt(myName, weekday, myPeriod);
+    if (sccCurrentType === 'exchange') {
+      const partnerSubj = sccSubjectAt(partner, weekday, partnerPeriod);
+      previewEl.innerText =
+        days[dayIdx] + '요일 기준\n' +
+        '나(' + myName + ') ' + myPeriod + '교시 "' + mySubj + '" → ' + partnerPeriod + '교시로 이동\n' +
+        partner + '쌤 ' + partnerPeriod + '교시 "' + partnerSubj + '" → ' + myPeriod + '교시로 이동';
+    } else {
+      previewEl.innerText =
+        days[dayIdx] + '요일 기준\n' +
+        '나(' + myName + ') ' + myPeriod + '교시 "' + mySubj + '"를 ' + partner + '쌤이 대신 가르쳐줌\n' +
+        partner + '쌤 시간표에 이 수업이 추가로 표시됩니다.';
+    }
+  }
+
+  async function sccSave() {
+    const myName = localStorage.getItem('my-n');
+    const dateStr = document.getElementById('scc-date').value;
+    const myPeriod = parseInt(document.getElementById('scc-my-period').value);
+    const partner = document.getElementById('scc-partner').value;
+    const partnerPeriod = parseInt(document.getElementById('scc-partner-period').value);
+
+    if (!dateStr) return customAlert('날짜를 선택해주세요.');
+    if (!partner) return customAlert('선생님을 선택해주세요.');
+    const weekDates = getCurrentWeekDates();
+    if (weekDates.indexOf(dateStr) === -1) return customAlert('이번 주(월~금) 날짜만 등록할 수 있어요.');
+
+    const record = {
+      change_date: dateStr,
+      type: sccCurrentType,
+      teacher_a: myName,
+      period_a: myPeriod,
+      teacher_b: partner,
+      period_b: sccCurrentType === 'exchange' ? partnerPeriod : myPeriod
+    };
+
+    try {
+      const { error } = await sb.from('schedule_changes').insert(record);
+      if (error) throw error;
+      await fetchScheduleChanges();
+      loadMyTimetable();
+      renderSearchTimetable(true);
+      await customAlert('등록했습니다! 🎉');
+      sccRenderList();
+    } catch (e) {
+      customAlert('등록 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  function sccRenderList() {
+    const myName = localStorage.getItem('my-n');
+    const listEl = document.getElementById('scc-list');
+    const mine = (window.scheduleChangesRaw || []).filter(function(c) { return c.teacher_a === myName || c.teacher_b === myName; })
+      .sort(function(a, b) { return a.change_date < b.change_date ? -1 : 1; });
+
+    if (mine.length === 0) { listEl.innerHTML = '<div style="color:var(--text-sub);">등록된 내역이 없습니다.</div>'; return; }
+
+    listEl.innerHTML = mine.map(function(c) {
+      const isA = c.teacher_a === myName;
+      const label = c.type === 'exchange'
+        ? (c.change_date + ' 교환: ' + (isA ? c.period_a : c.period_b) + '교시 ↔ ' + (isA ? c.teacher_b : c.teacher_a) + ' ' + (isA ? c.period_b : c.period_a) + '교시')
+        : (c.change_date + ' 보강: ' + (isA ? ('내 ' + c.period_a + '교시를 ' + c.teacher_b + '쌤이') : (c.teacher_a + '쌤 ' + c.period_a + '교시를 내가')));
+      return '<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--bg-color); border-radius:6px; padding:5px 8px;">' +
+        '<span>' + label + '</span>' +
+        '<button class="top-btn" style="padding:1px 6px; font-size:10px; color:var(--alert); flex-shrink:0;" onclick="sccDelete(' + c.id + ')">삭제</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  async function sccDelete(id) {
+    const ok = await customConfirm('이 변경 내역을 삭제할까요?');
+    if (!ok) return;
+    try {
+      const { error } = await sb.from('schedule_changes').delete().eq('id', id);
+      if (error) throw error;
+      await fetchScheduleChanges();
+      loadMyTimetable();
+      renderSearchTimetable(true);
+      sccRenderList();
+    } catch (e) {
+      customAlert('삭제 실패: ' + (e && e.message ? e.message : e));
+    }
   }
 
   let todoCounts = { work: 20, stu: 20 };
