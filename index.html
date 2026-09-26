@@ -906,6 +906,19 @@
       <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
     </div>
 
+    <div class="widget w-accent-a" id="websearch-widget" style="flex: 0 0 78px; min-height: 0;">
+      <div class="widget-title" style="margin-bottom: 6px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></div>
+          🔍 웹 검색
+        </div>
+      </div>
+      <form onsubmit="return submitGoogleSearch(event)" style="display:flex; gap:5px;">
+        <input type="text" id="google-search-input" placeholder="구글에서 검색 (뉴스 검색 아님)" style="flex:1; min-width:0; padding:5px 9px; font-size:11.5px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none;">
+        <button type="submit" class="top-btn" style="padding:5px 10px; font-size:11.5px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></button>
+      </form>
+    </div>
+
     <div class="widget w-accent-a" id="news-widget" style="flex: 1.3; min-height: 0; display:flex; flex-direction:column;">
       <div class="widget-title" style="margin-bottom: 6px; flex-wrap:wrap; row-gap:4px;">
         <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
@@ -914,10 +927,6 @@
         </div>
         <div id="news-tab-switch" style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:3px;"></div>
       </div>
-      <form onsubmit="return submitGoogleSearch(event)" style="display:flex; gap:5px; margin-bottom:8px; flex:0 0 auto;">
-        <input type="text" id="google-search-input" placeholder="구글 검색" style="flex:1; min-width:0; padding:5px 9px; font-size:11.5px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none;">
-        <button type="submit" class="top-btn" style="padding:5px 10px; font-size:11.5px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></button>
-      </form>
       <ul class="recent-notices" id="news-list">
         <li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">불러오는 중...</li>
       </ul>
@@ -1256,7 +1265,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.33';
+  var BUILD_ID = '2026-09-26.34';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2180,6 +2189,7 @@
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
+    { selector: '#websearch-widget', title: '🔍 웹 검색', desc: '여기서 검색하면 구글 검색 결과가 새 탭으로 열려요. 아래 "뉴스" 안에서 검색하는 게 아니라 인터넷 전체를 검색하는 창이에요.' },
     { selector: '#news-widget', title: '📰 뉴스', desc: '탭을 눌러 종합/정치·사회/경제/IT·과학/스포츠 뉴스를 볼 수 있어요. 제목을 클릭하면 기사로 이동해요.' },
     { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
     { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 여기 전부 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
