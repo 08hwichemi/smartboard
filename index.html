@@ -105,6 +105,8 @@
 
     /* 💡 여기가 폭 삐뚤어짐을 해결한 마법의 코드입니다! box-sizing: border-box 추가 */
     .widget { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; box-shadow: none; display: flex; flex-direction: column; position: relative; min-height: 0; box-sizing: border-box; }
+    /* 위젯 테두리 색 규칙: 화면의 세로줄(열)마다 통일해서 번갈아 칠한다 — 1열(즐겨찾기·D-day·내시간표)=a,
+       2열(시계·검색시간표·캘린더)=b, 3열(공지·급식·뉴스)=a, 4열(업무)=b. 같은 열은 항상 같은 색. */
     .widget.w-accent-a { border: 2px solid var(--accent-color); }
     .widget.w-accent-b { border: 2px solid var(--accent-secondary); }
     .widget-title { font-size: 14px; font-weight: 800; color: var(--text-main); margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 6px;}
@@ -744,7 +746,7 @@
             <div id="bookmark-grid" class="fav-grid"></div>
           </div>
         </div>
-        <div class="widget w-accent-b" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
+        <div class="widget w-accent-a" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
           <div class="dday-row">
             <div class="dday-half" onclick="toggleDdaySettings(1)">
               <span class="dday-text" id="dday1-num">D-0</span>
@@ -765,7 +767,7 @@
         </div>
       </div>
 
-      <div class="widget top-bar-widget w-accent-a" style="padding: 0 16px; position: relative; min-width: 0;">
+      <div class="widget top-bar-widget w-accent-b" style="padding: 0 16px; position: relative; min-width: 0;">
         <div class="time-group" style="flex: 4; align-items: center; text-align: center;">
           <div class="time-display" id="clock" style="font-size: 48px;">00:00<span class="clock-sec" id="clock-sec">00</span></div>
           <div class="date-display" style="justify-content: center; font-size:15px; margin-top:4px;"><span id="date-text">...</span> <span class="badge-today" id="day-text" style="font-size:13px; padding:4px 10px;">...</span></div>
@@ -798,7 +800,7 @@
     </div>
 
     <div id="left-bottom-tt" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; min-height: 0;">
-      <div id="my-tt-widget" class="widget timetable-widget w-accent-b" style="min-width: 0;">
+      <div id="my-tt-widget" class="widget timetable-widget w-accent-a" style="min-width: 0;">
         <div class="widget-title">
           <div style="display:flex; align-items:center; gap:7px;">
             <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.7 14.7 9l7 .6-5.3 4.6 1.6 6.9L12 17.3l-6 3.8 1.6-6.9L2.3 9.6l7-.6z"/></svg></div>
@@ -814,7 +816,7 @@
         <div class="timetable-grid" id="my-timetable-grid"></div>
       </div>
 
-      <div id="search-tt-widget" class="widget timetable-widget w-accent-a" style="min-width: 0;">
+      <div id="search-tt-widget" class="widget timetable-widget w-accent-b" style="min-width: 0;">
         <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
           <div class="tab-switch">
             <button class="tab-btn active" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
@@ -844,7 +846,7 @@
       </div>
     </div>
 
-    <div id="left-bottom-cal" class="widget timetable-widget w-accent-a" style="display: none; flex: 1; min-height: 0;">
+    <div id="left-bottom-cal" class="widget timetable-widget w-accent-b" style="display: none; flex: 1; min-height: 0;">
       <div style="display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; flex: 0 0 auto; margin-bottom: 8px;">
         <div></div>
         <div class="widget-title" style="height: 32px; margin-bottom: 0; padding-left: 15px;">
@@ -873,7 +875,7 @@
   </div>
 
   <div class="dash-col" style="flex: 0.85;">
-    <div id="notice-widget" class="widget w-accent-b" style="flex: 0.7; min-height: 0;">
+    <div id="notice-widget" class="widget w-accent-a" style="flex: 0.7; min-height: 0;">
       <div class="widget-title">
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></div>
@@ -904,7 +906,7 @@
       <ul class="meal-tags" id="meal-list"><li>로딩 중...</li></ul>
     </div>
 
-    <div class="widget w-accent-b" id="news-widget" style="flex: 1.3; min-height: 0; display:flex; flex-direction:column;">
+    <div class="widget w-accent-a" id="news-widget" style="flex: 1.3; min-height: 0; display:flex; flex-direction:column;">
       <div class="widget-title" style="margin-bottom: 6px; flex-wrap:wrap; row-gap:4px;">
         <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 0 1 8-8"/><path d="M4 11a8 8 0 0 0 8 8"/><circle cx="12" cy="11" r="2.2"/><path d="M12 3v1.5M12 17.5V19M20 11h-1.5M5.5 11H4"/></svg></div>
@@ -923,7 +925,7 @@
   </div>
 
   <div class="dash-col" style="flex: 0.85;">
-    <div id="todo-work-widget" class="widget todo-widget w-accent-a" style="flex: 1; min-height: 0;">
+    <div id="todo-work-widget" class="widget todo-widget w-accent-b" style="flex: 1; min-height: 0;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
         <div class="tab-switch">
           <button class="tab-btn active" id="todo-tab-work" onclick="switchTodoTab('work')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12.2 2.6 2.6 5-5.6"/></svg><span id="title-todo-work">업무</span></button>
@@ -1254,7 +1256,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.32';
+  var BUILD_ID = '2026-09-26.33';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
