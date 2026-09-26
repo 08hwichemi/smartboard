@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=Black+And+White+Picture&family=Chiron+Hei+HK&family=Chiron+Sung+HK&family=Cute+Font&family=Diphylleia&family=Do+Hyeon&family=Dongle:wght@700&family=Gaegu&family=Gamja+Flower&family=Gowun+Batang:wght@700&family=Gowun+Dodum&family=Gugi&family=Hahmlet:wght@400;700&family=Hi+Melody&family=Jua&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@700;900&family=Noto+Serif+KR:wght@700&family=Orbit&family=Poor+Story&family=Single+Day&family=Stylish&family=Sunflower:wght@700&family=Yeon+Sung&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
     :root {
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
@@ -342,9 +343,13 @@
     .sc-student-item.sc-used { opacity: 0.4; pointer-events: none; }
 
     @media print {
+      /* 여러 전체화면 기능(좌석배치표/월간일정표)이 같은 print 미디어쿼리를 쓰므로,
+         "지금 어느 페이지를 인쇄 중인지"를 body의 data-print-target으로 구분해서 그 페이지만
+         display:block으로 풀어준다 — 안 그러면 두 페이지가 동시에 강제로 보이게 됨. */
       #app-rail, .updatebar, #sc-panel, #sc-page-header { display: none !important; }
-      body, #app-shell, #app-main, #seatchart-page, #sc-body { display: block !important; height: auto !important; overflow: visible !important; }
-      #sc-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
+      body, #app-shell, #app-main { display: block !important; height: auto !important; overflow: visible !important; }
+      body[data-print-target="seatchart"] #seatchart-page, body[data-print-target="seatchart"] #sc-body { display: block !important; height: auto !important; overflow: visible !important; }
+      body[data-print-target="seatchart"] #sc-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
       #sc-paper-wrapper { transform: none !important; margin: 0 auto !important; }
       .sc-a4-paper { box-shadow: none !important; border-radius: 0 !important; }
       .sc-doc-title-input, .sc-footer-input, .sc-footer-input-sub, .sc-side-text { border: none !important; }
@@ -352,6 +357,89 @@
       .sc-desk.sc-fixed .sc-desk-num { background-color: var(--sc-desk-pill-bg) !important; }
       @page { size: A4 portrait; margin: 0; }
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+
+    /* ===== 월간일정표 =====
+       사용자가 만들어둔 독립 HTML 도구("스마트 월간 일정표 V4")를 대시보드 디자인 시스템에
+       맞춰 이식. 좌석배치표(ms→sc 대응)와 같은 구조: 왼쪽 설정 패널 + 오른쪽 A4 미리보기. */
+    :root { --ms-main-font: 'Pretendard', sans-serif; --ms-print-scale: 1; }
+    #monthly-page { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #ms-body { display: flex; flex: 1; min-height: 0; }
+
+    #ms-panel { width: 360px; flex: 0 0 auto; border-right: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; box-sizing: border-box; background: var(--card-bg); }
+    .ms-section { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; box-sizing: border-box; }
+    .ms-section-title { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; cursor: pointer; }
+    .ms-section-body { display: flex; flex-direction: column; gap: 8px; }
+    .ms-section-body.ms-collapsed { display: none; }
+    .ms-row { display: flex; align-items: center; gap: 6px; }
+    .ms-row label { font-size: 11px; font-weight: 700; color: var(--text-sub); flex-shrink: 0; }
+    .ms-input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12px; outline: none; background: var(--card-bg); color: var(--text-main); box-sizing: border-box; font-family: inherit; }
+    .ms-input:focus { border-color: var(--accent-color); }
+    .ms-upload-btn { background: var(--card-bg); border: 1px dashed var(--border-color); color: var(--text-sub); text-align: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .ms-upload-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+    .ms-font-nav { background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 11px; flex-shrink: 0; }
+    .ms-font-nav:hover { filter: brightness(0.95); }
+
+    .ms-cat-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 800; border: 1px solid rgba(0,0,0,0.06); margin: 0 5px 5px 0; color: var(--text-main); }
+    .ms-cat-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+    .ms-cat-del { border: none; background: transparent; cursor: pointer; color: var(--text-sub); font-size: 11px; padding: 0 2px; }
+
+    .ms-table-wrapper { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: var(--card-bg); }
+    .ms-table-wrapper table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .ms-table-wrapper th { background: var(--bg-color); padding: 7px; font-size: 10.5px; font-weight: 800; color: var(--text-sub); text-align: left; border-bottom: 1px solid var(--border-color); }
+    .ms-table-wrapper td { border-bottom: 1px solid var(--border-color); border-right: 1px dashed var(--border-color); padding: 0; position: relative; }
+    .ms-table-wrapper td:last-child { border-right: none; }
+    .ms-cell-input { width: 100%; min-height: 30px; padding: 6px 7px; outline: none; font-size: 11.5px; word-break: break-all; box-sizing: border-box; color: var(--text-main); font-family: inherit; }
+    .ms-cell-input:focus { background: var(--accent-soft); }
+    .ms-example-row { background: var(--bg-color); }
+    .ms-example-row .ms-cell-input { color: var(--text-sub); font-style: italic; pointer-events: none; }
+    select.ms-cell-input { border: none; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
+    .ms-del-row-btn { border: none; background: transparent; cursor: pointer; font-size: 13px; width: 100%; height: 100%; padding: 6px 0; border-radius: 6px; }
+    .ms-del-row-btn:hover { background: var(--alert-bg); }
+
+    #ms-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
+    #ms-paper-wrapper { position: relative; transform-origin: center; }
+    .ms-a4-paper, .ms-a4-paper * { font-family: var(--ms-main-font); box-sizing: border-box; margin: 0; padding: 0; }
+    .ms-a4-paper { width: 210mm; height: 297mm; background: #fff; padding: 15mm; box-shadow: 0 10px 25px rgba(0,0,0,0.12); border-radius: 4px; display: flex; flex-direction: column; color: #2C3E50; position: relative; overflow: hidden; }
+
+    .ms-paper-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; flex-shrink: 0; position: relative; }
+    .ms-header-left { display: flex; align-items: flex-end; gap: 24px; }
+    .ms-big-month-wrap { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100px; height: 100px; }
+    .ms-month-row { display: flex; align-items: baseline; justify-content: center; width: 100%; }
+    .ms-big-month { font-weight: 900; color: #2C3E50; line-height: 0.8; }
+    .ms-month-text { font-weight: 900; color: #2C3E50; }
+    .ms-big-year { font-size: 30px; font-weight: 900; color: #7F8C8D; margin-top: -2px; line-height: 1; text-align: center; width: 100%; }
+    .ms-paper-title { font-size: 34px; font-weight: 900; color: #2C3E50; letter-spacing: -1px; padding-bottom: 4px; }
+    .ms-header-right { display: flex; flex-direction: column; align-items: flex-end; padding-bottom: 6px; }
+    .ms-school-identity { display: flex; align-items: center; gap: 10px; }
+    .ms-school-logo { height: 40px; object-fit: contain; }
+    .ms-school-name { font-size: 22px; font-weight: 900; letter-spacing: -1px; color: #7F8C8D; }
+    .ms-copyright { position: absolute; top: 30px; right: 0; font-size: 10px; font-weight: 700; color: #94A3B8; }
+
+    .ms-cal-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; position: relative; }
+    .ms-cal-wrapper::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background-color: #2C3E50; z-index: 5; }
+    .ms-cal-wrapper::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: #2C3E50; z-index: 5; }
+    .ms-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); position: relative; z-index: 2; background-color: #2C3E50; column-gap: 1px; }
+    .ms-weekday { text-align: center; padding: 6px 0; font-size: 20px; font-weight: 900; color: #2C3E50; background: #fff; }
+    .ms-weekday.ms-sun { color: #E74C3C; background: #FFF0F5; }
+    .ms-weekday.ms-sat { color: #3498DB; background: #F0F8FF; }
+    .ms-cal-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(0, 1fr); min-height: 0; background-color: #2C3E50; gap: 1px; }
+    .ms-cal-cell { padding: 6px; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+    .ms-cal-cell.ms-is-sun { background: #FFF0F5; }
+    .ms-cal-cell.ms-is-sat { background: #F0F8FF; }
+    .ms-date-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; min-height: 30px; }
+    .ms-date-num { font-size: 18px; font-weight: 900; margin-left: -2px; letter-spacing: -0.5px; }
+    .ms-dday-list { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .ms-dday-mini { font-size: 8.5px; font-weight: 800; padding: 2px 5px; border-radius: 4px; color: #1E293B; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); line-height: 1.1; }
+    .ms-event-item { font-size: 10px; font-weight: 800; padding: 3px 5px; border-radius: 6px; margin-bottom: 3px; line-height: 1.25; word-break: break-all; display: flex; align-items: flex-start; gap: 4px; white-space: pre-wrap; }
+    .ms-event-neis { color: #E74C3C; font-weight: 900; font-size: 10px; margin-bottom: 4px; padding-left: 2px; }
+
+    @media print {
+      #ms-panel, #ms-page-header { display: none !important; }
+      body[data-print-target="monthly"] #monthly-page, body[data-print-target="monthly"] #ms-body { display: block !important; height: auto !important; overflow: visible !important; }
+      body[data-print-target="monthly"] #ms-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
+      #ms-paper-wrapper { transform: scale(var(--ms-print-scale, 1)) !important; transform-origin: top left !important; margin: 0 !important; }
+      .ms-a4-paper { box-shadow: none !important; border-radius: 0 !important; }
     }
   </style>
 </head>
@@ -406,7 +494,7 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
       <div class="rail-label">학급시간표</div>
     </div>
-    <div class="rail-item" title="월간일정표 (준비 중)" onclick="railComingSoon('월간일정표')">
+    <div class="rail-item" id="rail-monthly-btn" title="월간일정표" onclick="openMonthlySchedule()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
       <div class="rail-label">월간일정표</div>
     </div>
@@ -1241,6 +1329,185 @@
   </div>
 </div>
 
+<div id="monthly-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="ms-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">🗓️ 월간일정표</div>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="msOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+    </div>
+    <div id="ms-month-nav" style="display:flex; align-items:center; gap:12px; background:var(--tt-bg); padding:5px 16px; border-radius:20px; border:1px solid var(--border-color);">
+      <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(-1)">◀</button>
+      <span id="ms-nav-month-text" style="font-size:13px; font-weight:800; min-width:66px; text-align:center;">2026. 04</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(1)">▶</button>
+    </div>
+    <div id="ms-header-save-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="msExportData()" title="지금 설정과 일정을 파일로 저장합니다">💾 저장</button>
+      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
+        📂 불러오기
+        <input type="file" id="ms-import-input" accept=".json" style="display:none;" onchange="msImportData(event)">
+      </label>
+      <select id="ms-cfg-print-size" class="mini-select" style="font-size:11px;" onchange="msUpdatePrintScale()" title="인쇄 용지 크기">
+        <option value="1">A4 용지</option>
+        <option value="1.22">B4 용지</option>
+        <option value="1.41">A3 용지</option>
+      </select>
+      <button class="top-btn accent" id="ms-print-btn" style="font-size:11px; padding:4px 10px;" onclick="msPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
+    </div>
+  </div>
+
+  <div id="ms-body">
+    <div id="ms-panel">
+
+      <div class="ms-section" id="ms-section-info">
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-info')"><span>⚙️ 기본 설정</span><span id="ms-icon-sec-info">▼</span></div>
+        <div class="ms-section-body" id="ms-sec-info">
+          <div class="ms-row">
+            <label style="width:52px;">학교명</label>
+            <input type="text" id="ms-cfg-school" class="ms-input" value="부광고등학교" oninput="msRenderCalendar()">
+            <label class="ms-upload-btn">
+              📷 로고
+              <input type="file" accept="image/*" style="display:none;" onchange="msHandleLogoUpload(event)">
+            </label>
+          </div>
+          <div class="ms-row">
+            <label style="width:52px;">타이틀</label>
+            <input type="text" id="ms-cfg-grade" class="ms-input" placeholder="부서명 (예: 3학년, 교무기획부)" oninput="msRenderCalendar()">
+            <input type="text" id="ms-cfg-title" class="ms-input" value="월간 일정표" style="flex:0.9;" oninput="msRenderCalendar()">
+          </div>
+          <div class="ms-row">
+            <input type="checkbox" id="ms-cfg-show-neis" checked onchange="msRenderCalendar()" style="width:15px; height:15px; cursor:pointer; accent-color:var(--accent-color);">
+            <span style="font-size:11.5px; font-weight:700; color:var(--text-sub);">나이스 학사일정 달력에 표시하기</span>
+          </div>
+          <div class="ms-row" style="flex-direction:column; align-items:stretch; gap:4px;">
+            <span style="font-size:11.5px; font-weight:800; color:var(--text-main);">✨ 출력 글꼴</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="ms-font-nav" onclick="msPrevFont()">◀</button>
+              <select id="ms-cfg-font" class="mini-select" style="flex:1;" onchange="msChangeGlobalFont()">
+                <optgroup label="단정/깔끔 (공식용)">
+                  <option value="'IBM Plex Sans KR', sans-serif">IBM 플렉스 산스</option>
+                  <option value="'Pretendard', sans-serif" selected>프리텐다드</option>
+                  <option value="'Noto Sans KR', sans-serif">노토 산스 고딕</option>
+                  <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+                  <option value="'Chiron Hei HK', sans-serif">치론 헤이 고딕</option>
+                  <option value="'Orbit', sans-serif">오르빗</option>
+                  <option value="'Noto Serif KR', serif">노토 세리프</option>
+                  <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                  <option value="'Gowun Batang', serif">고운바탕</option>
+                  <option value="'Chiron Sung HK', serif">치론 성 명조</option>
+                  <option value="'Hahmlet', serif">함렛</option>
+                  <option value="'Diphylleia', serif">산돌비체</option>
+                </optgroup>
+                <optgroup label="감성/손글씨">
+                  <option value="'Poor Story', cursive">푸어스토리</option>
+                  <option value="'Sunflower', sans-serif">해바라기</option>
+                </optgroup>
+                <optgroup label="아주 굵은 제목/강조">
+                  <option value="'Jua', sans-serif">배민 주아체</option>
+                  <option value="'Do Hyeon', sans-serif">배민 도현체</option>
+                  <option value="'Gugi', cursive">구기체</option>
+                </optgroup>
+              </select>
+              <button type="button" class="ms-font-nav" onclick="msNextFont()">▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-section" id="ms-section-dday">
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-dday')"><span>⏳ 목표 D-Day</span><span id="ms-icon-sec-dday">▼</span></div>
+        <div class="ms-section-body" id="ms-sec-dday">
+          <label style="font-size:10.5px; font-weight:800; color:var(--text-sub);">정기고사 (지나면 다음 고사가 자동 표시됨)</label>
+          <div id="ms-exam-dday-container"></div>
+          <div style="border-top: 1px dashed var(--border-color); margin: 4px 0;"></div>
+          <label style="font-size:10.5px; font-weight:800; color:var(--text-sub);">커스텀 D-Day (항상 표시되는 D-Day)</label>
+          <div id="ms-custom-dday-container"></div>
+        </div>
+      </div>
+
+      <div class="ms-section" id="ms-section-cat">
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-cat')"><span>🎨 일정 분류 및 컬러</span><span id="ms-icon-sec-cat">▼</span></div>
+        <div class="ms-section-body" id="ms-sec-cat">
+          <div id="ms-category-container" style="margin-bottom: 2px;"></div>
+          <div style="display: flex; gap: 6px; background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <input type="text" id="ms-new-cat-name" class="ms-input" placeholder="새 분류명">
+            <input type="color" id="ms-new-cat-color" value="#FFB3BA" style="border:none; width:32px; height:32px; cursor:pointer; background:transparent; flex-shrink:0;">
+            <button class="top-btn" style="flex-shrink:0;" onclick="msAddCategory()">+ 추가</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-section" id="ms-section-table">
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-table')">
+          <span>📋 세부 일정 <span style="font-size:10px; color:var(--alert); font-weight:700;">(※ 최대 4줄 권장)</span></span>
+          <span id="ms-icon-sec-table">▼</span>
+        </div>
+        <div class="ms-section-body" id="ms-sec-table">
+          <div style="display: flex; justify-content: flex-end; gap:5px; margin-bottom: 8px;">
+            <button class="top-btn" style="padding: 3px 8px; font-size: 10.5px;" onclick="msAddRows(5)">+ 5칸 추가</button>
+            <button class="top-btn" style="padding: 3px 8px; font-size: 10.5px; color:var(--alert);" onclick="msClearTable()">전체 초기화</button>
+          </div>
+          <div class="ms-table-wrapper">
+            <table id="ms-schedule-table">
+              <thead>
+                <tr>
+                  <th style="width: 20%; cursor:pointer; color:var(--accent-color);" onclick="msSortTableByDate()" title="클릭하여 오름차순 정렬">날짜 ↕️</th>
+                  <th style="width: 45%;">일정 내용</th>
+                  <th style="width: 25%;">분류</th>
+                  <th style="width: 10%; text-align: center;">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="ms-table-body">
+                <tr class="ms-example-row">
+                  <td><div class="ms-cell-input">4/27</div></td>
+                  <td><div class="ms-cell-input">1학기 중간고사</div></td>
+                  <td><div class="ms-cell-input" style="padding-top:8px;">(분류)</div></td>
+                  <td style="text-align: center;"><span style="color:var(--text-sub); font-size:11px;">-</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="ms-preview">
+      <div id="ms-paper-wrapper">
+        <div class="ms-a4-paper" id="ms-a4-paper">
+          <div class="ms-paper-header">
+            <div class="ms-header-left">
+              <div class="ms-big-month-wrap">
+                <div class="ms-month-row">
+                  <div class="ms-big-month" id="ms-print-month">4</div>
+                  <div class="ms-month-text">월</div>
+                </div>
+                <div class="ms-big-year" id="ms-print-year">2026</div>
+              </div>
+              <div class="ms-paper-title"><span id="ms-print-grade"></span> <span id="ms-print-title">월간 일정표</span></div>
+            </div>
+            <div class="ms-header-right">
+              <div class="ms-school-identity">
+                <img id="ms-print-logo" class="ms-school-logo" style="display:none;">
+                <div class="ms-school-name" id="ms-print-school">부광고등학교</div>
+              </div>
+            </div>
+            <div class="ms-copyright">ⓒ 부광고 스마트보드</div>
+          </div>
+
+          <div class="ms-cal-wrapper">
+            <div class="ms-cal-weekdays">
+              <div class="ms-weekday ms-sun">일</div><div class="ms-weekday">월</div><div class="ms-weekday">화</div>
+              <div class="ms-weekday">수</div><div class="ms-weekday">목</div><div class="ms-weekday">금</div><div class="ms-weekday ms-sat">토</div>
+            </div>
+            <div class="ms-cal-grid" id="ms-cal-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="sc-student-modal">
   <div class="modal-box" style="width: 320px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
@@ -1269,7 +1536,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.42';
+  var BUILD_ID = '2026-09-26.43';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1555,18 +1822,24 @@
     document.getElementById('settings-page').style.display = 'none';
     const seatchartPage = document.getElementById('seatchart-page');
     if (seatchartPage) seatchartPage.style.display = 'none';
+    const monthlyPage = document.getElementById('monthly-page');
+    if (monthlyPage) monthlyPage.style.display = 'none';
     document.querySelector('.top-bar-row').style.display = 'flex';
     document.querySelector('.quick-row').style.display = 'flex';
     document.getElementById('main-dashboard').style.display = 'grid';
     document.getElementById('rail-settings-btn').classList.remove('active');
     const railSeatchartBtn = document.getElementById('rail-seatchart-btn');
     if (railSeatchartBtn) railSeatchartBtn.classList.remove('active');
+    const railMonthlyBtn = document.getElementById('rail-monthly-btn');
+    if (railMonthlyBtn) railMonthlyBtn.classList.remove('active');
     document.getElementById('rail-home-btn').classList.add('active');
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
     const scStudentModal = document.getElementById('sc-student-modal');
     if (scStudentModal) scStudentModal.style.display = 'none';
+    document.body.removeAttribute('data-print-target');
     if (tourMode === 'seatchart') scCloseTour();
+    if (tourMode === 'monthly') msCloseTour();
   }
 
   // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
@@ -2266,6 +2539,7 @@
 
   function closeTour() {
     if (tourMode === 'seatchart') { scCloseTour(); return; }
+    if (tourMode === 'monthly') { msCloseTour(); return; }
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
     tourResetTransient();
     if (currentMainTab !== tourOriginalTab) switchMainTab(tourOriginalTab);
@@ -2319,12 +2593,14 @@
 
   function tourNext() {
     if (tourMode === 'seatchart') { scTourNext(); return; }
+    if (tourMode === 'monthly') { msTourNext(); return; }
     if (tourIndex < tourSteps.length - 1) { tourIndex++; showTourStep(); }
     else closeTour();
   }
 
   function tourPrev() {
     if (tourMode === 'seatchart') { scTourPrev(); return; }
+    if (tourMode === 'monthly') { msTourPrev(); return; }
     if (tourIndex > 0) { tourIndex--; showTourStep(); }
   }
 
@@ -4650,6 +4926,7 @@
     const settingsPage = document.getElementById('settings-page');
     if (settingsPage) settingsPage.style.display = 'none';
     document.getElementById('seatchart-page').style.display = 'flex';
+    document.body.setAttribute('data-print-target', 'seatchart');
     document.getElementById('rail-home-btn').classList.remove('active');
     const railSettingsBtn = document.getElementById('rail-settings-btn');
     if (railSettingsBtn) railSettingsBtn.classList.remove('active');
@@ -5176,6 +5453,622 @@
       }
     };
     reader.readAsText(file); event.target.value = '';
+  }
+
+  // ===== 🗓️ 월간일정표 =====
+  // 사용자가 따로 만들어 쓰던 독립 HTML 도구("스마트 월간 일정표 V4")를 대시보드 안으로
+  // 이식한 기능. 좌석배치표(sc-)와 같은 구조(왼쪽 설정 패널 + 오른쪽 A4 미리보기, 화면
+  // 크기에 맞춰 자동 축소, 저장/불러오기는 서버가 아니라 파일 다운로드/업로드)를 그대로
+  // 따르되, 학교가 이미 고정돼 있어서 원본에 있던 "학교 검색" 기능은 빼고 이 앱에 이미
+  // 있는 NEIS_KEY/EDU_CODE/SCH_CODE와 학사일정 캐시(neisDataCache)를 그대로 재사용한다.
+  let msCurYear = 2026;
+  let msCurMonth = 4;
+  let msSchoolLogoBase64 = '';
+  let msCategories = [
+    { id: 'mscat1', name: '자율', color: '#feba43' },
+    { id: 'mscat2', name: '동아리', color: '#cdb8ff' },
+    { id: 'mscat3', name: '행사', color: '#E2E8F0' }
+  ];
+
+  async function openMonthlySchedule() {
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    const settingsPage = document.getElementById('settings-page');
+    if (settingsPage) settingsPage.style.display = 'none';
+    document.getElementById('monthly-page').style.display = 'flex';
+    document.body.setAttribute('data-print-target', 'monthly');
+    document.getElementById('rail-home-btn').classList.remove('active');
+    const railSettingsBtn = document.getElementById('rail-settings-btn');
+    if (railSettingsBtn) railSettingsBtn.classList.remove('active');
+    document.getElementById('rail-monthly-btn').classList.add('active');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuDropdown) userMenuDropdown.style.display = 'none';
+
+    if (!window.__msInited) {
+      window.__msInited = true;
+      const now = new Date();
+      msCurYear = now.getFullYear();
+      msCurMonth = now.getMonth() + 1;
+      msInitDdayInputs();
+      msInitTable(15);
+      msRenderCategories();
+      document.getElementById('ms-table-body').addEventListener('paste', msHandlePaste);
+    }
+
+    if (!window.__msResizeBound) {
+      window.addEventListener('resize', msScalePaper);
+      window.__msResizeBound = true;
+    }
+    requestAnimationFrame(msScalePaper);
+    await msRenderCalendar();
+  }
+
+  function msScalePaper() {
+    const container = document.getElementById('ms-preview');
+    const wrapper = document.getElementById('ms-paper-wrapper');
+    if (!container || !wrapper || container.clientWidth === 0) return;
+    const availableHeight = container.clientHeight - 40;
+    const availableWidth = container.clientWidth - 40;
+    let scale = Math.min(availableWidth / 794, availableHeight / 1123, 1);
+    if (scale < 0.25) scale = 0.25;
+    wrapper.style.transform = 'scale(' + scale + ')';
+  }
+
+  function msToggleSection(bodyId) {
+    const el = document.getElementById(bodyId);
+    const icon = document.getElementById('ms-icon-' + bodyId.substring(3));
+    if (el.classList.contains('ms-collapsed')) { el.classList.remove('ms-collapsed'); icon.innerText = '▼'; }
+    else { el.classList.add('ms-collapsed'); icon.innerText = '◀'; }
+  }
+
+  function msInitDdayInputs() {
+    const examCont = document.getElementById('ms-exam-dday-container');
+    const customCont = document.getElementById('ms-custom-dday-container');
+    const examColors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9'];
+
+    examCont.innerHTML =
+      '<div class="ms-row" style="margin-bottom:4px; align-items:flex-end;">' +
+        '<div style="width:15px; flex-shrink:0;"></div><div style="width:26px; flex-shrink:0;"></div>' +
+        '<div style="flex:1.2; min-width:0; text-align:center; font-size:10px; font-weight:800; color:var(--text-sub);">고사명</div>' +
+        '<div style="width:32px; flex-shrink:0; text-align:center; font-size:9px; font-weight:800; color:var(--text-sub);">기간</div>' +
+        '<span style="font-size:11px; flex-shrink:0; color:transparent;">일</span>' +
+        '<div style="flex:1.4; min-width:0; text-align:center; font-size:10px; font-weight:800; color:var(--text-sub);">시작일</div>' +
+      '</div>';
+
+    for (let i = 0; i < 4; i++) {
+      examCont.innerHTML +=
+        '<div class="ms-row" style="margin-bottom:6px;">' +
+          '<input type="checkbox" id="ms-dd-show-' + i + '" checked onchange="msRenderCalendar()" style="cursor:pointer; width:15px; height:15px; flex-shrink:0; accent-color:var(--accent-color);" title="달력에 표시하기">' +
+          '<input type="color" id="ms-dd-color-' + i + '" value="' + examColors[i] + '" style="border:none; width:26px; height:26px; flex-shrink:0; cursor:pointer; background:transparent; padding:0;" oninput="msRenderCalendar()">' +
+          '<input type="text" id="ms-dd-name-' + i + '" class="ms-input" placeholder="시험이름" style="flex:1.2; min-width:0; padding:6px 5px;" oninput="msRenderCalendar()">' +
+          '<input type="number" id="ms-dd-days-' + i + '" class="ms-input" placeholder="0" min="1" max="10" style="width:32px; flex-shrink:0; padding:6px 3px; text-align:center;" oninput="msRenderCalendar()">' +
+          '<span style="font-size:11px; font-weight:700; color:var(--text-sub); flex-shrink:0;">일</span>' +
+          '<input type="date" id="ms-dd-date-' + i + '" class="ms-input" style="flex:1.4; min-width:0; padding:6px 3px;" onchange="msRenderCalendar()">' +
+        '</div>';
+    }
+
+    customCont.innerHTML =
+      '<div class="ms-row" style="margin-bottom:6px;">' +
+        '<input type="checkbox" id="ms-dd-show-4" checked onchange="msRenderCalendar()" style="cursor:pointer; width:15px; height:15px; flex-shrink:0; accent-color:var(--accent-color);" title="달력에 표시하기">' +
+        '<input type="color" id="ms-dd-color-4" value="#BAE1FF" style="border:none; width:26px; height:26px; flex-shrink:0; cursor:pointer; background:transparent; padding:0;" oninput="msRenderCalendar()">' +
+        '<input type="text" id="ms-dd-name-4" class="ms-input" placeholder="커스텀 고사명 입력(예: 수능)" style="flex:1; min-width:0;" oninput="msRenderCalendar()">' +
+        '<input type="date" id="ms-dd-date-4" class="ms-input" style="flex:1; min-width:0;" onchange="msRenderCalendar()">' +
+      '</div>';
+  }
+
+  /* --- 일정 분류(카테고리) 관리 --- */
+  function msRenderCategories() {
+    const container = document.getElementById('ms-category-container');
+    container.innerHTML = '';
+    msCategories.forEach(function(cat) {
+      container.innerHTML +=
+        '<div class="ms-cat-tag" style="background:' + cat.color + '30;">' +
+          '<div class="ms-cat-dot" style="background:' + cat.color + '"></div>' +
+          cat.name +
+          '<button class="ms-cat-del" onclick="msDeleteCategory(\'' + cat.id + '\')">✕</button>' +
+        '</div>';
+    });
+    msUpdateSelectOptions();
+    msRenderCalendar();
+  }
+
+  function msAddCategory() {
+    const name = document.getElementById('ms-new-cat-name').value.trim();
+    const color = document.getElementById('ms-new-cat-color').value;
+    if (!name) return;
+    msCategories.push({ id: 'mscat_' + Date.now(), name: name, color: color });
+    document.getElementById('ms-new-cat-name').value = '';
+    msRenderCategories();
+  }
+
+  function msDeleteCategory(id) {
+    msCategories = msCategories.filter(function(c) { return c.id !== id; });
+    msRenderCategories();
+  }
+
+  /* --- 세부 일정 표 입력 --- */
+  function msInitTable(rows) {
+    const tbody = document.getElementById('ms-table-body');
+    for (let i = 0; i < rows; i++) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()"></div></td>' +
+        '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()"></div></td>' +
+        '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
+        '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
+      tbody.appendChild(tr);
+    }
+    msUpdateSelectOptions();
+  }
+
+  function msDeleteRow(btn) {
+    const tr = btn.closest('tr');
+    tr.remove();
+    msRenderCalendar();
+  }
+
+  function msAddRows(count) { msInitTable(count); }
+
+  function msUpdateSelectOptions() {
+    const selects = document.querySelectorAll('.ms-cat-selector');
+    let optionsHtml = '<option value="">선택안함</option>';
+    msCategories.forEach(function(cat) { optionsHtml += '<option value="' + cat.id + '">' + cat.name + '</option>'; });
+    selects.forEach(function(select) {
+      const prevVal = select.value;
+      select.innerHTML = optionsHtml;
+      if (msCategories.find(function(c) { return c.id === prevVal; })) select.value = prevVal;
+    });
+  }
+
+  async function msClearTable() {
+    const ok = await customConfirm('입력한 모든 일정과 카테고리 설정을 비우시겠습니까?');
+    if (!ok) return;
+    document.querySelectorAll('#ms-table-body tr:not(.ms-example-row) .ms-cell-input[contenteditable="true"]').forEach(function(el) { el.innerText = ''; });
+    document.querySelectorAll('#ms-table-body .ms-cat-selector').forEach(function(sel) { sel.value = ''; });
+    msRenderCalendar();
+  }
+
+  function msHandlePaste(e) {
+    e.preventDefault();
+    const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+    const rows = text.split(/\r\n|\n|\r/);
+
+    let targetCell = document.activeElement;
+    let currentRow = targetCell.closest('tr');
+    if (!currentRow || currentRow.classList.contains('ms-example-row')) { customAlert('회색 예시 칸에는 붙여넣을 수 없습니다. 아래 흰색 빈칸을 선택하세요.'); return; }
+
+    let currentCellIndex = Array.from(currentRow.children).indexOf(targetCell.closest('td'));
+
+    rows.forEach(function(row) {
+      if (!row.trim() || !currentRow) return;
+      const cols = row.split('\t');
+
+      let tCell = currentRow.children[currentCellIndex].querySelector('.ms-cell-input');
+      if (tCell && cols[0]) tCell.innerText = cols[0].trim();
+
+      if (cols[1]) {
+        let nCell = currentRow.children[currentCellIndex + 1] && currentRow.children[currentCellIndex + 1].querySelector('.ms-cell-input');
+        if (nCell) nCell.innerText = cols[1].trim();
+      }
+
+      currentRow = currentRow.nextElementSibling;
+      if (!currentRow) { msAddRows(1); currentRow = document.getElementById('ms-table-body').lastElementChild; }
+    });
+    msRenderCalendar();
+  }
+
+  function msSortTableByDate() {
+    const tbody = document.getElementById('ms-table-body');
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.ms-example-row)'));
+
+    const rowData = rows.map(function(tr) {
+      const dStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
+      const catId = tr.children[2].querySelector('select').value;
+      let sortValue = 999999;
+      if (dStr) {
+        const parts = dStr.split(/[-/]/);
+        let m = 99, d = 99;
+        if (parts.length >= 3) { m = parseInt(parts[1]); d = parseInt(parts[2]); }
+        else if (parts.length === 2) { m = parseInt(parts[0]); d = parseInt(parts[1]); }
+        else { m = msCurMonth; d = parseInt(parts[0]); }
+        if (!isNaN(m) && !isNaN(d)) sortValue = m * 100 + d;
+      }
+      return { tr: tr, sortValue: sortValue, catId: catId };
+    });
+
+    rowData.sort(function(a, b) { return a.sortValue - b.sortValue; });
+    rowData.forEach(function(item) {
+      tbody.appendChild(item.tr);
+      item.tr.querySelector('select').value = item.catId;
+    });
+    msRenderCalendar();
+  }
+
+  function msGetUserData() {
+    let data = {};
+    const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
+    rows.forEach(function(tr) {
+      const dateStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
+      const content = tr.children[1].querySelector('.ms-cell-input').innerText.trim();
+      const catId = tr.children[2].querySelector('select').value;
+      if (dateStr && content) {
+        const parts = dateStr.split(/[-/]/);
+        let m, d;
+        if (parts.length >= 3) { m = parseInt(parts[1]); d = parseInt(parts[2]); }
+        else if (parts.length === 2) { m = parseInt(parts[0]); d = parseInt(parts[1]); }
+        else { m = msCurMonth; d = parseInt(parts[0]); }
+        const key = msCurYear + '-' + m + '-' + d;
+        if (!data[key]) data[key] = [];
+        data[key].push({ text: content, catId: catId });
+      }
+    });
+    return data;
+  }
+
+  function msHandleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) { msSchoolLogoBase64 = ev.target.result; msRenderCalendar(); };
+    reader.readAsDataURL(file);
+  }
+
+  // 이 앱은 학교가 이미 고정돼 있어서(NEIS_KEY/EDU_CODE/SCH_CODE), 대시보드 큰
+  // 캘린더(renderBigCalendar)가 쓰는 것과 같은 neisDataCache를 그대로 재사용한다
+  // (같은 달을 두 화면에서 각자 또 불러오지 않아도 됨).
+  async function msFetchNeisHolidays(monthKey) {
+    if (neisDataCache[monthKey]) return neisDataCache[monthKey];
+    try {
+      const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + monthKey + '01&AA_TO_YMD=' + monthKey + '31';
+      const res = await fetch(url);
+      const data = await res.json();
+      let events = {};
+      if (data.SchoolSchedule) {
+        data.SchoolSchedule[1].row.forEach(function(r) {
+          const dStr = r.AA_YMD;
+          if (r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') {
+            if (!events[dStr]) events[dStr] = [];
+            events[dStr].push(r.EVENT_NM);
+          }
+        });
+      }
+      neisDataCache[monthKey] = events;
+    } catch (e) { neisDataCache[monthKey] = {}; }
+    return neisDataCache[monthKey];
+  }
+
+  async function msRenderCalendar() {
+    document.getElementById('ms-nav-month-text').innerText = msCurYear + '. ' + String(msCurMonth).padStart(2, '0');
+    document.getElementById('ms-print-month').innerText = msCurMonth;
+    document.getElementById('ms-print-year').innerText = msCurYear;
+
+    const bigMonthEl = document.getElementById('ms-print-month');
+    const monthTextEl = document.querySelector('#ms-a4-paper .ms-month-text');
+    if (msCurMonth >= 10) {
+      bigMonthEl.style.fontSize = '60px'; bigMonthEl.style.letterSpacing = '-4px';
+      monthTextEl.style.fontSize = '22px'; monthTextEl.style.marginLeft = '4px';
+    } else {
+      bigMonthEl.style.fontSize = '78px'; bigMonthEl.style.letterSpacing = '-2px';
+      monthTextEl.style.fontSize = '26px'; monthTextEl.style.marginLeft = '8px';
+    }
+
+    document.getElementById('ms-print-school').innerText = document.getElementById('ms-cfg-school').value || '';
+    document.getElementById('ms-print-grade').innerText = document.getElementById('ms-cfg-grade').value || '';
+    document.getElementById('ms-print-title').innerText = document.getElementById('ms-cfg-title').value || '';
+
+    const logoImg = document.getElementById('ms-print-logo');
+    if (msSchoolLogoBase64) { logoImg.src = msSchoolLogoBase64; logoImg.style.display = 'block'; }
+    else { logoImg.style.display = 'none'; }
+
+    let activeDdays = [];
+    for (let i = 0; i < 5; i++) {
+      const showEl = document.getElementById('ms-dd-show-' + i);
+      if (!showEl) continue;
+      const isShow = showEl.checked;
+      const name = document.getElementById('ms-dd-name-' + i).value.trim();
+      const dateStr = document.getElementById('ms-dd-date-' + i).value;
+      const color = document.getElementById('ms-dd-color-' + i).value;
+      const days = i < 4 ? (parseInt(document.getElementById('ms-dd-days-' + i).value) || 1) : 1;
+      if (isShow && name && dateStr) activeDdays.push({ name: name, dateStr: dateStr, color: color, isExam: i < 4, days: days });
+    }
+
+    activeDdays.forEach(function(dd) {
+      if (dd.isExam) {
+        let endDate = new Date(dd.dateStr);
+        let daysAdded = 1;
+        while (daysAdded < dd.days) {
+          endDate.setDate(endDate.getDate() + 1);
+          const dow = endDate.getDay();
+          if (dow !== 0 && dow !== 6) daysAdded++;
+        }
+        dd.trueEndDate = endDate;
+      }
+    });
+
+    const showNeis = document.getElementById('ms-cfg-show-neis').checked;
+    const monthKey = msCurYear + String(msCurMonth).padStart(2, '0');
+    const neisData = showNeis ? await msFetchNeisHolidays(monthKey) : {};
+
+    const userData = msGetUserData();
+    const grid = document.getElementById('ms-cal-grid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(msCurYear, msCurMonth - 1, 1).getDay();
+    const daysInMonth = new Date(msCurYear, msCurMonth, 0).getDate();
+    const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+    for (let i = 0; i < totalCells; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'ms-cal-cell';
+      if (i % 7 === 0) cell.classList.add('ms-is-sun');
+      if (i % 7 === 6) cell.classList.add('ms-is-sat');
+
+      if (i >= firstDay && i < firstDay + daysInMonth) {
+        const d = i - firstDay + 1;
+        const targetDate = new Date(msCurYear, msCurMonth - 1, d, 0, 0, 0);
+        const dStr = msCurYear + String(msCurMonth).padStart(2, '0') + String(d).padStart(2, '0');
+
+        let dateColor = '#2C3E50';
+        if (i % 7 === 0) dateColor = '#E74C3C';
+        if (i % 7 === 6) dateColor = '#3498DB';
+
+        let eventsHtml = '';
+        if (neisData[dStr]) {
+          neisData[dStr].forEach(function(ev) {
+            eventsHtml += '<div class="ms-event-neis">' + ev + '</div>';
+            if (ev.includes('휴업') || ev.includes('기념') || ev.includes('방학')) dateColor = '#E74C3C';
+          });
+        }
+
+        const uKey = msCurYear + '-' + msCurMonth + '-' + d;
+        if (userData[uKey]) {
+          userData[uKey].forEach(function(item) {
+            let bgCol = 'transparent', fontCol = '#2C3E50', border = '1px solid #E2E8F0';
+            const catObj = msCategories.find(function(c) { return c.id === item.catId; });
+            if (catObj) { bgCol = catObj.color + '40'; border = '1px solid ' + catObj.color; fontCol = '#2C3E50'; }
+            eventsHtml += '<div class="ms-event-item" style="background:' + bgCol + '; border:' + border + '; color:' + fontCol + ';"><div style="width:6px; height:6px; border-radius:50%; background:' + (catObj ? catObj.color : '#CBD5E1') + '; flex-shrink:0; margin-top:4px;"></div>' + item.text + '</div>';
+          });
+        }
+
+        let cellDdayHtml = [];
+        let upcomingExam = null;
+        let minExamDiff = 99999;
+
+        activeDdays.forEach(function(dd) {
+          if (dd.isExam) {
+            const start = new Date(dd.dateStr);
+            const end = dd.trueEndDate;
+            const diffStart = Math.round((start - targetDate) / 86400000);
+            const diffEnd = Math.round((end - targetDate) / 86400000);
+            if (diffEnd >= 0) {
+              if (diffStart > 0) {
+                if (diffStart < minExamDiff) { minExamDiff = diffStart; upcomingExam = Object.assign({}, dd, { examText: 'D-' + diffStart }); }
+              } else {
+                minExamDiff = -99999;
+                const targetDay = targetDate.getDay();
+                if (targetDay === 0 || targetDay === 6) { upcomingExam = null; }
+                else {
+                  let workDays = 1;
+                  let tempDate = new Date(start);
+                  while (tempDate < targetDate) {
+                    tempDate.setDate(tempDate.getDate() + 1);
+                    const dow = tempDate.getDay();
+                    if (dow !== 0 && dow !== 6) workDays++;
+                  }
+                  upcomingExam = Object.assign({}, dd, { examText: workDays + '일차' });
+                }
+              }
+            }
+          } else {
+            const diffStart = Math.round((new Date(dd.dateStr) - targetDate) / 86400000);
+            if (diffStart >= 0) {
+              cellDdayHtml.push('<div class="ms-dday-mini" style="background:' + dd.color + ';">' + dd.name + ' ' + (diffStart === 0 ? 'D-DAY' : 'D-' + diffStart) + '</div>');
+            }
+          }
+        });
+
+        if (upcomingExam) cellDdayHtml.unshift('<div class="ms-dday-mini" style="background:' + upcomingExam.color + ';">' + upcomingExam.name + ' ' + upcomingExam.examText + '</div>');
+        cellDdayHtml = cellDdayHtml.slice(0, 2);
+
+        cell.innerHTML =
+          '<div class="ms-date-header">' +
+            '<div class="ms-date-num" style="color:' + dateColor + '">' + d + '</div>' +
+            '<div class="ms-dday-list">' + cellDdayHtml.join('') + '</div>' +
+          '</div>' +
+          '<div style="flex:1; min-height:0; overflow:hidden; padding-bottom:2px;">' + eventsHtml + '</div>';
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function msChangeMonth(dir) {
+    msCurMonth += dir;
+    if (msCurMonth > 12) { msCurMonth = 1; msCurYear++; }
+    if (msCurMonth < 1) { msCurMonth = 12; msCurYear--; }
+    msRenderCalendar();
+  }
+
+  /* --- 파일로 저장/불러오기 (좌석배치표와 같은 방식: 서버 저장 아님) --- */
+  function msExportData() {
+    const data = {
+      school: document.getElementById('ms-cfg-school').value,
+      grade: document.getElementById('ms-cfg-grade').value,
+      title: document.getElementById('ms-cfg-title').value,
+      showNeis: document.getElementById('ms-cfg-show-neis').checked,
+      logo: msSchoolLogoBase64,
+      font: document.getElementById('ms-cfg-font').value,
+      ddays: [],
+      categories: msCategories,
+      table: []
+    };
+
+    for (let i = 0; i < 5; i++) {
+      data.ddays.push({
+        show: document.getElementById('ms-dd-show-' + i).checked,
+        name: document.getElementById('ms-dd-name-' + i).value,
+        date: document.getElementById('ms-dd-date-' + i).value,
+        color: document.getElementById('ms-dd-color-' + i).value,
+        days: i < 4 ? document.getElementById('ms-dd-days-' + i).value : 1
+      });
+    }
+
+    document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)').forEach(function(tr) {
+      data.table.push({
+        d: tr.children[0].querySelector('.ms-cell-input').innerText.trim(),
+        c: tr.children[1].querySelector('.ms-cell-input').innerHTML.replace(/<br\s*[\/]?>/gi, '\n').trim(),
+        catId: tr.children[2].querySelector('select').value
+      });
+    });
+
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '월간일정표_' + msCurYear + '년_' + msCurMonth + '월.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function msImportData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+
+        if (data.school !== undefined) document.getElementById('ms-cfg-school').value = data.school;
+        if (data.grade !== undefined) document.getElementById('ms-cfg-grade').value = data.grade;
+        if (data.title !== undefined) document.getElementById('ms-cfg-title').value = data.title;
+        if (data.showNeis !== undefined) document.getElementById('ms-cfg-show-neis').checked = data.showNeis;
+        if (data.logo) msSchoolLogoBase64 = data.logo;
+        if (data.font) { document.getElementById('ms-cfg-font').value = data.font; msChangeGlobalFont(); }
+
+        if (data.ddays && data.ddays.length === 5) {
+          for (let i = 0; i < 5; i++) {
+            document.getElementById('ms-dd-name-' + i).value = data.ddays[i].name;
+            document.getElementById('ms-dd-date-' + i).value = data.ddays[i].date;
+            document.getElementById('ms-dd-color-' + i).value = data.ddays[i].color;
+            document.getElementById('ms-dd-show-' + i).checked = data.ddays[i].show !== false;
+            if (i < 4 && data.ddays[i].days) document.getElementById('ms-dd-days-' + i).value = data.ddays[i].days;
+          }
+        }
+
+        if (data.categories) msCategories = data.categories;
+
+        if (data.table) {
+          const tbody = document.getElementById('ms-table-body');
+          Array.from(tbody.children).forEach(function(tr) { if (!tr.classList.contains('ms-example-row')) tr.remove(); });
+
+          data.table.forEach(function(row) {
+            const tr = document.createElement('tr');
+            const contentHtml = row.c ? row.c.replace(/\n/g, '<br>') : '';
+            tr.innerHTML =
+              '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + row.d + '</div></td>' +
+              '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + contentHtml + '</div></td>' +
+              '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
+              '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
+            tbody.appendChild(tr);
+          });
+
+          msUpdateSelectOptions();
+          const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
+          data.table.forEach(function(row, idx) { rows[idx].querySelector('select').value = row.catId; });
+        }
+
+        msRenderCategories();
+        customAlert('데이터를 성공적으로 불러왔습니다! 🎉');
+      } catch (err) {
+        customAlert('파일을 읽는 데 실패했습니다. 올바른 월간일정표 파일인지 확인해주세요.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  /* --- 폰트 / 인쇄 배율 --- */
+  function msPrevFont() {
+    const select = document.getElementById('ms-cfg-font');
+    select.selectedIndex = select.selectedIndex > 0 ? select.selectedIndex - 1 : select.options.length - 1;
+    msChangeGlobalFont();
+  }
+
+  function msNextFont() {
+    const select = document.getElementById('ms-cfg-font');
+    select.selectedIndex = select.selectedIndex < select.options.length - 1 ? select.selectedIndex + 1 : 0;
+    msChangeGlobalFont();
+  }
+
+  function msChangeGlobalFont() {
+    document.documentElement.style.setProperty('--ms-main-font', document.getElementById('ms-cfg-font').value);
+  }
+
+  function msUpdatePrintScale() {
+    const scale = document.getElementById('ms-cfg-print-size').value;
+    document.documentElement.style.setProperty('--ms-print-scale', scale);
+  }
+
+  async function msPrintPaper() {
+    await customAlert('💡 안내: 인쇄 창이 열리면 대상(프린터)을 [PDF로 저장]으로 선택하면 PDF로도 저장할 수 있습니다.');
+    window.print();
+  }
+
+  // ----- 월간일정표 시뮬레이션 설명서 (좌석배치표와 같은 스포트라이트 투어 UI 재사용) -----
+  const msTourSteps = [
+    { selector: '#ms-page-header', title: '🗓️ 월간일정표에 오신 것을 환영해요!', desc: '학사일정과 우리 반(부서) 일정을 A4 한 장짜리 달력으로 만들어 인쇄까지 할 수 있는 화면이에요. "다음"을 눌러 하나씩 따라와 보세요.' },
+    { selector: '#ms-section-info', title: '1단계. 기본 설정', desc: '학교명·부서명·타이틀을 정하고, 로고를 올리거나 글꼴을 바꿀 수 있어요. "나이스 학사일정 표시"를 켜두면 개교기념일 같은 학교 공식 일정이 자동으로 달력에 나와요.' },
+    { selector: '#ms-section-dday', title: '2단계. 목표 D-Day', desc: '정기고사 4개는 시작일과 시험 기간(일수)을 넣으면, 시험 중엔 "n일차", 시작 전엔 "D-n"으로 자동 표시돼요. 커스텀 D-Day는 수능처럼 항상 챙겨야 할 날짜에 써요.' },
+    { selector: '#ms-section-cat', title: '3단계. 일정 분류 및 컬러', desc: '자율/동아리/행사처럼 분류를 만들고 색을 정해두면, 세부 일정에서 분류를 고를 때 그 색으로 달력에 표시돼요.' },
+    { selector: '#ms-section-table', title: '4단계. 세부 일정 입력', desc: '날짜와 내용을 입력하면 오른쪽 달력에 바로 반영돼요. 엑셀에서 복사한 표를 그대로 붙여넣을 수도 있고, "날짜" 제목을 누르면 날짜순 정렬도 돼요.' },
+    { selector: '#ms-a4-paper', title: '5단계. 미리보기', desc: '지금까지 설정한 내용이 실제 인쇄될 모습 그대로 보여요.' },
+    { selector: '#ms-month-nav', title: '월 이동', desc: '여기서 달을 옮기면 그 달의 학사일정을 새로 불러와서 달력이 다시 그려져요.' },
+    { selector: '#ms-header-save-group', title: '6단계. 저장/불러오기', desc: '💾 저장/📂 불러오기로 지금까지 만든 설정과 일정을 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
+    { selector: '#ms-print-btn', title: '7단계. 인쇄 또는 PDF로 저장', desc: '용지 크기(A4/B4/A3)를 고른 뒤 이 버튼을 눌러 인쇄하거나, 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일로 저장할 수도 있어요. 수고하셨습니다! 🎉' }
+  ];
+  let msTourIndex = 0;
+
+  function msOpenTour() {
+    tourMode = 'monthly';
+    msTourIndex = 0;
+    document.getElementById('tour-overlay').style.display = 'block';
+    msShowTourStep();
+  }
+
+  function msCloseTour() {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    tourMode = 'dashboard';
+    document.getElementById('tour-overlay').style.display = 'none';
+  }
+
+  function msShowTourStep() {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (msTourIndex >= msTourSteps.length) { msCloseTour(); return; }
+    const step = msTourSteps[msTourIndex];
+    const el = document.querySelector(step.selector);
+    if (!el) {
+      if (msTourIndex < msTourSteps.length - 1) { msTourIndex++; msShowTourStep(); } else msCloseTour();
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('tour-card-title').innerText = step.title;
+    document.getElementById('tour-card-desc').innerText = step.desc;
+    document.getElementById('tour-card-progress').innerText = (msTourIndex + 1) + ' / ' + msTourSteps.length;
+    document.getElementById('tour-prev-btn').style.visibility = msTourIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tour-next-btn').innerText = msTourIndex === msTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
+    setTimeout(function() {
+      positionTourSpotlight(el);
+      tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+      tourSpotlightObserver.observe(el);
+    }, 320);
+  }
+
+  function msTourNext() {
+    if (msTourIndex < msTourSteps.length - 1) { msTourIndex++; msShowTourStep(); }
+    else msCloseTour();
+  }
+
+  function msTourPrev() {
+    if (msTourIndex > 0) { msTourIndex--; msShowTourStep(); }
   }
 
 </script>
