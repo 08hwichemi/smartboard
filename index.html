@@ -949,7 +949,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.19';
+  var BUILD_ID = '2026-09-26.20';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3142,8 +3142,12 @@
           document.getElementById('notice-popup').classList.add('show');
           currentNoticeId = latest.id;
         }
+      }
 
-        const listEl = document.getElementById('recent-notice-list');
+      const listEl = document.getElementById('recent-notice-list');
+      if (!Array.isArray(data) || data.length === 0) {
+        listEl.innerHTML = '<li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">공지가 없습니다.</li>';
+      } else {
         listEl.innerHTML = '';
         data.forEach(function(item) {
           const likes = parseInt(item.likes) || 0;
@@ -3152,7 +3156,7 @@
           const isHearted = localStorage.getItem('reaction-' + item.id + '-heart') === 'true';
           const likeStyle = isLiked ? 'background:var(--accent-color); color:white;' : 'background:var(--tt-bg); color:var(--text-main);';
           const heartStyle = isHearted ? 'background:var(--accent-color); color:white;' : 'background:var(--tt-bg); color:var(--text-main);';
-          
+
           const authorHtml = item.author ? '<span style="color:var(--accent-color); font-weight:800;">' + escapeHtmlAttr(item.author) + '</span> · ' : '';
           const canManage = window.currentTeacher && (window.currentTeacher.is_admin || item.author === window.currentTeacher.name);
           const manageHtml = canManage
