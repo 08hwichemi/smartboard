@@ -271,7 +271,9 @@
     .sc-font-nav:hover { filter: brightness(0.95); }
     #seatchart-page input[type="range"] { width: 100%; accent-color: var(--accent-color); box-sizing: border-box; }
 
-    #sc-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
+    #sc-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; flex-direction: column; padding: 14px 20px 20px; box-sizing: border-box; gap: 10px; }
+    #sc-paper-toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; flex: 0 0 auto; }
+    #sc-paper-stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
     #sc-paper-wrapper { position: relative; transform-origin: center; }
 
     .sc-a4-paper, .sc-a4-paper * { font-family: var(--sc-main-font); box-sizing: border-box; margin: 0; padding: 0; }
@@ -324,8 +326,8 @@
     .sc-student-item.sc-used { opacity: 0.4; pointer-events: none; }
 
     @media print {
-      #app-rail, .updatebar, #sc-panel, #sc-page-header { display: none !important; }
-      body, #app-shell, #app-main, #seatchart-page, #sc-body { display: block !important; height: auto !important; overflow: visible !important; }
+      #app-rail, .updatebar, #sc-panel, #sc-page-header, #sc-paper-toolbar { display: none !important; }
+      body, #app-shell, #app-main, #seatchart-page, #sc-body, #sc-paper-stage { display: block !important; height: auto !important; overflow: visible !important; }
       #sc-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
       #sc-paper-wrapper { transform: none !important; margin: 0 auto !important; }
       .sc-a4-paper { box-shadow: none !important; border-radius: 0 !important; }
@@ -1057,14 +1059,16 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🪑 좌석배치표</div>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scOpenManual()" title="사용 방법을 안내합니다">📖 설명서</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
     </div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap;">
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scArrangeSeats('random')" title="빈 자리를 랜덤으로 섞습니다">🎲 랜덤배치</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scClearContent()" title="배정된 학생을 모두 지웁니다">🧹 초기화</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scToggleTeacherView()" title="교탁에서 바라본 시점으로 상하좌우를 반전합니다">🔄 위치반전</button>
-      <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="scPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
+    <div id="sc-header-save-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scDownloadThemeSettings()" title="지금 폰트·크기·색상 설정을 파일로 저장합니다">💾 디자인저장</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('sc-theme-file-input').click()" title="저장해둔 디자인 설정 파일을 불러옵니다">📂 디자인로드</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scSaveArrangement()" title="완성한 배치 결과를 파일로 저장합니다">📝 결과저장</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="document.getElementById('sc-arrangement-file-input').click()" title="저장해둔 배치 결과 파일을 불러옵니다">📂 결과로드</button>
+      <input type="file" id="sc-theme-file-input" style="display:none;" accept=".json" onchange="scUploadThemeSettings(event)">
+      <input type="file" id="sc-arrangement-file-input" style="display:none;" accept=".json" onchange="scLoadArrangement(event)">
+      <button class="top-btn accent" id="sc-print-btn" style="font-size:11px; padding:4px 10px;" onclick="scPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
     </div>
   </div>
 
@@ -1073,12 +1077,12 @@
 
       <div class="sc-section">
         <div class="sc-section-title">🧑‍🎓 명렬표 불러오기</div>
-        <div class="sc-row">
+        <div class="sc-row" id="sc-roster-select-row">
           <select id="sc-grade-select" class="mini-select" style="flex:1;" onchange="scOnGradeChange()"><option value="">학년</option></select>
           <select id="sc-class-select" class="mini-select" style="flex:1;" onchange="scOnClassChange()"><option value="">반</option></select>
         </div>
         <div id="sc-roster-status" style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년과 반을 선택하세요.</div>
-        <div class="sc-row" style="background: var(--alert-bg); padding: 6px 8px; border-radius: 8px; border: 1px dashed var(--alert-border); margin-bottom:0;">
+        <div class="sc-row" id="sc-exclude-row" style="background: var(--alert-bg); padding: 6px 8px; border-radius: 8px; border: 1px dashed var(--alert-border); margin-bottom:0;">
           <label style="color:var(--alert); font-size: 11px; font-weight:700; white-space:nowrap;">🚫 결석/제외</label>
           <input type="text" id="sc-exclude-nums" class="sc-text-input" placeholder="예: 5, 12" style="flex:1;">
         </div>
@@ -1086,24 +1090,24 @@
 
       <div class="sc-section">
         <div class="sc-section-title">🏫 반 구조</div>
-        <div class="sc-grid-3">
+        <div class="sc-grid-3" id="sc-structure-grid">
           <div class="sc-field"><label>분단(열)</label><input type="number" id="sc-cfg-groups" min="1" value="1"></div>
           <div class="sc-field"><label>가로(행)</label><input type="number" id="sc-cfg-rows" min="1" value="1"></div>
           <div class="sc-field"><label>짝꿍 수</label><input type="number" id="sc-cfg-seats" min="1" value="1"></div>
         </div>
-        <button class="top-btn accent" style="width:100%; padding:8px; box-sizing:border-box;" onclick="scApplySettings()">🔄 구조 그리기 (입력 필수!)</button>
+        <button class="top-btn accent" id="sc-build-btn" style="width:100%; padding:8px; box-sizing:border-box;" onclick="scApplySettings()">🔄 구조 그리기 (입력 필수!)</button>
       </div>
 
       <div class="sc-section">
         <div class="sc-section-title">📌 특수 좌석 세팅</div>
-        <div class="sc-btn-grid" style="margin-bottom:8px;">
+        <div class="sc-btn-grid" id="sc-special-seat-row" style="margin-bottom:8px;">
           <button class="top-btn sc-btn-mode" id="sc-btn-fix" onclick="scToggleMode('fix')">고정석 지정 📌</button>
           <button class="top-btn sc-btn-mode" id="sc-btn-exclude" onclick="scToggleMode('exclude')">제외석 지정 🚫</button>
         </div>
         <div class="sc-help" id="sc-help-text">👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.</div>
       </div>
 
-      <div class="sc-section">
+      <div class="sc-section" id="sc-design-section">
         <div class="sc-section-title">🎨 종이 디자인</div>
         <div class="sc-theme-grid">
           <button class="sc-theme-btn sc-active" id="sc-theme-classic" style="background:#e5eceb; color:#2d3735" onclick="scSetTheme('classic')">🌿 기본</button>
@@ -1168,32 +1172,26 @@
         </div>
       </div>
 
-      <div class="sc-section">
-        <div class="sc-section-title">💾 저장 / 불러오기</div>
-        <div class="sc-btn-grid" style="margin-bottom:6px;">
-          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="scDownloadThemeSettings()">💾 디자인저장</button>
-          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="document.getElementById('sc-theme-file-input').click()">📂 디자인로드</button>
-        </div>
-        <div class="sc-btn-grid">
-          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="scSaveArrangement()">📝 결과저장</button>
-          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="document.getElementById('sc-arrangement-file-input').click()">📂 결과로드</button>
-        </div>
-        <input type="file" id="sc-theme-file-input" style="display:none;" accept=".json" onchange="scUploadThemeSettings(event)">
-        <input type="file" id="sc-arrangement-file-input" style="display:none;" accept=".json" onchange="scLoadArrangement(event)">
-      </div>
-
     </div>
 
     <div id="sc-preview">
-      <div id="sc-paper-wrapper">
-        <div class="sc-a4-paper" id="sc-a4-paper">
-          <div id="sc-curtain"><div id="sc-countdown-text">3</div></div>
-          <div class="sc-title-wrapper"><input type="text" class="sc-doc-title-input" id="sc-display-title" value="🏫 좌석배치표 ✨"></div>
-          <div class="sc-top-row"><input type="text" class="sc-side-text" value="창 가"><div class="sc-podium">교 탁</div><input type="text" class="sc-side-text" value="복 도"></div>
-          <div class="sc-center-area"><div id="sc-seat-grid"></div></div>
-          <div class="sc-footer-box">
-            <input type="text" class="sc-footer-input" id="sc-footer-1" value="[지정좌석제] 자리를 마음대로 바꿀 수 없습니다.">
-            <input type="text" class="sc-footer-input-sub" id="sc-footer-2" value="">
+      <div id="sc-paper-toolbar">
+        <button class="top-btn" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
+        <button class="top-btn" onclick="scArrangeSeats('random')" title="빈 자리를 랜덤으로 섞습니다">🎲 랜덤배치</button>
+        <button class="top-btn" onclick="scClearContent()" title="배정된 학생을 모두 지웁니다">🧹 초기화</button>
+        <button class="top-btn" onclick="scToggleTeacherView()" title="교탁에서 바라본 시점으로 상하좌우를 반전합니다">🔄 위치반전</button>
+      </div>
+      <div id="sc-paper-stage">
+        <div id="sc-paper-wrapper">
+          <div class="sc-a4-paper" id="sc-a4-paper">
+            <div id="sc-curtain"><div id="sc-countdown-text">3</div></div>
+            <div class="sc-title-wrapper"><input type="text" class="sc-doc-title-input" id="sc-display-title" value="🏫 좌석배치표 ✨"></div>
+            <div class="sc-top-row"><input type="text" class="sc-side-text" value="창 가"><div class="sc-podium">교 탁</div><input type="text" class="sc-side-text" value="복 도"></div>
+            <div class="sc-center-area"><div id="sc-seat-grid"></div></div>
+            <div class="sc-footer-box">
+              <input type="text" class="sc-footer-input" id="sc-footer-1" value="[지정좌석제] 자리를 마음대로 바꿀 수 없습니다.">
+              <input type="text" class="sc-footer-input-sub" id="sc-footer-2" value="">
+            </div>
           </div>
         </div>
       </div>
@@ -1209,34 +1207,6 @@
     </div>
     <div id="sc-modal-student-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:50vh; overflow-y:auto;"></div>
     <button class="top-btn" style="width:100%; margin-top:10px; color:var(--alert); box-sizing:border-box;" onclick="scClearSpecificSeat()">이 자리 비우기</button>
-  </div>
-</div>
-
-<div class="overlay" id="sc-manual-overlay">
-  <div class="modal-box" style="width: 460px; max-width: 92vw; max-height: 84vh;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <div style="font-weight:800; font-size:16px;">📖 좌석배치표 설명서</div>
-      <button class="top-btn" style="font-size:11px; padding:2px 8px;" onclick="scCloseManual()">✕</button>
-    </div>
-    <div style="font-size:13px; line-height:1.7; color:var(--text-main);">
-      <div style="font-weight:800; margin-bottom:6px;">사용 순서</div>
-      <div style="margin-bottom:8px;"><b>1단계.</b> 왼쪽 위에서 학년과 반을 고르면 그 반 명렬표가 자동으로 불러와집니다.</div>
-      <div style="margin-bottom:8px;"><b>2단계.</b> 결석했거나 배치에서 빼야 할 학생이 있다면 <b>[결석/제외]</b> 칸에 번호를 콤마(,)로 입력하세요.</div>
-      <div style="margin-bottom:8px;"><b>3단계.</b> <b>분단(열)/가로(행)/짝꿍 수</b>를 입력하고 <b>[구조 그리기]</b>를 누르세요.</div>
-      <div style="margin-bottom:8px;"><b>4단계.</b> <b>특수 좌석 세팅</b>에서 <b>[고정석 지정]</b> 또는 <b>[제외석 지정]</b>으로 미리 고정하거나 뺄 자리를 정하세요.</div>
-      <div style="margin-bottom:8px;"><b>5단계.</b> 자리를 직접 클릭해 학생을 배정하거나, 위쪽 <b>[번호순]</b> / <b>[랜덤배치]</b> 버튼으로 한 번에 채우세요.</div>
-      <div style="margin-bottom:8px;"><b>6단계.</b> 인쇄하기 전에 <b>[위치반전]</b>을 누르면 교탁에서 보는 방향으로 바뀝니다(교탁용/학생용을 각각 뽑을 때 사용).</div>
-      <div style="margin-bottom:14px;"><b>7단계.</b> <b>[인쇄/PDF]</b>로 인쇄하거나, 인쇄 창에서 대상을 "PDF로 저장"으로 바꾸면 PDF 파일로 저장됩니다.</div>
-
-      <div class="sc-help" style="margin-top:0;">
-        💡 <b>꿀팁</b><br>
-        · 제목, 창가/복도, 하단 문구는 종이 위 글씨를 직접 클릭해서 바로 고칠 수 있습니다.<br>
-        · <b>[디자인저장]</b>을 눌러두면 지금 폰트·크기·색상 설정을 파일로 남겨뒀다가 다른 반에도 똑같이 적용할 수 있습니다.<br>
-        · <b>[결과저장]</b>으로 완성한 배치를 파일로 남겨두면 나중에 <b>[결과로드]</b>로 그대로 불러올 수 있습니다.<br>
-        · <b>[고정석]</b>은 랜덤 배치를 돌리기 <u>전에</u> 미리 지정해둬야 그 자리 학생이 움직이지 않습니다.
-      </div>
-    </div>
-    <button class="top-btn accent" style="width:100%; margin-top:14px; box-sizing:border-box;" onclick="scCloseManual()">확인했습니다</button>
   </div>
 </div>
 
@@ -1257,7 +1227,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.28';
+  var BUILD_ID = '2026-09-26.29';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1512,8 +1482,7 @@
     if (rosterOverlay) rosterOverlay.style.display = 'none';
     const scStudentModal = document.getElementById('sc-student-modal');
     if (scStudentModal) scStudentModal.style.display = 'none';
-    const scManualOverlay = document.getElementById('sc-manual-overlay');
-    if (scManualOverlay) scManualOverlay.style.display = 'none';
+    if (tourMode === 'seatchart') scCloseTour();
   }
 
   // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
@@ -2178,6 +2147,9 @@
   ];
   let tourIndex = 0;
   let tourOriginalTab = 'tt';
+  // 대시보드 투어와 좌석배치표 투어가 같은 스포트라이트 UI(#tour-overlay 등)를 공유하므로,
+  // 지금 어느 투어가 진행 중인지 이 플래그로 구분해서 next/prev/close를 알맞게 넘겨준다.
+  let tourMode = 'dashboard';
 
   // 시간표관리/감독표처럼 단계 진입 시 실제로 모달을 여는 스텝이 있는데, 중간에 투어를 끄거나
   // 다음/이전으로 넘어갈 때 그 모달이 그대로 열린 채 남아있으면 안 되므로 매 단계 전환 전에 항상 닫아준다.
@@ -2188,6 +2160,7 @@
   }
 
   function openTour() {
+    tourMode = 'dashboard';
     tourOriginalTab = currentMainTab;
     tourIndex = 0;
     document.getElementById('tour-overlay').style.display = 'block';
@@ -2195,6 +2168,7 @@
   }
 
   function closeTour() {
+    if (tourMode === 'seatchart') { scCloseTour(); return; }
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
     tourResetTransient();
     if (currentMainTab !== tourOriginalTab) switchMainTab(tourOriginalTab);
@@ -2247,11 +2221,13 @@
   }
 
   function tourNext() {
+    if (tourMode === 'seatchart') { scTourNext(); return; }
     if (tourIndex < tourSteps.length - 1) { tourIndex++; showTourStep(); }
     else closeTour();
   }
 
   function tourPrev() {
+    if (tourMode === 'seatchart') { scTourPrev(); return; }
     if (tourIndex > 0) { tourIndex--; showTourStep(); }
   }
 
@@ -4555,11 +4531,11 @@
   }
 
   function scScalePaper() {
-    const container = document.getElementById('sc-preview');
+    const container = document.getElementById('sc-paper-stage');
     const wrapper = document.getElementById('sc-paper-wrapper');
     if (!container || !wrapper || container.clientWidth === 0) return;
-    const availableHeight = container.clientHeight - 40;
-    const availableWidth = container.clientWidth - 40;
+    const availableHeight = container.clientHeight - 20;
+    const availableWidth = container.clientWidth - 20;
     let scale = Math.min(availableWidth / 794, availableHeight / 1123, 1);
     if (scale < 0.25) scale = 0.25;
     wrapper.style.transform = 'scale(' + scale + ')';
@@ -4752,8 +4728,68 @@
     scTargetDesk = null;
   }
 
-  function scOpenManual() { document.getElementById('sc-manual-overlay').style.display = 'flex'; }
-  function scCloseManual() { document.getElementById('sc-manual-overlay').style.display = 'none'; }
+  // ----- 좌석배치표 시뮬레이션 설명서 -----
+  // 처음 쓰는 선생님을 위해, 대시보드에서 쓰던 스포트라이트 투어 UI(#tour-overlay 등)를
+  // 그대로 재사용해서 실제 버튼을 하나씩 짚어가며 보여준다. tourMode로 대시보드 투어와
+  // 구분해서 같은 UI를 공유한다(closeTour/tourNext/tourPrev 참고).
+  const scTourSteps = [
+    { selector: '#sc-page-header', title: '🪑 좌석배치표에 오신 것을 환영해요!', desc: '반 학생들을 자동으로 배치하고 예쁘게 꾸며서 인쇄까지 할 수 있는 화면이에요. "다음"을 눌러 하나씩 따라와 보세요.' },
+    { selector: '#sc-roster-select-row', title: '1단계. 학년/반 선택', desc: '여기서 학년과 반을 고르면, 그 반 학생 명렬표가 자동으로 불러와져요. 담임 선생님이면 처음 열었을 때 이미 본인 반이 선택돼 있어요.' },
+    { selector: '#sc-exclude-row', title: '2단계. 결석/제외 번호 (선택)', desc: '결석했거나 이번 배치에서 빼야 할 학생이 있으면, 번호를 콤마(,)로 구분해서 여기에 적어주세요. 예: 5, 12' },
+    { selector: '#sc-structure-grid', title: '3단계. 반 구조 정하기', desc: '분단(세로줄) 수, 가로(줄) 수, 짝꿍이 몇 명씩 앉을지(짝꿍 수)를 숫자로 입력하세요.' },
+    { selector: '#sc-build-btn', title: '이 버튼을 눌러보세요', desc: '입력한 숫자대로 오른쪽 종이에 빈 책상이 쫙 그려져요. 구조를 바꾸고 싶으면 숫자를 고치고 이 버튼을 다시 누르면 됩니다.' },
+    { selector: '#sc-special-seat-row', title: '4단계. 고정석 / 제외석 (선택)', desc: '📌 고정석: 미리 정해두면 랜덤 배치를 돌려도 그 자리 학생은 움직이지 않아요.\n🚫 제외석: 책상이 없거나 비워둘 자리를 표시할 때 써요.\n필요 없으면 건너뛰어도 괜찮아요.' },
+    { selector: '#sc-paper-toolbar', title: '5단계. 자리 채우기', desc: '🔢 번호순: 앞에서부터 번호 순서대로 채워요.\n🎲 랜덤배치: 카운트다운 후 무작위로 섞어서 채워요(고정석·제외 번호는 그대로 유지돼요).\n🧹 초기화: 배정만 지우고 고정·제외 표시는 남겨요.\n🔄 위치반전: 인쇄할 때 교탁이 보는 방향으로 뒤집어요.' },
+    { selector: '#sc-a4-paper', title: '6단계. 직접 클릭해서 배정하기', desc: '자리 하나를 클릭하면 학생을 직접 골라 앉힐 수 있어요. 제목, "창가"/"복도", 맨 아래 문구도 모두 클릭해서 바로 고칠 수 있습니다.' },
+    { selector: '#sc-design-section', title: '7단계. 종이 디자인 꾸미기', desc: '색 테마, 글꼴(30여 종), 글씨 크기와 여백 등을 자유롭게 바꿔서 우리 반만의 좌석표를 만들어보세요.' },
+    { selector: '#sc-header-save-group', title: '8단계. 저장하기', desc: '💾 디자인저장/로드: 지금 폰트·색·크기 설정을 파일로 저장했다가 다른 반에도 똑같이 적용할 수 있어요.\n📝 결과저장/로드: 완성한 배치 결과 전체를 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
+    { selector: '#sc-print-btn', title: '9단계. 인쇄 또는 PDF로 저장', desc: '다 완성됐으면 이 버튼을 눌러 인쇄하거나, 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일로 저장할 수 있어요. 수고하셨습니다! 🎉' }
+  ];
+  let scTourIndex = 0;
+
+  function scOpenTour() {
+    tourMode = 'seatchart';
+    scTourIndex = 0;
+    document.getElementById('tour-overlay').style.display = 'block';
+    scShowTourStep();
+  }
+
+  function scCloseTour() {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    tourMode = 'dashboard';
+    document.getElementById('tour-overlay').style.display = 'none';
+  }
+
+  function scShowTourStep() {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (scTourIndex >= scTourSteps.length) { scCloseTour(); return; }
+    const step = scTourSteps[scTourIndex];
+    const el = document.querySelector(step.selector);
+    if (!el) {
+      if (scTourIndex < scTourSteps.length - 1) { scTourIndex++; scShowTourStep(); } else scCloseTour();
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('tour-card-title').innerText = step.title;
+    document.getElementById('tour-card-desc').innerText = step.desc;
+    document.getElementById('tour-card-progress').innerText = (scTourIndex + 1) + ' / ' + scTourSteps.length;
+    document.getElementById('tour-prev-btn').style.visibility = scTourIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tour-next-btn').innerText = scTourIndex === scTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
+    setTimeout(function() {
+      positionTourSpotlight(el);
+      tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+      tourSpotlightObserver.observe(el);
+    }, 320);
+  }
+
+  function scTourNext() {
+    if (scTourIndex < scTourSteps.length - 1) { scTourIndex++; scShowTourStep(); }
+    else scCloseTour();
+  }
+
+  function scTourPrev() {
+    if (scTourIndex > 0) { scTourIndex--; scShowTourStep(); }
+  }
 
   function scClearSpecificSeat() {
     if (!scTargetDesk) return;
