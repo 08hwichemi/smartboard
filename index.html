@@ -607,19 +607,19 @@
         <div class="weather-group" style="flex: 6; padding-left: 16px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
             <span style="font-size:11px; font-weight:800; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">🌤️ 날씨 · <span id="weather-location-label">부광고</span></span>
-            <span style="font-size:9.5px; font-weight:700; color:var(--alert); background:var(--alert-bg); border:1px solid var(--alert-border); border-radius:6px; padding:1px 6px; white-space:nowrap; flex-shrink:0;">미세먼지 <span id="weather-dust-val">--</span></span>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
             <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-              <span style="font-size:28px; flex-shrink:0;" id="weather-icon">⛅</span>
+              <span style="font-size:30px; flex-shrink:0;" id="weather-icon">⛅</span>
               <div style="min-width:0;">
-                <div style="font-size:21px; font-weight:800; line-height:1;" id="weather-temp">--°</div>
+                <div style="font-size:22px; font-weight:800; line-height:1;" id="weather-temp">--°</div>
                 <div style="font-size:10px; color:var(--text-sub); font-weight:700; white-space:nowrap;" id="weather-cond-text">-</div>
+                <div style="font-size:10px; font-weight:800; white-space:nowrap; margin-top:2px;"><span id="weather-lo" style="color:#4C8DC2;">--°</span> / <span id="weather-hi" style="color:#D9534F;">--°</span></div>
               </div>
             </div>
             <div style="text-align:right; font-size:10px; color:var(--text-sub); font-weight:700; white-space:nowrap; line-height:1.6; flex-shrink:0;">
-              <div>최고 <span style="color:var(--text-main);" id="weather-hi">--°</span></div>
-              <div>최저 <span style="color:var(--text-main);" id="weather-lo">--°</span></div>
+              <div>미세 <span style="color:var(--text-main);" id="weather-pm10-status">-</span></div>
+              <div>초미세 <span style="color:var(--text-main);" id="weather-pm25-status">-</span></div>
             </div>
           </div>
           <div id="weather-hourly-strip" style="display:flex; justify-content:space-between; gap:4px; padding-top:6px; border-top:1px dashed var(--border-color); width:100%; box-sizing:border-box;"></div>
@@ -719,7 +719,7 @@
       </ul>
     </div>
 
-    <div id="meal-widget" class="widget" style="flex: 1.4; min-height: 0;">
+    <div id="meal-widget" class="widget" style="flex: 0 0 136px; min-height: 0;">
       <div class="widget-title" style="font-size:11px; margin-bottom:6px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg></div>
@@ -915,7 +915,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.11';
+  var BUILD_ID = '2026-09-26.12';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2971,6 +2971,12 @@
   function weatherCondTextFor(code) {
     if(code===0) return '맑음'; if(code<=3) return '구름조금'; if(code<=48) return '흐림'; if(code<=67) return '비'; if(code<=77) return '눈'; if(code<=82) return '소나기'; return '흐림';
   }
+  function dustStatusFor(value, thresholds) {
+    if(value > thresholds[2]) return '매우나쁨';
+    if(value > thresholds[1]) return '나쁨';
+    if(value > thresholds[0]) return '보통';
+    return '좋음';
+  }
 
   const WEATHER_LAT = '37.495';
   const WEATHER_LON = '126.722';
@@ -3002,23 +3008,23 @@
           const temp = Math.round(data.hourly.temperature_2m[idx]);
           const icon = weatherIconFor(data.hourly.weathercode[idx]);
           html += '<div style="text-align:center; flex:1;">' +
-            '<div style="font-size:10.5px; color:var(--text-sub); font-weight:700;">' + hour + '시</div>' +
-            '<div style="font-size:17px; margin:3px 0;">' + icon + '</div>' +
             '<div style="font-size:12px; font-weight:800;">' + temp + '°</div>' +
+            '<div style="font-size:17px; margin:3px 0;">' + icon + '</div>' +
+            '<div style="font-size:10.5px; color:var(--text-sub); font-weight:700;">' + hour + '시</div>' +
           '</div>';
         }
         document.getElementById('weather-hourly-strip').innerHTML = html;
       }
 
-      const resAir = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + WEATHER_LAT + '&longitude=' + WEATHER_LON + '&current=pm10');
+      const resAir = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + WEATHER_LAT + '&longitude=' + WEATHER_LON + '&current=pm10,pm2_5');
       const dataAir = await resAir.json();
-      if(dataAir.current && dataAir.current.pm10 !== undefined) {
-        const pm10 = dataAir.current.pm10;
-        let status = '좋음';
-        if(pm10 > 150) status = '매우나쁨';
-        else if(pm10 > 80) status = '나쁨';
-        else if(pm10 > 30) status = '보통';
-        document.getElementById('weather-dust-val').innerText = pm10 + ' · ' + status;
+      if(dataAir.current) {
+        if(dataAir.current.pm10 !== undefined) {
+          document.getElementById('weather-pm10-status').innerText = dustStatusFor(dataAir.current.pm10, [30, 80, 150]);
+        }
+        if(dataAir.current.pm2_5 !== undefined) {
+          document.getElementById('weather-pm25-status').innerText = dustStatusFor(dataAir.current.pm2_5, [15, 35, 75]);
+        }
       }
     } catch(e) { }
   }
