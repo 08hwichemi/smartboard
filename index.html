@@ -1057,6 +1057,7 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🪑 좌석배치표</div>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scOpenManual()" title="사용 방법을 안내합니다">📖 설명서</button>
     </div>
     <div style="display:flex; gap:6px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
@@ -1211,6 +1212,34 @@
   </div>
 </div>
 
+<div class="overlay" id="sc-manual-overlay">
+  <div class="modal-box" style="width: 460px; max-width: 92vw; max-height: 84vh;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <div style="font-weight:800; font-size:16px;">📖 좌석배치표 설명서</div>
+      <button class="top-btn" style="font-size:11px; padding:2px 8px;" onclick="scCloseManual()">✕</button>
+    </div>
+    <div style="font-size:13px; line-height:1.7; color:var(--text-main);">
+      <div style="font-weight:800; margin-bottom:6px;">사용 순서</div>
+      <div style="margin-bottom:8px;"><b>1단계.</b> 왼쪽 위에서 학년과 반을 고르면 그 반 명렬표가 자동으로 불러와집니다.</div>
+      <div style="margin-bottom:8px;"><b>2단계.</b> 결석했거나 배치에서 빼야 할 학생이 있다면 <b>[결석/제외]</b> 칸에 번호를 콤마(,)로 입력하세요.</div>
+      <div style="margin-bottom:8px;"><b>3단계.</b> <b>분단(열)/가로(행)/짝꿍 수</b>를 입력하고 <b>[구조 그리기]</b>를 누르세요.</div>
+      <div style="margin-bottom:8px;"><b>4단계.</b> <b>특수 좌석 세팅</b>에서 <b>[고정석 지정]</b> 또는 <b>[제외석 지정]</b>으로 미리 고정하거나 뺄 자리를 정하세요.</div>
+      <div style="margin-bottom:8px;"><b>5단계.</b> 자리를 직접 클릭해 학생을 배정하거나, 위쪽 <b>[번호순]</b> / <b>[랜덤배치]</b> 버튼으로 한 번에 채우세요.</div>
+      <div style="margin-bottom:8px;"><b>6단계.</b> 인쇄하기 전에 <b>[위치반전]</b>을 누르면 교탁에서 보는 방향으로 바뀝니다(교탁용/학생용을 각각 뽑을 때 사용).</div>
+      <div style="margin-bottom:14px;"><b>7단계.</b> <b>[인쇄/PDF]</b>로 인쇄하거나, 인쇄 창에서 대상을 "PDF로 저장"으로 바꾸면 PDF 파일로 저장됩니다.</div>
+
+      <div class="sc-help" style="margin-top:0;">
+        💡 <b>꿀팁</b><br>
+        · 제목, 창가/복도, 하단 문구는 종이 위 글씨를 직접 클릭해서 바로 고칠 수 있습니다.<br>
+        · <b>[디자인저장]</b>을 눌러두면 지금 폰트·크기·색상 설정을 파일로 남겨뒀다가 다른 반에도 똑같이 적용할 수 있습니다.<br>
+        · <b>[결과저장]</b>으로 완성한 배치를 파일로 남겨두면 나중에 <b>[결과로드]</b>로 그대로 불러올 수 있습니다.<br>
+        · <b>[고정석]</b>은 랜덤 배치를 돌리기 <u>전에</u> 미리 지정해둬야 그 자리 학생이 움직이지 않습니다.
+      </div>
+    </div>
+    <button class="top-btn accent" style="width:100%; margin-top:14px; box-sizing:border-box;" onclick="scCloseManual()">확인했습니다</button>
+  </div>
+</div>
+
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1228,7 +1257,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.27';
+  var BUILD_ID = '2026-09-26.28';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1481,6 +1510,10 @@
     document.getElementById('rail-home-btn').classList.add('active');
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
+    const scStudentModal = document.getElementById('sc-student-modal');
+    if (scStudentModal) scStudentModal.style.display = 'none';
+    const scManualOverlay = document.getElementById('sc-manual-overlay');
+    if (scManualOverlay) scManualOverlay.style.display = 'none';
   }
 
   // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
@@ -4718,6 +4751,9 @@
     document.getElementById('sc-student-modal').style.display = 'none';
     scTargetDesk = null;
   }
+
+  function scOpenManual() { document.getElementById('sc-manual-overlay').style.display = 'flex'; }
+  function scCloseManual() { document.getElementById('sc-manual-overlay').style.display = 'none'; }
 
   function scClearSpecificSeat() {
     if (!scTargetDesk) return;
