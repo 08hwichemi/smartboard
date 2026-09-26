@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Black+And+White+Picture&family=Chiron+Hei+HK&family=Chiron+Sung+HK&family=Cute+Font&family=Diphylleia&family=Do+Hyeon&family=Dongle:wght@700&family=Gaegu&family=Gamja+Flower&family=Gowun+Batang:wght@700&family=Gowun+Dodum&family=Gugi&family=Hahmlet:wght@400;700&family=Hi+Melody&family=Jua&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@700;900&family=Noto+Serif+KR:wght@700&family=Orbit&family=Poor+Story&family=Single+Day&family=Stylish&family=Sunflower:wght@700&family=Yeon+Sung&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
@@ -235,6 +236,105 @@
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
     body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
+
+    /* ===== 좌석배치표 ===== */
+    :root {
+      --sc-desk-pill-bg: #315752; --sc-desk-pill-text: #ffffff;
+      --sc-desk-card-bg: #e5eceb; --sc-desk-card-text: #2d3735; --sc-title-bg: #ffffff;
+      --sc-main-font: 'Jua', sans-serif;
+      --sc-page-padding: 20mm; --sc-title-size: 34px; --sc-footer-size: 16px;
+      --sc-name-size: 26px; --sc-num-size: 16px; --sc-aisle-gap: 30px; --sc-row-gap: 15px;
+      --sc-desk-radius: 10px; --sc-desk-gap: 10px; --sc-desk-height: 75px;
+    }
+
+    #seatchart-page { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #sc-body { display: flex; flex: 1; min-height: 0; }
+
+    #sc-panel { width: 320px; flex: 0 0 auto; border-right: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; box-sizing: border-box; background: var(--card-bg); }
+    .sc-section { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; box-sizing: border-box; }
+    .sc-section-title { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .sc-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .sc-row:last-child { margin-bottom: 0; }
+    .sc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .sc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .sc-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 700; color: var(--text-sub); text-align: center; box-sizing: border-box; }
+    .sc-field input[type="number"] { padding: 4px; border: 1px solid var(--border-color); border-radius: 6px; text-align: center; background: var(--card-bg); color: var(--text-main); width: 100%; box-sizing: border-box; outline: none; }
+    .sc-text-input { padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-main); font-size: 12px; outline: none; box-sizing: border-box; font-family: inherit; }
+    .sc-help { font-size: 11px; color: var(--text-sub); line-height: 1.4; margin-top: 8px; background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px dashed var(--border-color); }
+    .sc-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .sc-btn-mode.sc-active-fix { background: var(--alert); color: #fff; border-color: var(--alert); }
+    .sc-btn-mode.sc-active-exc { background: var(--text-main); color: var(--card-bg); border-color: var(--text-main); }
+    .sc-theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .sc-theme-btn { padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: 700; font-size: 11.5px; cursor: pointer; box-sizing: border-box; font-family: inherit; }
+    .sc-theme-btn.sc-active { box-shadow: 0 0 0 2px var(--accent-color) inset; }
+    .sc-font-nav { background: var(--tt-bg); border: 1px solid var(--border-color); border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 11px; flex-shrink: 0; }
+    .sc-font-nav:hover { filter: brightness(0.95); }
+    #seatchart-page input[type="range"] { width: 100%; accent-color: var(--accent-color); box-sizing: border-box; }
+
+    #sc-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
+    #sc-paper-wrapper { position: relative; transform-origin: center; }
+
+    .sc-a4-paper, .sc-a4-paper * { font-family: var(--sc-main-font); box-sizing: border-box; margin: 0; padding: 0; }
+    .sc-a4-paper { width: 210mm; height: 297mm; background: #fff; padding: var(--sc-page-padding); box-shadow: 0 10px 25px rgba(0,0,0,0.12); border-radius: 4px; display: flex; flex-direction: column; position: relative; overflow: hidden; color: #1a1a1a; }
+
+    #sc-curtain { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 50; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+    #sc-curtain.sc-active { opacity: 1; pointer-events: all; }
+    #sc-countdown-text { font-size: 160px; color: #fff; text-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: "IBM Plex Sans KR", sans-serif; font-weight: 900; }
+    @keyframes scPopIn { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+    .sc-pop-anim { animation: scPopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+    .sc-title-wrapper { text-align: center; margin-bottom: 22px; }
+    .sc-doc-title-input { width: 85%; text-align: center; font-size: var(--sc-title-size); font-weight: 400; border: 2px dashed transparent; outline: none; color: #1a1a1a; background: var(--sc-title-bg); padding: 8px 25px; border-radius: 50px; transition: 0.2s; }
+    .sc-doc-title-input:hover, .sc-doc-title-input:focus { border: 2px dashed #cbd5e1; }
+    .sc-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 22px; padding: 0 10px; }
+    .sc-side-text { font-weight: 400; font-size: 20px; color: #94a3b8; letter-spacing: 3px; background: transparent; border: 2px dashed transparent; outline: none; text-align: center; width: 90px; padding: 4px; border-radius: 10px; }
+    .sc-side-text:hover, .sc-side-text:focus { border: 2px dashed #cbd5e1; }
+    .sc-podium { background-color: #d4a373; color: #fff; border-radius: 6px; width: 130px; height: 38px; display: flex; justify-content: center; align-items: center; font-size: 20px; letter-spacing: 5px; }
+
+    .sc-center-area { flex: 1; display: flex; flex-direction: column; width: 100%; min-height: 0; }
+    #sc-seat-grid { display: flex; gap: var(--sc-aisle-gap); justify-content: center; width: 100%; flex: 1; }
+    .sc-seating-group { display: grid; gap: var(--sc-row-gap) var(--sc-desk-gap); flex: 1; grid-template-rows: repeat(var(--sc-row-count, 1), 1fr); padding-top: 15px; }
+    .sc-desk { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; cursor: pointer; height: var(--sc-desk-height); margin-top: 10px; transition: transform 0.2s; }
+    .sc-desk:hover { transform: translateY(-3px); }
+    .sc-desk-num { background-color: var(--sc-desk-pill-bg); color: var(--sc-desk-pill-text); padding: 4px 16px; border-radius: 20px; font-size: var(--sc-num-size); position: absolute; top: -12px; z-index: 2; }
+    .sc-desk-name { background-color: var(--sc-desk-card-bg); color: var(--sc-desk-card-text); width: 100%; height: 100%; border-radius: var(--sc-desk-radius); display: flex; justify-content: center; align-items: center; font-size: var(--sc-name-size); padding-top: 15px; }
+
+    .sc-desk.sc-excluded { visibility: hidden; }
+    body.sc-mode-exclude .sc-desk.sc-excluded { visibility: visible; background-color: transparent; border: 2px dashed #94a3b8; opacity: 0.5; }
+    body.sc-mode-exclude .sc-desk.sc-excluded .sc-desk-name { background: transparent; color: #94a3b8; font-size: 15px; }
+    body.sc-mode-exclude .sc-desk.sc-excluded .sc-desk-name::after { content: '제외됨'; }
+    body.sc-mode-exclude .sc-desk.sc-excluded .sc-desk-num { display: none; }
+    .sc-desk.sc-fixed .sc-desk-name { border: 3px solid var(--alert); background-color: #fff0f2; }
+    .sc-desk.sc-fixed .sc-desk-num { background-color: var(--alert); }
+
+    .sc-footer-box { margin-top: 14px; border-top: 2px solid #e2e8f0; padding-top: 8px; }
+    .sc-footer-input { width: 100%; border: none; font-size: var(--sc-footer-size); outline: none; background: transparent; color: #334155; margin-bottom: 3px; }
+    .sc-footer-input-sub { width: 100%; border: none; font-size: calc(var(--sc-footer-size) * 0.8); outline: none; background: transparent; color: #64748b; }
+
+    .sc-inverted .sc-title-wrapper { order: 1; }
+    .sc-inverted .sc-center-area { order: 2; }
+    .sc-inverted .sc-top-row { order: 3; flex-direction: row-reverse; margin-top: 22px; margin-bottom: 8px; }
+    .sc-inverted .sc-footer-box { order: 4; }
+    .sc-inverted #sc-seat-grid { transform: rotate(180deg); }
+    .sc-inverted .sc-desk { transform: rotate(180deg); }
+    .sc-inverted .sc-desk:hover { transform: translateY(-3px) rotate(180deg); }
+
+    .sc-student-item { padding: 9px 6px; text-align: center; cursor: pointer; border: 2px solid var(--border-color); border-radius: 8px; font-weight: 700; font-size: 13px; color: var(--text-main); background: var(--card-bg); box-sizing: border-box; }
+    .sc-student-item:hover { background-color: var(--accent-soft); border-color: var(--accent-color); color: var(--accent-color); }
+    .sc-student-item.sc-used { opacity: 0.4; pointer-events: none; }
+
+    @media print {
+      #app-rail, .updatebar, #sc-panel, #sc-page-header { display: none !important; }
+      body, #app-shell, #app-main, #seatchart-page, #sc-body { display: block !important; height: auto !important; overflow: visible !important; }
+      #sc-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
+      #sc-paper-wrapper { transform: none !important; margin: 0 auto !important; }
+      .sc-a4-paper { box-shadow: none !important; border-radius: 0 !important; }
+      .sc-doc-title-input, .sc-footer-input, .sc-footer-input-sub, .sc-side-text { border: none !important; }
+      .sc-desk.sc-fixed .sc-desk-name { border: 0 !important; background-color: var(--sc-desk-card-bg) !important; }
+      .sc-desk.sc-fixed .sc-desk-num { background-color: var(--sc-desk-pill-bg) !important; }
+      @page { size: A4 portrait; margin: 0; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -288,9 +388,9 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
       <div class="rail-label">월간일정표</div>
     </div>
-    <div class="rail-item" title="좌석표 (준비 중)" onclick="railComingSoon('좌석표')">
+    <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="openSeatChart()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
-      <div class="rail-label">좌석표</div>
+      <div class="rail-label">좌석배치표</div>
     </div>
     <div style="flex: 1;"></div>
     <div style="text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding-bottom:8px; line-height:1.4;" id="app-version">-</div>
@@ -952,6 +1052,165 @@
   </div>
 </div>
 
+<div id="seatchart-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="sc-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">🪑 좌석배치표</div>
+    </div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scArrangeSeats('seq')" title="번호순으로 배치합니다">🔢 번호순</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scArrangeSeats('random')" title="빈 자리를 랜덤으로 섞습니다">🎲 랜덤배치</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scClearContent()" title="배정된 학생을 모두 지웁니다">🧹 초기화</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scToggleTeacherView()" title="교탁에서 바라본 시점으로 상하좌우를 반전합니다">🔄 위치반전</button>
+      <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="scPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
+    </div>
+  </div>
+
+  <div id="sc-body">
+    <div id="sc-panel">
+
+      <div class="sc-section">
+        <div class="sc-section-title">🧑‍🎓 명렬표 불러오기</div>
+        <div class="sc-row">
+          <select id="sc-grade-select" class="mini-select" style="flex:1;" onchange="scOnGradeChange()"><option value="">학년</option></select>
+          <select id="sc-class-select" class="mini-select" style="flex:1;" onchange="scOnClassChange()"><option value="">반</option></select>
+        </div>
+        <div id="sc-roster-status" style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년과 반을 선택하세요.</div>
+        <div class="sc-row" style="background: var(--alert-bg); padding: 6px 8px; border-radius: 8px; border: 1px dashed var(--alert-border); margin-bottom:0;">
+          <label style="color:var(--alert); font-size: 11px; font-weight:700; white-space:nowrap;">🚫 결석/제외</label>
+          <input type="text" id="sc-exclude-nums" class="sc-text-input" placeholder="예: 5, 12" style="flex:1;">
+        </div>
+      </div>
+
+      <div class="sc-section">
+        <div class="sc-section-title">🏫 반 구조</div>
+        <div class="sc-grid-3">
+          <div class="sc-field"><label>분단(열)</label><input type="number" id="sc-cfg-groups" min="1" value="1"></div>
+          <div class="sc-field"><label>가로(행)</label><input type="number" id="sc-cfg-rows" min="1" value="1"></div>
+          <div class="sc-field"><label>짝꿍 수</label><input type="number" id="sc-cfg-seats" min="1" value="1"></div>
+        </div>
+        <button class="top-btn accent" style="width:100%; padding:8px; box-sizing:border-box;" onclick="scApplySettings()">🔄 구조 그리기 (입력 필수!)</button>
+      </div>
+
+      <div class="sc-section">
+        <div class="sc-section-title">📌 특수 좌석 세팅</div>
+        <div class="sc-btn-grid" style="margin-bottom:8px;">
+          <button class="top-btn sc-btn-mode" id="sc-btn-fix" onclick="scToggleMode('fix')">고정석 지정 📌</button>
+          <button class="top-btn sc-btn-mode" id="sc-btn-exclude" onclick="scToggleMode('exclude')">제외석 지정 🚫</button>
+        </div>
+        <div class="sc-help" id="sc-help-text">👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.</div>
+      </div>
+
+      <div class="sc-section">
+        <div class="sc-section-title">🎨 종이 디자인</div>
+        <div class="sc-theme-grid">
+          <button class="sc-theme-btn sc-active" id="sc-theme-classic" style="background:#e5eceb; color:#2d3735" onclick="scSetTheme('classic')">🌿 기본</button>
+          <button class="sc-theme-btn" id="sc-theme-cherry" style="background:#ffe4e1; color:#d6336c" onclick="scSetTheme('cherry')">🌸 벚꽃</button>
+          <button class="sc-theme-btn" id="sc-theme-ocean" style="background:#dbeafe; color:#1e3a8a" onclick="scSetTheme('ocean')">🌊 바다</button>
+          <button class="sc-theme-btn" id="sc-theme-wood" style="background:#fef3c7; color:#92400e" onclick="scSetTheme('wood')">☕ 우드</button>
+        </div>
+
+        <div class="sc-field" style="text-align:left; margin-bottom:10px;">
+          <label style="padding-left:2px;">글꼴</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="sc-font-nav" onclick="scPrevFont()">◀</button>
+            <select id="sc-cfg-font" class="mini-select" style="flex:1;" onchange="scChangeStyleVars()">
+              <optgroup label="단정/깔끔 (공식용)">
+                <option value="'IBM Plex Sans KR', sans-serif">IBM 플렉스 산스 (깔끔고딕)</option>
+                <option value="'Noto Sans KR', sans-serif">노토 산스 고딕</option>
+                <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+                <option value="'Chiron Hei HK', sans-serif">치론 헤이 고딕 (홍콩)</option>
+                <option value="'Orbit', sans-serif">오르빗</option>
+                <option value="'Noto Serif KR', serif">노토 세리프 (단정명조)</option>
+                <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                <option value="'Gowun Batang', serif">고운바탕</option>
+                <option value="'Chiron Sung HK', serif">치론 성 명조 (홍콩)</option>
+                <option value="'Hahmlet', serif">함렛 (레트로)</option>
+                <option value="'Diphylleia', serif">산돌비체 (우아함)</option>
+              </optgroup>
+              <optgroup label="감성/귀여운 손글씨 (학생용)">
+                <option value="'Dongle', sans-serif">동글체</option>
+                <option value="'Nanum Pen Script', cursive">나눔손글씨 펜</option>
+                <option value="'Gamja Flower', cursive">감자꽃마을</option>
+                <option value="'Hi Melody', cursive">하이멜로디</option>
+                <option value="'Yeon Sung', cursive">연성체</option>
+                <option value="'Poor Story', cursive">푸어스토리</option>
+                <option value="'Single Day', cursive">싱글데이</option>
+                <option value="'Cute Font', cursive">큐트폰트</option>
+                <option value="'Stylish', sans-serif">스타일리시</option>
+                <option value="'Sunflower', sans-serif">해바라기</option>
+                <option value="'Black And White Picture', sans-serif">흑백사진체 (붓글씨)</option>
+                <option value="'Gaegu', cursive">개구쟁이</option>
+              </optgroup>
+              <optgroup label="아주 굵은 제목/강조">
+                <option value="'Jua', sans-serif" selected>배민 주아체</option>
+                <option value="'Do Hyeon', sans-serif">배민 도현체</option>
+                <option value="'Gugi', cursive">구기체</option>
+              </optgroup>
+            </select>
+            <button type="button" class="sc-font-nav" onclick="scNextFont()">▶</button>
+          </div>
+        </div>
+
+        <div class="sc-grid-2">
+          <div class="sc-field"><label>용지 여백</label><input type="range" id="sc-cfg-padding" min="10" max="30" value="20" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>제목 크기</label><input type="range" id="sc-cfg-title-size" min="20" max="50" value="34" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>이름 크기</label><input type="range" id="sc-cfg-name-size" min="16" max="40" value="26" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>번호 크기</label><input type="range" id="sc-cfg-num-size" min="10" max="24" value="16" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>분단 간격</label><input type="range" id="sc-cfg-aisle" min="10" max="60" value="30" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>짝꿍 간격</label><input type="range" id="sc-cfg-desk-gap" min="0" max="40" value="10" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>앞뒤 간격</label><input type="range" id="sc-cfg-row-gap" min="5" max="40" value="15" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>책상 높이</label><input type="range" id="sc-cfg-desk-height" min="50" max="100" value="75" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>책상 둥글기</label><input type="range" id="sc-cfg-desk-radius" min="0" max="35" value="10" oninput="scChangeStyleVars()"></div>
+          <div class="sc-field"><label>하단문구 크기</label><input type="range" id="sc-cfg-footer-size" min="12" max="22" value="16" oninput="scChangeStyleVars()"></div>
+        </div>
+      </div>
+
+      <div class="sc-section">
+        <div class="sc-section-title">💾 저장 / 불러오기</div>
+        <div class="sc-btn-grid" style="margin-bottom:6px;">
+          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="scDownloadThemeSettings()">💾 디자인저장</button>
+          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="document.getElementById('sc-theme-file-input').click()">📂 디자인로드</button>
+        </div>
+        <div class="sc-btn-grid">
+          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="scSaveArrangement()">📝 결과저장</button>
+          <button class="top-btn" style="font-size:11px; padding:6px;" onclick="document.getElementById('sc-arrangement-file-input').click()">📂 결과로드</button>
+        </div>
+        <input type="file" id="sc-theme-file-input" style="display:none;" accept=".json" onchange="scUploadThemeSettings(event)">
+        <input type="file" id="sc-arrangement-file-input" style="display:none;" accept=".json" onchange="scLoadArrangement(event)">
+      </div>
+
+    </div>
+
+    <div id="sc-preview">
+      <div id="sc-paper-wrapper">
+        <div class="sc-a4-paper" id="sc-a4-paper">
+          <div id="sc-curtain"><div id="sc-countdown-text">3</div></div>
+          <div class="sc-title-wrapper"><input type="text" class="sc-doc-title-input" id="sc-display-title" value="🏫 좌석배치표 ✨"></div>
+          <div class="sc-top-row"><input type="text" class="sc-side-text" value="창 가"><div class="sc-podium">교 탁</div><input type="text" class="sc-side-text" value="복 도"></div>
+          <div class="sc-center-area"><div id="sc-seat-grid"></div></div>
+          <div class="sc-footer-box">
+            <input type="text" class="sc-footer-input" id="sc-footer-1" value="[지정좌석제] 자리를 마음대로 바꿀 수 없습니다.">
+            <input type="text" class="sc-footer-input-sub" id="sc-footer-2" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="sc-student-modal">
+  <div class="modal-box" style="width: 320px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div style="font-weight:800; font-size:15px;">학생 선택</div>
+      <button class="top-btn" style="font-size:11px; padding:2px 8px;" onclick="scCloseModal()">✕</button>
+    </div>
+    <div id="sc-modal-student-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+    <button class="top-btn" style="width:100%; margin-top:10px; color:var(--alert); box-sizing:border-box;" onclick="scClearSpecificSeat()">이 자리 비우기</button>
+  </div>
+</div>
+
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -969,7 +1228,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.26';
+  var BUILD_ID = '2026-09-26.27';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1211,10 +1470,14 @@
 
   function goHome() {
     document.getElementById('settings-page').style.display = 'none';
+    const seatchartPage = document.getElementById('seatchart-page');
+    if (seatchartPage) seatchartPage.style.display = 'none';
     document.querySelector('.top-bar-row').style.display = 'flex';
     document.querySelector('.quick-row').style.display = 'flex';
     document.getElementById('main-dashboard').style.display = 'grid';
     document.getElementById('rail-settings-btn').classList.remove('active');
+    const railSeatchartBtn = document.getElementById('rail-seatchart-btn');
+    if (railSeatchartBtn) railSeatchartBtn.classList.remove('active');
     document.getElementById('rail-home-btn').classList.add('active');
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
@@ -4205,7 +4468,495 @@
     if (activeBtn) activeBtn.classList.add('theme-active');
     saveAllData();
   }
-  
+
+  // ----- 좌석배치표 -----
+  // 예전에 제미나이로 만들었던 독립 HTML 도구를 이 대시보드 안으로 옮긴 것.
+  // 학생 명단은 수동 입력 대신 왼쪽의 "명렬표"와 같은 방식으로 학년/반을 골라 students 테이블에서 바로 불러온다.
+  let scStudents = [];
+  let scCurrentMode = 'normal';
+  let scTargetDesk = null;
+  let scCurrentPrintTheme = 'classic';
+  let scIsAnimating = false;
+
+  const scPrintThemes = {
+    classic: { deskPill: '#315752', deskCard: '#e5eceb', cardText: '#2d3735', titleBg: '#ffffff' },
+    cherry:  { deskPill: '#d6336c', deskCard: '#ffe4e1', cardText: '#a61e4d', titleBg: '#fff0f2' },
+    ocean:   { deskPill: '#1e3a8a', deskCard: '#dbeafe', cardText: '#1e3a8a', titleBg: '#e0f2fe' },
+    wood:    { deskPill: '#92400e', deskCard: '#fef3c7', cardText: '#78350f', titleBg: '#fffbeb' }
+  };
+
+  async function openSeatChart() {
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    const settingsPage = document.getElementById('settings-page');
+    if (settingsPage) settingsPage.style.display = 'none';
+    document.getElementById('seatchart-page').style.display = 'flex';
+    document.getElementById('rail-home-btn').classList.remove('active');
+    const railSettingsBtn = document.getElementById('rail-settings-btn');
+    if (railSettingsBtn) railSettingsBtn.classList.remove('active');
+    document.getElementById('rail-seatchart-btn').classList.add('active');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuDropdown) userMenuDropdown.style.display = 'none';
+
+    await ensureClassStructureLoaded();
+    const gradeSel = document.getElementById('sc-grade-select');
+    gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
+    document.getElementById('sc-class-select').innerHTML = '<option value="">반</option>';
+
+    if (!window.__scResizeBound) {
+      window.addEventListener('resize', scScalePaper);
+      window.__scResizeBound = true;
+    }
+    requestAnimationFrame(scScalePaper);
+
+    const t = window.currentTeacher;
+    if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
+      gradeSel.value = String(t.homeroom_grade);
+      document.getElementById('sc-class-select').innerHTML = classOptionsHtml(t.homeroom_grade, t.homeroom_class);
+      document.getElementById('sc-class-select').value = String(t.homeroom_class);
+      await scLoadRosterFromDB(t.homeroom_grade, t.homeroom_class);
+    } else {
+      document.getElementById('sc-roster-status').textContent = '학년과 반을 선택하세요.';
+    }
+  }
+
+  function scScalePaper() {
+    const container = document.getElementById('sc-preview');
+    const wrapper = document.getElementById('sc-paper-wrapper');
+    if (!container || !wrapper || container.clientWidth === 0) return;
+    const availableHeight = container.clientHeight - 40;
+    const availableWidth = container.clientWidth - 40;
+    let scale = Math.min(availableWidth / 794, availableHeight / 1123, 1);
+    if (scale < 0.25) scale = 0.25;
+    wrapper.style.transform = 'scale(' + scale + ')';
+  }
+
+  function scOnGradeChange() {
+    const grade = parseInt(document.getElementById('sc-grade-select').value);
+    const classSel = document.getElementById('sc-class-select');
+    if (!grade) { classSel.innerHTML = '<option value="">반</option>'; document.getElementById('sc-roster-status').textContent = '학년과 반을 선택하세요.'; return; }
+    classSel.innerHTML = '<option value="">반</option>' + classOptionsHtml(grade, null);
+  }
+
+  async function scOnClassChange() {
+    const grade = parseInt(document.getElementById('sc-grade-select').value);
+    const classNo = parseInt(document.getElementById('sc-class-select').value);
+    if (!grade || !classNo) return;
+    await scLoadRosterFromDB(grade, classNo);
+  }
+
+  async function scLoadRosterFromDB(grade, classNo) {
+    const statusEl = document.getElementById('sc-roster-status');
+    statusEl.textContent = '불러오는 중...';
+    try {
+      const { data, error } = await sb.from('students').select('*').eq('grade', grade).eq('class_no', classNo).order('number');
+      if (error) throw error;
+      scStudents = (data || []).map(function(r) { return { num: String(r.number), name: r.name }; });
+      statusEl.textContent = scStudents.length ? ('총 ' + scStudents.length + '명을 불러왔습니다.') : '등록된 학생이 없습니다.';
+      const titleInput = document.getElementById('sc-display-title');
+      if (titleInput) titleInput.value = '🏫 ' + grade + '학년 ' + classNo + '반 좌석배치표 ✨';
+    } catch (e) {
+      scStudents = [];
+      statusEl.textContent = '불러오기 실패: ' + (e && e.message ? e.message : e);
+    }
+  }
+
+  function scSetTheme(name) {
+    scCurrentPrintTheme = name;
+    const t = scPrintThemes[name];
+    const root = document.documentElement;
+    root.style.setProperty('--sc-desk-pill-bg', t.deskPill);
+    root.style.setProperty('--sc-desk-card-bg', t.deskCard);
+    root.style.setProperty('--sc-desk-card-text', t.cardText);
+    root.style.setProperty('--sc-title-bg', t.titleBg);
+    document.querySelectorAll('.sc-theme-btn').forEach(function(b) { b.classList.remove('sc-active'); });
+    const btn = document.getElementById('sc-theme-' + name);
+    if (btn) btn.classList.add('sc-active');
+  }
+
+  function scChangeStyleVars() {
+    const root = document.documentElement;
+    root.style.setProperty('--sc-main-font', document.getElementById('sc-cfg-font').value);
+    root.style.setProperty('--sc-page-padding', document.getElementById('sc-cfg-padding').value + 'mm');
+    root.style.setProperty('--sc-title-size', document.getElementById('sc-cfg-title-size').value + 'px');
+    root.style.setProperty('--sc-footer-size', document.getElementById('sc-cfg-footer-size').value + 'px');
+    root.style.setProperty('--sc-name-size', document.getElementById('sc-cfg-name-size').value + 'px');
+    root.style.setProperty('--sc-num-size', document.getElementById('sc-cfg-num-size').value + 'px');
+    root.style.setProperty('--sc-aisle-gap', document.getElementById('sc-cfg-aisle').value + 'px');
+    root.style.setProperty('--sc-row-gap', document.getElementById('sc-cfg-row-gap').value + 'px');
+    root.style.setProperty('--sc-desk-gap', document.getElementById('sc-cfg-desk-gap').value + 'px');
+    root.style.setProperty('--sc-desk-height', document.getElementById('sc-cfg-desk-height').value + 'px');
+    root.style.setProperty('--sc-desk-radius', document.getElementById('sc-cfg-desk-radius').value + 'px');
+  }
+
+  function scPrevFont() {
+    const select = document.getElementById('sc-cfg-font');
+    select.selectedIndex = select.selectedIndex > 0 ? select.selectedIndex - 1 : select.options.length - 1;
+    scChangeStyleVars();
+  }
+
+  function scNextFont() {
+    const select = document.getElementById('sc-cfg-font');
+    select.selectedIndex = select.selectedIndex < select.options.length - 1 ? select.selectedIndex + 1 : 0;
+    scChangeStyleVars();
+  }
+
+  function scUpdateHelpText(mode) {
+    const helpEl = document.getElementById('sc-help-text');
+    if (mode === 'fix') {
+      helpEl.innerHTML = '📌 <b>[고정석 지정 중]</b><br>자리를 클릭하면 빨간 테두리가 생깁니다.<br>랜덤 배치를 돌려도 <b>이 자리의 학생은 이동하지 않습니다.</b><br>다 하셨으면 위 버튼을 다시 눌러 완료하세요.';
+    } else if (mode === 'exclude') {
+      helpEl.innerHTML = '🚫 <b>[제외석 지정 중]</b><br>클릭하면 점선으로 바뀌며 빈 자리가 됩니다.<br><b>다시 누르면 원상복구</b>됩니다.<br>다 하셨으면 위 버튼을 다시 눌러 완료하세요.';
+    } else {
+      helpEl.innerHTML = '👉 <b>기본 모드:</b> 자리를 클릭해서 학생을 배치하세요.<br>버튼을 눌러 특수 좌석 모드를 켤 수 있습니다.';
+    }
+  }
+
+  function scToggleMode(mode) {
+    const btnFix = document.getElementById('sc-btn-fix');
+    const btnExc = document.getElementById('sc-btn-exclude');
+    if (scCurrentMode === mode) {
+      scCurrentMode = 'normal';
+      btnFix.innerText = '고정석 지정 📌'; btnExc.innerText = '제외석 지정 🚫';
+      btnFix.classList.remove('sc-active-fix'); btnExc.classList.remove('sc-active-exc');
+      document.body.classList.remove('sc-mode-exclude');
+      scUpdateHelpText('normal');
+      return;
+    }
+    scCurrentMode = mode;
+    btnFix.classList.remove('sc-active-fix'); btnExc.classList.remove('sc-active-exc');
+    btnFix.innerText = '고정석 지정 📌'; btnExc.innerText = '제외석 지정 🚫';
+    document.body.classList.remove('sc-mode-exclude');
+    if (mode === 'fix') {
+      btnFix.innerText = '✅ 고정 완료하기'; btnFix.classList.add('sc-active-fix');
+    } else if (mode === 'exclude') {
+      btnExc.innerText = '✅ 제외 완료하기'; btnExc.classList.add('sc-active-exc');
+      document.body.classList.add('sc-mode-exclude');
+    }
+    scUpdateHelpText(mode);
+  }
+
+  async function scApplySettings() {
+    if (scStudents.length === 0) { await customAlert('⚠️ 먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+    if (scCurrentMode !== 'normal') { await customAlert('진행 중인 모드를 해제해주세요.'); return; }
+    const rVal = document.getElementById('sc-cfg-rows').value;
+    const gVal = document.getElementById('sc-cfg-groups').value;
+    const sVal = document.getElementById('sc-cfg-seats').value;
+    if (!rVal || !gVal || !sVal) { await customAlert('줄 수, 분단 수, 분단당 자리를 모두 입력해주세요!'); return; }
+    scBuildSeatGrid(parseInt(rVal), parseInt(gVal), parseInt(sVal));
+  }
+
+  function scBuildSeatGrid(rows, groups, seats) {
+    document.documentElement.style.setProperty('--sc-row-count', rows);
+    const grid = document.getElementById('sc-seat-grid');
+    grid.innerHTML = '';
+    for (let g = 1; g <= groups; g++) {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'sc-seating-group';
+      groupDiv.style.gridTemplateColumns = 'repeat(' + seats + ', 1fr)';
+      for (let r = 1; r <= rows; r++) {
+        for (let s = 1; s <= seats; s++) {
+          const desk = document.createElement('div');
+          desk.className = 'sc-desk';
+          desk.dataset.col = (g - 1) * seats + s;
+          desk.dataset.row = r;
+          desk.innerHTML = '<div class="sc-desk-num"></div><div class="sc-desk-name"></div>';
+          desk.onclick = function() { scOnDeskClick(desk); };
+          groupDiv.appendChild(desk);
+        }
+      }
+      grid.appendChild(groupDiv);
+    }
+  }
+
+  async function scOnDeskClick(desk) {
+    if (scCurrentMode === 'exclude') {
+      desk.classList.toggle('sc-excluded'); desk.classList.remove('sc-fixed');
+      desk.querySelector('.sc-desk-num').innerText = ''; desk.querySelector('.sc-desk-name').innerText = '';
+    } else if (scCurrentMode === 'fix') {
+      if (desk.classList.contains('sc-excluded')) return;
+      desk.classList.toggle('sc-fixed');
+    } else {
+      if (desk.classList.contains('sc-excluded')) return;
+      if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+      scTargetDesk = desk;
+      scOpenModal();
+    }
+  }
+
+  function scOpenModal() {
+    const listEl = document.getElementById('sc-modal-student-list');
+    listEl.innerHTML = '';
+    const usedNumbers = new Set();
+    document.querySelectorAll('.sc-desk').forEach(function(d) {
+      if (!d.classList.contains('sc-excluded')) {
+        const n = d.querySelector('.sc-desk-num').innerText.replace('번', '');
+        if (n) usedNumbers.add(n);
+      }
+    });
+    const targetNum = scTargetDesk.querySelector('.sc-desk-num').innerText.replace('번', '');
+    scStudents.forEach(function(std) {
+      const item = document.createElement('div');
+      item.className = 'sc-student-item';
+      item.innerText = std.num + '. ' + std.name;
+      if (usedNumbers.has(std.num) && targetNum !== std.num) {
+        item.classList.add('sc-used');
+      } else {
+        item.onclick = function() {
+          scTargetDesk.querySelector('.sc-desk-num').innerText = std.num + '번';
+          scTargetDesk.querySelector('.sc-desk-name').innerText = std.name;
+          scCloseModal();
+        };
+      }
+      listEl.appendChild(item);
+    });
+    document.getElementById('sc-student-modal').style.display = 'flex';
+  }
+
+  function scCloseModal() {
+    document.getElementById('sc-student-modal').style.display = 'none';
+    scTargetDesk = null;
+  }
+
+  function scClearSpecificSeat() {
+    if (!scTargetDesk) return;
+    scTargetDesk.querySelector('.sc-desk-num').innerText = '';
+    scTargetDesk.querySelector('.sc-desk-name').innerText = '';
+    scCloseModal();
+  }
+
+  async function scClearContent() {
+    const ok = await customConfirm('학생 배정 상태를 모두 지울까요? (고정/제외 상태는 유지)');
+    if (!ok) return;
+    document.querySelectorAll('.sc-desk').forEach(function(desk) {
+      if (!desk.classList.contains('sc-fixed') && !desk.classList.contains('sc-excluded')) {
+        desk.querySelector('.sc-desk-num').innerText = '';
+        desk.querySelector('.sc-desk-name').innerText = '';
+      }
+    });
+  }
+
+  async function scArrangeSeats(type) {
+    if (scIsAnimating) return;
+    if (scCurrentMode !== 'normal') { await customAlert("진행 중인 지정 모드를 '완료' 눌러서 해제해주세요."); return; }
+    if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+    const grid = document.getElementById('sc-seat-grid');
+    if (grid.innerHTML.trim() === '') { await customAlert('먼저 구조 그리기를 실행해주세요.'); return; }
+
+    const allDesks = Array.from(document.querySelectorAll('.sc-desk'));
+    const fixedDesks = allDesks.filter(function(d) { return d.classList.contains('sc-fixed'); });
+    let targetDesks = allDesks.filter(function(d) { return !d.classList.contains('sc-excluded') && !d.classList.contains('sc-fixed'); });
+    const fixedNumbers = new Set(fixedDesks.map(function(d) { return d.querySelector('.sc-desk-num').innerText.replace('번', ''); }).filter(function(n) { return n; }));
+
+    const excludeInput = document.getElementById('sc-exclude-nums');
+    const excludeList = excludeInput ? excludeInput.value.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; }) : [];
+
+    let remainingStudents = scStudents.filter(function(s) { return !fixedNumbers.has(s.num) && !excludeList.includes(s.num); });
+    if (remainingStudents.length > targetDesks.length) { await customAlert('빈 자리가 부족합니다.'); return; }
+
+    if (type === 'random') {
+      scIsAnimating = true;
+      const curtain = document.getElementById('sc-curtain');
+      const textObj = document.getElementById('sc-countdown-text');
+      curtain.classList.add('sc-active');
+      const seq = ['3', '2', '1', '🎉 짠!'];
+      for (let i = 0; i < seq.length; i++) {
+        textObj.innerText = seq[i];
+        textObj.classList.remove('sc-pop-anim'); void textObj.offsetWidth; textObj.classList.add('sc-pop-anim');
+        await new Promise(function(resolve) { setTimeout(resolve, 900); });
+      }
+      for (let i = remainingStudents.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = remainingStudents[i]; remainingStudents[i] = remainingStudents[j]; remainingStudents[j] = tmp;
+      }
+      for (let i = targetDesks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = targetDesks[i]; targetDesks[i] = targetDesks[j]; targetDesks[j] = tmp;
+      }
+      targetDesks.forEach(function(d) { d.querySelector('.sc-desk-num').innerText = ''; d.querySelector('.sc-desk-name').innerText = ''; });
+      for (let i = 0; i < remainingStudents.length; i++) {
+        targetDesks[i].querySelector('.sc-desk-num').innerText = remainingStudents[i].num + '번';
+        targetDesks[i].querySelector('.sc-desk-name').innerText = remainingStudents[i].name;
+      }
+      await new Promise(function(resolve) { setTimeout(resolve, 500); });
+      curtain.classList.remove('sc-active');
+      scIsAnimating = false;
+    } else if (type === 'seq') {
+      targetDesks.forEach(function(d) { d.querySelector('.sc-desk-num').innerText = ''; d.querySelector('.sc-desk-name').innerText = ''; });
+      remainingStudents.sort(function(a, b) { return parseInt(a.num) - parseInt(b.num); });
+      targetDesks.sort(function(a, b) {
+        const colA = parseInt(a.dataset.col), colB = parseInt(b.dataset.col);
+        const rowA = parseInt(a.dataset.row), rowB = parseInt(b.dataset.row);
+        if (colA !== colB) return colB - colA;
+        return rowA - rowB;
+      });
+      for (let i = 0; i < remainingStudents.length; i++) {
+        targetDesks[i].querySelector('.sc-desk-num').innerText = remainingStudents[i].num + '번';
+        targetDesks[i].querySelector('.sc-desk-name').innerText = remainingStudents[i].name;
+      }
+    }
+  }
+
+  async function scToggleTeacherView() {
+    const paper = document.getElementById('sc-a4-paper');
+    const isInverted = paper.classList.toggle('sc-inverted');
+    if (isInverted) await customAlert('🔄 교탁용 시점으로 반전되었습니다.\n(교탁이 아래로 이동하고 좌우가 반전됩니다.)');
+    else await customAlert('📱 학생용 시점으로 복구되었습니다.\n(교탁이 위로 이동하고 원래대로 돌아옵니다.)');
+  }
+
+  async function scPrintPaper() {
+    await customAlert('💡 안내: 인쇄 창이 열리면 대상(프린터)을 [PDF로 저장]으로 선택하면 PDF로도 저장할 수 있습니다.');
+    window.print();
+  }
+
+  function scDownloadThemeSettings() {
+    const settings = {
+      theme: scCurrentPrintTheme, font: document.getElementById('sc-cfg-font').value, padding: document.getElementById('sc-cfg-padding').value,
+      titleSize: document.getElementById('sc-cfg-title-size').value, nameSize: document.getElementById('sc-cfg-name-size').value,
+      numSize: document.getElementById('sc-cfg-num-size').value, aisleGap: document.getElementById('sc-cfg-aisle').value, rowGap: document.getElementById('sc-cfg-row-gap').value,
+      deskGap: document.getElementById('sc-cfg-desk-gap').value, deskHeight: document.getElementById('sc-cfg-desk-height').value,
+      deskRadius: document.getElementById('sc-cfg-desk-radius').value, footerSize: document.getElementById('sc-cfg-footer-size').value
+    };
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '좌석배치표_디자인설정.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  function scApplyThemeSettingsObj(s) {
+    if (s.theme) scSetTheme(s.theme);
+    if (s.font) document.getElementById('sc-cfg-font').value = s.font;
+    if (s.padding) document.getElementById('sc-cfg-padding').value = s.padding;
+    if (s.titleSize) document.getElementById('sc-cfg-title-size').value = s.titleSize;
+    if (s.nameSize) document.getElementById('sc-cfg-name-size').value = s.nameSize;
+    if (s.numSize) document.getElementById('sc-cfg-num-size').value = s.numSize;
+    if (s.aisleGap) document.getElementById('sc-cfg-aisle').value = s.aisleGap;
+    if (s.rowGap) document.getElementById('sc-cfg-row-gap').value = s.rowGap;
+    if (s.deskGap) document.getElementById('sc-cfg-desk-gap').value = s.deskGap;
+    if (s.deskHeight) document.getElementById('sc-cfg-desk-height').value = s.deskHeight;
+    if (s.deskRadius) document.getElementById('sc-cfg-desk-radius').value = s.deskRadius;
+    if (s.footerSize) document.getElementById('sc-cfg-footer-size').value = s.footerSize;
+    scChangeStyleVars();
+  }
+
+  async function scUploadThemeSettings(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const s = JSON.parse(e.target.result);
+        scApplyThemeSettingsObj(s);
+        await customAlert('저장된 디자인을 불러왔습니다! ✨');
+      } catch (err) { await customAlert('설정 파일을 읽는 데 실패했습니다. 올바른 파일인지 확인해주세요.'); }
+    };
+    reader.readAsText(file); event.target.value = '';
+  }
+
+  async function scSaveArrangement() {
+    const grid = document.getElementById('sc-seat-grid');
+    if (grid.innerHTML.trim() === '') { await customAlert('저장할 좌석배치표가 없습니다. 먼저 구조를 그리고 배치를 완료해주세요.'); return; }
+
+    const desks = Array.from(document.querySelectorAll('.sc-desk'));
+    const seatData = desks.map(function(desk) {
+      return {
+        row: desk.dataset.row, col: desk.dataset.col,
+        num: desk.querySelector('.sc-desk-num').innerText,
+        name: desk.querySelector('.sc-desk-name').innerText,
+        isFixed: desk.classList.contains('sc-fixed'),
+        isExcluded: desk.classList.contains('sc-excluded')
+      };
+    });
+
+    const fullData = {
+      grade: document.getElementById('sc-grade-select').value,
+      classNo: document.getElementById('sc-class-select').value,
+      rows: document.getElementById('sc-cfg-rows').value,
+      groups: document.getElementById('sc-cfg-groups').value,
+      seats: document.getElementById('sc-cfg-seats').value,
+      seatData: seatData,
+      excludeNums: document.getElementById('sc-exclude-nums').value,
+      theme: scCurrentPrintTheme,
+      font: document.getElementById('sc-cfg-font').value,
+      padding: document.getElementById('sc-cfg-padding').value,
+      titleSize: document.getElementById('sc-cfg-title-size').value,
+      nameSize: document.getElementById('sc-cfg-name-size').value,
+      numSize: document.getElementById('sc-cfg-num-size').value,
+      aisleGap: document.getElementById('sc-cfg-aisle').value,
+      rowGap: document.getElementById('sc-cfg-row-gap').value,
+      deskGap: document.getElementById('sc-cfg-desk-gap').value,
+      deskHeight: document.getElementById('sc-cfg-desk-height').value,
+      deskRadius: document.getElementById('sc-cfg-desk-radius').value,
+      footerSize: document.getElementById('sc-cfg-footer-size').value,
+      displayTitle: document.getElementById('sc-display-title').value,
+      footerText1: document.getElementById('sc-footer-1').value,
+      footerText2: document.getElementById('sc-footer-2').value,
+      sideTextLeft: document.querySelectorAll('.sc-side-text')[0].value,
+      sideTextRight: document.querySelectorAll('.sc-side-text')[1].value,
+      inverted: document.getElementById('sc-a4-paper').classList.contains('sc-inverted')
+    };
+
+    const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '좌석배치_' + (fullData.grade || '') + '학년' + (fullData.classNo || '') + '반.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  async function scLoadArrangement(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.seatData) throw new Error('Invalid format');
+
+        scApplyThemeSettingsObj(data);
+
+        if (data.displayTitle) document.getElementById('sc-display-title').value = data.displayTitle;
+        if (data.footerText1 !== undefined) document.getElementById('sc-footer-1').value = data.footerText1;
+        if (data.footerText2 !== undefined) document.getElementById('sc-footer-2').value = data.footerText2;
+        if (data.sideTextLeft) document.querySelectorAll('.sc-side-text')[0].value = data.sideTextLeft;
+        if (data.sideTextRight) document.querySelectorAll('.sc-side-text')[1].value = data.sideTextRight;
+        if (data.excludeNums !== undefined) document.getElementById('sc-exclude-nums').value = data.excludeNums;
+
+        document.getElementById('sc-a4-paper').classList.toggle('sc-inverted', !!data.inverted);
+
+        if (data.grade && data.classNo) {
+          await ensureClassStructureLoaded();
+          const gradeSel = document.getElementById('sc-grade-select');
+          gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(parseInt(data.grade));
+          document.getElementById('sc-class-select').innerHTML = classOptionsHtml(parseInt(data.grade), parseInt(data.classNo));
+          await scLoadRosterFromDB(parseInt(data.grade), parseInt(data.classNo));
+        }
+
+        const rows = parseInt(data.rows) || 1, groups = parseInt(data.groups) || 1, seats = parseInt(data.seats) || 1;
+        document.getElementById('sc-cfg-rows').value = rows;
+        document.getElementById('sc-cfg-groups').value = groups;
+        document.getElementById('sc-cfg-seats').value = seats;
+        scBuildSeatGrid(rows, groups, seats);
+
+        const desks = document.querySelectorAll('.sc-desk');
+        data.seatData.forEach(function(savedDesk) {
+          const targetDesk = Array.from(desks).find(function(d) { return d.dataset.row === savedDesk.row && d.dataset.col === savedDesk.col; });
+          if (targetDesk) {
+            targetDesk.querySelector('.sc-desk-num').innerText = savedDesk.num;
+            targetDesk.querySelector('.sc-desk-name').innerText = savedDesk.name;
+            if (savedDesk.isFixed) targetDesk.classList.add('sc-fixed');
+            if (savedDesk.isExcluded) {
+              targetDesk.classList.add('sc-excluded');
+              targetDesk.querySelector('.sc-desk-num').innerText = '';
+              targetDesk.querySelector('.sc-desk-name').innerText = '';
+            }
+          }
+        });
+        await customAlert('저장된 배치 결과를 불러왔습니다! 🎉');
+      } catch (err) {
+        await customAlert("파일을 읽는 데 실패했습니다. 올바른 '좌석배치' 결과 파일인지 확인해주세요.");
+      }
+    };
+    reader.readAsText(file); event.target.value = '';
+  }
+
 </script>
 </body>
 </html>
