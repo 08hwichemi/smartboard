@@ -1,0 +1,14 @@
+{
+  "name": "부광고 스마트보드",
+  "short_name": "부광고 스마트보드",
+  "description": "부광고등학교 통합 대시보드",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#F4F5F7",
+  "theme_color": "#1F3A5F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

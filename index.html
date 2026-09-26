@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>부광고 통합 대시보드 - Chrome App Edition</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#1F3A5F">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -965,7 +969,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-26.24';
+  var BUILD_ID = '2026-09-26.25';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1210,6 +1214,8 @@
     document.getElementById('main-dashboard').style.display = 'grid';
     document.getElementById('rail-settings-btn').classList.remove('active');
     document.getElementById('rail-home-btn').classList.add('active');
+    const rosterOverlay = document.getElementById('roster-overlay');
+    if (rosterOverlay) rosterOverlay.style.display = 'none';
   }
 
   // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
@@ -1971,6 +1977,9 @@
     renderBigCalendar();
     loadUpcomingScheduleTeaser();
 
+    const savedMainTab = localStorage.getItem('main-tab');
+    if (savedMainTab && savedMainTab !== currentMainTab) switchMainTab(savedMainTab);
+
     setInterval(maybeAutoBackup, 43200000);
   }
 
@@ -2054,6 +2063,7 @@
     document.getElementById('tab-halfcal').classList.remove('active');
 
     currentMainTab = tab;
+    localStorage.setItem('main-tab', tab);
 
     if (tab === 'cal') {
       ttPanel.style.display = 'none';
@@ -2486,6 +2496,7 @@
   }
 
   async function openStudentRoster() {
+    if (document.getElementById('roster-overlay').style.display === 'flex') { closeStudentRoster(); return; }
     await ensureClassStructureLoaded();
     rosterEditMode = false;
     updateRosterEditToggleBtn();
