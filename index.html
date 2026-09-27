@@ -1572,12 +1572,32 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_3LTnOme1yT3sNFka2PhUHQ_MWuTPYK1';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // ===== 📤 개인 데이터 자동 서버 동기화 (localStorage 변경 자동 감지) =====
+  // 폰트 크기, 즐겨찾기, 디데이 등 새 기능을 추가할 때마다 매번 scheduleBackupWrite()
+  // 호출을 빠뜨리지 않도록, localStorage.setItem/removeItem 자체를 가로채서 값이
+  // 바뀔 때마다 자동으로 서버 백업을 예약한다. (scheduleBackupWrite 함수 선언 자체는
+  // 호이스팅되어 여기서 이름으로 참조해도 문제없지만, 그 안에서 쓰는 backupWriteTimer는
+  // let 변수라 선언 줄보다 먼저 참조되면 TDZ 에러가 나므로 여기서 미리 선언해둔다.)
+  let backupWriteTimer = null;
+  (function() {
+    const _origSetItem = localStorage.setItem.bind(localStorage);
+    const _origRemoveItem = localStorage.removeItem.bind(localStorage);
+    localStorage.setItem = function(key, value) {
+      _origSetItem(key, value);
+      if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
+    };
+    localStorage.removeItem = function(key) {
+      _origRemoveItem(key);
+      if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
+    };
+  })();
+
   // ===== 🔄 새 버전 알림 =====
   // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-27.2';
+  var BUILD_ID = '2026-09-27.3';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2680,7 +2700,6 @@
   }
 
   // ===== 📥 다운로드 폴더 자동 백업 =====
-  let backupWriteTimer = null;
 
   function collectBackupData() {
     const data = {};
