@@ -1595,7 +1595,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-27.4';
+  var BUILD_ID = '2026-09-27.5';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -1787,17 +1787,30 @@
     const prevOwner = localStorage.getItem(ownerKey);
     if (prevOwner === teacherId) return;
 
+    // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰은 절대 지우거나 옛날 값으로
+    // 덮어쓰지 않도록, clear() 전에 따로 챙겨뒀다가 복원 뒤에 다시 심어준다.
+    const preservedAuthEntries = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
+    }
+    function restorePreservedAuthEntries() {
+      preservedAuthEntries.forEach(function(entry) { localStorage.setItem(entry[0], entry[1]); });
+    }
+
     try {
       const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
       if (!error && data && data.data && typeof data.data === 'object') {
         localStorage.clear();
-        Object.keys(data.data).forEach(function(k) { localStorage.setItem(k, data.data[k]); });
+        Object.keys(data.data).forEach(function(k) { if (!isAuthSessionKey(k)) localStorage.setItem(k, data.data[k]); });
+        restorePreservedAuthEntries();
       } else if (prevOwner !== null) {
         localStorage.clear();
+        restorePreservedAuthEntries();
       }
       // prevOwner가 null이고 서버에도 없으면: 이 브라우저의 기존 로컬 데이터를 그대로 둔다.
     } catch (e) {
-      if (prevOwner !== null) localStorage.clear();
+      if (prevOwner !== null) { localStorage.clear(); restorePreservedAuthEntries(); }
     }
     localStorage.setItem(ownerKey, teacherId);
   }
@@ -2697,10 +2710,20 @@
 
   // ===== 📥 다운로드 폴더 자동 백업 =====
 
+  // Supabase 로그인 SDK가 이 브라우저의 로그인 세션 토큰을 저장해두는 키(그리고 이
+  // 앱과 무관한 다른 supabase 프로젝트의 토큰이 우연히 같은 브라우저에 남아있는 경우도)는
+  // "내 개인 설정"이 아니라 이 브라우저 고유의 로그인 상태이므로 백업/복원 대상에서 제외한다.
+  // 예전엔 이걸 걸러내지 않아서, 다른 기기에서 동기화된 옛날 토큰이 복원되면서 지금 막
+  // 로그인해서 받은 이 브라우저의 정상 세션 토큰을 덮어써버리는 문제가 있었다.
+  function isAuthSessionKey(key) {
+    return /^sb-.*-auth-token/.test(key);
+  }
+
   function collectBackupData() {
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
+      if (isAuthSessionKey(key)) continue;
       data[key] = localStorage.getItem(key);
     }
     return data;
