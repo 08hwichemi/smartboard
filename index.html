@@ -459,7 +459,6 @@
     <input type="password" id="login-pw-input" placeholder="비밀번호" autocomplete="current-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
     <div id="login-error" style="color:#E5484D; font-size:12px; min-height:16px; margin-bottom:8px;"></div>
     <button class="top-btn accent" id="login-submit-btn" style="width:100%; padding:10px;" onclick="submitLogin()">로그인</button>
-    <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-top:14px;">처음 로그인하는 선생님의 초기 비밀번호는 123456입니다.</div>
   </div>
 </div>
 
@@ -785,14 +784,13 @@
     <div style="font-weight: 800; font-size: 16px; margin-bottom: 12px;">💾 데이터 백업 / 복원</div>
 
     <div style="background: var(--tt-bg); border-radius: 12px; padding: 14px; margin-bottom: 15px; text-align: left;">
-      <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 자동 다운로드 백업 (추천)</div>
-      <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5;">⚪ 캘린더 · 할일 · 상담기록 등 내용이 바뀌면, 마지막 자동 백업 이후 15일이 지났을 때 다운로드 폴더에 백업 파일이 하나 자동으로 생깁니다. 그 사이에 중요한 걸 크게 바꿨다면 아래 "지금 바로 백업" 버튼을 눌러서 바로 저장해두는 걸 추천드려요.</div>
+      <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 파일로 백업 (선택)</div>
+      <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5;">⚪ 캘린더 · 할일 · 상담기록 등 내용은 로그인한 계정으로 서버에 자동 저장되어, 다른 기기에서 같은 계정으로 로그인해도 그대로 이어서 볼 수 있습니다. 그것과는 별개로, 내 컴퓨터에 파일로도 따로 보관해두고 싶다면 아래 버튼을 눌러주세요.</div>
       <div style="display:flex; flex-direction:column; gap:6px;">
         <button class="top-btn accent" style="padding:8px;" onclick="manualBackupNow()">💾 지금 바로 백업 다운로드</button>
         <input type="file" id="json-backup-input" accept=".json" style="display: none;" onchange="restoreFromBackupFile(event)">
         <button class="top-btn" style="padding:8px;" onclick="document.getElementById('json-backup-input').click()">📤 백업 파일로 복원하기</button>
       </div>
-      <div style="font-size:10px; color:var(--text-sub); margin-top:8px; line-height:1.4;">※ 크롬이 "여러 파일을 자동으로 다운로드할까요?"라고 처음 한 번 물어보면 "허용"을 눌러주세요. 그래야 이후로 계속 자동 저장됩니다.</div>
     </div>
 
     <div style="border-top: 1px dashed var(--border-color); padding-top: 12px;">
@@ -1597,7 +1595,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-27.3';
+  var BUILD_ID = '2026-09-27.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2695,8 +2693,6 @@
 
     const savedMainTab = localStorage.getItem('main-tab');
     if (savedMainTab && savedMainTab !== currentMainTab) switchMainTab(savedMainTab);
-
-    setInterval(maybeAutoBackup, 43200000);
   }
 
   // ===== 📥 다운로드 폴더 자동 백업 =====
@@ -2726,20 +2722,8 @@
   function scheduleBackupWrite() {
     if (backupWriteTimer) clearTimeout(backupWriteTimer);
     backupWriteTimer = setTimeout(function() {
-      maybeAutoBackup();
       syncUserBackupToServer();
     }, 1500);
-  }
-
-  function maybeAutoBackup() {
-    const now = new Date();
-    const lastStr = localStorage.getItem('last-auto-backup-date');
-    const daysSince = lastStr ? Math.floor((now - new Date(lastStr)) / 86400000) : Infinity;
-    if (daysSince >= 15) {
-      const todayStr = now.toISOString().slice(0, 10);
-      downloadBackupFile('대시보드_백업_' + todayStr + '.json');
-      localStorage.setItem('last-auto-backup-date', todayStr);
-    }
   }
 
   function manualBackupNow() {
