@@ -1590,12 +1590,30 @@
     };
   })();
 
+  // 캘린더 메모 같은 입력칸은 onblur(포커스를 벗어날 때)에 저장되는데, 입력하자마자
+  // 바로 탭을 닫거나 다른 화면으로 전환하면 blur가 안 일어나서 로컬 저장조차 안 될 수
+  // 있고, 로컬 저장은 됐어도 서버 업로드는 1.5초 debounce를 기다리다가 그 전에 탭이
+  // 닫히면 서버엔 못 올라갈 수 있다. 화면이 안 보이게 되는 시점(탭 전환/닫기/최소화)에
+  // 지금 포커스된 입력칸을 강제로 blur해서 저장을 마치고, 서버 업로드도 debounce 없이
+  // 바로 시도해서 이런 경우를 최대한 줄인다.
+  function flushPendingSaveAndSync() {
+    if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    if (backupWriteTimer) { clearTimeout(backupWriteTimer); backupWriteTimer = null; }
+    if (typeof syncUserBackupToServer === 'function') syncUserBackupToServer();
+  }
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') flushPendingSaveAndSync();
+  });
+  window.addEventListener('pagehide', flushPendingSaveAndSync);
+
   // ===== 🔄 새 버전 알림 =====
   // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-27.5';
+  var BUILD_ID = '2026-09-28.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2765,8 +2783,17 @@
     reader.onload = async function(e) {
       try {
         const data = JSON.parse(e.target.result);
+        // 예전에 받아둔 백업 파일엔 그 당시 로그인 세션 토큰이 같이 들어있을 수 있는데,
+        // 그걸 그대로 복원하면 지금 이 브라우저의 정상 로그인 세션이 깨질 수 있어서
+        // 그 키는 제외한다. (restoreUserBackupIfNeeded와 동일한 이유)
+        const preservedAuthEntries = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
+        }
         localStorage.clear();
-        Object.keys(data).forEach(function(k) { localStorage.setItem(k, data[k]); });
+        Object.keys(data).forEach(function(k) { if (!isAuthSessionKey(k)) localStorage.setItem(k, data[k]); });
+        preservedAuthEntries.forEach(function(entry) { localStorage.setItem(entry[0], entry[1]); });
         // 복원한 내용을 지금 로그인한 계정 것으로 확정하고, 다음 편집을 기다리지 않고
         // 바로 서버에도 올려서 다른 기기에서 로그인해도 곧장 보이게 함.
         if (window.currentTeacher && window.currentTeacher.id) {
