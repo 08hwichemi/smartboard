@@ -34,6 +34,8 @@
       --accent-secondary: #E8735C; --accent-secondary-soft: #FBE4DF; --accent-secondary-text: #C14E37; --on-accent-secondary: #FFFFFF; }
     [data-theme="forest"] { --bg-color: #F4F6F1; --card-bg: #FFFDF9; --text-main: #2B3324; --text-sub: #7C8A6E; --border-color: #E1E6D8; --accent-color: #3F5B3A; --tt-bg: #EBEFE6; --accent-soft: #E4EBDF; --alert: #9C4A22; --alert-bg: #F8EAE0; --alert-border: #E3BC9E;
       --accent-secondary: #D9822B; --accent-secondary-soft: #FBEBD7; --accent-secondary-text: #A85F1B; --on-accent-secondary: #FFFFFF; }
+    [data-theme="amber"] { --bg-color: #FFFBEA; --card-bg: #FFFFFF; --text-main: #3A3006; --text-sub: #8C7F45; --border-color: #F0E4B8; --accent-color: #7A6E00; --tt-bg: #FFF7DC; --accent-soft: #F5EFCA; --alert: #A04A1C; --alert-bg: #FBEBDD; --alert-border: #E9BC96;
+      --accent-secondary: #2F6F8F; --accent-secondary-soft: #E1EEF3; --accent-secondary-text: #1F5069; --on-accent-secondary: #FFFFFF; }
 
     body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
 
@@ -623,6 +625,7 @@
               <button class="theme-select-btn theme-swatch" id="theme-btn-lavender" style="background:#5B4B8A;" onclick="changeTheme('lavender')" title="라벤더"></button>
               <button class="theme-select-btn theme-swatch" id="theme-btn-slate" style="background:#445068;" onclick="changeTheme('slate')" title="슬레이트"></button>
               <button class="theme-select-btn theme-swatch" id="theme-btn-forest" style="background:#3F5B3A;" onclick="changeTheme('forest')" title="포레스트"></button>
+              <button class="theme-select-btn theme-swatch" id="theme-btn-amber" style="background:#7A6E00;" onclick="changeTheme('amber')" title="앰버(골드)"></button>
             </div>
           </div>
         </div>
@@ -1837,7 +1840,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.6';
+  var BUILD_ID = '2026-09-28.7';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2830,7 +2833,7 @@
     { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
-    { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 8가지 색상 테마 중 하나로 화면 전체를 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
+    { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 9가지 색상 테마 중 하나로 화면 전체를 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
     { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
     { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
     { selector: '#schedule-overlay .modal-box', title: '🗓️ 시간표 관리', desc: '이 버튼을 누르면 이렇게 모달이 열려요. 위에서 선생님을 고른 뒤 "✏️ 수정"을 누르면 그 선생님 시간표를 직접 고칠 수 있고, "+ 새 선생님 추가"로 새 시간표를 만들 수도 있어요.', modal: function() { openScheduleModal(); } },
