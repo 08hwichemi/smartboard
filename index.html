@@ -19,6 +19,7 @@
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
       --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px;
+      --fz-tt-mobile: 14px; --fz-cal-mobile: 14px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
       --accent-secondary: #2E8F8F; --accent-secondary-soft: #E3F3F3; --accent-secondary-text: #1F6B6B; --on-accent-secondary: #FFFFFF; }
@@ -555,7 +556,11 @@
     #m-duty-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); overflow-x: auto; box-sizing: border-box; }
     .m-duty-btn { flex: 0 0 auto; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--tt-bg); color: var(--text-main); white-space: nowrap; }
 
-    #m-tab-row { display: flex; gap: 6px; padding: 10px 12px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); overflow-x: auto; position: sticky; top: 53px; z-index: 40; box-sizing: border-box; }
+    /* #m-tab-row는 일부러 sticky를 안 쓴다 — #m-header 높이가 내용(감독알림 배지 길이 등)에
+       따라 조금씩 달라질 수 있는데, 예전에 top 값을 고정 숫자(53px)로 박아뒀더니 헤더가
+       그보다 살짝만 높아져도 이 줄이 그 아래 감독표 버튼줄과 겹쳐서 버튼이 눌리지 않는
+       문제가 있었다. 화면과 같이 스크롤되는 평범한 줄로 두는 게 더 안전하다. */
+    #m-tab-row { display: flex; gap: 6px; padding: 10px 12px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); overflow-x: auto; box-sizing: border-box; }
     .m-tab-btn { flex: 1 0 auto; font-size: 12.5px; font-weight: 800; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border-color); background: var(--card-bg); color: var(--text-sub); white-space: nowrap; text-align: center; cursor: pointer; }
     .m-tab-btn.active { background: var(--accent-color); color: var(--on-accent); border-color: var(--accent-color); }
 
@@ -586,6 +591,39 @@
     /* "내 시간표" 안에 숨겨둔 선생님 선택 드롭다운은 이 위젯이 모바일 칸으로 옮겨져
        있을 때만 보이게 한다(평소 PC 화면에서는 안 보임). */
     .m-pane #my-tt-widget #m-tt-teacher-select { display: inline-block !important; }
+
+    /* 시간표 왼쪽 "교시·시간" 칸이 PC 기준 65px로 고정돼 있어서, 폭이 좁은 모바일에서는
+       그 칸이 상대적으로 너무 크게 차지하고 정작 요일 칸은 좁아진다. 모바일에서만 그
+       칸을 줄이고 안의 글씨도 맞춰 줄인다(!important로 인라인 스타일을 덮어씀). */
+    .m-pane .timetable-grid { grid-template-columns: 40px repeat(5, 1fr); gap: 3px; }
+    .m-pane .tt-time { font-size: 11px !important; padding: 0 !important; }
+    .m-pane .tt-time > div { font-size: 8px !important; margin-top: 2px !important; }
+    /* 글씨 크기 조절(A-/A+)은 PC와 변수를 공유하면(--fz-tt) 모바일에서 조절한 크기가
+       그대로 PC 화면에도 적용돼버린다. 화면 크기 차이가 커서 적정 글씨 크기도 다르므로,
+       모바일 전용 변수(--fz-tt-mobile)와 전용 버튼을 따로 두고 PC용 버튼은 숨긴다. */
+    .m-pane #my-tt-widget .m-tt-fz-desktop { display: none !important; }
+    .m-pane #my-tt-widget .m-tt-fz-mobile { display: inline-flex !important; }
+    .m-pane #my-timetable-grid .tt-subj { font-size: var(--fz-tt-mobile); }
+    .m-pane #my-timetable-grid .tt-room { font-size: calc(var(--fz-tt-mobile) - 2px); }
+
+    /* 캘린더도 같은 이유로 모바일 전용 글씨 크기 변수/버튼을 따로 둔다. */
+    .m-pane #left-bottom-cal .m-cal-fz-desktop { display: none !important; }
+    .m-pane #left-bottom-cal .m-cal-fz-mobile { display: inline-flex !important; }
+    .m-pane .big-cal-memo { font-size: var(--fz-cal-mobile); }
+    /* 요일 7칸이 좁은 화면에 다 들어가다 보니 한 칸이 너무 작아 메모를 쓰거나 읽기
+       힘들다는 의견 — 한 화면에 한 달을 다 보여주는 대신, 각 날짜 칸을 충분히 크게
+       만들고(최소 110px) 대신 위아래로 스크롤해서 보게 한다. */
+    .m-pane #left-bottom-cal .big-cal-wrapper { height: auto; min-height: 0; }
+    .m-pane #left-bottom-cal .big-cal-grid { grid-auto-rows: minmax(110px, auto); flex: none; }
+    .m-pane .big-cal-date { font-size: 14px; cursor: pointer; }
+    /* 요일 7칸짜리 좁은 칸 안에서는 메모를 읽고 쓰기 둘 다 불편해서, 날짜를 누르면 그
+       아래에 훨씬 넓은 전용 입력칸이 나타나게 한다(같은 cal-memo-* 값을 그대로 공유).
+       PC에서는 이 패널 자체를 숨겨서(#m-cal-detail은 기본 display:none) 영향이 없다. */
+    #m-cal-detail { display: none; }
+    .m-pane #left-bottom-cal #m-cal-detail { display: block; margin-top: 10px; border: 2px solid var(--accent-color); border-radius: 10px; padding: 10px; background: var(--card-bg); }
+    #m-cal-detail-date { font-size: 13px; font-weight: 800; color: var(--accent-color); margin-bottom: 6px; }
+    #m-cal-detail-editor { min-height: 90px; font-size: var(--fz-cal-mobile); line-height: 1.5; outline: none; white-space: pre-wrap; word-break: break-word; }
+    #m-cal-detail-editor:empty:before { content: attr(data-placeholder); color: var(--text-sub); }
 
     /* 공지사항 팝업 — #notice-widget을 그대로 옮겨와서 보여주므로 카드 테두리 등
        중첩된 장식은 없앤다. */
@@ -973,14 +1011,14 @@
 </div>
 
 <div class="overlay" id="custom-alert-overlay">
-  <div class="modal-box" style="width: 300px; text-align: center;">
+  <div class="modal-box" style="width: 300px; max-width: 90vw; box-sizing: border-box; text-align: center;">
     <div id="custom-alert-msg" style="font-size: 14px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 18px;"></div>
     <button class="top-btn accent" id="custom-alert-ok-btn" style="width: 100%; padding: 8px;">확인</button>
   </div>
 </div>
 
 <div class="overlay" id="custom-confirm-overlay">
-  <div class="modal-box" style="width: 300px; text-align: center;">
+  <div class="modal-box" style="width: 300px; max-width: 90vw; box-sizing: border-box; text-align: center;">
     <div id="custom-confirm-msg" style="font-size: 14px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 18px;"></div>
     <div style="display: flex; gap: 10px;">
       <button class="top-btn" id="custom-confirm-cancel-btn" style="flex: 1; padding: 8px;">취소</button>
@@ -990,7 +1028,7 @@
 </div>
 
 <div class="overlay" id="custom-prompt-overlay">
-  <div class="modal-box" style="width: 300px;">
+  <div class="modal-box" style="width: 300px; max-width: 90vw; box-sizing: border-box;">
     <div id="custom-prompt-msg" style="font-size: 14px; line-height: 1.5; margin-bottom: 10px;"></div>
     <input type="text" id="custom-prompt-input" style="margin-bottom: 4px;">
     <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -1099,8 +1137,10 @@
             <select id="m-tt-teacher-select" class="mini-select" style="display:none; font-size:11px;" onchange="mSelectTimetableTeacher(this.value)" title="다른 선생님 시간표 보기">
               <option value="">내 시간표</option>
             </select>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
+            <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
+            <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
+            <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', -1)">A-</button>
+            <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', 1)">A+</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
           </div>
         </div>
@@ -1147,8 +1187,10 @@
             <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2 캘린더</button>
           </div>
           <div style="display:flex; align-items:center; gap:3px;">
-            <button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
-            <button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
+            <button class="top-btn m-cal-fz-desktop" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal', -1)">A-</button>
+            <button class="top-btn m-cal-fz-desktop" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal', 1)">A+</button>
+            <button class="top-btn m-cal-fz-mobile" style="display:none; padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal-mobile', -1)">A-</button>
+            <button class="top-btn m-cal-fz-mobile" style="display:none; padding:2px 4px; font-size:11px;" onclick="changeFontSize('cal-mobile', 1)">A+</button>
             <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 1px;"></div>
             <button class="top-btn" style="padding:2px 4px;" onclick="moveBigCal(-1)">◀</button>
             <span id="big-cal-month-label" style="font-size:14px; font-weight:800; min-width:60px; text-align:center;">0000. 00</span>
@@ -1161,6 +1203,10 @@
           <div style="color:#F07178;">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div style="color:#82AAFF;">토</div>
         </div>
         <div class="big-cal-grid" id="big-cal-grid"></div>
+      </div>
+      <div id="m-cal-detail">
+        <div id="m-cal-detail-date"></div>
+        <div id="m-cal-detail-editor" contenteditable="true" spellcheck="false" onblur="mSaveCalDayDetail(this)" data-placeholder="날짜를 눌러 일정을 입력·확인하세요"></div>
       </div>
     </div>
   </div>
@@ -1873,9 +1919,7 @@
     <div id="m-menu-wrap">
       <button id="m-menu-btn" onclick="mToggleMenu()" aria-label="메뉴">☰</button>
       <div id="m-menu-dropdown">
-        <button class="m-menu-item" onclick="mCloseMenu(); document.getElementById('backup-overlay').style.display='flex';">💾 백업</button>
         <button class="m-menu-item" onclick="mCloseMenu(); openNoticeModal();">📢 공지 보내기</button>
-        <button class="m-menu-item" onclick="mCloseMenu(); openTour();">❓ 사용법</button>
         <div style="border-top:1px solid var(--border-color); margin:4px 0;"></div>
         <div style="font-size:11px; font-weight:700; color:var(--text-sub); padding:6px 10px 0;">🎨 테마</div>
         <div id="m-menu-theme-row">
@@ -1893,15 +1937,15 @@
           <button style="background:conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D);" onclick="changeTheme('random')" title="오늘의 랜덤"></button>
         </div>
         <div style="border-top:1px solid var(--border-color); margin:6px 0 4px;"></div>
-        <button class="m-menu-item" style="color:var(--alert);" onclick="mCloseMenu(); logout();">🚪 로그아웃</button>
+        <button class="m-menu-item" style="color:var(--alert);" onclick="mLogout()">🚪 로그아웃</button>
       </div>
     </div>
   </div>
 
   <div id="m-duty-row">
-    <button class="m-duty-btn" onclick="openDutyModal('야자감독', '🌙')">🌙 야자감독표</button>
-    <button class="m-duty-btn" onclick="openDutyModal('급식감독', '🍱')">🍱 급식감독표</button>
-    <button class="m-duty-btn" onclick="openDutyModal('아침감독', '☀️')">☀️ 아침감독표</button>
+    <button class="m-duty-btn" onclick="openDutyModal('야자감독', '🌙')">🌙 야자</button>
+    <button class="m-duty-btn" onclick="openDutyModal('급식감독', '🍱')">🍱 급식</button>
+    <button class="m-duty-btn" onclick="openDutyModal('아침감독', '☀️')">☀️ 아침</button>
     <button class="m-duty-btn" onclick="mOpenNotice()">📢 공지사항</button>
   </div>
 
@@ -1985,7 +2029,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.11';
+  var BUILD_ID = '2026-09-28.12';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3405,7 +3449,8 @@
         const cellStyle = isToday ? 'border:2px solid var(--accent-color);' : '';
 
         // 💡 템플릿 리터럴을 100% 일반 문자열 덧셈(+)으로 교체 완료. (구글 앱스 스크립트 파싱 오류 완전 제거)
-        html += '<div class="big-cal-cell ' + cellClass + '" style="' + cellStyle + '"><div class="big-cal-date"><span style="' + todayStyle + '">' + dateNum + '</span></div><div style="flex:0 0 auto;">' + neisHtml + '</div><div class="big-cal-memo editable" contenteditable="true" spellcheck="false" id="' + lsKey + '" onblur="saveAllData()" data-placeholder="일정 입력">' + savedMemo + '</div></div>';
+        const dateLabel = y + '.' + m + '.' + String(dateNum).padStart(2, '0');
+        html += '<div class="big-cal-cell ' + cellClass + '" style="' + cellStyle + '"><div class="big-cal-date" onclick="mOpenCalDayDetail(\'' + lsKey + '\', \'' + dateLabel + '\')"><span style="' + todayStyle + '">' + dateNum + '</span></div><div style="flex:0 0 auto;">' + neisHtml + '</div><div class="big-cal-memo editable" contenteditable="true" spellcheck="false" id="' + lsKey + '" onblur="saveAllData()" data-placeholder="일정 입력">' + savedMemo + '</div></div>';
       }
     }
     grid.innerHTML = html;
@@ -4094,7 +4139,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'tt-mobile': 14, 'cal-mobile': 14 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
@@ -7355,6 +7400,28 @@
     dd.style.display = (dd.style.display === 'flex') ? 'none' : 'flex';
   }
   function mCloseMenu() { document.getElementById('m-menu-dropdown').style.display = 'none'; }
+  function mLogout() { mCloseMenu(); logout(); }
+
+  // 모바일 캘린더: 요일 7칸이 좁아서 그 안에서 직접 읽고 쓰기 힘드니, 날짜를 누르면
+  // 아래 넓은 칸에 그 날짜 메모를 가져와서 편하게 보고 고칠 수 있게 한다. 저장은 같은
+  // localStorage 키(cal-memo-*)를 그대로 쓰므로 작은 칸과 항상 같은 내용을 보여준다.
+  function mOpenCalDayDetail(key, dateLabel) {
+    const gridMemoEl = document.getElementById(key);
+    const detailEditor = document.getElementById('m-cal-detail-editor');
+    document.getElementById('m-cal-detail-date').innerText = '📅 ' + dateLabel;
+    detailEditor.innerHTML = gridMemoEl ? gridMemoEl.innerHTML : '';
+    detailEditor.dataset.key = key;
+    document.getElementById('m-cal-detail').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function mSaveCalDayDetail(el) {
+    const key = el.dataset.key;
+    if (!key) return;
+    if (el.innerText.trim() === '') { el.innerHTML = ''; localStorage.removeItem(key); }
+    else localStorage.setItem(key, el.innerHTML);
+    const gridMemoEl = document.getElementById(key);
+    if (gridMemoEl) gridMemoEl.innerHTML = el.innerHTML;
+  }
 
   const mMediaQuery = window.matchMedia('(max-width: 860px)');
   function mHandleMediaChange(e) { if (e.matches) mEnterLayout(); else mExitLayout(); }
