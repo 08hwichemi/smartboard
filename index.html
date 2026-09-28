@@ -591,6 +591,10 @@
     /* "내 시간표" 안에 숨겨둔 선생님 선택 드롭다운은 이 위젯이 모바일 칸으로 옮겨져
        있을 때만 보이게 한다(평소 PC 화면에서는 안 보임). */
     .m-pane #my-tt-widget #m-tt-teacher-select { display: inline-block !important; }
+    .m-pane #my-tt-widget .m-tt-nav { display: inline-flex !important; }
+    /* 제목 줄이 좁아서 줄바꿈될 때 justify-content:space-between이 버튼 묶음을 왼쪽에
+       붙여버리는 문제 — 오른쪽 정렬로 고정한다. */
+    .m-pane #my-tt-widget .m-tt-toolbar { margin-left: auto; }
 
     /* 시간표 왼쪽 "교시·시간" 칸이 PC 기준 65px로 고정돼 있어서, 폭이 좁은 모바일에서는
        그 칸이 상대적으로 너무 크게 차지하고 정작 요일 칸은 좁아진다. 모바일에서만 그
@@ -609,19 +613,37 @@
     /* 캘린더도 같은 이유로 모바일 전용 글씨 크기 변수/버튼을 따로 둔다. */
     .m-pane #left-bottom-cal .m-cal-fz-desktop { display: none !important; }
     .m-pane #left-bottom-cal .m-cal-fz-mobile { display: inline-flex !important; }
-    .m-pane .big-cal-memo { font-size: var(--fz-cal-mobile); }
-    /* 요일 7칸이 좁은 화면에 다 들어가다 보니 한 칸이 너무 작아 메모를 쓰거나 읽기
-       힘들다는 의견 — 한 화면에 한 달을 다 보여주는 대신, 각 날짜 칸을 충분히 크게
-       만들고(최소 110px) 대신 위아래로 스크롤해서 보게 한다. */
+    /* 일정이 있으면 칸 안에 내용을 그대로 다 보여주다 보니 칸 세로 길이가 내용
+       길이에 따라 들쭉날쭉 엄청 길어지는 문제 — 모바일에서는 칸 안에는 점(●) 하나로
+       "일정 있음"만 표시하고, 실제 내용은 날짜를 눌렀을 때 아래 편집칸에서 보거나,
+       평소에는 달력 아래 "이번 달 일정" 목록에서 한 번에 쭉 확인한다. */
+    .m-pane .big-cal-memo { display: none; }
+    .big-cal-dot { display: none; }
+    .m-pane .big-cal-dot.has-memo { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-color); margin: 3px auto 0; }
     .m-pane #left-bottom-cal .big-cal-wrapper { height: auto; min-height: 0; }
-    .m-pane #left-bottom-cal .big-cal-grid { grid-auto-rows: minmax(110px, auto); flex: none; }
-    .m-pane .big-cal-date { font-size: 14px; cursor: pointer; }
+    .m-pane #left-bottom-cal .big-cal-grid { grid-auto-rows: minmax(46px, auto); flex: none; }
+    .m-pane .big-cal-date { font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    /* 달력 아래 항상 보이는 "이번 달 일정" 목록 — 날짜별 내용을 한 번에 쭉 볼 수 있고,
+       각 항목을 누르면 그 날짜 편집칸이 열린다. */
+    #m-cal-month-list { display: none; }
+    .m-pane #left-bottom-cal #m-cal-month-list { display: block; margin-top: 10px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+    .m-pane #left-bottom-cal #m-cal-month-list.m-cal-list-hidden { display: none; }
+    #m-cal-list-empty { font-size: 12.5px; color: var(--text-sub); text-align: center; padding: 18px 10px; }
+    .m-cal-list-item { padding: 9px 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+    .m-cal-list-item:last-child { border-bottom: none; }
+    .m-cal-list-item:active { background: var(--bg-color); }
+    .m-cal-list-date { font-size: 11.5px; font-weight: 800; color: var(--accent-color); margin-bottom: 3px; }
+    .m-cal-list-memo { font-size: var(--fz-cal-mobile); line-height: 1.4; word-break: break-word; white-space: pre-wrap; color: var(--text-main); }
     /* 요일 7칸짜리 좁은 칸 안에서는 메모를 읽고 쓰기 둘 다 불편해서, 날짜를 누르면 그
        아래에 훨씬 넓은 전용 입력칸이 나타나게 한다(같은 cal-memo-* 값을 그대로 공유).
-       PC에서는 이 패널 자체를 숨겨서(#m-cal-detail은 기본 display:none) 영향이 없다. */
+       평소(날짜를 안 눌렀을 때)엔 숨겨져 있고, 편집을 마치면 다시 숨겨지면서 위의
+       "이번 달 일정" 목록이 기본 화면으로 돌아온다. PC에서는 이 패널 자체를 아예
+       숨긴다(#m-cal-detail은 기본 display:none). */
     #m-cal-detail { display: none; }
-    .m-pane #left-bottom-cal #m-cal-detail { display: block; margin-top: 10px; border: 2px solid var(--accent-color); border-radius: 10px; padding: 10px; background: var(--card-bg); }
-    #m-cal-detail-date { font-size: 13px; font-weight: 800; color: var(--accent-color); margin-bottom: 6px; }
+    .m-pane #left-bottom-cal #m-cal-detail.m-cal-detail-open { display: block; margin-top: 10px; border: 2px solid var(--accent-color); border-radius: 10px; padding: 10px; background: var(--card-bg); }
+    #m-cal-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    #m-cal-detail-date { font-size: 13px; font-weight: 800; color: var(--accent-color); }
+    #m-cal-detail-close { border: none; background: transparent; font-size: 12px; font-weight: 700; color: var(--text-sub); cursor: pointer; padding: 4px 6px; }
     #m-cal-detail-editor { min-height: 90px; font-size: var(--fz-cal-mobile); line-height: 1.5; outline: none; white-space: pre-wrap; word-break: break-word; }
     #m-cal-detail-editor:empty:before { content: attr(data-placeholder); color: var(--text-sub); }
 
@@ -1133,10 +1155,12 @@
             내 시간표 <span id="my-tt-name" style="font-size:13px; font-weight:800; color:var(--accent-color);">(미설정)</span>
             <span id="active-semester-label" style="font-size:10px; font-weight:700; color:var(--text-sub); background:var(--tt-bg); padding:2px 6px; border-radius:6px;"></span>
           </div>
-          <div style="display:flex; gap:4px;">
+          <div class="m-tt-toolbar" style="display:flex; gap:4px; align-items:center;">
+            <button class="top-btn m-tt-nav" style="display:none; padding:2px 6px; font-size:11px;" onclick="mMoveTimetableTeacher(-1)">◀</button>
             <select id="m-tt-teacher-select" class="mini-select" style="display:none; font-size:11px;" onchange="mSelectTimetableTeacher(this.value)" title="다른 선생님 시간표 보기">
               <option value="">내 시간표</option>
             </select>
+            <button class="top-btn m-tt-nav" style="display:none; padding:2px 6px; font-size:11px;" onclick="mMoveTimetableTeacher(1)">▶</button>
             <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
             <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
             <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', -1)">A-</button>
@@ -1204,9 +1228,13 @@
         </div>
         <div class="big-cal-grid" id="big-cal-grid"></div>
       </div>
+      <div id="m-cal-month-list"></div>
       <div id="m-cal-detail">
-        <div id="m-cal-detail-date"></div>
-        <div id="m-cal-detail-editor" contenteditable="true" spellcheck="false" onblur="mSaveCalDayDetail(this)" data-placeholder="날짜를 눌러 일정을 입력·확인하세요"></div>
+        <div id="m-cal-detail-header">
+          <div id="m-cal-detail-date"></div>
+          <button type="button" id="m-cal-detail-close" onclick="mCloseCalDayDetail()">✕ 닫기</button>
+        </div>
+        <div id="m-cal-detail-editor" contenteditable="true" spellcheck="false" onblur="mSaveCalDayDetail(this)" data-placeholder="일정을 입력하세요"></div>
       </div>
     </div>
   </div>
@@ -1954,7 +1982,7 @@
     <button class="m-tab-btn" data-m-tab="cal" onclick="mSwitchTab('cal')">📅 캘린더</button>
     <button class="m-tab-btn" data-m-tab="meal" onclick="mSwitchTab('meal')">🍽 급식</button>
     <button class="m-tab-btn" data-m-tab="work" onclick="mSwitchTab('work')">💼 업무</button>
-    <button class="m-tab-btn" data-m-tab="stu" onclick="mSwitchTab('stu')">🧑‍🎓 학생상담</button>
+    <button class="m-tab-btn" data-m-tab="stu" onclick="mSwitchTab('stu')">🧑‍🎓 상담</button>
   </div>
 
   <div id="m-content">
@@ -2029,7 +2057,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.12';
+  var BUILD_ID = '2026-09-28.13';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2165,7 +2193,20 @@
 
   async function logout() {
     if (!await customConfirm('로그아웃할까요?')) return;
-    await sb.auth.signOut();
+    // 모바일 네트워크가 불안정하면 signOut() 요청이 응답 없이 걸려서(hang) 화면이
+    // 아무 반응 없이 멈춘 것처럼 보일 수 있다 — 3초 넘게 응답이 없으면 포기하고
+    // 아래에서 로컬 세션 토큰을 직접 지운 뒤 새로고침으로 넘어간다.
+    try {
+      await Promise.race([
+        sb.auth.signOut(),
+        new Promise(function(resolve) { setTimeout(resolve, 3000); })
+      ]);
+    } catch (e) {
+      console.error('로그아웃 signOut 실패:', e);
+    }
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) localStorage.removeItem(k);
+    });
     location.reload();
   }
 
@@ -3450,10 +3491,13 @@
 
         // 💡 템플릿 리터럴을 100% 일반 문자열 덧셈(+)으로 교체 완료. (구글 앱스 스크립트 파싱 오류 완전 제거)
         const dateLabel = y + '.' + m + '.' + String(dateNum).padStart(2, '0');
-        html += '<div class="big-cal-cell ' + cellClass + '" style="' + cellStyle + '"><div class="big-cal-date" onclick="mOpenCalDayDetail(\'' + lsKey + '\', \'' + dateLabel + '\')"><span style="' + todayStyle + '">' + dateNum + '</span></div><div style="flex:0 0 auto;">' + neisHtml + '</div><div class="big-cal-memo editable" contenteditable="true" spellcheck="false" id="' + lsKey + '" onblur="saveAllData()" data-placeholder="일정 입력">' + savedMemo + '</div></div>';
+        const hasMemoText = savedMemo.replace(/<[^>]*>/g, '').trim() !== '';
+        const dotClass = 'big-cal-dot' + (hasMemoText ? ' has-memo' : '');
+        html += '<div class="big-cal-cell ' + cellClass + '" style="' + cellStyle + '"><div class="big-cal-date" onclick="mOpenCalDayDetail(\'' + lsKey + '\', \'' + dateLabel + '\')"><span style="' + todayStyle + '">' + dateNum + '</span><span class="' + dotClass + '"></span></div><div style="flex:0 0 auto;">' + neisHtml + '</div><div class="big-cal-memo editable" contenteditable="true" spellcheck="false" id="' + lsKey + '" onblur="saveAllData()" data-placeholder="일정 입력">' + savedMemo + '</div></div>';
       }
     }
     grid.innerHTML = html;
+    if (typeof mRenderCalMonthList === 'function') mRenderCalMonthList();
   }
 
   function moveBigCal(d) { bigCalOffset += d; renderBigCalendar(); }
@@ -7367,6 +7411,17 @@
     updateCellColors('my-tt');
   }
 
+  // ◀/▶ 버튼으로 "내 시간표" 드롭다운의 선생님을 한 명씩 앞/뒤로 넘긴다(0번 "내 시간표" 포함).
+  function mMoveTimetableTeacher(direction) {
+    const sel = document.getElementById('m-tt-teacher-select');
+    if (!sel || sel.options.length <= 1) return;
+    let newIndex = sel.selectedIndex + direction;
+    if (newIndex < 0) newIndex = sel.options.length - 1;
+    if (newIndex >= sel.options.length) newIndex = 0;
+    sel.selectedIndex = newIndex;
+    mSelectTimetableTeacher(sel.value);
+  }
+
   function mOpenNotice() {
     const el = document.getElementById('notice-widget');
     if (el.parentNode.id !== 'm-notice-slot') {
@@ -7411,7 +7466,19 @@
     document.getElementById('m-cal-detail-date').innerText = '📅 ' + dateLabel;
     detailEditor.innerHTML = gridMemoEl ? gridMemoEl.innerHTML : '';
     detailEditor.dataset.key = key;
+    document.getElementById('m-cal-detail').classList.add('m-cal-detail-open');
+    const listEl = document.getElementById('m-cal-month-list');
+    if (listEl) listEl.classList.add('m-cal-list-hidden');
     document.getElementById('m-cal-detail').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function() { detailEditor.focus(); }, 300);
+  }
+
+  // 편집칸을 닫고 "이번 달 일정" 목록 화면으로 되돌아간다 — 날짜를 안 눌렀을 때뿐 아니라
+  // 일정을 입력/수정하고 난 뒤에도 항상 이 목록 화면이 기본 화면이 되도록 한다.
+  function mCloseCalDayDetail() {
+    document.getElementById('m-cal-detail').classList.remove('m-cal-detail-open');
+    const listEl = document.getElementById('m-cal-month-list');
+    if (listEl) listEl.classList.remove('m-cal-list-hidden');
   }
 
   function mSaveCalDayDetail(el) {
@@ -7419,8 +7486,37 @@
     if (!key) return;
     if (el.innerText.trim() === '') { el.innerHTML = ''; localStorage.removeItem(key); }
     else localStorage.setItem(key, el.innerHTML);
-    const gridMemoEl = document.getElementById(key);
-    if (gridMemoEl) gridMemoEl.innerHTML = el.innerHTML;
+    renderBigCalendar();
+    mCloseCalDayDetail();
+  }
+
+  // 작은 칸에는 점(●)으로 일정 유무만 표시하고, 실제 내용은 달력 아래 "이번 달 일정"
+  // 목록에 날짜순으로 모아서 보여준다 — 날짜를 눌러 편집한 뒤에도 이 목록 화면으로
+  // 돌아오므로 한 달치 일정을 항상 쭉 훑어볼 수 있다.
+  function mRenderCalMonthList() {
+    const listEl = document.getElementById('m-cal-month-list');
+    if (!listEl) return;
+    const bD = new Date(); bD.setDate(1); bD.setMonth(bD.getMonth() + bigCalOffset);
+    const y = bD.getFullYear();
+    const m = String(bD.getMonth() + 1).padStart(2, '0');
+    const daysInMonth = new Date(y, bD.getMonth() + 1, 0).getDate();
+    let items = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dStr = y + m + String(d).padStart(2, '0');
+      const lsKey = 'cal-memo-' + dStr;
+      const memo = localStorage.getItem(lsKey) || '';
+      const memoText = memo.replace(/<[^>]*>/g, '').trim();
+      if (memoText !== '') items.push({ key: lsKey, label: y + '.' + m + '.' + String(d).padStart(2, '0'), memo: memo });
+    }
+    if (items.length === 0) {
+      listEl.innerHTML = '<div id="m-cal-list-empty">이번 달 등록된 일정이 없어요. 위 달력에서 날짜를 눌러 추가해보세요.</div>';
+      return;
+    }
+    let html = '';
+    items.forEach(function(it) {
+      html += '<div class="m-cal-list-item" onclick="mOpenCalDayDetail(\'' + it.key + '\', \'' + it.label + '\')"><div class="m-cal-list-date">' + it.label + '</div><div class="m-cal-list-memo">' + it.memo + '</div></div>';
+    });
+    listEl.innerHTML = html;
   }
 
   const mMediaQuery = window.matchMedia('(max-width: 860px)');
