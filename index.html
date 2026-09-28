@@ -2342,7 +2342,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.22';
+  var BUILD_ID = '2026-09-28.23';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2594,14 +2594,16 @@
         localStorage.clear();
         Object.keys(data.data).forEach(function(k) { if (!isAuthSessionKey(k)) localStorage.setItem(k, data.data[k]); });
         restorePreservedAuthEntries();
-      } else if (prevOwner !== null) {
-        localStorage.clear();
-        restorePreservedAuthEntries();
+      } else {
+        // 서버 조회 자체는 성공했는데(오류 없음) 이 선생님 앞으로 저장된 백업이 아예
+        // 없다는 뜻 — 오류로 인한 실패와는 다른 상황이라 구분해서 눈에 보이게 알려준다.
+        showMobileDebugError('서버에 저장된 백업이 없습니다 (teacher_id: ' + teacherId + '). 이 선생님 이름으로 자동저장이 한 번도 성공한 적이 없을 수 있어요.');
+        if (prevOwner !== null) { localStorage.clear(); restorePreservedAuthEntries(); }
       }
-      // prevOwner가 null이고 서버에도 없으면: 이 브라우저의 기존 로컬 데이터를 그대로 둔다.
       // 여기까지 왔다는 건 서버 확인이 확실히 끝났다는 뜻이라 소유 표시를 남겨도 안전하다.
       localStorage.setItem(ownerKey, teacherId);
     } catch (e) {
+      showMobileDebugError('서버 백업 조회 실패: ' + (e && e.message ? e.message : e));
       if (prevOwner !== null) { localStorage.clear(); restorePreservedAuthEntries(); }
       // 소유 표시(ownerKey)는 남기지 않는다 — 다음에 열 때 다시 복원을 시도하게 하기 위함.
     }
@@ -2618,11 +2620,17 @@
   async function syncUserBackupToServer() {
     if (!window.currentTeacher || !window.currentTeacher.id) return;
     try {
-      await sb.from('user_backups').upsert(
+      const { error } = await sb.from('user_backups').upsert(
         { teacher_id: window.currentTeacher.id, data: collectBackupData(), updated_at: new Date().toISOString() },
         { onConflict: 'teacher_id' }
       );
-    } catch (e) { }
+      if (error) throw error;
+    } catch (e) {
+      // 예전엔 이 실패를 조용히 삼켜서, 서버 저장이 계속 실패하고 있어도 아무도 몰랐다
+      // ("한 기기엔 자료가 있는데 다른 기기엔 없다"는 신고의 원인일 수 있음) — 눈에
+      // 보이게 띄워서 정확한 오류 내용을 바로 알 수 있게 한다.
+      showMobileDebugError('서버 저장 실패: ' + (e && e.message ? e.message : e));
+    }
   }
 
   async function submitForcePasswordChange() {
