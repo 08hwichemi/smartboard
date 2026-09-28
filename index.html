@@ -2027,6 +2027,21 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
+  // ===== 🚨 모바일: #app-shell 안에 갇혀있던 공용 모달을 body 바로 아래로 꺼내기 =====
+  // 모바일 화면에서는 PC용 레이아웃 전체(#app-shell)를 display:none으로 숨기는데,
+  // 확인/알림 팝업(customConfirm/Alert/Prompt), 감독표, 수업변경 모달이 전부 그
+  // #app-shell 안쪽에 있어서 — JS로 style.display='flex'를 줘도 부모가 display:none이면
+  // 절대 화면에 보이지 않는다. 그래서 모바일에서 로그아웃 확인창이나 감독표 버튼을
+  // 눌러도 "완전히 무반응"으로 보였던 것 — 공지사항 팝업만 유일하게 #app-shell 밖에
+  // 새로 만들어서 정상 동작했다. 이 공용 모달들을 body 바로 아래로 옮겨서(내용/기능은
+  // 그대로, 위치만 이동) PC/모바일 어디서든 항상 보이게 한다.
+  (function() {
+    ['custom-confirm-overlay', 'custom-alert-overlay', 'custom-prompt-overlay', 'duty-overlay', 'schedule-change-overlay'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) document.body.appendChild(el);
+    });
+  })();
+
   // ===== Supabase 연결 (구글 앱스크립트를 대신합니다) =====
   // anon key는 공개되어도 안전합니다 — 실제 읽기/쓰기 권한은 Supabase RLS 정책이 정합니다.
   const SUPABASE_URL = 'https://pqreeimkjnphupqqwiqo.supabase.co';
@@ -2076,7 +2091,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.15';
+  var BUILD_ID = '2026-09-28.16';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
