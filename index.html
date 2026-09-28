@@ -235,7 +235,7 @@
 
     /* ===== 즐겨찾기 8칸 ===== */
     .fav-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 4px; min-height: 0; }
-    .fav-cell { background: var(--bg-color); border-radius: 7px; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 10px; font-weight: 700; text-align: center; cursor: pointer; overflow: hidden; text-decoration: none; color: var(--text-main); }
+    .fav-cell { background: var(--bg-color); border-radius: 7px; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 11.5px; font-weight: 700; text-align: center; cursor: pointer; overflow: hidden; text-decoration: none; color: var(--text-main); }
     .fav-cell:hover { filter: brightness(0.96); }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
@@ -1221,7 +1221,7 @@
             <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
             <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
-            <span id="half-cal-month-label" style="font-size:12px; font-weight:800; min-width:44px; text-align:center;">0000.00</span>
+            <span id="half-cal-month-label" style="font-size:14px; font-weight:800; min-width:50px; text-align:center;">0000.00</span>
             <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
           </div>
         </div>
@@ -1308,7 +1308,8 @@
     <div class="widget w-accent-a" id="websearch-widget" style="flex: 0 0 auto; min-height: 0;">
       <div class="widget-title" style="margin-bottom: 6px;">
         <div style="display:flex; align-items:center; gap:5px;">
-          🔍 웹 검색
+          <div class="w-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></div>
+          웹 검색
         </div>
       </div>
       <form onsubmit="return submitGoogleSearch(event)" style="display:flex; gap:5px;">
@@ -1336,7 +1337,7 @@
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
         <div class="tab-switch">
           <button class="tab-btn active" id="todo-tab-work" onclick="switchTodoTab('work')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12.2 2.6 2.6 5-5.6"/></svg><span id="title-todo-work">업무</span></button>
-          <button class="tab-btn" id="todo-tab-stu" onclick="switchTodoTab('stu')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8"/><circle cx="17" cy="9" r="2.3"/><path d="M15 20c.2-2.3 1.7-4.2 3.7-4.7"/></svg><span id="title-todo-stu">학생·상담</span></button>
+          <button class="tab-btn" id="todo-tab-stu" onclick="switchTodoTab('stu')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px; margin-right:3px;"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8"/><circle cx="17" cy="9" r="2.3"/><path d="M15 20c.2-2.3 1.7-4.2 3.7-4.7"/></svg><span id="title-todo-stu">상담</span></button>
         </div>
         <button class="top-btn" style="padding:2px 6px; font-size:11px;" title="제목 바꾸기" onclick="renameTitle(currentTodoTab === 'work' ? 'title-todo-work' : 'title-todo-stu')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button>
       </div>
@@ -2107,7 +2108,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.17';
+  var BUILD_ID = '2026-09-28.18';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
