@@ -880,6 +880,7 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--text-sub);"><path d="M6 9.5 12 15l6-5.5"/></svg>
 
           <div id="user-menu-dropdown">
+            <button class="um-btn" id="btn-resync" onclick="event.stopPropagation(); forceResyncFromServer()" title="이 기기의 자료가 서버와 다르게 보일 때, 서버에 저장된 자료로 다시 맞춥니다"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>서버 자료로 다시 맞추기</button>
             <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h9"/><path d="M11 12h9M17 8l4 4-4 4"/></svg>로그아웃</button>
           </div>
         </div>
@@ -2230,6 +2231,7 @@
           <button style="background:conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D);" onclick="changeTheme('random')" title="오늘의 랜덤"></button>
         </div>
         <div style="border-top:1px solid var(--border-color); margin:6px 0 4px;"></div>
+        <button class="m-menu-item" onclick="mCloseMenu(); forceResyncFromServer();">🔄 서버 자료로 다시 맞추기</button>
         <button class="m-menu-item" style="color:var(--alert);" onclick="mLogout()">🚪 로그아웃</button>
       </div>
     </div>
@@ -2340,7 +2342,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.21';
+  var BUILD_ID = '2026-09-28.22';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2582,7 +2584,13 @@
 
     try {
       const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
-      if (!error && data && data.data && typeof data.data === 'object') {
+      // 네트워크 오류 등으로 서버 확인 자체가 안 됐으면 catch로 넘겨서, 이 기기를
+      // "이 선생님 소유로 확인됨" 표시를 하지 않게 한다 — 그래야 다음에 열 때 다시
+      // 복원을 시도한다. (예전엔 오류가 나도 무조건 표시해버려서, 처음 여는 기기에서
+      // 한 번이라도 네트워크가 불안정하면 그 뒤로 영영 서버 자료를 못 받아오는
+      // 문제가 있었다 — "집에 오니 아무 내용도 없다"는 신고가 바로 이 버그였다.)
+      if (error) throw error;
+      if (data && data.data && typeof data.data === 'object') {
         localStorage.clear();
         Object.keys(data.data).forEach(function(k) { if (!isAuthSessionKey(k)) localStorage.setItem(k, data.data[k]); });
         restorePreservedAuthEntries();
@@ -2591,10 +2599,20 @@
         restorePreservedAuthEntries();
       }
       // prevOwner가 null이고 서버에도 없으면: 이 브라우저의 기존 로컬 데이터를 그대로 둔다.
+      // 여기까지 왔다는 건 서버 확인이 확실히 끝났다는 뜻이라 소유 표시를 남겨도 안전하다.
+      localStorage.setItem(ownerKey, teacherId);
     } catch (e) {
       if (prevOwner !== null) { localStorage.clear(); restorePreservedAuthEntries(); }
+      // 소유 표시(ownerKey)는 남기지 않는다 — 다음에 열 때 다시 복원을 시도하게 하기 위함.
     }
-    localStorage.setItem(ownerKey, teacherId);
+  }
+
+  // ☰ 메뉴의 "서버 자료로 다시 맞추기" — 기기를 바꿨는데 예전 자료가 안 보이거나,
+  // 반대로 이 기기에만 예전 자료가 남아있어 보일 때 수동으로 강제 복원한다.
+  async function forceResyncFromServer() {
+    if (!await customConfirm('서버에 저장된 자료로 이 기기를 다시 맞출까요?\n(방금 이 기기에서만 입력하고 아직 반영 안 된 내용이 있다면 사라질 수 있어요)')) return;
+    localStorage.removeItem('backup-owner-teacher-id');
+    location.reload();
   }
 
   async function syncUserBackupToServer() {
