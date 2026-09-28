@@ -2348,7 +2348,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.26';
+  var BUILD_ID = '2026-09-28.27';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2559,58 +2559,43 @@
     await init();
   }
 
-  // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등, localStorage 전체)를 계정별로 서버에도
-  // 저장해서 다른 기기·브라우저에서 로그인해도 본인 데이터가 보이게 하는 로직.
-  //
-  // 예전엔 "이 기기가 이 선생님 걸로 확인된 적이 있는가"라는 참/거짓 표시(ownerKey) 하나로
-  // "복원할지 말지"를 정했다 — 그런데 이 표시는 실제 자료가 언제 것인지는 전혀 모른다.
-  // 그래서 (1) 확인 자체가 한 번 실패해도 표시가 남아버리는 버그, (2) 반대로 "한 번 더
-  // 확인해보자"고 표시를 지우면 그 순간 이미 최신 자료를 갖고 있던 멀쩡한 기기까지
-  // 서버의 더 오래된 자료로 덮어써버리는 사고가 둘 다 일어났다.
-  //
-  // 이제는 서버의 updated_at(마지막 저장 시각)과 이 기기가 "마지막으로 성공적으로 맞춘
-  // 시각"(backup-last-synced-at)을 직접 시간으로 비교한다 — 서버가 이 기기보다 확실히
-  // 더 최신일 때만 받아오고, 그 외에는(서버가 같거나 더 오래됐으면, 또는 조회 자체가
-  // 실패하면) 절대 로컬을 건드리지 않는다. 매번 다시 확인해도 안전하므로 "이미 확인된
-  // 기기" 같은 예외 처리 자체가 필요 없다.
+  // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등)는 서버(user_backups)가 유일한 원본이다.
+  // localStorage는 화면을 그리기 위한 캐시일 뿐 — 로그인할 때마다(=페이지를 열 때마다)
+  // 무조건 서버에서 다시 받아와 그대로 덮어쓴다. "이 기기 걸 믿을지 서버 걸 믿을지"를
+  // 비교하거나 고민하지 않는다 — 서버가 곧 정답이다. 유일한 예외는 서버 조회 자체가
+  // 실패했을 때뿐인데, 그때는 서버 상태를 모르니 화면을 함부로 비우지 않고 화면 아래
+  // 빨간 띠로 실패를 알린 뒤 지금 있는 화면을 그대로 둔다.
   async function restoreUserBackupIfNeeded(teacherId) {
-    // 이 시간 비교 방식이 생기기 전부터 이미 이 기기에서 이 선생님으로 정상적으로
-    // 쓰고 있었다면(예전 귀속 표시가 이 선생님과 일치), "비교 기록이 없다"는 이유로
-    // 지금 막 새 코드를 받자마자 서버 걸로 덮어써버리면 안 된다 — 지금 이 순간
-    // 상태를 "방금 확인됨"으로 인정만 해두고 넘어간다.
-    if (!localStorage.getItem('backup-last-synced-at') && localStorage.getItem('backup-owner-teacher-id') === teacherId) {
-      rawSetItem('backup-last-synced-at', String(Date.now()));
+    // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰은 절대 지우거나 옛날 값으로
+    // 덮어쓰지 않도록 따로 챙겨뒀다가 복원 뒤에 다시 심어준다.
+    const preservedAuthEntries = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
     }
     try {
-      const { data, error } = await sb.from('user_backups').select('data, updated_at').eq('teacher_id', teacherId).maybeSingle();
+      const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
       if (error) throw error;
-      if (!data || !data.data || typeof data.data !== 'object') return; // 서버에 이 선생님 자료가 아직 없음 — 로컬을 그대로 둔다
-      const serverTime = new Date(data.updated_at).getTime();
-      const localSyncedTime = parseInt(localStorage.getItem('backup-last-synced-at') || '0', 10);
-      if (!(serverTime > localSyncedTime)) return; // 이 기기가 이미 이 시점 이상의 자료를 갖고 있다 — 덮어쓰지 않는다
-
-      // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰은 절대 지우거나 옛날 값으로
-      // 덮어쓰지 않도록, clear() 전에 따로 챙겨뒀다가 복원 뒤에 다시 심어준다.
-      const preservedAuthEntries = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
-      }
       localStorage.clear();
-      Object.keys(data.data).forEach(function(k) { if (!isLocalOnlyKey(k)) localStorage.setItem(k, data.data[k]); });
+      if (data && data.data && typeof data.data === 'object') {
+        Object.keys(data.data).forEach(function(k) { if (!isLocalOnlyKey(k)) localStorage.setItem(k, data.data[k]); });
+      }
+      // 서버에 이 선생님 자료가 아직 하나도 없으면(처음 쓰는 계정) 빈 상태로 시작한다 —
+      // 그것도 "서버가 곧 정답"이라는 원칙 그대로다.
       preservedAuthEntries.forEach(function(entry) { localStorage.setItem(entry[0], entry[1]); });
-      rawSetItem('backup-last-synced-at', String(serverTime));
     } catch (e) {
       showMobileDebugError('서버 백업 조회 실패: ' + (e && e.message ? e.message : e));
-      // 조회 자체가 실패했으면 로컬은 절대 건드리지 않는다.
+      // 조회 자체가 실패했으면(네트워크 등) 서버 상태를 알 수 없으니 지금 화면을
+      // 함부로 비우지 않고 그대로 둔다 — 이건 "로컬을 믿는다"는 게 아니라, 틀린
+      // 정보(빈 화면)로 덮어쓰느니 아무것도 안 하는 게 낫다는 최소한의 방어다.
     }
   }
 
-  // ☰ 메뉴의 "서버 자료로 다시 맞추기" — 기기를 바꿨는데 예전 자료가 안 보이거나,
-  // 반대로 이 기기에만 예전 자료가 남아있어 보일 때 수동으로 강제 복원한다.
+  // ☰ 메뉴의 "서버 자료로 다시 맞추기" — 페이지를 새로고침하면 위 로직이 어차피
+  // 서버에서 다시 받아오므로, 사실상 새로고침과 같다. 메뉴에 남겨두는 건 "혹시
+  // 화면이 이상해 보일 때 눌러볼 수 있는 버튼"이 있다는 안도감을 위해서다.
   async function forceResyncFromServer() {
     if (!await customConfirm('서버에 저장된 자료로 이 기기를 다시 맞출까요?\n(방금 이 기기에서만 입력하고 아직 반영 안 된 내용이 있다면 사라질 수 있어요)')) return;
-    rawSetItem('backup-last-synced-at', '0');
     location.reload();
   }
 
@@ -2625,10 +2610,6 @@
         { onConflict: 'teacher_id' }
       );
       if (error) throw error;
-      // 이 기기가 방금 "이 시각 기준 자료"를 서버에 올렸다는 걸 기록해둔다 — 다음에
-      // 이 기기가 다시 열릴 때, 서버 걸로 되돌아오는 자기 자신의 자료 때문에 괜히
-      // 한 번 더 통째로 덮어쓰는 일이 없게 하기 위함.
-      rawSetItem('backup-last-synced-at', String(new Date(nowIso).getTime()));
       backupSyncRetryDelay = 5000;
       if (backupSyncRetryTimer) { clearTimeout(backupSyncRetryTimer); backupSyncRetryTimer = null; }
     } catch (e) {
