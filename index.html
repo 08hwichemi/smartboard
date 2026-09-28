@@ -658,6 +658,16 @@
     /* 공지사항 팝업 — #notice-widget을 그대로 옮겨와서 보여주므로 카드 테두리 등
        중첩된 장식은 없앤다. */
     #m-notice-overlay #notice-widget { border: none !important; padding: 0 !important; }
+
+    /* 화면 맨 아래 버전 표시 — 모바일에서는 새로고침해도 지금 몇 판을 보고 있는지
+       확인할 방법이 없어서, 문제 리포트 받을 때 캐시 때문인지 아닌지 바로 구분할
+       수 있게 항상 맨 밑에 작게 적어둔다. */
+    #m-version-footer { text-align: center; font-size: 10.5px; color: var(--text-sub); padding: 10px 0 16px; opacity: .6; }
+
+    /* 버튼을 눌러도 반응이 없을 때 원인을 알 수 없어 답답했던 문제 — 자바스크립트
+       오류가 나면(원인 불명으로 "아무 반응 없음"처럼 보이는 대부분의 경우) 화면
+       맨 아래에 빨간 띠로 오류 내용을 띄워서, 스크린샷으로 바로 공유할 수 있게 한다. */
+    #m-debug-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 99999; background: #c0392b; color: #fff; font-size: 12px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.35); white-space: pre-wrap; word-break: break-word; cursor: pointer; }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -1999,6 +2009,7 @@
     <div class="m-pane" id="m-pane-meal"></div>
     <div class="m-pane" id="m-pane-work"></div>
   </div>
+  <div id="m-version-footer">버전 <span id="m-version-footer-text">-</span></div>
 </div>
 
 <div class="overlay" id="m-notice-overlay">
@@ -2065,7 +2076,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.14';
+  var BUILD_ID = '2026-09-28.15';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2118,11 +2129,35 @@
   }
 
   function paintVersion() {
-    var el = document.getElementById('app-version');
-    if (!el) return;
     var m = /^(\d{4})-(\d{2})-(\d{2})\.(\d+)$/.exec(BUILD_ID);
-    el.innerHTML = m ? (m[1] + '<br>' + m[2] + '.' + m[3] + '<br>Ver.' + m[4]) : ('v' + BUILD_ID);
+    var el = document.getElementById('app-version');
+    if (el) el.innerHTML = m ? (m[1] + '<br>' + m[2] + '.' + m[3] + '<br>Ver.' + m[4]) : ('v' + BUILD_ID);
+    var mEl = document.getElementById('m-version-footer-text');
+    if (mEl) mEl.innerText = BUILD_ID;
   }
+
+  // 버튼을 눌러도 반응이 없어 보이는 문제는 대부분 어딘가에서 조용히 에러가 나서
+  // 그 다음 동작(모달 열기, 로그아웃 등)까지 멈춰버리기 때문이다. 콘솔을 볼 수 없는
+  // 모바일 환경에서는 이게 "아무 반응 없음"으로만 보이므로, 에러가 나면 화면
+  // 아래에 눈에 보이게 띄워서 스크린샷으로 바로 공유할 수 있게 한다.
+  function showMobileDebugError(msg) {
+    var el = document.getElementById('m-debug-error');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'm-debug-error';
+      el.onclick = function() { el.remove(); };
+      document.body.appendChild(el);
+    }
+    el.innerText = '⚠️ ' + msg + '\n(눌러서 닫기)';
+  }
+  window.addEventListener('error', function(e) {
+    showMobileDebugError((e.message || '알 수 없는 오류') + ' (' + (e.filename ? e.filename.split('/').pop() : '') + ':' + (e.lineno || '') + ')');
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    var reason = e.reason;
+    var msg = (reason && (reason.message || String(reason))) || '알 수 없는 오류(Promise)';
+    showMobileDebugError('비동기 오류: ' + msg);
+  });
 
   // 그냥 location.reload()는 브라우저가 쥐고 있던 캐시를 그대로 다시 쓸 수 있어서,
   // 주소에 ?v=를 붙여 다시 열어 새 파일을 받게 한다.
