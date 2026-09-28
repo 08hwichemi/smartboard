@@ -2348,7 +2348,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.28';
+  var BUILD_ID = '2026-09-28.29';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2578,7 +2578,19 @@
       if (error) throw error;
       localStorage.clear();
       if (data && data.data && typeof data.data === 'object') {
-        Object.keys(data.data).forEach(function(k) { if (!isLocalOnlyKey(k)) localStorage.setItem(k, data.data[k]); });
+        // 키 하나를 저장하다가 실패해도(값 형식 문제, 저장 공간 등) 그 뒤에 남은 다른
+        // 키들까지 통째로 못 받아오면 안 되므로, 키마다 따로 try/catch로 감싼다 —
+        // 예전엔 하나라도 실패하면 그 지점에서 전체가 멈춰서 화면에 아무것도 없는
+        // 것처럼 보일 수 있었다.
+        const failedKeys = [];
+        Object.keys(data.data).forEach(function(k) {
+          if (isLocalOnlyKey(k)) return;
+          try { localStorage.setItem(k, data.data[k]); }
+          catch (e) { failedKeys.push(k); }
+        });
+        if (failedKeys.length > 0) {
+          showMobileDebugError('일부 자료를 이 기기에 저장하지 못했습니다: ' + failedKeys.join(', '));
+        }
       }
       // 서버에 이 선생님 자료가 아직 하나도 없으면(처음 쓰는 계정) 빈 상태로 시작한다 —
       // 그것도 "서버가 곧 정답"이라는 원칙 그대로다.
