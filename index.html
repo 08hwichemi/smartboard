@@ -581,9 +581,11 @@
     /* 캘린더 위젯 안에 있던 "🔍시간표/📅캘린더/🗓️1/2캘린더" 자체 탭은, 모바일 캘린더
        화면 안에서 누르면 switchMainTab()이 실행되면서 이 위젯 자신을 숨겨버려서(캘린더가
        통째로 사라지는 것처럼 보임) 아예 숨긴다 — 모바일에는 이미 위에 똑같은 역할을
-       하는 탭이 따로 있다. 시간표 검색 위젯도 같은 이유로 자체 탭을 숨긴다. */
-    .m-pane #left-bottom-cal .tab-switch,
-    .m-pane #search-tt-widget .tab-switch { display: none; }
+       하는 탭이 따로 있다. */
+    .m-pane #left-bottom-cal .tab-switch { display: none; }
+    /* "내 시간표" 안에 숨겨둔 선생님 선택 드롭다운은 이 위젯이 모바일 칸으로 옮겨져
+       있을 때만 보이게 한다(평소 PC 화면에서는 안 보임). */
+    .m-pane #my-tt-widget #m-tt-teacher-select { display: inline-block !important; }
 
     /* 공지사항 팝업 — #notice-widget을 그대로 옮겨와서 보여주므로 카드 테두리 등
        중첩된 장식은 없앤다. */
@@ -1094,6 +1096,9 @@
             <span id="active-semester-label" style="font-size:10px; font-weight:700; color:var(--text-sub); background:var(--tt-bg); padding:2px 6px; border-radius:6px;"></span>
           </div>
           <div style="display:flex; gap:4px;">
+            <select id="m-tt-teacher-select" class="mini-select" style="display:none; font-size:11px;" onchange="mSelectTimetableTeacher(this.value)" title="다른 선생님 시간표 보기">
+              <option value="">내 시간표</option>
+            </select>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', -1)">A-</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
             <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
@@ -1980,7 +1985,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.10';
+  var BUILD_ID = '2026-09-28.11';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4638,6 +4643,7 @@
       }); 
       window.allSchedules = data;
       await fetchScheduleChanges();
+      mPopulateTtTeacherSelect();
 
       const lastSearch = localStorage.getItem('last-search');
       if(lastSearch && window.allSchedules[lastSearch]) {
@@ -7253,7 +7259,7 @@
   // 되돌린다(mExitLayout). "업무"와 "학생상담"은 모바일에서는 버튼 2개로 나눠 보이지만
   // 실제로는 같은 위젯(#todo-work-widget) 하나를 그대로 쓰고, 그 안의 기존 탭 전환
   // 함수(switchTodoTab)로 내용만 바꿔 보여준다.
-  const M_WIDGET_IDS = ['duty-alert-pill', 'my-tt-widget', 'search-tt-widget', 'left-bottom-cal', 'meal-widget', 'todo-work-widget'];
+  const M_WIDGET_IDS = ['duty-alert-pill', 'my-tt-widget', 'left-bottom-cal', 'meal-widget', 'todo-work-widget'];
   let mOriginalPlacements = {};
   let mLayoutActive = false;
   let mCurrentTab = 'tt';
@@ -7272,13 +7278,7 @@
     mCapturePlacements();
     document.getElementById('m-duty-alert-slot').appendChild(document.getElementById('duty-alert-pill'));
     document.getElementById('m-pane-tt').appendChild(document.getElementById('my-tt-widget'));
-    document.getElementById('m-pane-tt').appendChild(document.getElementById('search-tt-widget'));
-    // 검색 위젯 자체 탭(시간표/캘린더/1·2캘린더)은 CSS로 숨겨뒀으니, PC에서 마지막으로
-    // 뭘 보고 있었든 상관없이 모바일에서는 항상 "선생님 검색 시간표" 모습으로 고정한다.
-    document.getElementById('search-timetable-grid').style.display = '';
-    document.getElementById('half-cal-wrapper').style.display = 'none';
-    document.getElementById('search-teacher-picker').style.display = 'flex';
-    document.getElementById('half-cal-nav').style.display = 'none';
+    mPopulateTtTeacherSelect();
     document.getElementById('m-pane-cal').appendChild(document.getElementById('left-bottom-cal'));
     document.getElementById('left-bottom-cal').style.display = 'flex';
     document.getElementById('m-pane-meal').appendChild(document.getElementById('meal-widget'));
@@ -7294,9 +7294,32 @@
       const place = mOriginalPlacements[id];
       if (el && place) place.parent.insertBefore(el, place.next);
     });
-    // 데스크탑으로 돌아가면 캘린더/검색 위젯의 표시 상태(그리드냐 1·2캘린더냐 등)를
-    // 모바일에서 강제로 고정해뒀던 것 대신 평소 로직(switchMainTab)으로 다시 계산한다.
+    document.getElementById('m-tt-teacher-select').value = '';
+    loadMyTimetable();
+    // 데스크탑으로 돌아가면 캘린더의 표시 상태를 모바일에서 강제로 고정해뒀던 것 대신
+    // 평소 로직(switchMainTab)으로 다시 계산한다.
     if (typeof switchMainTab === 'function' && typeof currentMainTab !== 'undefined') switchMainTab(currentMainTab);
+  }
+
+  // 모바일 "내 시간표" 칸 안에, 데스크탑의 시간표 검색 위젯과 똑같은 선생님 목록을
+  // 복사해와서 드롭다운으로 넣는다 — 새 위젯을 따로 만들지 않고, 고르면 같은 그리드
+  // (#my-timetable-grid)에 그 선생님 시간표를 바로 그려서 보여준다.
+  function mPopulateTtTeacherSelect() {
+    const sel = document.getElementById('m-tt-teacher-select');
+    const source = document.getElementById('search-select');
+    if (!sel || !source) return;
+    const prevValue = sel.value;
+    sel.innerHTML = '<option value="">내 시간표</option>' + source.innerHTML.replace(/<option value="">.*?<\/option>/, '');
+    if (prevValue && window.allSchedules && window.allSchedules[prevValue]) sel.value = prevValue;
+  }
+
+  function mSelectTimetableTeacher(name) {
+    if (!name) { loadMyTimetable(); return; }
+    if (!window.allSchedules || !window.allSchedules[name]) return;
+    document.getElementById('my-tt-name').innerText = name;
+    applyScheduleToGrid('my-tt', window.allSchedules[name]);
+    applyChangeOverlayToGrid('my-tt', name);
+    updateCellColors('my-tt');
   }
 
   function mOpenNotice() {
