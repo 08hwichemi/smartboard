@@ -2348,7 +2348,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.29';
+  var BUILD_ID = '2026-09-28.30';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -8549,7 +8549,17 @@
     if (pane) pane.classList.add('active');
     if (tab === 'work' || tab === 'stu') { if (typeof switchTodoTab === 'function') switchTodoTab(tab); }
     if (tab === 'tt' && typeof loadMyTimetable === 'function') loadMyTimetable();
-    if (tab === 'cal' && typeof renderBigCalendar === 'function') renderBigCalendar();
+    if (tab === 'cal') {
+      // PC에서 "1/2 캘린더" 탭을 마지막으로 보고 있었으면 main-tab이 'halfcal'로
+      // 저장되어 있고, 부팅할 때 그 값을 복원하는 switchMainTab('halfcal')이
+      // #left-bottom-cal(이 위젯 자체)을 display:none으로 숨겨버린다. 모바일
+      // 캘린더 탭 안에는 그 전환 탭 자체가 없으니(따로 숨겨둠) 이 위젯은 여기서
+      // 무조건 다시 보이게 강제한다 — 안 그러면 캘린더 탭을 눌러도 완전히
+      // 빈 화면만 보이게 된다.
+      const calWidget = document.getElementById('left-bottom-cal');
+      if (calWidget) calWidget.style.display = 'flex';
+      if (typeof renderBigCalendar === 'function') renderBigCalendar();
+    }
   }
 
   function mToggleMenu() {
