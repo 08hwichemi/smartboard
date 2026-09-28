@@ -1842,8 +1842,9 @@
     </div>
     <div style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
       <span style="font-size:12px;">🔍</span>
-      <input type="range" id="lp-zoom-range" min="0.5" max="1.5" step="0.1" value="1" oninput="lpZoom(this.value)" style="width:90px;">
+      <button class="top-btn" style="padding:2px 8px;" onclick="lpZoomBy(-0.1)">-</button>
       <span id="lp-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center;">100%</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="lpZoomBy(0.1)">+</button>
     </div>
     <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--text-sub);">
@@ -2108,7 +2109,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.18';
+  var BUILD_ID = '2026-09-28.19';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3510,7 +3511,7 @@
     const y = bD.getFullYear();
     const m = String(bD.getMonth() + 1).padStart(2, '0');
     
-    document.getElementById('big-cal-month-label').innerText = y + '. ' + m;
+    document.getElementById('big-cal-month-label').innerText = y + '.' + m;
     const grid = document.getElementById('big-cal-grid');
     
     const monthKey = y + m;
@@ -7264,7 +7265,15 @@
     reader.readAsDataURL(file);
   }
 
+  let lpZoomLevel = 1;
+  function lpZoomBy(diff) {
+    lpZoomLevel = Math.round((lpZoomLevel + diff) * 10) / 10;
+    if (lpZoomLevel < 0.5) lpZoomLevel = 0.5;
+    if (lpZoomLevel > 1.5) lpZoomLevel = 1.5;
+    lpZoom(lpZoomLevel);
+  }
   function lpZoom(val) {
+    lpZoomLevel = parseFloat(val);
     document.querySelectorAll('.lp-a4-paper').forEach(function(p) { p.style.transform = 'scale(' + val + ')'; });
     document.getElementById('lp-zoom-text').innerText = Math.round(val * 100) + '%';
   }
@@ -7323,7 +7332,7 @@
       container.appendChild(paper);
     }
 
-    lpZoom(document.getElementById('lp-zoom-range').value);
+    lpZoom(lpZoomLevel);
   }
 
   function lpCollectData() {
@@ -7415,7 +7424,7 @@
     if (!originalStamp) return;
 
     const papers = document.querySelectorAll('.lp-a4-paper');
-    const currentZoom = document.getElementById('lp-zoom-range').value;
+    const currentZoom = lpZoomLevel;
     papers.forEach(function(p) { p.style.transform = 'scale(1)'; });
 
     html2canvas(originalStamp, { backgroundColor: null, scale: 4, logging: false }).then(function(canvas) {
