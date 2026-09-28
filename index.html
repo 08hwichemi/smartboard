@@ -1613,7 +1613,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.1';
+  var BUILD_ID = '2026-09-28.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4082,7 +4082,10 @@
     { key: '교육', label: '교육' },
   ];
   let newsData = null;
-  let currentNewsTab = '종합';
+  let currentNewsTab = (function() {
+    const saved = localStorage.getItem('news-tab');
+    return (saved && NEWS_CATEGORIES.some(function(c) { return c.key === saved; })) ? saved : '종합';
+  })();
 
   function renderNewsTabs() {
     const wrap = document.getElementById('news-tab-switch');
@@ -4094,10 +4097,13 @@
 
   function switchNewsTab(key) {
     currentNewsTab = key;
+    localStorage.setItem('news-tab', key);
     document.querySelectorAll('#news-tab-switch .news-tab-btn').forEach(function(btn) {
       btn.classList.toggle('active', btn.dataset.cat === key);
     });
     renderNewsList();
+    const listEl = document.getElementById('news-list');
+    if (listEl) listEl.scrollTop = 0;
   }
 
   function formatNewsTime(pubDate) {
