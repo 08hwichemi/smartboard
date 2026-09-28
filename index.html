@@ -18,7 +18,7 @@
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
-      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px;
+      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
       --accent-secondary: #2E8F8F; --accent-secondary-soft: #E3F3F3; --accent-secondary-text: #1F6B6B; --on-accent-secondary: #FFFFFF; }
@@ -401,7 +401,7 @@
     .ms-del-row-btn { border: none; background: transparent; cursor: pointer; font-size: 13px; width: 100%; height: 100%; padding: 6px 0; border-radius: 6px; }
     .ms-del-row-btn:hover { background: var(--alert-bg); }
 
-    #ms-preview { flex: 1; min-width: 0; position: relative; overflow: hidden; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
+    #ms-preview { flex: 1; min-width: 0; position: relative; overflow: auto; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
     #ms-paper-wrapper { position: relative; transform-origin: center; }
     .ms-a4-paper, .ms-a4-paper * { font-family: var(--ms-main-font); box-sizing: border-box; margin: 0; padding: 0; }
     .ms-a4-paper { width: 210mm; height: 297mm; background: #fff; padding: 15mm; box-shadow: 0 10px 25px rgba(0,0,0,0.12); border-radius: 4px; display: flex; flex-direction: column; color: #2C3E50; position: relative; overflow: hidden; }
@@ -611,7 +611,11 @@
         <select id="roster-grade-select" class="mini-select" style="width:70px; flex:0 0 auto;" onchange="onRosterGradeChange()"><option value="">학년</option></select>
         <select id="roster-class-select" class="mini-select" style="width:62px; flex:0 0 auto;" onchange="onRosterClassChange()"><option value="">반</option></select>
       </div>
-      <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px; flex:0 0 auto;" onclick="toggleRosterEditMode()">✏️ 수정</button>
+      <div style="display:flex; gap:6px; align-items:center; flex:0 0 auto;">
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('roster', -1)">A-</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('roster', 1)">A+</button>
+        <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px;" onclick="toggleRosterEditMode()">✏️ 수정</button>
+      </div>
     </div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="roster-list-container">
       <div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>
@@ -1387,6 +1391,12 @@
       <span id="ms-nav-month-text" style="font-size:13px; font-weight:800; min-width:66px; text-align:center;">2026. 04</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(1)">▶</button>
     </div>
+    <div style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
+      <span style="font-size:12px;">🔍</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="msZoomPaper(-0.1)">-</button>
+      <span id="ms-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center;">100%</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="msZoomPaper(0.1)">+</button>
+    </div>
     <div id="ms-header-save-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="msExportData()" title="지금 설정과 일정을 파일로 저장합니다">💾 저장</button>
       <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
@@ -1620,7 +1630,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.3';
+  var BUILD_ID = '2026-09-28.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2655,6 +2665,7 @@
     if (tourMode === 'seatchart') { scCloseTour(); return; }
     if (tourMode === 'monthly') { msCloseTour(); return; }
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     tourResetTransient();
     if (currentMainTab !== tourOriginalTab) switchMainTab(tourOriginalTab);
     document.getElementById('tour-overlay').style.display = 'none';
@@ -2664,6 +2675,11 @@
   // (예전엔 강조되는 요소 옆으로 카드가 매번 따라 움직여서, 여러 단계를 빠르게 넘기려 하면 버튼을 다시 찾아 눌러야 하는 문제가 있었음)
   // 스포트라이트(테두리)만 실제 요소 위치/크기에 맞춰 계속 갱신한다.
   let tourSpotlightObserver = null;
+  // 로딩 중에 커지는 모달을 위해 한 번 더 재확인하는 안전장치(320ms 뒤 재측정) 타이머.
+  // 단계를 빠르게 연달아 넘기면 이전 단계에서 걸어둔 타이머가 취소되지 않은 채 남아있다가
+  // 늦게 실행되면서, 이미 다음 단계로 넘어간 스포트라이트를 예전 단계 위치로 되돌려버리는
+  // 문제가 있었다. 그래서 새 단계로 넘어갈 때마다 이전 타이머를 반드시 먼저 취소한다.
+  let tourSpotlightSafetyTimer = null;
 
   function positionTourSpotlight(el) {
     const r = el.getBoundingClientRect();
@@ -2677,6 +2693,7 @@
 
   function showTourStep() {
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
 
     if (tourIndex >= tourSteps.length) { closeTour(); return; }
     const step = tourSteps[tourIndex];
@@ -2696,13 +2713,14 @@
     document.getElementById('tour-card-progress').innerText = (tourIndex + 1) + ' / ' + tourSteps.length;
     document.getElementById('tour-prev-btn').style.visibility = tourIndex === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').innerText = tourIndex === tourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
-    setTimeout(function() {
-      positionTourSpotlight(el);
-      // 감독표처럼 모달이 열린 직후엔 "불러오는 중..." 상태라 작게 잡히는데, 데이터가 로딩되면서 모달 크기가 커지면
-      // 그 크기 변화를 감지해서 스포트라이트도 다시 맞춰준다.
-      tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
-      tourSpotlightObserver.observe(el);
-    }, 320);
+    // 예전엔 이 자리를 전부 320ms setTimeout 안에서 처리해서, 로딩이 필요 없는(테마 등) 단계에서도
+    // 스포트라이트가 0.32초씩 늦게 따라와 카드 설명과 안 맞는 걸 강조하는 것처럼 보였다.
+    // 이제 일단 바로 그 자리에 맞추고, 감독표처럼 데이터가 나중에 로딩되며 커지는 모달을 위해
+    // ResizeObserver와 한 번 더 재확인(320ms 뒤)은 그대로 안전장치로 남겨둔다.
+    positionTourSpotlight(el);
+    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+    tourSpotlightObserver.observe(el);
+    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
   }
 
   function tourNext() {
@@ -3330,10 +3348,10 @@
     if (rows.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">등록된 학생이 없습니다.</div>'; return; }
 
     const cols = rosterEditMode ? '26px 42px 1fr 1fr 30px' : '26px 42px 1fr 1fr';
-    let html = '<div style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:10px; font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
+    let html = '<div style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:calc(var(--fz-roster) - 1px); font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
       '<div>번호</div><div>이름</div><div>학생전화</div><div>부모님</div>' + (rosterEditMode ? '<div></div>' : '') + '</div>';
     rows.forEach(function(r) {
-      html += '<div id="roster-row-' + r.id + '" style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:11px; align-items:center; border-bottom:1px dashed var(--border-color);">' +
+      html += '<div id="roster-row-' + r.id + '" style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:var(--fz-roster); align-items:center; border-bottom:1px dashed var(--border-color);">' +
         '<div>' + r.number + '</div>' +
         '<div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtmlAttr(r.name) + '</div>' +
         '<div id="roster-view-student-' + r.id + '" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtmlAttr(r.student_phone || '-') + '</div>' +
@@ -3717,7 +3735,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
@@ -5567,12 +5585,14 @@
 
   function scCloseTour() {
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     tourMode = 'dashboard';
     document.getElementById('tour-overlay').style.display = 'none';
   }
 
   function scShowTourStep() {
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     if (scTourIndex >= scTourSteps.length) { scCloseTour(); return; }
     const step = scTourSteps[scTourIndex];
     const el = document.querySelector(step.selector);
@@ -5586,11 +5606,10 @@
     document.getElementById('tour-card-progress').innerText = (scTourIndex + 1) + ' / ' + scTourSteps.length;
     document.getElementById('tour-prev-btn').style.visibility = scTourIndex === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').innerText = scTourIndex === scTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
-    setTimeout(function() {
-      positionTourSpotlight(el);
-      tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
-      tourSpotlightObserver.observe(el);
-    }, 320);
+    positionTourSpotlight(el);
+    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+    tourSpotlightObserver.observe(el);
+    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
   }
 
   function scTourNext() {
@@ -5948,6 +5967,21 @@
     await msRenderCalendar();
   }
 
+  // 화면 크기에 맞춰 자동으로 줄어드는 기본 배율(fit) 위에, 사용자가 직접 더 키우거나
+  // 줄일 수 있는 배율(msZoomLevel)을 곱해서 적용한다. 원래 업로드받은 도구엔 🔍 -/100%/+
+  // 확대·축소 버튼이 있었는데 포팅하면서 빠졌던 걸 되살린 것 — 완성된 달력을 자세히
+  // 보고 싶을 때 화면 맞춤 크기보다 더 키워볼 수 있게 해준다.
+  let msZoomLevel = 1;
+
+  function msZoomPaper(diff) {
+    msZoomLevel = Math.round((msZoomLevel + diff) * 10) / 10;
+    if (msZoomLevel < 0.5) msZoomLevel = 0.5;
+    if (msZoomLevel > 2) msZoomLevel = 2;
+    const zoomText = document.getElementById('ms-zoom-text');
+    if (zoomText) zoomText.innerText = Math.round(msZoomLevel * 100) + '%';
+    msScalePaper();
+  }
+
   function msScalePaper() {
     const container = document.getElementById('ms-preview');
     const wrapper = document.getElementById('ms-paper-wrapper');
@@ -5956,7 +5990,7 @@
     const availableWidth = container.clientWidth - 40;
     let scale = Math.min(availableWidth / 794, availableHeight / 1123, 1);
     if (scale < 0.25) scale = 0.25;
-    wrapper.style.transform = 'scale(' + scale + ')';
+    wrapper.style.transform = 'scale(' + (scale * msZoomLevel) + ')';
   }
 
   function msToggleSection(bodyId) {
@@ -6505,12 +6539,14 @@
 
   function msCloseTour() {
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     tourMode = 'dashboard';
     document.getElementById('tour-overlay').style.display = 'none';
   }
 
   function msShowTourStep() {
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     if (msTourIndex >= msTourSteps.length) { msCloseTour(); return; }
     const step = msTourSteps[msTourIndex];
     const el = document.querySelector(step.selector);
@@ -6524,11 +6560,10 @@
     document.getElementById('tour-card-progress').innerText = (msTourIndex + 1) + ' / ' + msTourSteps.length;
     document.getElementById('tour-prev-btn').style.visibility = msTourIndex === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').innerText = msTourIndex === msTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
-    setTimeout(function() {
-      positionTourSpotlight(el);
-      tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
-      tourSpotlightObserver.observe(el);
-    }, 320);
+    positionTourSpotlight(el);
+    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+    tourSpotlightObserver.observe(el);
+    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
   }
 
   function msTourNext() {
