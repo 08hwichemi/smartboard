@@ -540,8 +540,10 @@
       #mobile-shell { display: flex; flex-direction: column; min-height: 100vh; background: var(--bg-color); }
     }
 
-    #m-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 50; box-sizing: border-box; }
-    #m-header .m-title { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #m-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 50; box-sizing: border-box; }
+    #m-header .m-title { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+    #m-header #m-duty-alert-slot { flex: 1; min-width: 0; display: flex; justify-content: center; overflow: hidden; }
+    #m-header #m-duty-alert-slot:empty { display: none; }
     #m-menu-wrap { position: relative; flex-shrink: 0; }
     #m-menu-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-main); padding: 4px 8px; line-height: 1; }
     #m-menu-dropdown { display: none; position: absolute; top: 40px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); padding: 8px; z-index: 100; min-width: 190px; flex-direction: column; gap: 2px; box-sizing: border-box; }
@@ -552,7 +554,6 @@
 
     #m-duty-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); overflow-x: auto; box-sizing: border-box; }
     .m-duty-btn { flex: 0 0 auto; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--tt-bg); color: var(--text-main); white-space: nowrap; }
-    #m-duty-alert-slot:empty { display: none; }
 
     #m-tab-row { display: flex; gap: 6px; padding: 10px 12px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); overflow-x: auto; position: sticky; top: 53px; z-index: 40; box-sizing: border-box; }
     .m-tab-btn { flex: 1 0 auto; font-size: 12.5px; font-weight: 800; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border-color); background: var(--card-bg); color: var(--text-sub); white-space: nowrap; text-align: center; cursor: pointer; }
@@ -577,6 +578,16 @@
     .m-pane #left-bottom-cal > div:first-child { display: flex !important; flex-direction: column; gap: 6px; }
     .m-pane #left-bottom-cal > div:first-child > div:first-child { display: none; }
     .m-pane #left-bottom-cal .widget-title { padding-left: 0 !important; }
+    /* 캘린더 위젯 안에 있던 "🔍시간표/📅캘린더/🗓️1/2캘린더" 자체 탭은, 모바일 캘린더
+       화면 안에서 누르면 switchMainTab()이 실행되면서 이 위젯 자신을 숨겨버려서(캘린더가
+       통째로 사라지는 것처럼 보임) 아예 숨긴다 — 모바일에는 이미 위에 똑같은 역할을
+       하는 탭이 따로 있다. 시간표 검색 위젯도 같은 이유로 자체 탭을 숨긴다. */
+    .m-pane #left-bottom-cal .tab-switch,
+    .m-pane #search-tt-widget .tab-switch { display: none; }
+
+    /* 공지사항 팝업 — #notice-widget을 그대로 옮겨와서 보여주므로 카드 테두리 등
+       중첩된 장식은 없앤다. */
+    #m-notice-overlay #notice-widget { border: none !important; padding: 0 !important; }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -1853,6 +1864,7 @@
 <div id="mobile-shell">
   <div id="m-header">
     <div class="m-title">🏫 부광고 스마트보드</div>
+    <div id="m-duty-alert-slot"></div>
     <div id="m-menu-wrap">
       <button id="m-menu-btn" onclick="mToggleMenu()" aria-label="메뉴">☰</button>
       <div id="m-menu-dropdown">
@@ -1885,7 +1897,7 @@
     <button class="m-duty-btn" onclick="openDutyModal('야자감독', '🌙')">🌙 야자감독표</button>
     <button class="m-duty-btn" onclick="openDutyModal('급식감독', '🍱')">🍱 급식감독표</button>
     <button class="m-duty-btn" onclick="openDutyModal('아침감독', '☀️')">☀️ 아침감독표</button>
-    <div id="m-duty-alert-slot"></div>
+    <button class="m-duty-btn" onclick="mOpenNotice()">📢 공지사항</button>
   </div>
 
   <div id="m-tab-row">
@@ -1901,6 +1913,16 @@
     <div class="m-pane" id="m-pane-cal"></div>
     <div class="m-pane" id="m-pane-meal"></div>
     <div class="m-pane" id="m-pane-work"></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-notice-overlay">
+  <div class="modal-box" style="width: 420px; max-width: 90vw; max-height: 82vh; overflow-y: auto; box-sizing: border-box;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div style="font-weight:800; font-size:15px;">📢 공지사항</div>
+      <button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="mCloseNotice()">✕ 닫기</button>
+    </div>
+    <div id="m-notice-slot"></div>
   </div>
 </div>
 
@@ -1958,7 +1980,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.9';
+  var BUILD_ID = '2026-09-28.10';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7231,13 +7253,13 @@
   // 되돌린다(mExitLayout). "업무"와 "학생상담"은 모바일에서는 버튼 2개로 나눠 보이지만
   // 실제로는 같은 위젯(#todo-work-widget) 하나를 그대로 쓰고, 그 안의 기존 탭 전환
   // 함수(switchTodoTab)로 내용만 바꿔 보여준다.
-  const M_WIDGET_IDS = ['duty-alert-pill', 'my-tt-widget', 'left-bottom-cal', 'meal-widget', 'todo-work-widget'];
+  const M_WIDGET_IDS = ['duty-alert-pill', 'my-tt-widget', 'search-tt-widget', 'left-bottom-cal', 'meal-widget', 'todo-work-widget'];
   let mOriginalPlacements = {};
   let mLayoutActive = false;
   let mCurrentTab = 'tt';
 
   function mCapturePlacements() {
-    M_WIDGET_IDS.forEach(function(id) {
+    M_WIDGET_IDS.concat(['notice-widget']).forEach(function(id) {
       if (mOriginalPlacements[id]) return;
       const el = document.getElementById(id);
       if (el) mOriginalPlacements[id] = { parent: el.parentNode, next: el.nextSibling };
@@ -7250,6 +7272,13 @@
     mCapturePlacements();
     document.getElementById('m-duty-alert-slot').appendChild(document.getElementById('duty-alert-pill'));
     document.getElementById('m-pane-tt').appendChild(document.getElementById('my-tt-widget'));
+    document.getElementById('m-pane-tt').appendChild(document.getElementById('search-tt-widget'));
+    // 검색 위젯 자체 탭(시간표/캘린더/1·2캘린더)은 CSS로 숨겨뒀으니, PC에서 마지막으로
+    // 뭘 보고 있었든 상관없이 모바일에서는 항상 "선생님 검색 시간표" 모습으로 고정한다.
+    document.getElementById('search-timetable-grid').style.display = '';
+    document.getElementById('half-cal-wrapper').style.display = 'none';
+    document.getElementById('search-teacher-picker').style.display = 'flex';
+    document.getElementById('half-cal-nav').style.display = 'none';
     document.getElementById('m-pane-cal').appendChild(document.getElementById('left-bottom-cal'));
     document.getElementById('left-bottom-cal').style.display = 'flex';
     document.getElementById('m-pane-meal').appendChild(document.getElementById('meal-widget'));
@@ -7265,8 +7294,25 @@
       const place = mOriginalPlacements[id];
       if (el && place) place.parent.insertBefore(el, place.next);
     });
-    const calPanel = document.getElementById('left-bottom-cal');
-    if (calPanel) calPanel.style.display = (typeof currentMainTab !== 'undefined' && currentMainTab === 'cal') ? 'flex' : 'none';
+    // 데스크탑으로 돌아가면 캘린더/검색 위젯의 표시 상태(그리드냐 1·2캘린더냐 등)를
+    // 모바일에서 강제로 고정해뒀던 것 대신 평소 로직(switchMainTab)으로 다시 계산한다.
+    if (typeof switchMainTab === 'function' && typeof currentMainTab !== 'undefined') switchMainTab(currentMainTab);
+  }
+
+  function mOpenNotice() {
+    const el = document.getElementById('notice-widget');
+    if (el.parentNode.id !== 'm-notice-slot') {
+      if (!mOriginalPlacements['notice-widget']) mOriginalPlacements['notice-widget'] = { parent: el.parentNode, next: el.nextSibling };
+      document.getElementById('m-notice-slot').appendChild(el);
+    }
+    document.getElementById('m-notice-overlay').style.display = 'flex';
+  }
+
+  function mCloseNotice() {
+    document.getElementById('m-notice-overlay').style.display = 'none';
+    const el = document.getElementById('notice-widget');
+    const place = mOriginalPlacements['notice-widget'];
+    if (el && place) place.parent.insertBefore(el, place.next);
   }
 
   function mSwitchTab(tab) {
