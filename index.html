@@ -271,6 +271,14 @@
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
     body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
+    /* 모바일 화면(#mobile-shell)은 #app-shell과 별개의 형제 요소라 위 규칙의 영향을
+       받지 않는다 — 새 버전 알림 띠(position:fixed, z-index:10000)가 뜨면 그 띠가
+       모바일 상단 헤더(제목/☰ 메뉴 버튼) 전체를 그대로 덮어버려서, 메뉴를 열거나
+       로그아웃 버튼을 누르는 탭 자체가 알림 띠에 막혀 버튼까지 전달되지 않는
+       문제가 있었다. #app-shell과 똑같이 띠 높이만큼 밀어주고, sticky 헤더도 그
+       아래에서 붙도록 top 값을 같이 옮긴다. */
+    body.has-update #mobile-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
+    body.has-update #mobile-shell #m-header { top: var(--updatebar-h, 40px); }
 
     /* ===== 좌석배치표 ===== */
     :root {
@@ -1994,12 +2002,12 @@
 </div>
 
 <div class="overlay" id="m-notice-overlay">
-  <div class="modal-box" style="width: 420px; max-width: 90vw; max-height: 82vh; overflow-y: auto; box-sizing: border-box;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+  <div class="modal-box" style="width: 420px; max-width: 90vw; max-height: 82vh; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex:0 0 auto;">
       <div style="font-weight:800; font-size:15px;">📢 공지사항</div>
       <button class="top-btn" style="font-size:11px; padding:3px 8px;" onclick="mCloseNotice()">✕ 닫기</button>
     </div>
-    <div id="m-notice-slot"></div>
+    <div id="m-notice-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
   </div>
 </div>
 
@@ -2057,7 +2065,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.13';
+  var BUILD_ID = '2026-09-28.14';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
