@@ -536,6 +536,73 @@
       @page { size: A4 portrait; margin: 0; }
     }
 
+    /* ===== 🗓️ 개인 시간표 (학생/교사 카드형 시간표 생성기) ===== */
+    :root {
+      --pt-base-w: 360px; --pt-base-h: 520px; --pt-sz-title: 18px; --pt-sz-name: 16px;
+      --pt-sz-motto: 13px; --pt-sz-sub: 16px; --pt-sz-info: 11px; --pt-sz-rad: 8px;
+      --pt-sz-time: 9px; --pt-font: 'Pretendard', sans-serif; --pt-fit-scale: 1; --pt-a4-margin: 15mm;
+    }
+    #pt-body { display: flex; flex: 1; min-height: 0; }
+    #pt-panel { width: 300px; flex: 0 0 auto; border-right: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; box-sizing: border-box; background: var(--card-bg); }
+    #pt-panel summary { font-weight: 800; font-size: 13px; padding: 6px 0; cursor: pointer; color: var(--text-main); }
+    #pt-panel input, #pt-panel select.mini-select { box-sizing: border-box; width: 100%; }
+    #pt-preview { flex: 1; min-width: 0; position: relative; overflow: auto; background: var(--bg-color); padding: 20px 0 40px; display: flex; flex-direction: column; align-items: center; }
+    .pt-theme-grid, .pt-style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px 0; }
+    .pt-theme-btn, .pt-style-btn { padding: 7px 10px; font-size: 11.5px; font-weight: 800; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; text-align: center; background: var(--tt-bg); color: var(--text-main); }
+    .pt-theme-btn.active, .pt-style-btn.active { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+    .pt-card, .pt-card * { font-family: var(--pt-font) !important; box-sizing: border-box; }
+    .pt-card {
+      width: var(--pt-base-w); height: var(--pt-base-h); background: #fff; padding: 15px; border-radius: 0;
+      display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      transform: scale(var(--pt-fit-scale)); transform-origin: center center; flex-shrink: 0; color: #1e293b;
+    }
+    .pt-header { text-align: center; margin-bottom: 10px; }
+    .pt-school { font-size: calc(var(--pt-sz-title) * 0.7); font-weight: 700; color: #64748b; margin-bottom: 2px; }
+    .pt-title { font-size: var(--pt-sz-title); font-weight: 800; }
+    .pt-info-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; padding: 6px 10px; background: #f8fafc; border-radius: 6px; border-bottom: 2px solid #4f46e5; }
+    .pt-motto { font-size: var(--pt-sz-motto); font-weight: 700; color: #64748b; text-align: left; }
+    .pt-name { font-size: var(--pt-sz-name); font-weight: 800; color: #4f46e5; text-align: right; }
+    .pt-grid { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .pt-row { display: flex; width: 100%; flex: 1; gap: 4px; }
+    .pt-h-row { flex: 0 0 auto; margin-bottom: 2px; }
+    .pt-col-time { width: 40px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8fafc; border-radius: var(--pt-sz-rad); }
+    .pt-col-day { flex: 1; display: flex; justify-content: center; align-items: center; background: #f1f5f9; font-weight: 800; border-radius: var(--pt-sz-rad); font-size: calc(var(--pt-sz-sub) * 0.9); }
+    .pt-t-num { font-size: 12px; font-weight: 800; color: #1e293b; }
+    .pt-t-sub { font-size: var(--pt-sz-time); color: #64748b; text-align: center; line-height: 1.1; margin-top: 2px; }
+    .pt-cell { flex: 1; position: relative; overflow: hidden; background: #fff; border-radius: var(--pt-sz-rad); display: flex; flex-direction: column; }
+    .pt-cell.empty { background: transparent !important; border: 1px dashed #cbd5e1; }
+    .pt-c-sub { flex: 1; display: flex; justify-content: center; align-items: center; text-align: center; font-size: var(--pt-sz-sub); font-weight: 800; word-break: break-all; line-height: 1.1; padding: 0 2px 18px 2px; }
+    .pt-c-bot { position: absolute; bottom: 4px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 1px; font-size: var(--pt-sz-info); font-weight: 700; color: #475569; }
+    .pt-c-room { background: rgba(255,255,255,0.6); padding: 0px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05); }
+    .pt-style-bubble .pt-cell { box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .pt-style-notion { border: 1px solid #cbd5e1; border-radius: 8px; }
+    .pt-style-notion .pt-cell, .pt-style-notion .pt-col-time, .pt-style-notion .pt-col-day { border-radius: 0; border: 1px solid #cbd5e1; }
+    .pt-style-notion .pt-grid, .pt-style-notion .pt-row { gap: 0; }
+    .pt-style-band .pt-cell { background-color: #fff !important; border: 1px solid #cbd5e1; border-left: 5px solid var(--pt-bg-col); border-radius: 4px; }
+    .pt-style-retro .pt-cell { background-color: var(--pt-bg-col) !important; border: 2px solid #1e293b; border-radius: 4px; box-shadow: 2px 2px 0px #1e293b; margin-bottom: 2px; margin-right: 2px; }
+    .pt-style-retro .pt-c-sub { font-weight: 900; }
+    .pt-style-border .pt-cell { background-color: transparent !important; border: 2px solid var(--pt-bg-col); border-radius: 6px; }
+    .pt-style-postit .pt-cell { background-color: var(--pt-bg-col) !important; border-radius: 2px; box-shadow: 2px 2px 4px rgba(0,0,0,0.1); border-bottom-right-radius: 10px; margin-bottom: 2px; margin-right: 2px; border: 1px solid rgba(0,0,0,0.05); }
+    .pt-style-postit .pt-grid { gap: 6px; }
+
+    .pt-a4-page { width: 210mm; min-height: 297mm; background: #fff; padding: var(--pt-a4-margin); box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: grid; gap: 10mm; align-content: start; justify-items: center; align-items: center; flex-shrink: 0; margin-bottom: 20px; }
+    .pt-grid-cell { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    .pt-a4-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; height: 297mm; }
+    .pt-a4-2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); height: 297mm; }
+    .pt-a4-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); height: 297mm; }
+    .pt-a4-6 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); height: 297mm; }
+    .pt-mobile-bg-view { width: 400px; height: 711px; background: #e2e8f0; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 20px; overflow: hidden; margin: 0 auto 20px; flex-shrink: 0; }
+
+    @media print {
+      #pt-panel, #pt-page-header, #pt-page-nav { display: none !important; }
+      body[data-print-target="persontt"] #persontt-page, body[data-print-target="persontt"] #pt-body { display: block !important; height: auto !important; overflow: visible !important; }
+      body[data-print-target="persontt"] #pt-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
+      .pt-a4-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; }
+      .pt-card { box-shadow: none !important; }
+      @page { size: A4 portrait; margin: 0; }
+    }
+
     /* ===== 📱 모바일 화면 =====
        PC용 위젯(내 시간표/캘린더/급식/업무·학생상담)을 새로 만들지 않고, 화면이 좁아지면
        그 실제 DOM을 모바일 레이아웃 자리로 옮겨서(mEnterLayout) 그대로 보여준다 — 데이터를
@@ -738,9 +805,9 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
       <div class="rail-label">좌석배치표</div>
     </div>
-    <div class="rail-item" title="학급시간표 (준비 중)" onclick="railComingSoon('학급시간표')">
+    <div class="rail-item" id="rail-persontt-btn" title="개인 시간표" onclick="openPersonTT()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
-      <div class="rail-label">학급시간표</div>
+      <div class="rail-label">개인 시간표</div>
     </div>
     <div class="rail-item" id="rail-monthly-btn" title="월간일정표" onclick="openMonthlySchedule()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
@@ -1970,6 +2037,160 @@
   </div>
 </div>
 
+<div id="persontt-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="pt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">🗓️ 개인 시간표</div>
+      <div class="tab-switch">
+        <button class="tab-btn active" id="pt-tab-me-btn" onclick="ptSwitchTab('me')">⭐ 내 시간표</button>
+        <button class="tab-btn" id="pt-tab-student-btn" onclick="ptSwitchTab('student')">👨‍🎓 학생 시간표</button>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
+      <span style="font-size:12px;">🔍</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="ptZoomBy(-0.1)">-</button>
+      <span id="pt-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center;">100%</span>
+      <button class="top-btn" style="padding:2px 8px;" onclick="ptZoomBy(0.1)">+</button>
+    </div>
+    <div id="pt-header-actions" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <select id="pt-print-layout" class="mini-select" onchange="ptRender()">
+        <option value="card">🪪 카드 1장</option>
+        <option value="1">📄 A4 (1x1)</option>
+        <option value="2">📄 A4 (2x1)</option>
+        <option value="4">📄 A4 (2x2)</option>
+        <option value="6">📄 A4 (2x3)</option>
+        <option value="mobile">📱 모바일 배경화면</option>
+      </select>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptPrint('current')">🖨️ 인쇄</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" id="pt-print-all-btn" onclick="ptPrint('all')">🖨️ 전체 인쇄</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptExportImage()">🖼️ 이미지</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" id="pt-pdf-btn" onclick="ptExportPDF()">📄 PDF</button>
+    </div>
+  </div>
+
+  <div id="pt-body">
+    <div id="pt-panel">
+      <div id="pt-me-controls" style="font-size:11.5px; color:var(--text-sub); line-height:1.5; background:var(--tt-bg); padding:10px; border-radius:8px;">
+        ⭐ 로그인한 내 이름(<b id="pt-me-name-label">미설정</b>) 기준으로 자동으로 시간표가 표시돼요.
+      </div>
+
+      <div id="pt-student-controls" style="display:none; flex-direction:column; gap:10px;">
+        <div id="pt-admin-upload-box" style="display:none; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; font-weight:800; color:var(--text-sub);">📂 학년별 학생 시간표 업로드 (관리자)</div>
+          <div style="display:flex; gap:6px;">
+            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(1)">1학년</button>
+            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(2)">2학년</button>
+            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(3)">3학년</button>
+          </div>
+          <input type="file" id="pt-excel-upload" accept=".xlsx,.xls" multiple style="display:none;">
+          <div style="font-size:10.5px; color:var(--text-sub); line-height:1.4;">엑셀을 올리면 그 학년 학생 시간표 전체가 교체돼요(모든 선생님이 같이 보는 공용 자료).</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <select id="pt-student-grade" class="mini-select" style="flex:1;" onchange="ptOnGradeChange()"><option value="">학년</option></select>
+          <select id="pt-student-class" class="mini-select" style="flex:1;" onchange="ptOnClassChange()"><option value="">반</option></select>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button class="top-btn" style="padding:2px 8px;" onclick="ptNavStudent(-1)">◀</button>
+          <select id="pt-student-select" class="mini-select" style="flex:1;" onchange="ptOnStudentPick()"><option value="">학생</option></select>
+          <button class="top-btn" style="padding:2px 8px;" onclick="ptNavStudent(1)">▶</button>
+        </div>
+      </div>
+
+      <details open>
+        <summary>⚙️ 학교 / 학기 표시</summary>
+        <div style="display:flex; flex-direction:column; gap:6px; padding:8px 0;">
+          <input type="text" id="pt-cfg-school" class="mini-select" placeholder="학교명" oninput="ptRender(); ptAutoSave();">
+          <input type="text" id="pt-cfg-term" class="mini-select" placeholder="학기명 (예: 2026학년도 1학기)" oninput="ptRender(); ptAutoSave();">
+        </div>
+      </details>
+
+      <details open>
+        <summary>🌈 색상 테마</summary>
+        <div class="pt-theme-grid" id="pt-theme-grid"></div>
+      </details>
+
+      <details>
+        <summary>🎨 표 스타일</summary>
+        <div class="pt-style-grid" id="pt-style-grid"></div>
+      </details>
+
+      <details>
+        <summary>🔤 글꼴</summary>
+        <div style="display:flex; gap:5px; align-items:center; padding:6px 0;">
+          <button class="top-btn" onclick="ptChangeFont(-1)">◀</button>
+          <select id="pt-cfg-font" class="mini-select" style="flex:1;" onchange="ptUpdateVars()">
+            <optgroup label="단정/깔끔 (공식용)">
+              <option value="'Pretendard', sans-serif" selected>프리텐다드</option>
+              <option value="'IBM Plex Sans KR', sans-serif">IBM 플렉스 산스</option>
+              <option value="'Noto Sans KR', sans-serif">노토 산스 고딕</option>
+              <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+              <option value="'Chiron Hei HK', sans-serif">치론 헤이 고딕</option>
+              <option value="'Orbit', sans-serif">오르빗</option>
+              <option value="'Noto Serif KR', serif">노토 세리프</option>
+              <option value="'Nanum Myeongjo', serif">나눔명조</option>
+              <option value="'Gowun Batang', serif">고운바탕</option>
+              <option value="'Chiron Sung HK', serif">치론 성 명조</option>
+              <option value="'Hahmlet', serif">함렛</option>
+              <option value="'Diphylleia', serif">산돌비체</option>
+            </optgroup>
+            <optgroup label="감성/귀여운 손글씨 (학생용)">
+              <option value="'Dongle', sans-serif">동글체</option>
+              <option value="'Nanum Pen Script', cursive">나눔손글씨 펜</option>
+              <option value="'Gamja Flower', cursive">감자꽃마을</option>
+              <option value="'Hi Melody', cursive">하이멜로디</option>
+              <option value="'Yeon Sung', cursive">연성체</option>
+              <option value="'Poor Story', cursive">푸어스토리</option>
+              <option value="'Single Day', cursive">싱글데이</option>
+              <option value="'Cute Font', cursive">큐트폰트</option>
+              <option value="'Stylish', sans-serif">스타일리시</option>
+              <option value="'Sunflower', sans-serif">해바라기</option>
+              <option value="'Black And White Picture', sans-serif">흑백사진체</option>
+              <option value="'Gaegu', cursive">개구쟁이</option>
+            </optgroup>
+            <optgroup label="아주 굵은 제목/강조">
+              <option value="'Jua', sans-serif">배민 주아체</option>
+              <option value="'Do Hyeon', sans-serif">배민 도현체</option>
+              <option value="'Gugi', cursive">구기체</option>
+            </optgroup>
+          </select>
+          <button class="top-btn" onclick="ptChangeFont(1)">▶</button>
+        </div>
+      </details>
+
+      <details>
+        <summary>📐 크기 조절</summary>
+        <div style="display:flex; flex-direction:column; gap:6px; padding:8px 0; font-size:11.5px; font-weight:700; color:var(--text-sub);">
+          <div>너비 <input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>높이 <input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>제목 크기 <input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>이름 크기 <input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>과목명 크기 <input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>교사/교실 크기 <input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()" style="width:100%;"></div>
+          <div>모서리 둥글기 <input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()" style="width:100%;"></div>
+        </div>
+      </details>
+
+      <div style="display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
+        <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptSaveSettings()">💾 디자인 저장</button>
+        <label class="top-btn" style="flex:1; font-size:11px; padding:6px; text-align:center; cursor:pointer; margin:0;">
+          📂 불러오기
+          <input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
+        </label>
+      </div>
+    </div>
+
+    <div id="pt-preview">
+      <div id="pt-page-nav" style="display:none; align-items:center; justify-content:center; gap:10px; padding:8px 0; flex-shrink:0;">
+        <button class="top-btn" onclick="ptChangePage(-1)">◀ 이전</button>
+        <span id="pt-page-text" style="font-size:12px; font-weight:800;">1 / 1</span>
+        <button class="top-btn" onclick="ptChangePage(1)">다음 ▶</button>
+      </div>
+      <div id="pt-render-area"></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="sc-student-modal">
   <div class="modal-box" style="width: 320px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
@@ -2052,6 +2273,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
   // ===== 🚨 모바일: #app-shell 안에 갇혀있던 공용 모달을 body 바로 아래로 꺼내기 =====
   // 모바일 화면에서는 PC용 레이아웃 전체(#app-shell)를 display:none으로 숨기는데,
@@ -2117,7 +2340,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.20';
+  var BUILD_ID = '2026-09-28.21';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2459,6 +2682,8 @@
     if (monthlyPage) monthlyPage.style.display = 'none';
     const leavepassPage = document.getElementById('leavepass-page');
     if (leavepassPage) leavepassPage.style.display = 'none';
+    const personttPage = document.getElementById('persontt-page');
+    if (personttPage) personttPage.style.display = 'none';
     document.querySelector('.top-bar-row').style.display = 'flex';
     document.querySelector('.quick-row').style.display = 'flex';
     document.getElementById('main-dashboard').style.display = 'grid';
@@ -2469,6 +2694,8 @@
     if (railMonthlyBtn) railMonthlyBtn.classList.remove('active');
     const railLeavepassBtn = document.getElementById('rail-leavepass-btn');
     if (railLeavepassBtn) railLeavepassBtn.classList.remove('active');
+    const railPersonttBtn = document.getElementById('rail-persontt-btn');
+    if (railPersonttBtn) railPersonttBtn.classList.remove('active');
     document.getElementById('rail-home-btn').classList.add('active');
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
@@ -5922,10 +6149,14 @@
     if (monthlyPage) monthlyPage.style.display = 'none';
     const leavepassPageOff = document.getElementById('leavepass-page');
     if (leavepassPageOff) leavepassPageOff.style.display = 'none';
+    const personttPageOff = document.getElementById('persontt-page');
+    if (personttPageOff) personttPageOff.style.display = 'none';
     const railMonthlyBtnOff = document.getElementById('rail-monthly-btn');
     if (railMonthlyBtnOff) railMonthlyBtnOff.classList.remove('active');
     const railLeavepassBtnOff = document.getElementById('rail-leavepass-btn');
     if (railLeavepassBtnOff) railLeavepassBtnOff.classList.remove('active');
+    const railPersonttBtnOff = document.getElementById('rail-persontt-btn');
+    if (railPersonttBtnOff) railPersonttBtnOff.classList.remove('active');
     document.getElementById('seatchart-page').style.display = 'flex';
     document.body.setAttribute('data-print-target', 'seatchart');
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -6542,10 +6773,14 @@
     if (seatchartPage) seatchartPage.style.display = 'none';
     const leavepassPageOff = document.getElementById('leavepass-page');
     if (leavepassPageOff) leavepassPageOff.style.display = 'none';
+    const personttPageOff = document.getElementById('persontt-page');
+    if (personttPageOff) personttPageOff.style.display = 'none';
     const railSeatchartBtnOff = document.getElementById('rail-seatchart-btn');
     if (railSeatchartBtnOff) railSeatchartBtnOff.classList.remove('active');
     const railLeavepassBtnOff = document.getElementById('rail-leavepass-btn');
     if (railLeavepassBtnOff) railLeavepassBtnOff.classList.remove('active');
+    const railPersonttBtnOff = document.getElementById('rail-persontt-btn');
+    if (railPersonttBtnOff) railPersonttBtnOff.classList.remove('active');
     document.getElementById('monthly-page').style.display = 'flex';
     document.body.setAttribute('data-print-target', 'monthly');
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -7206,10 +7441,14 @@
     if (seatchartPage) seatchartPage.style.display = 'none';
     const monthlyPage = document.getElementById('monthly-page');
     if (monthlyPage) monthlyPage.style.display = 'none';
+    const personttPageOff = document.getElementById('persontt-page');
+    if (personttPageOff) personttPageOff.style.display = 'none';
     const railSeatchartBtnOff = document.getElementById('rail-seatchart-btn');
     if (railSeatchartBtnOff) railSeatchartBtnOff.classList.remove('active');
     const railMonthlyBtnOff = document.getElementById('rail-monthly-btn');
     if (railMonthlyBtnOff) railMonthlyBtnOff.classList.remove('active');
+    const railPersonttBtnOff = document.getElementById('rail-persontt-btn');
+    if (railPersonttBtnOff) railPersonttBtnOff.classList.remove('active');
     document.getElementById('leavepass-page').style.display = 'flex';
     document.body.setAttribute('data-print-target', 'leavepass');
     document.getElementById('rail-home-btn').classList.remove('active');
@@ -7447,6 +7686,725 @@
   async function lpPrintPaper() {
     await customAlert('💡 안내: 인쇄 창이 열리면 대상(프린터)을 [PDF로 저장]으로 선택하면 PDF로도 저장할 수 있습니다.');
     window.print();
+  }
+
+  // ===== 🗓️ 개인 시간표 (학생/교사 카드형 시간표 생성기) =====
+  // 업로드해서 만드는 원본 도구를 그대로 가져오되, "교사 시간표는 이미 있으니
+  // 본인 시간표만 카드로 예쁘게 만들면 된다"는 요청에 맞춰 교사용 엑셀 업로드는
+  // 빼고 기존 시간표 데이터(window.allSchedules)를 그대로 재사용한다. 학생
+  // 시간표는 관리자가 학년별로 엑셀을 올리면 전교 공용 서버 테이블
+  // (student_timetable_card)에 저장되어 모든 선생님이 같이 본다.
+  const PT_PALETTES = {
+    vivid: ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#dcbaff', '#ffc4e1', '#fce2c4', '#c9c9ff', '#a8e6cf', '#ffebb3', '#ffc2c2'],
+    cherry: ['#fff1f2', '#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#fef08a', '#fde047', '#bbf7d0', '#86efac', '#e9d5ff', '#d8b4fe', '#fed7aa'],
+    ocean: ['#f0f9ff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#fef08a', '#fecaca', '#fca5a5', '#a7f3d0', '#6ee7b7', '#c7d2fe'],
+    wood: ['#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d9f99d', '#bef264', '#fca5a5', '#f87171', '#d6d3d1', '#a8a29e', '#e7e5e4']
+  };
+  let ptTheme = 'vivid';
+  let ptStyle = 'bubble';
+  let ptSubjectColorMap = {};
+  let ptColorIdx = 0;
+  let ptCurrentTab = 'me';
+  let ptStudentsByGrade = { 1: [], 2: [], 3: [] };
+  let ptStudentDataLoaded = false;
+  let ptUploadTargetGrade = 1;
+  let ptVisualZoom = 1;
+  let ptCurrentPage = 1;
+  let ptTotalPages = 1;
+
+  function ptSetTheme(theme) {
+    ptTheme = theme; ptSubjectColorMap = {}; ptColorIdx = 0;
+    document.querySelectorAll('.pt-theme-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.theme === theme); });
+    ptAutoSave(); ptRender();
+  }
+  function ptSetStyle(style) {
+    ptStyle = style;
+    document.querySelectorAll('.pt-style-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.style === style); });
+    ptAutoSave(); ptRender();
+  }
+  function ptGetSubjectColor(subj) {
+    if (!subj) return 'transparent';
+    const key = subj.replace(/\s+/g, '');
+    if (!ptSubjectColorMap[key]) { ptSubjectColorMap[key] = PT_PALETTES[ptTheme][ptColorIdx % PT_PALETTES[ptTheme].length]; ptColorIdx++; }
+    return ptSubjectColorMap[key];
+  }
+
+  function ptInitPickers() {
+    const themeNames = { vivid: '🍭 비비드', cherry: '🌸 벚꽃', ocean: '🌊 바다', wood: '☕ 우드' };
+    document.getElementById('pt-theme-grid').innerHTML = Object.keys(themeNames).map(function(t) {
+      return '<button type="button" class="pt-theme-btn' + (t === ptTheme ? ' active' : '') + '" data-theme="' + t + '" onclick="ptSetTheme(\'' + t + '\')">' + themeNames[t] + '</button>';
+    }).join('');
+    const styleNames = { bubble: '☁️ 둥근 버블형', notion: '📝 노션 실선형', band: '🔖 컬러 띠지형', retro: '🎮 레트로 블록', border: '🔲 투명 테두리', postit: '📌 포스트잇' };
+    document.getElementById('pt-style-grid').innerHTML = Object.keys(styleNames).map(function(s) {
+      return '<button type="button" class="pt-style-btn' + (s === ptStyle ? ' active' : '') + '" data-style="' + s + '" onclick="ptSetStyle(\'' + s + '\')">' + styleNames[s] + '</button>';
+    }).join('');
+  }
+
+  function ptUpdateVars() {
+    const root = document.documentElement;
+    root.style.setProperty('--pt-font', document.getElementById('pt-cfg-font').value);
+    root.style.setProperty('--pt-base-w', document.getElementById('pt-sl-width').value + 'px');
+    root.style.setProperty('--pt-base-h', document.getElementById('pt-sl-height').value + 'px');
+    root.style.setProperty('--pt-sz-title', document.getElementById('pt-sl-title').value + 'px');
+    const nameSize = parseInt(document.getElementById('pt-sl-name').value);
+    root.style.setProperty('--pt-sz-name', nameSize + 'px');
+    root.style.setProperty('--pt-sz-motto', Math.round(nameSize * 0.8) + 'px');
+    root.style.setProperty('--pt-sz-sub', document.getElementById('pt-sl-sub').value + 'px');
+    root.style.setProperty('--pt-sz-info', document.getElementById('pt-sl-info').value + 'px');
+    root.style.setProperty('--pt-sz-rad', document.getElementById('pt-sl-rad').value + 'px');
+    ptAutoSave();
+    ptRender();
+  }
+
+  function ptChangeFont(dir) {
+    const sel = document.getElementById('pt-cfg-font');
+    let idx = sel.selectedIndex + dir;
+    if (idx < 0) idx = sel.options.length - 1;
+    if (idx >= sel.options.length) idx = 0;
+    sel.selectedIndex = idx;
+    ptUpdateVars();
+  }
+
+  function ptSwitchTab(tab) {
+    ptCurrentTab = tab;
+    document.getElementById('pt-tab-me-btn').classList.toggle('active', tab === 'me');
+    document.getElementById('pt-tab-student-btn').classList.toggle('active', tab === 'student');
+    document.getElementById('pt-me-controls').style.display = tab === 'me' ? 'block' : 'none';
+    document.getElementById('pt-student-controls').style.display = tab === 'student' ? 'flex' : 'none';
+    if (tab === 'student') {
+      const adminBox = document.getElementById('pt-admin-upload-box');
+      adminBox.style.display = (window.currentTeacher && window.currentTeacher.is_admin) ? 'flex' : 'none';
+      ptEnsureStudentDataLoaded();
+    }
+    ptCurrentPage = 1;
+    ptRender();
+  }
+
+  function ptBuildMyPerson() {
+    const myName = (window.currentTeacher && window.currentTeacher.name) || localStorage.getItem('my-n') || '';
+    const sched = (window.allSchedules && window.allSchedules[myName]) || null;
+    const days = ['월', '화', '수', '목', '금'];
+    const schedule = [];
+    if (sched) {
+      for (let j = 0; j < 35; j++) {
+        const p = (j % 7) + 1; const d = Math.floor(j / 7) + 1;
+        const parts = String(sched[j] || '').split(String.fromCharCode(10));
+        const subject = (parts[0] || '').replace(/<[^>]*>/g, '').trim();
+        const room = (parts[1] || '').trim();
+        if (subject) schedule.push({ day: days[d - 1], period: p, subject: subject, teacher: '', room: room });
+      }
+    }
+    return { name: myName || '(미설정)', schedule: schedule };
+  }
+
+  // 학생 번호 형식(학년+반 2자리+번호 2자리, 예: 20115 = 2학년 1반 15번)에서 반을 뽑아낸다 —
+  // 우리나라 학교 학번의 일반적인 관례이자, 고교학점제 파싱 결과도 이 형식으로 만들어진다.
+  function ptStudentClassOf(std) {
+    const num = String(std.num || '');
+    if (num.length >= 4) return parseInt(num.substring(1, num.length - 2)) || 0;
+    return 0;
+  }
+
+  function ptFilteredStudents() {
+    const grade = parseInt(document.getElementById('pt-student-grade').value);
+    const cls = parseInt(document.getElementById('pt-student-class').value);
+    const list = ptStudentsByGrade[grade] || [];
+    if (!cls) return list;
+    return list.filter(function(s) { return ptStudentClassOf(s) === cls; });
+  }
+
+  async function ptEnsureStudentDataLoaded() {
+    const gradeSel = document.getElementById('pt-student-grade');
+    if (ptStudentDataLoaded) { gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null); return; }
+    ptStudentDataLoaded = true;
+    try {
+      await ensureClassStructureLoaded();
+      const { data, error } = await sb.from('student_timetable_card').select('grade, students');
+      if (error) throw error;
+      (data || []).forEach(function(row) { ptStudentsByGrade[row.grade] = row.students || []; });
+    } catch (e) { /* 아직 테이블이 없거나 업로드된 자료가 없을 수 있음 */ }
+    gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
+  }
+
+  function ptOnGradeChange() {
+    const grade = parseInt(document.getElementById('pt-student-grade').value);
+    document.getElementById('pt-student-class').innerHTML = '<option value="">반</option>' + (grade ? classOptionsHtml(grade, null) : '');
+    ptRefreshStudentSelect();
+  }
+  function ptOnClassChange() { ptRefreshStudentSelect(); }
+
+  function ptRefreshStudentSelect() {
+    const sel = document.getElementById('pt-student-select');
+    const list = ptFilteredStudents();
+    if (list.length === 0) { sel.innerHTML = '<option value="">(학생 없음)</option>'; ptCurrentPage = 1; ptRender(); return; }
+    sel.innerHTML = list.map(function(s, i) { return '<option value="' + i + '">' + escapeHtmlAttr(s.num) + ' ' + escapeHtmlAttr(s.name) + '</option>'; }).join('');
+    sel.selectedIndex = 0;
+    ptCurrentPage = 1;
+    ptRender();
+  }
+  function ptOnStudentPick() { ptCurrentPage = 1; ptRender(); }
+  function ptNavStudent(dir) {
+    const sel = document.getElementById('pt-student-select');
+    if (sel.options.length === 0) return;
+    let idx = sel.selectedIndex + dir;
+    if (idx < 0) idx = sel.options.length - 1;
+    if (idx >= sel.options.length) idx = 0;
+    sel.selectedIndex = idx;
+    ptCurrentPage = 1;
+    ptRender();
+  }
+  function ptCurrentStudent() {
+    const list = ptFilteredStudents();
+    const idx = parseInt(document.getElementById('pt-student-select').value);
+    return list[idx] || null;
+  }
+
+  function ptTriggerUpload(grade) { ptUploadTargetGrade = grade; document.getElementById('pt-excel-upload').click(); }
+
+  // ----- 엑셀 파싱 엔진 (원본 "스마트 개인별 시간표" 도구에서 학생용 부분만 이식) -----
+  function ptParseSmartCell(content) {
+    let subject = '', teacher = '', room = '';
+    const parts = content.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+    let leftover = [];
+    parts.forEach(function(part) {
+      const tMatch = part.match(/^\(([가-힣]{2,4})\)$/);
+      if (tMatch) { teacher = tMatch[1]; return; }
+      const noBracket = part.replace(/[()]/g, '');
+      if (/^\d-\d$/.test(noBracket) || /^\d{3,4}$/.test(noBracket) || noBracket.endsWith('실') || noBracket.endsWith('관') || /^[A-Z]\d+/.test(noBracket)) {
+        room = noBracket;
+        if (/^\d{3}$/.test(room)) room = room[0] + '-' + parseInt(room.substring(1));
+        return;
+      }
+      leftover.push(part);
+    });
+    subject = leftover.join(' ').replace(/[()]/g, '');
+    return { subject: subject, teacher: teacher, room: room };
+  }
+
+  function ptParse2DGrid(rows) {
+    const days = ['월', '화', '수', '목', '금'];
+    const students = [];
+    const stdRegex = /^(\d{4,5})\s*([가-힣]{2,4})/;
+    let studentBlocks = []; let currentBlock = null;
+    for (let r = 0; r < rows.length; r++) {
+      if (!rows[r]) continue;
+      let foundStd = null;
+      for (let c = 0; c < rows[r].length; c++) {
+        const cellVal = String(rows[r][c] || '').trim();
+        const match = cellVal.match(stdRegex);
+        if (match) { foundStd = { num: match[1], name: match[2] }; break; }
+      }
+      if (foundStd) {
+        if (currentBlock) studentBlocks.push(currentBlock);
+        currentBlock = { stdInfo: foundStd, rows: [rows[r]] };
+      } else if (currentBlock && rows[r].some(function(v) { return String(v || '').trim() !== ''; })) {
+        currentBlock.rows.push(rows[r]);
+      }
+    }
+    if (currentBlock) studentBlocks.push(currentBlock);
+
+    let globalDayCols = {};
+    studentBlocks.forEach(function(block) {
+      const std = { num: block.stdInfo.num, name: block.stdInfo.name, motto: '', schedule: [] };
+      let dayCols = {};
+      block.rows.forEach(function(row) {
+        row.forEach(function(cell, cIdx) {
+          const val = String(cell || '').trim();
+          const foundDay = days.find(function(d) { return val === d || val === d + '요일'; });
+          if (foundDay) dayCols[foundDay] = cIdx;
+        });
+      });
+      if (Object.keys(dayCols).length > 0) globalDayCols = dayCols; else dayCols = globalDayCols;
+      if (Object.keys(dayCols).length === 0) dayCols = { '월': 2, '화': 3, '수': 4, '목': 5, '금': 6 };
+
+      block.rows.forEach(function(row) {
+        let periodNum = -1;
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim();
+          if (/^[1-8]$/.test(val) || /^0?[1-8]교시$/.test(val)) { periodNum = parseInt(val.replace(/[^0-9]/g, ''), 10); break; }
+        }
+        if (periodNum !== -1) {
+          days.forEach(function(day) {
+            const colIdx = dayCols[day];
+            if (colIdx !== undefined) {
+              const content = String(row[colIdx] || '').trim();
+              if (content && ['X', 'x', '강좌명', '강의실', '요일', '교시'].indexOf(content) === -1) {
+                const parsed = ptParseSmartCell(content);
+                std.schedule.push({ day: day, period: periodNum, subject: parsed.subject, teacher: parsed.teacher, room: parsed.room });
+              }
+            }
+          });
+        }
+      });
+      if (std.schedule.length > 0) students.push(std);
+    });
+    return students;
+  }
+
+  // 고교학점제(선택과목) 학교용 — 배정내역/학급시간표/교실배정 3개 시트를 결합해서
+  // 학생 개인별 시간표를 조립한다.
+  function ptParseCreditSystem(workbook) {
+    let assignSheetName = workbook.SheetNames.find(function(n) { return n.includes('배정내역'); });
+    let classTimeSheetName = workbook.SheetNames.find(function(n) { return n.includes('학급시간표') && !n.includes('학급별'); });
+    let roomAssignSheetName = workbook.SheetNames.find(function(n) { return n.includes('교실배정') || n.includes('선택과목'); });
+    if (!assignSheetName || !classTimeSheetName || !roomAssignSheetName) {
+      customAlert('⚠️ 필수 시트(배정내역, 학급시간표, 교실배정)를 모두 찾지 못했습니다.\n인식된 시트: ' + workbook.SheetNames.join(', '));
+      return [];
+    }
+    const assignRows = XLSX.utils.sheet_to_json(workbook.Sheets[assignSheetName], { header: 1, defval: '', raw: false });
+    const classTimeRows = XLSX.utils.sheet_to_json(workbook.Sheets[classTimeSheetName], { header: 1, defval: '', raw: false });
+    const roomRows = XLSX.utils.sheet_to_json(workbook.Sheets[roomAssignSheetName], { header: 1, defval: '', raw: false });
+
+    let studentsList = []; let headerRowIdx = -1; let subjectHeaders = [];
+    for (let i = 0; i < Math.min(20, assignRows.length); i++) {
+      if (!assignRows[i] || !Array.isArray(assignRows[i])) continue;
+      const rowStr = assignRows[i].map(function(v) { return String(v || ''); }).join('');
+      if (rowStr.includes('신학년') && rowStr.includes('신번호')) { headerRowIdx = i; subjectHeaders = assignRows[i]; break; }
+    }
+    if (headerRowIdx !== -1) {
+      const gradeIdx = subjectHeaders.findIndex(function(h) { return String(h).includes('신학년'); });
+      const classIdx = subjectHeaders.findIndex(function(h) { return String(h).includes('신반'); });
+      const numIdx = subjectHeaders.findIndex(function(h) { return String(h).includes('신번호'); });
+      let nameIdx = subjectHeaders.findIndex(function(h) { return String(h).includes('이름') || String(h).includes('성명'); });
+      if (nameIdx === -1 && headerRowIdx > 0) nameIdx = assignRows[headerRowIdx - 1].findIndex(function(h) { return String(h).includes('이름') || String(h).includes('성명'); });
+      for (let i = headerRowIdx + 1; i < assignRows.length; i++) {
+        const row = assignRows[i];
+        if (!row || !row[gradeIdx] || !row[classIdx]) continue;
+        let std = {
+          grade: String(row[gradeIdx]).replace(/[^0-9]/g, ''), cls: String(row[classIdx]).replace(/[^0-9]/g, ''),
+          num: String(row[numIdx]).replace(/[^0-9]/g, ''), name: String(row[nameIdx] || '').trim(), choices: {}
+        };
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c]).trim();
+          const match = val.match(/[A-E]/i);
+          if (match) std.choices[match[0].toUpperCase()] = String(subjectHeaders[c] || '').trim();
+        }
+        studentsList.push(std);
+      }
+    }
+
+    let blocksInfo = {}; let roomHeaders = [];
+    for (let i = 0; i < Math.min(10, roomRows.length); i++) {
+      if (!roomRows[i] || !Array.isArray(roomRows[i])) continue;
+      const rowStr = roomRows[i].map(function(v) { return String(v || ''); }).join('');
+      if (rowStr.includes('2-1') && rowStr.includes('2-2')) { roomHeaders = roomRows[i]; break; }
+    }
+    for (let i = 0; i < roomRows.length; i++) {
+      const row = roomRows[i];
+      if (!row || !Array.isArray(row)) continue;
+      const blockCode = String(row[0]).trim();
+      const bMatch = blockCode.match(/([A-E])\d/i);
+      if (bMatch) {
+        const upperCode = bMatch[0].toUpperCase();
+        blocksInfo[upperCode] = [];
+        const teacherRow = roomRows[i + 1] || [];
+        for (let c = 1; c < row.length; c++) {
+          const subj = String(row[c]).trim().replace(/\(가\)|\(나\)|\(다\)|\s/g, '');
+          const teacher = String(teacherRow[c] || '').trim();
+          const room = String(roomHeaders[c] || '').trim();
+          if (subj) blocksInfo[upperCode].push({ subject: subj, teacher: teacher, room: room });
+        }
+      }
+    }
+
+    let classTimetables = {}; let dayHeaders = []; let periodHeaders = []; let timeRowIdx = -1;
+    for (let i = 0; i < Math.min(10, classTimeRows.length); i++) {
+      if (!classTimeRows[i] || !Array.isArray(classTimeRows[i])) continue;
+      const rowStr = classTimeRows[i].map(function(v) { return String(v || ''); }).join('');
+      if (rowStr.includes('월') && rowStr.includes('화') && rowStr.includes('금')) {
+        dayHeaders = classTimeRows[i]; periodHeaders = classTimeRows[i + 1] || []; timeRowIdx = i + 2; break;
+      }
+    }
+    let timeCols = [];
+    if (timeRowIdx !== -1) {
+      let currentDay = '';
+      for (let c = 0; c < dayHeaders.length; c++) {
+        const d = String(dayHeaders[c]).trim();
+        if (['월', '화', '수', '목', '금'].indexOf(d) !== -1) currentDay = d;
+        const pMatch = String(periodHeaders[c] || '').match(/(\d)/);
+        if (currentDay && pMatch) timeCols.push({ day: currentDay, period: parseInt(pMatch[1]), col: c });
+      }
+      for (let i = timeRowIdx; i < classTimeRows.length; i++) {
+        const row = classTimeRows[i];
+        if (!row || !Array.isArray(row)) continue;
+        const className = String(row[0] || '').trim();
+        let formattedClass = '';
+        const numMatch = className.match(/(\d+)[^0-9]*(\d+)/);
+        if (numMatch) formattedClass = numMatch[1] + '-' + numMatch[2];
+        else { const singleMatch = className.match(/(\d+)/); if (singleMatch) formattedClass = singleMatch[1]; }
+        if (formattedClass) {
+          classTimetables[formattedClass] = [];
+          timeCols.forEach(function(tc) {
+            const content = String(row[tc.col] || '').trim();
+            if (content) classTimetables[formattedClass].push({ day: tc.day, period: tc.period, content: content });
+          });
+        }
+      }
+    }
+
+    const resultStudents = [];
+    studentsList.forEach(function(std) {
+      const className = std.grade + '-' + std.cls;
+      const classTT = classTimetables[className] || classTimetables[std.cls];
+      if (!classTT) return;
+      let stdResult = { num: std.grade + std.cls.padStart(2, '0') + std.num.padStart(2, '0'), name: std.name, motto: '', schedule: [] };
+      classTT.forEach(function(cell) {
+        let finalSubject = cell.content; let finalTeacher = ''; let finalRoom = className;
+        const blockMatch = cell.content.match(/([A-E])\d/i);
+        if (blockMatch) {
+          const blockCode = blockMatch[0].toUpperCase();
+          const blockLetter = blockMatch[1].toUpperCase();
+          const chosenFullSubject = std.choices[blockLetter];
+          if (chosenFullSubject && blocksInfo[blockCode]) {
+            const chosenParts = chosenFullSubject.split('/').map(function(s) { return s.replace(/\s/g, ''); });
+            let matchedInfo = blocksInfo[blockCode].find(function(info) {
+              if (!info.subject) return false;
+              return chosenParts.some(function(part) { return info.subject.includes(part) || part.includes(info.subject); });
+            });
+            if (matchedInfo) { finalSubject = matchedInfo.subject; finalTeacher = matchedInfo.teacher; finalRoom = matchedInfo.room; }
+            else { finalSubject = chosenFullSubject.split('/')[0].trim(); finalRoom = '이동'; }
+          } else if (chosenFullSubject) { finalSubject = chosenFullSubject.split('/')[0].trim(); finalRoom = '이동'; }
+          else { finalSubject = '미선택'; finalRoom = '-'; }
+        }
+        stdResult.schedule.push({ day: cell.day, period: cell.period, subject: finalSubject, teacher: finalTeacher, room: finalRoom });
+      });
+      if (stdResult.schedule.length > 0) resultStudents.push(stdResult);
+    });
+    return resultStudents;
+  }
+
+  document.getElementById('pt-excel-upload').addEventListener('change', async function(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    let combinedWorkbook = { SheetNames: [], Sheets: {} };
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      workbook.SheetNames.forEach(function(name) {
+        let newName = name; let counter = 1;
+        while (combinedWorkbook.SheetNames.indexOf(newName) !== -1) newName = name + '_' + (counter++);
+        combinedWorkbook.SheetNames.push(newName);
+        combinedWorkbook.Sheets[newName] = workbook.Sheets[name];
+      });
+    }
+    const sheetNames = combinedWorkbook.SheetNames;
+    const hasAssign = sheetNames.some(function(n) { return n.includes('배정내역'); });
+    const hasRoomAssign = sheetNames.some(function(n) { return n.includes('교실배정') || n.includes('선택과목'); });
+
+    let parsedStudents = [];
+    if (hasAssign && hasRoomAssign) {
+      parsedStudents = ptParseCreditSystem(combinedWorkbook);
+    } else {
+      let targetSheet = sheetNames.find(function(n) { return !n.includes('교실배정') && !n.includes('선택과목'); }) || sheetNames[0];
+      const worksheet = combinedWorkbook.Sheets[targetSheet];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+      parsedStudents = ptParse2DGrid(rows);
+    }
+
+    if (parsedStudents.length === 0) {
+      await customAlert('⚠️ 시간표 양식을 찾지 못했습니다.');
+    } else {
+      ptStudentsByGrade[ptUploadTargetGrade] = parsedStudents;
+      document.getElementById('pt-student-grade').value = String(ptUploadTargetGrade);
+      ptOnGradeChange();
+      try {
+        const { error } = await sb.from('student_timetable_card').upsert({ grade: ptUploadTargetGrade, students: parsedStudents, updated_at: new Date().toISOString() }, { onConflict: 'grade' });
+        if (error) throw error;
+        await customAlert('🎉 ' + ptUploadTargetGrade + '학년 학생 ' + parsedStudents.length + '명의 시간표가 저장되었습니다!');
+      } catch (err) {
+        await customAlert('⚠️ 서버 저장에 실패했습니다: ' + (err && err.message ? err.message : err));
+      }
+    }
+    document.getElementById('pt-excel-upload').value = '';
+  });
+
+  function ptCreateCardHTML(person, isTeacherCard) {
+    const school = document.getElementById('pt-cfg-school').value;
+    const term = document.getElementById('pt-cfg-term').value;
+    const days = ['월', '화', '수', '목', '금'];
+    let infoHtml;
+    if (!isTeacherCard) {
+      infoHtml = '<div class="pt-motto">' + (person.motto ? '좌우명 : ' + escapeHtmlAttr(person.motto) : '') + '</div>' +
+        '<div class="pt-name">' + escapeHtmlAttr(person.num || '') + ' ' + escapeHtmlAttr(person.name || '') + '</div>';
+    } else {
+      infoHtml = '<div class="pt-motto" style="font-size:var(--pt-sz-info);">주당 ' + person.schedule.length + '시간</div>' +
+        '<div class="pt-name">' + escapeHtmlAttr(person.name || '') + ' 선생님</div>';
+    }
+    let html = '<div class="pt-card pt-style-' + ptStyle + '">' +
+      '<div class="pt-header">' +
+        '<div class="pt-school">' + escapeHtmlAttr(school || '') + '</div>' +
+        '<div class="pt-title">' + escapeHtmlAttr(term || '') + ' 시간표</div>' +
+        '<div class="pt-info-row">' + infoHtml + '</div>' +
+      '</div>' +
+      '<div class="pt-grid">' +
+        '<div class="pt-row pt-h-row"><div class="pt-col-time" style="background:transparent;"></div>' +
+          days.map(function(d) { return '<div class="pt-col-day">' + d + '</div>'; }).join('') +
+        '</div>';
+    for (let p = 1; p <= currentTimes.length; p++) {
+      const t = currentTimes[p - 1];
+      if (!t) continue;
+      const timeStr = t.s + '<br>~ ' + t.e;
+      html += '<div class="pt-row"><div class="pt-col-time"><div class="pt-t-num">' + p + '</div><div class="pt-t-sub">' + timeStr + '</div></div>';
+      days.forEach(function(day) {
+        const cls = person.schedule.find(function(s) { return s.period === p && s.day === day; });
+        if (cls && cls.subject) {
+          const colorKey = isTeacherCard ? (cls.subject + cls.room) : cls.subject;
+          const bgColor = ptGetSubjectColor(colorKey);
+          const botText = !isTeacherCard
+            ? '<span>' + escapeHtmlAttr(cls.teacher || '') + '</span>' + (cls.room ? '<span class="pt-c-room">' + escapeHtmlAttr(cls.room) + '</span>' : '')
+            : (cls.room ? '<span class="pt-c-room" style="font-weight:800;">' + escapeHtmlAttr(cls.room) + '</span>' : '');
+          html += '<div class="pt-cell" style="background-color:' + bgColor + '; --pt-bg-col:' + bgColor + ';">' +
+            '<div class="pt-c-sub"><span>' + escapeHtmlAttr(cls.subject) + '</span></div>' +
+            '<div class="pt-c-bot">' + botText + '</div>' +
+          '</div>';
+        } else { html += '<div class="pt-cell empty"></div>'; }
+      });
+      html += '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function ptCalcFitScale() {
+    const layout = document.getElementById('pt-print-layout').value;
+    if (layout === 'card' || layout === 'mobile') { document.documentElement.style.setProperty('--pt-fit-scale', 1); return; }
+    const a4W = 794, a4H = 1123, marginPx = 15 * 3.78, gapPx = 10 * 3.78;
+    let cols = 2, rows = 2;
+    if (layout === '1') { cols = 1; rows = 1; }
+    if (layout === '2') { cols = 1; rows = 2; }
+    if (layout === '6') { cols = 2; rows = 3; }
+    const cellW = (a4W - marginPx * 2 - gapPx * (cols - 1)) / cols;
+    const cellH = (a4H - marginPx * 2 - gapPx * (rows - 1)) / rows;
+    const baseW = parseInt(document.getElementById('pt-sl-width').value);
+    const baseH = parseInt(document.getElementById('pt-sl-height').value);
+    const finalScale = Math.min(cellW / baseW, cellH / baseH) * 0.95;
+    document.documentElement.style.setProperty('--pt-fit-scale', finalScale);
+  }
+
+  function ptZoomBy(diff) {
+    ptVisualZoom = Math.round((ptVisualZoom + diff) * 10) / 10;
+    if (ptVisualZoom < 0.3) ptVisualZoom = 0.3;
+    if (ptVisualZoom > 2) ptVisualZoom = 2;
+    document.getElementById('pt-zoom-text').innerText = Math.round(ptVisualZoom * 100) + '%';
+    const area = document.getElementById('pt-render-area');
+    area.style.transform = 'scale(' + ptVisualZoom + ')';
+    area.style.transformOrigin = 'top center';
+  }
+
+  function ptChangePage(dir) {
+    ptCurrentPage += dir;
+    if (ptCurrentPage < 1) ptCurrentPage = ptTotalPages;
+    if (ptCurrentPage > ptTotalPages) ptCurrentPage = 1;
+    ptRender();
+  }
+
+  function ptRender() {
+    const area = document.getElementById('pt-render-area');
+    const layout = document.getElementById('pt-print-layout').value;
+    const meLabel = document.getElementById('pt-me-name-label');
+    if (meLabel) meLabel.innerText = (window.currentTeacher && window.currentTeacher.name) || localStorage.getItem('my-n') || '미설정';
+
+    if (ptCurrentTab === 'me') {
+      document.getElementById('pt-page-nav').style.display = 'none';
+      const me = ptBuildMyPerson();
+      if (layout === 'card') { ptTotalPages = 1; area.innerHTML = ptCreateCardHTML(me, true); }
+      else if (layout === 'mobile') { ptTotalPages = 1; area.innerHTML = '<div class="pt-mobile-bg-view">' + ptCreateCardHTML(me, true) + '</div>'; }
+      else {
+        ptCalcFitScale(); ptTotalPages = 1;
+        area.innerHTML = '<div class="pt-a4-page pt-a4-' + layout + '" id="pt_print_page_1"><div class="pt-grid-cell">' + ptCreateCardHTML(me, true) + '</div></div>';
+      }
+      return;
+    }
+
+    const person = ptCurrentStudent();
+    if (!person) {
+      area.innerHTML = '<div style="margin:60px auto; color:var(--text-sub); font-weight:800; text-align:center;">👈 학년·반·학생을 선택하거나 관리자가 엑셀을 업로드해주세요.</div>';
+      document.getElementById('pt-page-nav').style.display = 'none';
+      return;
+    }
+
+    if (layout === 'card') {
+      document.getElementById('pt-page-nav').style.display = 'none';
+      ptTotalPages = 1;
+      area.innerHTML = ptCreateCardHTML(person, false);
+    } else if (layout === 'mobile') {
+      const list = ptFilteredStudents();
+      ptTotalPages = list.length || 1;
+      if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
+      document.getElementById('pt-page-nav').style.display = list.length > 1 ? 'flex' : 'none';
+      document.getElementById('pt-page-text').innerText = ptCurrentPage + ' / ' + ptTotalPages;
+      const p = list[ptCurrentPage - 1] || person;
+      area.innerHTML = '<div class="pt-mobile-bg-view" id="pt_print_page_' + ptCurrentPage + '">' + ptCreateCardHTML(p, false) + '</div>';
+    } else {
+      ptCalcFitScale();
+      const list = ptFilteredStudents();
+      const layoutNum = parseInt(layout);
+      ptTotalPages = Math.max(1, Math.ceil(list.length / layoutNum));
+      if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
+      document.getElementById('pt-page-nav').style.display = list.length > layoutNum ? 'flex' : 'none';
+      document.getElementById('pt-page-text').innerText = ptCurrentPage + ' / ' + ptTotalPages;
+      const startIdx = (ptCurrentPage - 1) * layoutNum;
+      const chunk = list.slice(startIdx, startIdx + layoutNum);
+      let html = '<div class="pt-a4-page pt-a4-' + layoutNum + '" id="pt_print_page_' + ptCurrentPage + '">';
+      chunk.forEach(function(p) { html += '<div class="pt-grid-cell">' + ptCreateCardHTML(p, false) + '</div>'; });
+      html += '</div>';
+      area.innerHTML = html;
+    }
+  }
+
+  function ptRenderAllPagesForPrint() {
+    const area = document.getElementById('pt-render-area');
+    const layout = document.getElementById('pt-print-layout').value;
+    const list = ptFilteredStudents();
+    if (layout === 'mobile') {
+      let html = '';
+      list.forEach(function(p, i) { html += '<div class="pt-mobile-bg-view" id="pt_print_page_' + (i + 1) + '">' + ptCreateCardHTML(p, false) + '</div>'; });
+      area.innerHTML = html;
+      return;
+    }
+    const layoutNum = parseInt(layout);
+    let html = '';
+    for (let i = 0; i < list.length; i += layoutNum) {
+      const chunk = list.slice(i, i + layoutNum);
+      html += '<div class="pt-a4-page pt-a4-' + layoutNum + '" id="pt_print_page_' + (Math.floor(i / layoutNum) + 1) + '">';
+      chunk.forEach(function(p) { html += '<div class="pt-grid-cell">' + ptCreateCardHTML(p, false) + '</div>'; });
+      html += '</div>';
+    }
+    area.innerHTML = html;
+  }
+
+  function ptPrint(type) {
+    document.body.setAttribute('data-print-target', 'persontt');
+    if (type === 'current' || ptCurrentTab === 'me' || document.getElementById('pt-print-layout').value === 'card') {
+      window.print();
+    } else {
+      ptRenderAllPagesForPrint();
+      setTimeout(function() { window.print(); ptRender(); }, 100);
+    }
+  }
+
+  async function ptExportImage() {
+    const layout = document.getElementById('pt-print-layout').value;
+    if (ptCurrentTab === 'me' || layout === 'card') {
+      const el = document.querySelector('#pt-render-area .pt-card');
+      if (!el) return;
+      const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+      const link = document.createElement('a');
+      link.download = '시간표.png'; link.href = canvas.toDataURL('image/png'); link.click();
+      return;
+    }
+    const zip = new JSZip();
+    ptRenderAllPagesForPrint();
+    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view');
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#fff', useCORS: true });
+      const imgData = canvas.toDataURL('image/png').split(',')[1];
+      zip.file('시간표_' + (i + 1) + '.png', imgData, { base64: true });
+    }
+    zip.generateAsync({ type: 'blob' }).then(function(content) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content); link.download = '학생시간표_전체.zip'; link.click();
+    });
+    ptRender();
+  }
+
+  async function ptExportPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const layout = document.getElementById('pt-print-layout').value;
+    if (ptCurrentTab === 'me' || layout === 'card') {
+      const el = document.querySelector('#pt-render-area .pt-card');
+      if (!el) return;
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#fff', useCORS: true });
+      pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+      pdf.save('시간표.pdf');
+      return;
+    }
+    ptRenderAllPagesForPrint();
+    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view');
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#fff', useCORS: true });
+      if (i > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+    }
+    pdf.save('학생시간표_전체.pdf');
+    ptRender();
+  }
+
+  function ptCollectSettings() {
+    return {
+      theme: ptTheme, style: ptStyle,
+      school: document.getElementById('pt-cfg-school').value,
+      term: document.getElementById('pt-cfg-term').value,
+      font: document.getElementById('pt-cfg-font').value,
+      width: document.getElementById('pt-sl-width').value,
+      height: document.getElementById('pt-sl-height').value,
+      title: document.getElementById('pt-sl-title').value,
+      name: document.getElementById('pt-sl-name').value,
+      sub: document.getElementById('pt-sl-sub').value,
+      info: document.getElementById('pt-sl-info').value,
+      rad: document.getElementById('pt-sl-rad').value
+    };
+  }
+  function ptApplySettings(data) {
+    if (!data) return;
+    if (data.school !== undefined) document.getElementById('pt-cfg-school').value = data.school;
+    if (data.term !== undefined) document.getElementById('pt-cfg-term').value = data.term;
+    if (data.font) document.getElementById('pt-cfg-font').value = data.font;
+    ['width', 'height', 'title', 'name', 'sub', 'info', 'rad'].forEach(function(k) {
+      if (data[k] !== undefined) document.getElementById('pt-sl-' + k).value = data[k];
+    });
+    if (data.theme) ptSetTheme(data.theme);
+    if (data.style) ptSetStyle(data.style);
+    ptUpdateVars();
+  }
+  function ptAutoSave() { try { localStorage.setItem('pt-design', JSON.stringify(ptCollectSettings())); } catch (e) {} }
+  function ptSaveSettings() {
+    const blob = new Blob([JSON.stringify(ptCollectSettings())], { type: 'application/json' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = '개인시간표_디자인.json'; link.click();
+  }
+  function ptLoadSettings(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try { ptApplySettings(JSON.parse(e.target.result)); ptAutoSave(); customAlert('디자인을 불러왔습니다! 🎉'); }
+      catch (err) { customAlert('파일을 읽는 데 실패했습니다.'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  async function openPersonTT() {
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    const settingsPage = document.getElementById('settings-page'); if (settingsPage) settingsPage.style.display = 'none';
+    const seatchartPage = document.getElementById('seatchart-page'); if (seatchartPage) seatchartPage.style.display = 'none';
+    const monthlyPage = document.getElementById('monthly-page'); if (monthlyPage) monthlyPage.style.display = 'none';
+    const leavepassPage = document.getElementById('leavepass-page'); if (leavepassPage) leavepassPage.style.display = 'none';
+    ['rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.classList.remove('active');
+    });
+    document.getElementById('persontt-page').style.display = 'flex';
+    document.body.setAttribute('data-print-target', 'persontt');
+    document.getElementById('rail-home-btn').classList.remove('active');
+    const railSettingsBtn = document.getElementById('rail-settings-btn'); if (railSettingsBtn) railSettingsBtn.classList.remove('active');
+    document.getElementById('rail-persontt-btn').classList.add('active');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown'); if (userMenuDropdown) userMenuDropdown.style.display = 'none';
+
+    if (!window.__ptInited) {
+      window.__ptInited = true;
+      ptInitPickers();
+      if (!document.getElementById('pt-cfg-school').value) document.getElementById('pt-cfg-school').value = '부광고등학교';
+      try {
+        const saved = localStorage.getItem('pt-design');
+        if (saved) ptApplySettings(JSON.parse(saved));
+      } catch (e) {}
+      ptUpdateVars();
+    }
+    ptSwitchTab(ptCurrentTab);
   }
 
   // ===== 📱 모바일 레이아웃 =====
