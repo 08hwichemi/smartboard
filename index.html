@@ -36,6 +36,10 @@
       --accent-secondary: #D9822B; --accent-secondary-soft: #FBEBD7; --accent-secondary-text: #A85F1B; --on-accent-secondary: #FFFFFF; }
     [data-theme="amber"] { --bg-color: #FFFBEA; --card-bg: #FFFFFF; --text-main: #3A3006; --text-sub: #8C7F45; --border-color: #F0E4B8; --accent-color: #7A6E00; --tt-bg: #FFF7DC; --accent-soft: #F5EFCA; --alert: #A04A1C; --alert-bg: #FBEBDD; --alert-border: #E9BC96;
       --accent-secondary: #2F6F8F; --accent-secondary-soft: #E1EEF3; --accent-secondary-text: #1F5069; --on-accent-secondary: #FFFFFF; }
+    [data-theme="coral"] { --bg-color: #FDF4F1; --card-bg: #FFFFFF; --text-main: #3A2118; --text-sub: #96725F; --border-color: #F0DCD3; --accent-color: #B8452B; --tt-bg: #FAEAE4; --accent-soft: #F7E2DA; --alert: #8B2F1C; --alert-bg: #F8E4DE; --alert-border: #E7BBAC;
+      --accent-secondary: #3D6EA5; --accent-secondary-soft: #E2EBF5; --accent-secondary-text: #2A507A; --on-accent-secondary: #FFFFFF; }
+    [data-theme="sky"] { --bg-color: #F1F8FA; --card-bg: #FFFFFF; --text-main: #16323A; --text-sub: #6C8F98; --border-color: #DCEBEE; --accent-color: #1B7A96; --tt-bg: #E7F3F5; --accent-soft: #DFF0F3; --alert: #A23B2A; --alert-bg: #FBEAE4; --alert-border: #E8BBAC;
+      --accent-secondary: #E0954A; --accent-secondary-soft: #FBEEDE; --accent-secondary-text: #A8672B; --on-accent-secondary: #FFFFFF; }
 
     body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
 
@@ -249,9 +253,14 @@
     #user-menu-dropdown .um-btn { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
     #user-menu-dropdown .um-btn:hover { background: var(--bg-color); }
 
-    .theme-swatch-row { display: flex; gap: 6px; align-items: center; }
-    .theme-swatch { width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer; padding: 0; box-sizing: border-box; }
-    .theme-swatch.theme-active { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .theme-swatch-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    /* 예전엔 이름 없이 작은 동그라미만 있어서 색이 비슷해 보이면 뭐가 뭔지 구분하기
+       어려웠다 — 동그라미 옆에 테마 이름을 같이 보여주는 "칩" 형태로 바꿨다. */
+    .theme-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--card-bg); cursor: pointer; font-size: 11.5px; font-weight: 700; color: var(--text-main); white-space: nowrap; }
+    .theme-chip:hover { background: var(--bg-color); }
+    .theme-chip.theme-active { border-color: var(--accent-color); background: var(--accent-soft); }
+    .theme-chip-dot { width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); box-sizing: border-box; }
+    .theme-chip-random .theme-chip-dot { background: conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 900; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
 
     /* ===== 새 버전 알림 띠 ===== */
     .updatebar { position: fixed; top: 0; left: 0; right: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: var(--accent-color); color: var(--on-accent); font-size: 12.5px; font-weight: 700; text-align: center; }
@@ -616,16 +625,19 @@
         <div style="position:relative;" id="theme-picker">
           <button class="top-btn" style="font-size:11px; padding:5px 10px; display:flex; align-items:center; gap:5px;" onclick="toggleThemeMenu()" title="테마 선택"><span id="theme-picker-swatch" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--accent-color); flex-shrink:0;"></span>테마</button>
           <div id="theme-menu-dropdown" style="display:none; position:absolute; top:34px; right:0; background:var(--card-bg); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.15); padding:10px; z-index:200;">
-            <div class="theme-swatch-row" id="theme-btn-group" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;" title="테마 선택">
-              <button class="theme-select-btn theme-swatch" id="theme-btn-default" style="background:#1F3A5F;" onclick="changeTheme('default')" title="기본"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-milky" style="background:#9A5B2E;" onclick="changeTheme('milky')" title="베이지"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-mint" style="background:#1F6E5C;" onclick="changeTheme('mint')" title="민트"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-dark" style="background:#14161B;" onclick="changeTheme('dark')" title="다크"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-wine" style="background:#7A2E3A;" onclick="changeTheme('wine')" title="버건디"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-lavender" style="background:#5B4B8A;" onclick="changeTheme('lavender')" title="라벤더"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-slate" style="background:#445068;" onclick="changeTheme('slate')" title="슬레이트"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-forest" style="background:#3F5B3A;" onclick="changeTheme('forest')" title="포레스트"></button>
-              <button class="theme-select-btn theme-swatch" id="theme-btn-amber" style="background:#7A6E00;" onclick="changeTheme('amber')" title="앰버(골드)"></button>
+            <div class="theme-swatch-row" id="theme-btn-group" title="테마 선택">
+              <button class="theme-select-btn theme-chip" id="theme-btn-default" onclick="changeTheme('default')" title="기본"><span class="theme-chip-dot" style="background:#1F3A5F;"></span>기본</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-milky" onclick="changeTheme('milky')" title="베이지"><span class="theme-chip-dot" style="background:#9A5B2E;"></span>베이지</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-mint" onclick="changeTheme('mint')" title="민트"><span class="theme-chip-dot" style="background:#1F6E5C;"></span>민트</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-dark" onclick="changeTheme('dark')" title="다크"><span class="theme-chip-dot" style="background:#14161B;"></span>다크</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-wine" onclick="changeTheme('wine')" title="버건디"><span class="theme-chip-dot" style="background:#7A2E3A;"></span>버건디</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-lavender" onclick="changeTheme('lavender')" title="라벤더"><span class="theme-chip-dot" style="background:#5B4B8A;"></span>라벤더</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-slate" onclick="changeTheme('slate')" title="슬레이트"><span class="theme-chip-dot" style="background:#445068;"></span>슬레이트</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-forest" onclick="changeTheme('forest')" title="포레스트"><span class="theme-chip-dot" style="background:#3F5B3A;"></span>포레스트</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-amber" onclick="changeTheme('amber')" title="앰버(골드)"><span class="theme-chip-dot" style="background:#7A6E00;"></span>앰버</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-coral" onclick="changeTheme('coral')" title="코랄"><span class="theme-chip-dot" style="background:#B8452B;"></span>코랄</button>
+              <button class="theme-select-btn theme-chip" id="theme-btn-sky" onclick="changeTheme('sky')" title="스카이"><span class="theme-chip-dot" style="background:#1B7A96;"></span>스카이</button>
+              <button class="theme-select-btn theme-chip theme-chip-random" id="theme-btn-random" onclick="changeTheme('random')" title="오늘의 랜덤 테마 (매일 바뀜)"><span class="theme-chip-dot">?</span>오늘의 랜덤</button>
             </div>
           </div>
         </div>
@@ -1840,7 +1852,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.7';
+  var BUILD_ID = '2026-09-28.8';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -5494,8 +5506,65 @@
     if (dotEl) dotEl.style.left = pct + '%';
   }
 
+  // "오늘의 랜덤" 테마가 쓰는 색상 변수들. 고정 테마로 되돌아갈 때 이 값들을 인라인으로
+  // 남겨두면 [data-theme="..."] 규칙보다 인라인 스타일이 항상 우선해서 새 테마가 안
+  // 먹히므로, 테마를 바꿀 때마다 먼저 전부 지우고 시작한다.
+  const THEME_COLOR_VARS = ['--bg-color', '--card-bg', '--text-main', '--text-sub', '--border-color', '--accent-color', '--tt-bg', '--accent-soft', '--alert', '--alert-bg', '--alert-border', '--accent-secondary', '--accent-secondary-soft', '--accent-secondary-text', '--on-accent-secondary'];
+
+  function seededRandom01(seedStr) {
+    let h = 1779033703 ^ seedStr.length;
+    for (let i = 0; i < seedStr.length; i++) {
+      h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function() {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= h >>> 16;
+      return (h >>> 0) / 4294967296;
+    };
+  }
+
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = function(n) { return (n + h / 30) % 12; };
+    const a = s * Math.min(l, 1 - l);
+    const f = function(n) { return l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); };
+    const toHex = function(x) { return Math.round(255 * x).toString(16).padStart(2, '0'); };
+    return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+  }
+
+  // 오늘 날짜를 씨앗으로 색을 뽑아서, 이 계정 저 계정 어느 기기에서 봐도 "오늘의 랜덤
+  // 테마"는 서로 같고, 자정이 지나 날짜가 바뀌면 자동으로 다른 색으로 바뀐다.
+  function randomThemeForToday() {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const rand = seededRandom01('smartboard-theme-' + todayStr);
+    const hue = Math.floor(rand() * 360);
+    const secondaryHue = (hue + 140 + Math.floor(rand() * 80)) % 360;
+    // 노랑~연두 쪽(대략 40~100도)은 같은 명도라도 흰 글씨와의 대비가 약해지므로 그 구간만 더 어둡게 보정한다.
+    const accentL = (hue >= 40 && hue <= 100) ? 24 : 32;
+    return {
+      '--bg-color': hslToHex(hue, 35, 97), '--card-bg': '#FFFFFF',
+      '--text-main': hslToHex(hue, 35, 15), '--text-sub': hslToHex(hue, 18, 46),
+      '--border-color': hslToHex(hue, 32, 89), '--accent-color': hslToHex(hue, 55, accentL),
+      '--tt-bg': hslToHex(hue, 32, 93), '--accent-soft': hslToHex(hue, 45, 91),
+      '--alert': '#A03A22', '--alert-bg': '#FBEAE5', '--alert-border': '#E9BCAE',
+      '--accent-secondary': hslToHex(secondaryHue, 55, 42), '--accent-secondary-soft': hslToHex(secondaryHue, 45, 91),
+      '--accent-secondary-text': hslToHex(secondaryHue, 55, 30), '--on-accent-secondary': '#FFFFFF'
+    };
+  }
+
   function changeTheme(t) {
-    t==='default' ? document.documentElement.removeAttribute('data-theme') : document.documentElement.setAttribute('data-theme', t);
+    THEME_COLOR_VARS.forEach(function(v) { document.documentElement.style.removeProperty(v); });
+    if (t === 'random') {
+      document.documentElement.setAttribute('data-theme', 'random');
+      const vars = randomThemeForToday();
+      Object.keys(vars).forEach(function(k) { document.documentElement.style.setProperty(k, vars[k]); });
+    } else if (t === 'default') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', t);
+    }
     document.querySelectorAll('.theme-select-btn').forEach(function(btn) { btn.classList.remove('theme-active'); });
     const activeBtn = document.getElementById('theme-btn-' + t);
     if (activeBtn) activeBtn.classList.add('theme-active');
