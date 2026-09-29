@@ -1685,6 +1685,13 @@
 
       <div class="sc-section">
         <div class="sc-section-title">🧑‍🎓 명렬표 불러오기</div>
+        <label id="sc-mix-toggle-row" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; margin-bottom:8px; cursor:pointer;">
+          <input type="checkbox" id="sc-mix-toggle" onchange="scToggleMix(this.checked)"> 🔀 여러 반 학생 섞기 (이름 붙여넣기)
+        </label>
+        <div id="sc-mix-box" style="display:none; flex-direction:column; gap:6px; margin-bottom:8px;">
+          <textarea id="sc-mix-names" class="sc-text-input" rows="7" style="width:100%; resize:vertical;" placeholder="한 줄에 한 명씩 이름을 붙여넣으세요.&#10;엑셀에서 학번·이름 칸을 같이 복사해도 이름만 씁니다.&#10;가나다순으로 1번부터 번호가 매겨집니다."></textarea>
+          <button class="top-btn accent" id="sc-mix-apply-btn" style="width:100%; padding:6px; box-sizing:border-box;" onclick="scApplyMixNames()">✅ 명단 적용 (가나다순 번호)</button>
+        </div>
         <div class="sc-row" id="sc-roster-select-row">
           <select id="sc-grade-select" class="mini-select" style="flex:1;" onchange="scOnGradeChange()"><option value="">학년</option></select>
           <select id="sc-class-select" class="mini-select" style="flex:1;" onchange="scOnClassChange()"><option value="">반</option></select>
@@ -2461,7 +2468,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.17';
+  var BUILD_ID = '2026-09-29.18';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6600,8 +6607,12 @@
     document.querySelectorAll(selector).forEach(function(el) { el.__userEdited = false; saveElementValue(el); });
     scheduleBackupWrite();
   }
+  // 할 일 체크처럼 칸 id로 개인 자료에 저장하는 체크박스. 자기 onchange가 있는 체크박스(좌석배치표
+  // "여러 반 섞기", 월간일정표 "나이스 일정 표시" 등)는 그 기능이 따로 저장하므로 빼야 한다 — 예전엔
+  // loadAllData가 모든 체크박스의 onchange를 saveAllData로 덮어써서 그 기능들이 동작하지 않았다.
+  const SYNCED_CHECKBOX_SELECTOR = 'input[type="checkbox"]:not([onchange])';
   function saveAllData() {
-    document.querySelectorAll('.editable, input[type="checkbox"]').forEach(function(el) {
+    document.querySelectorAll('.editable, ' + SYNCED_CHECKBOX_SELECTOR).forEach(function(el) {
       if (!el.__userEdited) return;
       el.__userEdited = false;
       saveElementValue(el);
@@ -6642,7 +6653,7 @@
       if (saved !== null) { if (el.innerHTML !== saved) el.innerHTML = saved; }
       else if (el.id.indexOf('sched-edit-') !== 0 && el.innerHTML !== '') el.innerHTML = '';
     });
-    document.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
+    document.querySelectorAll(SYNCED_CHECKBOX_SELECTOR).forEach(function(el) {
       const saved = localStorage.getItem(el.id);
       if (saved !== null) el.checked = saved === 'true'; // 값이 없으면 화면의 기본 상태 그대로
       el.onchange = saveAllData;
@@ -6856,7 +6867,9 @@
     }
 
     const t = window.currentTeacher;
-    if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
+    if (scIsMix()) {
+      // 여러 반 섞기 중이었으면 그 화면을 그대로 둔다(담임 반으로 바꾸지 않음).
+    } else if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
       gradeSel.value = String(t.homeroom_grade);
       document.getElementById('sc-class-select').innerHTML = classOptionsHtml(t.homeroom_grade, t.homeroom_class);
       document.getElementById('sc-class-select').value = String(t.homeroom_class);
@@ -6889,6 +6902,71 @@
     const classNo = parseInt(document.getElementById('sc-class-select').value);
     if (!grade || !classNo) return;
     await scLoadOrRestoreClass(grade, classNo);
+  }
+
+  // ----- 여러 반 섞기 -----
+  // 선택과목·방과후처럼 여러 반 학생이 섞인 경우. 반 안 번호는 반마다 겹치므로, 붙여넣은 이름을
+  // 가나다순으로 정렬해 1번부터 새 번호를 매긴다 — 이후 자리 채우기/결석 제외/고정석/결과 저장은
+  // 모두 scStudents의 번호로 동작하므로 한 반일 때와 똑같이 쓴다. 자동저장은 'sc-data-mix' 하나.
+  const SC_MIX_KEY = 'sc-data-mix';
+  function scIsMix() { const el = document.getElementById('sc-mix-toggle'); return !!(el && el.checked); }
+  function scParseMixNames(text) {
+    const names = [];
+    String(text || '').split(/[\n,]/).forEach(function(line) {
+      // 학번·번호 칸(숫자만 있는 조각)은 버리고 이름만 남긴다. 예: "20305\t김철수", "3. 김철수"
+      const parts = line.split(/[\t ]+/).filter(function(p) { return p && !/^\d+[.번)]?$/.test(p); });
+      const name = parts.join(' ').trim();
+      if (name) names.push(name);
+    });
+    names.sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+    return names;
+  }
+  function scSetMixStudents(text) {
+    const names = scParseMixNames(text);
+    scStudents = names.map(function(name, i) { return { num: String(i + 1), name: name }; });
+    const dupCount = names.length - new Set(names).size;
+    document.getElementById('sc-roster-status').textContent = names.length
+      ? ('총 ' + names.length + '명 — 가나다순으로 1~' + names.length + '번' + (dupCount ? ' (같은 이름 ' + dupCount + '건 있음, 확인하세요)' : ''))
+      : '이름을 붙여넣고 "명단 적용"을 누르세요.';
+  }
+  function scShowMixUI(on) {
+    document.getElementById('sc-mix-toggle').checked = on;
+    document.getElementById('sc-mix-box').style.display = on ? 'flex' : 'none';
+    document.getElementById('sc-roster-select-row').style.display = on ? 'none' : 'flex';
+    if (on) {
+      document.getElementById('sc-grade-select').value = '';
+      document.getElementById('sc-class-select').innerHTML = '<option value="">반</option>';
+    }
+  }
+  async function scToggleMix(on) {
+    scShowMixUI(on);
+    scStudents = [];
+    if (on) {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(SC_MIX_KEY) || 'null'); } catch (e) { saved = null; }
+      if (saved && saved.seatData) {
+        await scApplyArrangement(saved);
+      } else {
+        document.getElementById('sc-mix-names').value = '';
+        scSetMixStudents('');
+        const titleInput = document.getElementById('sc-display-title');
+        if (titleInput) titleInput.value = '🏫 좌석배치표 ✨';
+      }
+    } else {
+      document.getElementById('sc-roster-status').textContent = '학년과 반을 선택하세요.';
+    }
+  }
+  async function scApplyMixNames() {
+    scSetMixStudents(document.getElementById('sc-mix-names').value);
+    if (!scStudents.length) { await customAlert('붙여넣은 이름이 없습니다.'); return; }
+    // 명단이 바뀌면 번호도 새로 매겨지므로, 이미 앉혀둔 자리(고정석 포함)는 비운다.
+    document.querySelectorAll('.sc-desk').forEach(function(d) {
+      if (d.classList.contains('sc-excluded')) return;
+      d.classList.remove('sc-fixed');
+      d.querySelector('.sc-desk-num').innerText = '';
+      d.querySelector('.sc-desk-name').innerText = '';
+    });
+    scScheduleAutoSave();
   }
 
   async function scLoadRosterFromDB(grade, classNo) {
@@ -6988,7 +7066,7 @@
   }
 
   async function scApplySettings() {
-    if (scStudents.length === 0) { await customAlert('⚠️ 먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+    if (scStudents.length === 0) { await customAlert('⚠️ 먼저 학년과 반을 선택해 명렬표를 불러오거나, 여러 반 섞기에서 명단을 적용해주세요.'); return; }
     if (scCurrentMode !== 'normal') { await customAlert('진행 중인 모드를 해제해주세요.'); return; }
     const rVal = document.getElementById('sc-cfg-rows').value;
     const gVal = document.getElementById('sc-cfg-groups').value;
@@ -7029,7 +7107,7 @@
       desk.classList.toggle('sc-fixed');
     } else {
       if (desk.classList.contains('sc-excluded')) return;
-      if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+      if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러오거나, 여러 반 섞기에서 명단을 적용해주세요.'); return; }
       scTargetDesk = desk;
       scOpenModal();
     }
@@ -7154,7 +7232,7 @@
   async function scArrangeSeats(type) {
     if (scIsAnimating) return;
     if (scCurrentMode !== 'normal') { await customAlert("진행 중인 지정 모드를 '완료' 눌러서 해제해주세요."); return; }
-    if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러와주세요.'); return; }
+    if (scStudents.length === 0) { await customAlert('먼저 학년과 반을 선택해 명렬표를 불러오거나, 여러 반 섞기에서 명단을 적용해주세요.'); return; }
     const grid = document.getElementById('sc-seat-grid');
     if (grid.innerHTML.trim() === '') { await customAlert('먼저 구조 그리기를 실행해주세요.'); return; }
 
@@ -7281,8 +7359,10 @@
     });
 
     return {
-      grade: document.getElementById('sc-grade-select').value,
-      classNo: document.getElementById('sc-class-select').value,
+      grade: scIsMix() ? '' : document.getElementById('sc-grade-select').value,
+      classNo: scIsMix() ? '' : document.getElementById('sc-class-select').value,
+      mix: scIsMix(),
+      mixNames: scIsMix() ? document.getElementById('sc-mix-names').value : undefined,
       rows: document.getElementById('sc-cfg-rows').value,
       groups: document.getElementById('sc-cfg-groups').value,
       seats: document.getElementById('sc-cfg-seats').value,
@@ -7316,7 +7396,7 @@
     const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = '좌석배치_' + (fullData.grade || '') + '학년' + (fullData.classNo || '') + '반.json';
+    a.download = fullData.mix ? '좌석배치_여러반.json' : ('좌석배치_' + (fullData.grade || '') + '학년' + (fullData.classNo || '') + '반.json');
     a.click(); URL.revokeObjectURL(a.href);
   }
 
@@ -7335,7 +7415,11 @@
 
     document.getElementById('sc-a4-paper').classList.toggle('sc-inverted', !!data.inverted);
 
-    if (data.grade && data.classNo) {
+    scShowMixUI(!!data.mix);
+    if (data.mix) {
+      document.getElementById('sc-mix-names').value = data.mixNames || '';
+      scSetMixStudents(data.mixNames || '');
+    } else if (data.grade && data.classNo) {
       await ensureClassStructureLoaded();
       const gradeSel = document.getElementById('sc-grade-select');
       gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(parseInt(data.grade));
@@ -7395,6 +7479,13 @@
     scAutoSaveTimer = setTimeout(scAutoSave, 800);
   }
   function scAutoSave() {
+    if (scIsMix()) {
+      const mixGrid = document.getElementById('sc-seat-grid');
+      if (!mixGrid || mixGrid.innerHTML.trim() === '') return;
+      try { localStorage.setItem(SC_MIX_KEY, JSON.stringify(scCollectArrangement())); } catch (e) { return; }
+      scheduleBackupWrite();
+      return;
+    }
     const grade = document.getElementById('sc-grade-select').value;
     const classNo = document.getElementById('sc-class-select').value;
     if (!grade || !classNo) return;

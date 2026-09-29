@@ -26,4 +26,5 @@ for t in *.js; do echo "== $t"; NODE_PATH=/opt/node22/lib/node_modules node $t |
 | staff-test.js | 실무사 전용 홈(시간표 7칸+정보 칸), 급식 칸 배치, 글씨 크기 |
 | admin-test.js | 관리자 설정 탭 구성, 일과 시간 표 입력·검증·저장 |
 | ttscroll-test.js | 설정 속 교사 시간표: 안쪽 스크롤 없음, 수정→저장 |
+| scmix-test.js | 좌석배치표 여러 반 섞기(이름 붙여넣기·가나다순 번호·자동저장·복원), 체크박스 onchange 유지 |
 | ptsel-test.js | 시간표 색상 테마 버튼 한 줄, 학생 시간표 학년/반 계정별 기억 |
