@@ -239,6 +239,23 @@ function check(label, cond, detail) {
   s = await state();
   check('정렬 후에도 달별 묶음 유지', s.heads.length === 4 && s.rows.filter(r => r.m === '3').map(r => r.d).join(',') === '3/2,3/10,3/15', s);
 
+  // 5칸 추가 후 패널 맨 아래에서 🗑️를 연달아 눌러도 스크롤이 위로 끌려가지 않음
+  await P.setViewportSize({ width: 1400, height: 700 }); await wait(300);
+  await P.evaluate(() => { const p = document.getElementById('ms-panel'); p.scrollTop = document.getElementById('ms-section-table').offsetTop - 10; });
+  await wait(200);
+  { const b = await P.locator('text=+ 5칸 추가').boundingBox(); await P.mouse.click(b.x + b.width / 2, b.y + b.height / 2); await wait(300); }
+  await P.evaluate(() => { const p = document.getElementById('ms-panel'); p.scrollTop = p.scrollHeight; }); await wait(200);
+  const lastBtn = P.locator('#ms-table-body .ms-del-row-btn').last();
+  const box = await lastBtn.boundingBox();
+  const top0 = await P.evaluate(() => document.getElementById('ms-panel').scrollTop);
+  const rows0 = (await state()).rows.length;
+  const x = box.x + box.width / 2, y = box.y - box.height * 3;   // 끝에서 몇 번째 줄 🗑️
+  for (let i = 0; i < 3; i++) { await P.mouse.click(x, y); await wait(250); }
+  const top1 = await P.evaluate(() => document.getElementById('ms-panel').scrollTop);
+  check('맨 아래에서 3줄 지워도 스크롤 그대로', top1 === top0 && (await state()).rows.length === rows0 - 3, { top0, top1 });
+  await P.evaluate(() => { document.getElementById('ms-panel').scrollTop = 0; }); await wait(300);
+  check('위로 스크롤하면 채워 둔 빈 칸은 사라짐', await P.evaluate(() => document.getElementById('ms-panel-spacer').style.height === ''));
+
   // 같은 계정 다른 기기: 켜진 채로 복원, 일정도 달별로 묶임
   const pc2 = await openDevice(browser, 'PC2', T1);
   const Q = pc2.page;

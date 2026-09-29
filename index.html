@@ -497,6 +497,8 @@
     .ms-month-head.ms-month-new:hover td { background: var(--bg-color); }
     .ms-month-head.ms-month-new .ms-month-head-inner { color: var(--text-sub); }
     #ms-table-body tr.ms-row-folded { display: none; }
+    /* 줄을 지울 때 패널 길이가 줄어 스크롤이 위로 끌려가지 않게 잠깐 채워 두는 빈 칸(msDeleteRow). */
+    #ms-panel-spacer { flex-shrink: 0; height: 0; margin-top: -10px; }
     .ms-expand-all-label { display: flex; align-items: center; gap: 4px; margin-right: auto; font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; }
     .ms-expand-all-label input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--accent-color); }
 
@@ -1994,6 +1996,7 @@
           </div>
         </div>
       </div>
+      <div id="ms-panel-spacer"></div>
 
     </div>
 
@@ -2506,7 +2509,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.25';
+  var BUILD_ID = '2026-09-29.26';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7869,10 +7872,28 @@
     msGroupRows();
   }
 
+  // 패널 맨 아래까지 내려서 줄을 지우면 내용이 짧아진 만큼 브라우저가 스크롤을 위로 끌어올려
+  // 화면이 한 줄씩 밀리고, 다음 🗑️가 마우스 밑에서 벗어났다. 지운 만큼 맨 아래 빈 칸을 늘려
+  // 화면을 그대로 두고, 그 빈 칸이 스크롤로 화면 밖에 나가면 다시 없앤다.
   function msDeleteRow(btn) {
     const tr = btn.closest('tr');
+    const panel = document.getElementById('ms-panel');
+    const spacer = document.getElementById('ms-panel-spacer');
+    const before = panel.scrollHeight, top = panel.scrollTop;
     tr.remove();
     msGroupRows();
+    const lost = before - panel.scrollHeight;
+    if (spacer && lost > 0) {
+      spacer.style.height = ((parseFloat(spacer.style.height) || 0) + lost) + 'px';
+      panel.scrollTop = top;
+      if (!panel.__msSpacerBound) {
+        panel.__msSpacerBound = true;
+        panel.addEventListener('scroll', function() {
+          if (!spacer.style.height) return;
+          if (spacer.getBoundingClientRect().top >= panel.getBoundingClientRect().bottom) spacer.style.height = '';
+        });
+      }
+    }
     msRenderCalendar();
   }
 
@@ -7930,18 +7951,21 @@
     msGroupRows();
   }
 
-  function msMonthHeadRow(m, count, open) {
-    const tr = document.createElement('tr');
-    tr.className = 'ms-month-head' + (m ? '' : ' ms-month-new');
-    tr.dataset.month = m;
-    if (m) {
-      tr.onclick = function() { msToggleMonth(m); };
-      tr.innerHTML = '<td colspan="4"><div class="ms-month-head-inner"><span>' + (open ? '▼ ' : '▶ ') + m + '월</span>' +
-        '<span class="ms-month-head-count">' + count + '건</span></div></td>';
-    } else {
-      tr.innerHTML = '<td colspan="4"><div class="ms-month-head-inner"><span>✏️ 새 일정 입력</span>' +
-        '<span class="ms-month-head-count">날짜를 적으면 그 달로 옮겨져요</span></div></td>';
+  // 달 머리줄 — 이미 있는 줄(existing)은 새로 만들지 않고 글자만 바꿔서 다시 쓴다.
+  function msMonthHeadRow(m, count, open, existing) {
+    let tr = existing;
+    if (!tr) {
+      tr = document.createElement('tr');
+      tr.className = 'ms-month-head' + (m ? '' : ' ms-month-new');
+      tr.dataset.month = m;
+      if (m) tr.onclick = function() { msToggleMonth(m); };
     }
+    const html = m
+      ? '<td colspan="4"><div class="ms-month-head-inner"><span>' + (open ? '▼ ' : '▶ ') + m + '월</span>' +
+        '<span class="ms-month-head-count">' + count + '건</span></div></td>'
+      : '<td colspan="4"><div class="ms-month-head-inner"><span>✏️ 새 일정 입력</span>' +
+        '<span class="ms-month-head-count">날짜를 적으면 그 달로 옮겨져요</span></div></td>';
+    if (tr.__html !== html) { tr.innerHTML = html; tr.__html = html; }
     return tr;
   }
 
@@ -7952,7 +7976,10 @@
     const tbody = document.getElementById('ms-table-body');
     if (!tbody) return;
     const active = document.activeElement;
-    tbody.querySelectorAll('tr.ms-month-head').forEach(function(h) { h.remove(); });
+    const panel = document.getElementById('ms-panel');
+    const panelScroll = panel ? panel.scrollTop : 0;
+    const oldHeads = {};
+    tbody.querySelectorAll('tr.ms-month-head').forEach(function(h) { oldHeads[h.dataset.month] = h; });
 
     const groups = {};
     const undated = [];
@@ -7964,26 +7991,38 @@
       else undated.push(tr);
     });
 
+    // 원하는 줄 순서(머리줄 + 일정 줄)를 만든 뒤, 제자리가 아닌 줄만 옮긴다. 예전엔 모든 줄을
+    // 빼냈다 다시 붙여서, 칸 추가·삭제 때마다 브라우저가 스크롤 위치를 놓쳐 위로 튀었다.
     const expandAll = msIsExpandAll();
-    function appendRows(rows, folded) {
-      rows.forEach(function(tr) {
-        const sel = tr.querySelector('select');
-        const val = sel ? sel.value : '';
-        tr.classList.toggle('ms-row-folded', folded);
-        tbody.appendChild(tr);
-        if (sel) sel.value = val;
-      });
+    const want = [];
+    const usedHeads = new Set();
+    function addHead(m, count, open) {
+      const h = msMonthHeadRow(m, count, open, oldHeads[String(m)]);
+      usedHeads.add(h);
+      want.push(h);
     }
     MS_MONTH_ORDER.forEach(function(m) {
       if (!groups[m]) return;
       const open = msMonthOpen[m] !== undefined ? msMonthOpen[m] : expandAll;
-      tbody.appendChild(msMonthHeadRow(m, groups[m].length, open));
-      appendRows(groups[m], !open);
+      addHead(m, groups[m].length, open);
+      groups[m].forEach(function(tr) { tr.classList.toggle('ms-row-folded', !open); want.push(tr); });
     });
     if (undated.length) {
-      tbody.appendChild(msMonthHeadRow(0, undated.length, true));
-      appendRows(undated, false);
+      addHead(0, undated.length, true);
+      undated.forEach(function(tr) { tr.classList.remove('ms-row-folded'); want.push(tr); });
     }
+    Object.keys(oldHeads).forEach(function(k) { if (!usedHeads.has(oldHeads[k])) oldHeads[k].remove(); });
+
+    const example = tbody.querySelector('tr.ms-example-row');
+    let cur = example ? example.nextElementSibling : tbody.firstElementChild;
+    want.forEach(function(tr) {
+      if (tr === cur) { cur = cur.nextElementSibling; return; }
+      const sel = tr.querySelector('select');
+      const val = sel ? sel.value : '';
+      tbody.insertBefore(tr, cur);
+      if (sel) sel.value = val;
+    });
+    if (panel && panel.scrollTop !== panelScroll) panel.scrollTop = panelScroll;
 
     // 줄을 옮기면 그 안에서 입력 중이던 칸의 커서가 풀리므로 되돌려 준다.
     if (active && active !== document.activeElement && tbody.contains(active) && !active.closest('tr.ms-row-folded')) active.focus();
