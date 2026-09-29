@@ -219,7 +219,6 @@
     .modal-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; margin-top: 10px; resize: none; box-sizing: border-box; font-family: inherit;}
     .modal-box input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 12px; }
     
-    .time-input-row { display: grid; grid-template-columns: 0.6fr 2fr 2fr; gap: 8px; align-items: center; margin-bottom: 10px; text-align: center; font-size: 13px; font-weight: 600;}
     .time-select-group { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
     .notice-popup { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: #F07178; color: white; padding: 15px 30px; border-radius: 10px; box-shadow: 0 10px 30px rgba(240,113,120,0.4); font-weight: 700; z-index: 1000; display: flex; gap: 15px; align-items: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; font-size: 15px;}
@@ -232,6 +231,29 @@
     .admin-tab-btn { display:flex; align-items:center; gap:7px; text-align:left; padding:9px 10px; border-radius:8px; border:none; background:transparent; color:var(--text-sub); font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
     .admin-tab-btn:hover { background: var(--bg-color); color: var(--text-main); }
     .admin-tab-btn.active { background: var(--accent-soft); color: var(--accent-color); }
+    .admin-nav-group { font-size: 10.5px; font-weight: 800; color: var(--text-sub); letter-spacing: 0.02em; padding: 12px 10px 4px; }
+    .admin-nav-group:first-child { padding-top: 2px; }
+    .admin-pane-head { font-weight: 800; font-size: 15px; margin-bottom: 12px; color: var(--text-main); }
+    .admin-pane-head span { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-sub); margin-top: 3px; }
+    .admin-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; max-width: 760px; box-sizing: border-box; }
+    .admin-card-title { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+    .admin-card-desc { font-size: 11px; color: var(--text-sub); margin-bottom: 10px; line-height: 1.5; }
+    .admin-card-actions { margin-top: 10px; }
+    .admin-card-actions .top-btn { font-size: 11.5px; padding: 5px 12px; }
+    .admin-form-rows { display: flex; flex-direction: column; gap: 6px; }
+    .admin-form-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .admin-form-label { width: 50px; font-weight: 700; flex-shrink: 0; }
+    .admin-input { padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-main); font-size: 12px; box-sizing: border-box; min-width: 0; }
+    .admin-time-table { border-collapse: collapse; font-size: 12px; }
+    .admin-time-table th { font-size: 11px; color: var(--text-sub); font-weight: 700; text-align: left; padding: 0 14px 6px 0; border-bottom: 1px dashed var(--border-color); }
+    .admin-time-table td { padding: 4px 14px 4px 0; }
+    .admin-time-table td:first-child { font-weight: 800; }
+    .admin-time-input { width: 72px; text-align: center; font-variant-numeric: tabular-nums; }
+    .admin-time-table .admin-time-dur { color: var(--text-sub); font-size: 11px; }
+    .admin-time-table .admin-time-dur.bad { color: #E5484D; font-weight: 700; }
+    /* 교사 시간표·감독표를 설정 화면 폭 전체로 늘리면 표가 너무 가로로 퍼져 보기 어렵다 */
+    #admin-tt-slot, #admin-duty-slot { max-width: 860px; width: 100%; }
+    .admin-tab-pane[data-tab="duty"] .admin-card { max-width: 860px; }
 
     .big-cal-wrapper { flex-direction: column; height: 100%; min-height: 0; }
 
@@ -1006,7 +1028,7 @@
   <div class="modal-box" id="schedule-modal-box" style="width: 900px; max-width: 92vw; max-height: 88vh; display: none; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap:10px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
+        <div id="schedule-modal-title" style="font-weight: 800; font-size: 16px;">🗓️ 시간표 관리</div>
         <div class="tab-switch" id="schedule-semester-switch">
           <button class="tab-btn" id="sched-sem-1" onclick="switchScheduleModalSemester('1학기')">1학기</button>
           <button class="tab-btn" id="sched-sem-2" onclick="switchScheduleModalSemester('2학기')">2학기</button>
@@ -1073,20 +1095,6 @@
     <div style="display:flex; gap:10px; margin-top: 15px;">
       <button class="top-btn accent" id="neis-check-save-btn" style="flex:1; padding:8px; display:none;" onclick="saveNeisSnapshot()">💾 스냅샷으로 저장</button>
       <button class="top-btn" style="flex:1; padding:8px;" onclick="closeNeisCheckModal()">닫기</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="time-setting-overlay">
-  <div class="modal-box" style="width: 380px;">
-    <div style="font-weight: 800; font-size: 16px; margin-bottom: 15px; text-align: center;">⚙️ 일과 시간 일괄 설정</div>
-    <div class="time-input-row" style="color: var(--text-sub); border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">
-      <div>교시</div><div>시작 시간</div><div>종료 시간</div>
-    </div>
-    <div id="time-inputs-container"></div>
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      <button class="top-btn" style="flex: 1; padding:8px;" onclick="closeTimeSettings()">취소</button>
-      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="saveTimeSettings()">저장하기</button>
     </div>
   </div>
 </div>
@@ -1505,37 +1513,42 @@
 
   <div style="display:flex; flex:1; min-height:0;">
     <div style="width:160px; flex:0 0 auto; border-right:1px solid var(--border-color); padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;">
-      <button class="admin-tab-btn" data-tab="tt" onclick="switchAdminTab('tt')">🗓️ 시간표</button>
+      <div class="admin-nav-group">학교 기본</div>
+      <button class="admin-tab-btn" data-tab="school" onclick="switchAdminTab('school')">📅 학사 기본</button>
+      <div class="admin-nav-group">시간표 · 감독</div>
+      <button class="admin-tab-btn" data-tab="tt" onclick="switchAdminTab('tt')">🗓️ 교사 시간표</button>
       <button class="admin-tab-btn" data-tab="duty" onclick="switchAdminTab('duty')">📋 감독표</button>
-      <button class="admin-tab-btn" data-tab="classes" onclick="switchAdminTab('classes')">🏫 학급 구성</button>
-      <button class="admin-tab-btn" data-tab="students" onclick="switchAdminTab('students')">🧑‍🎓 명렬표</button>
-      <button class="admin-tab-btn" data-tab="stt" onclick="switchAdminTab('stt')">🪪 학생 시간표</button>
-      <button class="admin-tab-btn" data-tab="semester" onclick="switchAdminTab('semester')">📅 학기 날짜</button>
-      <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기</button>
+      <div class="admin-nav-group">학생 · 교직원</div>
+      <button class="admin-tab-btn" data-tab="students" onclick="switchAdminTab('students')">🧑‍🎓 학생 자료</button>
       <button class="admin-tab-btn" data-tab="accounts" onclick="switchAdminTab('accounts')">👤 계정 관리</button>
+      <div class="admin-nav-group">공통 화면</div>
+      <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기 고정</button>
+      <div class="admin-nav-group">관리</div>
       <button class="admin-tab-btn" data-tab="danger" onclick="switchAdminTab('danger')">🧹 초기화</button>
     </div>
 
     <div style="flex:1; min-width:0; overflow-y:auto; padding:20px 26px;">
 
       <div class="admin-tab-pane" data-tab="tt" style="display:none; height:100%; flex-direction:column;">
+        <div class="admin-pane-head">🗓️ 교사 시간표 <span>선생님별 시간표를 보고 고치거나, 전체 시간표 엑셀을 한 번에 가져옵니다.</span></div>
         <div id="admin-tt-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
       </div>
 
       <div class="admin-tab-pane" data-tab="duty" style="display:none; height:100%; flex-direction:column;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 평일 자리 한 번에 만들기</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">"학기 날짜" 탭에 등록해둔 학기 시작~종료일 그대로, 방학·휴업일을 뺀 평일 날짜를 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(감독 종류와 상관없이 평일 계산은 똑같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
+        <div class="admin-pane-head">📋 감독표 <span>야자·급식·아침 감독 명단을 날짜별로 채웁니다.</span></div>
+        <div class="admin-card" style="flex:0 0 auto;">
+        <div class="admin-card-title">학기 평일 자리 한 번에 만들기</div>
+        <div class="admin-card-desc">"학사 기본" 탭에 등록해둔 학기 시작~종료일 그대로, 방학·휴업일을 뺀 평일 날짜를 체크한 감독표들에 이름 없는 빈 자리로 한 번에 등록합니다(감독 종류와 상관없이 평일 계산은 똑같아서 한 번만 하면 됩니다). 이미 등록된 날짜는 건너뜁니다 — 이름은 아래에서 채우면 됩니다.</div>
         <div style="display:flex; gap:16px; margin-bottom:10px; font-size:12px; font-weight:600;">
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-야자감독" checked><span>🌙 야자 감독</span></label>
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-급식감독" checked><span>🍱 급식 감독</span></label>
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="admin-duty-fill-아침감독" checked><span>☀️ 아침 감독</span></label>
         </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('1학기')">📅 1학기 빈 자리 만들기</button>
           <button class="top-btn accent" style="font-size:12px; padding:6px 12px;" onclick="fillDutyRowsForSemester('2학기')">📅 2학기 빈 자리 만들기</button>
         </div>
-
-        <div style="border-top:1px solid var(--border-color); margin-bottom:14px;"></div>
+        </div>
 
         <div class="tab-switch" id="admin-duty-board-switch" style="align-self:flex-start; margin-bottom:10px;">
           <button class="tab-btn admin-duty-board-btn" data-board="야자감독" onclick="selectAdminDutyBoard('야자감독','🌙')">🌙 야자</button>
@@ -1545,90 +1558,96 @@
         <div id="admin-duty-slot" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
       </div>
 
-      <div class="admin-tab-pane" data-tab="classes" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🏫 학급 구성</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학년 수와 학년별 반 개수를 정해두면, 담임 지정이나 학급시간표 같은 기능에서 그대로 씁니다.</div>
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
-          <span style="font-size:12px; font-weight:700;">학년 수</span>
-          <select id="class-grade-count" class="mini-select" onchange="renderClassCountInputs()">
-            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
-          </select>
+      <div class="admin-tab-pane" data-tab="school" style="display:none;">
+        <div class="admin-pane-head">📅 학사 기본 <span>한 해(학기)를 시작할 때 정해 두면 모든 선생님 화면에 공통으로 적용됩니다.</span></div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">학기 날짜</div>
+          <div class="admin-card-desc">이 기간으로 지금이 몇 학기인지 자동으로 판단합니다(시간표 학기 전환, 감독표 빈 자리 만들기에 쓰임).</div>
+          <div class="admin-form-rows">
+            <div class="admin-form-row"><span class="admin-form-label">1학기</span><input type="date" id="sem1-start" class="admin-input"><span>~</span><input type="date" id="sem1-end" class="admin-input"></div>
+            <div class="admin-form-row"><span class="admin-form-label">2학기</span><input type="date" id="sem2-start" class="admin-input"><span>~</span><input type="date" id="sem2-end" class="admin-input"></div>
+          </div>
+          <div class="admin-card-actions"><button class="top-btn accent" onclick="saveSemesterRanges()">학기 날짜 저장</button></div>
         </div>
-        <div id="class-count-rows" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
-        <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="saveClassStructure()">학급 구성 저장</button>
+
+        <div class="admin-card">
+          <div class="admin-card-title">일과 시간 (교시별 시작·종료)</div>
+          <div class="admin-card-desc">모든 선생님의 시간표 화면과 "지금 이 시간" 표시에 공통으로 쓰입니다.</div>
+          <table class="admin-time-table">
+            <thead><tr><th>교시</th><th>시작</th><th>종료</th><th>수업 시간</th></tr></thead>
+            <tbody id="admin-time-rows"></tbody>
+          </table>
+          <div class="admin-card-actions"><button class="top-btn accent" onclick="saveClassTimesUI()">일과 시간 저장</button></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">학급 구성</div>
+          <div class="admin-card-desc">학년 수와 학년별 반 개수 — 담임 지정, 명렬표, 학생 시간표의 학년·반 목록에 쓰입니다.</div>
+          <div class="admin-form-row" style="margin-bottom:10px;">
+            <span class="admin-form-label">학년 수</span>
+            <select id="class-grade-count" class="mini-select" onchange="renderClassCountInputs()">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </div>
+          <div id="class-count-rows" class="admin-form-rows"></div>
+          <div class="admin-card-actions"><button class="top-btn accent" onclick="saveClassStructure()">학급 구성 저장</button></div>
+        </div>
       </div>
 
       <div class="admin-tab-pane" data-tab="students" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🧑‍🎓 명렬표 엑셀 업로드</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀을 학년별로 각각 올려주세요. 그 학년 파일을 다시 올리면 명단이 새 내용으로 통째로 바뀝니다(다른 학년은 그대로 남습니다).</div>
-        <div id="student-upload-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
-      </div>
+        <div class="admin-pane-head">🧑‍🎓 학생 자료 <span>학년별 엑셀을 올립니다. 그 학년 파일을 다시 올리면 그 학년 자료만 새 내용으로 통째로 바뀝니다.</span></div>
 
-      <div class="admin-tab-pane" data-tab="stt" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🪪 학생 시간표 엑셀 업로드</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">학년별로 학생 시간표 엑셀을 올려주세요(고교학점제 "배정내역·교실배정" 파일은 여러 개를 한 번에 골라도 됩니다). 그 학년 파일을 다시 올리면 그 학년 학생 시간표 전체가 새 내용으로 바뀝니다. 올린 시간표는 모든 선생님이 왼쪽 레일 "시간표 → 학생 시간표"에서 함께 봅니다.</div>
-        <div id="stt-upload-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
-        <input type="file" id="pt-excel-upload" accept=".xlsx,.xls" multiple style="display:none;">
-      </div>
-
-      <div class="admin-tab-pane" data-tab="semester" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📅 학기 날짜 설정</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 기간으로 화면이 지금 몇 학기인지 자동으로 판단합니다(시간표 화면 전환, 감독표 자동 채우기에 같이 쓰입니다).</div>
-        <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="width:40px; font-weight:700;">1학기</span>
-            <input type="date" id="sem1-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-            <span>~</span>
-            <input type="date" id="sem1-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="width:40px; font-weight:700;">2학기</span>
-            <input type="date" id="sem2-start" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-            <span>~</span>
-            <input type="date" id="sem2-end" style="padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:var(--text-main);">
-          </div>
+        <div class="admin-card">
+          <div class="admin-card-title">명렬표</div>
+          <div class="admin-card-desc">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀. 왼쪽 레일 "명렬표"와 좌석배치표에서 씁니다.</div>
+          <div id="student-upload-rows" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
-        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveSemesterRanges()">학기 날짜 저장</button>
 
-        <div style="border-top:1px solid var(--border-color); margin:18px 0 12px;"></div>
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">⏰ 일과 시간 (교시별 시작·종료)</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">여기서 정한 시간이 모든 선생님의 시간표 화면에 공통으로 적용됩니다.</div>
-        <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="openTimeSettings()">일과 시간 설정</button>
+        <div class="admin-card">
+          <div class="admin-card-title">학생 시간표</div>
+          <div class="admin-card-desc">고교학점제 "배정내역·교실배정" 파일은 여러 개를 한 번에 골라도 됩니다. 모든 선생님이 왼쪽 레일 "시간표 → 학생 시간표"에서 함께 봅니다.</div>
+          <div id="stt-upload-rows" style="display:flex; flex-direction:column; gap:8px;"></div>
+          <input type="file" id="pt-excel-upload" accept=".xlsx,.xls" multiple style="display:none;">
+        </div>
       </div>
 
       <div class="admin-tab-pane" data-tab="bookmarks" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🔗 즐겨찾기 고정 링크 (모두에게 같게 보임)</div>
-        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
-          <input type="text" id="fixed-bm-name-0" placeholder="이름 (예: 업무포탈)">
-          <input type="text" id="fixed-bm-url-0" placeholder="주소 (URL)">
-          <input type="text" id="fixed-bm-name-1" placeholder="이름 (예: 리로스쿨)">
-          <input type="text" id="fixed-bm-url-1" placeholder="주소 (URL)">
-          <input type="text" id="fixed-bm-name-2" placeholder="이름 (예: 학교홈피)">
-          <input type="text" id="fixed-bm-url-2" placeholder="주소 (URL)">
-          <input type="text" id="fixed-bm-name-3" placeholder="이름 (예: 정보AS)">
-          <input type="text" id="fixed-bm-url-3" placeholder="주소 (URL)">
+        <div class="admin-pane-head">🔗 즐겨찾기 고정 링크 <span>모든 선생님 홈 화면 즐겨찾기에 똑같이 보입니다.</span></div>
+        <div class="admin-card">
+          <div style="display:grid; grid-template-columns: 1fr 2fr; gap:6px;">
+            <input type="text" id="fixed-bm-name-0" class="admin-input" placeholder="이름 (예: 업무포탈)">
+            <input type="text" id="fixed-bm-url-0" class="admin-input" placeholder="주소 (URL)">
+            <input type="text" id="fixed-bm-name-1" class="admin-input" placeholder="이름 (예: 리로스쿨)">
+            <input type="text" id="fixed-bm-url-1" class="admin-input" placeholder="주소 (URL)">
+            <input type="text" id="fixed-bm-name-2" class="admin-input" placeholder="이름 (예: 학교홈피)">
+            <input type="text" id="fixed-bm-url-2" class="admin-input" placeholder="주소 (URL)">
+            <input type="text" id="fixed-bm-name-3" class="admin-input" placeholder="이름 (예: 정보AS)">
+            <input type="text" id="fixed-bm-url-3" class="admin-input" placeholder="주소 (URL)">
+          </div>
+          <div class="admin-card-actions"><button class="top-btn accent" onclick="saveFixedBookmarks()">고정 링크 저장</button></div>
         </div>
-        <button class="top-btn accent" style="font-size:11px; padding:5px 10px; margin-top:6px;" onclick="saveFixedBookmarks()">고정 링크 저장</button>
       </div>
 
       <div class="admin-tab-pane" data-tab="accounts" style="display:none;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px; flex-wrap:wrap;">
-          <div style="font-weight:700; font-size:13px;">👤 아이디 관리</div>
+        <div class="admin-pane-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <div>👤 계정 관리 <span>역할(담임·교사·교감·교장·실무사), 담임 학급, 관리자 지정, 비밀번호 초기화</span></div>
           <div style="display:flex; gap:6px;">
             <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="saveAllTeacherRolesUI()">✅ 역할 전체 저장</button>
             <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="addTeacherAccountUI()">+ 계정 추가</button>
           </div>
         </div>
-        <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:8px; max-height:calc(100vh - 260px); overflow-y:auto;"></div>
+        <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:12px; background:var(--card-bg); max-height:calc(100vh - 230px); overflow-y:auto;"></div>
       </div>
 
       <div class="admin-tab-pane" data-tab="danger" style="display:none;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#E5484D;">🧹 학기별 초기화</div>
-        <div style="font-size:11px; color:var(--text-sub); margin-bottom:8px;">학기가 바뀌어 선생님 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
-          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('1학기')">1학기 시간표 삭제</button>
-          <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('2학기')">2학기 시간표 삭제</button>
+        <div class="admin-pane-head" style="color:#E5484D;">🧹 학기별 초기화 <span>학기가 바뀌어 명단이나 시간표를 완전히 새로 시작할 때만 쓰세요. 되돌릴 수 없습니다.</span></div>
+        <div class="admin-card" style="border-color:#F2B8BA;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetAllTeachersUI()">선생님 계정 전체 삭제 (본인 제외)</button>
+            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('1학기')">1학기 시간표 삭제</button>
+            <button class="top-btn" style="font-size:12px; padding:6px 12px; color:#E5484D;" onclick="resetTimetableUI('2학기')">2학기 시간표 삭제</button>
+          </div>
         </div>
       </div>
 
@@ -2435,7 +2454,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.13';
+  var BUILD_ID = '2026-09-29.14';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3056,6 +3075,9 @@
   function closeAdminSettingsModal() { goHome(); }
 
   async function switchAdminTab(tabId) {
+    // 예전 탭 이름(학기 날짜·학급 구성 → 학사 기본, 학생 시간표 → 학생 자료)으로 불러도 새 탭으로 연다.
+    if (tabId === 'semester' || tabId === 'classes') tabId = 'school';
+    if (tabId === 'stt') tabId = 'students';
     adminSettingsActiveTab = tabId;
     document.querySelectorAll('.admin-tab-btn').forEach(function(el) { el.classList.toggle('active', el.dataset.tab === tabId); });
     document.querySelectorAll('.admin-tab-pane').forEach(function(el) {
@@ -3067,13 +3089,18 @@
     });
     if (tabId === 'tt') {
       mountBox(document.getElementById('schedule-modal-box'), document.getElementById('admin-tt-slot'), true);
+      document.getElementById('schedule-modal-title').style.display = 'none'; // 설정 화면 제목("교사 시간표")과 겹침
       document.getElementById('schedule-close-row').style.display = 'none';
       await initScheduleModalBody();
     } else if (tabId === 'duty') {
       await selectAdminDutyBoard(currentDutySheetName || '야자감독', currentDutyIcon || '🌙');
+    } else if (tabId === 'school') {
+      loadSemesterRangesUI();
+      loadClassStructureUI();
+      await ensureClassTimesLoaded();
+      loadClassTimesUI();
     } else if (tabId === 'students') {
       await renderStudentUploadRows();
-    } else if (tabId === 'stt') {
       await renderStudentTimetableUploadRows();
     }
   }
@@ -4250,37 +4277,68 @@
     event.target.value = ''; 
   }
 
-  function getSelectOptions(max, selected) {
+  // ===== ⏰ 관리자 설정 "학사 기본" 탭의 일과 시간 표 =====
+  // 예전엔 버튼을 눌러 작은 팝업에서 시·분을 드롭다운으로 골랐는데, 설정 화면은 공간이 넉넉해서
+  // 표를 바로 두고 입력하게 했다. 교시마다 수업 시간(분)을 옆에 보여줘서 잘못 친 시간을 바로 알 수 있다.
+  function loadClassTimesUI() {
+    const body = document.getElementById('admin-time-rows');
+    if (!body) return;
     let html = '';
-    for(let i=0; i<=max; i++) {
-      let val = i.toString().padStart(2, '0');
-      let selStr = (val === selected) ? 'selected' : '';
-      html += '<option value="' + val + '" ' + selStr + '>' + val + '</option>';
+    for (let i = 1; i <= 7; i++) {
+      const t = currentTimes[i - 1] || { s: '', e: '' };
+      html += '<tr><td>' + i + '교시</td>' +
+        // 브라우저 시간 입력칸(type=time)은 "오전/오후"로 보여서, 시간표와 같은 24시간 표기(13:40)로 직접 입력받는다.
+        '<td><input type="text" inputmode="numeric" maxlength="5" placeholder="08:50" class="admin-input admin-time-input" id="admin-time-s-' + i + '" value="' + t.s + '" oninput="updateClassTimeDurations()" onblur="normalizeTimeInput(this)"></td>' +
+        '<td><input type="text" inputmode="numeric" maxlength="5" placeholder="09:40" class="admin-input admin-time-input" id="admin-time-e-' + i + '" value="' + t.e + '" oninput="updateClassTimeDurations()" onblur="normalizeTimeInput(this)"></td>' +
+        '<td class="admin-time-dur" id="admin-time-dur-' + i + '"></td></tr>';
     }
-    return html;
+    body.innerHTML = html;
+    updateClassTimeDurations();
   }
 
-  function openTimeSettings() {
-    const container = document.getElementById('time-inputs-container');
-    container.innerHTML = '';
-    for(let i=1; i<=7; i++) {
-      const sParts = currentTimes[i-1].s.split(':');
-      const eParts = currentTimes[i-1].e.split(':');
-      container.innerHTML += '<div class="time-input-row"><div>' + i + '교시</div><div class="time-select-group"><select id="time-s-h-' + i + '" class="mini-select">' + getSelectOptions(23, sParts[0]) + '</select> : <select id="time-s-m-' + i + '" class="mini-select">' + getSelectOptions(59, sParts[1]) + '</select></div><div class="time-select-group"><select id="time-e-h-' + i + '" class="mini-select">' + getSelectOptions(23, eParts[0]) + '</select> : <select id="time-e-m-' + i + '" class="mini-select">' + getSelectOptions(59, eParts[1]) + '</select></div></div>';
-    }
-    document.getElementById('time-setting-overlay').style.display = 'flex';
+  // "850", "8:50", "0850" 같이 쳐도 "08:50"으로 맞춰 준다.
+  function normalizeTimeInput(el) {
+    const v = el.value.trim().replace(/[^0-9:]/g, '');
+    let h, m;
+    if (/^\d{1,2}:\d{1,2}$/.test(v)) { h = v.split(':')[0]; m = v.split(':')[1]; }
+    else if (/^\d{3,4}$/.test(v)) { h = v.slice(0, v.length - 2); m = v.slice(-2); }
+    if (h !== undefined && parseInt(h, 10) < 24 && parseInt(m, 10) < 60) el.value = h.padStart(2, '0') + ':' + m.padStart(2, '0');
+    updateClassTimeDurations();
   }
 
-  function closeTimeSettings() { document.getElementById('time-setting-overlay').style.display = 'none'; }
+  function minutesOf(hhmm) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+    if (!m || parseInt(m[1], 10) > 23 || parseInt(m[2], 10) > 59) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
 
-  async function saveTimeSettings() {
+  // 교시별 수업 시간을 계산해 보여주고, 끝이 시작보다 빠르거나 앞 교시와 겹치면 빨갛게 표시한다.
+  function updateClassTimeDurations() {
+    let prevEnd = null;
+    let ok = true;
+    for (let i = 1; i <= 7; i++) {
+      const s = minutesOf(document.getElementById('admin-time-s-' + i).value);
+      const e = minutesOf(document.getElementById('admin-time-e-' + i).value);
+      const cell = document.getElementById('admin-time-dur-' + i);
+      let msg = '', bad = false;
+      if (s === null || e === null) { msg = '시간을 입력하세요'; bad = true; }
+      else if (e <= s) { msg = '끝나는 시간이 시작보다 빠름'; bad = true; }
+      else if (prevEnd !== null && s < prevEnd) { msg = (e - s) + '분 · 앞 교시와 겹침'; bad = true; }
+      else msg = (e - s) + '분';
+      cell.innerText = msg;
+      cell.classList.toggle('bad', bad);
+      if (bad) ok = false;
+      if (e !== null) prevEnd = e;
+    }
+    return ok;
+  }
+
+  async function saveClassTimesUI() {
+    if (!updateClassTimeDurations()) return customAlert('빨갛게 표시된 교시의 시간을 먼저 고쳐 주세요.');
     const newTimes = [];
-    for(let i=1; i<=7; i++) {
-      const sH = document.getElementById('time-s-h-' + i).value;
-      const sM = document.getElementById('time-s-m-' + i).value;
-      const eH = document.getElementById('time-e-h-' + i).value;
-      const eM = document.getElementById('time-e-m-' + i).value;
-      newTimes.push({ s: sH + ':' + sM, e: eH + ':' + eM });
+    for (let i = 1; i <= 7; i++) {
+      ['s', 'e'].forEach(function(k) { normalizeTimeInput(document.getElementById('admin-time-' + k + '-' + i)); });
+      newTimes.push({ s: document.getElementById('admin-time-s-' + i).value, e: document.getElementById('admin-time-e-' + i).value });
     }
     try {
       const { error } = await sb.from('app_settings').upsert({ key: 'class_times', value: newTimes });
@@ -4289,7 +4347,6 @@
 
     currentTimes = newTimes;
     window.classTimes = newTimes;
-    closeTimeSettings();
     document.getElementById('my-timetable-grid').innerHTML = buildGridHTML('my-tt');
     document.getElementById('search-timetable-grid').innerHTML = buildGridHTML('search-tt');
     loadMyTimetable();
@@ -5717,6 +5774,7 @@
     // initScheduleModalBody가 isAdmin을 보고 안에서 따로 보여준다). 관리자 설정
     // 페이지의 "🗓️ 시간표" 탭은 별도 진입점(showSettingsPage)으로 계속 열 수 있다.
     mountBox(document.getElementById('schedule-modal-box'), document.getElementById('schedule-overlay'), false);
+    document.getElementById('schedule-modal-title').style.display = '';
     document.getElementById('schedule-overlay').style.display = 'flex';
     document.getElementById('schedule-close-row').style.display = 'flex';
     await initScheduleModalBody();
