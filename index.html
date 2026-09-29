@@ -1402,11 +1402,13 @@
             <button class="top-btn" style="padding:2px 6px;" onclick="moveTeacher(1)">▶</button>
           </div>
           <div id="half-cal-nav" style="display:none; align-items:center; gap:3px;">
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', -1)">A-</button>
-            <button class="top-btn" style="padding:1px 4px; font-size:10px;" onclick="changeFontSize('halfcal', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(-1)">◀</button>
-            <span id="half-cal-month-label" style="font-size:14px; font-weight:800; min-width:50px; text-align:center;">0000.00</span>
-            <button class="top-btn" style="padding:2px 6px;" onclick="moveHalfCal(1)">▶</button>
+            <!-- 캘린더 탭(#left-bottom-cal)의 글자 크기·달 이동 버튼과 크기·간격을 똑같이 맞춘다 — 두 탭을 번갈아 누를 때 버튼이 움직이지 않게. -->
+            <button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('halfcal', -1)">A-</button>
+            <button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="changeFontSize('halfcal', 1)">A+</button>
+            <div style="width: 1px; height: 12px; background: var(--border-color); margin: 0 1px;"></div>
+            <button class="top-btn" style="padding:2px 4px;" onclick="moveHalfCal(-1)">◀</button>
+            <span id="half-cal-month-label" style="font-size:14px; font-weight:800; min-width:60px; text-align:center;">0000. 00</span>
+            <button class="top-btn" style="padding:2px 4px;" onclick="moveHalfCal(1)">▶</button>
           </div>
         </div>
         <div class="timetable-grid" id="search-timetable-grid"></div>
@@ -1422,7 +1424,7 @@
     <div id="left-bottom-cal" class="widget timetable-widget w-accent-b" style="display: none; flex: 1; min-height: 0;">
       <div style="display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; flex: 0 0 auto; margin-bottom: 8px;">
         <div></div>
-        <div class="widget-title" style="height: 32px; margin-bottom: 0; padding-left: 15px;">
+        <div class="widget-title" style="height: 32px; margin-bottom: 0; padding-left: 16px;"><!-- 16px = 1/2 캘린더 칸의 테두리 2px + 안쪽 여백 14px → 탭 버튼이 같은 자리에 -->
           <div class="tab-switch">
             <button class="tab-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
             <button class="tab-btn active" onclick="switchMainTab('cal')">📅 캘린더</button>
@@ -2510,7 +2512,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.27';
+  var BUILD_ID = '2026-09-29.28';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 

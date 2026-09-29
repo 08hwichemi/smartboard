@@ -198,6 +198,16 @@ function check(label, cond, detail) {
   check('시간표 보다가 설정 누르면 시간표 닫힘', !(await vis('persontt-page')) && await vis('settings-page') && !(await act('rail-persontt-btn')));
   await pc.page.click('#rail-persontt-btn'); await wait(600);
   check('설정 보다가 시간표 누르면 설정 닫힘', await vis('persontt-page') && !(await vis('settings-page')) && !(await act('rail-settings-btn')));
+  // 캘린더 ↔ 1/2 캘린더를 번갈아 눌러도 탭·글자 크기·달 이동 버튼이 같은 자리, 같은 크기
+  await pc.page.click('#rail-home-btn'); await wait(500);
+  const calBtns = (root) => pc.page.evaluate((root) => [...document.querySelectorAll(root + ' .widget-title button, ' + root + ' .widget-title span')].filter(e => e.offsetParent).map(e => { const b = e.getBoundingClientRect(); return [e.innerText.trim().slice(0, 4), Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)].join(','); }), root);
+  await pc.page.evaluate(() => switchMainTab('cal')); await wait(300);
+  const calPos = await calBtns('#left-bottom-cal');
+  await pc.page.evaluate(() => switchMainTab('halfcal')); await wait(300);
+  const halfPos = await calBtns('#search-tt-widget');
+  check('캘린더/1/2 캘린더 버튼 위치·크기 같음', calPos.length === 8 && JSON.stringify(calPos) === JSON.stringify(halfPos), { calPos, halfPos });
+  await pc.page.evaluate(() => switchMainTab('tt')); await wait(200);
+
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
   console.log(failures === 0 ? '\n모든 검사 통과' : '\n실패 ' + failures + '건');
