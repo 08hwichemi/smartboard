@@ -2320,6 +2320,17 @@
       if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
     };
     localStorage.removeItem = function(key) {
+      // 이 기기에서 "지운" 키는 서버 병합 때 같이 지워달라고 알려야 하므로 따로
+      // 적어둔다 (아래 syncUserBackupToServer 참고) — 안 그러면 병합(merge) 방식
+      // 저장에서는 "이 기기가 이 키를 안 보냈다"는 것과 "이 기기에서 이 키를
+      // 지웠다"는 걸 구분할 수 없어서, 지운 항목이 서버에 계속 남아있게 된다.
+      if (typeof isLocalOnlyKey !== 'function' || !isLocalOnlyKey(key)) {
+        try {
+          const raw = localStorage.getItem('backup-pending-deletes');
+          const list = raw ? JSON.parse(raw) : [];
+          if (!list.includes(key)) { list.push(key); rawSetItem('backup-pending-deletes', JSON.stringify(list)); }
+        } catch (e) {}
+      }
       _origRemoveItem(key);
       if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
     };
@@ -2348,7 +2359,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-28.30';
+  var BUILD_ID = '2026-09-29.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2566,12 +2577,13 @@
   // 실패했을 때뿐인데, 그때는 서버 상태를 모르니 화면을 함부로 비우지 않고 화면 아래
   // 빨간 띠로 실패를 알린 뒤 지금 있는 화면을 그대로 둔다.
   async function restoreUserBackupIfNeeded(teacherId) {
-    // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰은 절대 지우거나 옛날 값으로
+    // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰이나, 이 기기만의 동기화
+    // 기록(예: 아직 서버에 못 보낸 "삭제 대기" 목록)은 절대 지우거나 옛날 값으로
     // 덮어쓰지 않도록 따로 챙겨뒀다가 복원 뒤에 다시 심어준다.
-    const preservedAuthEntries = [];
+    const preservedLocalEntries = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
+      if (isLocalOnlyKey(k)) preservedLocalEntries.push([k, localStorage.getItem(k)]);
     }
     try {
       const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
@@ -2594,7 +2606,7 @@
       }
       // 서버에 이 선생님 자료가 아직 하나도 없으면(처음 쓰는 계정) 빈 상태로 시작한다 —
       // 그것도 "서버가 곧 정답"이라는 원칙 그대로다.
-      preservedAuthEntries.forEach(function(entry) { localStorage.setItem(entry[0], entry[1]); });
+      preservedLocalEntries.forEach(function(entry) { rawSetItem(entry[0], entry[1]); });
     } catch (e) {
       showMobileDebugError('서버 백업 조회 실패: ' + (e && e.message ? e.message : e));
       // 조회 자체가 실패했으면(네트워크 등) 서버 상태를 알 수 없으니 지금 화면을
@@ -2613,15 +2625,20 @@
 
   let backupSyncRetryTimer = null;
   let backupSyncRetryDelay = 5000; // 5초에서 시작, 실패할 때마다 두 배씩 늘어나 최대 5분까지
+  // PC/휴대폰/시크릿창처럼 같은 계정을 여러 기기·탭에서 동시에 열어두면, 각자 "자기가
+  // 아는 전체 localStorage"를 통째로 upsert하던 예전 방식은 나중에 저장한 쪽이 이긴다
+  // (다른 기기가 방금 추가한 내용을 자기가 모른다는 이유로 지워버림) — 실제로 이 문제로
+  // 캘린더 메모가 사라졌다 나타났다 했다. 그래서 서버에 저장할 때는 "덮어쓰기"가 아니라
+  // "병합"한다: 이 기기가 갖고 있는 값은 그대로 얹고, 이 기기가 모르는(=다른 기기가
+  // 넣은) 값은 서버에 있던 걸 그대로 둔다. 이 기기에서 실제로 지운 키만 같이 지운다.
   async function syncUserBackupToServer() {
     if (!window.currentTeacher || !window.currentTeacher.id) return;
-    const nowIso = new Date().toISOString();
+    let pendingDeletes = [];
+    try { pendingDeletes = JSON.parse(localStorage.getItem('backup-pending-deletes') || '[]'); } catch (e) {}
     try {
-      const { error } = await sb.from('user_backups').upsert(
-        { teacher_id: window.currentTeacher.id, data: collectBackupData(), updated_at: nowIso },
-        { onConflict: 'teacher_id' }
-      );
+      const { error } = await sb.rpc('merge_user_backup', { p_set: collectBackupData(), p_delete: pendingDeletes });
       if (error) throw error;
+      rawSetItem('backup-pending-deletes', '[]');
       backupSyncRetryDelay = 5000;
       if (backupSyncRetryTimer) { clearTimeout(backupSyncRetryTimer); backupSyncRetryTimer = null; }
     } catch (e) {
@@ -3562,7 +3579,7 @@
   // 동기화 시점 비교에만 쓰는 이 기기만의 기록 — 다른 기기로 옮겨가거나 복원될
   // 이유가 없는 값들이라 서버로 올리지도, 서버에서 받아온 자료로 덮어쓰지도 않는다.
   function isLocalOnlyKey(key) {
-    return isAuthSessionKey(key) || key === 'backup-owner-teacher-id' || key === 'backup-last-synced-at' || key === 'backup-restore-retry-v2';
+    return isAuthSessionKey(key) || key === 'backup-owner-teacher-id' || key === 'backup-last-synced-at' || key === 'backup-restore-retry-v2' || key === 'backup-pending-deletes';
   }
 
   function collectBackupData() {
