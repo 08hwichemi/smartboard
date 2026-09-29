@@ -617,6 +617,9 @@
     #pt-panel input, #pt-panel select.mini-select { box-sizing: border-box; width: 100%; }
     #pt-preview { flex: 1; min-width: 0; position: relative; overflow: auto; background: var(--bg-color); padding: 20px 0 40px; display: flex; flex-direction: column; align-items: center; }
     .pt-theme-grid, .pt-style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px 0; }
+    /* 과목별 색상 테마 4개는 한 줄에 — 2×2로 두면 버튼이 커서 설정 패널 세로 공간을 많이 차지함 */
+    .pt-theme-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 2px 0 4px; }
+    .pt-theme-grid .pt-theme-btn { padding: 6px 2px; font-size: 11px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pt-theme-btn, .pt-style-btn { padding: 10px 6px; font-size: 12px; font-weight: 800; border: 2px solid transparent; border-radius: 10px; cursor: pointer; text-align: center; }
     .pt-theme-btn[data-theme="vivid"] { background: #ffe4c7; color: #c2410c; }
     .pt-theme-btn[data-theme="cherry"] { background: #ffe4e6; color: #be123c; }
@@ -2458,7 +2461,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.16';
+  var BUILD_ID = '2026-09-29.17';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -8452,9 +8455,41 @@
     return list.filter(function(s) { return ptStudentClassOf(s) === cls; });
   }
 
+  // 학생 시간표에서 마지막으로 고른 학년/반/출력 범위를 기억한다. localStorage 키는 계정별로 서버에
+  // 동기화되므로(user_data_items) 로그인한 선생님마다 따로, 다른 기기에서도 그대로 이어진다.
+  const PT_STUDENT_SEL_KEY = 'pt-student-sel';
+  function ptSaveStudentSel() {
+    const sel = {
+      grade: document.getElementById('pt-student-grade').value || '',
+      cls: document.getElementById('pt-student-class').value || '',
+      scope: ptScope
+    };
+    try { localStorage.setItem(PT_STUDENT_SEL_KEY, JSON.stringify(sel)); } catch (e) {}
+  }
+  function ptRestoreStudentSel() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(PT_STUDENT_SEL_KEY) || 'null'); } catch (e) {}
+    const gradeSel = document.getElementById('pt-student-grade');
+    const classSel = document.getElementById('pt-student-class');
+    if (!saved || !saved.grade || !gradeSel.querySelector('option[value="' + saved.grade + '"]')) return;
+    gradeSel.value = saved.grade;
+    classSel.innerHTML = '<option value="">반</option>' + classOptionsHtml(parseInt(saved.grade), null);
+    if (saved.cls && classSel.querySelector('option[value="' + saved.cls + '"]')) classSel.value = saved.cls;
+    if (saved.scope === 'one' || saved.scope === 'class') {
+      ptScope = saved.scope;
+      document.getElementById('pt-scope-one-btn').classList.toggle('active', ptScope === 'one');
+      document.getElementById('pt-scope-class-btn').classList.toggle('active', ptScope === 'class');
+    }
+    ptRefreshStudentSelect();
+  }
+
   async function ptEnsureStudentDataLoaded() {
     const gradeSel = document.getElementById('pt-student-grade');
-    if (ptStudentDataLoaded) { gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null); return; }
+    if (ptStudentDataLoaded) {
+      // 탭을 오갈 때 이미 고른 학년/반이 풀리지 않게 한다.
+      if (!gradeSel.value) { gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null); ptRestoreStudentSel(); }
+      return;
+    }
     ptStudentDataLoaded = true;
     try {
       await ensureClassStructureLoaded();
@@ -8463,14 +8498,16 @@
       (data || []).forEach(function(row) { ptStudentsByGrade[row.grade] = row.students || []; });
     } catch (e) { /* 아직 테이블이 없거나 업로드된 자료가 없을 수 있음 */ }
     gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
+    ptRestoreStudentSel();
   }
 
   function ptOnGradeChange() {
     const grade = parseInt(document.getElementById('pt-student-grade').value);
     document.getElementById('pt-student-class').innerHTML = '<option value="">반</option>' + (grade ? classOptionsHtml(grade, null) : '');
+    ptSaveStudentSel();
     ptRefreshStudentSelect();
   }
-  function ptOnClassChange() { ptRefreshStudentSelect(); }
+  function ptOnClassChange() { ptSaveStudentSel(); ptRefreshStudentSelect(); }
 
   function ptRefreshStudentSelect() {
     const sel = document.getElementById('pt-student-select');
@@ -8499,6 +8536,7 @@
     ptScope = scope;
     document.getElementById('pt-scope-one-btn').classList.toggle('active', scope === 'one');
     document.getElementById('pt-scope-class-btn').classList.toggle('active', scope === 'class');
+    ptSaveStudentSel();
     ptCurrentPage = 1;
     ptRender();
   }
