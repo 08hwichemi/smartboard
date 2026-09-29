@@ -488,6 +488,17 @@
     select.ms-cell-input { border: none; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
     .ms-del-row-btn { border: none; background: transparent; cursor: pointer; font-size: 13px; width: 100%; height: 100%; padding: 6px 0; border-radius: 6px; }
     .ms-del-row-btn:hover { background: var(--alert-bg); }
+    /* 세부 일정 월별 접기(아코디언) — 머리줄을 누르면 그 달 일정만 펼치거나 접는다. */
+    .ms-month-head td { background: var(--bg-color); border-right: none; cursor: pointer; user-select: none; }
+    .ms-month-head:hover td { background: var(--accent-soft); }
+    .ms-month-head-inner { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 8px; font-size: 11.5px; font-weight: 800; color: var(--text-main); }
+    .ms-month-head-count { font-size: 10.5px; font-weight: 700; color: var(--text-sub); }
+    .ms-month-head.ms-month-new td { cursor: default; }
+    .ms-month-head.ms-month-new:hover td { background: var(--bg-color); }
+    .ms-month-head.ms-month-new .ms-month-head-inner { color: var(--text-sub); }
+    #ms-table-body tr.ms-row-folded { display: none; }
+    .ms-expand-all-label { display: flex; align-items: center; gap: 4px; margin-right: auto; font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; }
+    .ms-expand-all-label input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--accent-color); }
 
     #ms-preview { flex: 1; min-width: 0; position: relative; overflow: auto; background: var(--bg-color); display: flex; justify-content: center; align-items: center; }
     #ms-paper-wrapper { position: relative; transform-origin: center; }
@@ -1956,7 +1967,8 @@
           <span id="ms-icon-sec-table">▼</span>
         </div>
         <div class="ms-section-body" id="ms-sec-table">
-          <div style="display: flex; justify-content: flex-end; gap:5px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap:5px; margin-bottom: 8px;">
+            <label class="ms-expand-all-label" title="체크하면 모든 달의 일정을 펼쳐 두고, 끄면 달별로 접어 둡니다 (마지막 설정을 기억해요)"><input type="checkbox" id="ms-expand-all" onchange="msOnExpandAllChange()"> 항상 펼치기</label>
             <button class="top-btn" style="padding: 3px 8px; font-size: 10.5px;" onclick="msAddRows(5)">+ 5칸 추가</button>
             <button class="top-btn" style="padding: 3px 8px; font-size: 10.5px; color:var(--alert);" onclick="msClearTable()">전체 초기화</button>
           </div>
@@ -2494,7 +2506,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.24';
+  var BUILD_ID = '2026-09-29.25';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7719,9 +7731,11 @@
       msCurYear = now.getFullYear();
       msCurMonth = now.getMonth() + 1;
       msInitDdayInputs();
+      msRestoreExpandAll();
       msInitTable(15);
       msRenderCategories();
       document.getElementById('ms-table-body').addEventListener('paste', msHandlePaste);
+      document.getElementById('ms-table-body').addEventListener('focusout', msOnTableFocusOut);
 
       // 이 계정으로 전에 저장해둔 내용이 있으면(로그인할 때 서버에서 받아와
       // localStorage에 채워진 것) 자동으로 불러온다.
@@ -7838,27 +7852,152 @@
   }
 
   /* --- 세부 일정 표 입력 --- */
+  function msCreateRow(dateHtml, contentHtml) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + (dateHtml || '') + '</div></td>' +
+      '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + (contentHtml || '') + '</div></td>' +
+      '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
+      '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
+    return tr;
+  }
+
   function msInitTable(rows) {
     const tbody = document.getElementById('ms-table-body');
-    for (let i = 0; i < rows; i++) {
-      const tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()"></div></td>' +
-        '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()"></div></td>' +
-        '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
-        '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
-      tbody.appendChild(tr);
-    }
+    for (let i = 0; i < rows; i++) tbody.appendChild(msCreateRow());
     msUpdateSelectOptions();
+    msGroupRows();
   }
 
   function msDeleteRow(btn) {
     const tr = btn.closest('tr');
     tr.remove();
+    msGroupRows();
     msRenderCalendar();
   }
 
   function msAddRows(count) { msInitTable(count); }
+
+  // 세부 일정 표의 실제 일정 줄들(회색 예시 줄과 월별 머리줄은 뺀다).
+  function msDataRows() {
+    return Array.from(document.querySelectorAll('#ms-table-body tr:not(.ms-example-row):not(.ms-month-head)'));
+  }
+
+  // 날짜 칸 글자("5/3", "2026-05-03", "3")에서 월을 읽는다 — msGetUserData와 같은 규칙
+  // (일만 적으면 지금 보고 있는 달). 날짜가 없거나 못 읽으면 0.
+  function msRowMonth(tr) {
+    const dStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
+    if (!dStr) return 0;
+    const parts = dStr.split(/[-/]/);
+    let m;
+    if (parts.length >= 3) m = parseInt(parts[1]);
+    else if (parts.length === 2) m = parseInt(parts[0]);
+    else m = parseInt(parts[0]) ? msCurMonth : NaN;
+    return (m >= 1 && m <= 12) ? m : 0;
+  }
+
+  /* --- 세부 일정 월별 접기(아코디언) ---
+     일정이 1년치로 길어지면 찾기 힘들어서 달마다 머리줄("▶ 5월 · 3건")을 두고 접었다 펼친다.
+     학기 순서(3월 → 2월)로 묶고, 날짜를 아직 안 적은 빈 줄은 맨 아래 "새 일정 입력" 묶음에
+     늘 펼쳐 둔다. "항상 펼치기"(ms-expand-all) 체크는 계정별 개인 자료로 기억한다. */
+  const MS_MONTH_ORDER = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2];
+  const MS_EXPAND_ALL_KEY = 'ms-expand-all';
+  let msMonthOpen = {};   // 머리줄을 눌러 직접 열고 닫은 달 — 없으면 "항상 펼치기" 설정을 따른다
+
+  function msIsExpandAll() {
+    const el = document.getElementById('ms-expand-all');
+    return !!(el && el.checked);
+  }
+
+  function msRestoreExpandAll() {
+    const el = document.getElementById('ms-expand-all');
+    if (!el) return;
+    let v = null;
+    try { v = localStorage.getItem(MS_EXPAND_ALL_KEY); } catch (e) {}
+    el.checked = v === '1';
+  }
+
+  function msOnExpandAllChange() {
+    try { localStorage.setItem(MS_EXPAND_ALL_KEY, msIsExpandAll() ? '1' : '0'); } catch (e) {}
+    scheduleBackupWrite();
+    msMonthOpen = {};
+    msGroupRows();
+  }
+
+  function msToggleMonth(m) {
+    const open = msMonthOpen[m] !== undefined ? msMonthOpen[m] : msIsExpandAll();
+    msMonthOpen[m] = !open;
+    msGroupRows();
+  }
+
+  function msMonthHeadRow(m, count, open) {
+    const tr = document.createElement('tr');
+    tr.className = 'ms-month-head' + (m ? '' : ' ms-month-new');
+    tr.dataset.month = m;
+    if (m) {
+      tr.onclick = function() { msToggleMonth(m); };
+      tr.innerHTML = '<td colspan="4"><div class="ms-month-head-inner"><span>' + (open ? '▼ ' : '▶ ') + m + '월</span>' +
+        '<span class="ms-month-head-count">' + count + '건</span></div></td>';
+    } else {
+      tr.innerHTML = '<td colspan="4"><div class="ms-month-head-inner"><span>✏️ 새 일정 입력</span>' +
+        '<span class="ms-month-head-count">날짜를 적으면 그 달로 옮겨져요</span></div></td>';
+    }
+    return tr;
+  }
+
+  // 일정 줄을 달별로 다시 묶는다. editedRow(방금 날짜를 고친 줄)가 다른 달로 옮겨 가면 그 달을
+  // 펼쳐서, 방금 적은 일정이 접힌 묶음 속으로 사라져 보이지 않게 한다(붙여넣기·정렬처럼
+  // 여러 줄을 한꺼번에 바꿀 땐 접힌 상태를 그대로 둔다).
+  function msGroupRows(editedRow) {
+    const tbody = document.getElementById('ms-table-body');
+    if (!tbody) return;
+    const active = document.activeElement;
+    tbody.querySelectorAll('tr.ms-month-head').forEach(function(h) { h.remove(); });
+
+    const groups = {};
+    const undated = [];
+    msDataRows().forEach(function(tr) {
+      const m = msRowMonth(tr);
+      if (m && tr === editedRow && tr.dataset.month !== String(m)) msMonthOpen[m] = true;
+      tr.dataset.month = m;
+      if (m) (groups[m] = groups[m] || []).push(tr);
+      else undated.push(tr);
+    });
+
+    const expandAll = msIsExpandAll();
+    function appendRows(rows, folded) {
+      rows.forEach(function(tr) {
+        const sel = tr.querySelector('select');
+        const val = sel ? sel.value : '';
+        tr.classList.toggle('ms-row-folded', folded);
+        tbody.appendChild(tr);
+        if (sel) sel.value = val;
+      });
+    }
+    MS_MONTH_ORDER.forEach(function(m) {
+      if (!groups[m]) return;
+      const open = msMonthOpen[m] !== undefined ? msMonthOpen[m] : expandAll;
+      tbody.appendChild(msMonthHeadRow(m, groups[m].length, open));
+      appendRows(groups[m], !open);
+    });
+    if (undated.length) {
+      tbody.appendChild(msMonthHeadRow(0, undated.length, true));
+      appendRows(undated, false);
+    }
+
+    // 줄을 옮기면 그 안에서 입력 중이던 칸의 커서가 풀리므로 되돌려 준다.
+    if (active && active !== document.activeElement && tbody.contains(active) && !active.closest('tr.ms-row-folded')) active.focus();
+  }
+
+  // 날짜 칸을 고치고 그 줄을 벗어날 때만 다시 묶는다 — 같은 줄의 내용 칸으로 넘어가는 중에
+  // 줄이 다른 달로 옮겨 가면 입력이 끊기기 때문.
+  function msOnTableFocusOut(e) {
+    const tr = e.target.closest && e.target.closest('tr');
+    if (!tr || tr.classList.contains('ms-month-head')) return;
+    if (e.relatedTarget && tr.contains(e.relatedTarget)) return;
+    if (tr.dataset.month === String(msRowMonth(tr))) return;
+    setTimeout(function() { msGroupRows(tr); }, 0);
+  }
 
   function msUpdateSelectOptions() {
     const selects = document.querySelectorAll('.ms-cat-selector');
@@ -7876,6 +8015,7 @@
     if (!ok) return;
     document.querySelectorAll('#ms-table-body tr:not(.ms-example-row) .ms-cell-input[contenteditable="true"]').forEach(function(el) { el.innerText = ''; });
     document.querySelectorAll('#ms-table-body .ms-cat-selector').forEach(function(sel) { sel.value = ''; });
+    msGroupRows();
     msRenderCalendar();
   }
 
@@ -7886,7 +8026,7 @@
 
     let targetCell = document.activeElement;
     let currentRow = targetCell.closest('tr');
-    if (!currentRow || currentRow.classList.contains('ms-example-row')) { customAlert('회색 예시 칸에는 붙여넣을 수 없습니다. 아래 흰색 빈칸을 선택하세요.'); return; }
+    if (!currentRow || currentRow.classList.contains('ms-example-row') || currentRow.classList.contains('ms-month-head')) { customAlert('회색 예시 칸에는 붙여넣을 수 없습니다. 아래 흰색 빈칸을 선택하세요.'); return; }
 
     let currentCellIndex = Array.from(currentRow.children).indexOf(targetCell.closest('td'));
 
@@ -7902,15 +8042,24 @@
         if (nCell) nCell.innerText = cols[1].trim();
       }
 
-      currentRow = currentRow.nextElementSibling;
-      if (!currentRow) { msAddRows(1); currentRow = document.getElementById('ms-table-body').lastElementChild; }
+      // 다음 줄로 이어 붙인다. 달 머리줄이나 접혀 있는 다른 달 일정은 덮어쓰지 않도록
+      // 그 자리에 새 줄을 끼워 넣는다(붙여넣기가 끝나면 달별로 다시 묶임).
+      const next = currentRow.nextElementSibling;
+      if (next && !next.classList.contains('ms-month-head') && !next.classList.contains('ms-row-folded')) currentRow = next;
+      else {
+        const tr = msCreateRow();
+        currentRow.parentNode.insertBefore(tr, next);
+        msUpdateSelectOptions();
+        currentRow = tr;
+      }
     });
+    msGroupRows();
     msRenderCalendar();
   }
 
   function msSortTableByDate() {
     const tbody = document.getElementById('ms-table-body');
-    const rows = Array.from(tbody.querySelectorAll('tr:not(.ms-example-row)'));
+    const rows = msDataRows();
 
     const rowData = rows.map(function(tr) {
       const dStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
@@ -7932,12 +8081,13 @@
       tbody.appendChild(item.tr);
       item.tr.querySelector('select').value = item.catId;
     });
+    msGroupRows();
     msRenderCalendar();
   }
 
   function msGetUserData() {
     let data = {};
-    const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
+    const rows = msDataRows();
     rows.forEach(function(tr) {
       const dateStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
       const content = tr.children[1].querySelector('.ms-cell-input').innerText.trim();
@@ -8155,7 +8305,7 @@
       });
     }
 
-    document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)').forEach(function(tr) {
+    msDataRows().forEach(function(tr) {
       data.table.push({
         d: tr.children[0].querySelector('.ms-cell-input').innerText.trim(),
         c: tr.children[1].querySelector('.ms-cell-input').innerHTML.replace(/<br\s*[\/]?>/gi, '\n').trim(),
@@ -8192,19 +8342,15 @@
       Array.from(tbody.children).forEach(function(tr) { if (!tr.classList.contains('ms-example-row')) tr.remove(); });
 
       data.table.forEach(function(row) {
-        const tr = document.createElement('tr');
         const contentHtml = row.c ? row.c.replace(/\n/g, '<br>') : '';
-        tr.innerHTML =
-          '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + row.d + '</div></td>' +
-          '<td><div class="ms-cell-input" contenteditable="true" onblur="msRenderCalendar()">' + contentHtml + '</div></td>' +
-          '<td><select class="ms-cell-input ms-cat-selector" onchange="msRenderCalendar()"></select></td>' +
-          '<td style="text-align:center; vertical-align:middle;"><button class="ms-del-row-btn" onclick="msDeleteRow(this)">🗑️</button></td>';
-        tbody.appendChild(tr);
+        tbody.appendChild(msCreateRow(row.d, contentHtml));
       });
 
       msUpdateSelectOptions();
-      const rows = document.querySelectorAll('#ms-table-body tr:not(.ms-example-row)');
+      const rows = msDataRows();
       data.table.forEach(function(row, idx) { rows[idx].querySelector('select').value = row.catId; });
+      msMonthOpen = {};
+      msGroupRows();
     }
 
     msRenderCategories();
@@ -8281,7 +8427,7 @@
     { selector: '#ms-section-info', title: '1단계. 기본 설정', desc: '학교명·부서명·타이틀을 정하고 글꼴을 바꿀 수 있어요. "나이스 학사일정 표시"를 켜두면 개교기념일 같은 학교 공식 일정이 자동으로 달력에 나와요.' },
     { selector: '#ms-section-dday', title: '2단계. 목표 D-Day', desc: '정기고사 4개는 시작일과 시험 기간(일수)을 넣으면, 시험 중엔 "n일차", 시작 전엔 "D-n"으로 자동 표시돼요. 커스텀 D-Day는 수능처럼 항상 챙겨야 할 날짜에 써요.' },
     { selector: '#ms-section-cat', title: '3단계. 일정 분류 및 컬러', desc: '자율/동아리/행사처럼 분류를 만들고 색을 정해두면, 세부 일정에서 분류를 고를 때 그 색으로 달력에 표시돼요.' },
-    { selector: '#ms-section-table', title: '4단계. 세부 일정 입력', desc: '날짜와 내용을 입력하면 오른쪽 달력에 바로 반영돼요. 엑셀에서 복사한 표를 그대로 붙여넣을 수도 있고, "날짜" 제목을 누르면 날짜순 정렬도 돼요.' },
+    { selector: '#ms-section-table', title: '4단계. 세부 일정 입력', desc: '날짜와 내용을 입력하면 오른쪽 달력에 바로 반영돼요. 엑셀에서 복사한 표를 그대로 붙여넣을 수도 있고, "날짜" 제목을 누르면 날짜순 정렬도 돼요. 일정은 달별로 묶여 접혀 있어서 "▶ 5월"처럼 달 이름을 누르면 펼쳐지고, "항상 펼치기"를 체크하면 모두 펼쳐 둬요(마지막 설정을 기억해요).' },
     { selector: '#ms-a4-paper', title: '5단계. 미리보기', desc: '지금까지 설정한 내용이 실제 인쇄될 모습 그대로 보여요.' },
     { selector: '#ms-month-nav', title: '월 이동', desc: '여기서 달을 옮기면 그 달의 학사일정을 새로 불러와서 달력이 다시 그려져요.' },
     { selector: '#ms-header-save-group', title: '6단계. 저장/불러오기', desc: '💾 저장/📂 불러오기로 지금까지 만든 설정과 일정을 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
