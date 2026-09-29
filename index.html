@@ -2494,7 +2494,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.23';
+  var BUILD_ID = '2026-09-29.24';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2696,7 +2696,8 @@
     document.getElementById('btn-logout').style.display = 'inline-flex';
     document.getElementById('admin-settings-current-name').innerText = data.name + ' 님' + (data.is_admin ? ' (관리자)' : '');
 
-    document.getElementById('user-avatar-initial').innerText = data.name.slice(0, 2);
+    // 동그라미에는 성을 뺀 이름(이용휘 → 용휘)을 넣는다. 두 글자 이하 이름은 그대로.
+    document.getElementById('user-avatar-initial').innerText = data.name.length > 2 ? data.name.slice(-2) : data.name;
     document.getElementById('user-chip-name').innerText = data.name;
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
     document.getElementById('rail-add-btn').style.display = data.is_admin ? 'flex' : 'none';

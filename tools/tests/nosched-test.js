@@ -230,6 +230,7 @@ function check(label, cond, detail) {
   const t = await openDevice(browser, '김교사PC', T1);
   await wait(1000);
   const tt = await t.page.evaluate(() => { const w = document.getElementById('my-tt-widget'); return { browse: w.classList.contains('my-tt-browse'), selVis: getComputedStyle(document.getElementById('m-tt-teacher-select')).display !== 'none', name: document.getElementById('my-tt-name').innerText, editable: document.getElementById('my-tt-1-1-s').getAttribute('contenteditable') }; });
+  check('이름 동그라미는 성 뺀 두 글자(교장님 → 장님, 김교사 → 교사)', await P.evaluate(() => document.getElementById('user-avatar-initial').innerText) === '장님' && await t.page.evaluate(() => document.getElementById('user-avatar-initial').innerText) === '교사');
   check('시간표 있는 교사는 예전 그대로(내 시간표, 목록 안 보임)', !tt.browse && !tt.selVis && tt.name === '김교사' && tt.editable === 'true', tt);
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
