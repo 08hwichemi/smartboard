@@ -253,6 +253,10 @@
     .admin-time-table .admin-time-dur.bad { color: #E5484D; font-weight: 700; }
     /* 교사 시간표·감독표를 설정 화면 폭 전체로 늘리면 표가 너무 가로로 퍼져 보기 어렵다 */
     #admin-tt-slot, #admin-duty-slot { max-width: 860px; width: 100%; }
+    /* 설정 화면 안에서는 시간표 창에 안쪽 스크롤 막대가 생기지 않게 한다(글꼴·화면 배율에 따라 몇 px 넘쳐서
+       창 오른쪽에 스크롤 막대가 생겼었음) — 칸 높이는 남는 공간에 맞춰 줄고, 그래도 모자라면 설정 화면 전체가 스크롤된다. */
+    #admin-tt-slot #schedule-modal-box { overflow: visible !important; }
+    #admin-tt-slot #schedule-edit-grid { grid-template-rows: 22px repeat(7, minmax(0, 1fr)); min-height: 400px !important; }
     .admin-tab-pane[data-tab="duty"] .admin-card { max-width: 860px; }
 
     .big-cal-wrapper { flex-direction: column; height: 100%; min-height: 0; }
@@ -1059,7 +1063,7 @@
 
     <div style="display:flex; gap:10px; margin-top: 15px;" id="schedule-close-row">
       <button class="top-btn accent" id="schedule-save-btn" style="flex:1; padding:8px; display:none;" onclick="saveScheduleGrid()">💾 저장</button>
-      <button class="top-btn" style="flex:1; padding:8px;" onclick="closeScheduleModal()">닫기</button>
+      <button class="top-btn" id="schedule-close-btn" style="flex:1; padding:8px;" onclick="closeScheduleModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -2454,7 +2458,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.14';
+  var BUILD_ID = '2026-09-29.15';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3090,7 +3094,9 @@
     if (tabId === 'tt') {
       mountBox(document.getElementById('schedule-modal-box'), document.getElementById('admin-tt-slot'), true);
       document.getElementById('schedule-modal-title').style.display = 'none'; // 설정 화면 제목("교사 시간표")과 겹침
-      document.getElementById('schedule-close-row').style.display = 'none';
+      // 설정 화면 안에서는 "닫기"만 숨긴다 — 예전엔 줄 전체를 숨겨서 그 안의 "💾 저장" 버튼까지 사라져,
+      // 설정에서 시간표를 고쳐도 저장할 수 없었다.
+      document.getElementById('schedule-close-btn').style.display = 'none';
       await initScheduleModalBody();
     } else if (tabId === 'duty') {
       await selectAdminDutyBoard(currentDutySheetName || '야자감독', currentDutyIcon || '🌙');
@@ -5776,7 +5782,7 @@
     mountBox(document.getElementById('schedule-modal-box'), document.getElementById('schedule-overlay'), false);
     document.getElementById('schedule-modal-title').style.display = '';
     document.getElementById('schedule-overlay').style.display = 'flex';
-    document.getElementById('schedule-close-row').style.display = 'flex';
+    document.getElementById('schedule-close-btn').style.display = '';
     await initScheduleModalBody();
   }
 
