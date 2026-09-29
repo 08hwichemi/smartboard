@@ -30,3 +30,4 @@ for t in *.js; do echo "== $t"; NODE_PATH=/opt/node22/lib/node_modules node $t |
 | scmix-test.js | 좌석배치표 여러 반 섞기(이름 붙여넣기·가나다순 번호·자동저장·복원), 체크박스 onchange 유지 |
 | ptsel-test.js | 시간표 색상 테마 버튼 한 줄, 학생 시간표 학년/반 계정별 기억 |
 | nosched-test.js | 본인 시간표가 없는 분(교장 등): "내 시간표" 칸에서 선생님 골라 보기, 계정별 기억·다른 기기 반영 |
+| sccmgr-test.js | 수업변경 담당(계정 체크): 둘째 줄 버튼, 아무 선생님 수업 등록, 이번 주 전체 내역 / 일반 교사는 그대로 |
