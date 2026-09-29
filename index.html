@@ -762,7 +762,7 @@
 <body onload="bootAuth()">
 
 <div id="updateBar" class="updatebar" hidden>
-  <span>🔄 새 버전이 있습니다. 새로고침해서 최신 화면으로 보세요.</span>
+  <span id="updateBarText">🔄 새 버전이 있습니다. 새로고침해서 최신 화면으로 보세요.</span>
   <button type="button" id="updateReload">새로고침</button>
   <button type="button" id="updateClose" class="updatebar-x" aria-label="닫기">&times;</button>
 </div>
@@ -2359,9 +2359,19 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.1';
+  var BUILD_ID = '2026-09-29.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
+  // 이 파란 띠는 원래 "앱 코드가 새 판으로 올라왔어요"만 알렸는데, 같은 띠를
+  // 재사용해서 "다른 기기에서 방금 저장한 새 자료가 있어요"도 같이 알린다(아래
+  // subscribeToOwnBackupUpdates 참고). 코드 갱신 알림(UPDATE_SHOWN)은 한 번 뜨면
+  // 그 뒤로 다시 확인 안 하는 게 기존 동작이라 그대로 두고, 자료 갱신 알림은
+  // DATA_UPDATE_SHOWN으로 따로 관리해서 닫았다가도 또 저장이 생기면 다시 뜰 수
+  // 있게 한다. updateBarKind로 지금 뜬 게 둘 중 뭔지 구분해서, 새로고침 버튼을
+  // 눌렀을 때 코드 갱신이면 캐시를 건너뛰는 ?v= 방식으로, 자료 갱신이면 그냥
+  // 보통 새로고침으로 다르게 처리한다.
+  var DATA_UPDATE_SHOWN = false;
+  var updateBarKind = null; // 'version' | 'data'
 
   function sizeUpdateBar() {
     var bar = document.getElementById('updateBar');
@@ -2371,10 +2381,28 @@
   }
 
   function showUpdateBar() {
-    if (UPDATE_SHOWN) return;
+    if (UPDATE_SHOWN || DATA_UPDATE_SHOWN) return;
     var bar = document.getElementById('updateBar');
     if (!bar) return;
     UPDATE_SHOWN = true;
+    updateBarKind = 'version';
+    var textEl = document.getElementById('updateBarText');
+    if (textEl) textEl.innerText = '🔄 새 버전이 있습니다. 새로고침해서 최신 화면으로 보세요.';
+    bar.hidden = false;
+    document.body.classList.add('has-update');
+    sizeUpdateBar();
+  }
+
+  // 다른 기기가 방금 서버에 새 개인 자료를 저장했다는 실시간 알림을 받았을 때 띄운다.
+  // 버전 알림 띠가 이미 떠 있으면 더 중요한 그쪽을 가리지 않도록 건너뛴다.
+  function showDataUpdateBar() {
+    if (UPDATE_SHOWN || DATA_UPDATE_SHOWN) return;
+    var bar = document.getElementById('updateBar');
+    if (!bar) return;
+    DATA_UPDATE_SHOWN = true;
+    updateBarKind = 'data';
+    var textEl = document.getElementById('updateBarText');
+    if (textEl) textEl.innerText = '📥 다른 기기에서 방금 저장한 새 자료가 있어요. 새로고침해서 확인해보세요.';
     bar.hidden = false;
     document.body.classList.add('has-update');
     sizeUpdateBar();
@@ -2385,6 +2413,10 @@
     if (bar) bar.hidden = true;
     document.body.classList.remove('has-update');
     document.documentElement.style.removeProperty('--updatebar-h');
+    // 자료 알림 띠는 닫아도 또 저장 이벤트가 오면 다시 뜰 수 있어야 하므로 리셋한다.
+    // 버전 알림(UPDATE_SHOWN)은 기존 그대로 한 번 뜨면 다시 확인하지 않는다.
+    DATA_UPDATE_SHOWN = false;
+    updateBarKind = null;
   }
 
   // 새로고침을 눌러 ?v=판번호로 다시 열었는데도 판 번호가 그대로면 서버(또는 중간
@@ -2449,10 +2481,17 @@
     location.replace(base + '?v=' + encodeURIComponent(SERVER_VERSION || String(Date.now())));
   }
 
+  // 새 버전 알림 띠는 캐시를 건너뛰는 ?v= 방식으로, 새 자료 알림 띠는(코드가 아니라
+  // 자료만 새로 받으면 되므로) 그냥 보통 새로고침으로 새로 연다.
+  function updateBarReloadClicked() {
+    if (updateBarKind === 'data') location.reload();
+    else reloadFresh();
+  }
+
   function initUpdateChecker() {
     paintVersion();
     const rb = document.getElementById('updateReload');
-    if (rb) rb.addEventListener('click', reloadFresh);
+    if (rb) rb.addEventListener('click', updateBarReloadClicked);
     const xb = document.getElementById('updateClose');
     if (xb) xb.addEventListener('click', hideUpdateBar);
     window.addEventListener('resize', sizeUpdateBar);
@@ -2568,6 +2607,7 @@
     localStorage.setItem('my-n', teacher.name);
     await restoreUserBackupIfNeeded(teacher.id);
     await init();
+    subscribeToOwnBackupUpdates(teacher.id);
   }
 
   // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등)는 서버(user_backups)가 유일한 원본이다.
@@ -2631,13 +2671,19 @@
   // 캘린더 메모가 사라졌다 나타났다 했다. 그래서 서버에 저장할 때는 "덮어쓰기"가 아니라
   // "병합"한다: 이 기기가 갖고 있는 값은 그대로 얹고, 이 기기가 모르는(=다른 기기가
   // 넣은) 값은 서버에 있던 걸 그대로 둔다. 이 기기에서 실제로 지운 키만 같이 지운다.
+  // 실시간 알림(subscribeToOwnBackupUpdates)이 "방금 내가 스스로 저장해서 생긴
+  // 알림"까지 "다른 기기가 저장했어요"로 잘못 띄우지 않도록, 이 기기가 저장을
+  // 시도하는 동안(+약간의 여유시간)은 이 시각을 갱신해둔다.
+  let ownSyncInFlightUntil = 0;
   async function syncUserBackupToServer() {
     if (!window.currentTeacher || !window.currentTeacher.id) return;
     let pendingDeletes = [];
     try { pendingDeletes = JSON.parse(localStorage.getItem('backup-pending-deletes') || '[]'); } catch (e) {}
+    ownSyncInFlightUntil = Date.now() + 4000;
     try {
       const { error } = await sb.rpc('merge_user_backup', { p_set: collectBackupData(), p_delete: pendingDeletes });
       if (error) throw error;
+      ownSyncInFlightUntil = Date.now() + 4000;
       rawSetItem('backup-pending-deletes', '[]');
       backupSyncRetryDelay = 5000;
       if (backupSyncRetryTimer) { clearTimeout(backupSyncRetryTimer); backupSyncRetryTimer = null; }
@@ -2650,6 +2696,29 @@
       if (backupSyncRetryTimer) clearTimeout(backupSyncRetryTimer);
       backupSyncRetryTimer = setTimeout(syncUserBackupToServer, backupSyncRetryDelay);
       backupSyncRetryDelay = Math.min(backupSyncRetryDelay * 2, 5 * 60 * 1000);
+    }
+  }
+
+  // PC를 하루 종일 켜두고 휴대폰으로 가끔 확인하는 식으로 쓰면, PC 탭은 새로고침
+  // 전까지 계속 예전 화면 그대로다. 그렇다고 몇 초마다 서버에 물어보는(폴링) 방식은
+  // 무료 한도를 불필요하게 쓰게 되니, Supabase Realtime(무료 요금제 포함) 구독 하나로
+  // "내 자료 행이 바뀌었다"는 신호만 서버가 알아서 push해주게 한다 — 매번 물어볼
+  // 필요 없이 연결 하나만 유지하면 된다. 신호를 받으면 자료를 그 자리에서 바로
+  // 덮어쓰지는 않는다(지금 입력 중인 칸이 있으면 그걸 지워버릴 수 있어서) — 대신
+  // 화면 위에 새로고침 띠만 띄워서 사용자가 원할 때 반영하게 한다.
+  function subscribeToOwnBackupUpdates(teacherId) {
+    try {
+      sb.channel('user-backup-changes-' + teacherId)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'user_backups', filter: 'teacher_id=eq.' + teacherId
+        }, function() {
+          if (Date.now() < ownSyncInFlightUntil) return; // 방금 이 기기 스스로 저장해서 온 알림은 무시
+          showDataUpdateBar();
+        })
+        .subscribe();
+    } catch (e) {
+      // 실시간 구독이 안 되더라도(네트워크/브라우저 제약 등) 자동저장 자체는 그대로
+      // 되니 치명적이지 않다 — 그냥 "다른 기기 자료 있음" 알림만 못 받을 뿐이다.
     }
   }
 
