@@ -605,6 +605,7 @@
     .pt-a4-2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); height: 297mm; }
     .pt-a4-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); height: 297mm; }
     .pt-a4-6 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); height: 297mm; }
+    .pt-card-page { display: flex; justify-content: center; margin-bottom: 20px; }
     .pt-mobile-bg-view { width: 400px; height: 711px; background: #e2e8f0; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 20px; overflow: hidden; margin: 0 auto 20px; flex-shrink: 0; }
 
     @media print {
@@ -612,6 +613,7 @@
       body[data-print-target="persontt"] #persontt-page, body[data-print-target="persontt"] #pt-body { display: block !important; height: auto !important; overflow: visible !important; }
       body[data-print-target="persontt"] #pt-preview { display: block !important; overflow: visible !important; background: #fff !important; padding: 0 !important; }
       .pt-a4-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; }
+      .pt-card-page { margin: 10mm 0 0 !important; page-break-after: always; }
       .pt-card { box-shadow: none !important; }
       @page { size: A4 portrait; margin: 0; }
     }
@@ -1464,6 +1466,7 @@
       <button class="admin-tab-btn" data-tab="duty" onclick="switchAdminTab('duty')">📋 감독표</button>
       <button class="admin-tab-btn" data-tab="classes" onclick="switchAdminTab('classes')">🏫 학급 구성</button>
       <button class="admin-tab-btn" data-tab="students" onclick="switchAdminTab('students')">🧑‍🎓 명렬표</button>
+      <button class="admin-tab-btn" data-tab="stt" onclick="switchAdminTab('stt')">🪪 학생 시간표</button>
       <button class="admin-tab-btn" data-tab="semester" onclick="switchAdminTab('semester')">📅 학기 날짜</button>
       <button class="admin-tab-btn" data-tab="bookmarks" onclick="switchAdminTab('bookmarks')">🔗 즐겨찾기</button>
       <button class="admin-tab-btn" data-tab="accounts" onclick="switchAdminTab('accounts')">👤 계정 관리</button>
@@ -1516,6 +1519,13 @@
         <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🧑‍🎓 명렬표 엑셀 업로드</div>
         <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">"학번, 이름, 학생번호(학생 전화번호), 어머니번호, 아버지번호" 열이 있는 엑셀을 학년별로 각각 올려주세요. 그 학년 파일을 다시 올리면 명단이 새 내용으로 통째로 바뀝니다(다른 학년은 그대로 남습니다).</div>
         <div id="student-upload-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <div class="admin-tab-pane" data-tab="stt" style="display:none;">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🪪 학생 시간표 엑셀 업로드</div>
+        <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">학년별로 학생 시간표 엑셀을 올려주세요(고교학점제 "배정내역·교실배정" 파일은 여러 개를 한 번에 골라도 됩니다). 그 학년 파일을 다시 올리면 그 학년 학생 시간표 전체가 새 내용으로 바뀝니다. 올린 시간표는 모든 선생님이 왼쪽 레일 "시간표 → 학생 시간표"에서 함께 봅니다.</div>
+        <div id="stt-upload-rows" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <input type="file" id="pt-excel-upload" accept=".xlsx,.xls" multiple style="display:none;">
       </div>
 
       <div class="admin-tab-pane" data-tab="semester" style="display:none;">
@@ -2065,8 +2075,7 @@
         <option value="6">📄 A4 (2x3)</option>
         <option value="mobile">📱 모바일 배경화면</option>
       </select>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptPrint('current')">🖨️ 인쇄</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" id="pt-print-all-btn" onclick="ptPrint('all')">🖨️ 전체 인쇄</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptPrint()">🖨️ 인쇄</button>
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptExportImage()">🖼️ 이미지</button>
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" id="pt-pdf-btn" onclick="ptExportPDF()">📄 PDF</button>
     </div>
@@ -2079,19 +2088,13 @@
       </div>
 
       <div id="pt-student-controls" style="display:none; flex-direction:column; gap:10px;">
-        <div id="pt-admin-upload-box" style="display:none; flex-direction:column; gap:6px;">
-          <div style="font-size:12px; font-weight:800; color:var(--text-sub);">📂 학년별 학생 시간표 업로드 (관리자)</div>
-          <div style="display:flex; gap:6px;">
-            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(1)">1학년</button>
-            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(2)">2학년</button>
-            <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptTriggerUpload(3)">3학년</button>
-          </div>
-          <input type="file" id="pt-excel-upload" accept=".xlsx,.xls" multiple style="display:none;">
-          <div style="font-size:10.5px; color:var(--text-sub); line-height:1.4;">엑셀을 올리면 그 학년 학생 시간표 전체가 교체돼요(모든 선생님이 같이 보는 공용 자료).</div>
-        </div>
         <div style="display:flex; gap:6px;">
           <select id="pt-student-grade" class="mini-select" style="flex:1;" onchange="ptOnGradeChange()"><option value="">학년</option></select>
           <select id="pt-student-class" class="mini-select" style="flex:1;" onchange="ptOnClassChange()"><option value="">반</option></select>
+        </div>
+        <div class="tab-switch" style="align-self:stretch; display:flex;">
+          <button class="tab-btn active" id="pt-scope-one-btn" style="flex:1;" onclick="ptSetScope('one')">👤 이 학생만</button>
+          <button class="tab-btn" id="pt-scope-class-btn" style="flex:1;" onclick="ptSetScope('class')">🏫 반 전체</button>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <button class="top-btn" style="padding:2px 8px;" onclick="ptNavStudent(-1)">◀</button>
@@ -2159,7 +2162,7 @@
           <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
         <div class="pt-box-title" style="margin-top:10px;">🔠 세부 글자 크기 조절</div>
           <div class="pt-slider-row"><label for="pt-sl-title">제목 크기</label><input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-name">이름/좌우명 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-name">이름 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
           <div class="pt-slider-row"><label for="pt-sl-sub">과목명 크기</label><input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()"></div>
           <div class="pt-slider-row"><label for="pt-sl-info">교사/교실 크기</label><input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()"></div>
           <div class="pt-slider-row"><label for="pt-sl-time">교시 시간 크기</label><input type="range" id="pt-sl-time" min="7" max="14" value="9" oninput="ptUpdateVars()"></div>
@@ -2389,7 +2392,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.7';
+  var BUILD_ID = '2026-09-29.8';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3023,6 +3026,8 @@
       await selectAdminDutyBoard(currentDutySheetName || '야자감독', currentDutyIcon || '🌙');
     } else if (tabId === 'students') {
       await renderStudentUploadRows();
+    } else if (tabId === 'stt') {
+      await renderStudentTimetableUploadRows();
     }
   }
 
@@ -8083,8 +8088,6 @@
     document.getElementById('pt-me-controls').style.display = tab === 'me' ? 'block' : 'none';
     document.getElementById('pt-student-controls').style.display = tab === 'student' ? 'flex' : 'none';
     if (tab === 'student') {
-      const adminBox = document.getElementById('pt-admin-upload-box');
-      adminBox.style.display = (window.currentTeacher && window.currentTeacher.is_admin) ? 'flex' : 'none';
       ptEnsureStudentDataLoaded();
     }
     ptCurrentPage = 1;
@@ -8164,6 +8167,22 @@
     ptCurrentPage = 1;
     ptRender();
   }
+  // 학생 시간표 출력 대상 — 'one'이면 고른 학생 한 명, 'class'면 고른 반 전체(반을 안 골랐으면
+  // 그 학년 전체). 미리보기·인쇄·이미지·PDF가 모두 이 기준을 따른다.
+  let ptScope = 'one';
+  function ptSetScope(scope) {
+    ptScope = scope;
+    document.getElementById('pt-scope-one-btn').classList.toggle('active', scope === 'one');
+    document.getElementById('pt-scope-class-btn').classList.toggle('active', scope === 'class');
+    ptCurrentPage = 1;
+    ptRender();
+  }
+  function ptTargetStudents() {
+    if (ptScope === 'class') return ptFilteredStudents();
+    const one = ptCurrentStudent();
+    return one ? [one] : [];
+  }
+
   function ptCurrentStudent() {
     const list = ptFilteredStudents();
     const idx = parseInt(document.getElementById('pt-student-select').value);
@@ -8171,6 +8190,39 @@
   }
 
   function ptTriggerUpload(grade) { ptUploadTargetGrade = grade; document.getElementById('pt-excel-upload').click(); }
+
+  // 관리자 설정 "🪪 학생 시간표" 탭 — 학년별 업로드 버튼과 지금 서버에 올라가 있는 상태(학생 수, 올린 날짜).
+  async function renderStudentTimetableUploadRows() {
+    await ensureClassStructureLoaded();
+    const cs = window.classStructure || { gradeCount: 3 };
+    const container = document.getElementById('stt-upload-rows');
+    let html = '';
+    for (let g = 1; g <= cs.gradeCount; g++) {
+      html += '<div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px;">' +
+        '<div style="font-weight:700; font-size:12.5px; min-width:48px;">' + g + '학년</div>' +
+        '<button class="top-btn accent" style="font-size:11.5px; padding:5px 10px;" onclick="ptTriggerUpload(' + g + ')">📥 엑셀 업로드</button>' +
+        '<div id="stt-upload-status-' + g + '" style="font-size:11px; color:var(--text-sub); flex:1;">확인 중…</div>' +
+        '</div>';
+    }
+    container.innerHTML = html;
+    try {
+      const { data, error } = await sb.from('student_timetable_card').select('grade, students, updated_at');
+      if (error) throw error;
+      for (let g = 1; g <= cs.gradeCount; g++) {
+        const row = (data || []).find(function(r) { return r.grade === g; });
+        const el = document.getElementById('stt-upload-status-' + g);
+        if (!el) continue;
+        el.innerText = row && Array.isArray(row.students) && row.students.length
+          ? '학생 ' + row.students.length + '명 · ' + formatKST(row.updated_at) + ' 업로드'
+          : '아직 올린 시간표가 없습니다';
+      }
+    } catch (e) {
+      for (let g = 1; g <= cs.gradeCount; g++) {
+        const el = document.getElementById('stt-upload-status-' + g);
+        if (el) el.innerText = '상태를 불러오지 못했습니다';
+      }
+    }
+  }
 
   // ----- 엑셀 파싱 엔진 (원본 "스마트 개인별 시간표" 도구에서 학생용 부분만 이식) -----
   function ptParseSmartCell(content) {
@@ -8417,12 +8469,11 @@
       await customAlert('⚠️ 시간표 양식을 찾지 못했습니다.');
     } else {
       ptStudentsByGrade[ptUploadTargetGrade] = parsedStudents;
-      document.getElementById('pt-student-grade').value = String(ptUploadTargetGrade);
-      ptOnGradeChange();
       try {
         const { error } = await sb.from('student_timetable_card').upsert({ grade: ptUploadTargetGrade, students: parsedStudents, updated_at: new Date().toISOString() }, { onConflict: 'grade' });
         if (error) throw error;
         await customAlert('🎉 ' + ptUploadTargetGrade + '학년 학생 ' + parsedStudents.length + '명의 시간표가 저장되었습니다!');
+        renderStudentTimetableUploadRows();
       } catch (err) {
         await customAlert('⚠️ 서버 저장에 실패했습니다: ' + (err && err.message ? err.message : err));
       }
@@ -8436,7 +8487,7 @@
     const days = ['월', '화', '수', '목', '금'];
     let infoHtml;
     if (!isTeacherCard) {
-      infoHtml = '<div class="pt-motto">' + (person.motto ? '좌우명 : ' + escapeHtmlAttr(person.motto) : '') + '</div>' +
+      infoHtml = '<div class="pt-motto"></div>' +
         '<div class="pt-name">' + escapeHtmlAttr(person.num || '') + ' ' + escapeHtmlAttr(person.name || '') + '</div>';
     } else {
       infoHtml = '<div class="pt-motto" style="font-size:var(--pt-sz-info);">주당 ' + person.schedule.length + '시간</div>' +
@@ -8535,29 +8586,20 @@
       return;
     }
 
+    const list = ptTargetStudents();
+    const perPage = (layout === 'card' || layout === 'mobile') ? 1 : parseInt(layout);
+    ptTotalPages = Math.max(1, Math.ceil(list.length / perPage));
+    if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
+    document.getElementById('pt-page-nav').style.display = ptTotalPages > 1 ? 'flex' : 'none';
+    document.getElementById('pt-page-text').innerText = ptCurrentPage + ' / ' + ptTotalPages;
+    const chunk = list.slice((ptCurrentPage - 1) * perPage, ptCurrentPage * perPage);
     if (layout === 'card') {
-      document.getElementById('pt-page-nav').style.display = 'none';
-      ptTotalPages = 1;
-      area.innerHTML = ptCreateCardHTML(person, false);
+      area.innerHTML = ptCreateCardHTML(chunk[0] || person, false);
     } else if (layout === 'mobile') {
-      const list = ptFilteredStudents();
-      ptTotalPages = list.length || 1;
-      if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
-      document.getElementById('pt-page-nav').style.display = list.length > 1 ? 'flex' : 'none';
-      document.getElementById('pt-page-text').innerText = ptCurrentPage + ' / ' + ptTotalPages;
-      const p = list[ptCurrentPage - 1] || person;
-      area.innerHTML = '<div class="pt-mobile-bg-view" id="pt_print_page_' + ptCurrentPage + '">' + ptCreateCardHTML(p, false) + '</div>';
+      area.innerHTML = '<div class="pt-mobile-bg-view" id="pt_print_page_' + ptCurrentPage + '">' + ptCreateCardHTML(chunk[0] || person, false) + '</div>';
     } else {
       ptCalcFitScale();
-      const list = ptFilteredStudents();
-      const layoutNum = parseInt(layout);
-      ptTotalPages = Math.max(1, Math.ceil(list.length / layoutNum));
-      if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
-      document.getElementById('pt-page-nav').style.display = list.length > layoutNum ? 'flex' : 'none';
-      document.getElementById('pt-page-text').innerText = ptCurrentPage + ' / ' + ptTotalPages;
-      const startIdx = (ptCurrentPage - 1) * layoutNum;
-      const chunk = list.slice(startIdx, startIdx + layoutNum);
-      let html = '<div class="pt-a4-page pt-a4-' + layoutNum + '" id="pt_print_page_' + ptCurrentPage + '">';
+      let html = '<div class="pt-a4-page pt-a4-' + perPage + '" id="pt_print_page_' + ptCurrentPage + '">';
       chunk.forEach(function(p) { html += '<div class="pt-grid-cell">' + ptCreateCardHTML(p, false) + '</div>'; });
       html += '</div>';
       area.innerHTML = html;
@@ -8567,7 +8609,11 @@
   function ptRenderAllPagesForPrint() {
     const area = document.getElementById('pt-render-area');
     const layout = document.getElementById('pt-print-layout').value;
-    const list = ptFilteredStudents();
+    const list = ptTargetStudents();
+    if (layout === 'card') {
+      area.innerHTML = list.map(function(p) { return '<div class="pt-card-page">' + ptCreateCardHTML(p, false) + '</div>'; }).join('');
+      return;
+    }
     if (layout === 'mobile') {
       let html = '';
       list.forEach(function(p, i) { html += '<div class="pt-mobile-bg-view" id="pt_print_page_' + (i + 1) + '">' + ptCreateCardHTML(p, false) + '</div>'; });
@@ -8585,9 +8631,9 @@
     area.innerHTML = html;
   }
 
-  function ptPrint(type) {
+  function ptPrint() {
     document.body.setAttribute('data-print-target', 'persontt');
-    if (type === 'current' || ptCurrentTab === 'me' || document.getElementById('pt-print-layout').value === 'card') {
+    if (ptCurrentTab === 'me') {
       window.print();
     } else {
       ptRenderAllPagesForPrint();
@@ -8597,7 +8643,7 @@
 
   async function ptExportImage() {
     const layout = document.getElementById('pt-print-layout').value;
-    if (ptCurrentTab === 'me' || layout === 'card') {
+    if (ptCurrentTab === 'me' || (layout === 'card' && ptTargetStudents().length <= 1)) {
       const el = document.querySelector('#pt-render-area .pt-card');
       if (!el) return;
       const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
@@ -8607,7 +8653,7 @@
     }
     const zip = new JSZip();
     ptRenderAllPagesForPrint();
-    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view');
+    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view, #pt-render-area .pt-card-page .pt-card');
     for (let i = 0; i < pages.length; i++) {
       const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#fff', useCORS: true });
       const imgData = canvas.toDataURL('image/png').split(',')[1];
@@ -8624,20 +8670,26 @@
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
     const layout = document.getElementById('pt-print-layout').value;
-    if (ptCurrentTab === 'me' || layout === 'card') {
+    // 카드 한 장은 A4 한 가운데에 비율을 지켜서 넣는다(예전엔 A4 전체로 늘어나 찌그러졌음).
+    function addFitted(canvas) {
+      const ratio = Math.min(190 / canvas.width, 277 / canvas.height);
+      const w = canvas.width * ratio, h = canvas.height * ratio;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', (210 - w) / 2, (297 - h) / 2, w, h);
+    }
+    if (ptCurrentTab === 'me' || (layout === 'card' && ptTargetStudents().length <= 1)) {
       const el = document.querySelector('#pt-render-area .pt-card');
       if (!el) return;
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#fff', useCORS: true });
-      pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+      if (layout === 'card') addFitted(canvas); else pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
       pdf.save('시간표.pdf');
       return;
     }
     ptRenderAllPagesForPrint();
-    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view');
+    const pages = document.querySelectorAll('#pt-render-area .pt-a4-page, #pt-render-area .pt-mobile-bg-view, #pt-render-area .pt-card-page .pt-card');
     for (let i = 0; i < pages.length; i++) {
       const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#fff', useCORS: true });
       if (i > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+      if (layout === 'card') addFitted(canvas); else pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
     }
     pdf.save('학생시간표_전체.pdf');
     ptRender();
