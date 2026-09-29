@@ -597,7 +597,7 @@
       @page { size: A4 portrait; margin: 0; }
     }
 
-    /* ===== 🗓️ 개인 시간표 (학생/교사 카드형 시간표 생성기) ===== */
+    /* ===== 🗓️ 시간표 만들기 (학생/교사 카드형 시간표 생성기) ===== */
     :root {
       --pt-base-w: 360px; --pt-base-h: 520px; --pt-sz-title: 18px; --pt-sz-name: 16px;
       --pt-sz-motto: 13px; --pt-sz-sub: 16px; --pt-sz-info: 11px; --pt-sz-rad: 8px;
@@ -977,7 +977,7 @@
         <button class="qbtn" style="border-bottom: 3px solid #4DB6AC;" onclick="openDutyModal('아침감독', '☀️')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#4DB6AC;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>아침 감독표</button>
       </div>
 
-      <div style="display:flex; align-items:center; gap:7px; color:var(--text-sub); min-width:0; overflow:hidden; background:var(--tt-bg); padding:5px 12px 5px 8px; border-radius:20px;">
+      <div id="upcoming-schedule-pill" style="display:flex; align-items:center; gap:7px; color:var(--text-sub); min-width:0; overflow:hidden; background:var(--tt-bg); padding:5px 12px 5px 8px; border-radius:20px;">
         <div class="w-chip" style="width:20px; height:20px; border-radius:6px; color:#8B7FE8;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
         <span style="font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;">다가오는 학사일정</span>
         <div class="schedule-marquee-wrap" id="upcoming-schedule-wrap">
@@ -1276,7 +1276,7 @@
             <div id="bookmark-grid" class="fav-grid"></div>
           </div>
         </div>
-        <div class="widget w-accent-a" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
+        <div class="widget w-accent-a" id="dday-panel" style="flex: 0 0 60px; padding: 0 12px; position: relative;">
           <div class="dday-row">
             <div class="dday-half" onclick="toggleDdaySettings(1)">
               <span class="dday-text" id="dday1-num">D-0</span>
@@ -1683,7 +1683,7 @@
   <div id="sc-body">
     <div id="sc-panel">
 
-      <div class="sc-section">
+      <div class="sc-section" id="sc-roster-section">
         <div class="sc-section-title">🧑‍🎓 명렬표 불러오기</div>
         <label id="sc-mix-toggle-row" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; margin-bottom:8px; cursor:pointer;">
           <input type="checkbox" id="sc-mix-toggle" onchange="scToggleMix(this.checked)"> 🔀 여러 반 학생 섞기 (이름 붙여넣기)
@@ -2003,19 +2003,22 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📋 조퇴증</div>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="lpOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <span id="lp-save-group" style="display:flex; gap:6px; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="lpSaveSettings()" title="지금 설정을 파일로 저장합니다">💾 저장</button>
       <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
         📂 불러오기
         <input type="file" id="lp-import-input" accept=".json" style="display:none;" onchange="lpLoadSettings(event)">
       </label>
+      </span>
     </div>
-    <div style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
+    <div id="lp-zoom-group" style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
       <span style="font-size:12px;">🔍</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="lpZoomBy(-0.1)">-</button>
       <span id="lp-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center;">100%</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="lpZoomBy(0.1)">+</button>
     </div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+    <div id="lp-print-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--text-sub);">
         📄 인쇄 매수
         <input type="number" id="lp-print-qty" class="mini-select" value="1" min="1" max="10" style="width:48px; text-align:center;" oninput="lpRender()">
@@ -2027,7 +2030,7 @@
   <div id="lp-body">
     <div id="lp-panel">
 
-      <div class="lp-section">
+      <div class="lp-section" id="lp-sec-school">
         <div class="lp-section-title">🏫 학교 정보</div>
         <div class="lp-row">
           <div class="lp-field lp-grow-3">
@@ -2037,7 +2040,7 @@
         </div>
       </div>
 
-      <div class="lp-section">
+      <div class="lp-section" id="lp-sec-class">
         <div class="lp-section-title">🧑‍🎓 학급 정보</div>
         <div class="lp-row">
           <div class="lp-field" style="flex:1.5;">
@@ -2061,7 +2064,7 @@
         </div>
       </div>
 
-      <div class="lp-section">
+      <div class="lp-section" id="lp-sec-font">
         <div class="lp-section-title">🎨 도장 전용 글꼴</div>
         <div style="display:flex; align-items:center; gap:8px;">
           <div class="lp-font-nav" onclick="lpPrevFont()">◀</div>
@@ -2091,7 +2094,7 @@
         <div style="font-size:11px; color:var(--text-sub); margin-top:8px;">※ 본문 글씨체는 고정되어 있고, 도장 글꼴만 바뀝니다.</div>
       </div>
 
-      <div class="lp-section">
+      <div class="lp-section" id="lp-sec-stamp">
         <div class="lp-section-title">
           🎯 도장 위치/크기/간격
           <button class="top-btn" style="font-size:10px; padding:3px 8px; color:#1F8F5C;" onclick="lpDownloadStampPNG()" title="투명 도장 이미지 다운로드">🖼️ 도장 저장</button>
@@ -2130,13 +2133,14 @@
   <div id="pt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
-      <div style="font-weight: 800; font-size: 16px;">🗓️ 개인 시간표</div>
-      <div class="tab-switch">
+      <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 만들기</div>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <div class="tab-switch" id="pt-tab-switch">
         <button class="tab-btn active" id="pt-tab-me-btn" onclick="ptSwitchTab('me')">⭐ 내 시간표</button>
         <button class="tab-btn" id="pt-tab-student-btn" onclick="ptSwitchTab('student')">👨‍🎓 학생 시간표</button>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
+    <div id="pt-zoom-group" style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
       <span style="font-size:12px;">🔍</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="ptZoomBy(-0.1)">-</button>
       <span id="pt-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center;">100%</span>
@@ -2179,13 +2183,13 @@
         </div>
       </div>
 
-      <div class="pt-card-box">
+      <div class="pt-card-box" id="pt-box-school">
         <div class="pt-box-title">🏫 학교 / 학기 표시</div>
         <input type="text" id="pt-cfg-school" class="mini-select" placeholder="학교명" oninput="ptRender(); ptAutoSave();">
         <input type="text" id="pt-cfg-term" class="mini-select" placeholder="학기명 (예: 2026학년도 1학기)" oninput="ptRender(); ptAutoSave();">
       </div>
 
-      <div class="pt-card-box">
+      <div class="pt-card-box" id="pt-box-design">
         <div class="pt-box-title">🌈 과목별 색상 테마 (4종 12색)</div>
         <div class="pt-theme-grid" id="pt-theme-grid"></div>
         <div class="pt-box-title">표 스타일 (총 6종)</div>
@@ -2232,7 +2236,7 @@
         </div>
       </div>
 
-      <div class="pt-card-box">
+      <div class="pt-card-box" id="pt-box-size">
         <div class="pt-box-title">📐 시간표 크기 조절 (가로/세로 비율)</div>
           <div class="pt-slider-row"><label for="pt-sl-width">전체 너비 ↔️</label><input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()"></div>
           <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
@@ -2245,7 +2249,7 @@
           <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
       </div>
 
-      <div style="display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
+      <div id="pt-design-save-row" style="display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
         <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptSaveSettings()">💾 디자인 저장</button>
         <label class="top-btn" style="flex:1; font-size:11px; padding:6px; text-align:center; cursor:pointer; margin:0;">
           📂 불러오기
@@ -2468,7 +2472,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.18';
+  var BUILD_ID = '2026-09-29.19';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3081,8 +3085,7 @@
     const scStudentModal = document.getElementById('sc-student-modal');
     if (scStudentModal) scStudentModal.style.display = 'none';
     document.body.removeAttribute('data-print-target');
-    if (tourMode === 'seatchart') scCloseTour();
-    if (tourMode === 'monthly') msCloseTour();
+    if (tourMode === 'page') closePageTour();
   }
 
   // 지난 라운드까지 이 두 이름으로 모달을 열고 닫았던 호출부(openScheduleModal/openDutyModal,
@@ -3134,6 +3137,10 @@
   }
 
   document.addEventListener('click', function(e) {
+    // 설명서의 "다음/이전"을 누른 클릭이 여기까지 올라와서, 설명서가 방금 열어 둔 테마 메뉴를
+    // 바로 닫아버리던 문제 — 설명서 안에서 누른 건 무시한다.
+    const tourOverlay = document.getElementById('tour-overlay');
+    if (tourOverlay && tourOverlay.contains(e.target)) return;
     const chip = document.getElementById('user-chip');
     const dd = document.getElementById('user-menu-dropdown');
     if (dd && dd.style.display === 'block' && chip && !chip.contains(e.target)) {
@@ -3763,29 +3770,32 @@
   // 실제 화면 위 각 버튼/영역의 위치를 getBoundingClientRect()로 계산해서 그 자리에 스포트라이트(테두리)를 씌우고,
   // 옆에 설명 카드를 띄우는 방식. 은행 앱 튜토리얼처럼 화면을 어둡게 가리고 해당 기능만 밝게 보이게 한다.
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
+  // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴에서 홈, 명렬표, 좌석배치표, 시간표 만들기, 월간일정표, 조퇴증으로 옮겨 갈 수 있어요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
-    { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
-    { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
+    { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
     { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 9가지 색상 테마 중 하나로 화면 전체를 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
-    { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
-    { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
     { selector: '#schedule-overlay .modal-box', title: '🗓️ 시간표 관리', desc: '이 버튼을 누르면 이렇게 모달이 열려요. 위에서 선생님을 고른 뒤 "✏️ 수정"을 누르면 그 선생님 시간표를 직접 고칠 수 있고, "+ 새 선생님 추가"로 새 시간표를 만들 수도 있어요.', modal: function() { openScheduleModal(); } },
     { selector: '#duty-overlay .modal-box', title: '🌙 야자 감독표', desc: '이렇게 감독표가 열려요. 기본은 보기 전용이고, "✏️ 수정 모드"를 눌러야 편집·추가·삭제 버튼이 나타나요(실수 방지를 위해서예요).', modal: function() { openDutyModal('야자감독', '🌙'); } },
     { selector: '#duty-overlay .modal-box', title: '🍱 급식 감독표', desc: '같은 방식으로 급식 감독 일정도 확인·수정할 수 있어요.', modal: function() { openDutyModal('급식감독', '🍱'); } },
     { selector: '#duty-overlay .modal-box', title: '☀️ 아침 감독표', desc: '아침 감독표도 마찬가지 방식이에요.', modal: function() { openDutyModal('아침감독', '☀️'); } },
+    { selector: '#upcoming-schedule-pill', title: '📅 다가오는 학사일정', desc: 'NEIS 학사일정에서 앞으로 있을 학교 일정을 가져와 옆으로 흘러가며 보여줘요.' },
+    { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
+    { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
+    { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
+    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를 바꿀 수 있어요. (일과 시간은 관리자 설정에서 학교 전체에 공통으로 적용돼요.)' },
     { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여줘요.' },
     { selector: '.weather-group', title: '🌤️ 날씨', desc: '현재 날씨·미세먼지와 최고/최저 기온, 앞으로 몇 시간의 시간별 예보를 보여줘요.' },
-    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를 바꿀 수 있어요. (일과 시간은 관리자 설정에서 학교 전체에 공통으로 적용돼요.)' },
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
     { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 클릭하면 바로 메모를 입력할 수 있어요. NEIS 학사일정도 자동으로 같이 표시돼요.', tab: 'cal' },
     { selector: '#search-tt-widget', title: '🗓️ 1/2캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 작게 모아서 볼 수 있어요. 한 주 전체 일정을 빠르게 훑어볼 때 편해요.', tab: 'halfcal' },
+    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 여기 전부 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
+    { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' },
     { selector: '#websearch-widget', title: '🔍 웹 검색', desc: '여기서 검색하면 구글 검색 결과가 새 탭으로 열려요. 아래 "뉴스" 안에서 검색하는 게 아니라 인터넷 전체를 검색하는 창이에요.' },
     { selector: '#news-widget', title: '📰 뉴스', desc: '탭을 눌러 종합/정치·사회/경제/IT·과학/스포츠 뉴스를 볼 수 있어요. 제목을 클릭하면 기사로 이동해요.' },
-    { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' },
-    { selector: '#notice-widget', title: '📢 공지 & 소담소담', desc: '받은 공지 목록이 여기 전부 남고, 보낸 사람 이름도 같이 표시돼요. 👍❤️ 버튼으로 각 공지에 반응을 남길 수도 있어요.' },
-    { selector: '#meal-widget', title: '🍽 급식', desc: '◀▶ 버튼으로 어제·내일 등 다른 날짜의 급식 메뉴도 확인할 수 있어요.' }
+    { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 학생·상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오갈 수 있어요. 체크박스로 완료 표시, "✔️ Del"로 완료된 항목만 지우기, "🗑️ ALL"로 전체 지우기가 가능해요.' }
   ];
   let tourIndex = 0;
   let tourOriginalTab = 'tt';
@@ -3811,8 +3821,7 @@
   }
 
   function closeTour() {
-    if (tourMode === 'seatchart') { scCloseTour(); return; }
-    if (tourMode === 'monthly') { msCloseTour(); return; }
+    if (tourMode === 'page') { closePageTour(); return; }
     if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
     if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
     tourResetTransient();
@@ -3872,16 +3881,61 @@
     tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
   }
 
+  // ----- 페이지 설명서(좌석배치표/월간일정표/시간표 만들기/조퇴증) 공용 -----
+  // 같은 스포트라이트 UI를 쓰고, 단계는 화면에서 읽는 순서(왼쪽 설정 패널 위→아래 → 오른쪽
+  // 미리보기 → 위쪽 저장·인쇄)로 둔다. 단계마다 before()로 화면을 준비할 수 있고, 안 보이는
+  // 요소(다른 탭에 있는 칸 등)는 건너뛴다. 끝나면 onClose()로 원래 상태로 되돌린다.
+  let pageTour = null; // { steps, index, onClose }
+  function openPageTour(steps, onClose) {
+    if (tourMode === 'page') closePageTour();
+    tourMode = 'page';
+    pageTour = { steps: steps, index: 0, onClose: onClose || null };
+    document.getElementById('tour-overlay').style.display = 'block';
+    showPageTourStep(1);
+  }
+  function closePageTour() {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
+    const t = pageTour; pageTour = null;
+    tourMode = 'dashboard';
+    document.getElementById('tour-overlay').style.display = 'none';
+    if (t && t.onClose) { try { t.onClose(); } catch (e) {} }
+  }
+  function showPageTourStep(dir) {
+    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
+    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
+    const t = pageTour; if (!t) return;
+    if (t.index < 0) t.index = 0;
+    if (t.index >= t.steps.length) { closePageTour(); return; }
+    const step = t.steps[t.index];
+    if (step.before) { try { step.before(); } catch (e) {} }
+    const el = document.querySelector(step.selector);
+    if (!el || el.getClientRects().length === 0) {
+      if (dir < 0 && t.index > 0) { t.index--; showPageTourStep(-1); }
+      else if (t.index < t.steps.length - 1) { t.index++; showPageTourStep(1); }
+      else closePageTour();
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('tour-card-title').innerText = step.title;
+    document.getElementById('tour-card-desc').innerText = step.desc;
+    document.getElementById('tour-card-progress').innerText = (t.index + 1) + ' / ' + t.steps.length;
+    document.getElementById('tour-prev-btn').style.visibility = t.index === 0 ? 'hidden' : 'visible';
+    document.getElementById('tour-next-btn').innerText = t.index === t.steps.length - 1 ? '완료 ✓' : '다음 ▶';
+    positionTourSpotlight(el);
+    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
+    tourSpotlightObserver.observe(el);
+    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
+  }
+
   function tourNext() {
-    if (tourMode === 'seatchart') { scTourNext(); return; }
-    if (tourMode === 'monthly') { msTourNext(); return; }
+    if (tourMode === 'page') { if (pageTour.index < pageTour.steps.length - 1) { pageTour.index++; showPageTourStep(1); } else closePageTour(); return; }
     if (tourIndex < tourSteps.length - 1) { tourIndex++; showTourStep(); }
     else closeTour();
   }
 
   function tourPrev() {
-    if (tourMode === 'seatchart') { scTourPrev(); return; }
-    if (tourMode === 'monthly') { msTourPrev(); return; }
+    if (tourMode === 'page') { if (pageTour.index > 0) { pageTour.index--; showPageTourStep(-1); } return; }
     if (tourIndex > 0) { tourIndex--; showTourStep(); }
   }
 
@@ -7152,64 +7206,19 @@
   // 그대로 재사용해서 실제 버튼을 하나씩 짚어가며 보여준다. tourMode로 대시보드 투어와
   // 구분해서 같은 UI를 공유한다(closeTour/tourNext/tourPrev 참고).
   const scTourSteps = [
-    { selector: '#sc-page-header', title: '🪑 좌석배치표에 오신 것을 환영해요!', desc: '반 학생들을 자동으로 배치하고 예쁘게 꾸며서 인쇄까지 할 수 있는 화면이에요. "다음"을 눌러 하나씩 따라와 보세요.' },
-    { selector: '#sc-roster-select-row', title: '1단계. 학년/반 선택', desc: '여기서 학년과 반을 고르면, 그 반 학생 명렬표가 자동으로 불러와져요. 담임 선생님이면 처음 열었을 때 이미 본인 반이 선택돼 있어요.' },
+    { selector: '#sc-page-header', title: '🪑 좌석배치표에 오신 것을 환영해요!', desc: '반 학생들을 자동으로 배치하고 예쁘게 꾸며서 인쇄까지 할 수 있는 화면이에요. 왼쪽 설정을 위에서부터 차례로 하고, 오른쪽 종이에서 확인한 뒤, 위쪽 버튼으로 저장·인쇄하면 돼요.' },
+    { selector: '#sc-roster-section', title: '1단계. 명렬표 불러오기', desc: '학년과 반을 고르면 그 반 학생 명렬표가 자동으로 불러와져요. 담임 선생님이면 처음 열었을 때 이미 본인 반이 선택돼 있어요.\n\n🔀 선택과목·방과후처럼 여러 반 학생이 섞였으면 "여러 반 학생 섞기"를 켜고 이름을 붙여넣으세요. 가나다순으로 1번부터 번호가 매겨져요.' },
     { selector: '#sc-exclude-row', title: '2단계. 결석/제외 번호 (선택)', desc: '결석했거나 이번 배치에서 빼야 할 학생이 있으면, 번호를 콤마(,)로 구분해서 여기에 적어주세요. 예: 5, 12' },
     { selector: '#sc-structure-grid', title: '3단계. 반 구조 정하기', desc: '분단(세로줄) 수, 가로(줄) 수, 짝꿍이 몇 명씩 앉을지(짝꿍 수)를 숫자로 입력하세요.' },
     { selector: '#sc-build-btn', title: '이 버튼을 눌러보세요', desc: '입력한 숫자대로 오른쪽 종이에 빈 책상이 쫙 그려져요. 구조를 바꾸고 싶으면 숫자를 고치고 이 버튼을 다시 누르면 됩니다.' },
     { selector: '#sc-special-seat-row', title: '4단계. 고정석 / 제외석 (선택)', desc: '📌 고정석: 미리 정해두면 랜덤 배치를 돌려도 그 자리 학생은 움직이지 않아요.\n🚫 제외석: 책상이 없거나 비워둘 자리를 표시할 때 써요.\n필요 없으면 건너뛰어도 괜찮아요.' },
     { selector: '#sc-arrange-section', title: '5단계. 자리 채우기', desc: '🔢 번호순: 앞에서부터 번호 순서대로 채워요.\n🎲 랜덤배치: 카운트다운 후 무작위로 섞어서 채워요(고정석·제외 번호는 그대로 유지돼요).\n🧹 초기화: 배정만 지우고 고정·제외 표시는 남겨요.\n🔄 위치반전: 인쇄할 때 교탁이 보는 방향으로 뒤집어요.' },
-    { selector: '#sc-a4-paper', title: '6단계. 직접 클릭해서 배정하기', desc: '자리 하나를 클릭하면 학생을 직접 골라 앉힐 수 있어요. 제목, "창가"/"복도", 맨 아래 문구도 모두 클릭해서 바로 고칠 수 있습니다.' },
-    { selector: '#sc-design-section', title: '7단계. 종이 디자인 꾸미기', desc: '색 테마, 글꼴(30여 종), 글씨 크기와 여백 등을 자유롭게 바꿔서 우리 반만의 좌석표를 만들어보세요.' },
-    { selector: '#sc-header-save-group', title: '8단계. 저장하기', desc: '💾 디자인저장/로드: 지금 폰트·색·크기 설정을 파일로 저장했다가 다른 반에도 똑같이 적용할 수 있어요.\n📝 결과저장/로드: 완성한 배치 결과 전체를 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
+    { selector: '#sc-design-section', title: '6단계. 종이 디자인 꾸미기', desc: '색 테마, 글꼴(30여 종), 글씨 크기와 여백 등을 자유롭게 바꿔서 우리 반만의 좌석표를 만들어보세요.' },
+    { selector: '#sc-a4-paper', title: '7단계. 종이에서 직접 고치기', desc: '자리 하나를 클릭하면 학생을 직접 골라 앉힐 수 있어요. 제목, "창가"/"복도", 맨 아래 문구도 모두 클릭해서 바로 고칠 수 있습니다.' },
+    { selector: '#sc-header-save-group', title: '8단계. 저장하기', desc: '💾 디자인저장/로드: 지금 폰트·색·크기 설정을 파일로 저장했다가 다른 반에도 똑같이 적용할 수 있어요.\n📝 결과저장/로드: 완성한 배치 결과 전체를 파일로 저장했다가 나중에 그대로 불러올 수 있어요.\n(파일로 저장하지 않아도 반마다 자동으로 저장돼요.)' },
     { selector: '#sc-print-btn', title: '9단계. 인쇄 또는 PDF로 저장', desc: '다 완성됐으면 이 버튼을 눌러 인쇄하거나, 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일로 저장할 수 있어요. 수고하셨습니다! 🎉' }
   ];
-  let scTourIndex = 0;
-
-  function scOpenTour() {
-    tourMode = 'seatchart';
-    scTourIndex = 0;
-    document.getElementById('tour-overlay').style.display = 'block';
-    scShowTourStep();
-  }
-
-  function scCloseTour() {
-    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
-    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
-    tourMode = 'dashboard';
-    document.getElementById('tour-overlay').style.display = 'none';
-  }
-
-  function scShowTourStep() {
-    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
-    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
-    if (scTourIndex >= scTourSteps.length) { scCloseTour(); return; }
-    const step = scTourSteps[scTourIndex];
-    const el = document.querySelector(step.selector);
-    if (!el) {
-      if (scTourIndex < scTourSteps.length - 1) { scTourIndex++; scShowTourStep(); } else scCloseTour();
-      return;
-    }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('tour-card-title').innerText = step.title;
-    document.getElementById('tour-card-desc').innerText = step.desc;
-    document.getElementById('tour-card-progress').innerText = (scTourIndex + 1) + ' / ' + scTourSteps.length;
-    document.getElementById('tour-prev-btn').style.visibility = scTourIndex === 0 ? 'hidden' : 'visible';
-    document.getElementById('tour-next-btn').innerText = scTourIndex === scTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
-    positionTourSpotlight(el);
-    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
-    tourSpotlightObserver.observe(el);
-    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
-  }
-
-  function scTourNext() {
-    if (scTourIndex < scTourSteps.length - 1) { scTourIndex++; scShowTourStep(); }
-    else scCloseTour();
-  }
-
-  function scTourPrev() {
-    if (scTourIndex > 0) { scTourIndex--; scShowTourStep(); }
-  }
+  function scOpenTour() { openPageTour(scTourSteps); }
 
   function scClearSpecificSeat() {
     if (!scTargetDesk) return;
@@ -8116,7 +8125,7 @@
   // ----- 월간일정표 시뮬레이션 설명서 (좌석배치표와 같은 스포트라이트 투어 UI 재사용) -----
   const msTourSteps = [
     { selector: '#ms-page-header', title: '🗓️ 월간일정표에 오신 것을 환영해요!', desc: '학사일정과 우리 반(부서) 일정을 A4 한 장짜리 달력으로 만들어 인쇄까지 할 수 있는 화면이에요. "다음"을 눌러 하나씩 따라와 보세요.' },
-    { selector: '#ms-section-info', title: '1단계. 기본 설정', desc: '학교명·부서명·타이틀을 정하고, 로고를 올리거나 글꼴을 바꿀 수 있어요. "나이스 학사일정 표시"를 켜두면 개교기념일 같은 학교 공식 일정이 자동으로 달력에 나와요.' },
+    { selector: '#ms-section-info', title: '1단계. 기본 설정', desc: '학교명·부서명·타이틀을 정하고 글꼴을 바꿀 수 있어요. "나이스 학사일정 표시"를 켜두면 개교기념일 같은 학교 공식 일정이 자동으로 달력에 나와요.' },
     { selector: '#ms-section-dday', title: '2단계. 목표 D-Day', desc: '정기고사 4개는 시작일과 시험 기간(일수)을 넣으면, 시험 중엔 "n일차", 시작 전엔 "D-n"으로 자동 표시돼요. 커스텀 D-Day는 수능처럼 항상 챙겨야 할 날짜에 써요.' },
     { selector: '#ms-section-cat', title: '3단계. 일정 분류 및 컬러', desc: '자율/동아리/행사처럼 분류를 만들고 색을 정해두면, 세부 일정에서 분류를 고를 때 그 색으로 달력에 표시돼요.' },
     { selector: '#ms-section-table', title: '4단계. 세부 일정 입력', desc: '날짜와 내용을 입력하면 오른쪽 달력에 바로 반영돼요. 엑셀에서 복사한 표를 그대로 붙여넣을 수도 있고, "날짜" 제목을 누르면 날짜순 정렬도 돼요.' },
@@ -8125,52 +8134,8 @@
     { selector: '#ms-header-save-group', title: '6단계. 저장/불러오기', desc: '💾 저장/📂 불러오기로 지금까지 만든 설정과 일정을 파일로 저장했다가 나중에 그대로 불러올 수 있어요.' },
     { selector: '#ms-print-btn', title: '7단계. 인쇄 또는 PDF로 저장', desc: '용지 크기(A4/B4/A3)를 고른 뒤 이 버튼을 눌러 인쇄하거나, 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일로 저장할 수도 있어요. 수고하셨습니다! 🎉' }
   ];
-  let msTourIndex = 0;
+  function msOpenTour() { openPageTour(msTourSteps); }
 
-  function msOpenTour() {
-    tourMode = 'monthly';
-    msTourIndex = 0;
-    document.getElementById('tour-overlay').style.display = 'block';
-    msShowTourStep();
-  }
-
-  function msCloseTour() {
-    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
-    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
-    tourMode = 'dashboard';
-    document.getElementById('tour-overlay').style.display = 'none';
-  }
-
-  function msShowTourStep() {
-    if (tourSpotlightObserver) { tourSpotlightObserver.disconnect(); tourSpotlightObserver = null; }
-    if (tourSpotlightSafetyTimer) { clearTimeout(tourSpotlightSafetyTimer); tourSpotlightSafetyTimer = null; }
-    if (msTourIndex >= msTourSteps.length) { msCloseTour(); return; }
-    const step = msTourSteps[msTourIndex];
-    const el = document.querySelector(step.selector);
-    if (!el) {
-      if (msTourIndex < msTourSteps.length - 1) { msTourIndex++; msShowTourStep(); } else msCloseTour();
-      return;
-    }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('tour-card-title').innerText = step.title;
-    document.getElementById('tour-card-desc').innerText = step.desc;
-    document.getElementById('tour-card-progress').innerText = (msTourIndex + 1) + ' / ' + msTourSteps.length;
-    document.getElementById('tour-prev-btn').style.visibility = msTourIndex === 0 ? 'hidden' : 'visible';
-    document.getElementById('tour-next-btn').innerText = msTourIndex === msTourSteps.length - 1 ? '완료 ✓' : '다음 ▶';
-    positionTourSpotlight(el);
-    tourSpotlightObserver = new ResizeObserver(function() { positionTourSpotlight(el); });
-    tourSpotlightObserver.observe(el);
-    tourSpotlightSafetyTimer = setTimeout(function() { positionTourSpotlight(el); }, 320);
-  }
-
-  function msTourNext() {
-    if (msTourIndex < msTourSteps.length - 1) { msTourIndex++; msShowTourStep(); }
-    else msCloseTour();
-  }
-
-  function msTourPrev() {
-    if (msTourIndex > 0) { msTourIndex--; msShowTourStep(); }
-  }
 
   // ===== 📋 조퇴증 자동 발급기 =====
   // 사용자가 만들어둔 독립 HTML 도구를 대시보드에 이식. 월간일정표(ms)와 같은 방식으로
@@ -8369,6 +8334,20 @@
     }, 400);
   }
 
+  // ----- 조퇴증 설명서 -----
+  const lpTourSteps = [
+    { selector: '#lp-page-header', title: '📋 조퇴증에 오신 것을 환영해요!', desc: '담임 도장이 찍힌 조퇴증 양식을 만들어 인쇄하는 화면이에요. 왼쪽 설정을 위에서부터 채우고, 오른쪽 미리보기를 확인한 뒤 인쇄하면 돼요.' },
+    { selector: '#lp-sec-school', title: '1단계. 학교 정보', desc: '양식에 나올 학교 이름을 적어요.' },
+    { selector: '#lp-sec-class', title: '2단계. 학급 정보', desc: '연도·학년·반과 담임 선생님 이름을 적어요. 담임 이름은 도장 글자로도 쓰여요.' },
+    { selector: '#lp-sec-font', title: '3단계. 도장 글꼴', desc: '도장에 들어갈 이름 글꼴을 골라요.' },
+    { selector: '#lp-sec-stamp', title: '4단계. 도장 위치·크기·간격', desc: '슬라이더로 도장 안 이름의 위치와 크기, 글자 간격을 맞춰요. 🖼️ 도장 저장을 누르면 배경이 투명한 도장 그림 파일로 받을 수 있어요.' },
+    { selector: '#lp-preview', title: '5단계. 미리보기', desc: '실제로 인쇄될 모습이에요.' },
+    { selector: '#lp-save-group', title: '저장 / 불러오기', desc: '지금 설정을 파일로 저장했다가 다른 컴퓨터에서 그대로 불러올 수 있어요.' },
+    { selector: '#lp-zoom-group', title: '미리보기 확대/축소', desc: '화면에서 보기만 크게/작게 해요. 인쇄 크기에는 영향이 없어요.' },
+    { selector: '#lp-print-group', title: '6단계. 인쇄', desc: '인쇄 매수를 정하고 🖨️ 인쇄/PDF를 누르세요. 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일로도 저장할 수 있어요. 수고하셨습니다! 🎉' }
+  ];
+  function lpOpenTour() { openPageTour(lpTourSteps); }
+
   function lpSaveSettings() {
     const settings = lpCollectData();
     const blob = new Blob([JSON.stringify(settings)], { type: 'application/json' });
@@ -8420,7 +8399,7 @@
     window.print();
   }
 
-  // ===== 🗓️ 개인 시간표 (학생/교사 카드형 시간표 생성기) =====
+  // ===== 🗓️ 시간표 만들기 (학생/교사 카드형 시간표 생성기) =====
   // 업로드해서 만드는 원본 도구를 그대로 가져오되, "교사 시간표는 이미 있으니
   // 본인 시간표만 카드로 예쁘게 만들면 된다"는 요청에 맞춰 교사용 엑셀 업로드는
   // 빼고 기존 시간표 데이터(window.allSchedules)를 그대로 재사용한다. 학생
@@ -9207,6 +9186,25 @@
     };
     reader.readAsText(file);
     event.target.value = '';
+  }
+
+  // ----- 시간표 만들기 설명서 -----
+  const ptTourSteps = [
+    { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만들 수 있는 화면이에요. 위에서 종류를 고르고, 왼쪽 설정을 위에서부터 차례로 한 뒤, 오른쪽 미리보기를 확인하고 인쇄하면 돼요.' },
+    { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 시간표로 만들어요.\n👨‍🎓 학생 시간표: 관리자가 올린 학생 시간표로 만들어요.\n두 탭의 디자인은 따로 저장돼요.' },
+    { selector: '#pt-me-controls', title: '⭐ 내 시간표', desc: '내 시간표 탭에서는 따로 고를 게 없어요. 로그인한 내 이름 기준으로 자동으로 채워져요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-student-controls', title: '👨‍🎓 학생 고르기', desc: '학생 시간표 탭에서는 학년·반을 고르고 ◀▶로 학생을 넘겨 보세요. 고른 학년·반은 기억해 둬서 다음에 열면 그대로 나와요.\n👤 이 학생만: 고른 학생 한 명만 출력\n🏫 반 전체: 그 반 학생 모두를 한 번에 출력', before: function() { ptSwitchTab('student'); } },
+    { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요.' },
+    { selector: '#pt-box-design', title: '3단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 자동으로 정해져요.\n표 스타일 6가지와 글꼴도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
+    { selector: '#pt-box-size', title: '4단계. 크기 조절', desc: '카드 전체 너비·높이와 제목·이름·과목·교시 시간 글씨 크기, 모서리 둥글기를 슬라이더로 맞춰요.' },
+    { selector: '#pt-design-save-row', title: '5단계. 디자인 저장 (선택)', desc: '꾸민 디자인은 자동으로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
+    { selector: '#pt-preview', title: '6단계. 미리보기', desc: '지금 설정대로 만들어질 모습이에요. 반 전체나 A4 여러 장일 때는 위쪽 ◀▶로 쪽을 넘겨 볼 수 있어요.' },
+    { selector: '#pt-zoom-group', title: '미리보기 확대/축소', desc: '화면에서 보기만 크게/작게 해요. 인쇄 크기에는 영향이 없어요.' },
+    { selector: '#pt-header-actions', title: '7단계. 출력하기', desc: '먼저 모양을 고르세요: 카드 1장, A4에 1·2·4·6장, 모바일 배경화면.\n🖨️ 인쇄: 인쇄 창에서 "PDF로 저장"도 돼요.\n🖼️ 이미지: 그림 파일로 저장(여러 명이면 ZIP)\n📄 PDF: PDF 파일로 바로 저장\n수고하셨습니다! 🎉' }
+  ];
+  function ptOpenTour() {
+    const origTab = ptCurrentTab;
+    openPageTour(ptTourSteps, function() { if (ptCurrentTab !== origTab) ptSwitchTab(origTab); });
   }
 
   async function openPersonTT() {
