@@ -1,0 +1,28 @@
+# 브라우저 자동 테스트
+
+진짜 Supabase 대신 **가짜 서버(Node 메모리)** 를 띄우고, 거기에 PC·휴대폰 같은 브라우저 여러 개를 붙여
+`index.html`의 실제 코드를 시나리오대로 돌려 봅니다. 로그인 비밀번호나 인터넷 없이 돌아갑니다
+(나이스 급식·학사일정, 날씨 같은 외부 요청은 막아 둠).
+
+```bash
+cd tools/tests
+NODE_PATH=/opt/node22/lib/node_modules node sync-test.js      # 하나만
+for t in *.js; do echo "== $t"; NODE_PATH=/opt/node22/lib/node_modules node $t | grep -E "❌|모든 검사|실패 [0-9]"; done
+```
+
+- Playwright는 전역 설치본(`/opt/node22/lib/node_modules/playwright`)과 `/opt/pw-browsers`의 Chromium을 씁니다.
+- 수정 전 코드로 버그를 재현하려면 `HTML_PATH=옛버전.html`을 붙입니다(`git show <커밋>:index.html > 옛버전.html`).
+  (sync-test.js는 이 옵션이 없고 늘 현재 index.html을 씀)
+- 스크린샷(`*.png`)은 실행한 폴더에 저장됩니다 — 커밋하지 마세요.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| sync-test.js | 여러 기기 동시 사용: 바뀐 항목만 올리기, 옛 값 덮어쓰기 방지, 삭제 전달, 오프라인 입력, 계정 전환, 백업 복원, 새 기기 첫 연결 실패 |
+| resurrect-test.js | 다른 기기에서 지운 메모·할 일·체크가 되살아나지 않는지, 반쪽 캘린더 즉시 반영 |
+| ui-test2.js | 레일 버튼 토글·화면 전환, 설정↔다른 화면 겹침 |
+| ui-test3.js | 학생 시간표: 관리자 업로드 위치, 이 학생만/반 전체 출력 |
+| design-test.js | 교사/학생 시간표 디자인 따로 저장 |
+| print-test.js | 인쇄(A4 폭)할 때 모바일 화면으로 바뀌지 않는지 |
+| staff-test.js | 실무사 전용 홈(시간표 7칸+정보 칸), 급식 칸 배치, 글씨 크기 |
+| admin-test.js | 관리자 설정 탭 구성, 일과 시간 표 입력·검증·저장 |
+| ttscroll-test.js | 설정 속 교사 시간표: 안쪽 스크롤 없음, 수정→저장 |

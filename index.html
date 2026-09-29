@@ -2458,7 +2458,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.15';
+  var BUILD_ID = '2026-09-29.16';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2879,8 +2879,8 @@
   // Supabase Realtime이 신호를 보내주고(폴링 없이), 신호가 오면 바뀐 것만 받아서 화면을
   // 조용히 다시 그린다. 휴대폰 화면이 꺼지는 등으로 연결이 끊겼다 다시 붙으면
   // (SUBSCRIBED) 그 사이 놓친 것도 받는다. 그래도 신호를 놓칠 수 있는 경우를 대비해,
-  // 화면이 보이는 동안에는 10분마다 한 번 바뀐 게 있는지 가볍게 확인한다(요청마다 서버
-  // 로그가 쌓이므로, 실시간 신호·화면 복귀·재연결로 이미 챙기는 걸 너무 자주 반복하지 않음).
+  // 화면이 보이는 동안에는 30분마다 한 번 바뀐 게 있는지 가볍게 확인한다(요청마다 서버 로그가
+  // 쌓이고 무료 요금제의 로그 한도가 있어서, 실시간 신호·화면 복귀·재연결로 이미 챙기는 걸 자주 반복하지 않음).
   let syncSubscribed = false;
   let syncPullDebounceTimer = null;
   function scheduleIncrementalPull() {
@@ -2905,7 +2905,7 @@
       if (document.visibilityState !== 'visible') return;
       pullRemoteChanges(false);
       if (getSyncDirtyKeys().length > 0) pushDirtyItems();
-    }, 10 * 60 * 1000);
+    }, 30 * 60 * 1000);
   }
 
   // 같은 브라우저의 다른 탭에서 고친 내용은 localStorage를 같이 쓰므로 이미 들어와
@@ -2940,7 +2940,9 @@
     // 달을 넘겼다 돌아와야(그때 새로 그려서) 보였다.
     renderHalfCalendar();
     if (isStaffHome()) renderStaffTimetables();
-    checkAllDuties();
+    // 감독표는 개인 자료가 아니라서 여기서 다시 받지 않는다(예전엔 다른 기기 자료가 올 때마다 감독표 3종을
+    // 서버에서 다시 받아와 요청·로그가 불필요하게 늘었다). 내 이름이 바뀐 경우만 다시 확인한다.
+    if (localStorage.getItem('my-n') !== lastDutyCheckedName) checkAllDuties();
   }
 
   // 지금 뭔가 입력 중이면 화면을 건드리지 않고 표시만 해뒀다가, focusout(입력칸에서
@@ -4371,8 +4373,10 @@
     }
   }
 
+ let lastDutyCheckedName = null;
  async function checkAllDuties() {
     const myName = localStorage.getItem('my-n');
+    lastDutyCheckedName = myName;
     const container = document.getElementById('duty-badge-container');
     if(!myName) { container.innerHTML = ''; return; }
 
@@ -5175,7 +5179,7 @@
   // 공지가 쌓일수록 무료 요금제의 월 전송량(5GB)을 넘길 수 있었다. 이제는 공지가
   // 추가·수정·삭제되거나 반응(👍❤️)이 바뀔 때 서버가 실시간으로 알려줄 때만 다시
   // 받는다. 연결이 끊겼다 다시 붙을 때, 화면이 다시 보일 때, 그리고 혹시 놓친 신호를
-  // 대비해 화면이 보이는 동안 10분에 한 번만 추가로 확인한다.
+  // 대비해 화면이 보이는 동안 30분에 한 번만 추가로 확인한다(무료 요금제 로그 한도 절약).
   let noticeCheckTimer = null;
   function scheduleNoticeCheck() {
     if (noticeCheckTimer) clearTimeout(noticeCheckTimer);
@@ -5187,7 +5191,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, scheduleNoticeCheck)
         .subscribe(function(status) { if (status === 'SUBSCRIBED') scheduleNoticeCheck(); });
     } catch (e) {}
-    setInterval(function() { if (document.visibilityState === 'visible') checkNotice(); }, 10 * 60 * 1000);
+    setInterval(function() { if (document.visibilityState === 'visible') checkNotice(); }, 30 * 60 * 1000);
     document.addEventListener('visibilitychange', function() {
       if (document.visibilityState === 'visible') scheduleNoticeCheck();
     });
