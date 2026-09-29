@@ -19,7 +19,7 @@
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
       --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px;
-      --fz-tt-mobile: 14px; --fz-cal-mobile: 14px;
+      --fz-tt-mobile: 14px; --fz-cal-mobile: 14px; --fz-staff-tt: 12px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
       --accent-secondary: #2E8F8F; --accent-secondary-soft: #E3F3F3; --accent-secondary-text: #1F6B6B; --on-accent-secondary: #FFFFFF; }
@@ -122,10 +122,18 @@
     #staff-grid .timetable-grid { grid-template-columns: 52px repeat(5, 1fr); gap: 3px; }
     #staff-grid .tt-time { font-size: 13px; }
     #staff-grid .tt-time div { font-size: 9.5px !important; margin-top: 2px !important; }
-    #staff-grid .tt-subj { cursor: default; }
+    #staff-grid .tt-subj { cursor: default; font-size: var(--fz-staff-tt); }
+    #staff-grid .tt-room { font-size: calc(var(--fz-staff-tt) - 2px); }
     #staff-info-cell { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
     #staff-info-top { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; }
     #staff-info-top > .widget { flex: 1 1 auto !important; min-height: 0; height: 100%; }
+    /* 정보 칸은 폭이 좁아서, 제목줄에 칼로리까지 넣으면 두 줄로 밀린다 — 제목줄은 한 줄로 고정하고
+       칼로리는 급식 칸 오른쪽 아래로 내린다(예전 실무사 화면과 같은 배치). */
+    #staff-info-top .widget-title { flex-wrap: nowrap; white-space: nowrap; gap: 4px; }
+    #staff-info-top .widget-title > div:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    #staff-info-top #meal-kcal { display: block; text-align: right; font-size: 10px; color: var(--text-sub); padding-top: 4px; flex: 0 0 auto; }
+    #staff-info-top .meal-tags { gap: 4px; }
+    #staff-info-top .meal-tags li { padding: 2px 7px; font-size: 12px; }
     #staff-cal-widget { flex: 1 1 0; min-height: 0; }
     .staff-cal-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 10px; flex: 1; min-height: 0; }
     .staff-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; align-content: start; text-align: center; font-size: 12px; font-weight: 700; }
@@ -2427,7 +2435,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.12';
+  var BUILD_ID = '2026-09-29.13';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4875,7 +4883,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'tt-mobile': 14, 'cal-mobile': 14 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
@@ -5495,6 +5503,9 @@
             '<button class="top-btn" style="padding:2px 6px;" onclick="moveStaffTeacher(' + n + ', -1)">◀</button>' +
             '<select id="staff-tt-select-' + n + '" class="mini-select" style="width:92px;" onchange="setStaffTeacher(' + n + ', this.value)"><option value="">-- 선택 --</option></select>' +
             '<button class="top-btn" style="padding:2px 6px;" onclick="moveStaffTeacher(' + n + ', 1)">▶</button>' +
+            // 글씨 크기는 7칸이 함께 바뀐다(따로 기억됨: fz-staff-tt)
+            '<button class="top-btn" style="padding:2px 5px; font-size:10px; margin-left:3px;" title="시간표 글씨 작게" onclick="changeFontSize(\'staff-tt\', -1)">A-</button>' +
+            '<button class="top-btn" style="padding:2px 5px; font-size:10px;" title="시간표 글씨 크게" onclick="changeFontSize(\'staff-tt\', 1)">A+</button>' +
           '</div>' +
         '</div>' +
         '<div class="timetable-grid" id="staff-tt-grid-' + n + '"></div>' +
@@ -5526,6 +5537,10 @@
       const el = document.getElementById(id);
       if (el && el.parentNode !== top) top.appendChild(el);
     });
+    // 칼로리는 좁은 칸의 제목줄에 두면 두 줄로 밀리므로 급식 칸 맨 아래 줄로 옮긴다.
+    const meal = document.getElementById('meal-widget');
+    const kcal = document.getElementById('meal-kcal');
+    if (meal && kcal && kcal.parentNode !== meal) meal.appendChild(kcal);
   }
 
   function staffTeacherNames() {
