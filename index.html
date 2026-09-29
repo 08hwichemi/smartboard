@@ -95,6 +95,8 @@
     .qbtn { font-size: 11px; font-weight: 700; color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; }
     .qbtn:hover { filter: brightness(0.97); }
     .qbtn svg { flex: 0 0 auto; }
+    /* 설명서 버튼 — 처음 쓰는 분 눈에 잘 띄게 빨간 테두리(테마마다 --alert 색). */
+    .tour-btn { border: 1.5px solid var(--alert) !important; color: var(--alert) !important; }
 
     @keyframes pulse-red {
       0% { box-shadow: 0 0 0 0 rgba(240, 113, 120, 0.7); }
@@ -305,6 +307,9 @@
     .fav-cell:hover { filter: brightness(0.96); }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
+    /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
+    .fav-cell.fav-fixed { background: var(--accent-soft); color: var(--accent-color); box-shadow: inset 0 0 0 1.5px var(--accent-color); font-weight: 800; }
+    .fav-cell.fav-fixed .fav-tag { color: var(--accent-color); opacity: .8; }
 
     /* ===== D-DAY 좌우 반반 ===== */
     .dday-row { flex: 0 0 56px; display: flex; align-items: center; }
@@ -936,10 +941,6 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
       <div class="rail-label">설정</div>
     </div>
-    <div class="rail-item" id="rail-add-btn" style="display:none;" title="새 페이지 추가 (관리자, 준비 중)" onclick="railComingSoon('레일 추가')">
-      <div class="rail-ico" style="border: 1.5px dashed var(--border-color); border-radius: 7px; width: 20px; height: 20px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
-      <div class="rail-label" style="font-weight: 600;">추가</div>
-    </div>
   </div>
 
   <div id="app-main">
@@ -963,7 +964,7 @@
         <div style="display:flex; gap:5px;">
           <button class="qbtn" id="btn-notice" onclick="openNoticeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>공지</button>
           <button class="qbtn" id="btn-backup" onclick="document.getElementById('backup-overlay').style.display='flex'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>백업</button>
-          <button class="qbtn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>설명서</button>
+          <button class="qbtn tour-btn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>설명서</button>
         </div>
         <div style="width:1px; height:20px; background:var(--border-color); margin:0 2px;"></div>
         <div style="position:relative;" id="theme-picker">
@@ -1702,7 +1703,7 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🪑 좌석배치표</div>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="scOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
     </div>
     <div id="sc-header-save-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="scDownloadThemeSettings()" title="지금 폰트·크기·색상 설정을 파일로 저장합니다">💾 디자인저장</button>
@@ -1858,7 +1859,7 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🗓️ 월간일정표</div>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="msOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="msOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
     </div>
     <div id="ms-month-nav" style="display:flex; align-items:center; gap:12px; background:var(--tt-bg); padding:5px 16px; border-radius:20px; border:1px solid var(--border-color);">
       <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(-1)">◀</button>
@@ -2040,7 +2041,7 @@
     <div style="display:flex; align-items:center; gap:10px;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📋 조퇴증</div>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="lpOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="lpOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <span id="lp-save-group" style="display:flex; gap:6px; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="lpSaveSettings()" title="지금 설정을 파일로 저장합니다">💾 저장</button>
       <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
@@ -2171,7 +2172,7 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 만들기</div>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ptOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <div class="tab-switch" id="pt-tab-switch">
         <button class="tab-btn active" id="pt-tab-me-btn" onclick="ptSwitchTab('me')">⭐ 내 시간표</button>
         <button class="tab-btn" id="pt-tab-student-btn" onclick="ptSwitchTab('student')">👨‍🎓 학생 시간표</button>
@@ -2509,7 +2510,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.26';
+  var BUILD_ID = '2026-09-29.27';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2715,7 +2716,6 @@
     document.getElementById('user-avatar-initial').innerText = data.name.length > 2 ? data.name.slice(-2) : data.name;
     document.getElementById('user-chip-name').innerText = data.name;
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
-    document.getElementById('rail-add-btn').style.display = data.is_admin ? 'flex' : 'none';
     document.getElementById('rail-settings-btn').style.display = data.is_admin ? 'flex' : 'none';
     // 수업변경 담당: 홈 둘째 줄에 수업변경 버튼, 시간표 없는 분의 휴대폰 시간표 칸에도 버튼을 보인다.
     document.body.classList.toggle('schedule-manager', !!data.schedule_manager);
@@ -3195,10 +3195,6 @@
       themeDd.style.display = 'none';
     }
   });
-
-  function railComingSoon(name) {
-    customAlert('📋 ' + name + '\n\n곧 추가될 예정인 페이지예요. 조금만 기다려주세요!');
-  }
 
   let currentTodoTab = 'work';
   function switchTodoTab(tab) {
@@ -5082,7 +5078,7 @@
     grid.innerHTML = '';
     fixed.forEach(function(b) {
       if (b && b.name && b.url) {
-        grid.innerHTML += '<a href="' + b.url + '" target="_blank" class="fav-cell"><span class="fav-tag">고정</span>' + b.name + '</a>';
+        grid.innerHTML += '<a href="' + b.url + '" target="_blank" class="fav-cell fav-fixed"><span class="fav-tag">고정</span>' + b.name + '</a>';
       } else {
         grid.innerHTML += '<div class="fav-cell empty">-</div>';
       }
