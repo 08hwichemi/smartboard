@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부광고 통합 대시보드 - Chrome App Edition</title>
+  <title>부광고 스마트보드</title>
+  <meta name="apple-mobile-web-app-title" content="부광고 스마트보드">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -858,6 +861,7 @@
     <input type="password" id="login-pw-input" placeholder="비밀번호" autocomplete="current-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
     <div id="login-error" style="color:#E5484D; font-size:12px; min-height:16px; margin-bottom:8px;"></div>
     <button class="top-btn accent" id="login-submit-btn" style="width:100%; padding:10px;" onclick="submitLogin()">로그인</button>
+    <a href="guide.html" target="_blank" rel="noopener" style="display:block; text-align:center; margin-top:12px; font-size:13px; font-weight:700; color:var(--accent-color); text-decoration:none;">📘 처음 오셨나요? 사용 안내 보기</a>
   </div>
 </div>
 
@@ -933,7 +937,7 @@
         <div style="display:flex; gap:5px;">
           <button class="qbtn" id="btn-notice" onclick="openNoticeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l4.5 4v-14l-4.5 4H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>공지</button>
           <button class="qbtn" id="btn-backup" onclick="document.getElementById('backup-overlay').style.display='flex'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>백업</button>
-          <button class="qbtn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>사용법</button>
+          <button class="qbtn" onclick="openTour()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.25"/><path d="M9.3 9.2a2.7 2.7 0 0 1 5.3.8c0 1.8-2.2 1.9-2.5 3.6"/><path d="M12 17.2h.01"/></svg>설명서</button>
         </div>
         <div style="width:1px; height:20px; background:var(--border-color); margin:0 2px;"></div>
         <div style="position:relative;" id="theme-picker">
@@ -2472,7 +2476,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.19';
+  var BUILD_ID = '2026-09-29.20';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
