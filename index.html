@@ -842,6 +842,15 @@
     /* 버튼을 눌러도 반응이 없을 때 원인을 알 수 없어 답답했던 문제 — 자바스크립트
        오류가 나면(원인 불명으로 "아무 반응 없음"처럼 보이는 대부분의 경우) 화면
        맨 아래에 빨간 띠로 오류 내용을 띄워서, 스크린샷으로 바로 공유할 수 있게 한다. */
+    /* 본인 시간표가 없는 분(교장·교감 등)은 "내 시간표" 칸이 PC에서도 선생님을 골라 보는 칸이 된다
+       (◀ 이름 ▶ 목록을 보이고, 제목은 "시간표", 내 수업이 없으니 수업변경 버튼은 숨김). */
+    #my-tt-widget.my-tt-browse #m-tt-teacher-select { display: inline-block !important; width: 96px; }
+    #my-tt-widget.my-tt-browse .m-tt-nav { display: inline-flex !important; }
+    #my-tt-widget.my-tt-browse .m-tt-title-desktop { display: none !important; }
+    #my-tt-widget.my-tt-browse .m-tt-title-mobile { display: inline !important; }
+    #my-tt-widget.my-tt-browse .m-tt-change-btn { display: none !important; }
+    #my-tt-widget.my-tt-browse #my-tt-name { display: none !important; } /* 이름은 목록에 이미 보인다 */
+
     #m-debug-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 99999; background: #c0392b; color: #fff; font-size: 12px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.35); white-space: pre-wrap; word-break: break-word; cursor: pointer; }
   </style>
 </head>
@@ -1351,7 +1360,7 @@
             <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
             <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', -1)">A-</button>
             <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', 1)">A+</button>
-            <button class="top-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
+            <button class="top-btn m-tt-change-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
           </div>
         </div>
         <div class="timetable-grid" id="my-timetable-grid"></div>
@@ -2476,7 +2485,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.20';
+  var BUILD_ID = '2026-09-29.21';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2953,6 +2962,8 @@
     document.getElementById('my-timetable-grid').innerHTML = buildGridHTML('my-tt');
     document.getElementById('search-timetable-grid').innerHTML = buildGridHTML('search-tt');
     loadAllData();
+    // 시간표가 없는 분의 "골라 보는 시간표"는 개인 자료 칸이 아니라서 다시 그려야 한다(다른 기기에서 고른 선생님도 반영).
+    if (window.allSchedules && Object.keys(window.allSchedules).length && !hasOwnTimetable()) loadMyTimetable();
     renderBigCalendar();
     // 시간표 옆 반쪽 캘린더도 다시 그린다 — 예전엔 빠져 있어서, 다른 기기에서 쓰거나 지운 메모가
     // 달을 넘겼다 돌아와야(그때 새로 그려서) 보였다.
@@ -3789,7 +3800,7 @@
     { selector: '#duty-alert-pill', title: '🔔 감독 알림', desc: '로그인하면 내 시간표가 자동으로 고정되고, 그 이름을 기준으로 오늘이나 다음 등교일(금·토요일엔 다음 월요일까지)에 야자·급식·아침 감독이 있을 때 여기 자동으로 뱃지가 떠요.' },
     { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '위쪽 4칸은 관리자가 등록한 모두 같은 고정 링크, 아래 4칸은 내가 직접 등록하는 개인 링크예요. 빈 칸(+)을 눌러 개인 링크를 등록해보세요.' },
     { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 클릭해서 날짜와 설명(예: 1차고사)을 입력하면, D-day가 자동으로 계산돼서 표시돼요. 두 개까지 따로 설정할 수 있어요.' },
-    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. A-/A+로 글씨 크기를 바꿀 수 있어요. (일과 시간은 관리자 설정에서 학교 전체에 공통으로 적용돼요.)' },
+    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '로그인한 내 이름을 기준으로 내 시간표가 자동으로 여기 표시돼요. 수업이 없어 내 시간표가 없는 분은 여기서 ◀ ▶나 목록으로 보고 싶은 선생님을 고르면 되고, 고른 선생님은 기억돼요. A-/A+로 글씨 크기를 바꿀 수 있어요. (일과 시간은 관리자 설정에서 학교 전체에 공통으로 적용돼요.)' },
     { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여줘요.' },
     { selector: '.weather-group', title: '🌤️ 날씨', desc: '현재 날씨·미세먼지와 최고/최저 기온, 앞으로 몇 시간의 시간별 예보를 보여줘요.' },
     { selector: '#search-tt-widget', title: '🔍 시간표', desc: '◀▶ 버튼이나 옆의 목록에서 다른 선생님을 골라 시간표를 검색해서 볼 수 있어요.', tab: 'tt' },
@@ -6314,17 +6325,62 @@
     checkAllDuties(); 
   }
 
+  // 로그인한 분의 시간표가 이번 학기 시간표에 있는지(교장·교감 등 수업이 없는 분은 없다).
+  function hasOwnTimetable() {
+    const my = localStorage.getItem('my-n');
+    return !!(my && window.allSchedules && window.allSchedules[my]);
+  }
+
+  // 시간표가 없는 분은 "내 시간표" 칸에서 보고 싶은 선생님을 골라 두면(my-tt-view) 그 시간표를 보여준다.
+  // 고른 선생님은 계정에 저장돼 다른 기기에서도 같게 보이고, 칸은 보기 전용(입력·저장 안 됨)이다.
+  function setMyTtEditable(on) {
+    document.querySelectorAll('#my-timetable-grid .tt-subj, #my-timetable-grid .tt-room').forEach(function(el) {
+      el.setAttribute('contenteditable', on ? 'true' : 'false');
+      el.classList.toggle('editable', on);
+    });
+  }
+
+  function loadMyTimetableBrowse() {
+    const widget = document.getElementById('my-tt-widget');
+    if (widget) widget.classList.add('my-tt-browse');
+    setMyTtEditable(false);
+    const view = localStorage.getItem('my-tt-view') || '';
+    const has = !!(view && window.allSchedules && window.allSchedules[view]);
+    const sel = document.getElementById('m-tt-teacher-select');
+    if (sel) {
+      if (sel.options.length && sel.options[0].value === '') sel.options[0].text = '-- 선택 --';
+      sel.value = has ? view : '';
+    }
+    document.getElementById('my-tt-name').innerText = has ? view : '';
+    const calMyTtName = document.getElementById('cal-my-tt-name2');
+    if (calMyTtName) calMyTtName.innerText = has ? view : '';
+    if (has) {
+      applyScheduleToGrid('my-tt', window.allSchedules[view]);
+      applyChangeOverlayToGrid('my-tt', view);
+    } else {
+      document.querySelectorAll('#my-timetable-grid .tt-subj, #my-timetable-grid .tt-room').forEach(function(el) { el.innerHTML = ''; });
+    }
+    updateCellColors('my-tt');
+  }
+
   function loadMyTimetable() { 
     const my = localStorage.getItem('my-n'); 
     const calMyTtName = document.getElementById('cal-my-tt-name2'); 
     
     if(!my || !window.allSchedules[my]) {
-        document.getElementById('my-tt-name').innerText = '(자유입력 모드)';
-        if(calMyTtName) calMyTtName.innerText = '(자유입력 모드)';
-        updateCellColors('my-tt');
+        // 시간표 목록을 아직 못 받았으면(첫 화면) 기다린다 — fetchSchedule이 받은 뒤 다시 부른다.
+        if (!window.allSchedules || !Object.keys(window.allSchedules).length) return;
+        loadMyTimetableBrowse();
         return;
     }
     
+    const widget = document.getElementById('my-tt-widget');
+    if (widget && widget.classList.contains('my-tt-browse')) {
+      widget.classList.remove('my-tt-browse');
+      setMyTtEditable(true);
+      const sel = document.getElementById('m-tt-teacher-select');
+      if (sel && sel.options.length) sel.options[0].text = '내 시간표';
+    }
     document.getElementById('my-tt-name').innerText = my;
     if(calMyTtName) calMyTtName.innerText = my; 
     
@@ -9298,11 +9354,18 @@
     const source = document.getElementById('search-select');
     if (!sel || !source) return;
     const prevValue = sel.value;
-    sel.innerHTML = '<option value="">내 시간표</option>' + source.innerHTML.replace(/<option value="">.*?<\/option>/, '');
+    sel.innerHTML = '<option value="">' + (hasOwnTimetable() ? '내 시간표' : '-- 선택 --') + '</option>' + source.innerHTML.replace(/<option value="">.*?<\/option>/, '');
     if (prevValue && window.allSchedules && window.allSchedules[prevValue]) sel.value = prevValue;
   }
 
   function mSelectTimetableTeacher(name) {
+    if (!hasOwnTimetable()) {
+      // 시간표가 없는 분: 고른 선생님을 기억해 두고(계정에 저장) 그 시간표를 보여준다.
+      if (name && window.allSchedules && window.allSchedules[name]) localStorage.setItem('my-tt-view', name);
+      else localStorage.removeItem('my-tt-view');
+      loadMyTimetable();
+      return;
+    }
     if (!name) { loadMyTimetable(); return; }
     if (!window.allSchedules || !window.allSchedules[name]) return;
     document.getElementById('my-tt-name').innerText = name;
@@ -9315,9 +9378,12 @@
   function mMoveTimetableTeacher(direction) {
     const sel = document.getElementById('m-tt-teacher-select');
     if (!sel || sel.options.length <= 1) return;
+    // 시간표가 없는 분은 "-- 선택 --"(0번)을 건너뛰고 선생님들 사이만 돈다.
+    const first = hasOwnTimetable() ? 0 : 1;
+    if (sel.options.length <= first) return;
     let newIndex = sel.selectedIndex + direction;
-    if (newIndex < 0) newIndex = sel.options.length - 1;
-    if (newIndex >= sel.options.length) newIndex = 0;
+    if (newIndex < first) newIndex = sel.options.length - 1;
+    if (newIndex >= sel.options.length) newIndex = first;
     sel.selectedIndex = newIndex;
     mSelectTimetableTeacher(sel.value);
   }

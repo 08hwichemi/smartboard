@@ -29,3 +29,4 @@ for t in *.js; do echo "== $t"; NODE_PATH=/opt/node22/lib/node_modules node $t |
 | tour-test.js | 모든 설명서(홈·좌석배치표·월간일정표·시간표 만들기·조퇴증)를 끝까지 넘기며 단계 위치·순서 확인 |
 | scmix-test.js | 좌석배치표 여러 반 섞기(이름 붙여넣기·가나다순 번호·자동저장·복원), 체크박스 onchange 유지 |
 | ptsel-test.js | 시간표 색상 테마 버튼 한 줄, 학생 시간표 학년/반 계정별 기억 |
+| nosched-test.js | 본인 시간표가 없는 분(교장 등): "내 시간표" 칸에서 선생님 골라 보기, 계정별 기억·다른 기기 반영 |
