@@ -2397,7 +2397,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.10';
+  var BUILD_ID = '2026-09-29.11';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2875,6 +2875,9 @@
     document.getElementById('search-timetable-grid').innerHTML = buildGridHTML('search-tt');
     loadAllData();
     renderBigCalendar();
+    // 시간표 옆 반쪽 캘린더도 다시 그린다 — 예전엔 빠져 있어서, 다른 기기에서 쓰거나 지운 메모가
+    // 달을 넘겼다 돌아와야(그때 새로 그려서) 보였다.
+    renderHalfCalendar();
     checkAllDuties();
   }
 
