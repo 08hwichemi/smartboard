@@ -188,7 +188,7 @@ function check(label, cond, detail) {
   await P.click('#rail-hwpkeys-btn'); await wait(300);
   check('누르면 열림 + 버튼 표시', await open() && await P.evaluate(() => document.getElementById('rail-hwpkeys-btn').classList.contains('active')));
   const info = await P.evaluate(() => ({ secs: [...document.querySelectorAll('#hwpkeys-list .hwp-sec')].map(e => e.innerText), rows: document.querySelectorAll('#hwpkeys-list .hwp-row').length }));
-  check('분류 7개, 단축키 전부 표시', info.secs.join(',') === '용지,글자,수식,표 / 셀,문단,서식,조판' && info.rows === 41, info);
+  check('분류 7개, 단축키 전부 표시', info.secs.join(',') === '파일 / 쪽,글자,수식,표 / 셀,문단,서식,조판' && info.rows === 50, info);
   const panelBox = await P.locator('#hwpkeys-overlay .modal-box').boundingBox();
   check('왼쪽 레일 바로 옆에 붙어 열림', Math.round(panelBox.x) === 68, panelBox);
   await P.locator('#hwpkeys-overlay .modal-box').screenshot({ path: 'hwpkeys.png' });

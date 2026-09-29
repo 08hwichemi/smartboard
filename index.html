@@ -2545,7 +2545,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.29';
+  var BUILD_ID = '2026-09-29.30';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4680,8 +4680,14 @@
   // 사용자가 준 "한글 단축Key" 표(PDF)를 옮긴 것. 키 적는 법: "+"는 함께 누르기, ","는 떼고 이어서
   // 누르기, "⇨"는 창이 열린 뒤 누르기. when은 그 키를 누르기 전 상태(셀에서, 편집기에서 …).
   const HWP_KEYS = [
-    { sec: '용지', items: [
-      { name: '용지 편집', keys: 'F7' }
+    { sec: '파일 / 쪽', items: [
+      { name: '저장', keys: 'Alt+S' },
+      { name: '인쇄', keys: 'Alt+P' },
+      { name: '용지 편집', keys: 'F7' },
+      { name: '쪽 나누기', when: '표 밖에서', keys: 'Ctrl+Enter' },
+      { name: '쪽 번호 매기기', keys: 'Ctrl+N, P' },
+      { name: '머리말/꼬리말', keys: 'Ctrl+N, H' },
+      { name: '각주', keys: 'Ctrl+N, N' }
     ] },
     { sec: '글자', items: [
       { name: '문자표', keys: 'Ctrl+F10' },
@@ -4715,13 +4721,16 @@
       { name: '셀 테두리/배경', when: '셀 선택 후', keys: 'L' },
       { name: '셀 높이 같게', when: '셀 선택 후', keys: 'H' },
       { name: '셀 너비 같게', when: '셀 선택 후', keys: 'W' },
+      { name: '셀 합치기', when: '셀 선택 후', keys: 'M' },
+      { name: '셀 나누기', when: '셀 선택 후', keys: 'S' },
+      { name: '블록 합계', when: '셀 선택 후', keys: 'Ctrl+Shift+S' },
       { name: '표 밖으로 커서', when: '셀에서', keys: 'Ctrl+Esc' }
     ] },
     { sec: '문단', items: [
       { name: '문단 모양', keys: 'Alt+T' },
       { name: '내어쓰기', keys: 'Alt+T, B' },
-      { name: '문단 간격 넓게', keys: 'Alt+Shift+Z', note: '(연타)' },
-      { name: '문단 간격 좁게', keys: 'Alt+Shift+A', note: '(연타)' },
+      { name: '줄 간격 넓게', keys: 'Alt+Shift+Z', note: '(연타)' },
+      { name: '줄 간격 좁게', keys: 'Alt+Shift+A', note: '(연타)' },
       { name: '왼쪽 정렬', keys: 'Ctrl+Shift+L' },
       { name: '가운데 정렬', keys: 'Ctrl+Shift+C' },
       { name: '오른쪽 정렬', keys: 'Ctrl+Shift+R' },
