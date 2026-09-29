@@ -21,7 +21,7 @@
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
-      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px;
+      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px; --fz-hwp: 12px;
       --fz-tt-mobile: 14px; --fz-cal-mobile: 14px; --fz-staff-tt: 12px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
@@ -305,6 +305,13 @@
     .fav-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 4px; min-height: 0; }
     .fav-cell { background: var(--bg-color); border-radius: 7px; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 11.5px; font-weight: 700; text-align: center; cursor: pointer; overflow: hidden; text-decoration: none; color: var(--text-main); }
     .fav-cell:hover { filter: brightness(0.96); }
+    .hwp-sec { font-size: calc(var(--fz-hwp) + 1px); font-weight: 800; color: var(--accent-color); margin: 12px 0 4px; padding-bottom: 4px; border-bottom: 2px solid var(--border-color); }
+    .hwp-sec:first-child { margin-top: 0; }
+    .hwp-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 2px; border-bottom: 1px dashed var(--border-color); font-size: var(--fz-hwp); }
+    .hwp-name { font-weight: 700; color: var(--text-main); flex: 0 1 auto; min-width: 0; }
+    .hwp-keys { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 3px; flex: 0 1 auto; color: var(--text-sub); font-size: calc(var(--fz-hwp) - 1px); text-align: right; }
+    .hwp-keys kbd { font-family: inherit; font-size: calc(var(--fz-hwp) - 1px); font-weight: 800; color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-color); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+    .hwp-when { font-size: calc(var(--fz-hwp) - 2px); color: var(--text-sub); margin-right: 2px; }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -341,6 +348,7 @@
     .updatebar .updatebar-x { border: 0; padding: 2px 6px; font-size: 17px; line-height: 1; opacity: .75; }
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
+    body.has-update #hwpkeys-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     /* 모바일 화면(#mobile-shell)은 #app-shell과 별개의 형제 요소라 위 규칙의 영향을
        받지 않는다 — 새 버전 알림 띠(position:fixed, z-index:10000)가 뜨면 그 띠가
@@ -919,6 +927,10 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
+    <div class="rail-item" id="rail-hwpkeys-btn" title="한글 단축키" onclick="openHwpKeys()">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg></div>
+      <div class="rail-label">한글 단축키</div>
+    </div>
     <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="railToggle('rail-seatchart-btn', openSeatChart)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
       <div class="rail-label">좌석배치표</div>
@@ -1059,6 +1071,27 @@
     </div>
     <div style="display: flex; margin-top: 12px;">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeStudentRoster()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 한글(HWP) 단축키 — 명렬표처럼 왼쪽에 붙어 열리는 조회 전용 패널. 내용은 HWP_KEYS 배열. -->
+<div class="overlay" id="hwpkeys-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);" onclick="if (event.target === this) closeHwpKeys()">
+  <div class="modal-box" style="width: 400px; max-width: 86vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
+      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">⌨️ 한글 단축키</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('hwp', -1)">A-</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('hwp', 1)">A+</button>
+      </div>
+    </div>
+    <input type="text" id="hwpkeys-search" class="admin-input" placeholder="🔍 찾기 (예: 표, 정렬, 첨자)" oninput="renderHwpKeys()" style="margin-bottom: 8px;">
+    <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="hwpkeys-list"></div>
+    <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+      <b>+</b> 함께 누르기 · <b>,</b> 떼고 이어서 누르기 · <b>(연타)</b> 여러 번 누를수록 더 바뀜
+    </div>
+    <div style="display: flex; margin-top: 10px;">
+      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeHwpKeys()">닫기</button>
     </div>
   </div>
 </div>
@@ -2512,7 +2545,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.28';
+  var BUILD_ID = '2026-09-29.29';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -3127,6 +3160,7 @@
     document.getElementById('rail-home-btn').classList.add('active');
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
+    closeHwpKeys();
     const scStudentModal = document.getElementById('sc-student-modal');
     if (scStudentModal) scStudentModal.style.display = 'none';
     document.body.removeAttribute('data-print-target');
@@ -3820,7 +3854,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴에서 홈, 명렬표, 좌석배치표, 시간표 만들기, 월간일정표, 조퇴증으로 옮겨 갈 수 있어요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴에서 홈, 명렬표, 한글 단축키, 좌석배치표, 시간표 만들기, 월간일정표, 조퇴증으로 옮겨 갈 수 있어요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -4619,6 +4653,7 @@
 
   async function openStudentRoster() {
     if (document.getElementById('roster-overlay').style.display === 'flex') { closeStudentRoster(); return; }
+    closeHwpKeys();
     await ensureClassStructureLoaded();
     rosterEditMode = false;
     updateRosterEditToggleBtn();
@@ -4640,6 +4675,122 @@
   }
 
   function closeStudentRoster() { document.getElementById('roster-overlay').style.display = 'none'; }
+
+  // ===== ⌨️ 한글(HWP) 단축키 =====
+  // 사용자가 준 "한글 단축Key" 표(PDF)를 옮긴 것. 키 적는 법: "+"는 함께 누르기, ","는 떼고 이어서
+  // 누르기, "⇨"는 창이 열린 뒤 누르기. when은 그 키를 누르기 전 상태(셀에서, 편집기에서 …).
+  const HWP_KEYS = [
+    { sec: '용지', items: [
+      { name: '용지 편집', keys: 'F7' }
+    ] },
+    { sec: '글자', items: [
+      { name: '문자표', keys: 'Ctrl+F10' },
+      { name: '글자 크기 키우기', keys: 'Alt+Shift+E', note: '(연타)' },
+      { name: '글자 크기 줄이기', keys: 'Alt+Shift+R', note: '(연타)' },
+      { name: '자간 넓게', keys: 'Alt+Shift+W' },
+      { name: '자간 좁게', keys: 'Alt+Shift+N' },
+      { name: '장평 넓게', keys: 'Alt+Shift+K' },
+      { name: '장평 좁게', keys: 'Alt+Shift+J' },
+      { name: '글자 굵게', keys: 'Alt+Shift+B' },
+      { name: '글자 모양', keys: 'Alt+L' },
+      { name: '윗첨자', keys: 'Alt+L ⇨ Alt+H' },
+      { name: '아래첨자', keys: 'Alt+L ⇨ Alt+Y' }
+    ] },
+    { sec: '수식', items: [
+      { name: '수식 편집기', keys: 'Ctrl+N, M' },
+      { name: '수식 윗첨자', when: '편집기에서', keys: 'Shift+6' },
+      { name: '수식 아래첨자', when: '편집기에서', keys: 'Shift+-' },
+      { name: '로마자(똑바른 글씨)', when: '편집기에서', keys: 'rm', typed: true },
+      { name: '이탤릭체', when: '편집기에서', keys: 'it', typed: true }
+    ] },
+    { sec: '표 / 셀', items: [
+      { name: '표 만들기', keys: 'Ctrl+N, T' },
+      { name: '표 아래로 줄 추가', when: '셀에서', keys: 'Ctrl+Enter' },
+      { name: '줄·칸 추가', keys: 'Alt+Insert' },
+      { name: '줄·칸 삭제', keys: 'Alt+Delete' },
+      { name: '셀 선택', keys: 'F5' },
+      { name: '여러 셀 선택', keys: 'F5', note: '2번' },
+      { name: '모든 셀 선택', keys: 'F5', note: '3번' },
+      { name: '표 설정', when: '셀 선택 후', keys: 'P' },
+      { name: '셀 테두리/배경', when: '셀 선택 후', keys: 'L' },
+      { name: '셀 높이 같게', when: '셀 선택 후', keys: 'H' },
+      { name: '셀 너비 같게', when: '셀 선택 후', keys: 'W' },
+      { name: '표 밖으로 커서', when: '셀에서', keys: 'Ctrl+Esc' }
+    ] },
+    { sec: '문단', items: [
+      { name: '문단 모양', keys: 'Alt+T' },
+      { name: '내어쓰기', keys: 'Alt+T, B' },
+      { name: '문단 간격 넓게', keys: 'Alt+Shift+Z', note: '(연타)' },
+      { name: '문단 간격 좁게', keys: 'Alt+Shift+A', note: '(연타)' },
+      { name: '왼쪽 정렬', keys: 'Ctrl+Shift+L' },
+      { name: '가운데 정렬', keys: 'Ctrl+Shift+C' },
+      { name: '오른쪽 정렬', keys: 'Ctrl+Shift+R' },
+      { name: '양쪽 정렬', keys: 'Ctrl+Shift+M' },
+      { name: '배분 정렬', keys: 'Ctrl+Shift+T' }
+    ] },
+    { sec: '서식', items: [
+      { name: '모양 복사', when: '커서 놓고', keys: 'Alt+C' },
+      { name: '모양 붙여넣기', when: '블록 지정 후', keys: 'Alt+C' }
+    ] },
+    { sec: '조판', items: [
+      { name: '조판부호 켜기/끄기', keys: 'Ctrl+G, C' }
+    ] }
+  ];
+
+  function hwpKeysHtml(item) {
+    // "Alt+L ⇨ Alt+H", "Ctrl+N, M"을 키 모양(kbd)으로 바꾼다.
+    const combo = function(c) { return c.trim().split('+').filter(Boolean).map(function(k) { return '<kbd>' + escapeHtmlAttr(k) + '</kbd>'; }).join('+'); };
+    let html = item.typed
+      ? '<kbd>' + escapeHtmlAttr(item.keys) + '</kbd> 입력'
+      : item.keys.split('⇨').map(function(step) { return step.split(',').map(combo).join(' , '); }).join(' ⇨ ');
+    if (item.when) html = '<span class="hwp-when">' + escapeHtmlAttr(item.when) + '</span>' + html;
+    if (item.note) html += ' <span>' + escapeHtmlAttr(item.note) + '</span>';
+    return html;
+  }
+
+  function renderHwpKeys() {
+    const q = (document.getElementById('hwpkeys-search').value || '').replace(/\s+/g, '').toLowerCase();
+    let html = '';
+    HWP_KEYS.forEach(function(sec) {
+      const items = sec.items.filter(function(it) {
+        if (!q) return true;
+        return (sec.sec + it.name + (it.when || '') + it.keys).replace(/\s+/g, '').toLowerCase().indexOf(q) !== -1;
+      });
+      if (!items.length) return;
+      html += '<div class="hwp-sec">' + escapeHtmlAttr(sec.sec) + '</div>';
+      items.forEach(function(it) {
+        html += '<div class="hwp-row"><div class="hwp-name">' + escapeHtmlAttr(it.name) + '</div><div class="hwp-keys">' + hwpKeysHtml(it) + '</div></div>';
+      });
+    });
+    document.getElementById('hwpkeys-list').innerHTML = html ||
+      '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:20px;">찾는 단축키가 없어요.</div>';
+  }
+
+  function openHwpKeys() {
+    const overlay = document.getElementById('hwpkeys-overlay');
+    if (overlay.style.display === 'flex') { closeHwpKeys(); return; }
+    closeStudentRoster();
+    document.getElementById('hwpkeys-search').value = '';
+    renderHwpKeys();
+    overlay.style.display = 'flex';
+    document.getElementById('rail-hwpkeys-btn').classList.add('active');
+  }
+
+  // 단축키를 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(그 화면 위에 겹쳐 남지 않게).
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-hwpkeys-btn') closeHwpKeys();
+    }, true);
+  });
+
+  function closeHwpKeys() {
+    const overlay = document.getElementById('hwpkeys-overlay');
+    if (overlay) overlay.style.display = 'none';
+    const btn = document.getElementById('rail-hwpkeys-btn');
+    if (btn) btn.classList.remove('active');
+  }
 
   function onRosterGradeChange() {
     const grade = parseInt(document.getElementById('roster-grade-select').value);
@@ -5062,7 +5213,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'hwp': 12, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
