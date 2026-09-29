@@ -218,6 +218,9 @@
     .mini-select option { background: var(--card-bg); color: var(--text-main); }
 
     .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(2px);}
+    /* 알림·확인·입력 창은 다른 창(수업 변경 등) 위에서 뜨는 경우가 많아 항상 맨 위에 둔다 —
+       예전엔 수업 변경 창 뒤에 "등록했습니다" 알림이 숨어서 확인을 누를 수 없었다. */
+    #custom-alert-overlay, #custom-confirm-overlay, #custom-prompt-overlay { z-index: 1100; }
     .modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
     .modal-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; margin-top: 10px; resize: none; box-sizing: border-box; font-family: inherit;}
     .modal-box input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 12px; }
@@ -1161,7 +1164,7 @@
     </div>
 
     <div style="border-top:1px solid var(--border-color); margin:16px 0 10px;"></div>
-    <div style="font-size:12px; font-weight:800; margin-bottom:8px;" id="scc-list-title">이번 주 등록된 내 변경 내역</div>
+    <div style="font-size:12px; font-weight:800; margin-bottom:8px;" id="scc-list-title">이번 주부터 등록된 내 변경 내역</div>
     <div id="scc-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; font-size:11.5px;"></div>
   </div>
 </div>
@@ -2491,7 +2494,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.22';
+  var BUILD_ID = '2026-09-29.23';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6437,11 +6440,36 @@
     return dates; // [월, 화, 수, 목, 금]
   }
 
+  // 수업 변경을 등록할 수 있는 기간: 이번 주 월요일부터 지금 학기 끝날까지(관리자 설정의 학기 날짜).
+  // 학기 날짜가 없거나 이미 지났으면 예전처럼 이번 주만.
+  function sccDateRange() {
+    const weekDates = getCurrentWeekDates();
+    const r = (window.semesterRanges || {})[window.currentActiveSemester || getActiveSemester()];
+    const end = (r && r.end && r.end > weekDates[4]) ? r.end : weekDates[4];
+    return { min: weekDates[0], max: end };
+  }
+
+  // 날짜 문자열(YYYY-MM-DD)의 요일 번호: 월=1 … 금=5, 주말은 0 또는 6.
+  function sccWeekdayOf(dateStr) {
+    const p = dateStr.split('-');
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getDay();
+  }
+
+  // 등록할 수 있는 날짜인지 확인하고, 안 되면 이유를 돌려준다.
+  function sccDateProblem(dateStr) {
+    const range = sccDateRange();
+    if (dateStr < range.min || dateStr > range.max) return '이번 주부터 학기 끝(' + range.max + ')까지의 날짜만 고를 수 있어요.';
+    const wd = sccWeekdayOf(dateStr);
+    if (wd < 1 || wd > 5) return '월~금요일만 고를 수 있어요.';
+    return '';
+  }
+
+  // 시간표에는 이번 주 변경만 그리지만, 창의 목록에서 앞으로 등록된 것도 보이도록 학기 끝까지 받아 둔다.
   async function fetchScheduleChanges() {
     try {
-      const weekDates = getCurrentWeekDates();
+      const range = sccDateRange();
       const { data, error } = await sb.from('schedule_changes').select('*')
-        .gte('change_date', weekDates[0]).lte('change_date', weekDates[4]);
+        .gte('change_date', range.min).lte('change_date', range.max);
       if (error) throw error;
       window.scheduleChangesRaw = data || [];
     } catch (e) { window.scheduleChangesRaw = []; }
@@ -6541,7 +6569,7 @@
 
     document.getElementById('scc-teacher-a-row').style.display = manager ? 'flex' : 'none';
     document.getElementById('scc-my-period-label').innerText = manager ? '교시' : '내 교시';
-    document.getElementById('scc-list-title').innerText = manager ? '이번 주 등록된 전체 변경 내역' : '이번 주 등록된 내 변경 내역';
+    document.getElementById('scc-list-title').innerText = manager ? '이번 주부터 등록된 전체 변경 내역' : '이번 주부터 등록된 내 변경 내역';
     if (manager) {
       const aSel = document.getElementById('scc-teacher-a');
       aSel.innerHTML = '<option value="">선택</option>' + sccTeacherNames()
@@ -6558,11 +6586,12 @@
     document.getElementById('scc-my-period').innerHTML = sccPeriodOptionsHtml();
     document.getElementById('scc-partner-period').innerHTML = sccPeriodOptionsHtml();
 
-    const weekDates = getCurrentWeekDates();
+    const range = sccDateRange();
     const dateInput = document.getElementById('scc-date');
-    dateInput.min = weekDates[0];
-    dateInput.max = weekDates[4];
-    dateInput.value = weekDates[0];
+    dateInput.min = range.min;
+    dateInput.max = range.max;
+    const today = todayYmdDash();
+    dateInput.value = sccDateProblem(today) ? range.min : today;
 
     document.getElementById('scc-partner').value = '';
     sccFillPartnerOptions();
@@ -6603,22 +6632,22 @@
     const previewEl = document.getElementById('scc-preview');
     if (!dateStr || !partner || !myName) { previewEl.innerText = '날짜와 선생님을 선택하면 미리보기가 보여요.'; return; }
 
-    const weekDates = getCurrentWeekDates();
-    const dayIdx = weekDates.indexOf(dateStr);
-    if (dayIdx === -1) { previewEl.innerText = '이번 주(월~금) 날짜만 고를 수 있어요.'; return; }
-    const weekday = dayIdx + 1;
+    const problem = sccDateProblem(dateStr);
+    if (problem) { previewEl.innerText = problem; return; }
+    const weekday = sccWeekdayOf(dateStr);
+    const dayIdx = weekday - 1;
     const days = ['월', '화', '수', '목', '금'];
 
     const mySubj = sccSubjectAt(myName, weekday, myPeriod);
     if (sccCurrentType === 'exchange') {
       const partnerSubj = sccSubjectAt(partner, weekday, partnerPeriod);
       previewEl.innerText =
-        days[dayIdx] + '요일 기준\n' +
+        dateStr.slice(5).replace('-', '/') + ' ' + days[dayIdx] + '요일 기준\n' +
         who + ' ' + myPeriod + '교시 "' + mySubj + '" → ' + partnerPeriod + '교시로 이동\n' +
         partner + '쌤 ' + partnerPeriod + '교시 "' + partnerSubj + '" → ' + myPeriod + '교시로 이동';
     } else {
       previewEl.innerText =
-        days[dayIdx] + '요일 기준\n' +
+        dateStr.slice(5).replace('-', '/') + ' ' + days[dayIdx] + '요일 기준\n' +
         who + ' ' + myPeriod + '교시 "' + mySubj + '"를 ' + partner + '쌤이 대신 가르쳐줌\n' +
         partner + '쌤 시간표에 이 수업이 추가로 표시됩니다.';
     }
@@ -6634,8 +6663,8 @@
     if (!dateStr) return customAlert('날짜를 선택해주세요.');
     if (!myName) return customAlert('수업을 바꿀 선생님을 선택해주세요.');
     if (!partner) return customAlert('선생님을 선택해주세요.');
-    const weekDates = getCurrentWeekDates();
-    if (weekDates.indexOf(dateStr) === -1) return customAlert('이번 주(월~금) 날짜만 등록할 수 있어요.');
+    const problem = sccDateProblem(dateStr);
+    if (problem) return customAlert(problem);
 
     const record = {
       change_date: dateStr,

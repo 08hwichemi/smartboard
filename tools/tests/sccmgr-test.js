@@ -14,6 +14,7 @@ const teachers = {
   [T1]: { id: T1, name: '김교사', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null },
   ['33333333-3333-3333-3333-333333333333']: { id: '33333333-3333-3333-3333-333333333333', name: '최실무', is_admin: false, must_change_password: false, role: '실무사', homeroom_grade: null, homeroom_class: null },
   ['55555555-5555-5555-5555-555555555555']: { id: '55555555-5555-5555-5555-555555555555', name: '수업계', is_admin: false, must_change_password: false, role: '실무사', homeroom_grade: null, homeroom_class: null, schedule_manager: true },
+  ['66666666-6666-6666-6666-666666666666']: { id: '66666666-6666-6666-6666-666666666666', name: '수업계교사', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null, schedule_manager: true },
   [T2]: { id: T2, name: '박교사', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null },
 };
 const items = new Map(); // teacher|key -> {teacher_id,key,value,updated_at}
@@ -66,6 +67,11 @@ async function handleDb(pageInfo, req) {
     list.sort((a, b) => (a.updated_at < b.updated_at ? -1 : a.updated_at > b.updated_at ? 1 : a.key < b.key ? -1 : 1));
     if (range) list = list.slice(range[0], range[1] + 1);
     return { data: list.map(r => ({ key: r.key, value: r.value, updated_at: r.updated_at })), error: null };
+  }
+  if (table === 'app_settings' && op === 'select' && filters.some(f => f.val === 'semester_ranges')) {
+    // 오늘이 속한 학기: 한 달 전 ~ 두 달 뒤
+    const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+    return { data: { value: { '1학기': { start: '2000-03-01', end: '2000-07-20' }, '2학기': { start: d(-30), end: d(60) } } }, error: null };
   }
   if (table === 'schedule_changes') {
     if (op === 'insert') { const r = Array.isArray(rows) ? rows : [rows]; r.forEach(x => changes.push(Object.assign({ id: changes.length + 1, created_by: teachers[pageInfo.uid].name }, x))); return { data: null, error: null }; }
@@ -209,12 +215,32 @@ function check(label, cond, detail) {
   const pv = await P.evaluate(() => document.getElementById('scc-preview').innerText);
   check('미리보기가 "김교사쌤 …"로', pv.includes('김교사쌤') && !pv.includes('나('), pv);
   await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => x.offsetParent && /확인/.test(x.innerText)); if (b) b.click(); }); await wait(300);
+  await P.click('#custom-alert-ok-btn'); await wait(300);
   check('등록된 기록의 주인이 김교사/박교사', changes.length === 1 && changes[0].teacher_a === '김교사' && changes[0].teacher_b === '박교사', changes);
   changes.push({ id: 2, change_date: changes[0].change_date, type: 'makeup', teacher_a: '이교사', period_a: 2, teacher_b: '정교사', period_b: 2, created_by: '이교사' });
   await P.evaluate(async () => { await fetchScheduleChanges(); sccRenderList(); });
   const list = await P.evaluate(() => document.getElementById('scc-list').innerText);
   check('다른 사람이 등록한 내역도 목록에 전부(이름 두 개씩)', list.includes('김교사') && list.includes('박교사') && list.includes('이교사') && list.includes('정교사') && (list.match(/삭제/g) || []).length === 2, list);
+  // 학기 안의 다음 주 날짜도 등록되고, 학기 밖은 막힘
+  const dr = await P.evaluate(() => {
+    const r = sccDateRange();
+    const next = new Date(); next.setDate(next.getDate() + 14); while (next.getDay() !== 3) next.setDate(next.getDate() + 1);
+    const ymd = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    const far = new Date(); far.setDate(far.getDate() + 90);
+    const sat = new Date(next); sat.setDate(sat.getDate() + 3);
+    return { r, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next), inputMax: document.getElementById('scc-date').max };
+  });
+  check('기간: 이번 주 월요일 ~ 학기 끝, 2주 뒤 수요일 가능 / 학기 뒤·토요일 불가', dr.nextOk && dr.farBad && dr.satBad && dr.inputMax === dr.r.max && dr.r.max > dr.next, dr);
+  await P.fill('#scc-date', dr.next); await P.dispatchEvent('#scc-date', 'change'); await wait(100);
+  await P.selectOption('#scc-partner', '이교사'); await wait(100);
+  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
+  await P.click('#custom-alert-ok-btn'); await wait(300);
+  check('2주 뒤 변경 등록됨 + 목록에 보임', changes.some(c => c.change_date === dr.next) && (await P.evaluate(() => document.getElementById('scc-list').innerText)).includes(dr.next), changes.map(c => c.change_date));
+  // 역할 "교사" + 담당 + 본인 시간표 없음: 내 시간표 자리에서 선생님 골라 보기 + 수업변경 버튼 둘 다
+  const g = await openDevice(browser, '수업계교사PC', '66666666-6666-6666-6666-666666666666');
+  await wait(1000);
+  const gs = await g.page.evaluate(() => { const w = document.getElementById('my-tt-widget'); const vis = (el) => getComputedStyle(el).display !== 'none'; return { browse: w.classList.contains('my-tt-browse'), sel: vis(document.getElementById('m-tt-teacher-select')), wBtn: vis(w.querySelector('.m-tt-change-btn')), qBtn: vis(document.getElementById('btn-scc-manager')) }; });
+  check('교사 역할 담당: 선생님 골라 보기 + 시간표 칸·둘째 줄 수업변경 버튼', gs.browse && gs.sel && gs.wBtn && gs.qBtn, gs);
   // 일반 교사
   const t = await openDevice(browser, '김교사PC', T1);
   await wait(1000);
