@@ -1,0 +1,27 @@
+# Supabase 무료 요금제는 7일 동안 아무 요청이 없으면 프로젝트를 일시정지한다(자료는
+# 남지만, 관리 화면에서 직접 다시 켜기 전까지 앱이 동작하지 않음). 방학처럼 아무도
+# 접속하지 않는 기간에도 정지되지 않도록 매일 한 번 서버에 가벼운 요청을 보낸다.
+# 주소와 키는 index.html에 이미 공개돼 있는 값(publishable key)을 그대로 읽어 쓴다.
+#
+# 참고: GitHub는 저장소에 60일 동안 커밋이 없으면 이런 예약 작업을 자동으로 끈다.
+# 그럴 땐 저장소 Actions 탭에서 이 작업을 다시 켜면 된다.
+name: Supabase 일시정지 방지
+
+on:
+  schedule:
+    - cron: '17 21 * * *' # 매일 한국 시각 06:17
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 서버에 요청 보내기
+        run: |
+          URL=$(grep -oE "SUPABASE_URL = '[^']+'" index.html | head -1 | cut -d"'" -f2)
+          KEY=$(grep -oE "SUPABASE_ANON_KEY = '[^']+'" index.html | head -1 | cut -d"'" -f2)
+          test -n "$URL" && test -n "$KEY"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$URL/rest/v1/app_settings?select=key&limit=1" -H "apikey: $KEY")
+          echo "응답 코드: $code"
+          test "$code" = "200"

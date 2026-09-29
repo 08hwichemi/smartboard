@@ -436,7 +436,6 @@
     .ms-paper-title { font-size: 34px; font-weight: 900; color: #2C3E50; letter-spacing: -1px; padding-bottom: 4px; }
     .ms-header-right { display: flex; flex-direction: column; align-items: flex-end; padding-bottom: 6px; }
     .ms-school-identity { display: flex; align-items: center; gap: 10px; }
-    .ms-school-logo { height: 40px; object-fit: contain; }
     .ms-school-name { font-size: 22px; font-weight: 900; letter-spacing: -1px; color: #7F8C8D; }
     .ms-copyright { position: absolute; top: 30px; right: 0; font-size: 10px; font-weight: 700; color: #94A3B8; }
 
@@ -1762,10 +1761,6 @@
           <div class="ms-row">
             <label style="width:52px;">학교명</label>
             <input type="text" id="ms-cfg-school" class="ms-input" value="부광고등학교" oninput="msRenderCalendar()">
-            <label class="ms-upload-btn">
-              📷 로고
-              <input type="file" accept="image/*" style="display:none;" onchange="msHandleLogoUpload(event)">
-            </label>
           </div>
           <div class="ms-row">
             <label style="width:52px;">타이틀</label>
@@ -1885,7 +1880,6 @@
             </div>
             <div class="ms-header-right">
               <div class="ms-school-identity">
-                <img id="ms-print-logo" class="ms-school-logo" style="display:none;">
                 <div class="ms-school-name" id="ms-print-school">부광고등학교</div>
               </div>
             </div>
@@ -1940,11 +1934,6 @@
           <div class="lp-field lp-grow-3">
             <label>학교명</label>
             <input type="text" id="lp-cfg-school" class="lp-input" placeholder="OO고등학교" oninput="lpRender()">
-          </div>
-          <div class="lp-field lp-grow-1">
-            <label>학교 마크</label>
-            <label for="lp-logo-upload" class="lp-upload-btn">📂 파일 선택</label>
-            <input type="file" id="lp-logo-upload" accept="image/*" style="display:none;" onchange="lpHandleLogoUpload(event)">
           </div>
         </div>
       </div>
@@ -2300,66 +2289,103 @@
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ===== 📤 개인 데이터 자동 서버 동기화 (localStorage 변경 자동 감지) =====
-  // 폰트 크기, 즐겨찾기, 디데이 등 새 기능을 추가할 때마다 매번 scheduleBackupWrite()
-  // 호출을 빠뜨리지 않도록, localStorage.setItem/removeItem 자체를 가로채서 값이
-  // 바뀔 때마다 자동으로 서버 백업을 예약한다. (scheduleBackupWrite 함수 선언 자체는
-  // 호이스팅되어 여기서 이름으로 참조해도 문제없지만, 그 안에서 쓰는 backupWriteTimer는
-  // let 변수라 선언 줄보다 먼저 참조되면 TDZ 에러가 나므로 여기서 미리 선언해둔다.)
-  let backupWriteTimer = null;
+  // 개인 자료(할 일/메모/D-day/글씨 크기/테마 등)는 localStorage 키 하나하나가 서버
+  // user_data_items의 한 줄이다. 폰트 크기, 즐겨찾기, 디데이 등 새 기능을 추가할 때마다
+  // 저장 코드를 따로 챙기지 않아도 되도록 localStorage.setItem/removeItem 자체를
+  // 가로채서, 값이 "실제로 바뀐" 키만 "아직 서버에 안 올라간 키(dirty)" 목록에 적어 두고
+  // 그것만 서버에 올린다.
+  //
+  // 예전엔 저장할 때마다 이 기기가 가진 자료 전체를 올렸는데, 그러면 오래 켜 둔
+  // 휴대폰이 자기가 들고 있던 옛날 값으로 PC에서 방금 고친 내용을 덮어써 버렸다.
+  // 지금은 이 기기에서 실제로 고친 항목만 올라가므로 그런 일이 생기지 않는다.
+  //
+  // 아래 값들은 가로채기 함수가 스크립트 맨 앞(Supabase 클라이언트가 로그인 토큰을
+  // localStorage에 쓰는 시점)부터 불릴 수 있어서, let 선언 전에 참조되는 TDZ 에러가
+  // 나지 않도록 여기서 먼저 선언한다.
+  const SYNC_DIRTY_KEY = 'sync-dirty-keys';       // 아직 서버에 못 올린 키 목록
+  const SYNC_OWNER_KEY = 'sync-owner-teacher-id'; // 이 브라우저의 개인 자료가 누구 것인지
+  const SYNC_CURSOR_KEY = 'sync-last-pulled-at';  // 서버에서 마지막으로 받아온 변경 시각(서버 시계)
+  const SYNC_SEEDED_KEY = 'sync-initial-pull-done'; // 이 계정 자료를 서버에서 한 번이라도 다 받아왔는지
+  const syncLocalEditAt = {}; // 키별로 이 기기에서 마지막으로 고친 시각(서버 자료 받기와 겹칠 때 판단용)
+  let syncPushTimer = null;
   let rawSetItem, rawRemoveItem;
   (function() {
     const _origSetItem = localStorage.setItem.bind(localStorage);
     const _origRemoveItem = localStorage.removeItem.bind(localStorage);
-    // 동기화 자체가 쓰는 "언제 마지막으로 서버랑 맞췄는지" 같은 내부 기록용 값은
-    // 이 가로채기를 거치면 그 값을 쓰는 것 자체가 또 새 동기화를 예약해버려서
-    // 끝없이 맞물려 돌게 된다 — 그런 내부 기록은 이 원본 함수로 직접 쓴다.
+    const _origGetItem = localStorage.getItem.bind(localStorage);
+    // 동기화 자체가 쓰는 내부 기록이나 서버에서 받아온 값을 반영할 때는 이 원본 함수로
+    // 직접 써서 "이 기기에서 고친 것"으로 잘못 기록되지 않게 한다.
     rawSetItem = _origSetItem;
     rawRemoveItem = _origRemoveItem;
     localStorage.setItem = function(key, value) {
+      const before = _origGetItem(key);
       _origSetItem(key, value);
-      if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
+      if (before !== String(value)) markSyncDirty(key);
     };
     localStorage.removeItem = function(key) {
-      // 이 기기에서 "지운" 키는 서버 병합 때 같이 지워달라고 알려야 하므로 따로
-      // 적어둔다 (아래 syncUserBackupToServer 참고) — 안 그러면 병합(merge) 방식
-      // 저장에서는 "이 기기가 이 키를 안 보냈다"는 것과 "이 기기에서 이 키를
-      // 지웠다"는 걸 구분할 수 없어서, 지운 항목이 서버에 계속 남아있게 된다.
-      if (typeof isLocalOnlyKey !== 'function' || !isLocalOnlyKey(key)) {
-        try {
-          const raw = localStorage.getItem('backup-pending-deletes');
-          const list = raw ? JSON.parse(raw) : [];
-          if (!list.includes(key)) { list.push(key); rawSetItem('backup-pending-deletes', JSON.stringify(list)); }
-        } catch (e) {}
-      }
+      const before = _origGetItem(key);
       _origRemoveItem(key);
-      if (typeof scheduleBackupWrite === 'function') scheduleBackupWrite();
+      if (before !== null) markSyncDirty(key);
     };
   })();
 
+  function getSyncDirtyKeys() {
+    try {
+      const list = JSON.parse(localStorage.getItem(SYNC_DIRTY_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  function markSyncDirty(key) {
+    if (isLocalOnlyKey(key)) return;
+    syncLocalEditAt[key] = Date.now();
+    const list = getSyncDirtyKeys();
+    if (list.indexOf(key) === -1) {
+      list.push(key);
+      try { rawSetItem(SYNC_DIRTY_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+    scheduleSyncPush();
+  }
+
+  function scheduleSyncPush() {
+    if (syncPushTimer) clearTimeout(syncPushTimer);
+    syncPushTimer = setTimeout(function() { syncPushTimer = null; pushDirtyItems(); }, 1500);
+  }
+
   // 캘린더 메모 같은 입력칸은 onblur(포커스를 벗어날 때)에 저장되는데, 입력하자마자
   // 바로 탭을 닫거나 다른 화면으로 전환하면 blur가 안 일어나서 로컬 저장조차 안 될 수
-  // 있고, 로컬 저장은 됐어도 서버 업로드는 1.5초 debounce를 기다리다가 그 전에 탭이
-  // 닫히면 서버엔 못 올라갈 수 있다. 화면이 안 보이게 되는 시점(탭 전환/닫기/최소화)에
-  // 지금 포커스된 입력칸을 강제로 blur해서 저장을 마치고, 서버 업로드도 debounce 없이
-  // 바로 시도해서 이런 경우를 최대한 줄인다.
+  // 있고, 서버 업로드는 1.5초 debounce를 기다리다가 그 전에 탭이 닫히면 못 올라갈 수
+  // 있다. 화면이 안 보이게 되는 시점(탭 전환/닫기/최소화)에 지금 포커스된 입력칸을
+  // 강제로 blur해서 저장을 마치고, 서버 업로드도 debounce 없이 바로 시도한다.
+  // (그래도 못 올라간 항목은 dirty 목록에 남아 있다가 다음에 열 때 올라간다.)
   function flushPendingSaveAndSync() {
     if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
     }
-    if (backupWriteTimer) { clearTimeout(backupWriteTimer); backupWriteTimer = null; }
-    if (typeof syncUserBackupToServer === 'function') syncUserBackupToServer();
+    if (syncPushTimer) { clearTimeout(syncPushTimer); syncPushTimer = null; }
+    return pushDirtyItems();
   }
   document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'hidden') flushPendingSaveAndSync();
+    if (document.visibilityState === 'hidden') {
+      flushPendingSaveAndSync();
+    } else if (window.currentTeacher && window.currentTeacher.id) {
+      // 휴대폰은 화면이 꺼져 있는 동안 실시간 연결이 끊겨 있었을 수 있으므로, 다시
+      // 켜지는 순간 그 사이에 다른 기기에서 바뀐 것을 받아오고 못 올린 것은 올린다.
+      pullRemoteChanges(false);
+      pushDirtyItems();
+    }
   });
   window.addEventListener('pagehide', flushPendingSaveAndSync);
+  window.addEventListener('online', function() {
+    if (window.currentTeacher && window.currentTeacher.id) { pushDirtyItems(); pullRemoteChanges(false); }
+  });
 
   // ===== 🔄 새 버전 알림 =====
   // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-29.4';
+  var BUILD_ID = '2026-09-29.5';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -2519,6 +2545,14 @@
 
   async function logout() {
     if (!await customConfirm('로그아웃할까요?')) return;
+    // 로그아웃하면 서버에 올릴 권한도 없어지므로, 그 전에 못 올린 자료를 먼저 올린다
+    // (인터넷이 느려도 최대 5초까지만 기다림).
+    await Promise.race([
+      flushPendingSaveAndSync(),
+      new Promise(function(resolve) { setTimeout(resolve, 5000); })
+    ]);
+    const unsynced = getSyncDirtyKeys().length > 0;
+    if (unsynced && !await customConfirm('아직 서버에 올리지 못한 자료가 있습니다(인터넷 연결 확인 필요).\n같은 계정으로 이 기기에서 다시 로그인하면 그때 올라가지만, 다른 계정이 먼저 로그인하면 사라집니다.\n그래도 로그아웃할까요?')) return;
     // 모바일 네트워크가 불안정하면 signOut() 요청이 응답 없이 걸려서(hang) 화면이
     // 아무 반응 없이 멈춘 것처럼 보일 수 있다 — 3초 넘게 응답이 없으면 포기하고
     // 아래에서 로컬 세션 토큰을 직접 지운 뒤 새로고침으로 넘어간다.
@@ -2533,6 +2567,10 @@
     Object.keys(localStorage).forEach(function(k) {
       if (k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) localStorage.removeItem(k);
     });
+    // 공용 PC에서 다음 사람이 내 메모·할 일을 보지 않도록 이 기기의 개인 자료도 지운다
+    // (서버엔 다 올라가 있으니 다시 로그인하면 그대로 돌아온다). 못 올린 게 남아 있으면
+    // 같은 계정으로 다시 로그인했을 때 올릴 수 있게 그대로 둔다.
+    if (!unsynced) clearPersonalDataFromThisDevice();
     location.reload();
   }
 
@@ -2564,127 +2602,257 @@
     await startAppFor(data);
   }
 
+  let syncAppStarted = false;
   async function startAppFor(teacher) {
+    await syncOnLogin(teacher.id);
     localStorage.setItem('my-n', teacher.name);
-    await restoreUserBackupIfNeeded(teacher.id);
     await init();
-    subscribeToOwnBackupUpdates(teacher.id);
+    syncAppStarted = true;
+    subscribeToOwnDataChanges(teacher.id);
   }
 
-  // 개인 데이터(할일/메모/D-day/글씨 크기/테마 등)는 서버(user_backups)가 유일한 원본이다.
-  // localStorage는 화면을 그리기 위한 캐시일 뿐 — 로그인할 때마다(=페이지를 열 때마다)
-  // 무조건 서버에서 다시 받아와 그대로 덮어쓴다. "이 기기 걸 믿을지 서버 걸 믿을지"를
-  // 비교하거나 고민하지 않는다 — 서버가 곧 정답이다. 유일한 예외는 서버 조회 자체가
-  // 실패했을 때뿐인데, 그때는 서버 상태를 모르니 화면을 함부로 비우지 않고 화면 아래
-  // 빨간 띠로 실패를 알린 뒤 지금 있는 화면을 그대로 둔다.
-  async function restoreUserBackupIfNeeded(teacherId) {
-    // 이 브라우저가 지금 막 로그인해서 받은 세션 토큰이나, 이 기기만의 동기화
-    // 기록(예: 아직 서버에 못 보낸 "삭제 대기" 목록)은 절대 지우거나 옛날 값으로
-    // 덮어쓰지 않도록 따로 챙겨뒀다가 복원 뒤에 다시 심어준다.
-    const preservedLocalEntries = [];
+  // 로그인할 때(=페이지를 열 때마다) 서버에서 이 선생님 자료 전체를 받아서 이 기기를
+  // 서버와 맞춘다. 단, 이 기기에서 고쳤는데 아직 서버에 못 올린 항목(dirty)은 절대
+  // 서버 값으로 덮어쓰지 않고, 받아온 뒤 바로 서버에 올린다 — 인터넷이 끊긴 채로
+  // 입력했거나 저장 직후 탭을 닫았어도 다음에 열 때 올라간다.
+  async function syncOnLogin(teacherId) {
+    if (localStorage.getItem(SYNC_OWNER_KEY) !== teacherId) {
+      // 이 브라우저에 남아 있는 개인 자료가 다른 계정 것(공용 PC)이거나 예전 동기화 방식
+      // 시절의 캐시다 — 섞이지 않도록 비우고 서버에서 새로 받는다.
+      clearPersonalDataFromThisDevice();
+      rawSetItem(SYNC_OWNER_KEY, teacherId);
+    }
+    await pullRemoteChanges(true);
+    pushDirtyItems();
+  }
+
+  // 로그인 토큰만 남기고 이 기기의 개인 자료와 동기화 기록을 모두 지운다(서버 자료는 그대로).
+  function clearPersonalDataFromThisDevice() {
+    const keys = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (isLocalOnlyKey(k)) preservedLocalEntries.push([k, localStorage.getItem(k)]);
+      if (!isAuthSessionKey(k)) keys.push(k);
     }
-    try {
-      const { data, error } = await sb.from('user_backups').select('data').eq('teacher_id', teacherId).maybeSingle();
-      if (error) throw error;
-      localStorage.clear();
-      if (data && data.data && typeof data.data === 'object') {
-        // 키 하나를 저장하다가 실패해도(값 형식 문제, 저장 공간 등) 그 뒤에 남은 다른
-        // 키들까지 통째로 못 받아오면 안 되므로, 키마다 따로 try/catch로 감싼다 —
-        // 예전엔 하나라도 실패하면 그 지점에서 전체가 멈춰서 화면에 아무것도 없는
-        // 것처럼 보일 수 있었다.
-        const failedKeys = [];
-        Object.keys(data.data).forEach(function(k) {
-          if (isLocalOnlyKey(k)) return;
-          try { localStorage.setItem(k, data.data[k]); }
-          catch (e) { failedKeys.push(k); }
-        });
-        if (failedKeys.length > 0) {
-          showMobileDebugError('일부 자료를 이 기기에 저장하지 못했습니다: ' + failedKeys.join(', '));
-        }
-      }
-      // 서버에 이 선생님 자료가 아직 하나도 없으면(처음 쓰는 계정) 빈 상태로 시작한다 —
-      // 그것도 "서버가 곧 정답"이라는 원칙 그대로다.
-      preservedLocalEntries.forEach(function(entry) { rawSetItem(entry[0], entry[1]); });
-    } catch (e) {
-      showMobileDebugError('서버 백업 조회 실패: ' + (e && e.message ? e.message : e));
-      // 조회 자체가 실패했으면(네트워크 등) 서버 상태를 알 수 없으니 지금 화면을
-      // 함부로 비우지 않고 그대로 둔다 — 이건 "로컬을 믿는다"는 게 아니라, 틀린
-      // 정보(빈 화면)로 덮어쓰느니 아무것도 안 하는 게 낫다는 최소한의 방어다.
-    }
+    keys.forEach(function(k) { rawRemoveItem(k); });
   }
 
-  // ☰ 메뉴의 "서버 자료로 다시 맞추기" — 페이지를 새로고침하면 위 로직이 어차피
-  // 서버에서 다시 받아오므로, 사실상 새로고침과 같다. 메뉴에 남겨두는 건 "혹시
-  // 화면이 이상해 보일 때 눌러볼 수 있는 버튼"이 있다는 안도감을 위해서다.
+  // ☰ 메뉴의 "서버 자료로 다시 맞추기" — 못 올린 게 있으면 먼저 올리고 새로고침한다.
+  // 새로고침하면 syncOnLogin이 서버 자료 전체를 다시 받아온다.
   async function forceResyncFromServer() {
-    if (!await customConfirm('서버에 저장된 자료로 이 기기를 다시 맞출까요?\n(방금 이 기기에서만 입력하고 아직 반영 안 된 내용이 있다면 사라질 수 있어요)')) return;
+    if (!await customConfirm('서버에 저장된 최신 자료를 다시 받아올까요?')) return;
+    await flushPendingSaveAndSync();
+    if (getSyncDirtyKeys().length > 0 &&
+        !await customConfirm('아직 서버에 올리지 못한 자료가 있습니다(인터넷 연결 확인 필요).\n이 자료는 이 기기에 그대로 남아 있다가 연결되면 자동으로 올라갑니다.\n그래도 새로고침할까요?')) return;
     location.reload();
   }
 
-  let backupSyncRetryTimer = null;
-  let backupSyncRetryDelay = 5000; // 5초에서 시작, 실패할 때마다 두 배씩 늘어나 최대 5분까지
-  // PC/휴대폰/시크릿창처럼 같은 계정을 여러 기기·탭에서 동시에 열어두면, 각자 "자기가
-  // 아는 전체 localStorage"를 통째로 upsert하던 예전 방식은 나중에 저장한 쪽이 이긴다
-  // (다른 기기가 방금 추가한 내용을 자기가 모른다는 이유로 지워버림) — 실제로 이 문제로
-  // 캘린더 메모가 사라졌다 나타났다 했다. 그래서 서버에 저장할 때는 "덮어쓰기"가 아니라
-  // "병합"한다: 이 기기가 갖고 있는 값은 그대로 얹고, 이 기기가 모르는(=다른 기기가
-  // 넣은) 값은 서버에 있던 걸 그대로 둔다. 이 기기에서 실제로 지운 키만 같이 지운다.
-  // 실시간 알림(subscribeToOwnBackupUpdates)이 "방금 내가 스스로 저장해서 생긴
-  // 알림"까지 "다른 기기가 저장했어요"로 잘못 띄우지 않도록, 이 기기가 저장을
-  // 시도하는 동안(+약간의 여유시간)은 이 시각을 갱신해둔다.
-  let ownSyncInFlightUntil = 0;
-  async function syncUserBackupToServer() {
-    if (!window.currentTeacher || !window.currentTeacher.id) return;
-    let pendingDeletes = [];
-    try { pendingDeletes = JSON.parse(localStorage.getItem('backup-pending-deletes') || '[]'); } catch (e) {}
-    ownSyncInFlightUntil = Date.now() + 4000;
+  // 서버 저장/받기가 실패하면 화면 아래 빨간 띠로 알리고, 다시 성공하면 그 띠를 치운다.
+  const SYNC_ERROR_PREFIX = '서버 동기화 문제';
+  function showSyncError(msg, e) {
+    showMobileDebugError(SYNC_ERROR_PREFIX + ' — ' + msg + ': ' + (e && e.message ? e.message : e));
+  }
+  function clearSyncError() {
+    const el = document.getElementById('m-debug-error');
+    if (el && el.innerText.indexOf(SYNC_ERROR_PREFIX) !== -1) el.remove();
+  }
+
+  // 이 기기에서 고친 항목(dirty)만 서버에 올린다. 서버는 도착한 순서대로 저장하고
+  // (나중에 저장된 값이 남음), 덮어쓰인 예전 값은 user_data_history에 30일간 남는다.
+  // 이미 올리는 중에 또 불리면 그 작업이 끝난 뒤 한 번 더 올리고, 부른 쪽은 그것까지
+  // 모두 끝날 때까지 기다릴 수 있다(로그아웃·백업 복원 전에 확실히 올리기 위함).
+  let syncPushPromise = null;
+  let syncPushAgain = false;
+  let syncPushRetryTimer = null;
+  let syncPushRetryDelay = 5000; // 5초에서 시작, 실패할 때마다 두 배씩 최대 5분까지
+  function pushDirtyItems() {
+    if (syncPushPromise) { syncPushAgain = true; return syncPushPromise; }
+    syncPushPromise = (async function() {
+      let ok;
+      do {
+        syncPushAgain = false;
+        ok = await pushDirtyItemsOnce();
+      } while (ok && syncPushAgain && getSyncDirtyKeys().length > 0);
+    })().finally(function() { syncPushPromise = null; });
+    return syncPushPromise;
+  }
+  async function pushDirtyItemsOnce() {
+    const teacherId = window.currentTeacher && window.currentTeacher.id;
+    if (!teacherId || localStorage.getItem(SYNC_OWNER_KEY) !== teacherId) return false;
+    // 이 기기가 아직 서버 자료를 한 번도 다 받아오지 못했으면(새 기기인데 첫 연결이
+    // 실패한 경우) 올리지 않는다 — 화면을 처음 그리며 써 넣은 빈 기본값이 서버에 있던
+    // 진짜 자료를 덮어쓸 수 있기 때문이다. 첫 받기가 성공하면 그때 올라간다.
+    if (localStorage.getItem(SYNC_SEEDED_KEY) !== teacherId) return false;
+    const keys = getSyncDirtyKeys();
+    if (keys.length === 0) return true;
+    const sent = {};
+    const rows = keys.map(function(k) {
+      const v = localStorage.getItem(k);
+      sent[k] = v;
+      return { teacher_id: teacherId, key: k, value: v };
+    });
     try {
-      const { error } = await sb.rpc('merge_user_backup', { p_set: collectBackupData(), p_delete: pendingDeletes });
-      if (error) throw error;
-      ownSyncInFlightUntil = Date.now() + 4000;
-      rawSetItem('backup-pending-deletes', '[]');
-      backupSyncRetryDelay = 5000;
-      if (backupSyncRetryTimer) { clearTimeout(backupSyncRetryTimer); backupSyncRetryTimer = null; }
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await sb.from('user_data_items').upsert(rows.slice(i, i + 500), { onConflict: 'teacher_id,key' });
+        if (error) throw error;
+      }
+      // 올리는 동안 또 고친 항목은 목록에 남겨 두고, 올린 값 그대로인 것만 뺀다.
+      const remaining = getSyncDirtyKeys().filter(function(k) {
+        return !Object.prototype.hasOwnProperty.call(sent, k) || localStorage.getItem(k) !== sent[k];
+      });
+      rawSetItem(SYNC_DIRTY_KEY, JSON.stringify(remaining));
+      syncPushRetryDelay = 5000;
+      if (syncPushRetryTimer) { clearTimeout(syncPushRetryTimer); syncPushRetryTimer = null; }
+      clearSyncError();
+      return true;
     } catch (e) {
-      // 예전엔 이 실패를 조용히 삼켜서, 서버 저장이 계속 실패하고 있어도 아무도 몰랐다
-      // ("한 기기엔 자료가 있는데 다른 기기엔 없다"는 신고의 원인일 수 있음) — 눈에
-      // 보이게 띄우고, 한 번 실패했다고 포기하지 않도록 자동으로 재시도한다(5초→최대
-      // 5분 간격으로 점점 늘려가며).
-      showMobileDebugError('서버 저장 실패(자동으로 다시 시도합니다): ' + (e && e.message ? e.message : e));
-      if (backupSyncRetryTimer) clearTimeout(backupSyncRetryTimer);
-      backupSyncRetryTimer = setTimeout(syncUserBackupToServer, backupSyncRetryDelay);
-      backupSyncRetryDelay = Math.min(backupSyncRetryDelay * 2, 5 * 60 * 1000);
+      showSyncError('저장 실패(이 기기엔 안전하게 남아 있고, 자동으로 다시 올립니다)', e);
+      if (syncPushRetryTimer) clearTimeout(syncPushRetryTimer);
+      syncPushRetryTimer = setTimeout(pushDirtyItems, syncPushRetryDelay);
+      syncPushRetryDelay = Math.min(syncPushRetryDelay * 2, 5 * 60 * 1000);
+      return false;
     }
   }
 
-  // PC를 하루 종일 켜두고 휴대폰으로 가끔 확인하는 식으로 쓰면, PC 탭은 새로고침
-  // 전까지 계속 예전 화면 그대로다. 구글 시트처럼 "어디서 입력하든 자연스럽게 화면에
-  // 나타나는" 느낌을 주려면, 알림 띠를 띄우고 사용자가 새로고침을 누르게 하는 게
-  // 아니라 화면을 그 자리에서 조용히 다시 그려야 한다. Supabase Realtime(무료
-  // 요금제 포함) 구독 하나로 "내 자료 행이 바뀌었다"는 신호만 서버가 push해주게
-  // 하고(폴링 없이), 신호가 오면 아래 applyRemoteBackupChangesIfSafe로 반영한다.
-  function subscribeToOwnBackupUpdates(teacherId) {
+  // 서버에서 바뀐 항목을 받아와 이 기기에 반영한다. full이면 전체를, 아니면 마지막으로
+  // 받은 시각 이후에 바뀐 것만 받는다(지운 항목도 value=null인 줄로 전달됨). 서버 쪽
+  // 저장 순서와 커밋 순서가 살짝 어긋날 수 있어서 2분을 겹쳐서 다시 받는다 — 같은 값을
+  // 또 받는 건 아무 영향이 없다. 여러 곳에서 동시에 불러도 한 번에 하나씩 차례로 돈다.
+  let syncNeedsFullPull = false;
+  let syncPullChain = Promise.resolve(false);
+  let syncPullRetryTimer = null;
+  function pullRemoteChanges(full) {
+    syncPullChain = syncPullChain.then(function() { return doPullRemoteChanges(full); }, function() { return doPullRemoteChanges(full); });
+    return syncPullChain;
+  }
+  async function doPullRemoteChanges(full) {
+    const teacherId = window.currentTeacher && window.currentTeacher.id;
+    if (!teacherId || localStorage.getItem(SYNC_OWNER_KEY) !== teacherId) return false;
+    full = full || syncNeedsFullPull;
+    const cursor = localStorage.getItem(SYNC_CURSOR_KEY);
+    const startedAt = Date.now();
+    const rows = [];
     try {
-      sb.channel('user-backup-changes-' + teacherId)
+      for (let from = 0; ; from += 1000) {
+        let q = sb.from('user_data_items').select('key, value, updated_at').eq('teacher_id', teacherId);
+        if (!full && cursor) q = q.gt('updated_at', new Date(new Date(cursor).getTime() - 2 * 60 * 1000).toISOString());
+        const { data, error } = await q.order('updated_at').order('key').range(from, from + 999);
+        if (error) throw error;
+        Array.prototype.push.apply(rows, data || []);
+        if (!data || data.length < 1000) break;
+      }
+    } catch (e) {
+      if (full) syncNeedsFullPull = true;
+      showSyncError('서버 자료 받기 실패(자동으로 다시 시도합니다)', e);
+      if (syncPullRetryTimer) clearTimeout(syncPullRetryTimer);
+      syncPullRetryTimer = setTimeout(function() { syncPullRetryTimer = null; pullRemoteChanges(false); }, 15000);
+      return false;
+    }
+    if (full) syncNeedsFullPull = false;
+    clearSyncError();
+    // 첫 받기 전에 이 기기에서 생긴 값(대부분 화면을 그리며 채운 기본값)은 서버에 이미
+    // 있는 항목이면 서버 값을 따른다. 서버에 없는 항목만 이 기기 값을 올린다.
+    const firstSeed = full && localStorage.getItem(SYNC_SEEDED_KEY) !== teacherId;
+    if (firstSeed) {
+      const onServer = {};
+      rows.forEach(function(r) { if (r.value !== null && r.value !== undefined) onServer[r.key] = true; });
+      rawSetItem(SYNC_DIRTY_KEY, JSON.stringify(getSyncDirtyKeys().filter(function(k) { return !onServer[k]; })));
+      Object.keys(onServer).forEach(function(k) { delete syncLocalEditAt[k]; });
+    }
+    const changed = applyRemoteRows(rows, full, startedAt);
+    if (firstSeed) {
+      rawSetItem(SYNC_SEEDED_KEY, teacherId);
+      if (getSyncDirtyKeys().length > 0) pushDirtyItems();
+    }
+    let newest = cursor ? new Date(cursor).getTime() : 0;
+    let newestStr = cursor;
+    rows.forEach(function(r) {
+      const t = new Date(r.updated_at).getTime();
+      if (t > newest) { newest = t; newestStr = r.updated_at; }
+    });
+    if (newestStr && newestStr !== cursor) rawSetItem(SYNC_CURSOR_KEY, newestStr);
+    if (changed) scheduleRemoteRefresh();
+    return changed;
+  }
+
+  // 받아온 줄을 localStorage에 반영한다. 이 기기에서 고쳐 놓고 아직 못 올린 항목, 또는
+  // 받아오는 도중에 새로 고친 항목은 건드리지 않는다(곧 서버로 올라가서 그게 최신이 됨).
+  function applyRemoteRows(rows, full, pullStartedAt) {
+    const dirty = {};
+    getSyncDirtyKeys().forEach(function(k) { dirty[k] = true; });
+    function keepLocal(k) {
+      return isLocalOnlyKey(k) || dirty[k] || (syncLocalEditAt[k] || 0) >= pullStartedAt;
+    }
+    let changed = false;
+    if (full) {
+      // 전체를 받았을 때, 서버에 없는 항목이 이 기기에만 남아 있으면(예전에 다른 기기에서
+      // 지워진 것) 이 기기에서도 지운다.
+      const onServer = {};
+      rows.forEach(function(r) { onServer[r.key] = true; });
+      const stale = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!onServer[k] && !keepLocal(k)) stale.push(k);
+      }
+      stale.forEach(function(k) { rawRemoveItem(k); changed = true; });
+    }
+    const failedKeys = [];
+    rows.forEach(function(r) {
+      if (keepLocal(r.key)) return;
+      const cur = localStorage.getItem(r.key);
+      if (r.value === null || r.value === undefined) {
+        if (cur !== null) { rawRemoveItem(r.key); changed = true; }
+      } else if (cur !== r.value) {
+        try { rawSetItem(r.key, r.value); changed = true; }
+        catch (e) { failedKeys.push(r.key); }
+      }
+    });
+    if (failedKeys.length > 0) {
+      showMobileDebugError('일부 자료를 이 기기에 저장하지 못했습니다: ' + failedKeys.join(', '));
+    }
+    return changed;
+  }
+
+  // 구글 시트처럼 "어디서 입력하든 자연스럽게 화면에 나타나게" — 내 자료 줄이 바뀌면
+  // Supabase Realtime이 신호를 보내주고(폴링 없이), 신호가 오면 바뀐 것만 받아서 화면을
+  // 조용히 다시 그린다. 휴대폰 화면이 꺼지는 등으로 연결이 끊겼다 다시 붙으면
+  // (SUBSCRIBED) 그 사이 놓친 것도 받는다. 그래도 신호를 놓칠 수 있는 경우를 대비해,
+  // 화면이 보이는 동안에는 3분마다 한 번 바뀐 게 있는지 가볍게 확인한다.
+  let syncSubscribed = false;
+  let syncPullDebounceTimer = null;
+  function scheduleIncrementalPull() {
+    if (syncPullDebounceTimer) clearTimeout(syncPullDebounceTimer);
+    syncPullDebounceTimer = setTimeout(function() { syncPullDebounceTimer = null; pullRemoteChanges(false); }, 400);
+  }
+  function subscribeToOwnDataChanges(teacherId) {
+    if (syncSubscribed) return;
+    syncSubscribed = true;
+    try {
+      sb.channel('user-data-changes-' + teacherId)
         .on('postgres_changes', {
-          event: 'UPDATE', schema: 'public', table: 'user_backups', filter: 'teacher_id=eq.' + teacherId
-        }, function() {
-          if (Date.now() < ownSyncInFlightUntil) return; // 방금 이 기기 스스로 저장해서 온 신호는 무시
-          applyRemoteBackupChangesIfSafe(teacherId);
-        })
-        .subscribe();
+          event: '*', schema: 'public', table: 'user_data_items', filter: 'teacher_id=eq.' + teacherId
+        }, scheduleIncrementalPull)
+        .subscribe(function(status) {
+          if (status === 'SUBSCRIBED') scheduleIncrementalPull();
+        });
     } catch (e) {
-      // 실시간 구독이 안 되더라도(네트워크/브라우저 제약 등) 자동저장 자체는 그대로
-      // 되니 치명적이지 않다 — 그냥 다른 기기 자료가 화면에 조용히 반영되는 게 안 될 뿐이다.
+      // 실시간 구독이 안 되더라도 저장 자체와 아래 주기 확인은 그대로 된다.
     }
+    setInterval(function() {
+      if (document.visibilityState !== 'visible') return;
+      pullRemoteChanges(false);
+      if (getSyncDirtyKeys().length > 0) pushDirtyItems();
+    }, 3 * 60 * 1000);
   }
 
-  // 지금 어딘가에 글자를 입력하고 있는 도중이면 true. 이때 서버 자료로 화면을 다시
-  // 그리면 지금 입력 중이던 내용이 통째로 지워질 수 있으므로, 이 경우엔 반영을
-  // 미룬다(아래 remoteRefreshPending).
+  // 같은 브라우저의 다른 탭에서 고친 내용은 localStorage를 같이 쓰므로 이미 들어와
+  // 있다 — 화면만 다시 그리면 된다.
+  window.addEventListener('storage', function(e) {
+    if (e.key && isLocalOnlyKey(e.key)) return;
+    scheduleRemoteRefresh();
+  });
+
+  // 지금 어딘가에 글자를 입력하고 있는 도중이면 true. 이때 화면을 다시 그리면 지금 입력
+  // 중이던 내용이 통째로 지워질 수 있으므로, 이 경우엔 반영을 미룬다.
   function isCurrentlyEditingSomething() {
     var el = document.activeElement;
     if (!el || el === document.body) return false;
@@ -2707,22 +2875,20 @@
     checkAllDuties();
   }
 
-  // 지금 뭔가 입력 중이면 화면을 건드리지 않고 표시만 해뒀다가, focusout(다른 기기
-  // 자료가 온 뒤 처음으로 입력칸에서 벗어나는 순간)에 마저 반영한다.
+  // 지금 뭔가 입력 중이면 화면을 건드리지 않고 표시만 해뒀다가, focusout(입력칸에서
+  // 벗어나는 순간)에 마저 반영한다.
   var remoteRefreshPending = false;
-  async function applyRemoteBackupChangesIfSafe(teacherId) {
+  function scheduleRemoteRefresh() {
+    if (!syncAppStarted) return; // 아직 화면을 처음 그리기 전이면 init()이 알아서 그린다
     if (isCurrentlyEditingSomething()) { remoteRefreshPending = true; return; }
     remoteRefreshPending = false;
-    await restoreUserBackupIfNeeded(teacherId);
     refreshDashboardFromLocalStorage();
   }
   document.addEventListener('focusout', function() {
     // 포커스가 실제로 다른 곳으로 옮겨갔는지는 이 이벤트 처리가 끝난 다음 틱에야
     // document.activeElement로 확인할 수 있다.
     setTimeout(function() {
-      if (remoteRefreshPending && !isCurrentlyEditingSomething() && window.currentTeacher && window.currentTeacher.id) {
-        applyRemoteBackupChangesIfSafe(window.currentTeacher.id);
-      }
+      if (remoteRefreshPending && !isCurrentlyEditingSomething()) scheduleRemoteRefresh();
     }, 0);
   });
 
@@ -3629,7 +3795,7 @@
     fetchWeather(); setInterval(fetchWeather, 1800000);
     renderNewsTabs(); fetchNews(); setInterval(fetchNews, 1800000);
 
-    checkNotice(); setInterval(checkNotice, 120000);
+    checkNotice(); startNoticeWatcher();
     checkAllDuties();
     renderBigCalendar();
     loadUpcomingScheduleTeaser();
@@ -3649,10 +3815,16 @@
     return /^sb-.*-auth-token/.test(key);
   }
 
-  // 동기화 시점 비교에만 쓰는 이 기기만의 기록 — 다른 기기로 옮겨가거나 복원될
-  // 이유가 없는 값들이라 서버로 올리지도, 서버에서 받아온 자료로 덮어쓰지도 않는다.
+  // 이 기기에서만 의미 있는 값 — 서버로 올리지도, 서버에서 받아온 자료로 덮어쓰지도
+  // 않는다. 로그인 토큰, 동기화 내부 기록(sync-*, 예전 방식의 backup-*), 탭 위치 같은
+  // 화면 상태(PC와 휴대폰이 서로 달라야 함 — 예전엔 PC의 main-tab 값이 휴대폰에 복원되며
+  // 모바일 캘린더가 사라졌었다), 브라우저에 붙은 다른 프로그램이 남긴 값(statsig.* 등).
+  // 서버의 public.is_device_local_key()와 같은 규칙이어야 한다.
   function isLocalOnlyKey(key) {
-    return isAuthSessionKey(key) || key === 'backup-owner-teacher-id' || key === 'backup-last-synced-at' || key === 'backup-restore-retry-v2' || key === 'backup-pending-deletes';
+    if (!key) return true;
+    return isAuthSessionKey(key) || key.indexOf('sb-') === 0 || key.indexOf('statsig.') === 0 ||
+      key.indexOf('backup-') === 0 || key.indexOf('sync-') === 0 || key.indexOf('practiceFboxOpen') === 0 ||
+      key === 'main-tab' || key === 'news-tab' || key === 'last-search' || key === 'last-auto-backup-date';
   }
 
   function collectBackupData() {
@@ -3663,6 +3835,17 @@
       data[key] = localStorage.getItem(key);
     }
     return data;
+  }
+
+  // 학교 로고 기능은 없앴다(이미지 한 장이 개인 자료 전체보다 수십 배 커서 기기 간
+  // 동기화를 무겁게 만들었음). 예전 백업 파일이나 설정 파일에 들어 있던 로고는 버린다.
+  function stripLogoFromSavedSettings(key, value) {
+    if (key !== 'ms-data' && key !== 'lp-data') return value;
+    try {
+      const obj = JSON.parse(value);
+      if (obj && typeof obj === 'object' && 'logo' in obj) { delete obj.logo; return JSON.stringify(obj); }
+    } catch (e) {}
+    return value;
   }
 
   function downloadBackupFile(filename) {
@@ -3678,11 +3861,10 @@
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
   }
 
+  // 예전 이름 그대로 두는 호출부(학사일정 만들기, 조퇴증 등)용 — localStorage.setItem
+  // 가로채기가 이미 바뀐 항목을 기록하므로, 여기선 서버 저장만 예약한다.
   function scheduleBackupWrite() {
-    if (backupWriteTimer) clearTimeout(backupWriteTimer);
-    backupWriteTimer = setTimeout(function() {
-      syncUserBackupToServer();
-    }, 1500);
+    scheduleSyncPush();
   }
 
   function manualBackupNow() {
@@ -3701,22 +3883,24 @@
     reader.onload = async function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        // 예전에 받아둔 백업 파일엔 그 당시 로그인 세션 토큰이 같이 들어있을 수 있는데,
-        // 그걸 그대로 복원하면 지금 이 브라우저의 정상 로그인 세션이 깨질 수 있어서
-        // 그 키는 제외한다. (restoreUserBackupIfNeeded와 동일한 이유)
-        const preservedAuthEntries = [];
+        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('형식 오류');
+        // 백업 파일 내용으로 "바꿔치기"한다: 파일에 없는 항목은 지우고, 있는 항목은 파일
+        // 값으로 쓴다. localStorage.clear() 대신 하나씩 지우고 쓰는 건, 가로채기가 바뀐
+        // 항목을 기록해서 서버에도 똑같이(지운 것까지) 반영되게 하려는 것이다. 로그인
+        // 토큰 같은 이 기기 전용 값은 파일에 있어도 건드리지 않는다.
+        const toRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (isAuthSessionKey(k)) preservedAuthEntries.push([k, localStorage.getItem(k)]);
+          if (!isLocalOnlyKey(k) && !Object.prototype.hasOwnProperty.call(data, k)) toRemove.push(k);
         }
-        localStorage.clear();
-        Object.keys(data).forEach(function(k) { if (!isAuthSessionKey(k)) localStorage.setItem(k, data[k]); });
-        preservedAuthEntries.forEach(function(entry) { localStorage.setItem(entry[0], entry[1]); });
-        // 복원한 내용을 지금 로그인한 계정 것으로 확정하고, 다음 편집을 기다리지 않고
-        // 바로 서버에도 올려서 다른 기기에서 로그인해도 곧장 보이게 함.
-        if (window.currentTeacher && window.currentTeacher.id) {
-          localStorage.setItem('backup-owner-teacher-id', window.currentTeacher.id);
-          await syncUserBackupToServer();
+        toRemove.forEach(function(k) { localStorage.removeItem(k); });
+        Object.keys(data).forEach(function(k) {
+          if (isLocalOnlyKey(k)) return;
+          localStorage.setItem(k, stripLogoFromSavedSettings(k, String(data[k])));
+        });
+        await flushPendingSaveAndSync();
+        if (getSyncDirtyKeys().length > 0) {
+          await customAlert('복원은 이 기기에 완료됐지만 아직 서버에 올리지 못했습니다.\n인터넷이 연결되면 자동으로 올라갑니다.');
         }
         await customAlert('복원이 완료되었습니다. 페이지를 새로고침합니다.');
         location.reload();
@@ -4860,6 +5044,28 @@
     document.querySelector('#notice-overlay button:last-child').innerText = '전송하기';
   }
   
+  // 예전엔 열려 있는 모든 탭(선생님 50명 × PC·휴대폰)이 2분마다 공지 전체를 받아와서,
+  // 공지가 쌓일수록 무료 요금제의 월 전송량(5GB)을 넘길 수 있었다. 이제는 공지가
+  // 추가·수정·삭제되거나 반응(👍❤️)이 바뀔 때 서버가 실시간으로 알려줄 때만 다시
+  // 받는다. 연결이 끊겼다 다시 붙을 때, 화면이 다시 보일 때, 그리고 혹시 놓친 신호를
+  // 대비해 화면이 보이는 동안 10분에 한 번만 추가로 확인한다.
+  let noticeCheckTimer = null;
+  function scheduleNoticeCheck() {
+    if (noticeCheckTimer) clearTimeout(noticeCheckTimer);
+    noticeCheckTimer = setTimeout(function() { noticeCheckTimer = null; checkNotice(); }, 500);
+  }
+  function startNoticeWatcher() {
+    try {
+      sb.channel('notices-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, scheduleNoticeCheck)
+        .subscribe(function(status) { if (status === 'SUBSCRIBED') scheduleNoticeCheck(); });
+    } catch (e) {}
+    setInterval(function() { if (document.visibilityState === 'visible') checkNotice(); }, 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') scheduleNoticeCheck();
+    });
+  }
+
   async function checkNotice() {
     try {
       const data = await gasGetNotice();
@@ -6881,7 +7087,6 @@
   // 있는 NEIS_KEY/EDU_CODE/SCH_CODE와 학사일정 캐시(neisDataCache)를 그대로 재사용한다.
   let msCurYear = 2026;
   let msCurMonth = 4;
-  let msSchoolLogoBase64 = '';
   let msCategories = [
     { id: 'mscat1', name: '자율', color: '#feba43' },
     { id: 'mscat2', name: '동아리', color: '#cdb8ff' },
@@ -6925,8 +7130,8 @@
       msRenderCategories();
       document.getElementById('ms-table-body').addEventListener('paste', msHandlePaste);
 
-      // 이 계정으로 전에 저장해둔 내용이 있으면(이 브라우저든, 서버에서 막 복원해온
-      // 것이든 restoreUserBackupIfNeeded가 localStorage에 채워준 것) 자동으로 불러온다.
+      // 이 계정으로 전에 저장해둔 내용이 있으면(로그인할 때 서버에서 받아와
+      // localStorage에 채워진 것) 자동으로 불러온다.
       try {
         const saved = localStorage.getItem('ms-data');
         if (saved) msApplyData(JSON.parse(saved));
@@ -7158,13 +7363,6 @@
     return data;
   }
 
-  function msHandleLogoUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev) { msSchoolLogoBase64 = ev.target.result; msRenderCalendar(); };
-    reader.readAsDataURL(file);
-  }
 
   // 이 앱은 학교가 이미 고정돼 있어서(NEIS_KEY/EDU_CODE/SCH_CODE), 대시보드 큰
   // 캘린더(renderBigCalendar)가 쓰는 것과 같은 neisDataCache를 그대로 재사용한다
@@ -7208,10 +7406,6 @@
     document.getElementById('ms-print-school').innerText = document.getElementById('ms-cfg-school').value || '';
     document.getElementById('ms-print-grade').innerText = document.getElementById('ms-cfg-grade').value || '';
     document.getElementById('ms-print-title').innerText = document.getElementById('ms-cfg-title').value || '';
-
-    const logoImg = document.getElementById('ms-print-logo');
-    if (msSchoolLogoBase64) { logoImg.src = msSchoolLogoBase64; logoImg.style.display = 'block'; }
-    else { logoImg.style.display = 'none'; }
 
     let activeDdays = [];
     for (let i = 0; i < 5; i++) {
@@ -7352,7 +7546,6 @@
       grade: document.getElementById('ms-cfg-grade').value,
       title: document.getElementById('ms-cfg-title').value,
       showNeis: document.getElementById('ms-cfg-show-neis').checked,
-      logo: msSchoolLogoBase64,
       font: document.getElementById('ms-cfg-font').value,
       ddays: [],
       categories: msCategories,
@@ -7387,7 +7580,6 @@
     if (data.grade !== undefined) document.getElementById('ms-cfg-grade').value = data.grade;
     if (data.title !== undefined) document.getElementById('ms-cfg-title').value = data.title;
     if (data.showNeis !== undefined) document.getElementById('ms-cfg-show-neis').checked = data.showNeis;
-    if (data.logo) msSchoolLogoBase64 = data.logo;
     if (data.font) { document.getElementById('ms-cfg-font').value = data.font; msChangeGlobalFont(); }
 
     if (data.ddays && data.ddays.length === 5) {
@@ -7554,7 +7746,6 @@
   // 왼쪽 설정 패널의 값이 바뀔 때마다 lpRender()가 오른쪽 미리보기를 다시 그리고,
   // lpAutoSave()가 그 설정을 localStorage(lp-data)에 저장해서 계정별 서버 동기화(전역
   // localStorage 후킹)를 그대로 탄다.
-  let lpLogoData = '';
 
   async function openLeavePass() {
     document.querySelector('.top-bar-row').style.display = 'none';
@@ -7625,18 +7816,6 @@
     lpAutoSave();
   }
 
-  function lpHandleLogoUpload(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      lpLogoData = e.target.result;
-      lpRender();
-      lpAutoSave();
-    };
-    reader.readAsDataURL(file);
-  }
-
   let lpZoomLevel = 1;
   function lpZoomBy(diff) {
     lpZoomLevel = Math.round((lpZoomLevel + diff) * 10) / 10;
@@ -7675,7 +7854,6 @@
         pass.innerHTML =
           '<div class="lp-pass-title">( 조퇴 · 외출 ) 확인증</div>' +
           '<div class="lp-pass-school">' +
-          (lpLogoData ? '<img src="' + lpLogoData + '">' : '') +
           '<span>' + escapeHtmlAttr(school) + '</span>' +
           '</div>' +
           '<div class="lp-pass-body">' +
@@ -7710,7 +7888,6 @@
   function lpCollectData() {
     return {
       school: document.getElementById('lp-cfg-school').value,
-      logo: lpLogoData,
       year: document.getElementById('lp-cfg-year').value,
       grade: document.getElementById('lp-cfg-grade').value,
       cls: document.getElementById('lp-cfg-class').value,
@@ -7728,7 +7905,6 @@
   // localStorage 자동 복원) 둘 다 이 함수를 쓴다.
   function lpApplyData(data) {
     if (data.school !== undefined) document.getElementById('lp-cfg-school').value = data.school;
-    if (data.logo) lpLogoData = data.logo;
     if (data.year !== undefined) document.getElementById('lp-cfg-year').value = data.year;
     if (data.grade !== undefined) document.getElementById('lp-cfg-grade').value = data.grade;
     if (data.cls !== undefined) document.getElementById('lp-cfg-class').value = data.cls;
