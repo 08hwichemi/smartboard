@@ -688,7 +688,7 @@
     #ab-pane-input, #ab-pane-stat, #ab-pane-hol { max-width: 1180px; }
     .ab-in { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12.5px; background: var(--card-bg); color: var(--text-main); font-family: inherit; outline: none; min-width: 0; }
     .ab-in:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
-    .ab-in[type="date"] { padding: 4px 4px; }
+    .ab-in[type="date"] { padding: 4px 2px; font-size: 12px; letter-spacing: -0.2px; }
     .ab-in.ab-days { text-align: center; padding: 5px 2px; }
     .ab-table tr.ab-new td { background: var(--accent-soft); border-bottom: 2px solid var(--accent-color); padding: 6px 4px; cursor: default; }
     .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
@@ -712,6 +712,11 @@
     .ab-reason[data-r="교외체험학습"] { background: #DDF5E3; color: #1E7B3A; }
     .ab-icon-btn { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
     .ab-icon-btn:hover { border-color: var(--accent-color); }
+    /* 작은 화면(1366 등)에선 미리보기 칸을 줄여 입력 표의 "구체적인 사유" 칸이 찌그러지지 않게 */
+    @media (max-width: 1500px) { #ab-right { width: 360px; } #ab-left { padding: 14px 12px; } }
+    .ab-num { display: inline-block; min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; }
+    #ab-list select.ab-in { font-variant-numeric: tabular-nums; }
+    #ab-list td.ab-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ab-see { font-size: 11.5px; padding: 2px 8px; line-height: 1.4; white-space: nowrap; }
     #ab-filter { margin-bottom: 8px; font-size: 12px; font-weight: 700; }
     .ab-empty { text-align: center; color: var(--text-sub); font-size: 12.5px; padding: 26px 10px; line-height: 1.7; }
@@ -2374,6 +2379,7 @@
       <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다">
         📥 엑셀 가져오기<input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
       </label>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="abResetClass()" title="지금 고른 반의 결석 기록을 모두 지웁니다">🗑 초기화</button>
       <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b>내 계정에만</b> 저장돼요(다른 선생님·관리자 화면엔 안 보임).</span>
     </div>
     <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="abPrint()" title="미리보기에 보이는 양식을 인쇄합니다">🖨️ 출력</button>
@@ -2764,7 +2770,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-30.3';
+  var BUILD_ID = '2026-09-30.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -9951,16 +9957,18 @@
   }
 
   // ----- 표 안 입력칸(새 줄 ab-n-*, 고치는 줄 ab-e-*) -----
+  // "␣5번  이름" / "25번  이름" — 한 자리 번호 앞에 숫자 폭 빈칸을 넣어 두 자리와 줄을 맞춘다.
+  function abNumLabel(n) { return (String(n).length < 2 ? '\u2007' : '') + escapeHtmlAttr(n) + '번\u00a0\u00a0'; }
   function abNumOptions(cur) {
     let h = '<option value="">번호·이름</option>', has = false;
     abRoster.forEach(function(s) {
       const on = String(s.num) === String(cur); if (on) has = true;
-      h += '<option value="' + s.num + '"' + (on ? ' selected' : '') + '>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</option>';
+      h += '<option value="' + s.num + '"' + (on ? ' selected' : '') + '>' + abNumLabel(s.num) + escapeHtmlAttr(s.name) + '</option>';
     });
     // 명렬표에서 빠진 학생(전학 등)의 예전 기록도 번호가 보이게
     if (cur !== '' && cur != null && !has) {
       const r = abAllRecords().find(function(x) { return String(x.num) === String(cur); });
-      h += '<option value="' + escapeHtmlAttr(cur) + '" selected>' + escapeHtmlAttr(cur) + '번 ' + escapeHtmlAttr(r ? r.name : '') + '</option>';
+      h += '<option value="' + escapeHtmlAttr(cur) + '" selected>' + abNumLabel(cur) + escapeHtmlAttr(r ? r.name : '') + '</option>';
     }
     return h;
   }
@@ -10050,6 +10058,20 @@
     if (abEditId === id) abEditId = null;
     abRenderAll();
   }
+  // 🗑 초기화: 지금 고른 반의 결석 기록을 모두 지운다(다른 반 기록·직접 더한 휴일은 그대로). 두 번 확인.
+  async function abResetClass() {
+    const c = abCfg();
+    if (!c.g || !c.c) return customAlert('위에서 학년·반을 먼저 고르세요.');
+    const recs = abClassRecords();
+    if (!recs.length) return customAlert(c.g + '학년 ' + c.c + '반에는 지울 결석 기록이 없어요.');
+    if (!(await customConfirm(c.g + '학년 ' + c.c + '반 결석 기록 ' + recs.length + '건을 모두 지울까요?\n(다른 반 기록과 직접 더한 휴일은 그대로 둬요)'))) return;
+    if (!(await customConfirm('정말 지울까요? 지운 기록은 되돌릴 수 없어요.\n(필요하면 먼저 위 💾 백업 또는 엑셀로 남겨 두세요)'))) return;
+    recs.forEach(function(r) { localStorage.removeItem(AB_REC_PREFIX + r.id); });
+    scheduleBackupWrite();
+    abSelId = null; abEditId = null; abFilterNum = null;
+    abRenderAll(true);
+    abMsg('🗑 ' + c.g + '학년 ' + c.c + '반 결석 기록 ' + recs.length + '건을 지웠어요.');
+  }
   // 한 번 누르면 미리보기만 바꾼다(목록을 다시 그리지 않아 새 줄에 적던 내용이 그대로).
   function abSelect(id) {
     if (abEditId === id) return;
@@ -10089,8 +10111,8 @@
       fEl.innerHTML = '🔎 ' + abFilterNum + '번 ' + escapeHtmlAttr(abNameOf(abFilterNum) || (rows[0] && rows[0].name) || '') + ' 기록만 보는 중 ' +
         '<button class="ab-icon-btn" onclick="abFilter(null)">✕ 전체 보기</button>';
     } else fEl.style.display = 'none';
-    let h = '<table class="ab-table ab-grid"><colgroup><col style="width:40px"><col style="width:112px"><col style="width:106px"><col><col style="width:128px"><col style="width:128px">' +
-      '<col style="width:50px"><col style="width:128px"><col style="width:17%"><col style="width:64px"></colgroup>' +
+    let h = '<table class="ab-table ab-grid"><colgroup><col style="width:32px"><col style="width:106px"><col style="width:94px"><col><col style="width:108px"><col style="width:108px">' +
+      '<col style="width:42px"><col style="width:108px"><col style="width:13%"><col style="width:58px"></colgroup>' +
       '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr></thead><tbody>';
     h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
       abRowCells('ab-n-', { num: abFilterNum != null ? abFilterNum : '' }) +
@@ -10102,9 +10124,9 @@
         return;
       }
       h += '<tr data-id="' + r.id + '" class="' + (r.id === abSelId ? 'ab-sel' : '') + '" onclick="abSelect(\'' + r.id + '\')" ondblclick="abEdit(\'' + r.id + '\')">' +
-        '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b>' + r.num + '번</b> ' + escapeHtmlAttr(r.name || '') + '</td>' +
+        '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b class="ab-num">' + r.num + '번</b><span style="margin-left:7px;">' + escapeHtmlAttr(r.name || '') + '</span></td>' +
         '<td><span class="ab-reason" data-r="' + escapeHtmlAttr(r.reason) + '">' + escapeHtmlAttr(r.reason) + '</span></td>' +
-        '<td class="ab-l">' + escapeHtmlAttr(r.detail || '') + '</td><td>' + abShort(r.from) + '</td><td>' + (r.to && r.to !== r.from ? abShort(r.to) : '') + '</td>' +
+        '<td class="ab-l" title="' + escapeHtmlAttr(r.detail || '') + '">' + escapeHtmlAttr(r.detail || '') + '</td><td>' + abShort(r.from) + '</td><td>' + (r.to && r.to !== r.from ? abShort(r.to) : '') + '</td>' +
         '<td>' + abDays(r) + (r.dm ? '<span title="직접 고친 일수">✎</span>' : '') + '</td><td>' + abShort(r.written) + '</td>' +
         '<td class="ab-l" style="font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escapeHtmlAttr(r.proof || '') + '">' + escapeHtmlAttr(r.proof || '') + '</td>' +
         '<td style="white-space:nowrap;"><button class="ab-icon-btn" title="이 자리에서 고치기" onclick="event.stopPropagation(); abEdit(\'' + r.id + '\')">✎</button> ' +
@@ -10143,7 +10165,7 @@
       '<table class="ab-table ab-stat-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
     list.forEach(function(s) {
       let sum = 0;
-      h += '<tr style="cursor:default;"><td>' + s.num + '번</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
+      h += '<tr style="cursor:default;"><td><span class="ab-num" style="min-width:2.4em;">' + s.num + '번</span></td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
       AB_REASONS.forEach(function(x) { const v = s.d[x] || 0; sum += v; tot[x] = (tot[x] || 0) + v; h += '<td class="' + (v ? '' : 'ab-zero') + '">' + v + '</td>'; });
       totAll += sum;
       h += '<td style="font-weight:800;" class="' + (sum ? '' : 'ab-zero') + '">' + sum + '</td><td>' +
@@ -10338,6 +10360,7 @@
     // transform 대신 zoom — transform은 차지하는 자리(원래 크기)가 그대로라 인쇄 때 표가 두 쪽으로 쪼개졌다.
     const t = paper.querySelector('table'), IN = 96, pw = 210 / 25.4 * IN;
     const m = f.margin_in.map(function(x) { return x * IN; });
+    const extra = 5 / 25.4 * IN; m[1] += extra; m[3] += extra; // 좌우 여백 5mm씩 더(사용자 요청 — 엑셀 여백은 너무 좁음)
     const w0 = t.offsetWidth;
     let s = (f.scale || 100) / 100;
     if (w0 * s > pw - m[1] - m[3]) s = (pw - m[1] - m[3]) / w0;

@@ -243,7 +243,7 @@ function check(label, cond, detail) {
   check('양식 한 번 받음', formFetches.length === 1, formFetches);
   check('명렬표는 번호·이름만 받음(연락처 X)', studentSelects.length >= 1);
   const opts = await P.evaluate(() => [...document.querySelectorAll('#ab-n-num option')].map(o => o.textContent));
-  check('번호 목록 = 명렬표 학생, "1번 가나다"', opts.length === 6 && opts[1] === '1번 가나다' && opts[5] === '5번 파하가', opts);
+  check('번호 목록 = 명렬표 학생, "1번 가나다"', opts.length === 6 && opts[1] === '\u20071번\u00a0\u00a0가나다' && opts[5] === '\u20075번\u00a0\u00a0파하가', opts);
   check('작성일은 처음엔 비어 있음(종료일 따라감)', await P.inputValue('#ab-n-written') === '');
   check('기록 없으면 안내', /아직 기록이 없어요/.test(await P.innerText('#ab-list')));
 
@@ -299,7 +299,7 @@ function check(label, cond, detail) {
   // 연번 = 시작일 순
   await add({ num: 1, reason: '인정결석', detail: '독감', from: '2026-03-02', to: '2026-03-02' });
   const list = await P.evaluate(() => [...document.querySelectorAll('#ab-list tbody tr[data-id]')].map(tr => tr.children[0].textContent + ':' + tr.children[1].textContent));
-  check('연번은 시작일 순(나중에 넣어도 앞으로), "1번 가나다"', list[0] === '1:1번 가나다' && list[1] === '2:2번 라마바', list);
+  check('연번은 시작일 순(나중에 넣어도 앞으로), "1번 가나다"', list[0] === '1:1번가나다' && list[1] === '2:2번라마바', list);
   check('작성일을 안 건드리면 종료일로 저장', (await recs())[0].written === '2026-03-02', (await recs())[0]);
   check('3/2는 대체공휴일 → 0일', await P.evaluate(() => abDays(abClassRecords()[0])) === 0);
 
@@ -318,6 +318,13 @@ function check(label, cond, detail) {
   check('두 번 누르면 그 줄이 입력칸으로(위로 안 올라감)', await P.evaluate((id) => { const tr = document.querySelector('#ab-list tr.ab-editrow'); return !!tr && tr.dataset.id === id && document.getElementById('ab-e-detail').value === '복통' && document.getElementById('ab-e-num').value === '2' && document.activeElement.id === 'ab-e-detail'; }, sid));
   check('고치는 동안에도 새 줄 적던 값 그대로', await P.inputValue('#ab-n-detail') === '적던 중');
   await P.locator('#absence-page').screenshot({ path: 'ab-edit.png' });
+  for (const w of [1366, 1600]) {
+    await P.setViewportSize({ width: w, height: 900 }); await wait(250);
+    const cw = await P.evaluate(() => { const d = document.getElementById('ab-e-from'); const det = document.getElementById('ab-e-detail'); return { dateClip: d.scrollWidth > d.clientWidth + 1, detail: Math.round(det.getBoundingClientRect().width), rowH: Math.round(document.querySelector('#ab-list tr[data-id]:not(.ab-editrow)').getBoundingClientRect().height) }; });
+    check(w + 'px: 날짜 칸 안 잘림, 구체적인 사유 칸 100px 이상, 줄이 두 줄로 안 늘어남', !cw.dateClip && cw.detail >= 100 && cw.rowH < 44, cw);
+    if (w === 1366) await P.locator('#absence-page').screenshot({ path: 'ab-edit-1366.png' });
+  }
+  await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
   await P.fill('#ab-e-detail', '엉뚱'); await P.press('#ab-e-detail', 'Escape'); await wait(100);
   R = await recs();
   check('Esc → 취소(안 바뀜)', R.find(r => r.id === sid).detail === '복통' && await P.evaluate(() => !document.querySelector('#ab-list tr.ab-editrow')));
@@ -380,10 +387,11 @@ function check(label, cond, detail) {
   const pr = await P.evaluate(() => {
     const vis = (id) => { const e = document.getElementById(id); return e && getComputedStyle(e).display !== 'none'; };
     const paper = document.getElementById('ab-paper').getBoundingClientRect(), t = document.querySelector('#ab-paper table').getBoundingClientRect();
-    return { left: vis('ab-left'), head: vis('ab-page-header'), rail: vis('app-rail'), right: vis('ab-right'), pw: Math.round(paper.width), tr: Math.round(t.right - paper.left), tb: Math.round(t.bottom - paper.top), ph: Math.round(paper.height) };
+    return { left: vis('ab-left'), head: vis('ab-page-header'), rail: vis('app-rail'), right: vis('ab-right'), pw: Math.round(paper.width), tr: Math.round(t.right - paper.left), tl: Math.round(t.left - paper.left), tb: Math.round(t.bottom - paper.top), ph: Math.round(paper.height) };
   });
   check('인쇄: 입력·머리·레일 숨김, 종이만', !pr.left && !pr.head && !pr.rail && pr.right, pr);
   check('인쇄: A4 폭(794px) 원래 크기, 양식이 종이 안에', Math.abs(pr.pw - 794) <= 1 && pr.tr <= pr.pw && pr.tb <= pr.ph, pr);
+  check('인쇄: 좌우 여백 11mm(엑셀 6mm + 5mm) 이상', pr.tl >= 41 && pr.pw - pr.tr >= 41, pr);
   const pdf = await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
   const pagesN = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   check('인쇄하면 딱 한 장', pagesN === 1, pagesN);
@@ -467,6 +475,18 @@ function check(label, cond, detail) {
   check('작은 화면(1366×768)은 줄을 20px까지만 줄이고(읽을 수 있게) 조금 스크롤', fit2.rh === 20, fit2);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
   await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
+
+  // 🗑 초기화: 이 반 기록만, 두 번 확인
+  await P.selectOption('#ab-class', '1'); await wait(300);
+  const nBefore = (await recs()).length, allBefore = await P.evaluate(() => abAllRecords().length);
+  await P.click('#ab-page-header button:has-text("초기화")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("취소")'); await wait(200);
+  check('초기화: 두 번째 확인에서 취소하면 그대로', (await recs()).length === nBefore && nBefore > 0);
+  await P.click('#ab-page-header button:has-text("초기화")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(400);
+  check('초기화: 이 반 기록만 모두 지움', (await recs()).length === 0 && await P.evaluate(() => abAllRecords().length) === allBefore - nBefore);
 
   // 닫기·다른 화면
   await P.click('#rail-leavepass-btn'); await wait(400);
