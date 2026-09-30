@@ -295,9 +295,12 @@ function check(label, cond, detail) {
   await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
   const pos = await P.evaluate(() => { const t = document.getElementById('sgb-text').getBoundingClientRect(), b = document.getElementById('sgb-copy-btn').getBoundingClientRect(); return b.top - t.bottom; });
   check('지우기·복사 버튼은 입력칸 바로 밑', pos >= 0 && pos < 20, pos);
+  const bw = await P.evaluate(() => { const c = document.getElementById('sgb-copy-btn'); return [c.previousElementSibling.getBoundingClientRect().width, c.getBoundingClientRect().width]; });
+  check('지우기·복사 반반 너비', Math.abs(bw[0] - bw[1]) < 1, bw);
+  check('바이트 세는 법은 아래 줄로', /\n바이트: 한글 3/.test(await P.evaluate(() => document.getElementById('sgb-note').textContent)));
   check('복사했다는 표시', /복사했어요/.test(await P.innerText('#sgb-copy-btn')));
   await wait(2000);
-  check('잠시 뒤 버튼 글자 원래대로', /^📋 복사/.test(await P.innerText('#sgb-copy-btn')));
+  check('잠시 뒤 버튼 글자 원래대로(괄호 설명 없이 "📋 복사")', (await P.innerText('#sgb-copy-btn')).trim() === '📋 복사');
   await P.click('#sgb-overlay button:has-text("지우기")'); await wait(100);
   await P.click('#sgb-copy-btn'); await wait(100);
   check('빈 칸에서 복사 → 안내', /복사할 문장이 없어요/.test(await P.innerText('#sgb-copy-btn')));

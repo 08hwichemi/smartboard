@@ -222,6 +222,9 @@ function pdfInfo(buf) {
   check('내용이 nt-cfg에 저장', (await cfgOf(pc)).text.split('\n').length === 7);
   const sub = await P.evaluate(() => { const s = [...document.querySelectorAll('#nt-pages .nt-sheet > svg')][5]; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => t.textContent); });
   check('" / " 뒤는 작은 부제로', sub.join('|') === '시간표 변경|TIMETABLE', sub);
+  // 띄어쓰기 없이 "/"만 써도 부제
+  const sub2 = await P.evaluate(() => ['월간 일정표/MONTHLY', '급식 /MENU', '/앞이 빈 줄'].map(s => ntItems({ mode: 'board', text: s, colorMode: 'cycle' })[0]).map(it => it.text + '|' + it.sub));
+  check('"/"만 써도(띄어쓰기 없이) 부제, 앞이 비면 그대로', sub2.join(',') === '월간 일정표|MONTHLY,급식|MENU,/앞이 빈 줄|', sub2);
   // 실제 크기(mm)·배치
   const geo = await P.evaluate(() => { const sh = document.querySelector('.nt-sheet'); const s = sh.querySelector('svg'); return { sw: sh.style.width, w: s.getAttribute('width'), h: s.getAttribute('height'), left: s.style.left, top: s.style.top, top2: sh.querySelectorAll('svg')[1].style.top }; });
   check('이름표 148×64mm, 가운데 정렬, 위 여백 8mm·사이 4mm', geo.sw === '210mm' && geo.w === '148mm' && geo.h === '64mm' && geo.left === '31mm' && geo.top === '8mm' && geo.top2 === '76mm', geo);

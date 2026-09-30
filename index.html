@@ -200,7 +200,22 @@
     .timer-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; }
     .timer-btn { padding: 4px 0; font-size: 11px; border: 1px solid var(--border-color); background: var(--tt-bg); border-radius: 6px; color: var(--text-main); cursor: pointer; font-weight: 600; white-space: nowrap; width: 100%; box-sizing: border-box;}
 
-    .weather-group { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 8px; position: relative; min-width: 0; }
+    .weather-group { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 8px; position: relative; min-width: 0; container-type: inline-size; }
+    .wx-head { font-size: 11px; } .wx-icon { font-size: 30px; } .wx-temp { font-size: 22px; } .wx-cond { font-size: 10px; }
+    .wx-lohi { font-size: 10.5px; } .wx-dust { font-size: 9.5px; }
+    .wx-h-temp { font-size: 12px; } .wx-h-icon { font-size: 17px; } .wx-h-hour { font-size: 10.5px; }
+    /* 날씨 칸이 넉넉할 때(24인치 전체 화면 등)만 글씨를 키운다 — 좁은 노트북 화면은 그대로.
+       문턱은 가장 긴 값(-12°, 매우나쁨)이 안 잘리는 폭으로 잰 것. */
+    @container (min-width: 235px) {
+      .wx-head { font-size: 12px; } .wx-icon { font-size: 33px; } .wx-temp { font-size: 25px; } .wx-cond { font-size: 11px; }
+      .wx-lohi { font-size: 12px; } .wx-dust { font-size: 10.5px; }
+      .wx-h-temp { font-size: 13px; } .wx-h-icon { font-size: 19px; } .wx-h-hour { font-size: 11.5px; }
+    }
+    @container (min-width: 262px) {
+      .wx-head { font-size: 12.5px; } .wx-icon { font-size: 36px; } .wx-temp { font-size: 27px; } .wx-cond { font-size: 12px; }
+      .wx-lohi { font-size: 13px; } .wx-dust { font-size: 11.5px; }
+      .wx-h-temp { font-size: 14px; } .wx-h-icon { font-size: 20px; } .wx-h-hour { font-size: 12px; }
+    }
 
     .news-tab-btn { font-size: 10px; font-weight: 700; padding: 3px 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-sub); cursor: pointer; white-space: nowrap; }
     .news-tab-btn.active { background: var(--accent-color); color: var(--on-accent); border-color: var(--accent-color); }
@@ -1282,12 +1297,12 @@
       </div>
       <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
       <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <button class="top-btn" style="flex: 0 0 auto; padding:7px 14px;" onclick="clearSgb()">지우기</button>
-        <button class="top-btn" id="sgb-copy-btn" style="flex: 1; padding:7px; font-weight:800;" onclick="copySgb()">📋 복사 (나이스에 붙여 넣기)</button>
+        <button class="top-btn" style="flex: 1 1 0; padding:7px;" onclick="clearSgb()">지우기</button>
+        <button class="top-btn" id="sgb-copy-btn" style="flex: 1 1 0; padding:7px; font-weight:800;" onclick="copySgb()">📋 복사</button>
       </div>
       <div class="sgb-count" id="sgb-count"></div>
       <div class="sgb-bar" id="sgb-bar"><div></div></div>
-      <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px;"></div>
+      <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px; white-space: pre-line;"></div>
       <div id="sgb-result"></div>
     </div>
     <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
@@ -1617,18 +1632,18 @@
 
         <div class="weather-group" style="flex: 6; padding-left: 16px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-            <span style="font-size:11px; font-weight:800; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">🌤️ 날씨 · <span id="weather-location-label">부광고</span></span>
+            <span class="wx-head" style="font-weight:800; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">🌤️ 날씨 · <span id="weather-location-label">부광고</span></span>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-evenly; gap:8px; overflow:hidden;">
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-              <span style="font-size:30px; flex-shrink:0;" id="weather-icon">⛅</span>
+              <span class="wx-icon" style="flex-shrink:0;" id="weather-icon">⛅</span>
               <div>
-                <div style="font-size:22px; font-weight:800; line-height:1; white-space:nowrap;" id="weather-temp">--°</div>
-                <div style="font-size:10px; color:var(--text-sub); font-weight:700; white-space:nowrap;" id="weather-cond-text">-</div>
+                <div class="wx-temp" style="font-weight:800; line-height:1; white-space:nowrap;" id="weather-temp">--°</div>
+                <div class="wx-cond" style="color:var(--text-sub); font-weight:700; white-space:nowrap;" id="weather-cond-text">-</div>
               </div>
             </div>
-            <div style="flex-shrink:0; text-align:center; font-size:10.5px; font-weight:800; white-space:nowrap;"><span id="weather-lo" style="color:#4C8DC2;">--°</span>/<span id="weather-hi" style="color:#D9534F;">--°</span></div>
-            <div style="flex-shrink:0; text-align:center; font-size:9.5px; color:var(--text-sub); font-weight:700; line-height:1.6; white-space:nowrap;">
+            <div class="wx-lohi" style="flex-shrink:0; text-align:center; font-weight:800; white-space:nowrap;"><span id="weather-lo" style="color:#4C8DC2;">--°</span>/<span id="weather-hi" style="color:#D9534F;">--°</span></div>
+            <div class="wx-dust" style="flex-shrink:0; text-align:center; color:var(--text-sub); font-weight:700; line-height:1.6; white-space:nowrap;">
               <div>미세 <span style="color:var(--text-main);" id="weather-pm10-status">-</span></div>
               <div>초미세 <span style="color:var(--text-main);" id="weather-pm25-status">-</span></div>
             </div>
@@ -2533,7 +2548,7 @@
       <div class="nt-box" id="nt-board-box">
         <div class="nt-title">✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></div>
         <textarea id="nt-text" class="lp-input" placeholder="예)&#10;월간 일정표&#10;오늘의 메뉴&#10;수능 D-Day&#10;시간표 변경 / TIMETABLE" oninput="ntOnText()"></textarea>
-        <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>" / "</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
+        <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>/</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
       </div>
 
       <div class="nt-box" id="nt-rc-box" style="display:none;">
@@ -2636,10 +2651,6 @@
 
   <div id="pt-body">
     <div id="pt-panel">
-      <div id="pt-me-controls" style="font-size:11.5px; color:var(--text-sub); line-height:1.5; background:var(--tt-bg); padding:10px; border-radius:8px;">
-        ⭐ 로그인한 내 이름(<b id="pt-me-name-label">미설정</b>) 기준으로 자동으로 시간표가 표시돼요.
-      </div>
-
       <div id="pt-student-controls" style="display:none; flex-direction:column; gap:10px;">
         <div style="display:flex; gap:6px;">
           <select id="pt-student-grade" class="mini-select" style="flex:1;" onchange="ptOnGradeChange()"><option value="">학년</option></select>
@@ -5559,7 +5570,7 @@
       area.label + ' 최대 ' + area.chars + '자(학년 단위)' + (area.page ? ' · 길라잡이 ' + area.page : '') +
       (area.note ? ' · ' + area.note : '') +
       (area.prefix ? ' · ' + area.prefix.label + '도 한도에 함께 들어가서 합쳐 셈(복사 버튼은 본문만 복사)' : '') +
-      ' · 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
+      '\n바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
 
     const result = document.getElementById('sgb-result');
     if (!text.trim()) {
@@ -5594,7 +5605,7 @@
     const done = function(msg) {
       btn.textContent = msg;
       clearTimeout(copySgb._t);
-      copySgb._t = setTimeout(function() { btn.textContent = '📋 복사 (나이스에 붙여 넣기)'; }, 1800);
+      copySgb._t = setTimeout(function() { btn.textContent = '📋 복사'; }, 1800);
     };
     if (!text) { done('복사할 문장이 없어요'); return; }
     let ok = false;
@@ -6587,9 +6598,9 @@
           const temp = Math.round(data.hourly.temperature_2m[idx]);
           const icon = weatherIconFor(data.hourly.weathercode[idx]);
           html += '<div style="text-align:center; flex:1;">' +
-            '<div style="font-size:12px; font-weight:800;">' + temp + '°</div>' +
-            '<div style="font-size:17px; margin:3px 0;">' + icon + '</div>' +
-            '<div style="font-size:10.5px; color:var(--text-sub); font-weight:700;">' + hour + '시</div>' +
+            '<div class="wx-h-temp" style="font-weight:800;">' + temp + '°</div>' +
+            '<div class="wx-h-icon" style="margin:3px 0;">' + icon + '</div>' +
+            '<div class="wx-h-hour" style="color:var(--text-sub); font-weight:700;">' + hour + '시</div>' +
           '</div>';
         }
         document.getElementById('weather-hourly-strip').innerHTML = html;
@@ -10751,8 +10762,10 @@
       });
     } else {
       String(c.text || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean).forEach(function(s) {
-        const i = s.indexOf(' / ');
-        out.push(i > 0 ? { text: s.slice(0, i).trim(), sub: s.slice(i + 3).trim() } : { text: s, sub: '' });
+        // 처음 나오는 "/" 뒤가 부제 — 앞뒤 띄어쓰기는 있어도 없어도 된다.
+        const i = s.indexOf('/');
+        const main = i > 0 ? s.slice(0, i).trim() : '';
+        out.push(main ? { text: main, sub: s.slice(i + 1).trim() } : { text: s, sub: '' });
       });
     }
     const mode = c.mode === 'recycle' ? c.rcColorMode : c.colorMode;
@@ -11110,7 +11123,7 @@
   const ntTourSteps = [
     { selector: '#nt-page-header', before: ntTourBoard, title: '🏷️ 이름표에 오신 것을 환영해요!', desc: '게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄하는 화면이에요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
     { selector: '#nt-size-box', before: ntTourBoard, title: '1단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
-    { selector: '#nt-board-box', before: ntTourBoard, title: '2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). " / " 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
+    { selector: '#nt-board-box', before: ntTourBoard, title: '2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). / 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
     { selector: '#nt-copies-box', before: ntTourBoard, title: '3단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
     { selector: '#nt-font-box', before: ntTourBoard, title: '4단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기·글자 크기·자간도 여기서 조절해요.' },
     { selector: '#nt-design-box', before: ntTourBoard, title: '5단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
@@ -11273,7 +11286,6 @@
     if (tabChanged && ptDefaultSettings) ptLoadDesignForTab(tab);
     document.getElementById('pt-tab-me-btn').classList.toggle('active', tab === 'me');
     document.getElementById('pt-tab-student-btn').classList.toggle('active', tab === 'student');
-    document.getElementById('pt-me-controls').style.display = tab === 'me' ? 'block' : 'none';
     document.getElementById('pt-student-controls').style.display = tab === 'student' ? 'flex' : 'none';
     if (tab === 'student') {
       ptEnsureStudentDataLoaded();
@@ -11787,8 +11799,6 @@
   function ptRender() {
     const area = document.getElementById('pt-render-area');
     const layout = document.getElementById('pt-print-layout').value;
-    const meLabel = document.getElementById('pt-me-name-label');
-    if (meLabel) meLabel.innerText = (window.currentTeacher && window.currentTeacher.name) || localStorage.getItem('my-n') || '미설정';
 
     if (ptCurrentTab === 'me') {
       document.getElementById('pt-page-nav').style.display = 'none';
@@ -11981,8 +11991,7 @@
   // ----- 시간표 만들기 설명서 -----
   const ptTourSteps = [
     { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만들 수 있는 화면이에요. 위에서 종류를 고르고, 왼쪽 설정을 위에서부터 차례로 한 뒤, 오른쪽 미리보기를 확인하고 인쇄하면 돼요.' },
-    { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 시간표로 만들어요.\n👨‍🎓 학생 시간표: 관리자가 올린 학생 시간표로 만들어요.\n두 탭의 디자인은 따로 저장돼요.' },
-    { selector: '#pt-me-controls', title: '⭐ 내 시간표', desc: '내 시간표 탭에서는 따로 고를 게 없어요. 로그인한 내 이름 기준으로 자동으로 채워져요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 시간표로 만들어요.\n👨‍🎓 학생 시간표: 관리자가 올린 학생 시간표로 만들어요.\n두 탭의 디자인은 따로 저장돼요.', before: function() { ptSwitchTab('me'); } },
     { selector: '#pt-student-controls', title: '👨‍🎓 학생 고르기', desc: '학생 시간표 탭에서는 학년·반을 고르고 ◀▶로 학생을 넘겨 보세요. 고른 학년·반은 기억해 둬서 다음에 열면 그대로 나와요.\n👤 이 학생만: 고른 학생 한 명만 출력\n🏫 반 전체: 그 반 학생 모두를 한 번에 출력', before: function() { ptSwitchTab('student'); } },
     { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요.' },
     { selector: '#pt-box-design', title: '3단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 자동으로 정해져요.\n표 스타일 6가지와 글꼴도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
