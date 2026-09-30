@@ -3909,9 +3909,10 @@
 
   // 계정마다 따로 "역할 저장"을 누르지 않고, 여러 선생님 역할을 한꺼번에 바꾼 뒤
   // 위쪽 "역할 전체 저장" 버튼 한 번으로 다 반영되게 한다.
+  // 바뀐 선생님만 서버에 보낸다(예전엔 누를 때마다 모든 계정을 다시 저장해서 요청·로그가 계정 수만큼 쌓였다).
   async function saveAllTeacherRolesUI() {
     const accounts = window.__teacherAccounts || [];
-    let failCount = 0;
+    let failCount = 0, savedCount = 0;
     for (const t of accounts) {
       const roleSel = document.getElementById('role-select-' + t.id);
       if (!roleSel) continue;
@@ -3923,21 +3924,29 @@
         grade = parseInt(gradeSel && gradeSel.value) || null;
         cls = parseInt(classSel && classSel.value) || null;
       }
+      const roleChanged = role !== (t.role || null) ||
+        (role === '담임' && (grade !== (t.homeroom_grade || null) || cls !== (t.homeroom_class || null)));
+      const mgrChk = document.getElementById('scc-mgr-' + t.id);
+      const mgrChanged = !!mgrChk && mgrChk.checked !== !!t.schedule_manager;
+      if (!roleChanged && !mgrChanged) continue;
       try {
-        const { error } = await sb.rpc('admin_set_teacher_role', { p_teacher_id: t.id, p_role: role, p_grade: grade, p_class: cls });
-        if (error) throw error;
-        const mgrChk = document.getElementById('scc-mgr-' + t.id);
-        if (mgrChk && mgrChk.checked !== !!t.schedule_manager) {
+        if (roleChanged) {
+          const { error } = await sb.rpc('admin_set_teacher_role', { p_teacher_id: t.id, p_role: role, p_grade: grade, p_class: cls });
+          if (error) throw error;
+        }
+        if (mgrChanged) {
           const r = await sb.rpc('admin_set_schedule_manager', { p_teacher_id: t.id, p_on: mgrChk.checked });
           if (r.error) throw r.error;
         }
+        savedCount++;
       } catch (e) {
         failCount++;
       }
     }
+    if (!savedCount && !failCount) return customAlert('바뀐 내용이 없어요.');
     await loadTeacherAccountList();
     if (failCount > 0) customAlert(failCount + '건 저장에 실패했습니다. 다시 시도해주세요.');
-    else customAlert('역할을 모두 저장했습니다.');
+    else customAlert(savedCount + '명의 역할·담당을 저장했습니다.');
   }
 
   async function addTeacherAccountUI() {

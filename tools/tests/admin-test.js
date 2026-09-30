@@ -212,7 +212,22 @@ function check(label, cond, detail) {
   check('학생 자료 탭에 명렬표·학생 시간표 업로드 둘 다', await P.evaluate(() => document.querySelectorAll('#student-upload-rows > div').length >= 3 && document.querySelectorAll('#stt-upload-rows > div').length >= 3));
   await P.evaluate(() => switchAdminTab('duty')); await wait(800);
   await P.screenshot({ path: 'adm-duty.png' });
-  for (const t of ['accounts', 'bookmarks', 'danger']) { await P.evaluate((t) => switchAdminTab(t), t); await wait(400); }
+  // 계정: "역할·담당 전체 저장"은 바뀐 선생님만 서버에 보낸다(예전엔 누를 때마다 모든 계정을 다시 저장)
+  await P.evaluate(() => switchAdminTab('accounts')); await wait(800);
+  await P.evaluate(() => { window.__rpcCalls = []; const orig = sb.rpc.bind(sb); sb.rpc = function(n, p) { window.__rpcCalls.push([n, p && p.p_teacher_id]); return orig(n, p); }; window.__lastAlert = ''; });
+  await P.evaluate(() => saveAllTeacherRolesUI()); await wait(300);
+  const r0 = await P.evaluate(() => [window.__rpcCalls.length, window.__lastAlert]);
+  check('역할 저장: 바뀐 게 없으면 서버에 안 보냄', r0[0] === 0 && r0[1].includes('바뀐 내용이 없어요'), r0);
+  const S3 = '33333333-3333-3333-3333-333333333333';
+  await P.evaluate(([t2, s3]) => {
+    const sel = document.getElementById('role-select-' + t2);
+    sel.value = [...sel.options].map(o => o.value).find(v => v && v !== '교사' && v !== '담임'); onTeacherRoleChange(t2);
+    document.getElementById('scc-mgr-' + s3).checked = true;
+  }, [T2, S3]);
+  await P.evaluate(() => saveAllTeacherRolesUI()); await wait(400);
+  const r1 = await P.evaluate(() => [window.__rpcCalls, window.__lastAlert]);
+  check('역할 저장: 박교사 역할 1건 + 최실무 수업변경 담당 1건만', r1[0].length === 2 && r1[0].some(c => c[0] === 'admin_set_teacher_role' && c[1] === T2) && r1[0].some(c => c[0] === 'admin_set_schedule_manager' && c[1] === S3) && r1[1].includes('2명'), r1);
+  for (const t of ['bookmarks', 'danger']) { await P.evaluate((t) => switchAdminTab(t), t); await wait(400); }
   await P.screenshot({ path: 'adm-danger.png' });
   await P.evaluate(() => switchAdminTab('semester')); await wait(300);
   check('예전 탭 이름도 새 탭으로', await P.evaluate(() => adminSettingsActiveTab) === 'school');

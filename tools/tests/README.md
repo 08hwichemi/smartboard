@@ -27,7 +27,7 @@ for t in *.js; do echo "== $t"; NODE_PATH=/opt/node22/lib/node_modules node $t |
 | design-test.js | 교사/학생 시간표 디자인 따로 저장 |
 | print-test.js | 인쇄(A4 폭)할 때 모바일 화면으로 바뀌지 않는지 |
 | staff-test.js | 실무사 전용 홈(시간표 7칸+정보 칸), 급식 칸 배치, 글씨 크기 |
-| admin-test.js | 관리자 설정 탭 구성, 일과 시간 표 입력·검증·저장 |
+| admin-test.js | 관리자 설정 탭 구성, 일과 시간 표 입력·검증·저장, 계정 "역할·담당 전체 저장"은 바뀐 사람만 서버에 보냄 |
 | ttscroll-test.js | 설정 속 교사 시간표: 안쪽 스크롤 없음, 수정→저장 |
 | tour-test.js | 모든 설명서(홈·좌석배치표·월간일정표·시간표 만들기·조퇴증·이름표)를 끝까지 넘기며 단계 위치·순서 확인 |
 | scmix-test.js | 좌석배치표 여러 반 섞기(이름 붙여넣기·가나다순 번호·자동저장·복원), 체크박스 onchange 유지 |
