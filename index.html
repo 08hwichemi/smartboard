@@ -57,6 +57,17 @@
     .rail-item.active { background: var(--accent-soft); color: var(--accent-color); }
     .rail-ico { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
     .rail-label { font-size: 9.5px; font-weight: 700; }
+    /* 레일 버튼이 많아져서 노트북(1366×768, 창 안 높이 약 650px)에선 아래 버튼(이름표·설정)이 화면 밖으로 밀렸다 →
+       낮은 화면에서만 간격을 좁히고, 그래도 넘치면 레일만 스크롤(스크롤 막대는 숨김). */
+    #app-rail { overflow-y: auto; scrollbar-width: none; }
+    #app-rail > * { flex-shrink: 0; }
+    #app-rail::-webkit-scrollbar { display: none; }
+    @media (max-height: 860px) {
+      #app-rail { gap: 1px; padding: 8px 0; }
+      #app-rail .rail-logo { margin-bottom: 3px; }
+      #app-rail .rail-item { padding: 5px 0; gap: 2px; flex-shrink: 0; }
+      #app-rail #app-version { padding-bottom: 4px !important; line-height: 1.25 !important; }
+    }
 
     /* ===== 상단 바 ===== */
     .top-bar-row { flex: 0 0 auto; height: 70px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); }
@@ -727,6 +738,50 @@
       .ab-paper { transform: none !important; box-shadow: none !important; break-after: avoid; break-inside: avoid; }
     }
 
+    /* ===== 🏷️ 이름표 (게시판·분리수거함) ===== */
+    #nt-body { display: flex; flex: 1; min-height: 0; }
+    #nt-left { width: 380px; flex: 0 0 auto; overflow-y: auto; padding: 14px; box-sizing: border-box; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; }
+    #nt-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
+    #nt-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
+    #nt-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; transform-origin: top center; }
+    .nt-sheet { position: relative; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.12); overflow: hidden; flex: 0 0 auto; }
+    .nt-sheet svg { position: absolute; display: block; overflow: visible; }
+    .nt-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .nt-title { font-weight: 800; font-size: 13px; color: var(--text-sub); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .nt-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+    .nt-row .lp-input[type="number"] { width: 72px; }
+    .nt-muted { font-size: 11.5px; color: var(--text-sub); line-height: 1.55; }
+    .nt-chip { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .nt-chip:hover { border-color: var(--accent-color); }
+    .nt-chip.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
+    #nt-text { width: 100%; min-height: 150px; resize: vertical; font-size: 13px; line-height: 1.6; }
+    #nt-font-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 196px; overflow-y: auto; padding: 2px; }
+    .nt-font { border: 1px solid var(--border-color); background: #fff; color: #222; border-radius: 8px; padding: 6px 8px; font-size: 16px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+    .nt-font small { display: block; font: 600 10px/1.3 'Pretendard', sans-serif; color: #888; }
+    .nt-font:hover { border-color: var(--accent-color); }
+    .nt-font.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    #nt-styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .nt-style { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 10px; padding: 6px 4px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; font-family: inherit; }
+    .nt-style svg { display: block; width: 100%; height: auto; }
+    .nt-style.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); color: var(--accent-color); }
+    #nt-swatches { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .nt-sw { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-color); cursor: pointer; padding: 0; }
+    .nt-sw.on { box-shadow: 0 0 0 2px var(--accent-color); }
+    #nt-rc-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .nt-rc { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--card-bg); user-select: none; }
+    .nt-rc input { margin: 0; }
+    .nt-rc svg { flex: 0 0 auto; }
+    .nt-rc.on { border-color: var(--accent-color); background: var(--accent-soft); }
+    .nt-empty { text-align: center; color: var(--text-sub); font-size: 13px; padding: 60px 10px; line-height: 1.8; }
+    @media (max-width: 1100px) { #nt-left { width: 320px; } }
+    @media print {
+      #nt-page-header, #nt-left, #nt-right-head { display: none !important; }
+      body[data-print-target="nametag"] #nametag-page, body[data-print-target="nametag"] #nt-body, body[data-print-target="nametag"] #nt-right, body[data-print-target="nametag"] #nt-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
+      #nt-pages { zoom: 1 !important; display: block !important; padding: 0 !important; }
+      .nt-sheet { box-shadow: none !important; margin: 0 !important; break-after: page; break-inside: avoid; }
+      .nt-sheet:last-child { break-after: auto; }
+    }
+
     /* ===== 🗓️ 시간표 만들기 (학생/교사 카드형 시간표 생성기) ===== */
     :root {
       --pt-base-w: 360px; --pt-base-h: 520px; --pt-sz-title: 18px; --pt-sz-name: 16px;
@@ -1052,6 +1107,10 @@
     <div class="rail-item" id="rail-absence-btn" title="결석계" onclick="railToggle('rail-absence-btn', openAbsence)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M9.5 13l5 5M14.5 13l-5 5"/></svg></div>
       <div class="rail-label">결석계</div>
+    </div>
+    <div class="rail-item" id="rail-nametag-btn" title="이름표" onclick="railToggle('rail-nametag-btn', openNametag)">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.2V4.5A1.5 1.5 0 0 1 4.5 3h7.7l8.9 8.9a1.5 1.5 0 0 1 0 2.1l-7.1 7.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg></div>
+      <div class="rail-label">이름표</div>
     </div>
     <div style="flex: 1;"></div>
     <div style="text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding-bottom:8px; line-height:1.4;" id="app-version">-</div>
@@ -2427,6 +2486,103 @@
   </div>
 </div>
 
+<div id="nametag-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="nt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">🏷️ 이름표</div>
+      <div class="tab-switch" id="nt-mode-switch">
+        <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판 이름표</button>
+        <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">♻️ 분리수거함</button>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="nt-muted">인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 두세요 — 적은 크기(cm) 그대로 나와요.</span>
+      <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="ntPrint()">🖨️ 출력</button>
+    </div>
+  </div>
+  <div id="nt-body">
+    <div id="nt-left">
+      <div class="nt-box">
+        <div class="nt-title">📏 크기 <span class="nt-muted" id="nt-fit-info"></span></div>
+        <div class="nt-row">
+          가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+          × 세로 <input type="number" id="nt-h" class="lp-input" min="1" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+        </div>
+        <div class="nt-row" id="nt-presets"></div>
+      </div>
+
+      <div class="nt-box" id="nt-board-box">
+        <div class="nt-title">✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></div>
+        <textarea id="nt-text" class="lp-input" placeholder="예)&#10;월간 일정표&#10;오늘의 메뉴&#10;수능 D-Day&#10;시간표 변경 / TIMETABLE" oninput="ntOnText()"></textarea>
+        <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>" / "</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
+      </div>
+
+      <div class="nt-box" id="nt-rc-box" style="display:none;">
+        <div class="nt-title">♻️ 분리수거 종류 <span class="nt-muted">체크한 것만 만들어요</span></div>
+        <div id="nt-rc-list"></div>
+        <textarea id="nt-rc-text" class="lp-input" style="min-height:52px; resize:vertical;" placeholder="직접 더하기 (한 줄에 하나) 예) 건전지" oninput="ntOnRcText()"></textarea>
+        <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="nt-rc-eng" onchange="ntSet({ rcEng: this.checked }); ntRender();"> 영어 이름 함께 쓰기 (PLASTIC, PAPER …)</label>
+      </div>
+
+      <div class="nt-box">
+        <div class="nt-row" style="justify-content:space-between;">
+          <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
+          <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSet({ same: this.checked }); ntRender();"> 글자 크기 모두 같게</label>
+        </div>
+      </div>
+
+      <div class="nt-box">
+        <div class="nt-title">🔤 글꼴</div>
+        <div id="nt-font-list"></div>
+        <div id="nt-custom-row" style="display:none; flex-direction:column; gap:6px;">
+          <div class="nt-row">
+            <input type="text" id="nt-custom" class="lp-input" style="flex:1; min-width:150px;" list="nt-local-fonts" placeholder="PC에 설치된 글꼴 이름 (예: 맑은 고딕)" oninput="ntOnCustomFont()">
+            <button class="top-btn" style="font-size:11px; padding:5px 8px;" onclick="ntLoadLocalFonts()" title="이 PC에 설치된 글꼴 목록을 불러와 고를 수 있게 합니다">💻 내 PC 글꼴 목록</button>
+            <datalist id="nt-local-fonts"></datalist>
+          </div>
+          <div class="nt-muted" id="nt-custom-msg">이 PC에 설치된 글꼴을 그대로 써요(인터넷으로 받는 것 없음). 다른 PC에 그 글꼴이 없으면 기본 글꼴로 나와요.</div>
+        </div>
+        <div class="nt-row">
+          굵기 <select id="nt-weight" class="mini-select" onchange="ntSet({ weight: parseInt(this.value) }); ntRender();">
+            <option value="400">보통</option><option value="600">조금 굵게</option><option value="700">굵게</option><option value="900">아주 굵게</option>
+          </select>
+        </div>
+        <div class="nt-row">
+          글자 크기 <span class="top-btn-cluster" id="nt-fill" style="display:inline-flex;">
+            <button class="top-btn" data-v="s" onclick="ntSet({ fill: 's' }); ntFillForm(); ntRender();">작게</button>
+            <button class="top-btn" data-v="m" onclick="ntSet({ fill: 'm' }); ntFillForm(); ntRender();">보통</button>
+            <button class="top-btn" data-v="l" onclick="ntSet({ fill: 'l' }); ntFillForm(); ntRender();">크게</button>
+          </span>
+        </div>
+        <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSet({ ls: parseInt(this.value) }); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
+      </div>
+
+      <div class="nt-box">
+        <div class="nt-title">🎨 디자인</div>
+        <div id="nt-styles"></div>
+        <div class="nt-row">모서리
+          <span class="top-btn-cluster" id="nt-radius" style="display:inline-flex;">
+            <button class="top-btn" data-v="0" onclick="ntSet({ radius: 0 }); ntFillForm(); ntRender();">각지게</button>
+            <button class="top-btn" data-v="2" onclick="ntSet({ radius: 2 }); ntFillForm(); ntRender();">살짝 둥글게</button>
+            <button class="top-btn" data-v="5" onclick="ntSet({ radius: 5 }); ntFillForm(); ntRender();">둥글게</button>
+          </span>
+        </div>
+        <div class="nt-row" id="nt-color-modes"></div>
+        <div id="nt-swatches"></div>
+      </div>
+    </div>
+
+    <div id="nt-right">
+      <div id="nt-right-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:13px;">🖨️ 출력 미리보기</div>
+        <div id="nt-prev-label" class="nt-muted" style="text-align:right;"></div>
+      </div>
+      <div id="nt-prev-scroll"><div id="nt-pages"></div></div>
+    </div>
+  </div>
+</div>
+
 <div id="persontt-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
   <div id="pt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -3267,7 +3423,7 @@
   // 지금 뭔가 입력 중이면 화면을 건드리지 않고 표시만 해뒀다가, focusout(입력칸에서
   // 벗어나는 순간)에 마저 반영한다.
   var remoteRefreshPending = false;
-  // 다른 기기에서 받아온 항목 이름들(다시 그릴 때 비움). 결석계 기록(ab-*)만 바뀌었으면 홈 화면 전체를 다시 그리지 않는다 —
+  // 다른 기기에서 받아온 항목 이름들(다시 그릴 때 비움). 결석계 기록(ab-*)·이름표 설정(nt-*)만 바뀌었으면 홈 화면 전체를 다시 그리지 않는다 —
   // 결석계를 한쪽 모니터에서 입력할 때마다 다른 화면의 홈(시간표·달력)이 깜빡이지 않게.
   var syncChangedKeys = {};
   function scheduleRemoteRefresh() {
@@ -3276,8 +3432,9 @@
     remoteRefreshPending = false;
     const keys = Object.keys(syncChangedKeys);
     syncChangedKeys = {};
-    if (keys.length && keys.every(function(k) { return k.indexOf('ab-') === 0; })) {
-      if (typeof abRenderAll === 'function') abRenderAll();
+    if (keys.length && keys.every(function(k) { return k.indexOf('ab-') === 0 || k.indexOf('nt-') === 0; })) {
+      if (keys.some(function(k) { return k.indexOf('ab-') === 0; }) && typeof abRenderAll === 'function') abRenderAll();
+      if (keys.some(function(k) { return k.indexOf('nt-') === 0; }) && typeof ntOnRemote === 'function') ntOnRemote();
       return;
     }
     refreshDashboardFromLocalStorage();
@@ -3350,6 +3507,7 @@
 
   async function showSettingsPage(startTab) {
     closeAbsencePage();
+    closeNametagPage();
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
@@ -3374,6 +3532,7 @@
 
   function goHome() {
     closeAbsencePage();
+    closeNametagPage();
     document.getElementById('settings-page').style.display = 'none';
     const seatchartPage = document.getElementById('seatchart-page');
     if (seatchartPage) seatchartPage.style.display = 'none';
@@ -10405,6 +10564,542 @@
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
       if (item && item.id !== 'rail-absence-btn') closeAbsencePage();
+    }, true);
+  });
+
+  // ===== 🏷️ 이름표 (게시판 이름표 · 분리수거함 이름표) =====
+  // 예전 엑셀 "게시판 이름표" 양식(가로·세로 cm + 이름 목록 → 글씨를 칸에 맞게 크게, A4에 실제 크기로 인쇄)을 옮긴 것.
+  // 이름표 한 장 = SVG 하나(단위 mm). 글씨 크기는 캔버스로 재서 칸에 맞추고, A4 여백 8mm 안에 여러 장을 격자로 놓는다
+  // (세로·가로 중 한 장에 더 많이 들어가는 쪽). 설정·내용은 개인 자료 nt-cfg 하나(작음 — 학생 정보 없음).
+  // 글꼴은 이미 받아 두는 웹 글꼴 + 이 PC에 설치된 글꼴 이름 직접 입력(인터넷으로 받는 것 없음).
+  const NT_CFG_KEY = 'nt-cfg';
+  const NT_MARGIN = 8, NT_GAP = 4; // mm — A4 여백(엑셀 0.8cm), 이름표 사이
+  const NT_FONTS = [
+    { f: 'Pretendard', n: '프리텐다드', w: [400, 500, 600, 700, 800, 900] },
+    { f: 'Noto Sans KR', n: '본고딕', w: [700, 900] },
+    { f: 'IBM Plex Sans KR', n: 'IBM 플렉스', w: [400, 500, 600, 700] },
+    { f: 'Malgun Gothic', n: '맑은 고딕', w: [400, 700], local: true },
+    { f: 'Gowun Dodum', n: '고운돋움', w: [400] },
+    { f: 'Sunflower', n: '해바라기', w: [700] },
+    { f: 'Do Hyeon', n: '도현', w: [400] },
+    { f: 'Black Han Sans', n: '검은고딕', w: [400] },
+    { f: 'Jua', n: '주아', w: [400] },
+    { f: 'Noto Serif KR', n: '본명조', w: [700] },
+    { f: 'Nanum Myeongjo', n: '나눔명조', w: [700, 800] },
+    { f: 'Gowun Batang', n: '고운바탕', w: [700] },
+    { f: 'Hahmlet', n: '함렛', w: [400, 700] },
+    { f: 'Song Myung', n: '송명', w: [400] },
+    { f: 'Orbit', n: '오르빗', w: [400] },
+    { f: 'Stylish', n: '스타일리시', w: [400] },
+    { f: 'Gugi', n: '구기', w: [400] },
+    { f: 'Yeon Sung', n: '연성', w: [400] },
+    { f: 'Dongle', n: '동글', w: [700] },
+    { f: 'Gaegu', n: '개구', w: [400] },
+    { f: 'Poor Story', n: '푸어스토리', w: [400] },
+    { f: 'Single Day', n: '싱글데이', w: [400] },
+    { f: 'Hi Melody', n: '하이멜로디', w: [400] },
+    { f: 'Gamja Flower', n: '감자꽃', w: [400] },
+    { f: 'Nanum Pen Script', n: '나눔손글씨 펜', w: [400] },
+    { f: 'Cute Font', n: '귀여운', w: [400] },
+  ];
+  // 자동 순환 12색(엑셀은 6색). 연한 바탕·진한 글씨는 이 색에서 섞어 만든다.
+  const NT_COLORS = ['#3B6FD4', '#2E9D6B', '#E07B39', '#7B5FD0', '#D9587A', '#1F9AA6', '#C9971A', '#4F5BD5', '#D24C4C', '#6F9A35', '#9C6B45', '#56657D'];
+  const NT_STYLES = [
+    { id: 'pop', n: '입체 글씨' }, { id: 'minimal', n: '미니멀' }, { id: 'soft', n: '파스텔' }, { id: 'frame', n: '액자' },
+    { id: 'solid', n: '컬러' }, { id: 'line', n: '밑줄' },
+  ];
+  const NT_PRESETS = {
+    board: [[14.8, 6.4, '엑셀 기본'], [20, 7, ''], [28, 9, 'A4 가로 폭']],
+    recycle: [[18, 8, ''], [28, 12, 'A4 가로 폭'], [19, 27, 'A4 한 장']],
+  };
+  const NT_ICONS = {
+    general: '<path d="M4 7h16M9.5 7V4.5h5V7M6 7l1.1 13h9.8L18 7M10 11v5.5M14 11v5.5"/>',
+    plastic: '<path d="M10 2.8h4v2.4l1.8 2.3v12.3a1.4 1.4 0 0 1-1.4 1.4H9.6a1.4 1.4 0 0 1-1.4-1.4V7.5L10 5.2z"/><path d="M8.2 11h7.6M8.2 16h7.6"/>',
+    vinyl: '<path d="M5.5 3H9v3c0 1.1 1.3 2 3 2s3-.9 3-2V3h3.5l.6 16.4a1.5 1.5 0 0 1-1.5 1.6H6.4a1.5 1.5 0 0 1-1.5-1.6z"/><path d="M9.5 13.5l1.2 2M14.5 12.5l-1 2.2"/>',
+    paper: '<path d="M6.5 3h7.5l4 4v13a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 11.5h6M9 15h6M9 18.2h3.5"/>',
+    can: '<ellipse cx="12" cy="5.5" rx="5" ry="2"/><path d="M7 5.5v13c0 1.1 2.2 2 5 2s5-.9 5-2v-13M7 9.5c0 1.1 2.2 2 5 2s5-.9 5-2"/>',
+    glass: '<path d="M10.3 2.8h3.4v4.6c1.9.8 3 2.3 3 4.3v8.1a1.2 1.2 0 0 1-1.2 1.2H8.5a1.2 1.2 0 0 1-1.2-1.2v-8.1c0-2 1.1-3.5 3-4.3z"/><path d="M7.3 13.5h9.4"/>',
+    canglass: '<g transform="translate(-2.6 3) scale(.78)"><ellipse cx="12" cy="5.5" rx="5" ry="2"/><path d="M7 5.5v13c0 1.1 2.2 2 5 2s5-.9 5-2v-13"/></g><g transform="translate(7.4 .6) scale(.8)"><path d="M10.3 2.8h3.4v4.6c1.9.8 3 2.3 3 4.3v8.1a1.2 1.2 0 0 1-1.2 1.2H8.5a1.2 1.2 0 0 1-1.2-1.2v-8.1c0-2 1.1-3.5 3-4.3z"/></g>',
+    pet: '<path d="M10.2 2.8h3.6v2l1.9 2.6v4.1l-.7 1.2.7 1.2v5.4a1.6 1.6 0 0 1-1.6 1.6H9.9a1.6 1.6 0 0 1-1.6-1.6v-5.4l.7-1.2-.7-1.2V7.4l1.9-2.6z"/><path d="M8.3 9h7.4"/>',
+    carton: '<path d="M7 9.5 9.5 4h5L17 9.5V21H7z"/><path d="M7 9.5h10M9.5 4 12 9.5M10 14h4"/>',
+    styro: '<path d="M3.5 8 12 4l8.5 4v8L12 20l-8.5-4z"/><path d="M3.5 8 12 12l8.5-4M12 12v8"/>',
+    food: '<path d="M3.5 12h17a8.5 8 0 0 1-17 0z"/><path d="M9 8.5c-.8-1.2-.2-2.5.6-3.5M13 8.5c-.8-1.2-.2-2.5.6-3.5"/>',
+    recycle: '<path d="M7.5 10 5 14.3a1.6 1.6 0 0 0 1.4 2.4H10M16.2 16.7h1.4a1.6 1.6 0 0 0 1.4-2.4l-1-1.8M10.4 5.3l.2-.4a1.6 1.6 0 0 1 2.8 0l2.2 3.8"/><path d="m8.2 14.4 1.8 2.3-1.8 2.3M13.9 8.6l1.7-.1.9-2.6M4.6 9.2l2.9.8.6-2.8"/>',
+  };
+  const NT_RC = [
+    { id: 'general', n: '일반쓰레기', en: 'GENERAL WASTE', c: '#56657D', on: true },
+    { id: 'plastic', n: '플라스틱', en: 'PLASTIC', c: '#3B6FD4', on: true },
+    { id: 'vinyl', n: '비닐', en: 'VINYL', c: '#E07B39', on: true },
+    { id: 'paper', n: '종이', en: 'PAPER', c: '#9C6B45', on: true },
+    { id: 'canglass', n: '캔/유리', en: 'CAN & GLASS', c: '#D24C4C', on: true },
+    { id: 'can', n: '캔', en: 'CAN', c: '#D24C4C' },
+    { id: 'glass', n: '유리', en: 'GLASS', c: '#2E9D6B' },
+    { id: 'pet', n: '페트병', en: 'PET BOTTLE', c: '#1F9AA6' },
+    { id: 'carton', n: '종이팩', en: 'PAPER CARTON', c: '#C9971A' },
+    { id: 'styro', n: '스티로폼', en: 'STYROFOAM', c: '#4F5BD5' },
+    { id: 'food', n: '음식물', en: 'FOOD WASTE', c: '#6F9A35' },
+  ];
+  const NT_DEFAULT = {
+    mode: 'board', w: 14.8, h: 6.4, rw: 18, rh: 8, text: '', rcText: '', copies: 1, rcCopies: 1,
+    rc: NT_RC.filter(function(r) { return r.on; }).map(function(r) { return r.id; }), rcEng: true,
+    font: 'Jua', custom: '', weight: 700, fill: 'm', ls: 4, same: true,
+    style: 'pop', radius: 2, colorMode: 'cycle', rcColorMode: 'type', color: NT_COLORS[0],
+  };
+  function ntCfg() {
+    let v = {};
+    try { v = JSON.parse(localStorage.getItem(NT_CFG_KEY) || '{}') || {}; } catch (e) {}
+    return Object.assign({}, NT_DEFAULT, typeof v === 'object' ? v : {});
+  }
+  function ntSet(patch) {
+    let cur = {};
+    try { cur = JSON.parse(localStorage.getItem(NT_CFG_KEY) || '{}') || {}; } catch (e) {}
+    try { localStorage.setItem(NT_CFG_KEY, JSON.stringify(Object.assign(cur, patch))); } catch (e) {}
+    scheduleBackupWrite();
+  }
+  function ntEsc(s) { return String(s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ntNum(v, lo, hi, def) { const n = parseFloat(v); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
+
+  // ----- 글꼴 -----
+  function ntFontInfo(c) {
+    if (c.font === '__custom') return { f: (c.custom || '').replace(/["'<>;\\]/g, '').trim() || 'Malgun Gothic', w: null, custom: true };
+    return NT_FONTS.find(function(x) { return x.f === c.font; }) || NT_FONTS[0];
+  }
+  function ntStack(f) { return "'" + f + "', 'Pretendard', 'Malgun Gothic', sans-serif"; }
+  // 고른 굵기에서 그 글꼴에 실제로 있는 가장 가까운 굵기(없는 굵기를 억지로 두껍게 그리면 지저분해서)
+  function ntWeight(c) {
+    const fi = ntFontInfo(c);
+    if (!fi.w) return c.weight;
+    return fi.w.reduce(function(a, b) { return Math.abs(b - c.weight) < Math.abs(a - c.weight) ? b : a; }, fi.w[0]);
+  }
+  let ntCtx = null;
+  function ntMeasure(text, font, weight) {
+    if (!ntCtx) ntCtx = document.createElement('canvas').getContext('2d');
+    ntCtx.font = weight + ' 100px ' + ntStack(font);
+    const m = ntCtx.measureText(text);
+    return { w: m.width / 100, a: m.actualBoundingBoxAscent / 100, d: m.actualBoundingBoxDescent / 100 };
+  }
+  // 이 PC에 그 글꼴이 있는지(없으면 대신 쓰는 글꼴과 폭이 똑같이 나옴)
+  function ntFontInstalled(name) {
+    if (!name) return false;
+    if (!ntCtx) ntCtx = document.createElement('canvas').getContext('2d');
+    const s = '가나다라 이름표 AaBbWw 0123';
+    return ['monospace', 'serif'].some(function(base) {
+      ntCtx.font = '40px ' + base; const w0 = ntCtx.measureText(s).width;
+      ntCtx.font = "40px '" + name + "', " + base; return Math.abs(ntCtx.measureText(s).width - w0) > 0.5;
+    });
+  }
+  let ntFontLoadKey = '';
+  function ntEnsureFont(c, sample) {
+    const fi = ntFontInfo(c);
+    if (fi.custom || fi.local || !document.fonts || !document.fonts.load) return;
+    const key = fi.f + '|' + ntWeight(c) + '|' + sample;
+    if (key === ntFontLoadKey) return;
+    ntFontLoadKey = key;
+    document.fonts.load(ntWeight(c) + " 40px '" + fi.f + "'", sample || '가').then(function(list) {
+      if (list && list.length && ntFontLoadKey === key) ntRender(true);
+    }).catch(function() {});
+  }
+
+  // ----- 색 -----
+  function ntMix(hex, to, t) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16);
+    const ch = function(x, s) { return (x >> s) & 255; };
+    const m = function(s) { return Math.round(ch(a, s) + (ch(b, s) - ch(a, s)) * t); };
+    return '#' + ((1 << 24) + (m(16) << 16) + (m(8) << 8) + m(0)).toString(16).slice(1);
+  }
+  function ntTheme(style, c) {
+    const tint = ntMix(c, '#ffffff', 0.9), soft = ntMix(c, '#ffffff', 0.55), deep = ntMix(c, '#000000', 0.45);
+    const ink = '#1F2430', line = '#C9CFD8';
+    const T = {
+      minimal: { bg: '#fff', stroke: line, ink: ink, sub: c, badge: tint, icon: c, accent: c },
+      soft: { bg: tint, stroke: soft, ink: deep, sub: c, badge: '#fff', icon: c, accent: soft },
+      frame: { bg: tint, stroke: soft, card: '#fff', cardStroke: c, ink: ink, sub: c, badge: tint, icon: c },
+      solid: { bg: c, stroke: c, ink: '#fff', sub: 'rgba(255,255,255,0.85)', badge: 'rgba(255,255,255,0.2)', icon: '#fff', hair: 'rgba(255,255,255,0.5)' },
+      line: { bg: '#fff', stroke: line, ink: ink, sub: c, badge: tint, icon: c, accent: c },
+      // 예전 엑셀 양식 그대로: 파스텔 바탕 + 회색 바깥선, 안쪽 카드 + 검정 선, 흰 글자에 검정 테두리·그림자
+      pop: { bg: ntMix(c, '#ffffff', 0.8), stroke: '#B4BEC8', card: ntMix(c, '#ffffff', 0.72), cardStroke: '#141414', ink: '#fff', sub: '#222', badge: '#fff', icon: '#222' },
+    };
+    return T[style] || T.minimal;
+  }
+
+  // ----- 이름표 목록 -----
+  function ntItems(c) {
+    const out = [];
+    if (c.mode === 'recycle') {
+      NT_RC.forEach(function(r) { if (c.rc.indexOf(r.id) >= 0) out.push({ text: r.n, sub: c.rcEng ? r.en : '', icon: r.id, typeColor: r.c }); });
+      String(c.rcText || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean).forEach(function(s) {
+        out.push({ text: s, sub: '', icon: 'recycle', typeColor: '#56657D' });
+      });
+    } else {
+      String(c.text || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean).forEach(function(s) {
+        const i = s.indexOf(' / ');
+        out.push(i > 0 ? { text: s.slice(0, i).trim(), sub: s.slice(i + 3).trim() } : { text: s, sub: '' });
+      });
+    }
+    const mode = c.mode === 'recycle' ? c.rcColorMode : c.colorMode;
+    out.forEach(function(it, i) {
+      it.color = mode === 'one' ? c.color : mode === 'type' && it.typeColor ? it.typeColor : NT_COLORS[i % NT_COLORS.length];
+    });
+    return out;
+  }
+
+  // ----- 이름표 한 장 그리기(단위 mm) -----
+  // 글자 크기(main)를 정하는 곳과 그리는 곳이 같은 배치 계산(ntGeom)을 쓰게 해서 "모두 같게"일 때도 어긋나지 않게 한다.
+  const NT_SUB_RATIO = 0.3, NT_SUB_GAP = 0.24;
+  const NT_POP_STROKE = 0.11, NT_POP_SHADOW = 0.075, NT_POP_EXTRA = NT_POP_STROKE + NT_POP_SHADOW;
+  function ntGeom(w, h, style, hasIcon, fillKey) {
+    const f = { s: 0.6, m: 0.74, l: 0.86 }[fillKey] || 0.74;
+    let x = 0, y = 0, iw = w, ih = h;
+    if (style === 'minimal') { const bar = Math.min(4, Math.max(1.5, h * 0.06)); x = bar; iw = w - bar; }
+    if (style === 'frame') { const ins = Math.min(4, Math.max(1.5, h * 0.07)); x = y = ins; iw = w - ins * 2; ih = h - ins * 2; }
+    if (style === 'pop') { const ins = Math.min(2.1, Math.max(0.8, h * 0.035)); x = y = ins; iw = w - ins * 2; ih = h - ins * 2; }
+    const g = { f: style === 'pop' ? Math.min(0.94, f + 0.08) : f, icon: null, inner: { x: x, y: y, w: iw, h: ih } };
+    if (hasIcon) {
+      if (w / h >= 1.3) { // 가로로 긴 이름표: 왼쪽 아이콘 + 오른쪽 글자
+        const d = Math.min(ih * 0.68, iw * 0.34), pad = (ih - d) / 2;
+        g.icon = { cx: x + pad + d / 2, cy: y + ih / 2, d: d };
+        const tx = x + pad * 1.7 + d;
+        g.box = { x: tx, y: y, w: x + iw - pad * 0.8 - tx, h: ih };
+        g.f = Math.min(0.94, f + 0.14);
+      } else { // 세로로 긴 이름표: 위 아이콘 + 아래 글자
+        const d = Math.min(iw * 0.5, ih * 0.4);
+        g.icon = { cx: x + iw / 2, cy: y + ih * 0.1 + d / 2, d: d };
+        const ty = g.icon.cy + d / 2 + ih * 0.04;
+        g.box = { x: x, y: ty, w: iw, h: y + ih - ih * 0.05 - ty };
+      }
+    } else g.box = { x: x, y: y, w: iw, h: ih };
+    return g;
+  }
+  // 칸 안에 들어가는 가장 큰 글자 크기(mm)
+  function ntFitSize(it, g, font, weight, lsEm, style) {
+    const ref = ntMeasure('가', font, weight), tm = ntMeasure(it.text, font, weight);
+    const gh = (ref.a + Math.max(ref.d, tm.d)) || 0.9;
+    const n = Array.from(it.text).length;
+    const fx = style === 'pop' ? NT_POP_EXTRA : 0; // 입체 글씨: 테두리·그림자만큼 여유
+    const mw = tm.w + lsEm * (n - 1) + fx;
+    const aw = g.box.w * g.f, ah = g.box.h * g.f;
+    let s = Math.min(aw / Math.max(mw, 0.01), ah / gh);
+    let hf = gh + fx;
+    if (style === 'line') hf += 0.26;
+    if (it.sub) {
+      const sw = ntMeasure(it.sub, 'Pretendard', 600).w * NT_SUB_RATIO + 0.1 * NT_SUB_RATIO * (Array.from(it.sub).length - 1);
+      hf += NT_SUB_GAP + NT_SUB_RATIO * 0.75;
+      s = Math.min(aw / Math.max(mw, 0.01), ah / hf, aw / Math.max(sw, 0.01));
+    } else if (style === 'line') s = Math.min(s, ah / hf);
+    return Math.max(1, s);
+  }
+  // 입체 글씨는 테두리가 글자 밖으로 두껍게 나가서 이웃 글자와 붙어 보이므로 그만큼 자간을 저절로 더 준다.
+  function ntLsEm(c) { return (c.ls || 0) / 100 + (c.style === 'pop' ? NT_POP_STROKE : 0); }
+  let ntClipSeq = 0;
+  function ntLabelSvg(it, c, w, h, size) {
+    const fi = ntFontInfo(c), weight = ntWeight(c), lsEm = ntLsEm(c);
+    const th = ntTheme(c.style, it.color);
+    const g = ntGeom(w, h, c.style, !!it.icon, c.fill);
+    const s = size || ntFitSize(it, g, fi.f, weight, lsEm, c.style);
+    const rx = Math.min(c.radius || 0, h / 2, w / 2), sw = c.style === 'pop' ? 0.5 : 0.3, hs = sw / 2;
+    const id = 'ntc' + (++ntClipSeq);
+    let o = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" style="width:' + w + 'mm;height:' + h + 'mm;">';
+    o += '<defs><clipPath id="' + id + '"><rect width="' + w + '" height="' + h + '" rx="' + rx + '"/></clipPath></defs>';
+    o += '<g clip-path="url(#' + id + ')"><rect width="' + w + '" height="' + h + '" fill="' + th.bg + '"/>';
+    if (c.style === 'minimal') o += '<rect width="' + g.inner.x + '" height="' + h + '" fill="' + th.accent + '"/>';
+    o += '</g>';
+    if (c.style === 'frame' || c.style === 'pop') {
+      const ins = g.inner.x;
+      o += '<rect x="' + ins + '" y="' + ins + '" width="' + (w - ins * 2) + '" height="' + (h - ins * 2) + '" rx="' + Math.max(0, rx - ins / 2) + '" fill="' + th.card + '" stroke="' + th.cardStroke + '" stroke-width="' + (c.style === 'pop' ? 0.6 : 0.4) + '"/>';
+    }
+    if (c.style === 'solid') {
+      const ins = Math.min(2.2, Math.max(1, h * 0.05));
+      o += '<rect x="' + ins + '" y="' + ins + '" width="' + (w - ins * 2) + '" height="' + (h - ins * 2) + '" rx="' + Math.max(0, rx - ins / 2) + '" fill="none" stroke="' + th.hair + '" stroke-width="0.3"/>';
+    }
+    // 바깥 선(자를 때 기준선) — 선 굵기가 안쪽으로 들어오게
+    o += '<rect x="' + hs + '" y="' + hs + '" width="' + (w - sw) + '" height="' + (h - sw) + '" rx="' + Math.max(0, rx - hs) + '" fill="none" stroke="' + th.stroke + '" stroke-width="' + sw + '"/>';
+    if (g.icon) {
+      const ic = g.icon, isz = ic.d * 0.56, sc = isz / 24;
+      o += '<circle cx="' + ic.cx + '" cy="' + ic.cy + '" r="' + ic.d / 2 + '" fill="' + th.badge + '"/>';
+      o += '<g transform="translate(' + (ic.cx - isz / 2) + ' ' + (ic.cy - isz / 2) + ') scale(' + sc + ')" fill="none" stroke="' + th.icon + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + (NT_ICONS[it.icon] || NT_ICONS.recycle) + '</g>';
+    }
+    // 글자: '가'의 위·아래 끝으로 가운데를 잡아 글꼴마다 위아래로 쏠리지 않게
+    const ref = ntMeasure('가', fi.f, weight);
+    // 아래 끝은 실제 글자(의·y처럼 내려오는 글자)까지 — 밑줄·부제가 글자에 붙지 않게
+    const ga = ref.a || 0.8, gd = Math.max(ref.d, ntMeasure(it.text, fi.f, weight).d) || 0.1;
+    const subS = s * NT_SUB_RATIO;
+    const pop = c.style === 'pop';
+    let blockH = s * (ga + gd + (pop ? NT_POP_EXTRA : 0));
+    if (c.style === 'line') blockH += s * 0.26;
+    if (it.sub) blockH += s * NT_SUB_GAP + subS * 0.75;
+    const cx = g.box.x + g.box.w / 2;
+    let top = g.box.y + (g.box.h - blockH) / 2;
+    const base = top + s * (ga + (pop ? NT_POP_STROKE / 2 : 0)), ls = lsEm * s;
+    const tAttr = 'text-anchor="middle" font-family="' + ntEsc(ntStack(fi.f)) + '" font-weight="' + weight + '" font-size="' + s + '" letter-spacing="' + ls + '"';
+    if (pop) {
+      // 그림자(오른쪽 아래로 밀린 검정 글자) → 흰 글자 + 굵은 검정 테두리(테두리를 먼저 칠해 글자 안쪽을 덮지 않게)
+      const tx = cx + ls / 2 - s * NT_POP_SHADOW / 2, sd = s * NT_POP_SHADOW, st = s * NT_POP_STROKE;
+      o += '<text class="nt-sh" x="' + (tx + sd) + '" y="' + (base + sd) + '" ' + tAttr + ' fill="#141414" stroke="#141414" stroke-width="' + st + '" stroke-linejoin="round">' + ntEsc(it.text) + '</text>';
+      o += '<text x="' + tx + '" y="' + base + '" ' + tAttr + ' fill="' + th.ink + '" stroke="#141414" stroke-width="' + st + '" stroke-linejoin="round" paint-order="stroke">' + ntEsc(it.text) + '</text>';
+    } else o += '<text x="' + (cx + ls / 2) + '" y="' + base + '" ' + tAttr + ' fill="' + th.ink + '">' + ntEsc(it.text) + '</text>';
+    let y2 = base + s * (gd + (pop ? NT_POP_EXTRA - NT_POP_STROKE / 2 : 0));
+    if (c.style === 'line') {
+      const n = Array.from(it.text).length, tw = s * (ntMeasure(it.text, fi.f, weight).w + lsEm * (n - 1));
+      const bw = Math.max(tw * 0.28, 6), bh = Math.max(0.6, s * 0.07);
+      o += '<rect x="' + (cx - bw / 2) + '" y="' + (y2 + s * 0.14) + '" width="' + bw + '" height="' + bh + '" rx="' + bh / 2 + '" fill="' + th.accent + '"/>';
+      y2 += s * 0.26;
+    }
+    if (it.sub) {
+      const sls = subS * 0.1;
+      o += '<text x="' + (cx + sls / 2) + '" y="' + (y2 + s * NT_SUB_GAP + subS * 0.75) + '" text-anchor="middle" font-family="' + ntEsc(ntStack('Pretendard')) + '" font-weight="600" font-size="' + subS + '" letter-spacing="' + sls + '" fill="' + th.sub + '">' + ntEsc(it.sub) + '</text>';
+    }
+    return o + '</svg>';
+  }
+
+  // ----- A4 배치 -----
+  function ntLayout(w, h) {
+    const fit = function(pw, ph) {
+      const uw = pw - NT_MARGIN * 2, uh = ph - NT_MARGIN * 2;
+      const cols = Math.floor((uw + NT_GAP) / (w + NT_GAP)), rows = Math.floor((uh + NT_GAP) / (h + NT_GAP));
+      return { pw: pw, ph: ph, cols: cols, rows: rows, per: cols * rows };
+    };
+    const p = fit(210, 297), l = fit(297, 210);
+    if (!p.per && !l.per) return null;
+    const r = l.per > p.per ? l : p;
+    r.land = r === l;
+    return r;
+  }
+  function ntSize(c) {
+    return c.mode === 'recycle' ? { w: ntNum(c.rw, 1, 300, 18), h: ntNum(c.rh, 1, 300, 8) } : { w: ntNum(c.w, 1, 300, 14.8), h: ntNum(c.h, 1, 300, 6.4) };
+  }
+
+  function ntRender(fromFontLoad) {
+    const page = document.getElementById('nametag-page');
+    if (!page || page.style.display === 'none') return;
+    const c = ntCfg();
+    const sz = ntSize(c), w = sz.w * 10, h = sz.h * 10; // mm
+    const items = ntItems(c);
+    const lay = ntLayout(w, h);
+    const box = document.getElementById('nt-pages');
+    const label = document.getElementById('nt-prev-label');
+    const info = document.getElementById('nt-fit-info');
+    info.textContent = lay ? ('A4 ' + (lay.land ? '가로' : '세로') + ' 한 장에 ' + lay.per + '개') : '';
+    document.getElementById('nt-ls-val').textContent = (c.ls / 100).toFixed(2).replace(/0$/, '') + 'em';
+    ntRenderStylePicker(c);
+    if (!fromFontLoad) ntEnsureFont(c, items.map(function(it) { return it.text; }).join('') + '가');
+    if (!lay) {
+      box.innerHTML = '<div class="nt-empty">이름표가 A4 종이보다 커요.<br>여백을 빼면 <b>세로 19.4 × 가로 28.1cm</b>(또는 반대)까지 들어가요.</div>';
+      box.style.zoom = ''; label.textContent = ''; return;
+    }
+    if (!items.length) {
+      box.innerHTML = '<div class="nt-empty">' + (c.mode === 'recycle' ? '왼쪽에서 분리수거 종류를 체크해 주세요.' : '왼쪽 <b>내용</b>에 이름을 한 줄에 하나씩 적어 주세요.<br>적는 대로 여기에 바로 만들어져요.') + '</div>';
+      box.style.zoom = ''; label.textContent = ''; return;
+    }
+    const copies = Math.round(ntNum(c.mode === 'recycle' ? c.rcCopies : c.copies, 1, 50, 1));
+    const fi = ntFontInfo(c), weight = ntWeight(c), lsEm = ntLsEm(c);
+    let same = null;
+    if (c.same) {
+      items.forEach(function(it) {
+        const s = ntFitSize(it, ntGeom(w, h, c.style, !!it.icon, c.fill), fi.f, weight, lsEm, c.style);
+        same = same === null ? s : Math.min(same, s);
+      });
+    }
+    const all = [];
+    items.forEach(function(it) {
+      const svg = ntLabelSvg(it, c, w, h, same);
+      for (let k = 0; k < copies; k++) all.push(svg);
+    });
+    // 한 장 안에서 가로는 가운데, 세로는 위에서부터(자를 때 장마다 자리가 같게)
+    const gw = lay.cols * w + (lay.cols - 1) * NT_GAP;
+    const x0 = (lay.pw - gw) / 2;
+    const sheets = [];
+    for (let i = 0; i < all.length; i += lay.per) {
+      let s = '<div class="nt-sheet" style="width:' + lay.pw + 'mm; height:' + (lay.ph - 0.3) + 'mm;">';
+      all.slice(i, i + lay.per).forEach(function(svg, j) {
+        const col = j % lay.cols, row = Math.floor(j / lay.cols);
+        s += svg.replace('<svg ', '<svg style="left:' + (x0 + col * (w + NT_GAP)) + 'mm; top:' + (NT_MARGIN + row * (h + NT_GAP)) + 'mm;" ').replace(/ style="width:([^"]*)"/, ' width="' + w + 'mm" height="' + h + 'mm"');
+      });
+      sheets.push(s + '</div>');
+    }
+    box.innerHTML = sheets.join('');
+    box.dataset.land = lay.land ? '1' : '';
+    label.textContent = 'A4 ' + (lay.land ? '가로' : '세로') + ' · 이름표 ' + all.length + '개 · 종이 ' + sheets.length + '장';
+    ntFitPreview();
+  }
+  function ntFitPreview() {
+    const box = document.getElementById('nt-pages'), sc = document.getElementById('nt-prev-scroll');
+    const sheet = box.querySelector('.nt-sheet');
+    if (!sheet) return;
+    box.style.zoom = '';
+    const pw = sheet.offsetWidth;
+    // 폭에 맞추되, 종이 한 장이 위아래로 한눈에 들어오게
+    const z = Math.min(1, (sc.clientWidth - 24) / pw, (sc.clientHeight - 16) / sheet.offsetHeight);
+    box.style.zoom = z > 0 ? String(z) : '';
+  }
+  function ntRenderStylePicker(c) {
+    const col = (c.mode === 'recycle' ? c.rcColorMode : c.colorMode) === 'one' ? c.color : NT_COLORS[0];
+    const fake = Object.assign({}, c, { ls: c.ls, fill: 'm' });
+    document.getElementById('nt-styles').innerHTML = NT_STYLES.map(function(st) {
+      const cc = Object.assign({}, fake, { style: st.id, fill: 's' });
+      return '<button class="nt-style' + (c.style === st.id ? ' on' : '') + '" onclick="ntSet({ style: \'' + st.id + '\' }); ntRender();">' +
+        ntLabelSvg({ text: '이름표', sub: '', color: col }, cc, 60, 24).replace(/ style="[^"]*"/, '') + st.n + '</button>';
+    }).join('');
+  }
+
+  // ----- 왼쪽 입력칸 -----
+  function ntFillForm() {
+    const c = ntCfg(), rc = c.mode === 'recycle', sz = ntSize(c);
+    document.querySelectorAll('#nt-mode-switch .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.mode === c.mode); });
+    document.getElementById('nt-board-box').style.display = rc ? 'none' : 'flex';
+    document.getElementById('nt-rc-box').style.display = rc ? 'flex' : 'none';
+    const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    setVal('nt-w', sz.w); setVal('nt-h', sz.h);
+    setVal('nt-text', c.text || ''); setVal('nt-rc-text', c.rcText || '');
+    setVal('nt-copies', rc ? c.rcCopies : c.copies);
+    setVal('nt-custom', c.custom || '');
+    document.getElementById('nt-same').checked = !!c.same;
+    document.getElementById('nt-rc-eng').checked = !!c.rcEng;
+    document.getElementById('nt-ls').value = c.ls || 0;
+    document.getElementById('nt-presets').innerHTML = NT_PRESETS[c.mode].map(function(p) {
+      const on = Math.abs(p[0] - sz.w) < 0.01 && Math.abs(p[1] - sz.h) < 0.01;
+      return '<button class="nt-chip' + (on ? ' on' : '') + '" onclick="ntSetSize(' + p[0] + ',' + p[1] + ')">' + p[0] + '×' + p[1] + (p[2] ? ' <span style="opacity:.7;">' + p[2] + '</span>' : '') + '</button>';
+    }).join('');
+    // 글꼴 목록(이름을 그 글꼴로 보여 줌)
+    document.getElementById('nt-font-list').innerHTML = NT_FONTS.map(function(f) {
+      return '<button class="nt-font' + (c.font === f.f ? ' on' : '') + '" style="font-family:' + ntEsc(ntStack(f.f)) + '; font-weight:' + f.w[f.w.length > 2 ? 3 : f.w.length - 1] + ';" onclick="ntSetFont(\'' + f.f + '\')" title="' + f.n + '">' + f.n + '<small>' + f.f + '</small></button>';
+    }).join('') + '<button class="nt-font' + (c.font === '__custom' ? ' on' : '') + '" onclick="ntSetFont(\'__custom\')" style="font-size:13px; font-weight:700;">✏️ 직접 입력<small>내 PC에 설치된 글꼴</small></button>';
+    document.getElementById('nt-custom-row').style.display = c.font === '__custom' ? 'flex' : 'none';
+    if (c.font === '__custom') ntCheckCustomFont();
+    const fi = ntFontInfo(c), wsel = document.getElementById('nt-weight');
+    wsel.value = String([400, 600, 700, 900].reduce(function(a, b) { return Math.abs(b - c.weight) < Math.abs(a - c.weight) ? b : a; }));
+    wsel.disabled = !!(fi.w && fi.w.length < 2);
+    wsel.title = wsel.disabled ? '이 글꼴은 굵기가 한 가지뿐이에요' : '';
+    document.querySelectorAll('#nt-fill .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.v === c.fill); });
+    document.querySelectorAll('#nt-radius .top-btn').forEach(function(b) { b.classList.toggle('theme-active', Number(b.dataset.v) === Number(c.radius)); });
+    // 분리수거 종류
+    document.getElementById('nt-rc-list').innerHTML = NT_RC.map(function(r) {
+      const on = c.rc.indexOf(r.id) >= 0;
+      return '<label class="nt-rc' + (on ? ' on' : '') + '"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="ntToggleRc(\'' + r.id + '\', this.checked)">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + r.c + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + NT_ICONS[r.id] + '</svg>' + r.n + '</label>';
+    }).join('');
+    // 색
+    const cm = rc ? c.rcColorMode : c.colorMode;
+    const modes = (rc ? [['type', '종류별 색']] : []).concat([['cycle', '여러 색 돌아가며 (12색)'], ['one', '한 색으로']]);
+    document.getElementById('nt-color-modes').innerHTML = '색 ' + modes.map(function(m) {
+      return '<button class="nt-chip' + (cm === m[0] ? ' on' : '') + '" onclick="ntSetColorMode(\'' + m[0] + '\')">' + m[1] + '</button>';
+    }).join('');
+    const sw = document.getElementById('nt-swatches');
+    sw.style.display = cm === 'one' ? 'flex' : 'none';
+    sw.innerHTML = NT_COLORS.map(function(col) {
+      return '<button class="nt-sw' + (c.color.toLowerCase() === col.toLowerCase() ? ' on' : '') + '" style="background:' + col + ';" onclick="ntSetColor(\'' + col + '\')" title="' + col + '"></button>';
+    }).join('') + '<label class="nt-muted" style="display:flex; align-items:center; gap:4px; margin-left:4px; cursor:pointer;">다른 색 <input type="color" id="nt-color-pick" value="' + c.color + '" oninput="ntSetColor(this.value, true)" style="width:30px; height:24px; padding:0; border:0; background:none; cursor:pointer;"></label>';
+  }
+  function ntSetMode(m) { ntSet({ mode: m }); ntFillForm(); ntRender(); }
+  function ntSetSize(w, h) { const c = ntCfg(); ntSet(c.mode === 'recycle' ? { rw: w, rh: h } : { w: w, h: h }); ntFillForm(); ntRender(); }
+  function ntOnSize() {
+    const c = ntCfg(), w = parseFloat(document.getElementById('nt-w').value), h = parseFloat(document.getElementById('nt-h').value);
+    if (!(w > 0) || !(h > 0)) return;
+    ntSet(c.mode === 'recycle' ? { rw: w, rh: h } : { w: w, h: h });
+    ntFillForm(); ntRender();
+  }
+  function ntOnText() { ntSet({ text: document.getElementById('nt-text').value }); ntRender(); }
+  function ntOnRcText() { ntSet({ rcText: document.getElementById('nt-rc-text').value }); ntRender(); }
+  function ntOnCopies() {
+    const v = parseInt(document.getElementById('nt-copies').value);
+    if (!(v >= 1)) return;
+    ntSet(ntCfg().mode === 'recycle' ? { rcCopies: Math.min(50, v) } : { copies: Math.min(50, v) }); ntRender();
+  }
+  function ntToggleRc(id, on) {
+    const c = ntCfg(), set = c.rc.filter(function(x) { return x !== id; });
+    if (on) set.push(id);
+    ntSet({ rc: NT_RC.map(function(r) { return r.id; }).filter(function(x) { return set.indexOf(x) >= 0; }) });
+    ntFillForm(); ntRender();
+  }
+  function ntSetFont(f) { ntSet({ font: f }); ntFillForm(); ntRender(); if (f === '__custom') { const el = document.getElementById('nt-custom'); if (el && !el.value) el.focus(); } }
+  function ntOnCustomFont() { ntSet({ custom: document.getElementById('nt-custom').value.trim() }); ntCheckCustomFont(); ntRender(); }
+  function ntCheckCustomFont() {
+    const name = (document.getElementById('nt-custom').value || '').trim(), msg = document.getElementById('nt-custom-msg');
+    if (!name) { msg.innerHTML = '이 PC에 설치된 글꼴을 그대로 써요(인터넷으로 받는 것 없음). 다른 PC에 그 글꼴이 없으면 기본 글꼴로 나와요.'; return; }
+    msg.innerHTML = ntFontInstalled(name) ? '✅ 이 PC에 있는 글꼴이에요. (다른 PC에서 인쇄하면 그 PC에도 이 글꼴이 있어야 해요.)'
+      : '⚠️ 이 PC에서 <b>' + ntEsc(name) + '</b> 글꼴을 찾지 못했어요 — 기본 글꼴로 나와요. 이름을 확인하거나 <b>💻 내 PC 글꼴 목록</b>에서 골라 주세요.';
+  }
+  async function ntLoadLocalFonts() {
+    if (!window.queryLocalFonts) return customAlert('이 브라우저에서는 PC 글꼴 목록을 불러올 수 없어요. 크롬·엣지 최신 판에서 되고, 안 되면 글꼴 이름을 직접 적어 주세요.');
+    try {
+      const fonts = await window.queryLocalFonts();
+      const fams = Array.from(new Set(fonts.map(function(f) { return f.family; }))).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+      document.getElementById('nt-local-fonts').innerHTML = fams.map(function(f) { return '<option value="' + ntEsc(f) + '">'; }).join('');
+      document.getElementById('nt-custom-msg').innerHTML = '💻 이 PC 글꼴 ' + fams.length + '개를 불러왔어요 — 이름 칸을 누르거나 몇 글자 적으면 목록이 나와요.';
+      const el = document.getElementById('nt-custom'); el.value = ''; el.focus();
+    } catch (e) {
+      customAlert('글꼴 목록 보기를 "허용"해야 불러올 수 있어요. 막았다면 주소창 왼쪽 자물쇠 → 글꼴에서 허용으로 바꿔 주세요.');
+    }
+  }
+  function ntSetColorMode(m) { const c = ntCfg(); ntSet(c.mode === 'recycle' ? { rcColorMode: m } : { colorMode: m }); ntFillForm(); ntRender(); }
+  function ntSetColor(col, fromPicker) {
+    ntSet({ color: col });
+    if (fromPicker) { document.querySelectorAll('#nt-swatches .nt-sw').forEach(function(b) { b.classList.toggle('on', b.title.toLowerCase() === col.toLowerCase()); }); }
+    else ntFillForm();
+    ntRender();
+  }
+  function ntOnRemote() {
+    const page = document.getElementById('nametag-page');
+    if (!page || page.style.display === 'none') return;
+    ntFillForm(); ntRender();
+  }
+
+  // ----- 화면 열기·닫기·인쇄 -----
+  function closeNametagPage() {
+    const pg = document.getElementById('nametag-page');
+    if (pg) pg.style.display = 'none';
+    const btn = document.getElementById('rail-nametag-btn');
+    if (btn) btn.classList.remove('active');
+  }
+  function openNametag() {
+    closeAbsencePage();
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    ['settings-page', 'seatchart-page', 'monthly-page', 'leavepass-page', 'persontt-page'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn', 'rail-absence-btn'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.classList.remove('active');
+    });
+    closeHwpKeys(); closeSgb();
+    const ro = document.getElementById('roster-overlay'); if (ro) ro.style.display = 'none';
+    const um = document.getElementById('user-menu-dropdown'); if (um) um.style.display = 'none';
+    document.getElementById('nametag-page').style.display = 'flex';
+    document.getElementById('rail-nametag-btn').classList.add('active');
+    document.body.setAttribute('data-print-target', 'nametag');
+    if (!window.__ntInited) {
+      window.__ntInited = true;
+      window.addEventListener('resize', function() { if (document.getElementById('nametag-page').style.display !== 'none') ntFitPreview(); });
+    }
+    ntFillForm();
+    ntRender();
+  }
+  async function ntPrint() {
+    const c = ntCfg();
+    if (!ntItems(c).length) return customAlert(c.mode === 'recycle' ? '분리수거 종류를 먼저 체크해 주세요.' : '내용에 이름을 먼저 적어 주세요.');
+    const sz = ntSize(c);
+    if (!ntLayout(sz.w * 10, sz.h * 10)) return customAlert('이름표가 A4 종이보다 커서 인쇄할 수 없어요. 크기를 줄여 주세요.');
+    const fi = ntFontInfo(c);
+    if (!fi.custom && document.fonts && document.fonts.load) {
+      try { await Promise.race([document.fonts.load(ntWeight(c) + " 40px '" + fi.f + "'", ntItems(c).map(function(it) { return it.text; }).join('')), new Promise(function(r) { setTimeout(r, 3000); })]); } catch (e) {}
+    }
+    ntRender(true);
+    // 가로로 놓는 게 더 많이 들어가면 그때만 인쇄 방향을 가로로(다른 화면 인쇄에 남지 않게 끝나면 지움)
+    const land = document.getElementById('nt-pages').dataset.land === '1';
+    let st = document.getElementById('nt-page-style');
+    if (!st) { st = document.createElement('style'); st.id = 'nt-page-style'; document.head.appendChild(st); }
+    st.textContent = '@media print { @page { size: A4 ' + (land ? 'landscape' : 'portrait') + '; margin: 0; } }';
+    const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    window.print();
+  }
+
+  // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다.
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-nametag-btn') closeNametagPage();
     }, true);
   });
 
