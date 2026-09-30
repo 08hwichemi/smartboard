@@ -194,7 +194,9 @@ function pdfInfo(buf) {
   const pickFont = async (title) => { await P.click('#nt-font-btn'); await wait(100); await P.click('#nt-font-menu .nt-font-opt[title="' + title + '"]'); await wait(200); };
 
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
-  check('레일 순서: 결석계 바로 아래 이름표', order[order.indexOf('결석계') + 1] === '이름표', order);
+  check('레일 순서: 공용(명렬표~이름표) → "학급" 선 → 좌석배치표·조퇴증·결석계', order.join(',') === '홈,명렬표,단축키,생기부 문장 점검,시간표,월간일정표,이름표,좌석배치표,조퇴증,결석계,관리자 설정', order);
+  const sep = await P.evaluate(() => { const s = document.querySelector('#app-rail .rail-sep'); return s && s.previousElementSibling.id === 'rail-nametag-btn' && s.nextElementSibling.id === 'rail-seatchart-btn' && s.innerText.trim() === '학급'; });
+  check('이름표와 좌석배치표 사이에 "학급" 구분선', sep);
 
   await P.click('#rail-nametag-btn'); await wait(300);
   check('누르면 이름표 화면 + 버튼 표시, 홈은 숨김', await shown() && await P.evaluate(() => document.getElementById('rail-nametag-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
