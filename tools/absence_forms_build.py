@@ -2,7 +2,7 @@
 # 칸 너비·줄 높이·병합·테두리·글꼴·바탕색을 그대로 가져오고, 수식 칸은 비워 두고 data-c="B2"로 표시 → 화면(index.html)이 값을 채움.
 # 쓰는 법: pip install openpyxl && python3 tools/absence_forms_build.py 결석계.xlsm absence/forms.json
 # (원본 엑셀엔 학생 이름·결석 기록이 들어 있으니 이 공개 저장소에 올리지 말 것. 양식이 바뀌면 엑셀 인쇄 시트만 고치고 다시 돌리면 됨.)
-import openpyxl, json, sys, html
+import openpyxl, json, sys, html, re
 from openpyxl.utils import get_column_letter as L, range_boundaries
 
 THEME = ['FFFFFF', '000000', 'E7E6E6', '44546A', '4472C4', 'ED7D31', 'A5A5A5', 'FFC000', '5B9BD5', '70AD47']
@@ -97,11 +97,26 @@ def build(ws, rng, name):
     out.append('</table>')
     return '\n'.join(out), dyn
 
+def close_frame(html):
+    """바깥 테두리 아래 선 닫기 — 교외체험학습 시트는 양옆 선이 34행까지 내려오는데 아래 선이 엑셀 셀에
+    안 남아 있어서 인쇄하면 큰 상자 아래가 열려 보였다(2026-09-30 사용자 제보). 첫 칸에 왼쪽 선이 있는
+    마지막 줄의 칸들에 아래 선을 넣는다(이미 있으면 그대로)."""
+    rows = re.findall(r'<tr[^>]*>.*?</tr>', html, re.S)
+    framed = [r for r in rows if re.search(r'<td[^>]*style="[^"]*border-left', r.split('</td>')[0])]
+    if not framed:
+        return html
+    last = framed[-1]
+    if 'border-bottom' in last.split('</td>')[0]:
+        return html
+    fixed = re.sub(r'(<td[^>]*style=")(?![^"]*border-bottom)', r'\1border-bottom:1px solid #000000;', last)
+    return html.replace(last, fixed)
+
 wb = openpyxl.load_workbook(sys.argv[1])
 res = {}
 for sheet, rng, key in (('출력미리보기', 'A1:M31', 'confirm'), ('교외체험학습', 'A1:O35', 'trip')):
     ws = wb[sheet]
     t, dyn = build(ws, rng, key)
+    t = close_frame(t)
     pm = ws.page_margins
     res[key] = {'html': t, 'dyn': dyn, 'scale': ws.page_setup.scale,
                 'margin_in': [pm.top, pm.right, pm.bottom, pm.left], 'hcenter': ws.print_options.horizontalCentered}

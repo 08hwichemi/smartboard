@@ -14,7 +14,7 @@ const XLSXLIB = (() => {
   }
   return fs.existsSync(f) ? f : null;
 })();
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const html = fs.readFileSync(process.env.HTML_PATH || path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
 const T1 = '11111111-1111-1111-1111-111111111111';
@@ -91,6 +91,8 @@ async function handleDb(pageInfo, req) {
     }
     return { data: [], error: null };
   }
+  // 학급 구성(학년별 반 수) — 결석계 반 목록이 이걸 보고 만들어진다(예전엔 안 받아서 "1반"만 보였음)
+  if (table === 'app_settings' && filters.some(f => f.val === 'class_structure')) return { data: { value: { gradeCount: 3, classCounts: [8, 9, 10] } }, error: null };
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
   return { data: null, error: null };
 }
@@ -240,6 +242,7 @@ function check(label, cond, detail) {
   await P.click('#rail-absence-btn'); await wait(700);
   check('열림 + 레일 표시 + 인쇄 대상', await shown() && await P.evaluate(() => document.getElementById('rail-absence-btn').classList.contains('active') && document.body.dataset.printTarget === 'absence' && document.getElementById('main-dashboard').style.display === 'none'));
   check('담임 반(3학년 1반)으로 시작', await P.evaluate(() => document.getElementById('ab-grade').value === '3' && document.getElementById('ab-class').value === '1'));
+  check('반 목록이 학급 구성대로(3학년 10반까지) — 처음 켜고 바로 결석계를 열어도', await P.evaluate(() => document.getElementById('ab-class').options.length) === 11, await P.evaluate(() => document.getElementById('ab-class').options.length));
   check('양식 한 번 받음', formFetches.length === 1, formFetches);
   check('명렬표는 번호·이름만 받음(연락처 X)', studentSelects.length >= 1);
   const opts = await P.evaluate(() => [...document.querySelectorAll('#ab-n-num option')].map(o => o.textContent));
@@ -399,6 +402,14 @@ function check(label, cond, detail) {
   await P.evaluate(() => abSelect(abClassRecords().find(r => r.reason === '교외체험학습').id)); await wait(200);
   const pt = await P.evaluate(() => { const paper = document.getElementById('ab-paper').getBoundingClientRect(), t = document.querySelector('#ab-paper table').getBoundingClientRect(); return { top: Math.round(t.top - paper.top), bottom: Math.round(paper.bottom - t.bottom), l: Math.round(t.left - paper.left), r: Math.round(paper.right - t.right) }; });
   check('신청서도 아래 여백 = 위 여백, 좌우 여백 11mm 이상', Math.abs(pt.top - pt.bottom) <= 6 && pt.l >= 41 && pt.r >= 41, pt);
+  // 신청서 바깥 큰 상자: 양옆 선이 내려오는 마지막 줄에 아래 선이 있어야 상자가 닫힘(예전엔 아래가 열려 있었음)
+  const frame = await P.evaluate(() => {
+    const rows = [...document.querySelectorAll('#ab-paper table tr')];
+    const framed = rows.filter(tr => tr.cells[0] && parseFloat(getComputedStyle(tr.cells[0]).borderLeftWidth) > 0);
+    const last = framed[framed.length - 1];
+    return { n: framed.length, bottoms: [...last.cells].map(td => parseFloat(getComputedStyle(td).borderBottomWidth)) };
+  });
+  check('신청서 바깥 큰 상자 아래 선이 닫혀 있음', frame.n > 20 && frame.bottoms.length && frame.bottoms.every(w => w > 0), frame);
   if (process.env.SAVE_PDF) fs.writeFileSync(process.env.SAVE_PDF + '-trip.pdf', await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true }));
   await P.evaluate(() => abSelect(abClassRecords().find(r => r.reason !== '교외체험학습').id)); await wait(200);
   if (process.env.SAVE_PDF) fs.writeFileSync(process.env.SAVE_PDF + '-confirm.pdf', await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true }));
@@ -428,6 +439,7 @@ function check(label, cond, detail) {
   check('명렬표도 안 받음', !studentSelects.some(q => q === 'grade=1&class_no=1'), studentSelects);
   await other.page.selectOption('#ab-grade', '3'); await wait(200);
   check('학년만 고르면 반은 비워 둠', await other.page.evaluate(() => document.getElementById('ab-class').value === '' && !document.getElementById('ab-n-num')));
+  check('담임 아닌 선생님도 반 목록 전부(3학년 10반)', await other.page.evaluate(() => document.getElementById('ab-class').options.length) === 11);
   await other.page.selectOption('#ab-class', '1'); await wait(400);
   check('반까지 고르면 그 반 명렬표 + 새 줄', await other.page.evaluate(() => document.querySelectorAll('#ab-n-num option').length === 6));
 

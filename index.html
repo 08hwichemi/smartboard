@@ -10570,6 +10570,8 @@
     // 반: 기억한 반 → 담임이면 담임 반. 담임이 아니면 고를 때까지 비워 둠(아무 반이나 띄우지 않음).
     const t = window.currentTeacher || {};
     if (!abHasClass() && t.role === '담임' && t.homeroom_grade && t.homeroom_class) abSetCfg({ g: t.homeroom_grade, c: t.homeroom_class });
+    // 학년별 반 수(관리자 설정 "학급 구성")를 먼저 받아야 반 목록이 다 나온다 — 안 받으면 "1반"만 보였다.
+    await ensureClassStructureLoaded();
     abFillClassSelects();
     if (!window.__abInited) {
       window.__abInited = true;
