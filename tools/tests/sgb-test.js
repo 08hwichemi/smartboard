@@ -321,6 +321,8 @@ function check(label, cond, detail) {
   check('문장 점검 칸은 숨김', await P.evaluate(() => document.getElementById('sgb-pane-check').style.display === 'none'));
   const g0 = await fl();
   check('빈 칸: Q&A 53개를 장별로', g0.qa === 53 && g0.secs[0] === '처리요령' && g0.pg === 0, g0);
+  const light = await P.evaluate(() => ({ answers: [...document.querySelectorAll('#sgb-find-list .sgbf-a')].filter(a => a.innerHTML).length, blur: getComputedStyle(document.getElementById('sgb-overlay')).backdropFilter, h: document.getElementById('sgb-find-list').scrollHeight }));
+  check('가볍게: 답 전문은 안 그림, 흐림 효과 없음', light.answers === 0 && light.blur === 'none', light);
   await P.fill('#sgb-find-q', '영문'); await wait(200);
   const g1 = await fl();
   check('"영문" → Q&A와 본문 쪽 둘 다', g1.qa >= 1 && g1.pg >= 1 && /^Q&A \d+개$/.test(g1.secs[0]), g1);
@@ -339,10 +341,13 @@ function check(label, cond, detail) {
   check('"자율동아리" 찾기', g4.qa + g4.pg > 0, g4);
   await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb-find.png' });
   // 답 펼치기
-  const clamp = () => P.evaluate(() => document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-a').classList.contains('clamp'));
-  const c0 = await clamp();
+  const ans = () => P.evaluate(() => { const a = document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-a'); return a.style.display === 'none' ? '' : a.innerText; });
+  const a0 = await ans();
   await P.click('#sgb-find-list .sgbf-item[data-qa] .sgbf-more'); await wait(100);
-  check('답 전체 보기 ↔ 접기', c0 && !(await clamp()) && /접기/.test(await P.innerText('#sgb-find-list .sgbf-item[data-qa] .sgbf-more')));
+  const a1 = await ans();
+  check('답은 처음엔 안 그림 → 답 보기 누르면 전문', a0 === '' && a1.length > 100 && /접기/.test(await P.innerText('#sgb-find-list .sgbf-item[data-qa] .sgbf-more')), [a0, a1.length]);
+  await P.click('#sgb-find-list .sgbf-item[data-qa] .sgbf-q'); await wait(100);
+  check('질문 눌러도 접힘', await ans() === '');
   await P.fill('#sgb-find-q', '없는말없는말'); await wait(150);
   check('없으면 안내', /찾는 말이 없어요/.test(await P.innerText('#sgb-find-list')));
   await P.fill('#sgb-find-q', '<img src=x>'); await wait(150);

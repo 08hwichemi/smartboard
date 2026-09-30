@@ -339,7 +339,8 @@
     #sgb-tabs .top-btn { flex: 1; font-size: 13px; padding: 6px 0; font-weight: 800; }
     .sgbf-sec { font-size: 13px; font-weight: 800; color: var(--accent-color); margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--border-color); }
     .sgbf-sec:first-child { margin-top: 0; }
-    .sgbf-item { border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; font-size: var(--fz-sgb); line-height: 1.55; }
+    /* 긴 목록 스크롤이 버벅이지 않게: 화면 밖 칸은 그리지 않음(content-visibility), 답은 펼칠 때만 넣음. */
+    .sgbf-item { border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; font-size: var(--fz-sgb); line-height: 1.55; content-visibility: auto; contain-intrinsic-size: auto 80px; }
     .sgbf-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--text-sub); font-weight: 700; margin-bottom: 3px; }
     .sgbf-open { flex: 0 0 auto; font-size: 11.5px; font-weight: 800; color: var(--accent-color); text-decoration: none; border: 1px solid var(--accent-color); border-radius: 6px; padding: 1px 8px; white-space: nowrap; }
     .sgbf-open:hover { background: var(--accent-soft); }
@@ -347,7 +348,7 @@
     .sgbf-q::before { content: 'Q. '; color: var(--accent-color); }
     .sgbf-a { color: var(--text-main); margin-top: 4px; white-space: normal; word-break: break-all; }
     .sgbf-a::before { content: 'A. '; font-weight: 800; color: var(--accent-color); }
-    .sgbf-a.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .sgbf-a-snip { color: var(--text-sub); margin-top: 3px; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); }
     .sgbf-more { background: none; border: 0; padding: 0; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); cursor: pointer; font-family: inherit; }
     .sgbf-tags span { display: inline-block; font-size: 11px; font-weight: 700; color: var(--text-sub); background: var(--bg-color); border-radius: 5px; padding: 0 6px; margin: 0 3px 3px 0; }
     .sgbf-snip { color: var(--text-main); word-break: break-all; }
@@ -1122,7 +1123,7 @@
 
 <!-- 📝 생기부 문장 점검 — 단축키처럼 왼쪽에 붙어 열리는 패널. 규칙은 SGB_RULES 한곳에 모여 있음(해마다 길라잡이 보고 교체).
      학생 문장은 이 화면(브라우저) 안에서만 점검하고 어디에도 저장·전송하지 않는다. -->
-<div class="overlay" id="sgb-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);" onclick="if (event.target === this) closeSgb()">
+<div class="overlay" id="sgb-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25); backdrop-filter: none;" onclick="if (event.target === this) closeSgb()">
   <div class="modal-box" style="width: 640px; max-width: 90vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
       <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">📝 생기부 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
@@ -5386,20 +5387,30 @@
   function sgbOpenLink(g, p) {
     return '<a class="sgbf-open" href="' + escapeHtmlAttr(g.pdf) + '#page=' + p + '" target="_blank" rel="noopener">p.' + p + ' 열기</a>';
   }
+  let sgbFindRes = [];
   function sgbQaHtml(g, x, idx, res) {
+    let snip = '';
+    if (res.length) {
+      const hitA = res.some(function(re) { re.lastIndex = 0; return re.test(x.a); });
+      if (hitA) snip = '<div class="sgbf-a-snip">' + sgbSnippet(x.a, res) + '</div>';
+    }
     return '<div class="sgbf-item" data-qa="' + idx + '">' +
       '<div class="sgbf-meta"><span>Q&amp;A · ' + escapeHtmlAttr(x.ch) + '</span>' + sgbOpenLink(g, x.p) + '</div>' +
       (x.tags.length ? '<div class="sgbf-tags">' + x.tags.map(function(t) { return '<span>#' + sgbMark(t, res) + '</span>'; }).join('') + '</div>' : '') +
-      '<div class="sgbf-q" onclick="toggleSgbAnswer(' + idx + ')">' + sgbMark(x.q, res) + '</div>' +
-      '<div class="sgbf-a clamp">' + sgbMark(x.a, res) + '</div>' +
-      '<button class="sgbf-more" onclick="toggleSgbAnswer(' + idx + ')">▾ 답 전체 보기</button></div>';
+      '<div class="sgbf-q" onclick="toggleSgbAnswer(' + idx + ')">' + sgbMark(x.q, res) + '</div>' + snip +
+      '<div class="sgbf-a" style="display:none;"></div>' +
+      '<button class="sgbf-more" onclick="toggleSgbAnswer(' + idx + ')">▾ 답 보기</button></div>';
   }
+  // 답 전문은 펼칠 때만 넣는다(53개 답을 한꺼번에 그리면 오래된 컴퓨터에서 스크롤이 버벅임).
   function toggleSgbAnswer(idx) {
     const el = document.querySelector('#sgb-find-list .sgbf-item[data-qa="' + idx + '"]');
-    if (!el) return;
-    const a = el.querySelector('.sgbf-a');
-    const open = a.classList.toggle('clamp');
-    el.querySelector('.sgbf-more').textContent = open ? '▾ 답 전체 보기' : '▴ 접기';
+    if (!el || !sgbGuide) return;
+    const a = el.querySelector('.sgbf-a'), snip = el.querySelector('.sgbf-a-snip');
+    const opening = a.style.display === 'none';
+    a.innerHTML = opening ? sgbMark(sgbGuide.qa[idx].a, sgbFindRes) : '';
+    a.style.display = opening ? '' : 'none';
+    if (snip) snip.style.display = opening ? 'none' : '';
+    el.querySelector('.sgbf-more').textContent = opening ? '▴ 접기' : '▾ 답 보기';
   }
 
   function renderSgbFind() {
@@ -5416,6 +5427,7 @@
     let res = sgbTermRes(q);
     let html = '';
     if (!res.length) {
+      sgbFindRes = [];
       // 빈 칸: Q&A 질문을 장별로 훑어보기
       html += '<div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">궁금한 말을 적으면 Q&amp;A와 길라잡이 본문에서 찾아요. 아래는 Q&amp;A ' + g.qa.length + '개 전체예요.</div>';
       let ch = null;
@@ -5442,6 +5454,7 @@
       }
     }
     const qa = r.qa, pages = r.pages;
+    sgbFindRes = res;
     if (splitNote) html += '<div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">"' + escapeHtmlAttr(q.trim()) + '"는 그대로 나오는 곳이 없어서 ' + escapeHtmlAttr(splitNote) + '로 나눠 찾았어요.</div>';
     if (qa.length) {
       html += '<div class="sgbf-sec">Q&amp;A ' + qa.length + '개</div>';
