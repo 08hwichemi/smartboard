@@ -312,6 +312,7 @@
     .hwp-keys { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 3px; flex: 0 1 auto; color: var(--text-sub); font-size: calc(var(--fz-hwp) - 1px); text-align: right; }
     .hwp-keys kbd { font-family: inherit; font-size: calc(var(--fz-hwp) - 1px); font-weight: 800; color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-color); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
     .hwp-when { font-size: calc(var(--fz-hwp) - 2px); color: var(--text-sub); margin-right: 2px; }
+    #hwpkeys-tabs .top-btn { flex: 1; font-size: 12.5px; padding: 5px 0; }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -927,9 +928,9 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
-    <div class="rail-item" id="rail-hwpkeys-btn" title="한글 단축키" onclick="openHwpKeys()">
+    <div class="rail-item" id="rail-hwpkeys-btn" title="단축키" onclick="openHwpKeys()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg></div>
-      <div class="rail-label">한글 단축키</div>
+      <div class="rail-label">단축키</div>
     </div>
     <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="railToggle('rail-seatchart-btn', openSeatChart)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
@@ -1075,16 +1076,17 @@
   </div>
 </div>
 
-<!-- 한글(HWP) 단축키 — 명렬표처럼 왼쪽에 붙어 열리는 조회 전용 패널. 내용은 HWP_KEYS 배열. -->
+<!-- 단축키(한글·엑셀·윈도우) — 명렬표처럼 왼쪽에 붙어 열리는 조회 전용 패널. 내용은 KEY_TABS(HWP_KEYS 등) 배열. -->
 <div class="overlay" id="hwpkeys-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);" onclick="if (event.target === this) closeHwpKeys()">
   <div class="modal-box" style="width: 400px; max-width: 86vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
-      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">⌨️ 한글 단축키</div>
+      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">⌨️ 단축키</div>
       <div style="display:flex; gap:6px; align-items:center;">
         <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('hwp', -1)">A-</button>
         <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('hwp', 1)">A+</button>
       </div>
     </div>
+    <div class="top-btn-cluster" id="hwpkeys-tabs" style="margin-bottom: 8px;"></div>
     <input type="text" id="hwpkeys-search" class="admin-input" placeholder="🔍 찾기 (예: 표, 정렬, 첨자)" oninput="renderHwpKeys()" style="margin-bottom: 8px;">
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="hwpkeys-list"></div>
     <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
@@ -3859,7 +3861,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴에서 홈, 명렬표, 한글 단축키, 좌석배치표, 시간표 만들기, 월간일정표, 조퇴증으로 옮겨 갈 수 있어요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴에서 홈, 명렬표, 단축키(한글·엑셀·윈도우), 좌석배치표, 시간표 만들기, 월간일정표, 조퇴증으로 옮겨 갈 수 있어요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -4681,7 +4683,7 @@
 
   function closeStudentRoster() { document.getElementById('roster-overlay').style.display = 'none'; }
 
-  // ===== ⌨️ 한글(HWP) 단축키 =====
+  // ===== ⌨️ 단축키 (한글 / 엑셀 / 윈도우) =====
   // 사용자가 준 "한글 단축Key" 표(PDF)를 옮긴 것. 키 적는 법: "+"는 함께 누르기, ","는 떼고 이어서
   // 누르기, "⇨"는 창이 열린 뒤 누르기. when은 그 키를 누르기 전 상태(셀에서, 편집기에서 …).
   const HWP_KEYS = [
@@ -4751,9 +4753,135 @@
     ] }
   ];
 
+  // 엑셀·윈도우 — 적는 법은 한글과 같다. 키 이름에 "+"나 ","가 들어가야 하면 Plus / Comma로 적는다.
+  const EXCEL_KEYS = [
+    { sec: '파일 / 시트', items: [
+      { name: '저장', keys: 'Ctrl+S' },
+      { name: '인쇄', keys: 'Ctrl+P' },
+      { name: '새 시트 넣기', keys: 'Shift+F11' },
+      { name: '다음 시트로', keys: 'Ctrl+PageDown' },
+      { name: '이전 시트로', keys: 'Ctrl+PageUp' }
+    ] },
+    { sec: '이동 / 선택', items: [
+      { name: '자료 끝으로 이동', keys: 'Ctrl+방향키' },
+      { name: '자료 끝까지 선택', keys: 'Ctrl+Shift+방향키' },
+      { name: '맨 처음 셀(A1)로', keys: 'Ctrl+Home' },
+      { name: '마지막 셀로', keys: 'Ctrl+End' },
+      { name: '열 전체 선택', keys: 'Ctrl+Space' },
+      { name: '행 전체 선택', keys: 'Shift+Space' },
+      { name: '전체 선택', keys: 'Ctrl+A' },
+      { name: '셀 주소로 이동', keys: 'F5' }
+    ] },
+    { sec: '입력 / 편집', items: [
+      { name: '셀 고치기', keys: 'F2' },
+      { name: '셀 안에서 줄 바꾸기', keys: 'Alt+Enter' },
+      { name: '고른 셀에 한꺼번에 입력', when: '여러 셀 선택 후', keys: 'Ctrl+Enter' },
+      { name: '위 셀 내용 채우기', keys: 'Ctrl+D' },
+      { name: '왼쪽 셀 내용 채우기', keys: 'Ctrl+R' },
+      { name: '빠른 채우기', keys: 'Ctrl+E' },
+      { name: '오늘 날짜', keys: 'Ctrl+;' },
+      { name: '지금 시각', keys: 'Ctrl+Shift+;' },
+      { name: '선택하여 붙여넣기', keys: 'Ctrl+Alt+V' },
+      { name: '행·열 넣기', when: '행·열 선택 후', keys: 'Ctrl+Shift+=' },
+      { name: '행·열 지우기', when: '행·열 선택 후', keys: 'Ctrl+-' },
+      { name: '찾기', keys: 'Ctrl+F' },
+      { name: '바꾸기', keys: 'Ctrl+H' }
+    ] },
+    { sec: '서식 / 보기', items: [
+      { name: '셀 서식', keys: 'Ctrl+1' },
+      { name: '글자 굵게', keys: 'Ctrl+B' },
+      { name: '표로 만들기', keys: 'Ctrl+T' },
+      { name: '필터 켜기/끄기', keys: 'Ctrl+Shift+L' },
+      { name: '틀 고정', keys: 'Alt, W, F, F' },
+      { name: '열 너비 자동 맞춤', when: '열 선택 후', keys: 'Alt, H, O, I' },
+      { name: '행 숨기기', keys: 'Ctrl+9' },
+      { name: '열 숨기기', keys: 'Ctrl+0' }
+    ] },
+    { sec: '수식', items: [
+      { name: '자동 합계', keys: 'Alt+=' },
+      { name: '참조 고정($) 바꾸기', when: '수식 고칠 때', keys: 'F4', note: '(연타)' },
+      { name: '함수 넣기', keys: 'Shift+F3' },
+      { name: '수식 보기/결과 보기', keys: 'Ctrl+`' },
+      { name: '다시 계산', keys: 'F9' }
+    ] }
+  ];
+
+  const WIN_KEYS = [
+    { sec: '창 / 화면', items: [
+      { name: '바탕 화면 보기', keys: 'Win+D' },
+      { name: '창 바꾸기', keys: 'Alt+Tab' },
+      { name: '창을 화면 반쪽으로', keys: 'Win+← / →' },
+      { name: '창 최대화', keys: 'Win+↑' },
+      { name: '창 최소화', keys: 'Win+↓' },
+      { name: '다른 모니터로 창 옮기기', keys: 'Win+Shift+← / →' },
+      { name: '창 닫기', keys: 'Alt+F4' },
+      { name: '화면 크게(돋보기)', keys: 'Win+Plus' },
+      { name: '돋보기 끄기', keys: 'Win+Esc' }
+    ] },
+    { sec: '자리 비울 때', items: [
+      { name: '화면 잠금', keys: 'Win+L' }
+    ] },
+    { sec: '화면 캡처', items: [
+      { name: '영역 골라 캡처', keys: 'Win+Shift+S' },
+      { name: '전체 화면 캡처해 저장', keys: 'Win+PrtSc' },
+      { name: '지금 창만 캡처', keys: 'Alt+PrtSc' }
+    ] },
+    { sec: '복사 / 붙여넣기', items: [
+      { name: '복사', keys: 'Ctrl+C' },
+      { name: '잘라내기', keys: 'Ctrl+X' },
+      { name: '붙여넣기', keys: 'Ctrl+V' },
+      { name: '클립보드 기록(예전 복사한 것)', keys: 'Win+V' },
+      { name: '서식 없이 붙여넣기', when: '크롬·엣지 등', keys: 'Ctrl+Shift+V' },
+      { name: '실행 취소', keys: 'Ctrl+Z' },
+      { name: '다시 실행', keys: 'Ctrl+Y' },
+      { name: '이모지', keys: 'Win+.' }
+    ] },
+    { sec: '파일 / 폴더', items: [
+      { name: '파일 탐색기', keys: 'Win+E' },
+      { name: '이름 바꾸기', when: '파일 선택 후', keys: 'F2' },
+      { name: '새 폴더', keys: 'Ctrl+Shift+N' },
+      { name: '휴지통 없이 삭제', keys: 'Shift+Delete' },
+      { name: '작업 관리자', keys: 'Ctrl+Shift+Esc' }
+    ] },
+    { sec: '인터넷 (크롬·엣지)', items: [
+      { name: '새 탭', keys: 'Ctrl+T' },
+      { name: '탭 닫기', keys: 'Ctrl+W' },
+      { name: '닫은 탭 다시 열기', keys: 'Ctrl+Shift+T' },
+      { name: '강력 새로고침', keys: 'Ctrl+F5' },
+      { name: '화면 확대 / 축소', keys: 'Ctrl+Plus / -' },
+      { name: '원래 크기로', keys: 'Ctrl+0' },
+      { name: '페이지에서 찾기', keys: 'Ctrl+F' },
+      { name: '주소창으로', keys: 'Ctrl+L' },
+      { name: '전체 화면', keys: 'F11' }
+    ] }
+  ];
+
+  const KEY_TABS = [
+    { id: 'hwp', label: '한글', data: HWP_KEYS, ph: '🔍 찾기 (예: 표, 정렬, 첨자)' },
+    { id: 'excel', label: '엑셀', data: EXCEL_KEYS, ph: '🔍 찾기 (예: 필터, 날짜, 합계)' },
+    { id: 'win', label: '윈도우', data: WIN_KEYS, ph: '🔍 찾기 (예: 캡처, 잠금, 탭)' }
+  ];
+  const KEY_TAB_KEY = 'keys-tab'; // 마지막으로 본 탭(계정별 개인 자료)
+
+  function keysCurrentTab() {
+    let v = null;
+    try { v = localStorage.getItem(KEY_TAB_KEY); } catch (e) {}
+    return KEY_TABS.find(function(t) { return t.id === v; }) || KEY_TABS[0];
+  }
+
+  function setKeysTab(id) {
+    if (keysCurrentTab().id !== id) {
+      try { localStorage.setItem(KEY_TAB_KEY, id); } catch (e) {}
+      scheduleBackupWrite();
+    }
+    document.getElementById('hwpkeys-search').value = '';
+    renderHwpKeys();
+  }
+
   function hwpKeysHtml(item) {
     // "Alt+L ⇨ Alt+H", "Ctrl+N, M"을 키 모양(kbd)으로 바꾼다.
-    const combo = function(c) { return c.trim().split('+').filter(Boolean).map(function(k) { return '<kbd>' + escapeHtmlAttr(k) + '</kbd>'; }).join('+'); };
+    const keyName = function(k) { return k.trim().replace(/Plus/g, '+').replace(/Comma/g, ','); };
+    const combo = function(c) { return c.trim().split('+').filter(Boolean).map(function(k) { return '<kbd>' + escapeHtmlAttr(keyName(k)) + '</kbd>'; }).join('+'); };
     let html = item.typed
       ? '<kbd>' + escapeHtmlAttr(item.keys) + '</kbd> 입력'
       : item.keys.split('⇨').map(function(step) { return step.split(',').map(combo).join(' , '); }).join(' ⇨ ');
@@ -4763,17 +4891,27 @@
   }
 
   function renderHwpKeys() {
-    const q = (document.getElementById('hwpkeys-search').value || '').replace(/\s+/g, '').toLowerCase();
+    const cur = keysCurrentTab();
+    document.getElementById('hwpkeys-tabs').innerHTML = KEY_TABS.map(function(t) {
+      return '<button class="top-btn' + (t.id === cur.id ? ' theme-active' : '') + '" data-tab="' + t.id + '" onclick="setKeysTab(\'' + t.id + '\')">' + t.label + '</button>';
+    }).join('');
+    const search = document.getElementById('hwpkeys-search');
+    search.placeholder = cur.ph;
+    const q = (search.value || '').replace(/\s+/g, '').toLowerCase();
+    // 찾을 때는 세 탭을 모두 뒤진다(엑셀에서 "캡처"를 찾아도 윈도우 것이 나오게) — 지금 탭 것이 먼저.
+    const tabs = q ? [cur].concat(KEY_TABS.filter(function(t) { return t !== cur; })) : [cur];
     let html = '';
-    HWP_KEYS.forEach(function(sec) {
-      const items = sec.items.filter(function(it) {
-        if (!q) return true;
-        return (sec.sec + it.name + (it.when || '') + it.keys).replace(/\s+/g, '').toLowerCase().indexOf(q) !== -1;
-      });
-      if (!items.length) return;
-      html += '<div class="hwp-sec">' + escapeHtmlAttr(sec.sec) + '</div>';
-      items.forEach(function(it) {
-        html += '<div class="hwp-row"><div class="hwp-name">' + escapeHtmlAttr(it.name) + '</div><div class="hwp-keys">' + hwpKeysHtml(it) + '</div></div>';
+    tabs.forEach(function(tab) {
+      tab.data.forEach(function(sec) {
+        const items = sec.items.filter(function(it) {
+          if (!q) return true;
+          return (tab.label + sec.sec + it.name + (it.when || '') + it.keys).replace(/\s+/g, '').toLowerCase().indexOf(q) !== -1;
+        });
+        if (!items.length) return;
+        html += '<div class="hwp-sec">' + (q ? escapeHtmlAttr(tab.label) + ' · ' : '') + escapeHtmlAttr(sec.sec) + '</div>';
+        items.forEach(function(it) {
+          html += '<div class="hwp-row"><div class="hwp-name">' + escapeHtmlAttr(it.name) + '</div><div class="hwp-keys">' + hwpKeysHtml(it) + '</div></div>';
+        });
       });
     });
     document.getElementById('hwpkeys-list').innerHTML = html ||

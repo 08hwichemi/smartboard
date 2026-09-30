@@ -183,7 +183,7 @@ function check(label, cond, detail) {
 
   // 레일에서 명렬표 바로 아래
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
-  check('레일 순서: 명렬표 바로 아래 한글 단축키', order[order.indexOf('명렬표') + 1] === '한글 단축키', order);
+  check('레일 순서: 명렬표 바로 아래 단축키', order[order.indexOf('명렬표') + 1] === '단축키', order);
 
   await P.click('#rail-hwpkeys-btn'); await wait(300);
   check('누르면 열림 + 버튼 표시', await open() && await P.evaluate(() => document.getElementById('rail-hwpkeys-btn').classList.contains('active')));
@@ -196,6 +196,31 @@ function check(label, cond, detail) {
   // 줄이 넘치지 않음(이름·키가 한 줄 안에서 겹치지 않음)
   const overflow = await P.evaluate(() => [...document.querySelectorAll('.hwp-row')].filter(r => r.scrollWidth > r.clientWidth + 1).map(r => r.innerText));
   check('가로로 넘치는 줄 없음', overflow.length === 0, overflow);
+
+  // 탭
+  const tabs = () => P.evaluate(() => [...document.querySelectorAll('#hwpkeys-tabs .top-btn')].map(b => b.innerText + (b.classList.contains('theme-active') ? '*' : '')).join(','));
+  check('탭 3개, 처음엔 한글', await tabs() === '한글*,엑셀,윈도우', await tabs());
+  await P.click('#hwpkeys-tabs [data-tab="excel"]'); await wait(150);
+  const ex = await P.evaluate(() => ({ secs: [...document.querySelectorAll('#hwpkeys-list .hwp-sec')].map(e => e.innerText), rows: document.querySelectorAll('#hwpkeys-list .hwp-row').length, ph: document.getElementById('hwpkeys-search').placeholder }));
+  check('엑셀 탭: 분류 5개·39개, 찾기 예시도 엑셀', ex.secs.join(',') === '파일 / 시트,이동 / 선택,입력 / 편집,서식 / 보기,수식' && ex.rows === 39 && /필터/.test(ex.ph), ex);
+  check('엑셀 탭 기억(계정 자료)', await ls(pc, 'keys-tab') === 'excel');
+  await P.click('#hwpkeys-tabs [data-tab="win"]'); await wait(150);
+  const wn = await P.evaluate(() => ({ secs: [...document.querySelectorAll('#hwpkeys-list .hwp-sec')].map(e => e.innerText), rows: document.querySelectorAll('#hwpkeys-list .hwp-row').length }));
+  check('윈도우 탭: 분류 6개·35개', wn.secs.length === 6 && wn.rows === 35, wn);
+  const plus = await P.evaluate(() => [...document.querySelectorAll('.hwp-row')].find(r => r.innerText.includes('돋보기)')).querySelector('.hwp-keys').innerText.replace(/\s+/g, ''));
+  check('"Plus"는 + 키로 표시', plus === 'Win++', plus);
+  await P.locator('#hwpkeys-overlay .modal-box').screenshot({ path: 'hwpkeys-win.png' });
+  const overflowW = await P.evaluate(() => [...document.querySelectorAll('.hwp-row')].filter(r => r.scrollWidth > r.clientWidth + 1).map(r => r.innerText));
+  check('윈도우 탭 가로로 넘치는 줄 없음', overflowW.length === 0, overflowW);
+  // 찾으면 세 탭 모두에서
+  await P.fill('#hwpkeys-search', '저장'); await wait(150);
+  const all = await P.evaluate(() => [...document.querySelectorAll('#hwpkeys-list .hwp-sec')].map(e => e.innerText));
+  check('윈도우 탭에서 "저장" 찾기 → 한글·엑셀 것도 나옴', all.some(t => t.startsWith('한글 ·')) && all.some(t => t.startsWith('엑셀 ·')), all);
+  await P.click('#hwpkeys-tabs [data-tab="excel"]'); await wait(150);
+  check('탭 바꾸면 찾기 칸 비움', await P.inputValue('#hwpkeys-search') === '');
+  await P.click('#rail-hwpkeys-btn'); await wait(150); await P.click('#rail-hwpkeys-btn'); await wait(150);
+  check('다시 열면 마지막 탭(엑셀)', await tabs() === '한글,엑셀*,윈도우', await tabs());
+  await P.click('#hwpkeys-tabs [data-tab="hwp"]'); await wait(150);
 
   // 찾기
   await P.fill('#hwpkeys-search', '정렬'); await wait(150);
