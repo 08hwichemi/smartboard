@@ -198,7 +198,8 @@ function check(label, cond, detail) {
   await P.click('#rail-sgb-btn'); await wait(300);
   check('누르면 열림 + 버튼 표시 + 입력칸에 커서', await open() && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.activeElement.id === 'sgb-text'));
   const areas = () => P.evaluate(() => [...document.querySelectorAll('#sgb-areas .top-btn')].map(b => b.innerText + (b.classList.contains('theme-active') ? '*' : '')).join(','));
-  check('영역 2개(500자 묶음 / 행특 300자), 처음엔 500자', await areas() === '세특·개세특·진로·자율자치·동아리 (500자)*,행특 (300자)', await areas());
+  check('영역 4개, 처음엔 세특 묶음', await areas() === '세특·개세특·자율자치 (500자)*,진로 (500자),동아리 (500자),행특 (300자)', await areas());
+  check('세특 묶음엔 앞말 칸 없음', await P.evaluate(() => document.getElementById('sgb-prefix-row').style.display === 'none'));
   check('빈 칸: 0자 0바이트 / 1500바이트', /공백 제외 0자 공백 포함 0자 0바이트 \/ 1500바이트\(500자\)/.test(await count()), await count());
 
   // 한도: 과목별 500자 = 1500바이트
@@ -211,9 +212,35 @@ function check(label, cond, detail) {
   check('고른 영역 기억(계정 자료)', await ls(pc, 'sgb-area') === 'behav');
   await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
   check('다시 500자 묶음 → 1500바이트', /\/ 1500바이트\(500자\)/.test(await count()) && await ls(pc, 'sgb-area') === 's500', await count());
-  await P.evaluate(() => { localStorage.setItem('sgb-area', 'club'); renderSgb(); });
-  check('예전에 기억한 영역(동아리 등)은 500자 묶음으로', /\/ 1500바이트/.test(await count()));
-  await P.evaluate(() => { localStorage.setItem('sgb-area', 's500'); });
+  await P.evaluate(() => { localStorage.setItem('sgb-area', 'indiv'); renderSgb(); });
+  check('예전 영역 id(개인별 세특 등)는 세특 묶음으로', /세특·개세특·자율자치 \(500자\)\*/.test(await areas()), await areas());
+
+  // 동아리: 동아리명 바이트를 본문과 합쳐 셈, 동아리명은 계정별 기억
+  await P.click('#sgb-areas [data-area="club"]'); await wait(100);
+  check('동아리 → 동아리명 칸 보임', await P.evaluate(() => document.getElementById('sgb-prefix-row').style.display === 'flex' && document.getElementById('sgb-prefix-label').innerText === '동아리명'));
+  await P.fill('#sgb-prefix', '(과학탐구반)'); await wait(150);   // 괄호 2 + 한글 5 = 17바이트
+  await type('가'.repeat(494));                                   // 1482바이트 → 합 1499
+  check('동아리명 17 + 본문 1482 = 1499바이트, 1 남음', /1499바이트/.test(await count()) && /1바이트 남음/.test(await count()) && /동아리명 17 \+ 본문 1482바이트/.test(await count()), await count());
+  await type('가'.repeat(495));
+  check('본문만으론 1485지만 동아리명 합치면 넘음', await P.evaluate(() => document.getElementById('sgb-count').classList.contains('over')) && /2바이트 넘음/.test(await count()), await count());
+  await P.fill('#sgb-text', '과학 실험 설계에 관심이 많아 산화 환원 반응을 주제로 탐구함.'); await wait(120);
+  await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb-club.png' });
+  await type('가'.repeat(495));
+  check('동아리명은 계정 자료로 기억', await ls(pc, 'sgb-club-name') === '(과학탐구반)');
+  await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
+  check('세특으로 바꾸면 동아리명은 안 셈', /1485바이트/.test(await count()), await count());
+
+  // 진로: 진로 희망 분야도 합쳐 셈(기억은 안 함)
+  await P.click('#sgb-areas [data-area="career"]'); await wait(100);
+  check('진로 → 진로 희망 분야 칸(비어 있음)', await P.evaluate(() => document.getElementById('sgb-prefix-label').innerText === '진로 희망 분야' && document.getElementById('sgb-prefix').value === ''));
+  await P.fill('#sgb-prefix', '의사'); await wait(150);
+  check('진로 분야 6 + 본문 1485 = 1491', /1491바이트/.test(await count()), await count());
+  check('진로 분야는 저장 안 함', !Object.keys(await P.evaluate(() => ({ ...localStorage }))).some(k => /career/.test(k) && k !== 'sgb-area'));
+  await P.click('#sgb-areas [data-area="club"]'); await wait(100);
+  check('동아리로 돌아오면 동아리명 그대로', await P.inputValue('#sgb-prefix') === '(과학탐구반)');
+  await P.click('#sgb-areas [data-area="career"]'); await wait(100);
+  check('진로로 돌아오면 진로 분야 그대로', await P.inputValue('#sgb-prefix') === '의사');
+  await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
 
   // 점검
   await type('TOEIC 900점을 받았고 수학 경시대회에서 금상을 수상하였다.\n① 부광고등학교 축제에서 발표함.');
@@ -255,6 +282,11 @@ function check(label, cond, detail) {
   await P.click('#sgb-copy-btn'); await wait(200);
   const clip = await P.evaluate(() => window.__clip);
   check('복사 → 쓴 문장 그대로(줄바꿈 포함) 클립보드에', clip === '첫 줄 탐구함.\n둘째 줄 발표함.', clip);
+  await P.click('#sgb-areas [data-area="club"]'); await wait(100);
+  await P.evaluate(() => { window.__clip = null; });
+  await P.click('#sgb-copy-btn'); await wait(200);
+  check('동아리에서 복사해도 본문만(동아리명 빼고)', await P.evaluate(() => window.__clip) === '첫 줄 탐구함.\n둘째 줄 발표함.', await P.evaluate(() => window.__clip));
+  await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
   check('복사했다는 표시', /복사했어요/.test(await P.innerText('#sgb-copy-btn')));
   await wait(2000);
   check('잠시 뒤 버튼 글자 원래대로', /^📋 복사/.test(await P.innerText('#sgb-copy-btn')));
@@ -274,7 +306,7 @@ function check(label, cond, detail) {
   await P.click('#rail-sgb-btn'); await wait(200);
   check('같은 버튼 한 번 더 → 닫힘', !(await open()) && !(await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active'))));
   await P.click('#rail-sgb-btn'); await wait(200);
-  check('다시 열면 마지막 영역(500자 묶음)', /동아리 \(500자\)\*/.test(await areas()), await areas());
+  check('다시 열면 마지막 영역(세특 묶음)', /자율자치 \(500자\)\*/.test(await areas()), await areas());
   await P.mouse.click(1400, 500); await wait(200);
   check('바깥 누르면 닫힘', !(await open()));
   await P.click('#rail-sgb-btn'); await wait(200);

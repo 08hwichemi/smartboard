@@ -1117,6 +1117,11 @@
     </div>
     <div class="top-btn-cluster" id="sgb-areas" style="margin-bottom: 8px; flex-wrap: wrap;"></div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;">
+      <div id="sgb-prefix-row" style="display:none; align-items:center; gap:8px; margin-bottom:8px;">
+        <label for="sgb-prefix" id="sgb-prefix-label" style="flex:0 0 auto; font-size:12.5px; font-weight:800;"></label>
+        <input type="text" id="sgb-prefix" class="admin-input" style="flex:1; margin:0;" oninput="onSgbPrefixInput()">
+        <span id="sgb-prefix-bytes" style="flex:0 0 auto; font-size:12px; font-weight:700; color:var(--text-sub);"></span>
+      </div>
       <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
       <div class="sgb-count" id="sgb-count"></div>
       <div class="sgb-bar" id="sgb-bar"><div></div></div>
@@ -5016,8 +5021,13 @@
     source: '2026학년도 학교생활기록부 기재 길라잡이(고)',
     // chars = 한글 기준 최대 글자 수. 나이스 바이트 한도 = chars × 3.
     areas: [
-      { id: 's500', label: '세특·개세특·진로·자율자치·동아리', chars: 500, page: 'p.73',
-        note: '과목별 세특은 과목마다, 공통과목(공통국어·공통수학·공통영어·통합사회·통합과학·한국사·과학탐구실험)은 1·2 합산 500자. 자율·자치·동아리 500자는 학교 확인값.' },
+      { id: 's500', label: '세특·개세특·자율자치', chars: 500, page: 'p.73',
+        note: '과목별 세특은 과목마다, 공통과목(공통국어·공통수학·공통영어·통합사회·통합과학·한국사·과학탐구실험)은 1·2 합산 500자. 자율·자치 500자는 학교 확인값.' },
+      // prefix: 본문 앞에 함께 들어가 한도를 같이 쓰는 말. 바이트는 합쳐 세고, 복사는 본문만(나이스에서 따로 들어감).
+      { id: 'career', label: '진로', chars: 500, page: 'p.73',
+        prefix: { label: '진로 희망 분야', ph: '예: 생명과학 연구원' } },
+      { id: 'club', label: '동아리', chars: 500, page: '', note: '동아리 500자는 학교 확인값.',
+        prefix: { label: '동아리명', ph: '예: (과학탐구반)', remember: 'sgb-club-name' } },
       { id: 'behav', label: '행특', chars: 300, page: 'p.73' }
     ],
     // level: 'no' = 기재 불가(빨강), 'chk' = 확인 필요(노랑). words는 그대로 찾을 말, re는 정규식.
@@ -5063,6 +5073,26 @@
         re: /[가-힣](?:다|요|니다|어요|해요)(?=\s*[.!?]|\s*$)/gm }
     ]
   };
+  const sgbPrefixVals = {}; // 영역별 앞말(진로 분야 등) — 화면에만. remember 키가 있는 것(동아리명)만 계정별 기억.
+  function sgbPrefixOf(area) {
+    if (!area.prefix) return '';
+    if (sgbPrefixVals[area.id] == null && area.prefix.remember) {
+      try { sgbPrefixVals[area.id] = localStorage.getItem(area.prefix.remember) || ''; } catch (e) {}
+    }
+    return sgbPrefixVals[area.id] || '';
+  }
+  function onSgbPrefixInput() {
+    const area = sgbCurrentArea();
+    if (!area.prefix) return;
+    const v = document.getElementById('sgb-prefix').value;
+    sgbPrefixVals[area.id] = v;
+    if (area.prefix.remember) {
+      try { if (v) localStorage.setItem(area.prefix.remember, v); else localStorage.removeItem(area.prefix.remember); } catch (e) {}
+      clearTimeout(onSgbPrefixInput._t);
+      onSgbPrefixInput._t = setTimeout(scheduleBackupWrite, 800);
+    }
+    renderSgb();
+  }
   const SGB_AREA_KEY = 'sgb-area'; // 마지막으로 고른 영역(계정별 개인 자료) — 문장은 저장 안 함
 
   // 나이스 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기(ASCII) 1, 엔터 2. 그 밖의 글자(·, “ ”, 한자 등)는
@@ -5155,7 +5185,20 @@
       return '<button class="top-btn' + (a.id === area.id ? ' theme-active' : '') + '" data-area="' + a.id + '" onclick="setSgbArea(\'' + a.id + '\')">' + a.label + ' <span style="font-weight:600; opacity:.75;">(' + a.chars + '자)</span></button>';
     }).join('');
     const text = document.getElementById('sgb-text').value;
-    const c = sgbCount(text);
+    const prefixRow = document.getElementById('sgb-prefix-row');
+    const prefix = sgbPrefixOf(area);
+    const pc = sgbCount(prefix);
+    if (area.prefix) {
+      prefixRow.style.display = 'flex';
+      document.getElementById('sgb-prefix-label').textContent = area.prefix.label;
+      const pin = document.getElementById('sgb-prefix');
+      pin.placeholder = area.prefix.ph;
+      if (pin.value !== prefix) pin.value = prefix;
+      document.getElementById('sgb-prefix-bytes').textContent = pc.bytes + '바이트';
+    } else prefixRow.style.display = 'none';
+    const bc = sgbCount(text);
+    // 앞말과 본문은 나이스에서 한 칸으로 이어지니 합쳐 센다(사이 띄어쓰기는 없는 것으로).
+    const c = { bytes: pc.bytes + bc.bytes, withSpace: pc.withSpace + bc.withSpace, noSpace: pc.noSpace + bc.noSpace };
     const limit = area.chars * 3;
     const over = c.bytes > limit;
     const countEl = document.getElementById('sgb-count');
@@ -5163,12 +5206,15 @@
     countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
       '<span><b>' + c.bytes + '</b>바이트 <span class="sgb-limit">/ ' + limit + '바이트(' + area.chars + '자)' +
       (over ? ' · <b>' + (c.bytes - limit) + '바이트 넘음</b>' : ' · ' + (limit - c.bytes) + '바이트 남음') + '</span></span>';
+    if (area.prefix && pc.bytes) countEl.innerHTML += '<span class="sgb-limit" id="sgb-split">(' + escapeHtmlAttr(area.prefix.label) + ' ' + pc.bytes + ' + 본문 ' + bc.bytes + '바이트)</span>';
     const bar = document.getElementById('sgb-bar');
     bar.className = 'sgb-bar' + (over ? ' over' : '');
     bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
     document.getElementById('sgb-note').textContent =
       area.label + ' 최대 ' + area.chars + '자(학년 단위)' + (area.page ? ' · 길라잡이 ' + area.page : '') +
-      (area.note ? ' · ' + area.note : '') + ' · 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
+      (area.note ? ' · ' + area.note : '') +
+      (area.prefix ? ' · ' + area.prefix.label + '도 한도에 함께 들어가서 합쳐 셈(복사 버튼은 본문만 복사)' : '') +
+      ' · 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
 
     const result = document.getElementById('sgb-result');
     if (!text.trim()) {
