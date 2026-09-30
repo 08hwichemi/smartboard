@@ -336,6 +336,22 @@
     #sgb-preview mark { border-radius: 3px; padding: 0 1px; color: inherit; }
     #sgb-preview mark.no { background: rgba(229,72,77,0.28); }
     #sgb-preview mark.chk { background: rgba(245,190,40,0.38); }
+    #sgb-tabs .top-btn { flex: 1; font-size: 13px; padding: 6px 0; font-weight: 800; }
+    .sgbf-sec { font-size: 13px; font-weight: 800; color: var(--accent-color); margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--border-color); }
+    .sgbf-sec:first-child { margin-top: 0; }
+    .sgbf-item { border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; font-size: var(--fz-sgb); line-height: 1.55; }
+    .sgbf-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--text-sub); font-weight: 700; margin-bottom: 3px; }
+    .sgbf-open { flex: 0 0 auto; font-size: 11.5px; font-weight: 800; color: var(--accent-color); text-decoration: none; border: 1px solid var(--accent-color); border-radius: 6px; padding: 1px 8px; white-space: nowrap; }
+    .sgbf-open:hover { background: var(--accent-soft); }
+    .sgbf-q { font-weight: 800; color: var(--text-main); cursor: pointer; }
+    .sgbf-q::before { content: 'Q. '; color: var(--accent-color); }
+    .sgbf-a { color: var(--text-main); margin-top: 4px; white-space: normal; word-break: break-all; }
+    .sgbf-a::before { content: 'A. '; font-weight: 800; color: var(--accent-color); }
+    .sgbf-a.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .sgbf-more { background: none; border: 0; padding: 0; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+    .sgbf-tags span { display: inline-block; font-size: 11px; font-weight: 700; color: var(--text-sub); background: var(--bg-color); border-radius: 5px; padding: 0 6px; margin: 0 3px 3px 0; }
+    .sgbf-snip { color: var(--text-main); word-break: break-all; }
+    .sgbf-item mark { background: rgba(245,190,40,0.45); color: inherit; border-radius: 3px; padding: 0 1px; }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -1109,12 +1125,17 @@
 <div class="overlay" id="sgb-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);" onclick="if (event.target === this) closeSgb()">
   <div class="modal-box" style="width: 640px; max-width: 90vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
-      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">📝 생기부 문장 점검 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
+      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">📝 생기부 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
       <div style="display:flex; gap:6px; align-items:center;">
         <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
         <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
       </div>
     </div>
+    <div class="top-btn-cluster" id="sgb-tabs" style="margin-bottom: 10px;">
+      <button class="top-btn theme-active" data-tab="check" onclick="setSgbTab('check')">✍️ 문장 점검</button>
+      <button class="top-btn" data-tab="find" onclick="setSgbTab('find')">🔍 길라잡이 찾기</button>
+    </div>
+    <div id="sgb-pane-check" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
     <div class="top-btn-cluster" id="sgb-areas" style="margin-bottom: 8px; flex-wrap: wrap;"></div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;">
       <div id="sgb-prefix-row" style="display:none; align-items:center; gap:8px; margin-bottom:8px;">
@@ -1135,6 +1156,15 @@
     <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
       🔒 적은 문장은 이 화면 안에서만 점검하고 <b>저장하거나 어디로 보내지 않아요</b>(새로고침하면 지워짐). ·
       자동 점검은 놓치는 것이 있을 수 있어요 — 최종 확인은 직접 해 주세요. · 쪽 번호는 「<span id="sgb-src"></span>」 기준.
+    </div>
+    </div>
+    <div id="sgb-pane-find" style="flex: 1; min-height: 0; display: none; flex-direction: column;">
+      <input type="text" id="sgb-find-q" class="admin-input" placeholder="🔍 궁금한 말 (예: 자율동아리, 영문, 봉사 시간, 전학)" oninput="renderSgbFind()" style="margin-bottom: 8px;">
+      <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="sgb-find-list"></div>
+      <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+        <b>p.○ 열기</b>를 누르면 길라잡이 PDF가 새 탭에서 그 쪽으로 열려요. · 「주요 변경 사항」(p.8~73)은 2023~2026 4개년 비교표라
+        <b>2026학년도 칸</b>을 보세요. · 길라잡이는 참고 자료로, 법령·지침(기재요령)보다 우선하지 않아요(p.3).
+      </div>
     </div>
     <div style="display: flex; gap: 8px; margin-top: 10px;">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeSgb()">닫기</button>
@@ -5274,10 +5304,9 @@
     if (overlay.style.display === 'flex') { closeSgb(); return; }
     closeStudentRoster();
     closeHwpKeys();
-    renderSgb();
     overlay.style.display = 'flex';
     document.getElementById('rail-sgb-btn').classList.add('active');
-    document.getElementById('sgb-text').focus();
+    applySgbTab();
   }
 
   function closeSgb() {
@@ -5285,6 +5314,148 @@
     if (overlay) overlay.style.display = 'none';
     const btn = document.getElementById('rail-sgb-btn');
     if (btn) btn.classList.remove('active');
+  }
+
+  // ----- 🔍 길라잡이 찾기 -----
+  // 찾기 자료(sgb/<연도>-guide.json, 약 400KB)는 이 탭을 처음 열 때만 받는다(index.html에 넣으면 모든 선생님이 매번 받게 됨).
+  // 만드는 법: tools/sgb_guide_build.py. PDF(sgb/<연도>-guide.pdf)는 "p.○ 열기"를 누를 때만 브라우저가 받는다.
+  const SGB_TAB_KEY = 'sgb-tab';
+  let sgbGuide = null, sgbGuideLoading = null;
+  function sgbGuideUrl() { return 'sgb/' + SGB_RULES.year + '-guide.json'; }
+  function loadSgbGuide() {
+    if (sgbGuide) return Promise.resolve(sgbGuide);
+    if (!sgbGuideLoading) {
+      sgbGuideLoading = fetch(sgbGuideUrl(), { cache: 'no-cache' })
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(d) { sgbGuide = d; return d; })
+        .catch(function(e) { sgbGuideLoading = null; throw e; });
+    }
+    return sgbGuideLoading;
+  }
+
+  function sgbTab() {
+    let v = null;
+    try { v = localStorage.getItem(SGB_TAB_KEY); } catch (e) {}
+    return v === 'find' ? 'find' : 'check';
+  }
+  function setSgbTab(tab) {
+    if (sgbTab() !== tab) {
+      try { localStorage.setItem(SGB_TAB_KEY, tab); } catch (e) {}
+      scheduleBackupWrite();
+    }
+    applySgbTab();
+  }
+  function applySgbTab() {
+    const tab = sgbTab();
+    document.querySelectorAll('#sgb-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
+    document.getElementById('sgb-pane-check').style.display = tab === 'check' ? 'flex' : 'none';
+    document.getElementById('sgb-pane-find').style.display = tab === 'find' ? 'flex' : 'none';
+    if (tab === 'find') { renderSgbFind(); document.getElementById('sgb-find-q').focus(); }
+    else { renderSgb(); document.getElementById('sgb-text').focus(); }
+  }
+
+  // 찾을 말: 띄어쓰기로 나눈 낱말이 모두 들어 있어야 함. 낱말 안의 띄어쓰기 차이는 무시("봉사시간" = "봉사 시간").
+  function sgbTermRes(q) {
+    return String(q || '').trim().split(/\s+/).filter(Boolean).map(function(w) {
+      return new RegExp(Array.from(w).map(function(ch) { return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('\\s*'), 'gi');
+    });
+  }
+  function sgbMark(text, res) {
+    const t = String(text || '');
+    const hit = new Array(t.length).fill(false);
+    res.forEach(function(re) {
+      re.lastIndex = 0; let m;
+      while ((m = re.exec(t)) !== null) { if (!m[0]) { re.lastIndex++; continue; } for (let i = m.index; i < m.index + m[0].length; i++) hit[i] = true; }
+    });
+    let html = '', i = 0;
+    while (i < t.length) {
+      let j = i; while (j < t.length && hit[j] === hit[i]) j++;
+      const seg = escapeHtmlAttr(t.slice(i, j));
+      html += hit[i] ? '<mark>' + seg + '</mark>' : seg;
+      i = j;
+    }
+    return html;
+  }
+  function sgbHasAll(text, res) { return res.every(function(re) { re.lastIndex = 0; return re.test(text); }); }
+  function sgbSnippet(text, res) {
+    let at = 0;
+    for (const re of res) { re.lastIndex = 0; const m = re.exec(text); if (m) { at = m.index; break; } }
+    const a = Math.max(0, at - 50), b = Math.min(text.length, at + 150);
+    return (a > 0 ? '… ' : '') + sgbMark(text.slice(a, b), res) + (b < text.length ? ' …' : '');
+  }
+  function sgbOpenLink(g, p) {
+    return '<a class="sgbf-open" href="' + escapeHtmlAttr(g.pdf) + '#page=' + p + '" target="_blank" rel="noopener">p.' + p + ' 열기</a>';
+  }
+  function sgbQaHtml(g, x, idx, res) {
+    return '<div class="sgbf-item" data-qa="' + idx + '">' +
+      '<div class="sgbf-meta"><span>Q&amp;A · ' + escapeHtmlAttr(x.ch) + '</span>' + sgbOpenLink(g, x.p) + '</div>' +
+      (x.tags.length ? '<div class="sgbf-tags">' + x.tags.map(function(t) { return '<span>#' + sgbMark(t, res) + '</span>'; }).join('') + '</div>' : '') +
+      '<div class="sgbf-q" onclick="toggleSgbAnswer(' + idx + ')">' + sgbMark(x.q, res) + '</div>' +
+      '<div class="sgbf-a clamp">' + sgbMark(x.a, res) + '</div>' +
+      '<button class="sgbf-more" onclick="toggleSgbAnswer(' + idx + ')">▾ 답 전체 보기</button></div>';
+  }
+  function toggleSgbAnswer(idx) {
+    const el = document.querySelector('#sgb-find-list .sgbf-item[data-qa="' + idx + '"]');
+    if (!el) return;
+    const a = el.querySelector('.sgbf-a');
+    const open = a.classList.toggle('clamp');
+    el.querySelector('.sgbf-more').textContent = open ? '▾ 답 전체 보기' : '▴ 접기';
+  }
+
+  function renderSgbFind() {
+    const list = document.getElementById('sgb-find-list');
+    if (!sgbGuide) {
+      list.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:20px;">길라잡이 자료를 불러오는 중…</div>';
+      loadSgbGuide().then(renderSgbFind).catch(function() {
+        list.innerHTML = '<div style="text-align:center; color:var(--alert); font-size:12px; padding:20px;">길라잡이 자료를 못 불러왔어요. 인터넷 연결을 확인하고 다시 눌러 주세요.</div>';
+      });
+      return;
+    }
+    const g = sgbGuide;
+    const q = document.getElementById('sgb-find-q').value;
+    let res = sgbTermRes(q);
+    let html = '';
+    if (!res.length) {
+      // 빈 칸: Q&A 질문을 장별로 훑어보기
+      html += '<div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">궁금한 말을 적으면 Q&amp;A와 길라잡이 본문에서 찾아요. 아래는 Q&amp;A ' + g.qa.length + '개 전체예요.</div>';
+      let ch = null;
+      g.qa.forEach(function(x, i) {
+        if (x.ch !== ch) { ch = x.ch; html += '<div class="sgbf-sec">' + escapeHtmlAttr(ch) + '</div>'; }
+        html += sgbQaHtml(g, x, i, res);
+      });
+      list.innerHTML = html;
+      return;
+    }
+    const search = function(res) {
+      const qa = [];
+      g.qa.forEach(function(x, i) { if (sgbHasAll(x.tags.join(' ') + ' ' + x.q + ' ' + x.a, res)) qa.push(i); });
+      return { qa: qa, pages: g.pages.filter(function(pg) { return sgbHasAll(pg.t, res); }) };
+    };
+    let r = search(res), splitNote = '';
+    // 붙여 쓴 말("봉사시간")이 하나도 없으면 두 낱말로 나눠(봉사 + 시간) 다시 찾는다 — 본문엔 "봉사활동 시간"처럼 떨어져 있기도 해서.
+    if (!r.qa.length && !r.pages.length && res.length === 1) {
+      const w = q.trim(), len = Array.from(w).length;
+      for (let k = 2; k <= len - 2 && !r.qa.length && !r.pages.length; k++) {
+        const parts = [Array.from(w).slice(0, k).join(''), Array.from(w).slice(k).join('')];
+        const r2 = search(sgbTermRes(parts.join(' ')));
+        if (r2.qa.length || r2.pages.length) { r = r2; res = sgbTermRes(parts.join(' ')); splitNote = '"' + parts[0] + '" + "' + parts[1] + '"'; }
+      }
+    }
+    const qa = r.qa, pages = r.pages;
+    if (splitNote) html += '<div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">"' + escapeHtmlAttr(q.trim()) + '"는 그대로 나오는 곳이 없어서 ' + escapeHtmlAttr(splitNote) + '로 나눠 찾았어요.</div>';
+    if (qa.length) {
+      html += '<div class="sgbf-sec">Q&amp;A ' + qa.length + '개</div>';
+      qa.forEach(function(i) { html += sgbQaHtml(g, g.qa[i], i, res); });
+    }
+    if (pages.length) {
+      html += '<div class="sgbf-sec">길라잡이 본문 ' + pages.length + '쪽</div>';
+      pages.slice(0, 40).forEach(function(pg) {
+        html += '<div class="sgbf-item" data-page="' + pg.p + '"><div class="sgbf-meta"><span>' + escapeHtmlAttr(pg.part) + ' · ' + escapeHtmlAttr(pg.ch) + '</span>' + sgbOpenLink(g, pg.p) + '</div>' +
+          '<div class="sgbf-snip">' + sgbSnippet(pg.t, res) + '</div></div>';
+      });
+      if (pages.length > 40) html += '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:8px;">…' + (pages.length - 40) + '쪽 더 있어요. 말을 더 붙여서 좁혀 보세요.</div>';
+    }
+    list.innerHTML = html || '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:20px;">찾는 말이 없어요. 다른 말(예: 짧게, 비슷한 말)로 찾아보세요.</div>';
   }
 
   // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(단축키 패널과 같은 방식).

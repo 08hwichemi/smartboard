@@ -19,6 +19,7 @@ const history = [];
 let lastTs = Date.now();
 function nowIso() { lastTs = Math.max(Date.now(), lastTs + 1); return new Date(lastTs).toISOString(); }
 const pages = []; // {page, name, offline, realtimeDown}
+const guideFetches = [];
 
 function seed(teacherId, obj) {
   for (const [k, v] of Object.entries(obj)) items.set(teacherId + '|' + k, { teacher_id: teacherId, key: k, value: v, updated_at: nowIso() });
@@ -145,6 +146,11 @@ async function openDevice(browser, name, uid, opts = {}) {
     const url = route.request().url();
     if (url.startsWith('http://app.test/')) {
       if (url.includes('version.txt')) return route.fulfill({ body: 'x', contentType: 'text/plain' });
+      const pathOnly = url.split('?')[0].split('#')[0].replace('http://app.test/', '');
+      if (pathOnly.startsWith('sgb/')) {
+        const f = path.join(ROOT, pathOnly);
+        if (fs.existsSync(f)) { if (pathOnly.endsWith('.json')) guideFetches.push(pathOnly); return route.fulfill({ body: fs.readFileSync(f), contentType: pathOnly.endsWith('.json') ? 'application/json' : 'application/pdf' }); }
+      }
       if (url.split('?')[0] === 'http://app.test/' || url.includes('index.html')) return route.fulfill({ body: html, contentType: 'text/html; charset=utf-8' });
       return route.fulfill({ status: 404, body: '' });
     }
@@ -303,6 +309,52 @@ function check(label, cond, detail) {
 
   const overflow = await P.evaluate(() => { const b = document.querySelector('#sgb-overlay .modal-box'); return b.scrollWidth > b.clientWidth + 1; });
   check('가로로 넘치지 않음', !overflow);
+
+  // ----- 길라잡이 찾기 -----
+  check('처음엔 찾기 자료를 안 받음', guideFetches.length === 0, guideFetches);
+  await P.click('#sgb-tabs [data-tab="find"]'); await wait(600);
+  const fl = () => P.evaluate(() => ({
+    secs: [...document.querySelectorAll('#sgb-find-list .sgbf-sec')].map(e => e.innerText),
+    qa: document.querySelectorAll('#sgb-find-list .sgbf-item[data-qa]').length,
+    pg: document.querySelectorAll('#sgb-find-list .sgbf-item[data-page]').length }));
+  check('찾기 탭 → 자료 받음(1번), 입력칸에 커서', guideFetches.length === 1 && await P.evaluate(() => document.activeElement.id === 'sgb-find-q'), guideFetches);
+  check('문장 점검 칸은 숨김', await P.evaluate(() => document.getElementById('sgb-pane-check').style.display === 'none'));
+  const g0 = await fl();
+  check('빈 칸: Q&A 53개를 장별로', g0.qa === 53 && g0.secs[0] === '처리요령' && g0.pg === 0, g0);
+  await P.fill('#sgb-find-q', '영문'); await wait(200);
+  const g1 = await fl();
+  check('"영문" → Q&A와 본문 쪽 둘 다', g1.qa >= 1 && g1.pg >= 1 && /^Q&A \d+개$/.test(g1.secs[0]), g1);
+  const firstQ = await P.evaluate(() => document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-q').innerText);
+  check('첫 Q&A는 한자·영문 문항(p.92)', /한자/.test(firstQ), firstQ);
+  const link = await P.evaluate(() => { const a = document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-open'); return { href: a.getAttribute('href'), target: a.target, text: a.innerText }; });
+  check('p.92 열기 → PDF 그 쪽을 새 탭으로', link.href === 'sgb/2026-guide.pdf#page=92' && link.target === '_blank' && link.text === 'p.92 열기', link);
+  check('찾은 말 색칠', await P.evaluate(() => [...document.querySelectorAll('#sgb-find-list mark')].some(m => m.innerText === '영문')));
+  await P.fill('#sgb-find-q', '봉사시간'); await wait(200);
+  const g2 = await fl();
+  await P.fill('#sgb-find-q', '봉사 시간'); await wait(200);
+  const g3 = await fl();
+  check('붙여 써도("봉사시간") 나눠서 "봉사 시간"과 같은 결과', g2.qa + g2.pg > 0 && g2.qa === g3.qa && g2.pg === g3.pg, [g2, g3]);
+  await P.fill('#sgb-find-q', '자율동아리'); await wait(200);
+  const g4 = await fl();
+  check('"자율동아리" 찾기', g4.qa + g4.pg > 0, g4);
+  await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb-find.png' });
+  // 답 펼치기
+  const clamp = () => P.evaluate(() => document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-a').classList.contains('clamp'));
+  const c0 = await clamp();
+  await P.click('#sgb-find-list .sgbf-item[data-qa] .sgbf-more'); await wait(100);
+  check('답 전체 보기 ↔ 접기', c0 && !(await clamp()) && /접기/.test(await P.innerText('#sgb-find-list .sgbf-item[data-qa] .sgbf-more')));
+  await P.fill('#sgb-find-q', '없는말없는말'); await wait(150);
+  check('없으면 안내', /찾는 말이 없어요/.test(await P.innerText('#sgb-find-list')));
+  await P.fill('#sgb-find-q', '<img src=x>'); await wait(150);
+  check('찾는 말에 태그 넣어도 안전', await P.evaluate(() => !document.querySelector('#sgb-find-list img')));
+  check('찾기 탭 기억(계정 자료)', await ls(pc, 'sgb-tab') === 'find');
+  await P.click('#rail-sgb-btn'); await wait(150); await P.click('#rail-sgb-btn'); await wait(300);
+  check('다시 열면 찾기 탭, 자료는 다시 안 받음', await P.evaluate(() => document.getElementById('sgb-pane-find').style.display === 'flex') && guideFetches.length === 1, guideFetches);
+  // 실제 PDF가 있고 쪽 수가 맞음
+  const pdfOk = fs.existsSync(path.join(ROOT, 'sgb/2026-guide.pdf')) && fs.statSync(path.join(ROOT, 'sgb/2026-guide.pdf')).size > 1e6;
+  check('sgb/2026-guide.pdf 있음', pdfOk);
+  await P.click('#sgb-tabs [data-tab="check"]'); await wait(200);
+  check('문장 점검 탭으로 돌아옴', await P.evaluate(() => document.getElementById('sgb-pane-check').style.display === 'flex' && document.activeElement.id === 'sgb-text'));
 
   // 닫기·다른 패널과 번갈아
   await P.click('#rail-sgb-btn'); await wait(200);
