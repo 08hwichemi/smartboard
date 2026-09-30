@@ -1212,7 +1212,6 @@
     <div class="quick-row">
       <div style="display:flex; gap:7px; flex-wrap:wrap; flex-shrink:0;">
         <button class="qbtn" style="border-bottom: 3px solid var(--accent-color);" onclick="openScheduleModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-color);"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg>시간표 관리</button>
-        <button class="qbtn" id="btn-scc-manager" style="display:none; border-bottom: 3px solid var(--accent-color);" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록 — 수업변경 담당">🔁 수업변경</button>
         <button class="qbtn" style="border-bottom: 3px solid #F07178;" onclick="openDutyModal('야자감독', '🌙')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#F07178;"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>야자 감독표</button>
         <button class="qbtn" style="border-bottom: 3px solid #FF8A65;" onclick="openDutyModal('급식감독', '🍱')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#FF8A65;"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>급식 감독표</button>
         <button class="qbtn" style="border-bottom: 3px solid #4DB6AC;" onclick="openDutyModal('아침감독', '☀️')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#4DB6AC;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>아침 감독표</button>
@@ -3163,9 +3162,8 @@
     document.getElementById('user-chip-name').innerText = data.name;
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
     document.getElementById('rail-settings-btn').style.display = data.is_admin ? 'flex' : 'none';
-    // 수업변경 담당: 홈 둘째 줄에 수업변경 버튼, 시간표 없는 분의 휴대폰 시간표 칸에도 버튼을 보인다.
+    // 수업변경 담당: 본인 시간표가 없어도 "내 시간표" 칸의 수업변경 버튼을 보인다(홈 둘째 줄엔 따로 두지 않음).
     document.body.classList.toggle('schedule-manager', !!data.schedule_manager);
-    document.getElementById('btn-scc-manager').style.display = data.schedule_manager ? 'inline-flex' : 'none';
 
     if (data.must_change_password) {
       document.getElementById('force-password-overlay').style.display = 'flex';

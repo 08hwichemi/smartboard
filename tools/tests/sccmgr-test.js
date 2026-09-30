@@ -199,8 +199,8 @@ function check(label, cond, detail) {
   const d = await openDevice(browser, '수업계PC', M);
   const P = d.page;
   await P.setViewportSize({ width: 2000, height: 1030 }); await wait(1500);
-  check('실무사 홈은 그대로 + 둘째 줄에 수업변경 버튼', await P.evaluate(() => document.getElementById('main-dashboard').classList.contains('staff-mode') && getComputedStyle(document.getElementById('btn-scc-manager')).display !== 'none'));
-  await P.click('#btn-scc-manager'); await wait(300);
+  check('실무사 홈은 그대로 + 둘째 줄에 수업변경 버튼 없음(사용자 요청으로 뺌)', await P.evaluate(() => document.getElementById('main-dashboard').classList.contains('staff-mode') && !document.getElementById('btn-scc-manager') && ![...document.querySelectorAll('.quick-row .qbtn')].some(b => b.innerText.includes('수업변경'))));
+  await P.evaluate(() => openScheduleChangeModal()); await wait(300);
   const m = await P.evaluate(() => ({
     open: getComputedStyle(document.getElementById('schedule-change-overlay')).display === 'flex',
     aRow: getComputedStyle(document.getElementById('scc-teacher-a-row')).display,
@@ -310,12 +310,12 @@ function check(label, cond, detail) {
   // 역할 "교사" + 담당 + 본인 시간표 없음: 내 시간표 자리에서 선생님 골라 보기 + 수업변경 버튼 둘 다
   const g = await openDevice(browser, '수업계교사PC', '66666666-6666-6666-6666-666666666666');
   await wait(1000);
-  const gs = await g.page.evaluate(() => { const w = document.getElementById('my-tt-widget'); const vis = (el) => getComputedStyle(el).display !== 'none'; return { browse: w.classList.contains('my-tt-browse'), sel: vis(document.getElementById('m-tt-teacher-select')), wBtn: vis(w.querySelector('.m-tt-change-btn')), qBtn: vis(document.getElementById('btn-scc-manager')) }; });
-  check('교사 역할 담당: 선생님 골라 보기 + 시간표 칸·둘째 줄 수업변경 버튼', gs.browse && gs.sel && gs.wBtn && gs.qBtn, gs);
+  const gs = await g.page.evaluate(() => { const w = document.getElementById('my-tt-widget'); const vis = (el) => getComputedStyle(el).display !== 'none'; return { browse: w.classList.contains('my-tt-browse'), sel: vis(document.getElementById('m-tt-teacher-select')), wBtn: vis(w.querySelector('.m-tt-change-btn')) }; });
+  check('교사 역할 담당: 선생님 골라 보기 + 시간표 칸 수업변경 버튼', gs.browse && gs.sel && gs.wBtn, gs);
   // 일반 교사
   const t = await openDevice(browser, '김교사PC', T1);
   await wait(1000);
-  const tb = await t.page.evaluate(() => getComputedStyle(document.getElementById('btn-scc-manager')).display);
+  const tb = await t.page.evaluate(() => document.getElementById('btn-scc-manager') ? 'exists' : 'none');
   await t.page.click('#my-tt-widget .m-tt-change-btn'); await wait(300);
   const tm = await t.page.evaluate(() => ({ aRow: getComputedStyle(document.getElementById('scc-teacher-a-row')).display, label: document.getElementById('scc-my-period-label').innerText, list: document.getElementById('scc-list').innerText }));
   check('일반 교사: 둘째 줄 버튼 없음, 창은 예전 그대로(내 교시, 내 내역만)', tb === 'none' && tm.aRow === 'none' && tm.label === '내 교시' && tm.list.includes('박교사') && !tm.list.includes('정교사'), [tb, tm]);
