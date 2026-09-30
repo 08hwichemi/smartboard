@@ -712,6 +712,7 @@
     .ab-reason[data-r="교외체험학습"] { background: #DDF5E3; color: #1E7B3A; }
     .ab-icon-btn { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
     .ab-icon-btn:hover { border-color: var(--accent-color); }
+    .ab-see { font-size: 11.5px; padding: 2px 8px; line-height: 1.4; white-space: nowrap; }
     #ab-filter { margin-bottom: 8px; font-size: 12px; font-weight: 700; }
     .ab-empty { text-align: center; color: var(--text-sub); font-size: 12.5px; padding: 26px 10px; line-height: 1.7; }
     @media print {
@@ -3164,16 +3165,16 @@
         const k = localStorage.key(i);
         if (!onServer[k] && !keepLocal(k)) stale.push(k);
       }
-      stale.forEach(function(k) { rawRemoveItem(k); changed = true; });
+      stale.forEach(function(k) { rawRemoveItem(k); changed = true; syncChangedKeys[k] = true; });
     }
     const failedKeys = [];
     rows.forEach(function(r) {
       if (keepLocal(r.key)) return;
       const cur = localStorage.getItem(r.key);
       if (r.value === null || r.value === undefined) {
-        if (cur !== null) { rawRemoveItem(r.key); changed = true; }
+        if (cur !== null) { rawRemoveItem(r.key); changed = true; syncChangedKeys[r.key] = true; }
       } else if (cur !== r.value) {
-        try { rawSetItem(r.key, r.value); changed = true; }
+        try { rawSetItem(r.key, r.value); changed = true; syncChangedKeys[r.key] = true; }
         catch (e) { failedKeys.push(r.key); }
       }
     });
@@ -3259,10 +3260,19 @@
   // 지금 뭔가 입력 중이면 화면을 건드리지 않고 표시만 해뒀다가, focusout(입력칸에서
   // 벗어나는 순간)에 마저 반영한다.
   var remoteRefreshPending = false;
+  // 다른 기기에서 받아온 항목 이름들(다시 그릴 때 비움). 결석계 기록(ab-*)만 바뀌었으면 홈 화면 전체를 다시 그리지 않는다 —
+  // 결석계를 한쪽 모니터에서 입력할 때마다 다른 화면의 홈(시간표·달력)이 깜빡이지 않게.
+  var syncChangedKeys = {};
   function scheduleRemoteRefresh() {
     if (!syncAppStarted) return; // 아직 화면을 처음 그리기 전이면 init()이 알아서 그린다
     if (isCurrentlyEditingSomething()) { remoteRefreshPending = true; return; }
     remoteRefreshPending = false;
+    const keys = Object.keys(syncChangedKeys);
+    syncChangedKeys = {};
+    if (keys.length && keys.every(function(k) { return k.indexOf('ab-') === 0; })) {
+      if (typeof abRenderAll === 'function') abRenderAll();
+      return;
+    }
     refreshDashboardFromLocalStorage();
   }
   document.addEventListener('focusout', function() {
@@ -5171,7 +5181,7 @@
     source: '2026학년도 학교생활기록부 기재 길라잡이(고)',
     // chars = 한글 기준 최대 글자 수. 나이스 바이트 한도 = chars × 3.
     areas: [
-      { id: 's500', label: '세특·개세특·자율자치', chars: 500, page: 'p.73',
+      { id: 's500', label: '과세특·개세특·자율자치', chars: 500, page: 'p.73',
         note: '과목별 세특은 과목마다, 공통과목(공통국어·공통수학·공통영어·통합사회·통합과학·한국사·과학탐구실험)은 1·2 합산 500자. 자율·자치 500자는 학교 확인값.' },
       // prefix: 본문 앞에 함께 들어가 한도를 같이 쓰는 말. 바이트는 합쳐 세고, 복사는 본문만(나이스에서 따로 들어감).
       { id: 'career', label: '진로', chars: 500, page: 'p.73',
@@ -9771,11 +9781,11 @@
     '2027-01-01': '신정', '2027-02-06': '설날', '2027-02-07': '설날', '2027-02-08': '설날', '2027-02-09': '대체공휴일'
   };
   const AB_REC_PREFIX = 'ab-r-';
-  const AB_CFG_KEY = 'ab-cfg';   // { g, c, tab, hol: { 'YYYY-MM-DD': '이름' } } — 고른 반·탭·직접 더한 휴일
+  const AB_CFG_KEY = 'ab-cfg';   // { g, c, hol: { 'YYYY-MM-DD': '이름' } } — 고른 반·직접 더한 휴일
   let abForms = null, abFormsLoading = null;
   let abRoster = [], abRosterKey = '';
   let abNeisHol = {}, abNeisYear = null;
-  let abSelId = null, abEditId = null, abFilterNum = null;
+  let abSelId = null, abEditId = null, abFilterNum = null, abTab = 'input';
 
   function abCfg() {
     try { const v = JSON.parse(localStorage.getItem(AB_CFG_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
@@ -9932,9 +9942,9 @@
   }
 
   // ----- 탭 -----
-  function abSetTab(tab) { abSetCfg({ tab: tab }); abApplyTab(); abRenderAll(); }
+  function abSetTab(tab) { abTab = tab; abApplyTab(); abRenderAll(); }
   function abApplyTab() {
-    const tab = abCfg().tab || 'input';
+    const tab = abTab;
     document.querySelectorAll('#ab-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
     ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
     if (tab === 'stat') abFitStat();
@@ -10024,7 +10034,7 @@
   }
   function abEdit(id) {
     abEditId = id; abSelId = id;
-    if ((abCfg().tab || 'input') !== 'input') abSetTab('input');
+    if (abTab !== 'input') abSetTab('input');
     abRenderList(); abRenderPreview();
     const el = document.getElementById('ab-e-detail'); if (el) el.focus();
   }
@@ -10049,7 +10059,7 @@
   }
   function abFilter(num) {
     abFilterNum = num; abEditId = null;
-    abSetCfg({ tab: 'input' }); abApplyTab();
+    abTab = 'input'; abApplyTab();
     abRenderAll(true); // 새 줄 번호도 그 학생으로
   }
 
@@ -10129,14 +10139,15 @@
     list.sort(function(a, b) { return a.num - b.num; });
     if (!list.length) { el.innerHTML = '<div class="ab-empty">이 반 명렬표가 비어 있어요.</div>'; return; }
     const tot = {}; let totAll = 0;
-    let h = '<div class="ab-muted" style="margin-bottom:8px;">줄을 누르면 그 학생 기록만 볼 수 있어요. 일수는 토·일·휴일을 뺀 날 수.</div>' +
+    let h = '<div class="ab-muted" style="margin-bottom:8px;"><b>📅 결석 일자 확인</b>을 누르면 그 학생의 결석 현황 입력 자료를 봐요. 일수는 토·일·휴일을 뺀 날 수.</div>' +
       '<table class="ab-table ab-stat-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
     list.forEach(function(s) {
       let sum = 0;
-      h += '<tr onclick="abFilter(' + s.num + ')"><td>' + s.num + '번</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
+      h += '<tr style="cursor:default;"><td>' + s.num + '번</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
       AB_REASONS.forEach(function(x) { const v = s.d[x] || 0; sum += v; tot[x] = (tot[x] || 0) + v; h += '<td class="' + (v ? '' : 'ab-zero') + '">' + v + '</td>'; });
       totAll += sum;
-      h += '<td style="font-weight:800;" class="' + (sum ? '' : 'ab-zero') + '">' + sum + '</td><td class="ab-l" style="font-size:11.5px;">' + s.dates.join(', ') + '</td></tr>';
+      h += '<td style="font-weight:800;" class="' + (sum ? '' : 'ab-zero') + '">' + sum + '</td><td>' +
+        (s.dates.length ? '<button class="ab-icon-btn ab-see" onclick="abFilter(' + s.num + ')" title="이 학생의 결석 현황 입력 자료 보기">📅 결석 일자 확인 (' + s.dates.length + '건)</button>' : '<span class="ab-zero">-</span>') + '</td></tr>';
     });
     h += '</tbody><tfoot><tr><td colspan="2">합계</td>' + AB_REASONS.map(function(x) { return '<td>' + (tot[x] || 0) + '</td>'; }).join('') + '<td>' + totAll + '</td><td></td></tr></tfoot></table>';
     el.innerHTML = h;

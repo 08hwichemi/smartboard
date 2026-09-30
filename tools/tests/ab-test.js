@@ -331,12 +331,13 @@ function check(label, cond, detail) {
   await P.click('#ab-tabs [data-tab="stat"]'); await wait(200);
   const stat = await P.evaluate(() => [...document.querySelectorAll('#ab-stat tbody tr')].map(tr => [...tr.children].map(td => td.textContent).join('|')));
   check('현황: 명렬표 5명 모두', stat.length === 5, stat);
-  check('1번: 인정 0 + 기타 3 = 3, 결석 일자', stat[0] === '1번|가나다|0|0|3|0|3|3/2, 6/8~6/12', stat[0]);
-  check('4번: 교외체험 5', stat[3] === '4번|차카타|0|0|0|5|5|4/6~4/8, 5/4~5/6', stat[3]);
+  check('1번: 인정 0 + 기타 3 = 3, 결석 일자는 버튼(2건)', stat[0] === '1번|가나다|0|0|3|0|3|📅 결석 일자 확인 (2건)', stat[0]);
+  check('4번: 교외체험 5', stat[3] === '4번|차카타|0|0|0|5|5|📅 결석 일자 확인 (2건)', stat[3]);
+  check('결석 없는 학생은 버튼 없이 "-"', stat[2] === '3번|사아자|0|0|0|0|0|-', stat[2]);
   check('합계 줄', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')) === '합계|2|0|3|5|10|', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')));
   await P.locator('#absence-page').screenshot({ path: 'ab-stat.png' });
-  await P.click('#ab-stat tbody tr:nth-child(4)'); await wait(200);
-  check('학생 줄 누르면 그 학생 기록만(새 줄 번호도 그 학생)', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && document.querySelectorAll('#ab-list tbody tr[data-id]').length === 2 && document.getElementById('ab-n-num').value === '4') && /4번 차카타 기록만/.test(await P.innerText('#ab-filter')));
+  await P.click('#ab-stat tbody tr:nth-child(4) .ab-see'); await wait(200);
+  check('결석 일자 확인 → 결석 현황 입력 탭에 그 학생 기록만(새 줄 번호도 그 학생)', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && document.querySelectorAll('#ab-list tbody tr[data-id]').length === 2 && document.getElementById('ab-n-num').value === '4') && /4번 차카타 기록만/.test(await P.innerText('#ab-filter')));
   await P.click('#ab-filter button'); await wait(100);
   check('전체 보기', await P.evaluate(() => document.querySelectorAll('#ab-list tbody tr[data-id]').length) === 5);
 
@@ -392,8 +393,14 @@ function check(label, cond, detail) {
   const pc2 = await openDevice(browser, 'PC2', T1);
   await pc2.page.click('#rail-absence-btn'); await wait(800);
   check('다른 기기에서도 내 기록 4건', await pc2.page.evaluate(() => abClassRecords().length) === 4);
+  await pc2.page.evaluate(() => { window.__dashRedraw = 0; const f = window.refreshDashboardFromLocalStorage; window.refreshDashboardFromLocalStorage = function() { window.__dashRedraw++; return f.apply(this, arguments); }; });
   await add({ num: 5, reason: '질병결석', detail: '두통', from: '2026-06-15' });
   await wait(3500);
+  check('결석계 기록만 바뀌면 다른 기기의 홈 화면 전체는 다시 안 그림(깜빡임 없음)', await pc2.page.evaluate(() => window.__dashRedraw) === 0, await pc2.page.evaluate(() => window.__dashRedraw));
+  await setLs(pc, 'todo-test-key', 'x'); await wait(3000);
+  check('다른 개인 자료가 바뀌면 예전처럼 홈 화면을 다시 그림', await pc2.page.evaluate(() => window.__dashRedraw) >= 1, await pc2.page.evaluate(() => window.__dashRedraw));
+  await P.click('#ab-tabs [data-tab="stat"]'); await P.click('#ab-tabs [data-tab="input"]'); await wait(1500);
+  check('탭 바꾸기는 서버로 안 올림', !/"tab"/.test(serverVal(T1, 'ab-cfg') || ''), serverVal(T1, 'ab-cfg'));
   const pRecs = (await recs()).length, sRecs = [...items.values()].filter(r => r.key.startsWith('ab-r-') && r.value).length, msg = await P.innerText('#ab-f-msg');
   const dbg = await pc2.page.evaluate(() => ({ recs: abClassRecords().length, rows: document.querySelectorAll('#ab-list tbody tr').length, act: document.activeElement && document.activeElement.id, pend: remoteRefreshPending }));
   check('한 기기에서 추가 → 펴 둔 다른 기기 목록에 바로', dbg.rows === 6, [dbg, pRecs, sRecs, msg]);

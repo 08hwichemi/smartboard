@@ -204,7 +204,7 @@ function check(label, cond, detail) {
   await P.click('#rail-sgb-btn'); await wait(300);
   check('누르면 열림 + 버튼 표시 + 입력칸에 커서', await open() && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.activeElement.id === 'sgb-text'));
   const areas = () => P.evaluate(() => [...document.querySelectorAll('#sgb-areas .top-btn')].map(b => b.innerText + (b.classList.contains('theme-active') ? '*' : '')).join(','));
-  check('영역 4개, 처음엔 세특 묶음', await areas() === '세특·개세특·자율자치 (500자)*,진로 (500자),동아리 (500자),행특 (300자)', await areas());
+  check('영역 4개, 처음엔 세특 묶음', await areas() === '과세특·개세특·자율자치 (500자)*,진로 (500자),동아리 (500자),행특 (300자)', await areas());
   check('세특 묶음엔 앞말 칸 없음', await P.evaluate(() => document.getElementById('sgb-prefix-row').style.display === 'none'));
   check('빈 칸: 0자 0바이트 / 1500바이트', /공백 제외 0자 공백 포함 0자 0바이트 \/ 1500바이트\(500자\)/.test(await count()), await count());
 
