@@ -86,6 +86,9 @@ async function handleDb(pageInfo, req) {
     if (g && Number(g.val) === 3 && c && Number(c.val) === 1) {
       return { data: ['가나다', '라마바', '사아자', '차카타', '파하가'].map((n, i) => ({ number: i + 1, name: n })), error: null };
     }
+    if (g && Number(g.val) === 3 && c && Number(c.val) === 2) { // 28명 반
+      return { data: Array.from({ length: 28 }, (_, i) => ({ number: i + 1, name: '학생' + (i + 1) })), error: null };
+    }
     return { data: [], error: null };
   }
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
@@ -173,6 +176,16 @@ async function openDevice(browser, name, uid, opts = {}) {
       return route.fulfill({ status: 404, body: '' });
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
+    if (url.includes('open.neis.go.kr/hub/SchoolSchedule') && url.includes('AA_FROM_YMD=20260301')) {
+      const row = [];
+      const add = (ymd, ev, kind) => row.push({ AA_YMD: ymd, EVENT_NM: ev, SBTR_DD_SC_NM: kind });
+      add('20260721', '여름방학식', '해당없음');
+      for (let d = new Date('2026-07-22T00:00:00'); d <= new Date('2026-08-16T00:00:00'); d.setDate(d.getDate() + 1)) {
+        const ymd = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+        add(ymd, d.getDay() === 6 ? '토요휴업일' : '여름방학', '휴업일');
+      }
+      return route.fulfill({ body: JSON.stringify({ SchoolSchedule: [{ head: [] }, { row }] }), contentType: 'application/json' });
+    }
     if (url.includes('xlsx.full.min.js') && XLSXLIB) return route.fulfill({ body: fs.readFileSync(XLSXLIB), contentType: 'application/javascript' });
     return route.abort();
   });
@@ -230,8 +243,8 @@ function check(label, cond, detail) {
   check('양식 한 번 받음', formFetches.length === 1, formFetches);
   check('명렬표는 번호·이름만 받음(연락처 X)', studentSelects.length >= 1);
   const opts = await P.evaluate(() => [...document.querySelectorAll('#ab-n-num option')].map(o => o.textContent));
-  check('번호 목록 = 명렬표 학생', opts.length === 6 && opts[1] === '1 가나다' && opts[5] === '5 파하가', opts);
-  check('작성일 기본 = 오늘', await P.inputValue('#ab-n-written') === await P.evaluate(() => abToday()));
+  check('번호 목록 = 명렬표 학생, "1번 가나다"', opts.length === 6 && opts[1] === '1번 가나다' && opts[5] === '5번 파하가', opts);
+  check('작성일은 처음엔 비어 있음(종료일 따라감)', await P.inputValue('#ab-n-written') === '');
   check('기록 없으면 안내', /아직 기록이 없어요/.test(await P.innerText('#ab-list')));
 
   // 결석 일수: 토·일·휴일 빼기
@@ -242,7 +255,13 @@ function check(label, cond, detail) {
   const dl = await P.evaluate(() => [...document.querySelectorAll('#ab-n-proofs option')].map(o => o.value));
   check('질병결석 증빙 목록 4개', dl.length === 4 && dl.includes('병원처방전'), dl);
   await P.fill('#ab-n-from', '2026-03-03'); await P.dispatchEvent('#ab-n-from', 'change');
-  check('시작일 넣으면 종료일 같은 날 + 일수 자동', await P.inputValue('#ab-n-to') === '2026-03-03' && await P.inputValue('#ab-n-days') === '1');
+  check('시작일 넣으면 종료일·작성일 같은 날 + 일수 자동', await P.inputValue('#ab-n-to') === '2026-03-03' && await P.inputValue('#ab-n-written') === '2026-03-03' && await P.inputValue('#ab-n-days') === '1');
+  await P.fill('#ab-n-to', '2026-03-05'); await P.dispatchEvent('#ab-n-to', 'change');
+  check('종료일 바꾸면 작성일도 따라감', await P.inputValue('#ab-n-written') === '2026-03-05');
+  await P.fill('#ab-n-written', '2026-03-09'); await P.fill('#ab-n-to', '2026-03-06'); await P.dispatchEvent('#ab-n-to', 'change');
+  check('작성일을 직접 고치면 그 값 유지', await P.inputValue('#ab-n-written') === '2026-03-09');
+  await P.fill('#ab-n-from', ''); await P.fill('#ab-n-to', ''); await P.fill('#ab-n-written', '');
+  await P.evaluate(() => { document.getElementById('ab-n-written').dataset.touched = ''; });
   // 입력칸이 한 줄(마우스 이동이 짧게): 새 줄 입력칸이 모두 같은 높이, 표 폭 1180px 이하
   const lay = await P.evaluate(() => { const ins = [...document.querySelectorAll('tr.ab-new .ab-in')].map(e => { const r = e.getBoundingClientRect(); return (r.top + r.bottom) / 2; }); return { spread: Math.max(...ins) - Math.min(...ins), n: ins.length, w: document.querySelector('#ab-list table').getBoundingClientRect().width }; });
   check('새 줄 입력칸 8개가 한 줄, 표 폭 제한', lay.spread < 3 && lay.n === 8 && lay.w <= 1181, lay);
@@ -280,7 +299,8 @@ function check(label, cond, detail) {
   // 연번 = 시작일 순
   await add({ num: 1, reason: '인정결석', detail: '독감', from: '2026-03-02', to: '2026-03-02' });
   const list = await P.evaluate(() => [...document.querySelectorAll('#ab-list tbody tr[data-id]')].map(tr => tr.children[0].textContent + ':' + tr.children[1].textContent));
-  check('연번은 시작일 순(나중에 넣어도 앞으로)', list[0] === '1:1 가나다' && list[1] === '2:2 라마바', list);
+  check('연번은 시작일 순(나중에 넣어도 앞으로), "1번 가나다"', list[0] === '1:1번 가나다' && list[1] === '2:2번 라마바', list);
+  check('작성일을 안 건드리면 종료일로 저장', (await recs())[0].written === '2026-03-02', (await recs())[0]);
   check('3/2는 대체공휴일 → 0일', await P.evaluate(() => abDays(abClassRecords()[0])) === 0);
 
   // 일수 직접 고치기
@@ -311,8 +331,8 @@ function check(label, cond, detail) {
   await P.click('#ab-tabs [data-tab="stat"]'); await wait(200);
   const stat = await P.evaluate(() => [...document.querySelectorAll('#ab-stat tbody tr')].map(tr => [...tr.children].map(td => td.textContent).join('|')));
   check('현황: 명렬표 5명 모두', stat.length === 5, stat);
-  check('1번: 인정 0 + 기타 3 = 3, 결석 일자', stat[0] === '1|가나다|0|0|3|0|3|3/2, 6/8~6/12', stat[0]);
-  check('4번: 교외체험 5', stat[3] === '4|차카타|0|0|0|5|5|4/6~4/8, 5/4~5/6', stat[3]);
+  check('1번: 인정 0 + 기타 3 = 3, 결석 일자', stat[0] === '1번|가나다|0|0|3|0|3|3/2, 6/8~6/12', stat[0]);
+  check('4번: 교외체험 5', stat[3] === '4번|차카타|0|0|0|5|5|4/6~4/8, 5/4~5/6', stat[3]);
   check('합계 줄', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')) === '합계|2|0|3|5|10|', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')));
   await P.locator('#absence-page').screenshot({ path: 'ab-stat.png' });
   await P.click('#ab-stat tbody tr:nth-child(4)'); await wait(200);
@@ -323,11 +343,19 @@ function check(label, cond, detail) {
   // 휴일 더하기 → 일수 바뀜
   await P.click('#ab-tabs [data-tab="hol"]'); await wait(150);
   const hl = await P.innerText('#ab-hol-list');
+  const holRows = await P.evaluate(() => [...document.querySelectorAll('#ab-hol-list tbody tr')].map(tr => [...tr.children].slice(0, 4).map(td => td.textContent).join('|')));
+  check('여름방학은 한 줄로(7/22~8/14 평일 18일), 방학식 날은 휴일 아님', holRows.some(r => r === '7/22(수) ~ 8/14(금)|여름방학|18일|학사일정') && !holRows.some(r => /방학식/.test(r) || /7\/21/.test(r)) && holRows.length < 30, holRows);
+  check('여름방학도 결석 일수에서 빠짐', await P.evaluate(() => abCountDays('2026-07-20', '2026-07-24')) === 2);
   check('휴일 목록에 평일 공휴일(어린이날)', /어린이날/.test(hl), hl);
   check('토·일요일 휴일은 목록에 없음(추석 9/26 토, 부처님오신날 5/24 일)', !/9\/26/.test(hl) && !/부처님오신날/.test(hl) && !/\((토|일)\)/.test(hl), hl);
   await P.fill('#ab-hol-date', '2026-04-11'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(200);
   await P.click('#custom-alert-overlay button').catch(() => {}); await wait(150);
   check('토요일은 휴일로 안 더함', !JSON.parse(await ls(pc, 'ab-cfg')).hol || !JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-04-11']);
+  for (const d of ['2026-12-28', '2026-12-29', '2026-12-30']) { await P.fill('#ab-hol-date', d); await P.fill('#ab-hol-name', '학교 공사'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(120); }
+  const hr2 = await P.evaluate(() => [...document.querySelectorAll('#ab-hol-list tbody tr')].filter(tr => /학교 공사/.test(tr.textContent)).map(tr => tr.children[0].textContent + '|' + tr.children[2].textContent));
+  check('직접 더한 이어진 날도 한 줄', hr2.length === 1 && hr2[0] === '12/28(월) ~ 12/30(수)|3일', hr2);
+  await P.click('#ab-hol-list tr:has-text("학교 공사") button'); await wait(150);
+  check('한 줄 🗑 → 3일 모두 지움', !Object.keys(JSON.parse(await ls(pc, 'ab-cfg')).hol || {}).some(d => d.startsWith('2026-12-2') || d === '2026-12-30'));
   await P.fill('#ab-hol-date', '2026-04-07'); await P.fill('#ab-hol-name', '재량휴업일'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(150);
   check('직접 더한 휴일 → 체험학습 4/6~8은 2일, 계정 자료에 저장', await P.evaluate(() => abDays(abClassRecords().find(r => r.from === '2026-04-06'))) === 2 && JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-04-07'] === '재량휴업일');
   await P.click('#ab-hol-list button'); await wait(150);
@@ -419,6 +447,19 @@ function check(label, cond, detail) {
     check('같은 파일 또 가져오면 0건(중복 안 생김)', /기록 0건/.test(conf2), conf2);
     await P.click('#custom-confirm-overlay button:has-text("취소")').catch(() => {}); await wait(200);
   } else console.log('  (xlsx 라이브러리를 못 찾아 엑셀 가져오기 검사는 건너뜀)');
+
+  // 28명 반: 학생별 현황이 스크롤 없이 한 화면에(1600×1000)
+  await P.evaluate(() => { window.classStructure = { gradeCount: 3, classCounts: [8, 8, 8] }; abFillClassSelects(); });
+  await P.selectOption('#ab-class', '2'); await wait(400);
+  await P.click('#ab-tabs [data-tab="stat"]'); await wait(200);
+  const fit = await P.evaluate(() => { const l = document.getElementById('ab-left'), t = document.querySelector('#ab-stat table'); return { rows: t.tBodies[0].rows.length, fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
+  check('28명이 스크롤 없이 한 화면, 줄 높이 24px 이상', fit.rows === 28 && fit.fits && fit.rh >= 24, fit);
+  await P.locator('#absence-page').screenshot({ path: 'ab-stat28.png' });
+  await P.setViewportSize({ width: 1366, height: 768 }); await wait(300);
+  const fit2 = await P.evaluate(() => { const l = document.getElementById('ab-left'), t = document.querySelector('#ab-stat table'); return { fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
+  check('작은 화면(1366×768)은 줄을 20px까지만 줄이고(읽을 수 있게) 조금 스크롤', fit2.rh === 20, fit2);
+  await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
+  await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
 
   // 닫기·다른 화면
   await P.click('#rail-leavepass-btn'); await wait(400);

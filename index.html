@@ -701,6 +701,8 @@
     .ab-table tbody tr { cursor: pointer; }
     .ab-table tbody tr:hover { background: var(--accent-soft); }
     .ab-table tr.ab-sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
+    .ab-stat-table tbody td { height: var(--ab-rh, 28px); padding-top: 0; padding-bottom: 0; font-size: var(--ab-fs, 12.5px); box-sizing: border-box; }
+    .ab-stat-table thead th, .ab-stat-table tfoot td { padding-top: 5px; padding-bottom: 5px; }
     .ab-table tfoot td { font-weight: 800; border-top: 2px solid var(--border-color); background: var(--tt-bg); }
     .ab-table .ab-zero { color: var(--text-sub); opacity: 0.45; }
     .ab-reason { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 11px; font-weight: 800; white-space: nowrap; background: var(--tt-bg); }
@@ -9828,6 +9830,7 @@
         data.SchoolSchedule[1].row.forEach(function(r) {
           const ev = r.EVENT_NM || '', kind = r.SBTR_DD_SC_NM || '', iso = neisDateToIso(r.AA_YMD);
           if (abIsWeekend(iso)) return; // 토요휴업일 등 주말은 어차피 빼고 셈
+          if (/방학식|개학|종업|졸업|입학/.test(ev)) return; // 방학식·개학식 날은 등교함
           if (kind === '휴업일' || kind === '공휴일' || /휴업|휴일|공휴|방학/.test(ev)) out[iso] = ev || kind;
         });
       }
@@ -9885,7 +9888,7 @@
     abFillClassSelects();
     if (!window.__abInited) {
       window.__abInited = true;
-      window.addEventListener('resize', abFitPaper);
+      window.addEventListener('resize', function() { abFitPaper(); abFitStat(); });
     }
     abApplyTab();
     abRenderAll();
@@ -9934,19 +9937,20 @@
     const tab = abCfg().tab || 'input';
     document.querySelectorAll('#ab-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
     ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
+    if (tab === 'stat') abFitStat();
   }
 
   // ----- 표 안 입력칸(새 줄 ab-n-*, 고치는 줄 ab-e-*) -----
   function abNumOptions(cur) {
-    let h = '<option value="">번호</option>', has = false;
+    let h = '<option value="">번호·이름</option>', has = false;
     abRoster.forEach(function(s) {
       const on = String(s.num) === String(cur); if (on) has = true;
-      h += '<option value="' + s.num + '"' + (on ? ' selected' : '') + '>' + s.num + ' ' + escapeHtmlAttr(s.name) + '</option>';
+      h += '<option value="' + s.num + '"' + (on ? ' selected' : '') + '>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</option>';
     });
     // 명렬표에서 빠진 학생(전학 등)의 예전 기록도 번호가 보이게
     if (cur !== '' && cur != null && !has) {
       const r = abAllRecords().find(function(x) { return String(x.num) === String(cur); });
-      h += '<option value="' + escapeHtmlAttr(cur) + '" selected>' + escapeHtmlAttr(cur) + ' ' + escapeHtmlAttr(r ? r.name : '') + '</option>';
+      h += '<option value="' + escapeHtmlAttr(cur) + '" selected>' + escapeHtmlAttr(cur) + '번 ' + escapeHtmlAttr(r ? r.name : '') + '</option>';
     }
     return h;
   }
@@ -9962,7 +9966,7 @@
       '<td><input type="date" id="' + p + 'from" class="ab-in" value="' + (r.from || '') + '" onchange="abRowDate(\'' + p + '\', \'from\')"' + on + '></td>' +
       '<td><input type="date" id="' + p + 'to" class="ab-in" value="' + (r.to || '') + '" onchange="abRowDate(\'' + p + '\', \'to\')"' + on + '></td>' +
       '<td><input type="number" id="' + p + 'days" class="ab-in ab-days" min="0" step="1" value="' + days + '" data-touched="' + (r.dm ? '1' : '') + '" oninput="abRowDaysInput(\'' + p + '\')" title="토·일·휴일을 빼고 자동으로 셈 — 직접 고칠 수도 있어요"' + on + '></td>' +
-      '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + (r.written || '') + '"' + on + '></td>' +
+      '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + (r.written || '') + '" data-touched="' + (r.written && r.written !== (r.to || r.from) ? '1' : '') + '" oninput="this.dataset.touched = this.value ? \'1\' : \'\'" title="종료 일자와 같게 자동 — 직접 고칠 수도 있어요"' + on + '></td>' +
       '<td><input id="' + p + 'proof" class="ab-in" list="' + p + 'proofs" placeholder="목록/직접" value="' + escapeHtmlAttr(r.proof || '') + '"' + on + '>' +
         '<datalist id="' + p + 'proofs">' + (AB_PROOFS[reason] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('') + '</datalist></td>';
   }
@@ -9983,6 +9987,8 @@
     if (which === 'to' && t.value && f.value && t.value < f.value) f.value = t.value;
     const d = document.getElementById(p + 'days');
     if (!d.dataset.touched) d.value = f.value ? abCountDays(f.value, t.value) : '';
+    const w = document.getElementById(p + 'written');
+    if (!w.dataset.touched) w.value = t.value || f.value || ''; // 작성 일자는 종료 일자와 같게(직접 고치면 그대로)
   }
   function abRowDaysInput(p) {
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
@@ -10005,7 +10011,7 @@
     r.reason = v('reason');
     r.detail = v('detail').trim();
     r.from = from; r.to = to;
-    r.written = v('written');
+    r.written = v('written') || to;
     r.proof = v('proof').trim();
     const dEl = document.getElementById(p + 'days');
     if (dEl.dataset.touched && dEl.value !== '') { r.dm = true; r.days = Number(dEl.value); } else { delete r.dm; delete r.days; }
@@ -10063,6 +10069,7 @@
       const e = document.getElementById('ab-n-' + k); if (e) keep[k] = e.value;
     });
     const newTouched = !reset && document.getElementById('ab-n-days') ? document.getElementById('ab-n-days').dataset.touched : '';
+    const newWTouched = !reset && document.getElementById('ab-n-written') ? document.getElementById('ab-n-written').dataset.touched : '';
     const all = abClassRecords();
     const idx = {}; all.forEach(function(r, i) { idx[r.id] = i + 1; });
     const rows = abFilterNum == null ? all : all.filter(function(r) { return r.num === abFilterNum; });
@@ -10076,7 +10083,7 @@
       '<col style="width:50px"><col style="width:128px"><col style="width:17%"><col style="width:64px"></colgroup>' +
       '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr></thead><tbody>';
     h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
-      abRowCells('ab-n-', { written: abToday(), num: abFilterNum != null ? abFilterNum : '' }) +
+      abRowCells('ab-n-', { num: abFilterNum != null ? abFilterNum : '' }) +
       '<td><button class="top-btn accent" style="padding:5px 8px; font-size:12px; font-weight:800;" onclick="abSaveRow(\'ab-n-\')" title="추가 (Enter)">➕</button></td></tr>';
     rows.forEach(function(r) {
       if (r.id === abEditId) {
@@ -10085,7 +10092,7 @@
         return;
       }
       h += '<tr data-id="' + r.id + '" class="' + (r.id === abSelId ? 'ab-sel' : '') + '" onclick="abSelect(\'' + r.id + '\')" ondblclick="abEdit(\'' + r.id + '\')">' +
-        '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b>' + r.num + '</b> ' + escapeHtmlAttr(r.name || '') + '</td>' +
+        '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b>' + r.num + '번</b> ' + escapeHtmlAttr(r.name || '') + '</td>' +
         '<td><span class="ab-reason" data-r="' + escapeHtmlAttr(r.reason) + '">' + escapeHtmlAttr(r.reason) + '</span></td>' +
         '<td class="ab-l">' + escapeHtmlAttr(r.detail || '') + '</td><td>' + abShort(r.from) + '</td><td>' + (r.to && r.to !== r.from ? abShort(r.to) : '') + '</td>' +
         '<td>' + abDays(r) + (r.dm ? '<span title="직접 고친 일수">✎</span>' : '') + '</td><td>' + abShort(r.written) + '</td>' +
@@ -10098,6 +10105,7 @@
     if (Object.keys(keep).length) {
       Object.keys(keep).forEach(function(k) { const e = document.getElementById('ab-n-' + k); if (e) e.value = keep[k]; });
       document.getElementById('ab-n-days').dataset.touched = newTouched || '';
+      document.getElementById('ab-n-written').dataset.touched = newWTouched || '';
       abRowReasonList('ab-n-');
     }
   }
@@ -10122,16 +10130,27 @@
     if (!list.length) { el.innerHTML = '<div class="ab-empty">이 반 명렬표가 비어 있어요.</div>'; return; }
     const tot = {}; let totAll = 0;
     let h = '<div class="ab-muted" style="margin-bottom:8px;">줄을 누르면 그 학생 기록만 볼 수 있어요. 일수는 토·일·휴일을 뺀 날 수.</div>' +
-      '<table class="ab-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
+      '<table class="ab-table ab-stat-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
     list.forEach(function(s) {
       let sum = 0;
-      h += '<tr onclick="abFilter(' + s.num + ')"><td>' + s.num + '</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
+      h += '<tr onclick="abFilter(' + s.num + ')"><td>' + s.num + '번</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
       AB_REASONS.forEach(function(x) { const v = s.d[x] || 0; sum += v; tot[x] = (tot[x] || 0) + v; h += '<td class="' + (v ? '' : 'ab-zero') + '">' + v + '</td>'; });
       totAll += sum;
       h += '<td style="font-weight:800;" class="' + (sum ? '' : 'ab-zero') + '">' + sum + '</td><td class="ab-l" style="font-size:11.5px;">' + s.dates.join(', ') + '</td></tr>';
     });
     h += '</tbody><tfoot><tr><td colspan="2">합계</td>' + AB_REASONS.map(function(x) { return '<td>' + (tot[x] || 0) + '</td>'; }).join('') + '<td>' + totAll + '</td><td></td></tr></tfoot></table>';
     el.innerHTML = h;
+    abFitStat();
+  }
+  // 학생별 현황은 스크롤 없이 반 전체가 한 화면에 보이게: 남은 높이 ÷ 학생 수로 줄 높이를 정한다(20~34px, 글씨도 따라 줄임).
+  function abFitStat() {
+    const t = document.querySelector('#ab-stat .ab-stat-table'), left = document.getElementById('ab-left');
+    if (!t || !left.clientHeight || document.getElementById('ab-pane-stat').style.display === 'none') return;
+    const n = t.tBodies[0].rows.length;
+    const fixed = t.getBoundingClientRect().top - left.getBoundingClientRect().top + left.scrollTop + t.tHead.offsetHeight + t.tFoot.offsetHeight + 24;
+    const rh = Math.max(20, Math.min(34, Math.floor((left.clientHeight - fixed) / Math.max(n, 1))));
+    t.style.setProperty('--ab-rh', rh + 'px');
+    t.style.setProperty('--ab-fs', Math.max(11, Math.min(13, rh * 0.5)) + 'px');
   }
   function abRenderHolidays() {
     const y = abSchoolYear(), from = y + '-03-01', to = (y + 1) + '-02-28';
@@ -10140,11 +10159,22 @@
     // 토·일요일 휴일은 어차피 결석 일수에서 빠지므로 목록에도 안 보인다(엑셀 NETWORKDAYS와 같음).
     const days = Object.keys(all).filter(function(d) { return d >= from && d <= to && !abIsWeekend(d); }).sort();
     const wd = ['일', '월', '화', '수', '목', '금', '토'];
-    let h = '<table class="ab-table"><thead><tr><th>날짜</th><th>이름</th><th>어디서</th><th></th></tr></thead><tbody>';
+    const srcOf = function(d) { return mine[d] ? '직접 더함' : abNeisHol[d] ? '학사일정' : '기본 공휴일'; };
+    // 바로 다음 평일로 이어지고 이름·출처가 같으면 한 줄로 묶는다 — 여름·겨울방학이 날마다 한 줄씩 수십 줄이 되지 않게.
+    const nextWeekday = function(d) { const t = new Date(d + 'T00:00:00'); do { t.setDate(t.getDate() + 1); } while (t.getDay() === 0 || t.getDay() === 6); return abIso(t); };
+    const groups = [];
     days.forEach(function(d) {
-      const src = mine[d] ? '직접 더함' : abNeisHol[d] ? '학사일정' : '기본 공휴일';
-      h += '<tr style="cursor:default;"><td style="white-space:nowrap;">' + abShort(d) + '(' + wd[new Date(d + 'T00:00:00').getDay()] + ')</td><td class="ab-l">' + escapeHtmlAttr(all[d]) + '</td>' +
-        '<td class="ab-muted">' + src + '</td><td>' + (mine[d] ? '<button class="ab-icon-btn" onclick="abRemoveHoliday(\'' + d + '\')">🗑</button>' : '') + '</td></tr>';
+      const g = groups[groups.length - 1];
+      if (g && nextWeekday(g.days[g.days.length - 1]) === d && all[d] === g.name && srcOf(d) === g.src) g.days.push(d);
+      else groups.push({ name: all[d], src: srcOf(d), days: [d] });
+    });
+    const lab = function(d) { return abShort(d) + '(' + wd[new Date(d + 'T00:00:00').getDay()] + ')'; };
+    let h = '<table class="ab-table"><thead><tr><th>날짜</th><th>이름</th><th>평일 수</th><th>어디서</th><th></th></tr></thead><tbody>';
+    groups.forEach(function(g) {
+      const first = g.days[0], last = g.days[g.days.length - 1];
+      h += '<tr style="cursor:default;"><td style="white-space:nowrap;">' + lab(first) + (last !== first ? ' ~ ' + lab(last) : '') + '</td>' +
+        '<td class="ab-l">' + escapeHtmlAttr(g.name) + '</td><td>' + g.days.length + '일</td><td class="ab-muted">' + g.src + '</td>' +
+        '<td>' + (g.src === '직접 더함' ? '<button class="ab-icon-btn" onclick="abRemoveHoliday(\'' + g.days.join(',') + '\')">🗑</button>' : '') + '</td></tr>';
     });
     document.getElementById('ab-hol-list').innerHTML = h + '</tbody></table>';
   }
@@ -10157,8 +10187,9 @@
     document.getElementById('ab-hol-date').value = ''; document.getElementById('ab-hol-name').value = '';
     abRenderAll();
   }
-  function abRemoveHoliday(d) {
-    const hol = Object.assign({}, abCfg().hol || {}); delete hol[d];
+  function abRemoveHoliday(list) {
+    const hol = Object.assign({}, abCfg().hol || {});
+    String(list).split(',').forEach(function(d) { delete hol[d]; });
     abSetCfg({ hol: hol });
     abRenderAll();
   }
