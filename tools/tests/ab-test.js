@@ -387,14 +387,21 @@ function check(label, cond, detail) {
   const pr = await P.evaluate(() => {
     const vis = (id) => { const e = document.getElementById(id); return e && getComputedStyle(e).display !== 'none'; };
     const paper = document.getElementById('ab-paper').getBoundingClientRect(), t = document.querySelector('#ab-paper table').getBoundingClientRect();
-    return { left: vis('ab-left'), head: vis('ab-page-header'), rail: vis('app-rail'), right: vis('ab-right'), pw: Math.round(paper.width), tr: Math.round(t.right - paper.left), tl: Math.round(t.left - paper.left), tb: Math.round(t.bottom - paper.top), ph: Math.round(paper.height) };
+    return { left: vis('ab-left'), head: vis('ab-page-header'), rail: vis('app-rail'), right: vis('ab-right'), pw: Math.round(paper.width), tr: Math.round(t.right - paper.left), tl: Math.round(t.left - paper.left), tt: Math.round(t.top - paper.top), tb: Math.round(t.bottom - paper.top), ph: Math.round(paper.height) };
   });
   check('인쇄: 입력·머리·레일 숨김, 종이만', !pr.left && !pr.head && !pr.rail && pr.right, pr);
   check('인쇄: A4 폭(794px) 원래 크기, 양식이 종이 안에', Math.abs(pr.pw - 794) <= 1 && pr.tr <= pr.pw && pr.tb <= pr.ph, pr);
   check('인쇄: 좌우 여백 11mm(엑셀 6mm + 5mm) 이상', pr.tl >= 41 && pr.pw - pr.tr >= 41, pr);
+  check('인쇄: 아래 여백 = 위 여백(표를 아래로 늘림, 오차 6px)', Math.abs((pr.ph - pr.tb) - pr.tt) <= 6, pr);
   const pdf = await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
   const pagesN = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   check('인쇄하면 딱 한 장', pagesN === 1, pagesN);
+  await P.evaluate(() => abSelect(abClassRecords().find(r => r.reason === '교외체험학습').id)); await wait(200);
+  const pt = await P.evaluate(() => { const paper = document.getElementById('ab-paper').getBoundingClientRect(), t = document.querySelector('#ab-paper table').getBoundingClientRect(); return { top: Math.round(t.top - paper.top), bottom: Math.round(paper.bottom - t.bottom), l: Math.round(t.left - paper.left), r: Math.round(paper.right - t.right) }; });
+  check('신청서도 아래 여백 = 위 여백, 좌우 여백 11mm 이상', Math.abs(pt.top - pt.bottom) <= 6 && pt.l >= 41 && pt.r >= 41, pt);
+  if (process.env.SAVE_PDF) fs.writeFileSync(process.env.SAVE_PDF + '-trip.pdf', await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true }));
+  await P.evaluate(() => abSelect(abClassRecords().find(r => r.reason !== '교외체험학습').id)); await wait(200);
+  if (process.env.SAVE_PDF) fs.writeFileSync(process.env.SAVE_PDF + '-confirm.pdf', await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true }));
   await P.emulateMedia({ media: 'screen' });
 
   // 다른 기기(같은 계정): 새 기록이 바로 보임
