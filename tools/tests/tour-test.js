@@ -222,6 +222,7 @@ function show(name, seen) {
     ['월간일정표', '#rail-monthly-btn', () => msOpenTour(), () => msTourSteps.length],
     ['시간표 만들기', '#rail-persontt-btn', () => ptOpenTour(), () => ptTourSteps.length],
     ['조퇴증', '#rail-leavepass-btn', () => lpOpenTour(), () => lpTourSteps.length],
+    ['이름표', '#rail-nametag-btn', () => ntOpenTour(), () => ntTourSteps.length],
   ];
   for (const [name, btn, open, len] of pages) {
     await P.click(btn); await wait(700);
@@ -232,6 +233,10 @@ function show(name, seen) {
     if (name === '시간표 만들기') {
       check('시간표 만들기: 제목 바뀜', (await P.evaluate(() => document.getElementById('pt-page-header').innerText)).includes('시간표 만들기'));
       check('시간표 만들기: 설명서 끝나면 원래 탭(내 시간표)으로', await P.evaluate(() => ptCurrentTab === 'me'));
+    }
+    if (name === '이름표') {
+      check('이름표: 분리수거함 단계도 나옴', seen.some(s => s.title.includes('분리수거 종류')));
+      check('이름표: 설명서 끝나면 원래 모드(게시판)로', await P.evaluate(() => ntCfg().mode === 'board' && document.getElementById('nt-board-box').style.display !== 'none'));
     }
     await P.click(btn); await wait(400); // 홈으로
   }

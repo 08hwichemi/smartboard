@@ -754,6 +754,7 @@
     .nt-chip { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
     .nt-chip:hover { border-color: var(--accent-color); }
     .nt-chip.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
+    #nt-text::placeholder, #nt-rc-text::placeholder, #nt-custom::placeholder { color: #BCC1CA; opacity: 1; }
     #nt-text { width: 100%; min-height: 150px; resize: vertical; font-size: 13px; line-height: 1.6; }
     /* 왼쪽 칸들이 패널 높이에 맞춰 눌려 찌그러지지 않게(넘치면 패널이 스크롤) */
     #nt-left > * { flex-shrink: 0; }
@@ -2502,6 +2503,7 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🏷️ 이름표</div>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ntOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <div class="tab-switch" id="nt-mode-switch">
         <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판 이름표</button>
         <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">♻️ 분리수거함</button>
@@ -2509,12 +2511,12 @@
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="nt-muted">인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 두세요 — 적은 크기(cm) 그대로 나와요.</span>
-      <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="ntPrint()">🖨️ 출력</button>
+      <button class="top-btn accent" id="nt-print-btn" style="font-size:12px; padding:5px 14px;" onclick="ntPrint()">🖨️ 출력</button>
     </div>
   </div>
   <div id="nt-body">
     <div id="nt-left">
-      <div class="nt-box">
+      <div class="nt-box" id="nt-size-box">
         <div class="nt-title">📏 크기 <span class="nt-muted" id="nt-fit-info"></span></div>
         <div class="nt-row">
           가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
@@ -2536,14 +2538,14 @@
         <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="nt-rc-eng" onchange="ntSet({ rcEng: this.checked }); ntRender();"> 영어 이름 함께 쓰기 (PLASTIC, PAPER …)</label>
       </div>
 
-      <div class="nt-box">
+      <div class="nt-box" id="nt-copies-box">
         <div class="nt-row" style="justify-content:space-between;">
           <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
           <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSet({ same: this.checked }); ntRender();"> 글자 크기 모두 같게</label>
         </div>
       </div>
 
-      <div class="nt-box">
+      <div class="nt-box" id="nt-font-box">
         <div class="nt-title">🔤 글꼴</div>
         <button type="button" id="nt-font-btn" onclick="ntToggleFontMenu()" title="글꼴 고르기"></button>
         <div id="nt-font-menu" style="display:none;"></div>
@@ -2570,7 +2572,7 @@
         <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSet({ ls: parseInt(this.value) }); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
       </div>
 
-      <div class="nt-box">
+      <div class="nt-box" id="nt-design-box">
         <div class="nt-title">🎨 디자인</div>
         <div id="nt-styles"></div>
         <div class="nt-row">모서리
@@ -2938,7 +2940,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-30.5';
+  var BUILD_ID = '2026-09-30.6';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -11093,6 +11095,31 @@
     const page = document.getElementById('nametag-page');
     if (!page || page.style.display === 'none') return;
     ntFillForm(); ntRender();
+  }
+
+  // ----- 이름표 설명서 -----
+  // 게시판 → 분리수거함 순서로 보여 주고, 끝나면 원래 보던 모드로 돌려놓는다.
+  let ntTourMode = null;
+  const ntTourBoard = function() { if (ntCfg().mode !== 'board') ntSetMode('board'); };
+  const ntTourRecycle = function() { if (ntCfg().mode !== 'recycle') ntSetMode('recycle'); };
+  const ntTourSteps = [
+    { selector: '#nt-page-header', before: ntTourBoard, title: '🏷️ 이름표에 오신 것을 환영해요!', desc: '게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄하는 화면이에요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
+    { selector: '#nt-size-box', before: ntTourBoard, title: '1단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
+    { selector: '#nt-board-box', before: ntTourBoard, title: '2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). " / " 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
+    { selector: '#nt-copies-box', before: ntTourBoard, title: '3단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
+    { selector: '#nt-font-box', before: ntTourBoard, title: '4단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기·글자 크기·자간도 여기서 조절해요.' },
+    { selector: '#nt-design-box', before: ntTourBoard, title: '5단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
+    { selector: '#nt-right', before: ntTourBoard, title: '6단계. 미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요.' },
+    { selector: '#nt-mode-switch', before: ntTourRecycle, title: '♻️ 분리수거함 이름표', desc: '위쪽 "분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요(게시판 이름표 내용은 따로 기억돼요).' },
+    { selector: '#nt-rc-box', before: ntTourRecycle, title: '분리수거 종류 고르기', desc: '만들 종류를 체크하면 아이콘과 함께 만들어지고, 색은 종류별로 들어가요. 목록에 없는 건 아래 칸에 직접 적어 더하고, 영어 이름(PLASTIC 등)은 켜고 끌 수 있어요.' },
+    { selector: '#nt-print-btn', title: '7단계. 출력', desc: '🖨️ 출력을 누르고, 인쇄 창에서 배율은 "기본값(100%)" 그대로 두세요 — 적은 크기(cm) 그대로 나와요. "PDF로 저장"을 고르면 파일로도 받을 수 있어요. 수고하셨습니다! 🎉' },
+  ];
+  function ntOpenTour() {
+    ntTourMode = ntCfg().mode;
+    openPageTour(ntTourSteps, function() {
+      if (ntTourMode && ntCfg().mode !== ntTourMode && document.getElementById('nametag-page').style.display !== 'none') ntSetMode(ntTourMode);
+      ntTourMode = null;
+    });
   }
 
   // ----- 화면 열기·닫기·인쇄 -----
