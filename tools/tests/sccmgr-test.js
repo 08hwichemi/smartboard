@@ -334,10 +334,13 @@ function check(label, cond, detail) {
   const todayStr = await P.evaluate(() => todayYmdDash());
   const nPast = changes.filter(c => c.change_date < todayStr && (c.change_date_b || c.change_date) < todayStr).length;
   const pastTxt = [await P.innerText('#scc-list'), await P.innerText('#scc-list-summary'), await P.evaluate(() => document.getElementById('scc-excel-btn').disabled)];
-  check('지난 내역: 두 날짜가 다 지난 것만(없으면 안내 + 엑셀 버튼 꺼짐)', nPast ? pastTxt[1].includes('전체 ' + nPast + '건') && !pastTxt[2] : pastTxt[0].includes('등록된 변경이 없어요') && pastTxt[2], [nPast, pastTxt]);
+  check('지난 내역: 두 날짜가 다 지난 것만(없으면 안내), 엑셀 버튼은 학기 전체라 그대로 켜짐', (nPast ? pastTxt[1].includes('전체 ' + nPast + '건') : pastTxt[0].includes('등록된 변경이 없어요')) && !pastTxt[2], [nPast, pastTxt]);
   const pastEmpty = await P.evaluate(() => { const keep = window.scheduleChangesAll; window.scheduleChangesAll = []; sccRenderList(); const r = [document.getElementById('scc-list').innerText, document.getElementById('scc-excel-btn').disabled]; window.scheduleChangesAll = keep; sccRenderList(); return r; });
-  check('내역이 없으면 안내 + 엑셀 버튼 꺼짐', pastEmpty[0].includes('등록된 변경이 없어요') && pastEmpty[1], pastEmpty);
-  await P.click('#scc-range-btns [data-range="all"]'); await wait(100);
+  check('학기 내역이 하나도 없으면 안내 + 엑셀 버튼 꺼짐', pastEmpty[0].includes('등록된 변경이 없어요') && pastEmpty[1], pastEmpty);
+  // 엑셀은 화면 거르기(다음 주·보강만)와 상관없이 학기 전체
+  await P.click('#scc-range-btns [data-range="nextweek"]'); await P.selectOption('#scc-type-filter', 'makeup'); await wait(100);
+  check('엑셀 버튼 이름: "2학기 전체 엑셀로 받기"', /2학기 전체 엑셀로 받기/.test(await P.innerText('#scc-excel-btn')), await P.innerText('#scc-excel-btn'));
+  const si = await P.evaluate(() => sccSemesterInfo());
 
   // ---- 엑셀: 제목·틀 고정·필터·색 ----
   let excelPath = null;
@@ -357,17 +360,19 @@ function check(label, cond, detail) {
     const head = ws.getRow(3).values.slice(1);
     const r4 = ws.getRow(4);
     const x = {
-      name: await P.evaluate(() => window.__dlName), sheet: ws.name, title: ws.getCell('A1').value, frozen: v.state === 'frozen' && v.ySplit === 3,
+      name: await P.evaluate(() => window.__dlName), sheet: ws.name, title: ws.getCell('A1').value, sub: ws.getCell('A2').value, frozen: v.state === 'frozen' && v.ySplit === 3,
       filter: ws.autoFilter, head: head.join(','), rows: ws.rowCount - 3, headFill: ws.getCell('A3').fill && ws.getCell('A3').fill.fgColor.argb,
       d1: r4.getCell(1).value instanceof Date ? r4.getCell(1).value.toISOString().slice(0, 10) : r4.getCell(1).value, fmt: r4.getCell(1).numFmt,
       landscape: ws.pageSetup.orientation, fitW: ws.pageSetup.fitToWidth, border: !!(r4.getCell(5).border && r4.getCell(5).border.top),
     };
     fs.unlinkSync(out);
-    check('엑셀: 파일 이름, 제목 줄, 머리줄 틀 고정, 필터(A3~P), 머리줄 색, 날짜는 진짜 날짜, 테두리, A4 가로 한 장 폭',
-      /^수업변경내역_전체_\d{4}-\d{2}-\d{2}\.xlsx$/.test(x.name) && x.sheet === '수업 변경 내역' && /수업 변경 내역/.test(x.title) && x.frozen &&
+    check('엑셀: 화면 거르기와 상관없이 학기 전체 5건, 파일 이름·제목에 학기, 기간 줄, 머리줄 틀 고정, 필터(A3~P), 머리줄 색, 날짜는 진짜 날짜, 테두리, A4 가로 한 장 폭',
+      /^수업변경내역_\d{4}학년도_2학기\.xlsx$/.test(x.name) && x.title === si.label + ' 수업 변경 내역' && /^\d{4}학년도 2학기$/.test(si.label) &&
+      String(x.sub).startsWith('기간: ' + si.start + ' ~ ' + si.end + ' · 총 5건') && x.sheet === '수업 변경 내역' && x.frozen &&
       /^A3:P8$/.test(typeof x.filter === 'string' ? x.filter : '') && x.head.startsWith('날짜,요일,교시,구분,원래 선생님,과목') && x.rows === 5 &&
       x.headFill === 'FF1F3A5F' && x.d1 === wk[0] && x.fmt === 'yyyy-mm-dd' && x.landscape === 'landscape' && x.fitW === 1 && x.border, x);
   }
+  await P.selectOption('#scc-type-filter', 'all'); await P.click('#scc-range-btns [data-range="all"]');
   await P.click('#scc-tab-new-btn'); await wait(100);
 
   // 같은 시간 교환 반영: 김교사 월1 국어 ↔ 정교사 월1 과학 → 김교사 칸에 과학, 정교사 칸에 국어

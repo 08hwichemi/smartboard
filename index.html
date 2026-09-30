@@ -1569,7 +1569,7 @@
         <input type="text" id="scc-search" placeholder="🔍 선생님 이름" oninput="sccRenderList()">
         <span id="scc-list-summary"></span>
         <div style="flex:1;"></div>
-        <button class="top-btn accent" id="scc-excel-btn" style="padding:6px 14px;" onclick="sccExportExcel()">📥 엑셀로 내려받기</button>
+        <button class="top-btn accent" id="scc-excel-btn" style="padding:6px 14px;" onclick="sccExportExcel()" title="위에서 고른 기간·구분과 상관없이 이번 학기 전체 내역을 받아요">📥 이번 학기 전체 엑셀로 받기</button>
       </div>
       <div id="scc-list"></div>
     </div>
@@ -8230,7 +8230,10 @@
     const today = todayYmdDash();
     const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length;
     document.getElementById('scc-list-summary').innerText = (isScheduleManager() ? '전체 ' : '내 변경 ') + list.length + '건' + (list.length ? ' (교환 ' + nEx + ' · 보강 ' + (list.length - nEx) + ')' : '');
-    document.getElementById('scc-excel-btn').disabled = list.length === 0;
+    // 엑셀은 거르기와 상관없이 학기 전체 — 버튼에도 그렇게 적는다.
+    const excelBtn = document.getElementById('scc-excel-btn');
+    excelBtn.innerText = '📥 ' + (window.currentActiveSemester || '이번 학기') + ' 전체 엑셀로 받기';
+    excelBtn.disabled = sccSemesterList().length === 0;
     if (!list.length) {
       listEl.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:40px 10px; font-size:13px;">' + escapeHtmlText(SCC_RANGE_NAMES[scc.listRange] || '') + ' 등록된 변경이 없어요.</div>';
       return;
@@ -8297,6 +8300,30 @@
   // 날짜 문자열 → 엑셀 날짜(ExcelJS는 UTC로 바꾸므로 UTC 자정으로 만들어야 하루 밀리지 않는다)
   function sccExcelDate(ymd) { const p = ymd.split('-'); return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10))); }
 
+  // 지금 학기(관리자 설정의 학기 날짜): { label: '2026학년도 2학기', start, end } — 학기 날짜가 없으면 start/end 빈 값
+  function sccSemesterInfo() {
+    const sem = window.currentActiveSemester || getActiveSemester() || '';
+    const r = (window.semesterRanges || {})[sem] || {};
+    const base = r.start ? sccParse(r.start) : new Date();
+    const year = base.getMonth() < 2 ? base.getFullYear() - 1 : base.getFullYear(); // 1~2월은 지난 학년도
+    return { label: year + '학년도' + (sem ? ' ' + sem : ''), start: r.start || '', end: r.end || '' };
+  }
+
+  // 엑셀은 화면에서 거른 것과 상관없이 이번 학기 전체(담당은 모두, 일반 교사는 본인 관련)를 날짜순으로.
+  function sccSemesterList() {
+    const myName = localStorage.getItem('my-n');
+    const manager = isScheduleManager();
+    const si = sccSemesterInfo();
+    return (window.scheduleChangesAll || window.scheduleChangesRaw || []).filter(function(c) {
+      if (!manager && c.teacher_a !== myName && c.teacher_b !== myName) return false;
+      if (!si.start || !si.end) return true;
+      return [c.change_date, sccDateB(c)].some(function(d) { return d >= si.start && d <= si.end; });
+    }).sort(function(x, y) {
+      const k = function(c) { return c.change_date + '|' + String(c.period_a).padStart(2, '0') + '|' + String(c.id).padStart(9, '0'); };
+      return k(x) < k(y) ? -1 : 1;
+    });
+  }
+
   async function sccBuildWorkbook(list) {
     const wb = new ExcelJS.Workbook();
     wb.creator = '스마트보드';
@@ -8316,24 +8343,21 @@
     ];
     ws.columns = cols.map(function(c) { return { width: c.w }; });
     const lastCol = String.fromCharCode(64 + cols.length); // P
-    const sem = window.currentActiveSemester || '';
-    const now = new Date();
-    const year = now.getMonth() < 2 ? now.getFullYear() - 1 : now.getFullYear(); // 1~2월은 지난 학년도
+    const si = sccSemesterInfo();
 
     ws.mergeCells('A1:' + lastCol + '1');
     const title = ws.getCell('A1');
-    title.value = year + '학년도 ' + sem + ' 수업 변경 내역';
+    title.value = si.label + ' 수업 변경 내역';
     title.font = { size: 16, bold: true, color: { argb: 'FF1F3A5F' } };
     title.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     ws.getRow(1).height = 32;
 
     ws.mergeCells('A2:' + lastCol + '2');
-    const type = document.getElementById('scc-type-filter').value;
-    const q = document.getElementById('scc-search').value.trim();
     const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length;
     const sub = ws.getCell('A2');
-    sub.value = '기간: ' + (SCC_RANGE_NAMES[scc.listRange] || '전체') + (type !== 'all' ? ' · ' + (type === 'exchange' ? '교환만' : '보강만') : '') +
-      (q ? ' · 이름: ' + q : '') + ' · 총 ' + list.length + '건(교환 ' + nEx + ' · 보강 ' + (list.length - nEx) + ') · ' + todayYmdDash() + ' 내려받음';
+    sub.value = (si.start && si.end ? '기간: ' + si.start + ' ~ ' + si.end + ' · ' : '') +
+      (isScheduleManager() ? '' : localStorage.getItem('my-n') + ' 선생님 관련 · ') +
+      '총 ' + list.length + '건(교환 ' + nEx + ' · 보강 ' + (list.length - nEx) + ') · ' + todayYmdDash() + ' 내려받음';
     sub.font = { size: 10, color: { argb: 'FF767C8C' } };
     sub.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     ws.getRow(2).height = 20;
@@ -8382,8 +8406,8 @@
   }
 
   async function sccExportExcel() {
-    const list = sccFilteredList();
-    if (!list.length) return customAlert('내려받을 변경 내역이 없어요.');
+    const list = sccSemesterList();
+    if (!list.length) return customAlert('이번 학기에 등록된 변경 내역이 없어요.');
     const btn = document.getElementById('scc-excel-btn');
     const label = btn.innerText;
     btn.disabled = true; btn.innerText = '⏳ 만드는 중...';
@@ -8394,7 +8418,7 @@
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = '수업변경내역_' + (SCC_RANGE_NAMES[scc.listRange] || '전체').replace(/\s/g, '') + '_' + todayYmdDash() + '.xlsx';
+      a.download = '수업변경내역_' + sccSemesterInfo().label.replace(/\s/g, '_') + '.xlsx';
       a.click();
       setTimeout(function() { URL.revokeObjectURL(a.href); }, 10000);
     } catch (e) {
