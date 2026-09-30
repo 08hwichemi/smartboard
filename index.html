@@ -21,7 +21,7 @@
       --bg-color: #F4F5F7; --card-bg: #FFFFFF; --text-main: #191C24; --text-sub: #767C8C; --border-color: #E3E5EA; --accent-color: #1F3A5F; --tt-bg: #EDEFF3;
       --accent-soft: #E7ECF3; --on-accent: #FFFFFF; --alert: #A03A22; --alert-bg: #FBEAE5; --alert-border: #E9BCAE;
       --accent-secondary: #E07A3D; --accent-secondary-soft: #FDECE0; --accent-secondary-text: #B85A22; --on-accent-secondary: #FFFFFF;
-      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px; --fz-hwp: 12px;
+      --fz-tt: 13px; --fz-noti: 16px; --fz-todo: 13px; --fz-cal: 11px; --fz-halfcal: 9px; --fz-roster: 11px; --fz-hwp: 12px; --fz-sgb: 13px;
       --fz-tt-mobile: 14px; --fz-cal-mobile: 14px; --fz-staff-tt: 12px;
     }
     [data-theme="milky"] { --bg-color: #FAF6EF; --card-bg: #FFFDF8; --text-main: #3B342A; --text-sub: #8A7B62; --border-color: #EAE1D2; --accent-color: #9A5B2E; --tt-bg: #F3ECDF; --accent-soft: #F3E7D8; --alert: #9A4A1C; --alert-bg: #FBEDE3; --alert-border: #E7B996;
@@ -313,6 +313,29 @@
     .hwp-keys kbd { font-family: inherit; font-size: calc(var(--fz-hwp) - 1px); font-weight: 800; color: var(--text-main); background: var(--card-bg); border: 1px solid var(--border-color); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
     .hwp-when { font-size: calc(var(--fz-hwp) - 2px); color: var(--text-sub); margin-right: 2px; }
     #hwpkeys-tabs .top-btn { flex: 1; font-size: 12.5px; padding: 5px 0; }
+    /* ===== 📝 생기부 문장 점검 ===== */
+    #sgb-areas .top-btn { flex: 1 1 auto; font-size: 12px; padding: 5px 6px; }
+    #sgb-text { width: 100%; box-sizing: border-box; min-height: 190px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); }
+    #sgb-text:focus { outline: none; border-color: var(--accent-color); }
+    .sgb-count { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12.5px; font-weight: 700; color: var(--text-main); margin: 8px 0 4px; }
+    .sgb-count b { font-size: 14px; }
+    .sgb-count .sgb-limit { color: var(--text-sub); font-weight: 600; }
+    .sgb-count.over, .sgb-count.over .sgb-limit { color: var(--alert); }
+    .sgb-bar { height: 6px; border-radius: 3px; background: var(--bg-color); overflow: hidden; margin-bottom: 10px; }
+    .sgb-bar > div { height: 100%; background: var(--accent-color); border-radius: 3px; }
+    .sgb-bar.over > div { background: var(--alert); }
+    .sgb-find { border: 1px solid var(--border-color); border-left-width: 4px; border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.5; }
+    .sgb-find.no { border-left-color: var(--alert); }
+    .sgb-find.chk { border-left-color: #E0A100; }
+    .sgb-find-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-weight: 800; }
+    .sgb-find-page { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--text-sub); }
+    .sgb-find-words { margin-top: 2px; }
+    .sgb-find-words span { display: inline-block; font-weight: 700; background: var(--bg-color); border-radius: 5px; padding: 0 6px; margin: 2px 3px 0 0; }
+    .sgb-find-tip { color: var(--text-sub); font-size: 11.5px; margin-top: 2px; }
+    #sgb-preview { font-size: var(--fz-sgb); line-height: 1.7; white-space: pre-wrap; word-break: break-all; background: var(--bg-color); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+    #sgb-preview mark { border-radius: 3px; padding: 0 1px; color: inherit; }
+    #sgb-preview mark.no { background: rgba(229,72,77,0.28); }
+    #sgb-preview mark.chk { background: rgba(245,190,40,0.38); }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -350,6 +373,7 @@
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
     body.has-update #hwpkeys-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
+    body.has-update #sgb-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     /* 모바일 화면(#mobile-shell)은 #app-shell과 별개의 형제 요소라 위 규칙의 영향을
        받지 않는다 — 새 버전 알림 띠(position:fixed, z-index:10000)가 뜨면 그 띠가
@@ -932,6 +956,10 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8"/></svg></div>
       <div class="rail-label">단축키</div>
     </div>
+    <div class="rail-item" id="rail-sgb-btn" title="생기부 문장 점검" onclick="openSgb()">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 13.5l2 2 4-4"/></svg></div>
+      <div class="rail-label">생기부</div>
+    </div>
     <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="railToggle('rail-seatchart-btn', openSeatChart)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
       <div class="rail-label">좌석배치표</div>
@@ -1072,6 +1100,36 @@
     </div>
     <div style="display: flex; margin-top: 12px;">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeStudentRoster()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📝 생기부 문장 점검 — 단축키처럼 왼쪽에 붙어 열리는 패널. 규칙은 SGB_RULES 한곳에 모여 있음(해마다 길라잡이 보고 교체).
+     학생 문장은 이 화면(브라우저) 안에서만 점검하고 어디에도 저장·전송하지 않는다. -->
+<div class="overlay" id="sgb-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25);" onclick="if (event.target === this) closeSgb()">
+  <div class="modal-box" style="width: 640px; max-width: 90vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
+      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">📝 생기부 문장 점검 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+      </div>
+    </div>
+    <div class="top-btn-cluster" id="sgb-areas" style="margin-bottom: 8px; flex-wrap: wrap;"></div>
+    <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;">
+      <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
+      <div class="sgb-count" id="sgb-count"></div>
+      <div class="sgb-bar" id="sgb-bar"><div></div></div>
+      <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px;"></div>
+      <div id="sgb-result"></div>
+    </div>
+    <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+      🔒 적은 문장은 이 화면 안에서만 점검하고 <b>저장하거나 어디로 보내지 않아요</b>(새로고침하면 지워짐). ·
+      자동 점검은 놓치는 것이 있을 수 있어요 — 최종 확인은 직접 해 주세요. · 쪽 번호는 「<span id="sgb-src"></span>」 기준.
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+      <button class="top-btn" style="flex: 0 0 auto; padding:8px 14px;" onclick="clearSgb()">지우기</button>
+      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeSgb()">닫기</button>
     </div>
   </div>
 </div>
@@ -3168,6 +3226,7 @@
     const rosterOverlay = document.getElementById('roster-overlay');
     if (rosterOverlay) rosterOverlay.style.display = 'none';
     closeHwpKeys();
+    closeSgb();
     const scStudentModal = document.getElementById('sc-student-modal');
     if (scStudentModal) scStudentModal.style.display = 'none';
     document.body.removeAttribute('data-print-target');
@@ -4661,6 +4720,7 @@
   async function openStudentRoster() {
     if (document.getElementById('roster-overlay').style.display === 'flex') { closeStudentRoster(); return; }
     closeHwpKeys();
+    closeSgb();
     await ensureClassStructureLoaded();
     rosterEditMode = false;
     updateRosterEditToggleBtn();
@@ -4922,6 +4982,7 @@
     const overlay = document.getElementById('hwpkeys-overlay');
     if (overlay.style.display === 'flex') { closeHwpKeys(); return; }
     closeStudentRoster();
+    closeSgb();
     document.getElementById('hwpkeys-search').value = '';
     renderHwpKeys();
     overlay.style.display = 'flex';
@@ -4943,6 +5004,231 @@
     const btn = document.getElementById('rail-hwpkeys-btn');
     if (btn) btn.classList.remove('active');
   }
+
+  // ===== 📝 생기부 문장 점검 =====
+  // 규칙은 전부 여기 한곳에 모아 둔다 — 해마다 새 길라잡이가 나오면 이 SGB_RULES만 바꾸면 됨.
+  // 근거: 2026학년도 학교생활기록부 기재 길라잡이(고) — 글자 수 p.73, 기재 불가 p.78, 문자·특수문자·종결 p.79.
+  // 자율·자치, 동아리 500자는 길라잡이엔 없고 사용자(학교) 확인값.
+  // 학생 문장은 저장하지 않는다(localStorage에 넣으면 서버로 동기화되니 절대 넣지 말 것). 기억하는 건 고른 영역뿐.
+  const SGB_RULES = {
+    year: 2026,
+    source: '2026학년도 학교생활기록부 기재 길라잡이(고)',
+    // chars = 한글 기준 최대 글자 수. 나이스 바이트 한도 = chars × 3.
+    areas: [
+      { id: 'subj', label: '과목별 세특', chars: 500, page: 'p.73', note: '공통과목(공통국어·공통수학·공통영어·통합사회·통합과학·한국사·과학탐구실험)은 1·2 합산 500자.' },
+      { id: 'indiv', label: '개인별 세특', chars: 500, page: 'p.73' },
+      { id: 'career', label: '진로', chars: 500, page: 'p.73' },
+      { id: 'auto', label: '자율·자치', chars: 500, page: '' },
+      { id: 'club', label: '동아리', chars: 500, page: '' },
+      { id: 'behav', label: '행특', chars: 300, page: 'p.73' }
+    ],
+    // level: 'no' = 기재 불가(빨강), 'chk' = 확인 필요(노랑). words는 그대로 찾을 말, re는 정규식.
+    checks: [
+      { level: 'no', title: '공인어학시험', page: 'p.78 가', tip: '참여 사실·성적·수상 모두 기재 불가(한자 시험 포함).',
+        words: ['토익', '토플', '텝스', '한자능력검정', '한자급수', '한자자격검정', '실용한자', '상공회의소한자', '상무한검', '상무 한검'],
+        re: /\b(?:TOEIC|TOEFL|TEPS|HSK|JPT|JLPT|DELF|DALF|TESTDAF|TestDaF|DSH|DSD|TORFL|DELE)\b/gi },
+      { level: 'chk', title: '대회·수상', page: 'p.78 나', tip: '교내·외 대회 참여 사실과 성적·수상 실적은 기재 불가.',
+        words: ['대회', '경시', '올림피아드', '수상', '입상', '최우수상', '우수상', '장려상', '금상', '은상', '동상'] },
+      { level: 'no', title: '교외상', page: 'p.78 다', tip: '교외 기관·단체(장)에게 받은 상(표창장·감사장·공로상 포함) 기재 불가.',
+        words: ['표창장', '감사장', '공로상'] },
+      { level: 'no', title: '인증시험', page: 'p.78 라', tip: '교내·외 인증시험 참여 사실이나 성적 기재 불가.',
+        words: ['인증시험', '인증 시험', '급수 취득', '급 취득', '검정시험'] },
+      { level: 'no', title: '모의고사·학력평가 성적', page: 'p.78 마', tip: '원점수·석차·등급·백분위 등 성적 관련 내용 일체 기재 불가.',
+        words: ['모의고사', '모의평가', '학력평가', '전국연합', '원점수', '백분위', '석차'], re: /\d\s*등급/g },
+      { level: 'chk', title: '논문 투고·발표', page: 'p.78 바', tip: '논문을 학회지 등에 투고·등재하거나 학회에서 발표한 사실은 기재 불가.',
+        words: ['논문', '학회', '학술지', '투고', '등재'] },
+      { level: 'chk', title: '도서 출간', page: 'p.78 사', tip: '도서 출간 사실 기재 불가.',
+        words: ['출간', '출판', '저서', '발간'] },
+      { level: 'chk', title: '지식재산권', page: 'p.78 아', tip: '특허·실용신안·상표·디자인 출원 또는 등록 사실 기재 불가.',
+        words: ['특허', '실용신안', '상표 등록', '상표등록', '출원'] },
+      { level: 'chk', title: '해외 활동', page: 'p.78 자', tip: '어학연수·봉사 등 해외 활동실적 기재 불가.',
+        words: ['어학연수', '해외', '국외', '유학'] },
+      { level: 'chk', title: '부모(친인척) 지위 암시', page: 'p.78 차', tip: '부모·친인척의 직종·직업·직장·직위를 암시하는 내용 기재 불가.',
+        words: ['아버지', '어머니', '부모님', '부친', '모친', '아빠', '엄마', '삼촌', '이모', '고모', '친척'] },
+      { level: 'no', title: '장학생·장학금', page: 'p.78 카', tip: '장학생·장학금 관련 내용 기재 불가.',
+        words: ['장학금', '장학생'] },
+      { level: 'chk', title: '대학·기관·상호·강사명', page: 'p.78 타', tip: '특정 대학명·기관명·상호명·강사명 기재 불가(교육부·교육청 등 교육관련기관은 예외, p.78 비고).',
+        words: ['대학교', '대학원', '카이스트', '포스텍', '서울대', '연세대', '고려대', '성균관대', '한양대', '서강대', '이화여대', '중앙대', '경희대', '교수', '박사', '강사'],
+        re: /\b(?:KAIST|POSTECH|UNIST|DGIST|GIST)\b/gi },
+      { level: 'chk', title: '자격증', page: 'p.78 파', tip: '자격증 명칭·취득 사실은 "자격증 취득" 항목 외에는 기재 불가.',
+        words: ['자격증', '자격 취득', '기능사', '컴퓨터활용능력', '컴활', '워드프로세서'] },
+      { level: 'no', title: '우리 학교 이름(고교블라인드)', page: 'p.78 2-②', tip: '학교명·재단명·학교 축제명·학교 별칭 등 학교를 알 수 있는 내용 일체 기재 불가.',
+        words: ['부광'] },
+      { level: 'chk', title: '학교를 알 수 있는 내용(고교블라인드)', page: 'p.78 2-②', tip: '학교명·재단명·학교 축제명·학교 별칭 등 기재 불가 — 다른 학교 이름·축제명도 확인.',
+        re: /[가-힣]{1,10}고등학교|[가-힣]{1,10}여고(?![가-힣])|[가-힣]{1,10}축제/g },
+      { level: 'chk', title: '영문 사용', page: 'p.79 3-③', tip: '한글로 입력(부득이한 경우 영문: 외국인 성명, 일반화된 명사, 도서명·저자명 같은 고유명사, 단위 등).',
+        re: /[A-Za-z][A-Za-z.\-]*/g,
+        allow: ['CEO', 'PD', 'UCC', 'IT', 'POP', 'CF', 'TV', 'PAPS', 'SNS', 'PPT', 'AI'] },
+      { level: 'chk', title: '특수문자·문단 번호', page: 'p.79 3-④', tip: '서술형 항목에는 특수문자, 문단 구분 기호(번호) 입력을 지양.',
+        re: /[①-⑳❶-❿■□▪▫●○◆◇▶▷►★☆※•◎◈▣→←↑↓⇒★♥♡]|^\s*(?:\d+[.)]|[-*·ㆍ]|[가-하][.)])\s*/gm },
+      { level: 'chk', title: '명사형 종결', page: 'p.79 3-⑤', tip: '서술형 문장은 명사형 종결어미(~함, ~임, ~음)로 끝냄.',
+        re: /[가-힣](?:다|요|니다|어요|해요)(?=\s*[.!?]|\s*$)/gm }
+    ]
+  };
+  const SGB_AREA_KEY = 'sgb-area'; // 마지막으로 고른 영역(계정별 개인 자료) — 문장은 저장 안 함
+
+  // 나이스 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기(ASCII) 1, 엔터 2. 그 밖의 글자(·, “ ”, 한자 등)는
+  // 나이스가 UTF-8로 세는 대로 2~3바이트.
+  function sgbCount(text) {
+    const t = String(text || '').replace(/\r\n?/g, '\n');
+    let bytes = 0, withSpace = 0, noSpace = 0;
+    for (const ch of t) {
+      const c = ch.codePointAt(0);
+      if (ch === '\n') { bytes += 2; continue; }
+      withSpace++;
+      if (!/\s/.test(ch)) noSpace++;
+      if (c <= 0x7F) bytes += 1;
+      else if (c <= 0x7FF) bytes += 2;
+      else if (c <= 0xFFFF) bytes += 3;
+      else bytes += 4;
+    }
+    return { bytes: bytes, withSpace: withSpace, noSpace: noSpace };
+  }
+
+  // 점검 결과: [{check, words:[...], ranges:[[시작,끝],...]}]
+  function sgbFindings(text) {
+    const t = String(text || '').replace(/\r\n?/g, '\n');
+    const out = [];
+    SGB_RULES.checks.forEach(function(ck) {
+      const ranges = [], words = [];
+      const add = function(i, len, w) {
+        ranges.push([i, i + len]);
+        if (words.indexOf(w) === -1) words.push(w);
+      };
+      (ck.words || []).forEach(function(w) {
+        let i = t.indexOf(w);
+        while (i !== -1) { add(i, w.length, w); i = t.indexOf(w, i + w.length); }
+      });
+      if (ck.re) {
+        const re = new RegExp(ck.re.source, ck.re.flags.indexOf('g') === -1 ? ck.re.flags + 'g' : ck.re.flags);
+        let m;
+        while ((m = re.exec(t)) !== null) {
+          if (!m[0]) { re.lastIndex++; continue; }
+          const w = m[0].trim() || m[0];
+          if (ck.allow && ck.allow.indexOf(w.replace(/[.\-]+$/, '').toUpperCase()) !== -1) continue;
+          add(m.index, m[0].length, w);
+        }
+      }
+      if (ranges.length) out.push({ check: ck, words: words, ranges: ranges });
+    });
+    return out;
+  }
+
+  function sgbCurrentArea() {
+    let v = null;
+    try { v = localStorage.getItem(SGB_AREA_KEY); } catch (e) {}
+    return SGB_RULES.areas.find(function(a) { return a.id === v; }) || SGB_RULES.areas[0];
+  }
+
+  function setSgbArea(id) {
+    if (sgbCurrentArea().id !== id) {
+      try { localStorage.setItem(SGB_AREA_KEY, id); } catch (e) {}
+      scheduleBackupWrite();
+    }
+    renderSgb();
+  }
+
+  // 찾은 곳을 색칠한 미리보기. 겹치는 곳은 '불가'가 '확인'보다 먼저.
+  function sgbPreviewHtml(text, findings) {
+    const t = String(text || '').replace(/\r\n?/g, '\n');
+    const mark = new Array(t.length).fill('');
+    findings.forEach(function(f) {
+      f.ranges.forEach(function(r) {
+        for (let i = r[0]; i < r[1]; i++) if (mark[i] !== 'no') mark[i] = f.check.level;
+      });
+    });
+    let html = '', i = 0;
+    while (i < t.length) {
+      const cls = mark[i];
+      let j = i;
+      while (j < t.length && mark[j] === cls) j++;
+      const seg = escapeHtmlAttr(t.slice(i, j));
+      html += cls ? '<mark class="' + cls + '">' + seg + '</mark>' : seg;
+      i = j;
+    }
+    return html;
+  }
+
+  function renderSgb() {
+    const area = sgbCurrentArea();
+    document.getElementById('sgb-year').textContent = SGB_RULES.year + '학년도';
+    document.getElementById('sgb-src').textContent = SGB_RULES.source;
+    document.getElementById('sgb-areas').innerHTML = SGB_RULES.areas.map(function(a) {
+      return '<button class="top-btn' + (a.id === area.id ? ' theme-active' : '') + '" data-area="' + a.id + '" onclick="setSgbArea(\'' + a.id + '\')">' + a.label + '</button>';
+    }).join('');
+    const text = document.getElementById('sgb-text').value;
+    const c = sgbCount(text);
+    const limit = area.chars * 3;
+    const over = c.bytes > limit;
+    const countEl = document.getElementById('sgb-count');
+    countEl.className = 'sgb-count' + (over ? ' over' : '');
+    countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
+      '<span><b>' + c.bytes + '</b>바이트 <span class="sgb-limit">/ ' + limit + '바이트(' + area.chars + '자)' +
+      (over ? ' · <b>' + (c.bytes - limit) + '바이트 넘음</b>' : ' · ' + (limit - c.bytes) + '바이트 남음') + '</span></span>';
+    const bar = document.getElementById('sgb-bar');
+    bar.className = 'sgb-bar' + (over ? ' over' : '');
+    bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
+    document.getElementById('sgb-note').textContent =
+      area.label + ' 최대 ' + area.chars + '자(학년 단위' + (area.id === 'subj' ? ', 과목별' : '') + ')' + (area.page ? ' · 길라잡이 ' + area.page : ' · 학교 확인값') +
+      (area.note ? ' · ' + area.note : '') + ' · 바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
+
+    const result = document.getElementById('sgb-result');
+    if (!text.trim()) {
+      result.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:16px;">문장을 넣으면 글자 수와 기재 불가 표현을 바로 보여 줘요.</div>';
+      return;
+    }
+    const findings = sgbFindings(text);
+    findings.sort(function(a, b) { return (a.check.level === 'no' ? 0 : 1) - (b.check.level === 'no' ? 0 : 1); });
+    let html = '';
+    if (findings.length) {
+      html += '<div id="sgb-preview">' + sgbPreviewHtml(text, findings) + '</div>';
+      html += findings.map(function(f) {
+        return '<div class="sgb-find ' + f.check.level + '" data-check="' + escapeHtmlAttr(f.check.title) + '">' +
+          '<div class="sgb-find-head"><span>' + (f.check.level === 'no' ? '⛔ 기재 불가 · ' : '⚠️ 확인 · ') + escapeHtmlAttr(f.check.title) + '</span>' +
+          '<span class="sgb-find-page">' + escapeHtmlAttr(f.check.page) + '</span></div>' +
+          '<div class="sgb-find-words">' + f.words.slice(0, 12).map(function(w) { return '<span>' + escapeHtmlAttr(w) + '</span>'; }).join('') +
+          (f.words.length > 12 ? ' 외 ' + (f.words.length - 12) + '개' : '') + '</div>' +
+          '<div class="sgb-find-tip">' + escapeHtmlAttr(f.check.tip) + '</div></div>';
+      }).join('');
+    } else {
+      html += '<div class="sgb-find" style="border-left-color: var(--accent-color);">✅ 자동으로 찾은 문제 표현은 없어요.</div>';
+    }
+    html += '<div class="sgb-find-tip" style="margin-top:6px;">※ AI로 만든 문장을 그대로 입력하는 것, 학생에게 써 오게 한 내용을 그대로 옮기는 것도 금지(p.78 2-③, p.79 3-①) — 자동 점검으로는 알 수 없어요.</div>';
+    result.innerHTML = html;
+  }
+
+  function clearSgb() {
+    document.getElementById('sgb-text').value = '';
+    renderSgb();
+    document.getElementById('sgb-text').focus();
+  }
+
+  function openSgb() {
+    const overlay = document.getElementById('sgb-overlay');
+    if (overlay.style.display === 'flex') { closeSgb(); return; }
+    closeStudentRoster();
+    closeHwpKeys();
+    renderSgb();
+    overlay.style.display = 'flex';
+    document.getElementById('rail-sgb-btn').classList.add('active');
+    document.getElementById('sgb-text').focus();
+  }
+
+  function closeSgb() {
+    const overlay = document.getElementById('sgb-overlay');
+    if (overlay) overlay.style.display = 'none';
+    const btn = document.getElementById('rail-sgb-btn');
+    if (btn) btn.classList.remove('active');
+  }
+
+  // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(단축키 패널과 같은 방식).
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-sgb-btn') closeSgb();
+    }, true);
+  });
 
   function onRosterGradeChange() {
     const grade = parseInt(document.getElementById('roster-grade-select').value);
@@ -5365,7 +5651,7 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'hwp': 12, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'hwp': 12, 'sgb': 13, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
