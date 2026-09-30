@@ -198,7 +198,7 @@ function check(label, cond, detail) {
   await P.click('#rail-sgb-btn'); await wait(300);
   check('누르면 열림 + 버튼 표시 + 입력칸에 커서', await open() && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.activeElement.id === 'sgb-text'));
   const areas = () => P.evaluate(() => [...document.querySelectorAll('#sgb-areas .top-btn')].map(b => b.innerText + (b.classList.contains('theme-active') ? '*' : '')).join(','));
-  check('영역 6개(봉사 없음), 처음엔 과목별 세특', await areas() === '과목별 세특*,개인별 세특,진로,자율·자치,동아리,행특', await areas());
+  check('영역 2개(500자 묶음 / 행특 300자), 처음엔 500자', await areas() === '세특·개세특·진로·자율자치·동아리 (500자)*,행특 (300자)', await areas());
   check('빈 칸: 0자 0바이트 / 1500바이트', /공백 제외 0자 공백 포함 0자 0바이트 \/ 1500바이트\(500자\)/.test(await count()), await count());
 
   // 한도: 과목별 500자 = 1500바이트
@@ -209,12 +209,11 @@ function check(label, cond, detail) {
   await P.click('#sgb-areas [data-area="behav"]'); await wait(150);
   check('행특: 900바이트(300자)', /\/ 900바이트\(300자\)/.test(await count()) && /601바이트 넘음/.test(await count()), await count());
   check('고른 영역 기억(계정 자료)', await ls(pc, 'sgb-area') === 'behav');
-  for (const id of ['indiv', 'career', 'auto', 'club']) {
-    await P.click('#sgb-areas [data-area="' + id + '"]'); await wait(80);
-    const t = await count();
-    if (!/\/ 1500바이트\(500자\)/.test(t)) check(id + ' 500자', false, t);
-  }
-  check('개인별 세특·진로·자율·자치·동아리 모두 1500바이트(500자)', true);
+  await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
+  check('다시 500자 묶음 → 1500바이트', /\/ 1500바이트\(500자\)/.test(await count()) && await ls(pc, 'sgb-area') === 's500', await count());
+  await P.evaluate(() => { localStorage.setItem('sgb-area', 'club'); renderSgb(); });
+  check('예전에 기억한 영역(동아리 등)은 500자 묶음으로', /\/ 1500바이트/.test(await count()));
+  await P.evaluate(() => { localStorage.setItem('sgb-area', 's500'); });
 
   // 점검
   await type('TOEIC 900점을 받았고 수학 경시대회에서 금상을 수상하였다.\n① 부광고등학교 축제에서 발표함.');
@@ -250,7 +249,19 @@ function check(label, cond, detail) {
   const serverLeak = [...items.values()].filter(r => String(r.value).includes('비밀 문장'));
   check('문장은 localStorage·서버 어디에도 저장 안 됨', leaked.length === 0 && serverLeak.length === 0, { leaked, serverLeak });
 
+  // 복사 버튼
+  await P.evaluate(() => { window.__clip = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { window.__clip = t; } } }); });
+  await type('첫 줄 탐구함.\n둘째 줄 발표함.');
+  await P.click('#sgb-copy-btn'); await wait(200);
+  const clip = await P.evaluate(() => window.__clip);
+  check('복사 → 쓴 문장 그대로(줄바꿈 포함) 클립보드에', clip === '첫 줄 탐구함.\n둘째 줄 발표함.', clip);
+  check('복사했다는 표시', /복사했어요/.test(await P.innerText('#sgb-copy-btn')));
+  await wait(2000);
+  check('잠시 뒤 버튼 글자 원래대로', /^📋 복사/.test(await P.innerText('#sgb-copy-btn')));
   await P.click('#sgb-overlay button:has-text("지우기")'); await wait(100);
+  await P.click('#sgb-copy-btn'); await wait(100);
+  check('빈 칸에서 복사 → 안내', /복사할 문장이 없어요/.test(await P.innerText('#sgb-copy-btn')));
+
   check('지우기 → 비움', await P.inputValue('#sgb-text') === '' && /0바이트/.test(await count()));
 
   await P.click('#sgb-overlay button:has-text("A+")'); await wait(150);
@@ -263,7 +274,7 @@ function check(label, cond, detail) {
   await P.click('#rail-sgb-btn'); await wait(200);
   check('같은 버튼 한 번 더 → 닫힘', !(await open()) && !(await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active'))));
   await P.click('#rail-sgb-btn'); await wait(200);
-  check('다시 열면 마지막 영역(동아리)', /동아리\*/.test(await areas()), await areas());
+  check('다시 열면 마지막 영역(500자 묶음)', /동아리 \(500자\)\*/.test(await areas()), await areas());
   await P.mouse.click(1400, 500); await wait(200);
   check('바깥 누르면 닫힘', !(await open()));
   await P.click('#rail-sgb-btn'); await wait(200);
