@@ -2550,7 +2550,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-09-30.1';
+  var BUILD_ID = '2026-09-30.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6605,7 +6605,8 @@
   // 같은 날 — 예전에 등록한 기록). 두 날짜는 서로 달라도 된다(월 3교시 ↔ 수 5교시).
   // 교환: 서로 자리를 맞바꾼다 — 내 (날짜A, 교시A) 수업이 (날짜B, 교시B) 자리로 옮겨가고, 상대방의
   //   (날짜B, 교시B) 수업이 내 (날짜A, 교시A) 자리로 옮겨간다. 각자 자기 과목을 그대로 들고
-  //   시간만 옮기는 것(내용을 서로 맞바꾸는 게 아님).
+  //   시간만 옮기는 것(내용을 서로 맞바꾸는 게 아님). 단, 같은 날짜·같은 교시끼리 교환은 그 시간에 서로
+  //   반(수업)을 맞바꿔 들어가는 것 — 내 칸엔 상대방 수업이, 상대방 칸엔 내 수업이 보인다.
   // 보강: 내가 (날짜A, 교시A) 수업을 못 해서 상대방이 (날짜B, 교시B)에 대신 가르쳐준다 — 보통은
   //   같은 날짜·교시. 내 칸은 비고, 상대방 시간표 (날짜B, 교시B)에 내 수업이 추가된다.
   function getCurrentWeekDates() {
@@ -6698,6 +6699,14 @@
       const dB = weekDates.indexOf(dateB) + 1;
       const wdA = sccWeekdayOf(c.change_date);
       const wdB = sccWeekdayOf(dateB);
+
+      // 같은 날짜·같은 교시 교환 — 그 시간에 서로 상대방 반에 들어간다.
+      if (c.type === 'exchange' && dateB === c.change_date && c.period_a === c.period_b) {
+        if (!dA) return;
+        if (teacherName === c.teacher_a) fillCell(c.period_a, dA, c.teacher_b, c.period_b, wdB);
+        if (teacherName === c.teacher_b) fillCell(c.period_b, dB, c.teacher_a, c.period_a, wdA);
+        return;
+      }
 
       if (teacherName === c.teacher_a) {
         // 원래 이 교시의 주인 — 그날은 여기서 안 가르치므로 빈 시간으로 표시
@@ -6855,6 +6864,11 @@
     const mySubj = sccSubjectAt(myName, sccWeekdayOf(dateStr), myPeriod);
     if (sccCurrentType === 'exchange') {
       const partnerSubj = sccSubjectAt(partner, sccWeekdayOf(dateB), partnerPeriod);
+      if (dateStr === dateB && myPeriod === partnerPeriod) {
+        previewEl.innerText = slotA + ' 같은 시간에 서로 반을 맞바꿔 들어감\n' +
+          who + ' → "' + partnerSubj + '" 수업으로\n' + partner + '쌤 → "' + mySubj + '" 수업으로';
+        return;
+      }
       previewEl.innerText =
         who + ' ' + slotA + ' "' + mySubj + '" → ' + slotB + '로 이동\n' +
         partner + '쌤 ' + slotB + ' "' + partnerSubj + '" → ' + slotA + '로 이동';
@@ -6879,7 +6893,6 @@
     if (!partner) return customAlert('선생님을 선택해주세요.');
     const problem = sccDateProblem(dateStr) || sccDateProblem(dateB);
     if (problem) return customAlert(problem);
-    if (sccCurrentType === 'exchange' && dateStr === dateB && myPeriod === partnerPeriod) return customAlert('같은 날짜·같은 교시끼리는 교환할 수 없어요. 상대방 날짜나 교시를 바꿔 주세요.');
 
     const record = {
       change_date: dateStr,

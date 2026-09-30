@@ -241,13 +241,15 @@ function check(label, cond, detail) {
   check('2주 뒤 변경 등록됨 + 목록에 보임', changes.some(c => c.change_date === dr.next) && (await P.evaluate(() => document.getElementById('scc-list').innerText)).includes(nextSlot), [changes.map(c => c.change_date), nextSlot]);
 
   // ---- 서로 다른 날짜끼리 교환/보강 ----
-  // 같은 날짜·같은 교시 교환은 막힘
-  const beforeN = changes.length;
+  // 같은 날짜·같은 교시 교환도 등록됨(그 시간에 서로 반을 맞바꿔 들어감)
   await P.selectOption('#scc-partner-period', '1'); await wait(100);
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(300);
-  const sameMsg = await P.evaluate(() => document.getElementById('custom-alert-msg') ? document.getElementById('custom-alert-msg').innerText : document.body.innerText);
-  await P.click('#custom-alert-ok-btn'); await wait(200);
-  check('같은 날짜·같은 교시 교환은 안내하고 막음', changes.length === beforeN && /같은 날짜·같은 교시/.test(sameMsg), sameMsg.slice(0, 80));
+  const pvSame = await P.evaluate(() => document.getElementById('scc-preview').innerText);
+  check('같은 날짜·같은 교시 미리보기: 서로 반을 맞바꿈', /서로 반을 맞바꿔/.test(pvSame), pvSame);
+  const n0 = changes.length;
+  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
+  await P.click('#custom-alert-ok-btn'); await wait(300);
+  check('같은 날짜·같은 교시 교환 저장됨', changes.length === n0 + 1 && changes[changes.length - 1].period_a === changes[changes.length - 1].period_b, changes[changes.length - 1]);
+  const beforeN = changes.length;
 
   const wk = await P.evaluate(() => getCurrentWeekDates());
   // 상대방 날짜를 직접 바꾸면 내 날짜를 바꿔도 따라가지 않음
@@ -294,6 +296,11 @@ function check(label, cond, detail) {
   await P.evaluate(async () => { await fetchScheduleChanges(); sccRenderList(); });
   const list2 = await P.evaluate(() => document.getElementById('scc-list').innerText);
   check('목록에 두 날짜 표시', list2.includes('(월) 1교시 ↔ 박교사') && /\(수\) 1교시/.test(list2) && /이교사쌤이 \d+\/\d+\(목\) 2교시에/.test(list2), list2);
+
+  // 같은 시간 교환 반영: 김교사 월1 국어 ↔ 정교사 월1 과학 → 김교사 칸에 과학, 정교사 칸에 국어
+  await P.evaluate((d) => { window.scheduleChangesRaw = [{ id: 98, change_date: d, change_date_b: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '정교사', period_b: 1, created_by: 'x' }]; }, wk[0]);
+  const sk = await cell('김교사', 1, 1), sj = await cell('정교사', 1, 1);
+  check('같은 시간 교환 반영: 김교사 월1 과학 / 정교사 월1 국어', sk === '과학' && sj === '국어', { sk, sj });
 
   // 예전 기록(change_date_b 없음)은 예전처럼 같은 날로
   await P.evaluate((d) => { window.scheduleChangesRaw = [{ id: 99, change_date: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '박교사', period_b: 4, created_by: 'x' }]; }, wk[0]);
