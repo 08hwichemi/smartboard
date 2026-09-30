@@ -191,15 +191,26 @@ function pdfInfo(buf) {
   const pc = await openDevice(browser, 'PC', T1);
   const P = pc.page;
   const shown = () => P.evaluate(() => document.getElementById('nametag-page').style.display === 'flex');
+  const pickFont = async (title) => { await P.click('#nt-font-btn'); await wait(100); await P.click('#nt-font-menu .nt-font-opt[title="' + title + '"]'); await wait(200); };
 
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
   check('레일 순서: 결석계 바로 아래 이름표', order[order.indexOf('결석계') + 1] === '이름표', order);
 
   await P.click('#rail-nametag-btn'); await wait(300);
   check('누르면 이름표 화면 + 버튼 표시, 홈은 숨김', await shown() && await P.evaluate(() => document.getElementById('rail-nametag-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
-  check('처음엔 입체 글씨 디자인·주아 글꼴(엑셀 양식처럼)', await P.evaluate(() => document.querySelector('#nt-styles .nt-style.on').innerText.includes('입체 글씨') && document.querySelector('#nt-font-list .nt-font.on').title === '주아'));
+  check('처음엔 입체 글씨 디자인·주아 글꼴(엑셀 양식처럼)', await P.evaluate(() => document.querySelector('#nt-styles .nt-style.on').innerText.includes('입체 글씨') && document.getElementById('nt-font-btn').innerText.includes('주아') && document.querySelector('#nt-font-menu .nt-font-opt.on').title === '주아'));
   check('처음엔 게시판 모드·14.8×6.4cm(엑셀 기본)·안내 문구', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '6.4' && /한 줄에 하나씩/.test(await P.locator('#nt-pages').innerText()));
-  check('글꼴 목록 + 직접 입력, 디자인 6가지', await P.evaluate(() => document.querySelectorAll('#nt-font-list .nt-font').length >= 20 && /직접 입력/.test(document.getElementById('nt-font-list').innerText) && document.querySelectorAll('#nt-styles .nt-style').length === 6));
+  check('글꼴은 드롭다운(닫혀 있음) + 디자인 6가지', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none' && document.querySelectorAll('#nt-styles .nt-style').length === 6));
+  await P.click('#nt-font-btn'); await wait(200);
+  const menu = await P.evaluate(() => { const m = document.getElementById('nt-font-menu'); const opts = [...m.querySelectorAll('.nt-font-opt')]; const r = m.getBoundingClientRect();
+    return { shown: m.style.display === 'block', n: opts.length, custom: /직접 입력/.test(m.innerText), inFont: opts.slice(0, -1).every(o => o.querySelector('.nt-fname').style.fontFamily.includes(o.dataset.f)),
+      tall: opts.every(o => o.getBoundingClientRect().height >= 30), inView: r.top >= 0 && r.bottom <= innerHeight, onVisible: (() => { const on = m.querySelector('.on').getBoundingClientRect(); return on.top >= r.top && on.bottom <= r.bottom; })() }; });
+  check('펼치면 글꼴 26개 + 직접 입력, 이름이 각 글꼴로·찌그러지지 않음·화면 안·지금 글꼴이 보이게', menu.shown && menu.n === 27 && menu.custom && menu.inFont && menu.tall && menu.inView && menu.onVisible, menu);
+  await P.locator('#nt-font-menu').screenshot({ path: 'nt-fontmenu.png' });
+  await P.mouse.click(1000, 500); await wait(150);
+  check('바깥 누르면 닫힘', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none'));
+  await P.click('#nt-font-btn'); await P.keyboard.press('Escape'); await wait(100);
+  check('Esc로 닫힘', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none'));
 
   // 내용 입력 → 바로 그려짐, 계정 자료에 저장
   await P.fill('#nt-text', '월간 일정표\n오늘의 메뉴\n\n  수능 D-Day  \n날씨&미세먼지\n일반 게시물\n시간표 변경 / TIMETABLE'); await wait(300);
@@ -255,14 +266,19 @@ function pdfInfo(buf) {
   check('한 색으로 → 고른 색 하나(입체 글씨는 그 색의 파스텔)', new Set(f).size === 1 && f[0].toLowerCase() !== '#ffffff', f);
   await P.click('#nt-styles .nt-style:nth-child(5)'); await wait(200);
   check('디자인 "컬러" → 색 바탕 + 흰 글씨', await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); return s.querySelector('g[clip-path] rect').getAttribute('fill').toLowerCase() === '#e07b39' && s.querySelector('text:not(.nt-sh)').getAttribute('fill') === '#fff'; }) && (await cfgOf(pc)).style === 'solid');
+  await P.click('#nt-styles .nt-style:nth-child(6)'); await wait(200);
+  const ul = await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); const t = s.querySelector('text:not(.nt-sh)').getBBox(); const r = [...s.querySelectorAll('rect')].pop().getBBox(); return { tw: t.width, rw: r.width, tx: t.x, rx: r.x }; });
+  check('밑줄: 글자 전체 폭', Math.abs(ul.rw - ul.tw) < ul.tw * 0.08 && Math.abs(ul.rx - ul.tx) < ul.tw * 0.06, ul);
+  await P.click('#nt-styles .nt-style:nth-child(5)'); await wait(200);
   await P.click('#nt-radius [data-v="0"]'); await wait(200);
   check('모서리 각지게', await P.evaluate(() => document.querySelector('#nt-pages svg clipPath rect').getAttribute('rx') === '0'));
   await P.click('#nt-styles .nt-style:nth-child(2)'); await P.click('#nt-color-modes .nt-chip:has-text("여러 색")'); await P.click('#nt-radius [data-v="2"]'); await wait(200);
 
   // 글꼴
-  await P.click('#nt-font-list .nt-font[title="검은고딕"]'); await wait(200);
+  await pickFont('검은고딕');
+  check('고르면 닫히고 버튼에 그 글꼴 이름(그 글꼴로)', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none' && document.querySelector('#nt-font-btn .nt-fname').innerText === '검은고딕' && document.querySelector('#nt-font-btn .nt-fname').style.fontFamily.includes('Black Han Sans')));
   check('글꼴 고르면 이름표 글꼴 바뀜·굵기 칸 잠김(한 가지 굵기)', await P.evaluate(() => document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'Black Han Sans'") && document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-weight') === '400' && document.getElementById('nt-weight').disabled) && (await cfgOf(pc)).font === 'Black Han Sans');
-  await P.click('#nt-font-list .nt-font:has-text("직접 입력")'); await wait(200);
+  await pickFont('직접 입력');
   check('직접 입력 → 이름 칸 보임', await P.isVisible('#nt-custom'));
   await P.fill('#nt-custom', '없는글꼴이름123'); await wait(200);
   check('PC에 없는 글꼴이면 경고', /찾지 못했어요/.test(await P.textContent('#nt-custom-msg')));
@@ -270,7 +286,7 @@ function pdfInfo(buf) {
   check('PC에 있는 글꼴이면 확인 + 이름표에 적용', /이 PC에 있는 글꼴/.test(await P.textContent('#nt-custom-msg')) && await P.evaluate(() => document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'DejaVu Sans'")) && (await cfgOf(pc)).custom === 'DejaVu Sans');
   await P.fill('#nt-custom', 'a"b<script>'); await wait(200);
   check('글꼴 이름의 따옴표·꺾쇠는 빼고 씀', await P.evaluate(() => !document.querySelector('#nt-pages script') && document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'abscript'")));
-  await P.click('#nt-font-list .nt-font[title="프리텐다드"]'); await wait(200);
+  await pickFont('프리텐다드');
   check('자간 조절', await P.evaluate(() => { const r = document.getElementById('nt-ls'); r.value = 20; r.dispatchEvent(new Event('input')); return document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('letter-spacing') > 0 && document.getElementById('nt-ls-val').textContent === '0.2em'; }));
 
   // 인쇄: 쪽수·방향
@@ -336,6 +352,11 @@ function pdfInfo(buf) {
   check('1366×768: 이름표 버튼 보이고 화면 열림', await small.page.evaluate(() => { const r = document.getElementById('rail-nametag-btn').getBoundingClientRect(); return r.bottom <= innerHeight && document.getElementById('nametag-page').style.display === 'flex'; }));
   const zoomOk = await small.page.evaluate(() => { const z = parseFloat(document.getElementById('nt-pages').style.zoom || '1'); const sh = document.querySelector('.nt-sheet'); const sc = document.getElementById('nt-prev-scroll'); return sh.offsetHeight * z <= sc.clientHeight && sh.offsetWidth * z <= sc.clientWidth; });
   check('미리보기: 종이 한 장이 칸 안에 다 보임', zoomOk);
+  const boxes = await small.page.evaluate(() => [...document.querySelectorAll('#nt-left > .nt-box')].map(b => b.scrollHeight <= b.clientHeight + 1));
+  check('1366×768: 왼쪽 칸들이 눌려 잘리지 않음(패널이 스크롤)', boxes.every(Boolean) && await small.page.evaluate(() => document.getElementById('nt-font-btn').getBoundingClientRect().height >= 38), boxes);
+  await small.page.evaluate(() => { document.getElementById('nt-left').scrollTop = 99999; }); await wait(200);
+  await small.page.click('#nt-font-btn'); await wait(200);
+  check('1366×768: 아래쪽에서 펼쳐도 목록이 화면 안', await small.page.evaluate(() => { const r = document.getElementById('nt-font-menu').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.height > 200; }));
   await small.page.screenshot({ path: 'nt-1366.png' });
 
   const errs = [...pc.errors, ...pc2.errors, ...small.errors];
