@@ -1,5 +1,6 @@
-// 수업변경 담당(계정 관리 체크): 실무사처럼 본인 시간표가 없어도 홈 둘째 줄 버튼으로 아무 선생님 수업을
-// 교환·보강 등록하고, 이번 주 전체 내역을 보는지 확인한다. 일반 교사는 예전 그대로. 가짜 서버는 staff-test.js와 같다.
+// 수업 변경 큰 창: 왼쪽·오른쪽 시간표에서 칸을 눌러 교환·보강 등록(두 쪽 주를 따로), 겹침 경고, 이미 바뀐 칸 막기,
+// 변경 내역(기간·구분·이름 거르기, 날짜별 묶음), 엑셀 내려받기(틀 고정·필터·색 — exceljs가 있을 때).
+// 수업변경 담당(계정 관리 체크)은 아무 선생님 수업을, 일반 교사는 본인 수업만. 가짜 서버는 staff-test.js와 같다.
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -168,6 +169,7 @@ async function openDevice(browser, name, uid, opts = {}) {
       return route.fulfill({ status: 404, body: '' });
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
+    if (url.includes('/exceljs@')) { try { return route.fulfill({ body: fs.readFileSync(require.resolve('exceljs/dist/exceljs.min.js')), contentType: 'application/javascript' }); } catch (e) {} }
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -200,102 +202,173 @@ function check(label, cond, detail) {
   const P = d.page;
   await P.setViewportSize({ width: 2000, height: 1030 }); await wait(1500);
   check('실무사 홈은 그대로 + 둘째 줄에 수업변경 버튼 없음(사용자 요청으로 뺌)', await P.evaluate(() => document.getElementById('main-dashboard').classList.contains('staff-mode') && !document.getElementById('btn-scc-manager') && ![...document.querySelectorAll('.quick-row .qbtn')].some(b => b.innerText.includes('수업변경'))));
-  await P.evaluate(() => openScheduleChangeModal()); await wait(300);
-  const m = await P.evaluate(() => ({
-    open: getComputedStyle(document.getElementById('schedule-change-overlay')).display === 'flex',
-    aRow: getComputedStyle(document.getElementById('scc-teacher-a-row')).display,
-    aOpts: document.getElementById('scc-teacher-a').options.length,
-    label: document.getElementById('scc-my-period-label').innerText,
-    title: document.getElementById('scc-list-title').innerText,
-  }));
-  check('담당 창: 선생님 고르는 줄, "교시", "전체 변경 내역"', m.open && m.aRow === 'flex' && m.aOpts === 9 && m.label === '교시' && m.title.includes('전체'), m);
-  await P.selectOption('#scc-teacher-a', '김교사'); await wait(100);
-  check('상대방 목록에서 고른 선생님은 빠짐', await P.evaluate(() => ![...document.getElementById('scc-partner').options].some(o => o.value === '김교사')));
-  await P.selectOption('#scc-partner', '박교사'); await wait(100);
-  await P.selectOption('#scc-partner-period', '2'); await wait(100);
-  const pv = await P.evaluate(() => document.getElementById('scc-preview').innerText);
-  check('미리보기가 "김교사쌤 …"로', pv.includes('김교사쌤') && !pv.includes('나('), pv);
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.click('#custom-alert-ok-btn'); await wait(300);
-  check('등록된 기록의 주인이 김교사/박교사', changes.length === 1 && changes[0].teacher_a === '김교사' && changes[0].teacher_b === '박교사', changes);
-  changes.push({ id: 2, change_date: changes[0].change_date, type: 'makeup', teacher_a: '이교사', period_a: 2, teacher_b: '정교사', period_b: 2, created_by: '이교사' });
-  await P.evaluate(async () => { await fetchScheduleChanges(); sccRenderList(); });
-  const list = await P.evaluate(() => document.getElementById('scc-list').innerText);
-  check('다른 사람이 등록한 내역도 목록에 전부(이름 두 개씩)', list.includes('김교사') && list.includes('박교사') && list.includes('이교사') && list.includes('정교사') && (list.match(/삭제/g) || []).length === 2, list);
-  // 학기 안의 다음 주 날짜도 등록되고, 학기 밖은 막힘
-  const dr = await P.evaluate(() => {
-    const r = sccDateRange();
-    const next = new Date(); next.setDate(next.getDate() + 14); while (next.getDay() !== 3) next.setDate(next.getDate() + 1);
-    const ymd = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
-    const far = new Date(); far.setDate(far.getDate() + 90);
-    const sat = new Date(next); sat.setDate(sat.getDate() + 3);
-    return { r, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next), inputMax: document.getElementById('scc-date').max };
+  await P.evaluate(() => openScheduleChangeModal()); await wait(400);
+  const cellSel = (side, date, p) => '#scc-grid-' + side + ' .scc-cell[data-date="' + date + '"][data-p="' + p + '"]';
+  const pick = (side, date, p) => P.click(cellSel(side, date, p));
+  const cls = (side, date, p) => P.evaluate((q) => { const e = document.querySelector(q); return e ? e.className : null; }, cellSel(side, date, p));
+  const setWeek = async (side, date) => { await P.fill('#scc-week-' + side, date); await P.dispatchEvent('#scc-week-' + side, 'change'); await wait(100); };
+  const preview = () => P.evaluate(() => document.getElementById('scc-preview').innerText);
+  const save = async () => { await P.click('#scc-save-btn'); await wait(500); await P.click('#custom-alert-ok-btn'); await wait(300); };
+  const m = await P.evaluate(() => {
+    const box = document.querySelector('#schedule-change-overlay .scc-box').getBoundingClientRect();
+    const ga = document.getElementById('scc-grid-a').getBoundingClientRect(), gb = document.getElementById('scc-grid-b').getBoundingClientRect();
+    return {
+      open: getComputedStyle(document.getElementById('schedule-change-overlay')).display === 'flex',
+      aSel: getComputedStyle(document.getElementById('scc-teacher-a')).display !== 'none',
+      aOpts: document.getElementById('scc-teacher-a').options.length,
+      big: box.width > 1200 && box.height > 850, sideBySide: Math.abs(ga.top - gb.top) < 2 && gb.left > ga.right,
+      saveOff: document.getElementById('scc-save-btn').disabled,
+    };
   });
-  check('기간: 이번 주 월요일 ~ 학기 끝, 2주 뒤 수요일 가능 / 학기 뒤·토요일 불가', dr.nextOk && dr.farBad && dr.satBad && dr.inputMax === dr.r.max && dr.r.max > dr.next, dr);
-  await P.fill('#scc-date', dr.next); await P.dispatchEvent('#scc-date', 'change'); await wait(100);
-  await P.selectOption('#scc-partner', '이교사'); await wait(100);
-  await P.selectOption('#scc-partner-period', '3'); await wait(100);
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.click('#custom-alert-ok-btn'); await wait(300);
-  const nextSlot = await P.evaluate((d) => sccSlotText(d, 1), dr.next);
-  check('2주 뒤 변경 등록됨 + 목록에 보임', changes.some(c => c.change_date === dr.next) && (await P.evaluate(() => document.getElementById('scc-list').innerText)).includes(nextSlot), [changes.map(c => c.change_date), nextSlot]);
-
-  // ---- 서로 다른 날짜끼리 교환/보강 ----
-  // 같은 날짜·같은 교시 교환도 등록됨(그 시간에 서로 반을 맞바꿔 들어감)
-  await P.selectOption('#scc-partner-period', '1'); await wait(100);
-  const pvSame = await P.evaluate(() => document.getElementById('scc-preview').innerText);
-  check('같은 날짜·같은 교시 미리보기: 서로 반을 맞바꿈', /서로 반을 맞바꿔/.test(pvSame), pvSame);
-  const n0 = changes.length;
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.click('#custom-alert-ok-btn'); await wait(300);
-  check('같은 날짜·같은 교시 교환 저장됨', changes.length === n0 + 1 && changes[changes.length - 1].period_a === changes[changes.length - 1].period_b, changes[changes.length - 1]);
-  const beforeN = changes.length;
-
-  const wk = await P.evaluate(() => getCurrentWeekDates());
-  // 상대방 날짜를 직접 바꾸면 내 날짜를 바꿔도 따라가지 않음
-  await P.fill('#scc-date', wk[0]); await P.dispatchEvent('#scc-date', 'change'); await wait(100);
-  check('상대방 날짜는 처음엔 내 날짜를 따라감', await P.evaluate(() => document.getElementById('scc-date-b').value) === wk[0]);
-  await P.fill('#scc-date-b', wk[2]); await P.dispatchEvent('#scc-date-b', 'change'); await wait(100);
-  await P.fill('#scc-date', wk[1]); await P.dispatchEvent('#scc-date', 'change'); await wait(100);
-  check('직접 고친 상대방 날짜는 그대로', await P.evaluate(() => document.getElementById('scc-date-b').value) === wk[2]);
-  await P.fill('#scc-date', wk[0]); await P.dispatchEvent('#scc-date', 'change'); await wait(100);
+  check('큰 창: 담당은 왼쪽 선생님 고르기, 두 시간표가 좌우로, 칸 고르기 전엔 등록 버튼 꺼짐', m.open && m.aSel && m.aOpts === 9 && m.big && m.sideBySide && m.saveOff, m);
   await P.selectOption('#scc-teacher-a', '김교사'); await wait(100);
-  await P.selectOption('#scc-my-period', '1'); await wait(100);
+  check('오른쪽 목록에서 왼쪽 선생님은 빠짐', await P.evaluate(() => ![...document.getElementById('scc-partner').options].some(o => o.value === '김교사')));
+  const wk = await P.evaluate(() => getCurrentWeekDates());
+  await setWeek('a', wk[0]);
+  check('오른쪽은 처음엔 왼쪽 주를 따라감', await P.evaluate(() => scc.weekB) === wk[0]);
+  // 교환 칸 규칙: 왼쪽 빈 시간은 못 누름, 오른쪽은 수업 칸만
+  check('왼쪽 빈 시간(월2)은 못 누름, 수업 칸(월1)은 누를 수 있음', !/pick/.test(await cls('a', wk[0], 2)) && /pick/.test(await cls('a', wk[0], 1)), [await cls('a', wk[0], 2), await cls('a', wk[0], 1)]);
   await P.selectOption('#scc-partner', '박교사'); await wait(100);
-  await P.selectOption('#scc-partner-period', '1'); await wait(100);
-  const pv2 = await P.evaluate(() => document.getElementById('scc-preview').innerText);
-  check('미리보기에 두 날짜가 모두(월 1교시 ↔ 수 1교시)', /\(월\) 1교시/.test(pv2) && /\(수\) 1교시/.test(pv2), pv2);
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.click('#custom-alert-ok-btn'); await wait(300);
+  check('교환: 오른쪽 빈 시간(박교사 월1)은 흐리게, 수업 칸(수1)은 누를 수 있음', /\bno\b/.test(await cls('b', wk[0], 1)) && /pick/.test(await cls('b', wk[2], 1)));
+
+  // ---- 서로 다른 날짜끼리 교환: 김교사 월1 ↔ 박교사 수1 ----
+  await pick('a', wk[0], 1); await wait(100);
+  check('한쪽만 고르면 등록 버튼 꺼짐 + 단계 안내', await P.evaluate(() => document.getElementById('scc-save-btn').disabled) && /✅ ① \d+\/\d+\(월\) 1교시 국어/.test(await preview()) && /⬜ ② 맞바꿀 수업 칸을 누르세요/.test(await preview()), await preview());
+  await pick('b', wk[2], 1); await wait(100);
+  const pv2 = await preview();
+  check('미리보기: "김교사쌤 …", 두 날짜(월 1교시 ↔ 수 1교시), 겹침 경고 없음', pv2.includes('김교사쌤') && !pv2.includes('나(') && /\(월\) 1교시/.test(pv2) && /\(수\) 1교시/.test(pv2) && !/겹쳐요/.test(pv2), pv2);
+  await save();
   const ex = changes[changes.length - 1];
-  check('다른 날짜 교환 저장: change_date=월, change_date_b=수', changes.length === beforeN + 1 && ex.type === 'exchange' && ex.change_date === wk[0] && ex.change_date_b === wk[2] && ex.period_a === 1 && ex.period_b === 1, ex);
+  check('다른 날짜 교환 저장: 김교사 월1 ↔ 박교사 수1', changes.length === 1 && ex.type === 'exchange' && ex.teacher_a === '김교사' && ex.teacher_b === '박교사' && ex.change_date === wk[0] && ex.change_date_b === wk[2] && ex.period_a === 1 && ex.period_b === 1, ex);
+  check('등록하면 고른 칸이 풀리고, 방금 바꾼 칸은 "교환" 표시·못 누름', await P.evaluate(() => !scc.pickA && !scc.pickB) && /chg/.test(await cls('a', wk[0], 1)) && await P.evaluate((q) => { const e = document.querySelector(q); return !e.getAttribute('onclick') && e.querySelector('.badge').innerText === '교환'; }, cellSel('a', wk[0], 1)));
+  check('왼쪽 김교사 수1 칸에 옮겨 온 국어(교환 표시)', await P.evaluate((q) => { const e = document.querySelector(q); return e.querySelector('.s').innerText === '국어' && /chg/.test(e.className); }, cellSel('a', wk[2], 1)));
 
   // 시간표에 반영: 김교사 월1(국어)은 비고 수1로, 박교사 수1(미술)은 비고 월1로
   const cell = (tn, period, d) => P.evaluate(([tn, period, d]) => {
     document.getElementById('search-select').value = tn; renderSearchTimetable(true);
     const e = document.getElementById('search-tt-' + period + '-' + d + '-s'); return e ? e.innerText.trim() : null;
   }, [tn, period, d]);
-  await P.evaluate(() => { window.scheduleChangesRaw = window.scheduleChangesRaw.filter(c => c.change_date_b); });
   const k1 = await cell('김교사', 1, 1), k3 = await cell('김교사', 1, 3);
   const b3 = await cell('박교사', 1, 3), b1 = await cell('박교사', 1, 1);
-  check('교환 반영: 김교사 월1 빔·수1 국어 / 박교사 수1 빔·월1 미술', k1 === '' && k3 === '국어' && b3 === '' && b1 === '미술', { k1, k3, b3, b1 });
+  check('교환 반영(홈 시간표): 김교사 월1 빔·수1 국어 / 박교사 수1 빔·월1 미술', k1 === '' && k3 === '국어' && b3 === '' && b1 === '미술', { k1, k3, b3, b1 });
 
-  // 다른 날짜·교시 보강: 김교사 월1을 이교사가 목2에
-  await P.evaluate(() => sccSetType('makeup')); await wait(100);
-  check('보강 칸 이름', await P.evaluate(() => document.getElementById('scc-date-b-label').innerText + '/' + document.getElementById('scc-partner-period-label').innerText) === '보강 날짜/보강 교시');
+  changes.push({ id: 2, change_date: wk[0], type: 'makeup', teacher_a: '이교사', period_a: 2, teacher_b: '정교사', period_b: 2, created_by: '이교사' });
+
+  // ---- 주 옮기기: 날짜 칸·◀ ▶, 오른쪽을 직접 옮기면 그 뒤론 따로 ----
+  const dr = await P.evaluate(() => {
+    const r = sccDateRange();
+    const next = new Date(); next.setDate(next.getDate() + 14); while (next.getDay() !== 3) next.setDate(next.getDate() + 1);
+    const ymd = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    const far = new Date(); far.setDate(far.getDate() + 90);
+    const sat = new Date(next); sat.setDate(sat.getDate() + 3);
+    return { r, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next), inputMax: document.getElementById('scc-week-a').max, prevOff: document.getElementById('scc-week-a-prev').disabled };
+  });
+  check('기간: 이번 주 월요일 ~ 학기 끝, 2주 뒤 수요일 가능 / 학기 뒤·토요일 불가, 이번 주에서 ◀ 꺼짐', dr.nextOk && dr.farBad && dr.satBad && dr.inputMax === dr.r.max && dr.r.max > dr.next && dr.prevOff, dr);
+  await P.click('#scc-week-a-next'); await wait(100);
+  await P.click('#scc-week-a-next'); await wait(100);
+  const w2 = await P.evaluate(() => [scc.weekA, scc.weekB, document.getElementById('scc-week-a').value]);
+  const nextMon = await P.evaluate((d) => sccMondayOf(d), dr.next);
+  check('▶ 두 번 = 2주 뒤, 오른쪽도 따라감', w2[0] === nextMon && w2[1] === nextMon && w2[2] === nextMon, [w2, nextMon]);
+  await setWeek('b', wk[0]);
+  await P.click('#scc-week-a-prev'); await wait(100);
+  check('오른쪽을 직접 옮기면 왼쪽을 옮겨도 그대로', await P.evaluate(() => scc.weekB) === wk[0] && await P.evaluate(() => scc.weekA) !== wk[0]);
+  // 2주 뒤 수2 김교사 ↔ 이교사 수3 (같은 주로 오른쪽도 맞춤)
+  await setWeek('a', dr.next);
+  await setWeek('b', dr.next);
+  check('날짜 칸에서 고른 날짜의 주가 보임', await P.evaluate(() => scc.weekA) === nextMon);
   await P.selectOption('#scc-partner', '이교사'); await wait(100);
-  await P.fill('#scc-date-b', wk[3]); await P.dispatchEvent('#scc-date-b', 'change'); await wait(100);
-  await P.selectOption('#scc-partner-period', '2'); await wait(100);
-  await P.click('#schedule-change-overlay button[onclick="sccSave()"]'); await wait(500);
-  await P.click('#custom-alert-ok-btn'); await wait(300);
+  await pick('a', dr.next, 2); await pick('b', dr.next, 3); await wait(100);
+  await save();
+  const nextSlot = await P.evaluate((d) => sccSlotText(d, 2), dr.next);
+  check('2주 뒤 변경 등록됨', changes.some(c => c.change_date === dr.next && c.period_a === 2 && c.teacher_b === '이교사'), changes.map(c => [c.change_date, c.period_a, c.teacher_b]));
+
+  // ---- 같은 날짜·같은 교시 교환(서로 반 맞바꿈): 다음 주 김교사 월1 ↔ 정교사 월1 ----
+  const nw = await P.evaluate((d) => sccAddDays(d, 7), wk[0]);
+  await setWeek('a', nw); await setWeek('b', nw);
+  await P.selectOption('#scc-partner', '정교사'); await wait(100);
+  await pick('a', nw, 1); await pick('b', nw, 1); await wait(100);
+  const pvSame = await preview();
+  check('같은 날짜·같은 교시 미리보기: 서로 반을 맞바꿈', /서로 반을 맞바꿔/.test(pvSame), pvSame);
+  const n0 = changes.length;
+  await save();
+  check('같은 날짜·같은 교시 교환 저장됨', changes.length === n0 + 1 && changes[changes.length - 1].period_a === changes[changes.length - 1].period_b && changes[changes.length - 1].change_date === nw, changes[changes.length - 1]);
+
+  // ---- 겹침 경고: 김교사 화3 ↔ 정교사 화6 (김교사는 화6에 이미 수업) — 경고만, 등록 버튼은 켜짐 ----
+  await P.click(cellSel('a', nw, 3)); await wait(50); // 월3은 빈 시간 — 눌러도 안 골라짐
+  check('왼쪽 빈 시간은 눌러도 안 골라짐', await P.evaluate(() => !scc.pickA));
+  const tue = await P.evaluate((d) => sccAddDays(d, 1), nw);
+  await pick('a', tue, 3); await pick('b', tue, 6); await wait(100);
+  const pvW = await preview();
+  check('교환 겹침 경고(김교사가 화6에 이미 수업) + 등록은 가능', /김교사쌤은 .*\(화\) 6교시에 이미 .* 겹쳐요/.test(pvW) && !(await P.evaluate(() => document.getElementById('scc-save-btn').disabled)), pvW);
+  await P.click('button[onclick="sccClearPicks()"]'); await wait(100);
+  check('"선택 지우기"', await P.evaluate(() => !scc.pickA && !scc.pickB && document.getElementById('scc-save-btn').disabled));
+
+  // ---- 다른 날짜·교시 보강: 김교사 월4(과학)를 이교사가 목1(빈 시간)에 ----
+  await P.click('#scc-type-makeup-btn'); await wait(100);
+  await setWeek('a', wk[0]); await setWeek('b', wk[0]);
+  await P.selectOption('#scc-partner', '이교사'); await wait(100);
+  const lab = await P.evaluate(() => document.getElementById('scc-side-a-label').innerText + '/' + document.getElementById('scc-side-b-label').innerText);
+  check('보강 칸 이름 + 오른쪽은 빈 시간만(이교사 목2 수업 칸은 흐리게, 목1 빈 칸은 누를 수 있음)', lab === '① 보강이 필요한 수업/② 보강해 줄 빈 시간' && /\bno\b/.test(await cls('b', wk[3], 2)) && /pick/.test(await cls('b', wk[3], 1)), [lab, await cls('b', wk[3], 2), await cls('b', wk[3], 1)]);
+  await pick('a', wk[0], 4); await pick('b', wk[3], 1); await wait(100);
+  await save();
   const mk = changes[changes.length - 1];
-  check('다른 날짜 보강 저장', mk.type === 'makeup' && mk.change_date === wk[0] && mk.change_date_b === wk[3] && mk.period_b === 2, mk);
-  await P.evaluate(() => { window.scheduleChangesRaw = window.scheduleChangesRaw.filter(c => c.type === 'makeup' && c.change_date_b); });
-  const l4 = await cell('이교사', 2, 4), k1b = await cell('김교사', 1, 1);
-  check('보강 반영: 이교사 목2에 김교사 국어, 김교사 월1 빔', l4 === '국어' && k1b === '', { l4, k1b });
-  await P.evaluate(async () => { await fetchScheduleChanges(); sccRenderList(); });
-  const list2 = await P.evaluate(() => document.getElementById('scc-list').innerText);
-  check('목록에 두 날짜 표시', list2.includes('(월) 1교시 ↔ 박교사') && /\(수\) 1교시/.test(list2) && /이교사쌤이 \d+\/\d+\(목\) 2교시에/.test(list2), list2);
+  check('다른 날짜 보강 저장', mk.type === 'makeup' && mk.teacher_a === '김교사' && mk.change_date === wk[0] && mk.change_date_b === wk[3] && mk.period_a === 4 && mk.period_b === 1, mk);
+  const l4 = await cell('이교사', 1, 4), k4 = await cell('김교사', 4, 1);
+  check('보강 반영: 이교사 목1에 김교사 과학, 김교사 월4 빔', l4 === '과학' && k4 === '', { l4, k4 });
+
+  // ---- 변경 내역 ----
+  await P.click('#scc-tab-list-btn'); await wait(200);
+  await P.click('#scc-range-btns [data-range="all"]'); await wait(100);
+  const lst = await P.evaluate(() => ({ text: document.getElementById('scc-list').innerText, sum: document.getElementById('scc-list-summary').innerText, del: document.querySelectorAll('#scc-list button').length, days: [...document.querySelectorAll('#scc-list tr.scc-day')].map(t => t.innerText) }));
+  check('내역(전체): 남이 등록한 것도, 두 날짜 표시, 날짜별 묶음, 담당은 전부 삭제 가능', lst.text.includes('이교사') && lst.text.includes('정교사') && /↔ 박교사 \d+\/\d+\(수\) 1교시/.test(lst.text) && /이교사가 대신 \(\d+\/\d+\(목\) 1교시에\)/.test(lst.text) && lst.del === changes.length && /전체 5건 \(교환 3 · 보강 2\)/.test(lst.sum) && lst.days.length >= 3, lst);
+  await P.selectOption('#scc-type-filter', 'makeup'); await wait(100);
+  check('구분: 보강만', /전체 2건/.test(await P.innerText('#scc-list-summary')));
+  await P.selectOption('#scc-type-filter', 'all');
+  await P.fill('#scc-search', '정교사'); await wait(100);
+  check('이름 찾기', /전체 2건/.test(await P.innerText('#scc-list-summary')), await P.innerText('#scc-list-summary'));
+  await P.fill('#scc-search', ''); await wait(50);
+  await P.click('#scc-range-btns [data-range="nextweek"]'); await wait(100);
+  check('다음 주만', /전체 1건/.test(await P.innerText('#scc-list-summary')) && (await P.innerText('#scc-list')).includes('같은 시간 반 맞바꿈'));
+  await P.click('#scc-range-btns [data-range="past"]'); await wait(100);
+  // 이번 주 월요일 기록(id 2)은 오늘이 화요일 이후면 지난 내역 — 요일마다 달라서 직접 센다
+  const todayStr = await P.evaluate(() => todayYmdDash());
+  const nPast = changes.filter(c => c.change_date < todayStr && (c.change_date_b || c.change_date) < todayStr).length;
+  const pastTxt = [await P.innerText('#scc-list'), await P.innerText('#scc-list-summary'), await P.evaluate(() => document.getElementById('scc-excel-btn').disabled)];
+  check('지난 내역: 두 날짜가 다 지난 것만(없으면 안내 + 엑셀 버튼 꺼짐)', nPast ? pastTxt[1].includes('전체 ' + nPast + '건') && !pastTxt[2] : pastTxt[0].includes('등록된 변경이 없어요') && pastTxt[2], [nPast, pastTxt]);
+  const pastEmpty = await P.evaluate(() => { const keep = window.scheduleChangesAll; window.scheduleChangesAll = []; sccRenderList(); const r = [document.getElementById('scc-list').innerText, document.getElementById('scc-excel-btn').disabled]; window.scheduleChangesAll = keep; sccRenderList(); return r; });
+  check('내역이 없으면 안내 + 엑셀 버튼 꺼짐', pastEmpty[0].includes('등록된 변경이 없어요') && pastEmpty[1], pastEmpty);
+  await P.click('#scc-range-btns [data-range="all"]'); await wait(100);
+
+  // ---- 엑셀: 제목·틀 고정·필터·색 ----
+  let excelPath = null;
+  try { excelPath = require.resolve('exceljs/dist/exceljs.min.js'); } catch (e) {}
+  if (!excelPath) {
+    console.log('  ⚠️ exceljs가 없어 엑셀 검사를 건너뜀 (npm i exceljs 후 NODE_PATH에 추가)');
+  } else {
+    const ExcelJS = require('exceljs');
+    // 이 테스트 브라우저는 한글 파일 이름을 "download"로 바꿔 버려서, 파일 이름은 링크에 붙인 값으로 확인한다.
+    await P.evaluate(() => { const orig = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function() { window.__dlName = this.download; return orig.apply(this, arguments); }; });
+    const [dl] = await Promise.all([P.waitForEvent('download', { timeout: 15000 }), P.click('#scc-excel-btn')]);
+    const out = path.join(__dirname, 'scc-export-test.xlsx');
+    await dl.saveAs(out);
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.readFile(out);
+    const ws = wb.worksheets[0];
+    const v = ws.views[0] || {};
+    const head = ws.getRow(3).values.slice(1);
+    const r4 = ws.getRow(4);
+    const x = {
+      name: await P.evaluate(() => window.__dlName), sheet: ws.name, title: ws.getCell('A1').value, frozen: v.state === 'frozen' && v.ySplit === 3,
+      filter: ws.autoFilter, head: head.join(','), rows: ws.rowCount - 3, headFill: ws.getCell('A3').fill && ws.getCell('A3').fill.fgColor.argb,
+      d1: r4.getCell(1).value instanceof Date ? r4.getCell(1).value.toISOString().slice(0, 10) : r4.getCell(1).value, fmt: r4.getCell(1).numFmt,
+      landscape: ws.pageSetup.orientation, fitW: ws.pageSetup.fitToWidth, border: !!(r4.getCell(5).border && r4.getCell(5).border.top),
+    };
+    fs.unlinkSync(out);
+    check('엑셀: 파일 이름, 제목 줄, 머리줄 틀 고정, 필터(A3~P), 머리줄 색, 날짜는 진짜 날짜, 테두리, A4 가로 한 장 폭',
+      /^수업변경내역_전체_\d{4}-\d{2}-\d{2}\.xlsx$/.test(x.name) && x.sheet === '수업 변경 내역' && /수업 변경 내역/.test(x.title) && x.frozen &&
+      /^A3:P8$/.test(typeof x.filter === 'string' ? x.filter : '') && x.head.startsWith('날짜,요일,교시,구분,원래 선생님,과목') && x.rows === 5 &&
+      x.headFill === 'FF1F3A5F' && x.d1 === wk[0] && x.fmt === 'yyyy-mm-dd' && x.landscape === 'landscape' && x.fitW === 1 && x.border, x);
+  }
+  await P.click('#scc-tab-new-btn'); await wait(100);
 
   // 같은 시간 교환 반영: 김교사 월1 국어 ↔ 정교사 월1 과학 → 김교사 칸에 과학, 정교사 칸에 국어
   await P.evaluate((d) => { window.scheduleChangesRaw = [{ id: 98, change_date: d, change_date_b: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '정교사', period_b: 1, created_by: 'x' }]; }, wk[0]);
@@ -312,13 +385,26 @@ function check(label, cond, detail) {
   await wait(1000);
   const gs = await g.page.evaluate(() => { const w = document.getElementById('my-tt-widget'); const vis = (el) => getComputedStyle(el).display !== 'none'; return { browse: w.classList.contains('my-tt-browse'), sel: vis(document.getElementById('m-tt-teacher-select')), wBtn: vis(w.querySelector('.m-tt-change-btn')) }; });
   check('교사 역할 담당: 선생님 골라 보기 + 시간표 칸 수업변경 버튼', gs.browse && gs.sel && gs.wBtn, gs);
-  // 일반 교사
+  // 일반 교사: 같은 큰 창, 왼쪽은 나로 고정, 내역은 내 것만, 남이 등록한 건 못 지움
   const t = await openDevice(browser, '김교사PC', T1);
   await wait(1000);
   const tb = await t.page.evaluate(() => document.getElementById('btn-scc-manager') ? 'exists' : 'none');
-  await t.page.click('#my-tt-widget .m-tt-change-btn'); await wait(300);
-  const tm = await t.page.evaluate(() => ({ aRow: getComputedStyle(document.getElementById('scc-teacher-a-row')).display, label: document.getElementById('scc-my-period-label').innerText, list: document.getElementById('scc-list').innerText }));
-  check('일반 교사: 둘째 줄 버튼 없음, 창은 예전 그대로(내 교시, 내 내역만)', tb === 'none' && tm.aRow === 'none' && tm.label === '내 교시' && tm.list.includes('박교사') && !tm.list.includes('정교사'), [tb, tm]);
+  await t.page.click('#my-tt-widget .m-tt-change-btn'); await wait(400);
+  const tm = await t.page.evaluate(() => ({
+    big: document.querySelector('#schedule-change-overlay .scc-box').getBoundingClientRect().width > 1200,
+    aSel: getComputedStyle(document.getElementById('scc-teacher-a')).display, fixed: document.getElementById('scc-teacher-a-fixed').innerText,
+    grid: document.querySelectorAll('#scc-grid-a .scc-cell').length,
+  }));
+  await t.page.click('#scc-tab-list-btn'); await wait(100);
+  await t.page.click('#scc-range-btns [data-range="all"]'); await wait(100);
+  const tl = await t.page.evaluate(() => ({ rows: [...document.querySelectorAll('#scc-list tbody tr:not(.scc-day)')].map(r => r.innerText), del: document.querySelectorAll('#scc-list button').length, sum: document.getElementById('scc-list-summary').innerText }));
+  check('일반 교사: 둘째 줄 버튼 없음, 같은 큰 창·왼쪽은 나(김교사) 고정', tb === 'none' && tm.big && tm.aSel === 'none' && tm.fixed === '김교사 (나)' && tm.grid === 35, [tb, tm]);
+  check('일반 교사 내역: 내 것만(이교사→정교사 보강 없음), 남이 등록한 건 삭제 버튼 없음', tl.rows.length === 4 && tl.rows.every(r => r.includes('김교사')) && tl.del === 0 && /^내 변경 4건/.test(tl.sum), tl);
+  // 휴대폰: 두 시간표를 위아래로
+  await t.page.setViewportSize({ width: 390, height: 800 }); await wait(300);
+  await t.page.evaluate(() => sccShowTab('new')); await wait(100); // 휴대폰 폭에선 테스트용 새로고침 띠가 버튼을 가림
+  const mob = await t.page.evaluate(() => { const a = document.getElementById('scc-grid-a').getBoundingClientRect(), b = document.getElementById('scc-grid-b').getBoundingClientRect(); return { stacked: b.top > a.bottom, fits: a.width <= 390 && b.width <= 390, h: a.height }; });
+  check('휴대폰: 두 시간표 위아래, 화면 폭 안', mob.stacked && mob.fits && mob.h > 300, mob);
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
   console.log(failures === 0 ? '\n모든 검사 통과' : '\n실패 ' + failures + '건');

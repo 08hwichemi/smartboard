@@ -255,6 +255,83 @@
     .modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
     .modal-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; margin-top: 10px; resize: none; box-sizing: border-box; font-family: inherit;}
     .modal-box input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 12px; }
+
+    /* ===== 🔁 수업 변경 큰 창: 왼쪽·오른쪽 시간표에서 칸을 눌러 교환/보강 ===== */
+    #schedule-change-overlay .scc-box { width: min(1340px, 96vw); height: 94vh; max-height: 94vh; box-sizing: border-box; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+    .scc-head { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .scc-title { font-weight: 800; font-size: 17px; white-space: nowrap; }
+    .scc-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+    .scc-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+    .scc-toolbar .tab-btn { font-size: 13px; padding: 6px 16px; }
+    #scc-hint { font-size: 12.5px; color: var(--text-sub); font-weight: 700; }
+    .scc-sides { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .scc-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; }
+    .scc-side-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+    .scc-side-label { font-size: 12px; font-weight: 800; color: var(--on-accent); background: var(--accent-color); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+    #scc-side-b .scc-side-label { background: #D9822B; }
+    .scc-side-head select { min-width: 110px; font-size: 13px; font-weight: 700; }
+    .scc-fixed-name { font-size: 14px; font-weight: 800; }
+    .scc-week { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+    .scc-week input[type="date"] { width: 132px; padding: 4px 6px; font-size: 12px; }
+    .scc-week .top-btn { padding: 4px 9px; font-size: 12px; }
+    .scc-week-range { font-size: 11.5px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
+    .scc-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(5, minmax(0, 1fr)); grid-template-rows: 30px repeat(7, minmax(38px, 1fr)); gap: 4px; }
+    .scc-grid .scc-dh { font-size: 12.5px; font-weight: 800; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; border-radius: 6px; }
+    .scc-grid .scc-dh small { font-size: 10.5px; font-weight: 700; color: var(--text-sub); }
+    .scc-grid .scc-dh.today { background: var(--accent-soft); color: var(--accent-color); }
+    .scc-grid .scc-dh.off { opacity: 0.35; }
+    .scc-grid .scc-ph { font-size: 12.5px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+    .scc-grid .scc-ph small { font-size: 9.5px; font-weight: 700; color: var(--text-sub); }
+    .scc-cell { position: relative; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-width: 0; overflow: hidden; line-height: 1.2; padding: 2px; box-sizing: border-box; color: inherit; font-family: inherit; }
+    .scc-cell .s { font-size: 13.5px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
+    .scc-cell .r { font-size: 11px; font-weight: 700; opacity: 0.8; }
+    .scc-cell.has { color: #222; }
+    .scc-cell.pick { cursor: pointer; }
+    .scc-cell.pick:hover { outline: 2px solid var(--accent-color); outline-offset: -1px; }
+    #scc-grid-b .scc-cell.pick:hover { outline-color: #D9822B; }
+    .scc-cell.pick.empty::after { content: '빈 시간'; font-size: 11px; font-weight: 700; color: var(--text-sub); }
+    .scc-cell.pick.empty:hover::after { content: '＋ 여기로'; color: #D9822B; }
+    .scc-cell.no { opacity: 0.28; cursor: not-allowed; }
+    .scc-cell.chg { opacity: 0.6; border-style: dashed; border-color: var(--text-sub); cursor: not-allowed; }
+    .scc-cell .badge { position: absolute; top: 2px; right: 3px; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #fff; }
+    .scc-cell.sel { outline: 3px solid var(--accent-color); outline-offset: -2px; opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
+    #scc-grid-b .scc-cell.sel { outline-color: #D9822B; box-shadow: 0 0 0 3px rgba(217,130,43,0.25); }
+    .scc-cell.sel .badge { background: var(--accent-color); }
+    #scc-grid-b .scc-cell.sel .badge { background: #D9822B; }
+    .scc-empty-msg { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; align-items: center; justify-content: center; color: var(--text-sub); font-size: 13px; font-weight: 700; }
+    .scc-foot { display: flex; align-items: stretch; gap: 10px; flex-shrink: 0; }
+    #scc-preview { flex: 1; font-size: 13px; color: var(--text-main); background: var(--bg-color); border: 1px dashed var(--border-color); border-radius: 8px; padding: 8px 12px; line-height: 1.55; white-space: pre-line; min-height: 42px; box-sizing: border-box; }
+    #scc-preview .warn { color: var(--alert); font-weight: 800; }
+    .scc-foot .top-btn { padding: 8px 18px; font-size: 13px; }
+    #scc-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* 변경 내역 */
+    .scc-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+    .scc-filters .tab-btn { font-size: 12.5px; padding: 5px 11px; }
+    .scc-filters input { width: 150px; padding: 5px 8px; font-size: 12.5px; }
+    .scc-filters select { font-size: 12.5px; }
+    #scc-list-summary { font-size: 12.5px; color: var(--text-sub); font-weight: 700; }
+    #scc-list { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; }
+    .scc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .scc-table th { position: sticky; top: 0; z-index: 1; background: var(--accent-color); color: var(--on-accent); font-size: 12px; font-weight: 800; padding: 7px 8px; text-align: left; white-space: nowrap; }
+    .scc-table td { padding: 7px 8px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .scc-table tr.scc-day td { background: var(--tt-bg); font-weight: 800; font-size: 12.5px; padding: 6px 8px; }
+    .scc-table tr.scc-day.today td { background: var(--accent-soft); color: var(--accent-color); }
+    .scc-table tr.scc-day .cnt { font-weight: 700; color: var(--text-sub); margin-left: 6px; font-size: 11.5px; }
+    .scc-table .nowrap { white-space: nowrap; }
+    .scc-table .sub { color: var(--text-sub); font-size: 11.5px; }
+    .scc-type { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+    .scc-type.ex { background: #E3EEFA; color: #1F5C99; }
+    .scc-type.mk { background: #FDEBD7; color: #A65A12; }
+    @media screen and (max-width: 860px) {
+      #schedule-change-overlay .scc-box { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; padding: 10px; overflow-y: auto; }
+      .scc-pane { flex: none; }
+      .scc-sides { grid-template-columns: 1fr; }
+      .scc-grid { height: 420px; flex: none; grid-template-columns: 40px repeat(5, minmax(0, 1fr)); }
+      .scc-cell .s { font-size: 11.5px; }
+      .scc-foot { flex-direction: column; }
+      #scc-list { max-height: none; overflow: visible; }
+      .scc-table { font-size: 12px; }
+    }
     
     .time-select-group { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
@@ -1421,52 +1498,81 @@
 </div>
 
 <div class="overlay" id="schedule-change-overlay">
-  <div class="modal-box" style="width: 420px;">
-    <div style="font-weight: 800; font-size: 16px; margin-bottom: 15px; text-align: center;">🔁 수업 변경 (교환/보강)</div>
-
-    <div class="tab-switch" style="margin-bottom: 14px;">
-      <button class="tab-btn active" id="scc-type-exchange-btn" onclick="sccSetType('exchange')">🔄 교환</button>
-      <button class="tab-btn" id="scc-type-makeup-btn" onclick="sccSetType('makeup')">🔁 보강</button>
+  <div class="modal-box scc-box">
+    <div class="scc-head">
+      <div class="scc-title">🔁 수업 변경</div>
+      <div class="tab-switch">
+        <button class="tab-btn active" id="scc-tab-new-btn" onclick="sccShowTab('new')">✏️ 변경 등록</button>
+        <button class="tab-btn" id="scc-tab-list-btn" onclick="sccShowTab('list')">📋 변경 내역</button>
+      </div>
+      <div style="flex:1;"></div>
+      <button class="top-btn" style="padding:6px 14px;" onclick="closeScheduleChangeModal()">✕ 닫기</button>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 14px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-date-label">내 날짜</label>
-        <input type="date" id="scc-date" class="mini-select" style="flex:1;" onchange="sccOnDateAChange()">
+    <!-- 등록: 왼쪽(바꿀 수업)·오른쪽(상대/보강) 시간표에서 칸을 눌러 고른다. 두 쪽은 날짜(주)를 따로 고를 수 있다. -->
+    <div class="scc-pane" id="scc-pane-new">
+      <div class="scc-toolbar">
+        <div class="tab-switch">
+          <button class="tab-btn active" id="scc-type-exchange-btn" onclick="sccSetType('exchange')">🔄 교환</button>
+          <button class="tab-btn" id="scc-type-makeup-btn" onclick="sccSetType('makeup')">🩹 보강</button>
+        </div>
+        <div id="scc-hint"></div>
       </div>
-      <div id="scc-teacher-a-row" style="display:none; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;">선생님</label>
-        <select id="scc-teacher-a" class="mini-select" style="flex:1;" onchange="sccOnTeacherAChange()"></select>
+      <div class="scc-sides">
+        <div class="scc-side" id="scc-side-a">
+          <div class="scc-side-head">
+            <span class="scc-side-label" id="scc-side-a-label">① 바꿀 수업</span>
+            <select id="scc-teacher-a" class="mini-select" style="display:none;" onchange="sccOnTeacherAChange()"></select>
+            <span class="scc-fixed-name" id="scc-teacher-a-fixed"></span>
+            <div class="scc-week">
+              <button class="top-btn" id="scc-week-a-prev" onclick="sccMoveWeek('a', -1)" title="지난주">◀</button>
+              <input type="date" id="scc-week-a" onchange="sccOnWeekDate('a')" title="날짜를 고르면 그 주가 보여요">
+              <button class="top-btn" id="scc-week-a-next" onclick="sccMoveWeek('a', 1)" title="다음 주">▶</button>
+            </div>
+          </div>
+          <div class="scc-grid" id="scc-grid-a"></div>
+        </div>
+        <div class="scc-side" id="scc-side-b">
+          <div class="scc-side-head">
+            <span class="scc-side-label" id="scc-side-b-label">② 맞바꿀 수업</span>
+            <select id="scc-partner" class="mini-select" onchange="sccOnPartnerChange()"><option value="">선생님 선택</option></select>
+            <div class="scc-week">
+              <button class="top-btn" id="scc-week-b-prev" onclick="sccMoveWeek('b', -1)" title="지난주">◀</button>
+              <input type="date" id="scc-week-b" onchange="sccOnWeekDate('b')" title="날짜를 고르면 그 주가 보여요">
+              <button class="top-btn" id="scc-week-b-next" onclick="sccMoveWeek('b', 1)" title="다음 주">▶</button>
+            </div>
+          </div>
+          <div class="scc-grid" id="scc-grid-b"></div>
+        </div>
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-my-period-label">내 교시</label>
-        <select id="scc-my-period" class="mini-select" style="flex:1;" onchange="sccOnPeriodAChange()"></select>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-partner-label">상대방 선생님</label>
-        <select id="scc-partner" class="mini-select" style="flex:1;" onchange="sccUpdatePreview()"><option value="">선택</option></select>
-      </div>
-      <!-- 상대방 쪽 날짜·교시 — 교환은 서로 다른 날짜끼리도, 보강은 다른 날짜·교시에 대신 해 주는 것도 된다. -->
-      <div id="scc-date-b-row" style="display:flex; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-date-b-label">상대방 날짜</label>
-        <input type="date" id="scc-date-b" class="mini-select" style="flex:1;" onchange="sccBTouched.date = true; sccUpdatePreview()">
-      </div>
-      <div id="scc-partner-period-row" style="display:flex; align-items:center; gap:8px;">
-        <label style="width:74px; font-size:12px; font-weight:700; color:var(--text-sub); flex-shrink:0;" id="scc-partner-period-label">상대방 교시</label>
-        <select id="scc-partner-period" class="mini-select" style="flex:1;" onchange="sccBTouched.period = true; sccUpdatePreview()"></select>
+      <div class="scc-foot">
+        <div id="scc-preview"></div>
+        <button class="top-btn" onclick="sccClearPicks()">선택 지우기</button>
+        <button class="top-btn accent" id="scc-save-btn" onclick="sccSave()" disabled>등록하기</button>
       </div>
     </div>
 
-    <div id="scc-preview" style="font-size:11.5px; color:var(--text-sub); background:var(--bg-color); border:1px dashed var(--border-color); border-radius:8px; padding:8px; margin-bottom:14px; line-height:1.5; white-space:pre-line;"></div>
-
-    <div style="display: flex; gap: 10px;">
-      <button class="top-btn" style="flex: 1; padding:8px;" onclick="closeScheduleChangeModal()">취소</button>
-      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="sccSave()">등록하기</button>
+    <!-- 변경 내역: 기간·구분·이름으로 거르고, 날짜별로 묶어 표로. 거른 그대로 엑셀로 내려받기. -->
+    <div class="scc-pane" id="scc-pane-list" style="display:none;">
+      <div class="scc-filters">
+        <div class="tab-switch" id="scc-range-btns">
+          <button class="tab-btn active" data-range="upcoming" onclick="sccSetListRange('upcoming')">오늘부터</button>
+          <button class="tab-btn" data-range="thisweek" onclick="sccSetListRange('thisweek')">이번 주</button>
+          <button class="tab-btn" data-range="nextweek" onclick="sccSetListRange('nextweek')">다음 주</button>
+          <button class="tab-btn" data-range="month" onclick="sccSetListRange('month')">이번 달</button>
+          <button class="tab-btn" data-range="past" onclick="sccSetListRange('past')">지난 내역</button>
+          <button class="tab-btn" data-range="all" onclick="sccSetListRange('all')">전체</button>
+        </div>
+        <select id="scc-type-filter" class="mini-select" onchange="sccRenderList()">
+          <option value="all">구분: 전체</option><option value="exchange">교환만</option><option value="makeup">보강만</option>
+        </select>
+        <input type="text" id="scc-search" placeholder="🔍 선생님 이름" oninput="sccRenderList()">
+        <span id="scc-list-summary"></span>
+        <div style="flex:1;"></div>
+        <button class="top-btn accent" id="scc-excel-btn" style="padding:6px 14px;" onclick="sccExportExcel()">📥 엑셀로 내려받기</button>
+      </div>
+      <div id="scc-list"></div>
     </div>
-
-    <div style="border-top:1px solid var(--border-color); margin:16px 0 10px;"></div>
-    <div style="font-size:12px; font-weight:800; margin-bottom:8px;" id="scc-list-title">이번 주부터 등록된 내 변경 내역</div>
-    <div id="scc-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; font-size:11.5px;"></div>
   </div>
 </div>
 
@@ -7653,11 +7759,64 @@
       const { data, error } = await sb.from('schedule_changes').select('*')
         .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max);
       if (error) throw error;
-      window.scheduleChangesRaw = (data || []).filter(function(c) {
+      // 변경 창(지난 내역·다른 주 보기·엑셀)은 받아 온 전부를, 홈 시간표는 이번 주 ~ 학기 끝만 쓴다.
+      window.scheduleChangesAll = data || [];
+      window.scheduleChangesRaw = window.scheduleChangesAll.filter(function(c) {
         const inRange = function(d) { return d >= range.min && d <= range.max; };
         return inRange(c.change_date) || inRange(sccDateB(c));
       });
-    } catch (e) { window.scheduleChangesRaw = []; }
+    } catch (e) { window.scheduleChangesRaw = []; window.scheduleChangesAll = []; }
+  }
+
+  // 한 선생님의 어느 한 주(weekDates = 그 주 월~금 날짜)에 변경 기록이 어떻게 겹치는지를 칸마다 돌려준다.
+  // { period, d(1=월…5=금), action: 'clear'(빈 시간으로) | 'fill'(src 수업을 넣음), src: {teacher, period, wd}, change }
+  // 홈 시간표(이번 주)와 수업 변경 창(아무 주)이 같은 규칙을 쓰도록 한곳에 둔다.
+  function sccWeekEffects(teacherName, weekDates, list) {
+    const out = [];
+    (list || []).filter(function(c) { return c.teacher_a === teacherName || c.teacher_b === teacherName; }).forEach(function(c) {
+      // dA/dB: 그 주 시간표에서 몇 번째 요일 칸인지(그 주가 아니면 0 — 그쪽은 그리지 않음).
+      // wdA/wdB: 원래 수업을 꺼내 올 요일(날짜가 그 주가 아니어도 정규 시간표의 그 요일).
+      const dateB = sccDateB(c);
+      const dA = weekDates.indexOf(c.change_date) + 1;
+      const dB = weekDates.indexOf(dateB) + 1;
+      const wdA = sccWeekdayOf(c.change_date);
+      const wdB = sccWeekdayOf(dateB);
+      const clear = function(period, d) { out.push({ period: period, d: d, action: 'clear', change: c }); };
+      const fill = function(period, d, teacher, srcPeriod, wd) { out.push({ period: period, d: d, action: 'fill', src: { teacher: teacher, period: srcPeriod, wd: wd }, change: c }); };
+
+      // 같은 날짜·같은 교시 교환 — 그 시간에 서로 상대방 반에 들어간다.
+      if (c.type === 'exchange' && dateB === c.change_date && c.period_a === c.period_b) {
+        if (!dA) return;
+        if (teacherName === c.teacher_a) fill(c.period_a, dA, c.teacher_b, c.period_b, wdB);
+        if (teacherName === c.teacher_b) fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
+        return;
+      }
+
+      if (teacherName === c.teacher_a) {
+        // 원래 이 교시의 주인 — 그날은 여기서 안 가르치므로 빈 시간으로 표시
+        if (dA) clear(c.period_a, dA);
+        // 교환이면 내 원래 수업을 상대방 자리(날짜B, 교시B)로 옮겨서 보여준다
+        if (c.type === 'exchange' && dB) fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
+      }
+      if (teacherName === c.teacher_b) {
+        if (c.type === 'exchange') {
+          if (dB) clear(c.period_b, dB);
+          if (dA) fill(c.period_a, dA, c.teacher_b, c.period_b, wdB);
+        } else if (dB) {
+          // 보강 — 상대방의 원래 수업을 내 시간표 (날짜B, 교시B)에 추가
+          fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
+        }
+      }
+    });
+    return out;
+  }
+
+  // 정규 시간표 한 칸(요일 wd 1~5, 교시 1~7)의 [과목, 교실]
+  function sccRegularCell(teacher, wd, period) {
+    const s = (window.allSchedules || {})[teacher];
+    if (!s || wd < 1 || wd > 5) return ['', ''];
+    const parts = (s[(wd - 1) * 7 + (period - 1)] || '').split(String.fromCharCode(10));
+    return [parts[0] || '', parts[1] || ''];
   }
 
   // 어떤 안내 문구나 뱃지도 없이, 실제로 그 요일에 무슨 수업이 있는지 "결과만" 보여준다.
@@ -7665,83 +7824,35 @@
   // 가르치는(또는 가르칠) 사람의 칸에 그 수업 내용을 평범한 시간표 칸처럼 그대로 넣는다.
   function applyChangeOverlayToGrid(prefix, teacherName) {
     if (!teacherName || !window.scheduleChangesRaw) return;
-    const weekDates = getCurrentWeekDates();
-    const changes = window.scheduleChangesRaw.filter(function(c) { return c.teacher_a === teacherName || c.teacher_b === teacherName; });
-    if (changes.length === 0) return;
-
-    function clearCell(period, d) {
-      const subjEl = document.getElementById(prefix + '-' + period + '-' + d + '-s');
-      const roomEl = document.getElementById(prefix + '-' + period + '-' + d + '-r');
-      if (subjEl) subjEl.innerHTML = '';
-      if (roomEl) roomEl.innerText = '';
-    }
-    function fillCell(period, d, sourceTeacher, sourcePeriod, sourceDay) {
-      const schedule = window.allSchedules[sourceTeacher];
-      if (!schedule) return;
-      const j = (sourceDay - 1) * 7 + (sourcePeriod - 1);
-      const parts = (schedule[j] || '').split(String.fromCharCode(10));
-      const subjEl = document.getElementById(prefix + '-' + period + '-' + d + '-s');
-      const roomEl = document.getElementById(prefix + '-' + period + '-' + d + '-r');
-      if (subjEl) subjEl.innerHTML = subjDisplayHtml(parts[0] || '');
-      if (roomEl) roomEl.innerText = parts[1] || '';
-    }
-
-    changes.forEach(function(c) {
-      // dA/dB: 이번 주 시간표에서 몇 번째 요일 칸인지(이번 주가 아니면 0 — 그쪽은 그리지 않음).
-      // wdA/wdB: 원래 수업을 꺼내 올 요일(날짜가 이번 주가 아니어도 정규 시간표의 그 요일).
-      const dateB = sccDateB(c);
-      const dA = weekDates.indexOf(c.change_date) + 1;
-      const dB = weekDates.indexOf(dateB) + 1;
-      const wdA = sccWeekdayOf(c.change_date);
-      const wdB = sccWeekdayOf(dateB);
-
-      // 같은 날짜·같은 교시 교환 — 그 시간에 서로 상대방 반에 들어간다.
-      if (c.type === 'exchange' && dateB === c.change_date && c.period_a === c.period_b) {
-        if (!dA) return;
-        if (teacherName === c.teacher_a) fillCell(c.period_a, dA, c.teacher_b, c.period_b, wdB);
-        if (teacherName === c.teacher_b) fillCell(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-        return;
-      }
-
-      if (teacherName === c.teacher_a) {
-        // 원래 이 교시의 주인 — 그날은 여기서 안 가르치므로 빈 시간으로 표시
-        if (dA) clearCell(c.period_a, dA);
-        // 교환이면 내 원래 수업을 상대방 자리(날짜B, 교시B)로 옮겨서 보여준다
-        if (c.type === 'exchange' && dB) fillCell(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-      }
-      if (teacherName === c.teacher_b) {
-        if (c.type === 'exchange') {
-          if (dB) clearCell(c.period_b, dB);
-          if (dA) fillCell(c.period_a, dA, c.teacher_b, c.period_b, wdB);
-        } else if (dB) {
-          // 보강 — 상대방의 원래 수업을 내 시간표 (날짜B, 교시B)에 추가
-          fillCell(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-        }
-      }
+    sccWeekEffects(teacherName, getCurrentWeekDates(), window.scheduleChangesRaw).forEach(function(e) {
+      const subjEl = document.getElementById(prefix + '-' + e.period + '-' + e.d + '-s');
+      const roomEl = document.getElementById(prefix + '-' + e.period + '-' + e.d + '-r');
+      if (e.action === 'fill' && !window.allSchedules[e.src.teacher]) return;
+      const cell = e.action === 'fill' ? sccRegularCell(e.src.teacher, e.src.wd, e.src.period) : ['', ''];
+      if (subjEl) subjEl.innerHTML = subjDisplayHtml(cell[0]);
+      if (roomEl) roomEl.innerText = cell[1];
     });
   }
 
-  function sccPeriodOptionsHtml() {
-    let html = '';
-    for (let i = 1; i <= 7; i++) html += '<option value="' + i + '">' + i + '교시</option>';
-    return html;
+  // ----- 수업 변경 큰 창 -----
+  // 왼쪽 = 바꿀 수업(담당이면 아무 선생님, 아니면 나), 오른쪽 = 교환 상대 / 보강해 줄 선생님.
+  // 두 쪽이 날짜(주)를 따로 고른다 — 오른쪽은 직접 옮기기 전까지 왼쪽 주를 따라간다.
+  // 칸을 누르면 날짜·교시가 한 번에 정해진다(pickA / pickB = { date, period }).
+  const scc = { type: 'exchange', weekA: '', weekB: '', bTouched: false, pickA: null, pickB: null, tab: 'new', listRange: 'upcoming' };
+  const SCC_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function sccYmd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function sccParse(ymd) { const p = ymd.split('-'); return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)); }
+  function sccAddDays(ymd, n) { const d = sccParse(ymd); d.setDate(d.getDate() + n); return sccYmd(d); }
+  // 그 날짜가 들어 있는 주의 월요일(토·일은 다음 주 월요일)
+  function sccMondayOf(ymd) {
+    const wd = sccWeekdayOf(ymd);
+    return sccAddDays(ymd, wd === 0 ? 1 : wd === 6 ? 2 : 1 - wd);
   }
+  function sccWeekDates(monday) { const out = []; for (let i = 0; i < 5; i++) out.push(sccAddDays(monday, i)); return out; }
+  function sccMD(ymd) { const p = ymd.split('-'); return parseInt(p[1], 10) + '/' + parseInt(p[2], 10); }
 
-  let sccCurrentType = 'exchange';
-  // 상대방 날짜·교시를 직접 고쳤는지 — 안 고쳤으면 내 날짜(보강이면 교시도)를 따라간다.
-  let sccBTouched = { date: false, period: false };
-
-  function sccOnDateAChange() {
-    if (!sccBTouched.date) document.getElementById('scc-date-b').value = document.getElementById('scc-date').value;
-    sccUpdatePreview();
-  }
-
-  function sccOnPeriodAChange() {
-    if (sccCurrentType === 'makeup' && !sccBTouched.period) document.getElementById('scc-partner-period').value = document.getElementById('scc-my-period').value;
-    sccUpdatePreview();
-  }
-
-  // 수업변경 담당(관리자가 계정 관리에서 체크)은 누구 수업이든 등록하고, 이번 주 내역을 전부 보고 지울 수 있다.
+  // 수업변경 담당(관리자가 계정 관리에서 체크)은 누구 수업이든 등록하고, 전체 내역을 보고 지울 수 있다.
   function isScheduleManager() {
     return !!(window.currentTeacher && window.currentTeacher.schedule_manager);
   }
@@ -7751,6 +7862,7 @@
     if (isScheduleManager()) return document.getElementById('scc-teacher-a').value;
     return localStorage.getItem('my-n');
   }
+  function sccPartner() { return document.getElementById('scc-partner').value; }
 
   function sccTeacherNames() {
     return Object.keys(window.allSchedules || {}).sort().filter(function(n) { return n !== '선생님' && n.trim() !== ''; });
@@ -7760,15 +7872,172 @@
     const a = sccTeacherA();
     const partnerSel = document.getElementById('scc-partner');
     const prev = partnerSel.value;
-    partnerSel.innerHTML = '<option value="">선택</option>' + sccTeacherNames()
+    partnerSel.innerHTML = '<option value="">선생님 선택</option>' + sccTeacherNames()
       .filter(function(n) { return n !== a; })
       .map(function(n) { return '<option value="' + escapeHtmlAttr(n) + '">' + escapeHtmlText(n) + '</option>'; }).join('');
-    if (prev && prev !== a) partnerSel.value = prev;
+    partnerSel.value = (prev && prev !== a) ? prev : '';
   }
 
   function sccOnTeacherAChange() {
+    scc.pickA = null;
+    const before = sccPartner();
     sccFillPartnerOptions();
+    if (before && !sccPartner()) scc.pickB = null;
+    sccRenderNew();
+  }
+
+  function sccOnPartnerChange() {
+    scc.pickB = null;
+    sccRenderNew();
+  }
+
+  // 그 선생님의 그 주 실제 시간표(등록된 변경까지 반영): cells[period][d] = { s, r, change }
+  function sccCellsForWeek(teacher, weekDates) {
+    const cells = {};
+    for (let p = 1; p <= 7; p++) {
+      cells[p] = {};
+      for (let d = 1; d <= 5; d++) { const c = sccRegularCell(teacher, d, p); cells[p][d] = { s: c[0], r: c[1], change: null }; }
+    }
+    sccWeekEffects(teacher, weekDates, window.scheduleChangesAll || window.scheduleChangesRaw || []).forEach(function(e) {
+      const cell = cells[e.period] && cells[e.period][e.d];
+      if (!cell) return;
+      const src = e.action === 'fill' ? sccRegularCell(e.src.teacher, e.src.wd, e.src.period) : ['', ''];
+      cell.s = src[0]; cell.r = src[1]; cell.change = e.change;
+    });
+    return cells;
+  }
+
+  // 그 날짜·교시에 그 선생님이 (변경까지 반영해서) 수업이 있는지
+  function sccBusyAt(teacher, date, period) {
+    const wd = sccWeekdayOf(date);
+    if (wd < 1 || wd > 5) return '';
+    const cell = sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)))[period][wd];
+    return cell.s ? (cell.s + (cell.r ? ' ' + cell.r : '')) : '';
+  }
+
+  // 칸을 누를 수 있는지. 못 누르면 이유(마우스를 올리면 보임)를 돌려준다.
+  function sccCellBlock(side, date, cell) {
+    if (sccDateProblem(date)) return sccDateProblem(date);
+    if (cell.change) return '이미 변경된 시간이에요 — 바꾸려면 "변경 내역"에서 지우고 다시 등록하세요.';
+    if (side === 'a') return cell.s ? '' : '빈 시간이에요 — 수업이 있는 칸을 눌러 주세요.';
+    if (scc.type === 'exchange') return cell.s ? '' : '교환은 수업이 있는 칸끼리 바꿔요.';
+    return cell.s ? '이 시간엔 이미 수업이 있어요 — 보강은 빈 시간을 눌러 주세요.' : '';
+  }
+
+  function sccRenderGrid(side) {
+    const teacher = side === 'a' ? sccTeacherA() : sccPartner();
+    const monday = side === 'a' ? scc.weekA : scc.weekB;
+    const grid = document.getElementById('scc-grid-' + side);
+    const weekDates = sccWeekDates(monday);
+    const today = todayYmdDash();
+    let html = '<div></div>';
+    weekDates.forEach(function(date, i) {
+      html += '<div class="scc-dh' + (date === today ? ' today' : '') + (sccDateProblem(date) ? ' off' : '') + '">' + SCC_DAYS[i + 1] + '<small>' + sccMD(date) + '</small></div>';
+    });
+    if (!teacher || !window.allSchedules[teacher]) {
+      html += '<div class="scc-empty-msg">' + (side === 'a' ? '위에서 선생님을 고르세요.' : '위에서 ' + (scc.type === 'exchange' ? '교환할' : '보강해 줄') + ' 선생님을 고르세요.') + '</div>';
+      grid.innerHTML = html;
+      return;
+    }
+    const cells = sccCellsForWeek(teacher, weekDates);
+    const pick = side === 'a' ? scc.pickA : scc.pickB;
+    for (let p = 1; p <= 7; p++) {
+      const t = currentTimes[p - 1] || { s: '' };
+      html += '<div class="scc-ph">' + p + '<small>' + escapeHtmlText(t.s) + '</small></div>';
+      for (let d = 1; d <= 5; d++) {
+        const date = weekDates[d - 1];
+        const cell = cells[p][d];
+        const block = sccCellBlock(side, date, cell);
+        const sel = pick && pick.date === date && pick.period === p;
+        // sel = 고른 칸, chg = 이미 변경된 칸, pick = 누를 수 있음, no = 흐리게(기간 밖·고를 수 없는 종류).
+        // 왼쪽의 빈 시간은 흐리게 하지 않고 그냥 못 누르게만(시간표가 읽기 쉽게).
+        let cls = 'scc-cell' + (cell.s ? ' has' : ' empty');
+        if (sel) cls += ' sel';
+        else if (cell.change) cls += ' chg';
+        else if (!block) cls += ' pick';
+        else if (sccDateProblem(date) || side === 'b') cls += ' no';
+        const bg = cell.s ? ' style="background:' + getSubjectColor(cell.s + cell.r) + ';"' : '';
+        const badge = sel ? (side === 'a' ? '①' : '②') : cell.change ? (cell.change.type === 'exchange' ? '교환' : '보강') : '';
+        html += '<div class="' + cls + '"' + bg + ' data-date="' + date + '" data-p="' + p + '"' +
+          (block && !sel ? ' title="' + escapeHtmlAttr(block) + '"' : '') +
+          (!block || sel ? ' onclick="sccPick(\'' + side + '\', \'' + date + '\', ' + p + ')"' : '') + '>' +
+          (cell.s ? '<span class="s">' + subjDisplayHtml(cell.s) + '</span><span class="r">' + escapeHtmlText(cell.r) + '</span>' : '') +
+          (badge ? '<span class="badge">' + badge + '</span>' : '') + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+  }
+
+  function sccPick(side, date, period) {
+    const key = side === 'a' ? 'pickA' : 'pickB';
+    const cur = scc[key];
+    scc[key] = (cur && cur.date === date && cur.period === period) ? null : { date: date, period: period };
+    sccRenderNew();
+  }
+
+  function sccClearPicks() { scc.pickA = null; scc.pickB = null; sccRenderNew(); }
+
+  // 주 옮기기: 등록할 수 있는 기간(이번 주 ~ 학기 끝) 안에서만
+  function sccSetWeek(side, monday) {
+    const range = sccDateRange();
+    const minMon = sccMondayOf(range.min), maxMon = sccMondayOf(range.max) > range.max ? sccAddDays(sccMondayOf(range.max), -7) : sccMondayOf(range.max);
+    if (monday < minMon) monday = minMon;
+    if (monday > maxMon) monday = maxMon;
+    if (side === 'a') {
+      scc.weekA = monday;
+      if (!scc.bTouched) scc.weekB = monday;
+    } else {
+      scc.weekB = monday;
+      scc.bTouched = true;
+    }
+  }
+  function sccMoveWeek(side, dir) {
+    sccSetWeek(side, sccAddDays(side === 'a' ? scc.weekA : scc.weekB, dir * 7));
+    sccRenderNew();
+  }
+  function sccOnWeekDate(side) {
+    const v = document.getElementById('scc-week-' + side).value;
+    if (v) sccSetWeek(side, sccMondayOf(v));
+    sccRenderNew();
+  }
+
+  function sccSetType(type) {
+    scc.type = type;
+    scc.pickB = null; // 교환은 수업 칸, 보강은 빈 칸 — 고를 수 있는 칸이 달라진다
+    sccRenderNew();
+  }
+
+  function sccRenderNew() {
+    const ex = scc.type === 'exchange';
+    document.getElementById('scc-type-exchange-btn').classList.toggle('active', ex);
+    document.getElementById('scc-type-makeup-btn').classList.toggle('active', !ex);
+    document.getElementById('scc-side-a-label').innerText = ex ? '① 바꿀 수업' : '① 보강이 필요한 수업';
+    document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : '② 보강해 줄 빈 시간';
+    document.getElementById('scc-hint').innerText = ex
+      ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 날짜 칸으로 그쪽 주를 옮기세요.'
+      : '①에서 보강이 필요한 수업, ②에서 보강해 줄 선생님의 빈 시간을 누르세요.';
+    const range = sccDateRange();
+    ['a', 'b'].forEach(function(side) {
+      const monday = side === 'a' ? scc.weekA : scc.weekB;
+      const input = document.getElementById('scc-week-' + side);
+      input.min = range.min; input.max = range.max;
+      const pick = side === 'a' ? scc.pickA : scc.pickB;
+      // 날짜 칸: 고른 칸이 이 주에 있으면 그 날짜, 아니면 그 주 월요일
+      input.value = (pick && sccMondayOf(pick.date) === monday) ? pick.date : monday;
+      document.getElementById('scc-week-' + side + '-prev').disabled = monday <= sccMondayOf(range.min);
+      document.getElementById('scc-week-' + side + '-next').disabled = sccAddDays(monday, 7) > range.max;
+      sccRenderGrid(side);
+    });
     sccUpdatePreview();
+  }
+
+  function sccShowTab(tab) {
+    scc.tab = tab;
+    document.getElementById('scc-tab-new-btn').classList.toggle('active', tab === 'new');
+    document.getElementById('scc-tab-list-btn').classList.toggle('active', tab === 'list');
+    document.getElementById('scc-pane-new').style.display = tab === 'new' ? 'flex' : 'none';
+    document.getElementById('scc-pane-list').style.display = tab === 'list' ? 'flex' : 'none';
+    if (tab === 'list') sccRenderList(); else sccRenderNew();
   }
 
   function openScheduleChangeModal() {
@@ -7776,169 +8045,221 @@
     const manager = isScheduleManager();
     if (!manager && (!myName || !window.allSchedules[myName])) { customAlert('먼저 "내 시간표"에 본인 시간표를 지정해주세요.'); return; }
 
-    document.getElementById('scc-teacher-a-row').style.display = manager ? 'flex' : 'none';
-    document.getElementById('scc-my-period-label').innerText = manager ? '교시' : '내 교시';
-    document.getElementById('scc-date-label').innerText = manager ? '날짜' : '내 날짜';
-    document.getElementById('scc-list-title').innerText = manager ? '이번 주부터 등록된 전체 변경 내역' : '이번 주부터 등록된 내 변경 내역';
+    const aSel = document.getElementById('scc-teacher-a');
+    aSel.style.display = manager ? '' : 'none';
+    document.getElementById('scc-teacher-a-fixed').innerText = manager ? '' : (myName + ' (나)');
     if (manager) {
-      const aSel = document.getElementById('scc-teacher-a');
-      aSel.innerHTML = '<option value="">선택</option>' + sccTeacherNames()
+      aSel.innerHTML = '<option value="">선생님 선택</option>' + sccTeacherNames()
         .map(function(n) { return '<option value="' + escapeHtmlAttr(n) + '">' + escapeHtmlText(n) + '</option>'; }).join('');
       aSel.value = (myName && window.allSchedules[myName]) ? myName : '';
     }
-
-    document.getElementById('scc-my-period').innerHTML = sccPeriodOptionsHtml();
-    document.getElementById('scc-partner-period').innerHTML = sccPeriodOptionsHtml();
-
-    const range = sccDateRange();
-    const today = todayYmdDash();
-    ['scc-date', 'scc-date-b'].forEach(function(id) {
-      const el = document.getElementById(id);
-      el.min = range.min;
-      el.max = range.max;
-      el.value = sccDateProblem(today) ? range.min : today;
-    });
-    sccBTouched = { date: false, period: false };
-    sccSetType('exchange');
-
     document.getElementById('scc-partner').value = '';
     sccFillPartnerOptions();
 
-    sccUpdatePreview();
-    sccRenderList();
+    scc.type = 'exchange'; scc.pickA = null; scc.pickB = null; scc.bTouched = false;
+    sccSetWeek('a', sccMondayOf(todayYmdDash())); // 주말이면 다음 주, 학기 밖이면 기간 안으로 맞춰진다
+    document.getElementById('scc-search').value = '';
+    document.getElementById('scc-type-filter').value = 'all';
+    sccShowTab('new');
     document.getElementById('schedule-change-overlay').style.display = 'flex';
+    // 다른 선생님이 방금 등록한 것도 보이게 한 번 새로 받아 온다.
+    fetchScheduleChanges().then(function() {
+      if (document.getElementById('schedule-change-overlay').style.display !== 'flex') return;
+      if (scc.tab === 'list') sccRenderList(); else sccRenderNew();
+    });
   }
 
   function closeScheduleChangeModal() {
     document.getElementById('schedule-change-overlay').style.display = 'none';
   }
 
-  function sccSetType(type) {
-    sccCurrentType = type;
-    document.getElementById('scc-type-exchange-btn').classList.toggle('active', type === 'exchange');
-    document.getElementById('scc-type-makeup-btn').classList.toggle('active', type === 'makeup');
-    document.getElementById('scc-partner-label').innerText = type === 'exchange' ? '상대방 선생님' : '보강해줄 선생님';
-    document.getElementById('scc-date-b-label').innerText = type === 'exchange' ? '상대방 날짜' : '보강 날짜';
-    document.getElementById('scc-partner-period-label').innerText = type === 'exchange' ? '상대방 교시' : '보강 교시';
-    // 보강은 보통 같은 교시 — 직접 고치지 않았으면 내 교시를 따라가게 맞춰 둔다.
-    if (type === 'makeup' && !sccBTouched.period) document.getElementById('scc-partner-period').value = document.getElementById('scc-my-period').value;
-    sccUpdatePreview();
-  }
-
   function sccSubjectAt(teacherName, weekday, period) {
     const s = window.allSchedules[teacherName];
     if (!s) return '(시간표 없음)';
-    const j = (weekday - 1) * 7 + (period - 1);
-    const parts = (s[j] || '').split(String.fromCharCode(10));
-    return parts[0] || '(빈 시간)';
+    return sccRegularCell(teacherName, weekday, period)[0] || '(빈 시간)';
+  }
+  // 과목 + 반·교실 ("국어 2-3")
+  function sccClassText(teacherName, weekday, period) {
+    const c = sccRegularCell(teacherName, weekday, period);
+    return c[0] ? c[0] + (c[1] ? ' ' + c[1] : '') : '';
   }
 
   // "9/30(수) 3교시"
   function sccSlotText(dateStr, period) {
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
-    const p = dateStr.split('-');
-    return parseInt(p[1], 10) + '/' + parseInt(p[2], 10) + '(' + days[sccWeekdayOf(dateStr)] + ') ' + period + '교시';
+    return sccMD(dateStr) + '(' + SCC_DAYS[sccWeekdayOf(dateStr)] + ') ' + period + '교시';
   }
 
   function sccUpdatePreview() {
-    const myName = sccTeacherA();
-    const who = isScheduleManager() ? (myName + '쌤') : ('나(' + myName + ')');
-    const dateStr = document.getElementById('scc-date').value;
-    const dateB = document.getElementById('scc-date-b').value;
-    const myPeriod = parseInt(document.getElementById('scc-my-period').value);
-    const partner = document.getElementById('scc-partner').value;
-    const partnerPeriod = parseInt(document.getElementById('scc-partner-period').value);
+    const a = sccTeacherA(), b = sccPartner();
+    const ex = scc.type === 'exchange';
     const previewEl = document.getElementById('scc-preview');
-    if (!dateStr || !dateB || !partner || !myName) { previewEl.innerText = '날짜와 선생님을 선택하면 미리보기가 보여요.'; return; }
-
-    const problem = sccDateProblem(dateStr) || sccDateProblem(dateB);
-    if (problem) { previewEl.innerText = problem; return; }
-    const slotA = sccSlotText(dateStr, myPeriod);
-    const slotB = sccSlotText(dateB, partnerPeriod);
-
-    const mySubj = sccSubjectAt(myName, sccWeekdayOf(dateStr), myPeriod);
-    if (sccCurrentType === 'exchange') {
-      const partnerSubj = sccSubjectAt(partner, sccWeekdayOf(dateB), partnerPeriod);
-      if (dateStr === dateB && myPeriod === partnerPeriod) {
-        previewEl.innerText = slotA + ' 같은 시간에 서로 반을 맞바꿔 들어감\n' +
-          who + ' → "' + partnerSubj + '" 수업으로\n' + partner + '쌤 → "' + mySubj + '" 수업으로';
-        return;
-      }
-      previewEl.innerText =
-        who + ' ' + slotA + ' "' + mySubj + '" → ' + slotB + '로 이동\n' +
-        partner + '쌤 ' + slotB + ' "' + partnerSubj + '" → ' + slotA + '로 이동';
-    } else {
-      const same = dateStr === dateB && myPeriod === partnerPeriod;
-      previewEl.innerText =
-        who + ' ' + slotA + ' "' + mySubj + '"를 ' + partner + '쌤이 ' + (same ? '대신 가르쳐줌' : slotB + '에 대신 가르쳐줌') + '\n' +
-        partner + '쌤 시간표 ' + slotB + '에 이 수업이 추가로 표시됩니다.';
+    const saveBtn = document.getElementById('scc-save-btn');
+    saveBtn.disabled = true;
+    const aName = isScheduleManager() ? (a + '쌤') : ('나(' + a + ')');
+    if (!scc.pickA || !scc.pickB || !a || !b) {
+      const step = function(done, text) { return (done ? '✅ ' : '⬜ ') + text; };
+      previewEl.innerText = step(!!scc.pickA, '① ' + (scc.pickA ? sccSlotText(scc.pickA.date, scc.pickA.period) + ' ' + sccClassText(a, sccWeekdayOf(scc.pickA.date), scc.pickA.period) : (ex ? '바꿀 수업 칸을 누르세요' : '보강이 필요한 수업 칸을 누르세요'))) + '\n' +
+        step(!!scc.pickB, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassText(b, sccWeekdayOf(scc.pickB.date), scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
+      return;
     }
+    const A = scc.pickA, B = scc.pickB;
+    const problem = sccDateProblem(A.date) || sccDateProblem(B.date);
+    if (problem) { previewEl.innerText = problem; return; }
+    const slotA = sccSlotText(A.date, A.period), slotB = sccSlotText(B.date, B.period);
+    const classA = sccClassText(a, sccWeekdayOf(A.date), A.period);
+    let html;
+    const warns = [];
+    if (ex) {
+      const classB = sccClassText(b, sccWeekdayOf(B.date), B.period);
+      if (A.date === B.date && A.period === B.period) {
+        html = '<b>' + escapeHtmlText(slotA) + '</b> 같은 시간에 서로 반을 맞바꿔 들어감\n' +
+          escapeHtmlText(aName) + ' → "' + escapeHtmlText(classB) + '" 수업으로 · ' + escapeHtmlText(b) + '쌤 → "' + escapeHtmlText(classA) + '" 수업으로';
+      } else {
+        html = escapeHtmlText(aName) + ' <b>' + escapeHtmlText(slotA) + '</b> "' + escapeHtmlText(classA) + '" → <b>' + escapeHtmlText(slotB) + '</b>로 이동\n' +
+          escapeHtmlText(b) + '쌤 <b>' + escapeHtmlText(slotB) + '</b> "' + escapeHtmlText(classB) + '" → <b>' + escapeHtmlText(slotA) + '</b>로 이동';
+        // 옮겨 가는 시간에 이미 수업이 있으면 한 사람이 같은 시간에 두 수업 — 경고만(등록은 됨)
+        const busyA = sccBusyAt(a, B.date, B.period), busyB = sccBusyAt(b, A.date, A.period);
+        if (busyA) warns.push(a + '쌤은 ' + slotB + '에 이미 "' + busyA + '" 수업이 있어서 겹쳐요.');
+        if (busyB) warns.push(b + '쌤은 ' + slotA + '에 이미 "' + busyB + '" 수업이 있어서 겹쳐요.');
+      }
+    } else {
+      const same = A.date === B.date && A.period === B.period;
+      html = escapeHtmlText(aName) + ' <b>' + escapeHtmlText(slotA) + '</b> "' + escapeHtmlText(classA) + '"를 ' + escapeHtmlText(b) + '쌤이 ' + (same ? '대신 가르쳐 줌' : '<b>' + escapeHtmlText(slotB) + '</b>에 대신 가르쳐 줌') + '\n' +
+        escapeHtmlText(b) + '쌤 시간표 ' + escapeHtmlText(slotB) + '에 이 수업이 추가로 표시돼요.';
+    }
+    if (warns.length) html += '\n<span class="warn">⚠️ ' + warns.map(escapeHtmlText).join(' ') + '</span>';
+    previewEl.innerHTML = html;
+    saveBtn.disabled = false;
   }
 
   async function sccSave() {
-    const myName = sccTeacherA();
-    const dateStr = document.getElementById('scc-date').value;
-    const dateB = document.getElementById('scc-date-b').value;
-    const myPeriod = parseInt(document.getElementById('scc-my-period').value);
-    const partner = document.getElementById('scc-partner').value;
-    const partnerPeriod = parseInt(document.getElementById('scc-partner-period').value);
-
-    if (!dateStr || !dateB) return customAlert('날짜를 선택해주세요.');
-    if (!myName) return customAlert('수업을 바꿀 선생님을 선택해주세요.');
-    if (!partner) return customAlert('선생님을 선택해주세요.');
-    const problem = sccDateProblem(dateStr) || sccDateProblem(dateB);
+    const a = sccTeacherA(), b = sccPartner();
+    if (!a) return customAlert('수업을 바꿀 선생님을 선택해주세요.');
+    if (!b) return customAlert('선생님을 선택해주세요.');
+    if (!scc.pickA || !scc.pickB) return customAlert('①과 ② 시간표에서 칸을 하나씩 눌러 주세요.');
+    const problem = sccDateProblem(scc.pickA.date) || sccDateProblem(scc.pickB.date);
     if (problem) return customAlert(problem);
 
     const record = {
-      change_date: dateStr,
-      change_date_b: dateB,
-      type: sccCurrentType,
-      teacher_a: myName,
-      period_a: myPeriod,
-      teacher_b: partner,
-      period_b: partnerPeriod
+      change_date: scc.pickA.date,
+      change_date_b: scc.pickB.date,
+      type: scc.type,
+      teacher_a: a,
+      period_a: scc.pickA.period,
+      teacher_b: b,
+      period_b: scc.pickB.period
     };
 
+    const btn = document.getElementById('scc-save-btn');
+    btn.disabled = true;
     try {
       const { error } = await sb.from('schedule_changes').insert(record);
       if (error) throw error;
       await fetchScheduleChanges();
       loadMyTimetable();
       renderSearchTimetable(true);
+      scc.pickA = null; scc.pickB = null;
+      sccRenderNew();
       await customAlert('등록했습니다! 🎉');
-      sccRenderList();
     } catch (e) {
+      sccUpdatePreview();
       customAlert('등록 실패: ' + (e && e.message ? e.message : e));
     }
   }
 
-  function sccRenderList() {
+  // ----- 변경 내역 -----
+  function sccSetListRange(r) {
+    scc.listRange = r;
+    document.querySelectorAll('#scc-range-btns .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.range === r); });
+    sccRenderList();
+  }
+
+  const SCC_RANGE_NAMES = { upcoming: '오늘부터', thisweek: '이번 주', nextweek: '다음 주', month: '이번 달', past: '지난 내역', all: '전체' };
+
+  // 지금 고른 기간·구분·이름으로 거른 내역(날짜순, 지난 내역은 최근 것부터)
+  function sccFilteredList() {
     const myName = localStorage.getItem('my-n');
     const manager = isScheduleManager();
+    const today = todayYmdDash();
+    const mon = sccMondayOf(today) > today ? sccAddDays(sccMondayOf(today), -7) : sccMondayOf(today);
+    const t = sccParse(today);
+    const ranges = {
+      upcoming: [today, '9999'], thisweek: [mon, sccAddDays(mon, 6)], nextweek: [sccAddDays(mon, 7), sccAddDays(mon, 13)],
+      month: [sccYmd(new Date(t.getFullYear(), t.getMonth(), 1)), sccYmd(new Date(t.getFullYear(), t.getMonth() + 1, 0))], all: ['0000', '9999']
+    };
+    const type = document.getElementById('scc-type-filter').value;
+    const q = document.getElementById('scc-search').value.trim();
+    const list = (window.scheduleChangesAll || window.scheduleChangesRaw || []).filter(function(c) {
+      if (!manager && c.teacher_a !== myName && c.teacher_b !== myName) return false;
+      if (type !== 'all' && c.type !== type) return false;
+      if (q && String(c.teacher_a).indexOf(q) < 0 && String(c.teacher_b).indexOf(q) < 0) return false;
+      const dates = [c.change_date, sccDateB(c)];
+      if (scc.listRange === 'past') return dates.every(function(d) { return d < today; });
+      const r = ranges[scc.listRange] || ranges.all;
+      return dates.some(function(d) { return d >= r[0] && d <= r[1]; });
+    });
+    const past = scc.listRange === 'past';
+    list.sort(function(x, y) {
+      const k = function(c) { return c.change_date + '|' + String(c.period_a).padStart(2, '0') + '|' + String(c.id).padStart(9, '0'); };
+      return (k(x) < k(y) ? -1 : 1) * (past ? -1 : 1);
+    });
+    return list;
+  }
+
+  // 한 건을 사람이 읽는 글로: 원래 수업 / 바뀐 내용
+  function sccDescribe(c) {
+    const dateB = sccDateB(c);
+    const wdA = sccWeekdayOf(c.change_date), wdB = sccWeekdayOf(dateB);
+    const same = dateB === c.change_date && c.period_a === c.period_b;
+    const classA = sccClassText(c.teacher_a, wdA, c.period_a);
+    const classB = c.type === 'exchange' ? sccClassText(c.teacher_b, wdB, c.period_b) : '';
+    let note;
+    if (c.type === 'exchange') note = same ? '같은 시간에 서로 반 맞바꿈' : (dateB === c.change_date ? '같은 날 교시 교환' : '다른 날끼리 교환');
+    else note = same ? '같은 시간 보강' : '다른 시간에 보강';
+    return { dateB: dateB, wdA: wdA, wdB: wdB, same: same, classA: classA, classB: classB, note: note };
+  }
+
+  function sccCanDelete(c) {
+    const me = window.currentTeacher || {};
+    return isScheduleManager() || me.is_admin || (c.created_by && c.created_by === me.name);
+  }
+
+  function sccRenderList() {
     const listEl = document.getElementById('scc-list');
-    const mine = (window.scheduleChangesRaw || []).filter(function(c) { return manager || c.teacher_a === myName || c.teacher_b === myName; })
-      .sort(function(a, b) { return a.change_date < b.change_date ? -1 : 1; });
-    const slotA = function(c) { return sccSlotText(c.change_date, c.period_a); };
-    const slotB = function(c) { return sccSlotText(sccDateB(c), c.period_b); };
-    const makeupWhen = function(c) { return (sccDateB(c) === c.change_date && c.period_b === c.period_a) ? '' : ' ' + slotB(c) + '에'; };
-
-    if (mine.length === 0) { listEl.innerHTML = '<div style="color:var(--text-sub);">등록된 내역이 없습니다.</div>'; return; }
-
-    listEl.innerHTML = mine.map(function(c) {
-      const isA = c.teacher_a === myName;
-      // 담당자는 두 선생님 이름을 모두 적어 누구의 변경인지 보이게 한다.
-      const label = (manager && c.teacher_a !== myName && c.teacher_b !== myName)
-        ? (c.type === 'exchange'
-            ? ('교환: ' + c.teacher_a + ' ' + slotA(c) + ' ↔ ' + c.teacher_b + ' ' + slotB(c))
-            : ('보강: ' + c.teacher_a + '쌤 ' + slotA(c) + '를 ' + c.teacher_b + '쌤이' + makeupWhen(c)))
-        : c.type === 'exchange'
-        ? ('교환: 내 ' + (isA ? slotA(c) : slotB(c)) + ' ↔ ' + (isA ? c.teacher_b : c.teacher_a) + ' ' + (isA ? slotB(c) : slotA(c)))
-        : ('보강: ' + (isA ? ('내 ' + slotA(c) + '를 ' + c.teacher_b + '쌤이' + makeupWhen(c)) : (c.teacher_a + '쌤 ' + slotA(c) + '를 내가' + makeupWhen(c))));
-      return '<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--bg-color); border-radius:6px; padding:5px 8px;">' +
-        '<span>' + escapeHtmlText(label) + '</span>' +
-        '<button class="top-btn" style="padding:1px 6px; font-size:10px; color:var(--alert); flex-shrink:0;" onclick="sccDelete(' + c.id + ')">삭제</button>' +
-        '</div>';
-    }).join('');
+    const list = sccFilteredList();
+    const today = todayYmdDash();
+    const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length;
+    document.getElementById('scc-list-summary').innerText = (isScheduleManager() ? '전체 ' : '내 변경 ') + list.length + '건' + (list.length ? ' (교환 ' + nEx + ' · 보강 ' + (list.length - nEx) + ')' : '');
+    document.getElementById('scc-excel-btn').disabled = list.length === 0;
+    if (!list.length) {
+      listEl.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:40px 10px; font-size:13px;">' + escapeHtmlText(SCC_RANGE_NAMES[scc.listRange] || '') + ' 등록된 변경이 없어요.</div>';
+      return;
+    }
+    const counts = {};
+    list.forEach(function(c) { counts[c.change_date] = (counts[c.change_date] || 0) + 1; });
+    let html = '<table class="scc-table"><thead><tr><th>교시</th><th>구분</th><th>원래 수업</th><th>바뀐 내용</th><th>등록</th><th></th></tr></thead><tbody>';
+    let lastDate = '';
+    list.forEach(function(c) {
+      if (c.change_date !== lastDate) {
+        lastDate = c.change_date;
+        const isToday = c.change_date === today;
+        html += '<tr class="scc-day' + (isToday ? ' today' : '') + '"><td colspan="6">' + sccMD(c.change_date) + '(' + SCC_DAYS[sccWeekdayOf(c.change_date)] + ')' + (isToday ? ' · 오늘' : '') + '<span class="cnt">' + counts[c.change_date] + '건</span></td></tr>';
+      }
+      const d = sccDescribe(c);
+      const ex = c.type === 'exchange';
+      const changed = ex
+        ? (d.same ? '↔ <b>' + escapeHtmlText(c.teacher_b) + '</b> ' + escapeHtmlText(d.classB) + ' <span class="sub">(같은 시간 반 맞바꿈)</span>'
+                  : '↔ <b>' + escapeHtmlText(c.teacher_b) + '</b> ' + escapeHtmlText(sccSlotText(d.dateB, c.period_b)) + ' ' + escapeHtmlText(d.classB))
+        : '→ <b>' + escapeHtmlText(c.teacher_b) + '</b>가 대신' + (d.same ? '' : ' <span class="nowrap">(' + escapeHtmlText(sccSlotText(d.dateB, c.period_b)) + '에)</span>');
+      const created = c.created_at ? sccMD(String(c.created_at).slice(0, 10)) : '';
+      html += '<tr><td class="nowrap"><b>' + c.period_a + '교시</b></td>' +
+        '<td><span class="scc-type ' + (ex ? 'ex' : 'mk') + '">' + (ex ? '교환' : '보강') + '</span></td>' +
+        '<td><b>' + escapeHtmlText(c.teacher_a) + '</b> ' + escapeHtmlText(d.classA) + '</td>' +
+        '<td>' + changed + '</td>' +
+        '<td class="sub nowrap">' + escapeHtmlText(c.created_by || '') + (created ? ' · ' + created : '') + '</td>' +
+        '<td class="nowrap">' + (sccCanDelete(c) ? '<button class="top-btn" style="padding:2px 8px; font-size:11px; color:var(--alert);" onclick="sccDelete(' + Number(c.id) + ')">삭제</button>' : '') + '</td></tr>';
+    });
+    listEl.innerHTML = html + '</tbody></table>';
   }
 
   async function sccDelete(id) {
@@ -7953,6 +8274,133 @@
       sccRenderList();
     } catch (e) {
       customAlert('삭제 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  // ----- 엑셀로 내려받기 -----
+  // 디자인(색·테두리·틀 고정·필터)을 넣으려고 ExcelJS를 쓴다. 누를 때만 받아 와서 다른 화면엔 부담 없음.
+  const SCC_EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+  function sccLoadExcelJS() {
+    if (window.ExcelJS) return Promise.resolve();
+    if (!sccLoadExcelJS._p) {
+      sccLoadExcelJS._p = new Promise(function(resolve, reject) {
+        const s = document.createElement('script');
+        s.src = SCC_EXCELJS_URL;
+        s.onload = function() { window.ExcelJS ? resolve() : reject(new Error('엑셀 도구를 불러오지 못했어요.')); };
+        s.onerror = function() { sccLoadExcelJS._p = null; s.remove(); reject(new Error('엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.')); };
+        document.head.appendChild(s);
+      });
+    }
+    return sccLoadExcelJS._p;
+  }
+
+  // 날짜 문자열 → 엑셀 날짜(ExcelJS는 UTC로 바꾸므로 UTC 자정으로 만들어야 하루 밀리지 않는다)
+  function sccExcelDate(ymd) { const p = ymd.split('-'); return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10))); }
+
+  async function sccBuildWorkbook(list) {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = '스마트보드';
+    wb.created = new Date();
+    const ws = wb.addWorksheet('수업 변경 내역', {
+      views: [{ state: 'frozen', xSplit: 0, ySplit: 3, topLeftCell: 'A4', activeCell: 'A4' }],
+      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }, printTitlesRow: '3:3', horizontalCentered: true },
+      headerFooter: { oddFooter: '&C&P / &N쪽' }
+    });
+    const cols = [
+      { h: '날짜', w: 12 }, { h: '요일', w: 6 }, { h: '교시', w: 6 }, { h: '구분', w: 7 },
+      { h: '원래 선생님', w: 12 }, { h: '과목', w: 14 }, { h: '반·교실', w: 10 },
+      { h: '바뀐 선생님', w: 12 }, { h: '바뀐 날짜', w: 12 }, { h: '바뀐 요일', w: 8 }, { h: '바뀐 교시', w: 8 },
+      { h: '상대 과목', w: 14 }, { h: '상대 반·교실', w: 11 }, { h: '비고', w: 22 },
+      { h: '등록한 사람', w: 12 }, { h: '등록일', w: 12 }
+    ];
+    ws.columns = cols.map(function(c) { return { width: c.w }; });
+    const lastCol = String.fromCharCode(64 + cols.length); // P
+    const sem = window.currentActiveSemester || '';
+    const now = new Date();
+    const year = now.getMonth() < 2 ? now.getFullYear() - 1 : now.getFullYear(); // 1~2월은 지난 학년도
+
+    ws.mergeCells('A1:' + lastCol + '1');
+    const title = ws.getCell('A1');
+    title.value = year + '학년도 ' + sem + ' 수업 변경 내역';
+    title.font = { size: 16, bold: true, color: { argb: 'FF1F3A5F' } };
+    title.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    ws.getRow(1).height = 32;
+
+    ws.mergeCells('A2:' + lastCol + '2');
+    const type = document.getElementById('scc-type-filter').value;
+    const q = document.getElementById('scc-search').value.trim();
+    const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length;
+    const sub = ws.getCell('A2');
+    sub.value = '기간: ' + (SCC_RANGE_NAMES[scc.listRange] || '전체') + (type !== 'all' ? ' · ' + (type === 'exchange' ? '교환만' : '보강만') : '') +
+      (q ? ' · 이름: ' + q : '') + ' · 총 ' + list.length + '건(교환 ' + nEx + ' · 보강 ' + (list.length - nEx) + ') · ' + todayYmdDash() + ' 내려받음';
+    sub.font = { size: 10, color: { argb: 'FF767C8C' } };
+    sub.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    ws.getRow(2).height = 20;
+
+    const thin = { style: 'thin', color: { argb: 'FFD5D9E0' } };
+    const border = { top: thin, left: thin, bottom: thin, right: thin };
+    const head = ws.getRow(3);
+    head.values = cols.map(function(c) { return c.h; });
+    head.height = 24;
+    head.eachCell(function(cell) {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10.5 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = border;
+    });
+
+    list.forEach(function(c) {
+      const d = sccDescribe(c);
+      const ex = c.type === 'exchange';
+      const bRoom = ex ? sccRegularCell(c.teacher_b, d.wdB, c.period_b) : ['', ''];
+      const aCell = sccRegularCell(c.teacher_a, d.wdA, c.period_a);
+      const row = ws.addRow([
+        sccExcelDate(c.change_date), SCC_DAYS[d.wdA], c.period_a, ex ? '교환' : '보강',
+        c.teacher_a, aCell[0], aCell[1],
+        c.teacher_b, sccExcelDate(d.dateB), SCC_DAYS[d.wdB], c.period_b,
+        bRoom[0], bRoom[1], d.note,
+        c.created_by || '', c.created_at ? sccExcelDate(String(c.created_at).slice(0, 10)) : ''
+      ]);
+      row.height = 20;
+      const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ex ? 'FFEEF4FB' : 'FFFFF5EA' } };
+      row.eachCell({ includeEmpty: true }, function(cell, n) {
+        cell.border = border;
+        cell.fill = fill;
+        cell.font = { size: 10.5 };
+        cell.alignment = { vertical: 'middle', horizontal: (n === 14 ? 'left' : 'center') };
+      });
+      row.getCell(1).numFmt = 'yyyy-mm-dd';
+      row.getCell(9).numFmt = 'yyyy-mm-dd';
+      row.getCell(16).numFmt = 'yyyy-mm-dd';
+      row.getCell(4).font = { size: 10.5, bold: true, color: { argb: ex ? 'FF1F5C99' : 'FFA65A12' } };
+      row.getCell(5).font = { size: 10.5, bold: true };
+      row.getCell(8).font = { size: 10.5, bold: true };
+    });
+    ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3 + list.length, column: cols.length } };
+    return wb;
+  }
+
+  async function sccExportExcel() {
+    const list = sccFilteredList();
+    if (!list.length) return customAlert('내려받을 변경 내역이 없어요.');
+    const btn = document.getElementById('scc-excel-btn');
+    const label = btn.innerText;
+    btn.disabled = true; btn.innerText = '⏳ 만드는 중...';
+    try {
+      await sccLoadExcelJS();
+      const wb = await sccBuildWorkbook(list);
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '수업변경내역_' + (SCC_RANGE_NAMES[scc.listRange] || '전체').replace(/\s/g, '') + '_' + todayYmdDash() + '.xlsx';
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(a.href); }, 10000);
+    } catch (e) {
+      customAlert('엑셀 만들기 실패: ' + (e && e.message ? e.message : e));
+    } finally {
+      btn.disabled = false; btn.innerText = label;
     }
   }
 
