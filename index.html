@@ -685,11 +685,15 @@
     .ab-paper .xf td[style*="바탕"] { font-family: '함초롬바탕', 'HCR Batang', '바탕', Batang, serif; }
     .ab-paper-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #888; font-size: 15px; text-align: center; line-height: 1.7; padding: 30px; }
     .ab-muted { font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
-    .ab-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    .ab-form.ab-editing { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
-    .ab-f label { display: block; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 4px; white-space: nowrap; }
-    .ab-f-wide { grid-column: span 2; }
-    .ab-f-btns { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; }
+    #ab-pane-input, #ab-pane-stat, #ab-pane-hol { max-width: 1180px; }
+    .ab-in { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12.5px; background: var(--card-bg); color: var(--text-main); font-family: inherit; outline: none; min-width: 0; }
+    .ab-in:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .ab-in[type="date"] { padding: 4px 4px; }
+    .ab-in.ab-days { text-align: center; padding: 5px 2px; }
+    .ab-table tr.ab-new td { background: var(--accent-soft); border-bottom: 2px solid var(--accent-color); padding: 6px 4px; cursor: default; }
+    .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
+    .ab-table tr.ab-new:hover, .ab-table tr.ab-editrow:hover { background: none; }
+    .ab-table.ab-grid { table-layout: fixed; }
     .ab-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--card-bg); }
     .ab-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 7px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 1; }
     .ab-table td { padding: 7px 6px; border-bottom: 1px solid var(--border-color); text-align: center; vertical-align: middle; }
@@ -2364,6 +2368,9 @@
       <div style="font-weight: 800; font-size: 16px;">📋 결석계</div>
       <select id="ab-grade" class="mini-select" style="width:74px;" onchange="abOnClassChange('grade')"></select>
       <select id="ab-class" class="mini-select" style="width:64px;" onchange="abOnClassChange('class')"></select>
+      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다">
+        📥 엑셀 가져오기<input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
+      </label>
       <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b>내 계정에만</b> 저장돼요(다른 선생님·관리자 화면엔 안 보임).</span>
     </div>
     <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="abPrint()" title="미리보기에 보이는 양식을 인쇄합니다">🖨️ 출력</button>
@@ -2377,21 +2384,8 @@
       </div>
 
       <div id="ab-pane-input" class="ab-pane">
-        <div class="ab-form" id="ab-form">
-          <div class="ab-f"><label for="ab-f-num">번호</label><select id="ab-f-num" class="lp-input"></select></div>
-          <div class="ab-f"><label for="ab-f-reason">결석 사유</label><select id="ab-f-reason" class="lp-input" onchange="abOnReasonChange()"></select></div>
-          <div class="ab-f ab-f-wide"><label for="ab-f-detail">구체적인 사유</label><input type="text" id="ab-f-detail" class="lp-input" placeholder="예) 감기, 가족 여행"></div>
-          <div class="ab-f"><label for="ab-f-from">결석 시작 일자</label><input type="date" id="ab-f-from" class="lp-input" onchange="abOnDateChange('from')"></div>
-          <div class="ab-f"><label for="ab-f-to">결석 종료 일자</label><input type="date" id="ab-f-to" class="lp-input" onchange="abOnDateChange('to')"></div>
-          <div class="ab-f ab-f-days"><label for="ab-f-days">결석 일수 <span id="ab-f-days-auto" class="ab-muted"></span></label><input type="number" id="ab-f-days" class="lp-input" min="0" step="1" oninput="abOnDaysInput()"></div>
-          <div class="ab-f"><label for="ab-f-written">결석계 작성 일자</label><input type="date" id="ab-f-written" class="lp-input"></div>
-          <div class="ab-f ab-f-wide"><label for="ab-f-proof">결석 확인 방법(증빙서류)</label><input type="text" id="ab-f-proof" class="lp-input" list="ab-proof-list" placeholder="목록에서 고르거나 직접 적기"><datalist id="ab-proof-list"></datalist></div>
-          <div class="ab-f-btns">
-            <button class="top-btn accent" id="ab-f-save" style="padding:7px 16px; font-weight:800;" onclick="abSaveForm()">➕ 추가</button>
-            <button class="top-btn" id="ab-f-cancel" style="padding:7px 12px; display:none;" onclick="abResetForm()">취소</button>
-            <span id="ab-f-msg" class="ab-muted"></span>
-          </div>
-        </div>
+        <div class="ab-muted" style="margin-bottom:8px;">맨 윗줄에 적고 <b>Enter</b>(또는 ➕)로 추가 · 기록 줄은 <b>두 번 누르거나 ✎</b>로 그 자리에서 고치기(Enter 저장, Esc 취소) · 줄을 한 번 누르면 오른쪽에 출력 미리보기</div>
+        <div id="ab-f-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div id="ab-filter" style="display:none;"></div>
         <div id="ab-list"></div>
       </div>
@@ -9756,6 +9750,7 @@
   // 휴일은 학사일정(나이스) + 기본 공휴일 + 직접 더한 날. 결석 기록은 한 건마다 개인 자료 키 하나(ab-r-<id>)로 저장한다 —
   // 한 키에 몰아 넣으면 한 건 고칠 때마다 1년 치 전체가 서버로 다시 올라가서(변경 이력에도 통째로 쌓임) 따로 나눔.
   // 출력 양식(absence/forms.json)은 이 화면을 처음 열 때만 받는다(모든 선생님이 매번 받지 않게).
+  // 입력은 엑셀처럼 표 안에서: 맨 윗줄(ab-n-*)에 적고 Enter로 추가, 기록 줄은 그 자리에서 입력칸(ab-e-*)으로 바꿔 고침.
   const AB_REASONS = ['질병결석', '인정결석', '기타결석', '교외체험학습'];
   // 엑셀 결석현황입력 시트의 "결석 확인 방법" 목록(사유별). 기타결석은 목록 없이 직접 적음.
   const AB_PROOFS = {
@@ -9765,7 +9760,7 @@
     '교외체험학습': ['교외체험학습 신청서']
   };
   // 나이스 학사일정을 못 받아도 결석 일수가 크게 틀리지 않게 넣어 둔 기본 휴일(엑셀 학급명렬표 휴일 목록 + 2027년 1~2월).
-  // 학교마다 다른 재량휴업일은 학사일정에서 오거나 직접 더한다.
+  // 토·일요일은 어차피 빼고 세므로 목록·계산 모두 평일 휴일만 의미가 있다. 학교마다 다른 재량휴업일은 학사일정에서 오거나 직접 더한다.
   const AB_BASE_HOLIDAYS = {
     '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-03-02': '대체공휴일',
     '2026-05-01': '노동절', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날', '2026-05-25': '대체공휴일', '2026-06-03': '지방선거',
@@ -9778,7 +9773,7 @@
   let abForms = null, abFormsLoading = null;
   let abRoster = [], abRosterKey = '';
   let abNeisHol = {}, abNeisYear = null;
-  let abSelId = null, abEditId = null, abFilterNum = null, abDaysTouched = false;
+  let abSelId = null, abEditId = null, abFilterNum = null;
 
   function abCfg() {
     try { const v = JSON.parse(localStorage.getItem(AB_CFG_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
@@ -9788,6 +9783,7 @@
     try { localStorage.setItem(AB_CFG_KEY, JSON.stringify(c)); } catch (e) {}
     scheduleBackupWrite();
   }
+  function abHasClass() { const c = abCfg(); return !!(c.g && c.c); }
   function abAllRecords() {
     const out = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -9800,6 +9796,7 @@
   // 지금 고른 반의 기록 — 시작일 순(같으면 입력한 순). 연번은 이 순서대로 1부터.
   function abClassRecords() {
     const c = abCfg();
+    if (!c.g || !c.c) return [];
     return abAllRecords().filter(function(r) { return r.g === c.g && r.c === c.c; })
       .sort(function(a, b) { return (a.from || '') < (b.from || '') ? -1 : (a.from || '') > (b.from || '') ? 1 : (a.created || 0) - (b.created || 0); });
   }
@@ -9808,8 +9805,11 @@
     scheduleBackupWrite();
     return true;
   }
+  function abNewId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
   // ----- 휴일·결석 일수 -----
+  function abIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function abIsWeekend(iso) { const w = new Date(iso + 'T00:00:00').getDay(); return w === 0 || w === 6; }
   function abSchoolYear(d) { const t = d ? new Date(d + 'T00:00:00') : new Date(); return t.getMonth() + 1 >= 3 ? t.getFullYear() : t.getFullYear() - 1; }
   function abHolidays() {
     return Object.assign({}, AB_BASE_HOLIDAYS, abNeisHol, abCfg().hol || {});
@@ -9826,8 +9826,9 @@
       const out = {};
       if (data.SchoolSchedule && data.SchoolSchedule[1] && data.SchoolSchedule[1].row) {
         data.SchoolSchedule[1].row.forEach(function(r) {
-          const ev = r.EVENT_NM || '', kind = r.SBTR_DD_SC_NM || '';
-          if (kind === '휴업일' || kind === '공휴일' || /휴업|휴일|공휴|방학/.test(ev)) out[neisDateToIso(r.AA_YMD)] = ev || kind;
+          const ev = r.EVENT_NM || '', kind = r.SBTR_DD_SC_NM || '', iso = neisDateToIso(r.AA_YMD);
+          if (abIsWeekend(iso)) return; // 토요휴업일 등 주말은 어차피 빼고 셈
+          if (kind === '휴업일' || kind === '공휴일' || /휴업|휴일|공휴|방학/.test(ev)) out[iso] = ev || kind;
         });
       }
       abNeisHol = out;
@@ -9841,8 +9842,8 @@
     let n = 0;
     const d = new Date(from + 'T00:00:00'), end = new Date(to + 'T00:00:00');
     for (let guard = 0; d <= end && guard < 400; guard++) {
-      const wd = d.getDay(), iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      if (wd !== 0 && wd !== 6 && !hol[iso]) n++;
+      const wd = d.getDay();
+      if (wd !== 0 && wd !== 6 && !hol[abIso(d)]) n++;
       d.setDate(d.getDate() + 1);
     }
     return n;
@@ -9852,7 +9853,7 @@
   function abDotDate(s) { if (!s) return ''; const p = s.split('-').map(Number); return p[0] + '.' + p[1] + '.' + p[2] + '.'; }
   function abShort(s) { if (!s) return ''; const p = s.split('-').map(Number); return p[1] + '/' + p[2]; }
   function abRange(r) { return !r.to || r.to === r.from ? abShort(r.from) : abShort(r.from) + '~' + abShort(r.to); }
-  function abToday() { const t = new Date(); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
+  function abToday() { return abIso(new Date()); }
 
   // ----- 화면 열기·반 고르기 -----
   function closeAbsencePage() {
@@ -9878,46 +9879,41 @@
     document.getElementById('rail-absence-btn').classList.add('active');
     document.body.setAttribute('data-print-target', 'absence');
 
-    // 반: 기억한 반 → 담임 반 → 1학년 1반
-    const c = abCfg(), t = window.currentTeacher || {};
-    if (!c.g || !c.c) {
-      const g = (t.role === '담임' && t.homeroom_grade) || 1, k = (t.role === '담임' && t.homeroom_class) || 1;
-      abSetCfg({ g: g, c: k });
-    }
+    // 반: 기억한 반 → 담임이면 담임 반. 담임이 아니면 고를 때까지 비워 둠(아무 반이나 띄우지 않음).
+    const t = window.currentTeacher || {};
+    if (!abHasClass() && t.role === '담임' && t.homeroom_grade && t.homeroom_class) abSetCfg({ g: t.homeroom_grade, c: t.homeroom_class });
     abFillClassSelects();
     if (!window.__abInited) {
       window.__abInited = true;
-      const rs = document.getElementById('ab-f-reason');
-      rs.innerHTML = AB_REASONS.map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join('');
-      abResetForm();
       window.addEventListener('resize', abFitPaper);
     }
     abApplyTab();
     abRenderAll();
     await Promise.all([abLoadRoster(), abLoadNeisHolidays(), abLoadForms().catch(function() {})]);
-    if (!abDaysTouched) abOnDateChange();
     abRenderAll();
   }
   function abFillClassSelects() {
     const c = abCfg();
-    document.getElementById('ab-grade').innerHTML = gradeOptionsHtml(c.g);
-    document.getElementById('ab-class').innerHTML = classOptionsHtml(c.g, c.c);
-    document.getElementById('ab-grade').value = String(c.g);
-    document.getElementById('ab-class').value = String(c.c);
+    document.getElementById('ab-grade').innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(c.g);
+    document.getElementById('ab-class').innerHTML = '<option value="">반</option>' + (c.g ? classOptionsHtml(c.g, c.c) : '');
+    document.getElementById('ab-grade').value = c.g ? String(c.g) : '';
+    document.getElementById('ab-class').value = c.g && c.c ? String(c.c) : '';
   }
   async function abOnClassChange(which) {
-    const g = parseInt(document.getElementById('ab-grade').value) || 1;
-    let k = parseInt(document.getElementById('ab-class').value) || 1;
-    if (which === 'grade') k = 1;
+    const g = parseInt(document.getElementById('ab-grade').value) || null;
+    let k = parseInt(document.getElementById('ab-class').value) || null;
+    if (which === 'grade') k = null; // 학년을 바꾸면 반을 다시 고르게
     abSetCfg({ g: g, c: k });
     abFillClassSelects();
-    abSelId = null; abFilterNum = null; abResetForm();
-    abRenderAll();
+    abSelId = null; abEditId = null; abFilterNum = null;
+    abRenderAll(true);
     await abLoadRoster();
-    abRenderAll();
+    abRenderAll(true);
   }
   async function abLoadRoster() {
-    const c = abCfg(), key = c.g + '-' + c.c;
+    const c = abCfg();
+    if (!c.g || !c.c) { abRoster = []; abRosterKey = ''; return; }
+    const key = c.g + '-' + c.c;
     if (abRosterKey === key) return;
     try {
       // 연락처는 필요 없어서 번호·이름만 받는다.
@@ -9926,21 +9922,6 @@
       abRoster = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
       abRosterKey = key;
     } catch (e) { abRoster = []; abRosterKey = ''; }
-    abFillNumSelect();
-  }
-  function abFillNumSelect(keep) {
-    const sel = document.getElementById('ab-f-num');
-    const cur = keep != null ? String(keep) : sel.value;
-    let html = '<option value="">번호 · 이름</option>';
-    const nums = {};
-    abRoster.forEach(function(s) { nums[s.num] = true; html += '<option value="' + s.num + '">' + s.num + ' ' + escapeHtmlAttr(s.name) + '</option>'; });
-    // 명렬표에서 빠진 학생(전학 등)의 예전 기록을 고칠 때도 번호가 보이게
-    if (cur && !nums[cur]) {
-      const r = abAllRecords().find(function(x) { return String(x.num) === cur; });
-      html += '<option value="' + escapeHtmlAttr(cur) + '">' + escapeHtmlAttr(cur) + ' ' + escapeHtmlAttr(r ? r.name : '') + '</option>';
-    }
-    sel.innerHTML = html;
-    sel.value = cur || '';
   }
   function abNameOf(num) {
     const s = abRoster.find(function(x) { return x.num === Number(num); });
@@ -9955,88 +9936,93 @@
     ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
   }
 
-  // ----- 입력 칸 -----
-  function abOnReasonChange() {
-    const r = document.getElementById('ab-f-reason').value;
-    document.getElementById('ab-proof-list').innerHTML = (AB_PROOFS[r] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('');
-    const proof = document.getElementById('ab-f-proof');
+  // ----- 표 안 입력칸(새 줄 ab-n-*, 고치는 줄 ab-e-*) -----
+  function abNumOptions(cur) {
+    let h = '<option value="">번호</option>', has = false;
+    abRoster.forEach(function(s) {
+      const on = String(s.num) === String(cur); if (on) has = true;
+      h += '<option value="' + s.num + '"' + (on ? ' selected' : '') + '>' + s.num + ' ' + escapeHtmlAttr(s.name) + '</option>';
+    });
+    // 명렬표에서 빠진 학생(전학 등)의 예전 기록도 번호가 보이게
+    if (cur !== '' && cur != null && !has) {
+      const r = abAllRecords().find(function(x) { return String(x.num) === String(cur); });
+      h += '<option value="' + escapeHtmlAttr(cur) + '" selected>' + escapeHtmlAttr(cur) + ' ' + escapeHtmlAttr(r ? r.name : '') + '</option>';
+    }
+    return h;
+  }
+  function abRowCells(p, r) {
+    r = r || {};
+    const reason = r.reason || AB_REASONS[0];
+    const days = r.dm ? r.days : (r.from ? abCountDays(r.from, r.to) : '');
+    const on = ' onkeydown="abRowKey(event, \'' + p + '\')"';
+    return '<td><select id="' + p + 'num" class="ab-in"' + on + '>' + abNumOptions(r.num) + '</select></td>' +
+      '<td><select id="' + p + 'reason" class="ab-in" onchange="abRowReason(\'' + p + '\')"' + on + '>' +
+        AB_REASONS.map(function(x) { return '<option' + (x === reason ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></td>' +
+      '<td><input id="' + p + 'detail" class="ab-in" placeholder="예) 감기" value="' + escapeHtmlAttr(r.detail || '') + '"' + on + '></td>' +
+      '<td><input type="date" id="' + p + 'from" class="ab-in" value="' + (r.from || '') + '" onchange="abRowDate(\'' + p + '\', \'from\')"' + on + '></td>' +
+      '<td><input type="date" id="' + p + 'to" class="ab-in" value="' + (r.to || '') + '" onchange="abRowDate(\'' + p + '\', \'to\')"' + on + '></td>' +
+      '<td><input type="number" id="' + p + 'days" class="ab-in ab-days" min="0" step="1" value="' + days + '" data-touched="' + (r.dm ? '1' : '') + '" oninput="abRowDaysInput(\'' + p + '\')" title="토·일·휴일을 빼고 자동으로 셈 — 직접 고칠 수도 있어요"' + on + '></td>' +
+      '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + (r.written || '') + '"' + on + '></td>' +
+      '<td><input id="' + p + 'proof" class="ab-in" list="' + p + 'proofs" placeholder="목록/직접" value="' + escapeHtmlAttr(r.proof || '') + '"' + on + '>' +
+        '<datalist id="' + p + 'proofs">' + (AB_PROOFS[reason] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('') + '</datalist></td>';
+  }
+  function abRowKey(e, p) {
+    if (e.key === 'Enter') { e.preventDefault(); abSaveRow(p); }
+    else if (e.key === 'Escape' && p === 'ab-e-') { e.preventDefault(); abCancelEdit(); }
+  }
+  function abRowReason(p) {
+    const r = document.getElementById(p + 'reason').value;
+    document.getElementById(p + 'proofs').innerHTML = (AB_PROOFS[r] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('');
+    const proof = document.getElementById(p + 'proof');
     // 교외체험학습은 증빙이 하나뿐이라 비어 있으면 채워 둔다
     if (r === '교외체험학습' && !proof.value) proof.value = AB_PROOFS['교외체험학습'][0];
   }
-  function abOnDateChange(which) {
-    const f = document.getElementById('ab-f-from'), t = document.getElementById('ab-f-to');
+  function abRowDate(p, which) {
+    const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to');
     if (which === 'from' && f.value && (!t.value || t.value < f.value)) t.value = f.value;
     if (which === 'to' && t.value && f.value && t.value < f.value) f.value = t.value;
-    const auto = abCountDays(f.value, t.value);
-    document.getElementById('ab-f-days-auto').textContent = f.value ? '(자동 ' + auto + '일)' : '(자동)';
-    if (!abDaysTouched) document.getElementById('ab-f-days').value = f.value ? auto : '';
+    const d = document.getElementById(p + 'days');
+    if (!d.dataset.touched) d.value = f.value ? abCountDays(f.value, t.value) : '';
   }
-  function abOnDaysInput() {
-    const f = document.getElementById('ab-f-from'), t = document.getElementById('ab-f-to');
-    const v = document.getElementById('ab-f-days').value;
-    abDaysTouched = v !== '' && Number(v) !== abCountDays(f.value, t.value);
+  function abRowDaysInput(p) {
+    const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
+    d.dataset.touched = d.value !== '' && Number(d.value) !== abCountDays(f.value, t.value) ? '1' : '';
   }
-  function abResetForm() {
-    abEditId = null; abDaysTouched = false;
-    abFillNumSelect('');
-    document.getElementById('ab-f-reason').value = AB_REASONS[0];
-    ['ab-f-detail', 'ab-f-from', 'ab-f-to', 'ab-f-days', 'ab-f-proof'].forEach(function(id) { document.getElementById(id).value = ''; });
-    document.getElementById('ab-f-written').value = abToday();
-    document.getElementById('ab-f-save').textContent = '➕ 추가';
-    document.getElementById('ab-f-cancel').style.display = 'none';
-    document.getElementById('ab-form').classList.remove('ab-editing');
-    document.getElementById('ab-f-msg').textContent = '';
-    abOnReasonChange();
-    abOnDateChange();
-  }
-  function abEdit(id) {
-    const r = abAllRecords().find(function(x) { return x.id === id; });
-    if (!r) return;
-    abEditId = id; abSelId = id;
-    abFillNumSelect(r.num);
-    document.getElementById('ab-f-reason').value = r.reason;
-    document.getElementById('ab-f-detail').value = r.detail || '';
-    document.getElementById('ab-f-from').value = r.from || '';
-    document.getElementById('ab-f-to').value = r.to || '';
-    document.getElementById('ab-f-written').value = r.written || '';
-    document.getElementById('ab-f-proof').value = r.proof || '';
-    abOnReasonChange();
-    abDaysTouched = !!r.dm;
-    abOnDateChange();
-    if (r.dm) document.getElementById('ab-f-days').value = r.days;
-    document.getElementById('ab-f-save').textContent = '💾 수정 저장';
-    document.getElementById('ab-f-cancel').style.display = '';
-    document.getElementById('ab-form').classList.add('ab-editing');
-    document.getElementById('ab-f-msg').textContent = '';
-    abSetTab('input');
-    document.getElementById('ab-left').scrollTop = 0;
-  }
-  function abSaveForm() {
+  function abMsg(t) { const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
+  function abSaveRow(p) {
     const c = abCfg();
-    const num = document.getElementById('ab-f-num').value;
-    const from = document.getElementById('ab-f-from').value;
-    let to = document.getElementById('ab-f-to').value;
-    const msg = document.getElementById('ab-f-msg');
-    if (!num) { msg.textContent = '⚠️ 번호를 고르세요.'; return; }
-    if (!from) { msg.textContent = '⚠️ 결석 시작 일자를 넣으세요.'; return; }
+    if (!c.g || !c.c) { abMsg('⚠️ 위에서 학년·반을 먼저 고르세요.'); return; }
+    const v = function(k) { return document.getElementById(p + k).value; };
+    const num = v('num'), from = v('from');
+    let to = v('to');
+    if (!num) { abMsg('⚠️ 번호를 고르세요.'); document.getElementById(p + 'num').focus(); return; }
+    if (!from) { abMsg('⚠️ 결석 시작 일자를 넣으세요.'); document.getElementById(p + 'from').focus(); return; }
     if (!to || to < from) to = from;
-    const old = abEditId ? abAllRecords().find(function(x) { return x.id === abEditId; }) : null;
-    const r = old ? Object.assign({}, old) : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), created: Date.now(), g: c.g, c: c.c };
+    const old = p === 'ab-e-' ? abAllRecords().find(function(x) { return x.id === abEditId; }) : null;
+    const r = old ? Object.assign({}, old) : { id: abNewId(), created: Date.now(), g: c.g, c: c.c };
     r.num = Number(num);
     r.name = abNameOf(num) || (old && String(old.num) === String(num) ? old.name : '');
-    r.reason = document.getElementById('ab-f-reason').value;
-    r.detail = document.getElementById('ab-f-detail').value.trim();
+    r.reason = v('reason');
+    r.detail = v('detail').trim();
     r.from = from; r.to = to;
-    r.written = document.getElementById('ab-f-written').value;
-    r.proof = document.getElementById('ab-f-proof').value.trim();
-    const dv = document.getElementById('ab-f-days').value;
-    if (abDaysTouched && dv !== '') { r.dm = true; r.days = Number(dv); } else { delete r.dm; delete r.days; }
+    r.written = v('written');
+    r.proof = v('proof').trim();
+    const dEl = document.getElementById(p + 'days');
+    if (dEl.dataset.touched && dEl.value !== '') { r.dm = true; r.days = Number(dEl.value); } else { delete r.dm; delete r.days; }
     if (!abSaveRecord(r)) return;
-    abSelId = r.id;
-    abResetForm();
-    msg.textContent = old ? '✅ 고쳤어요.' : '✅ 추가했어요. 오른쪽 미리보기를 확인하고 🖨️ 출력을 누르세요.';
-    abRenderAll();
+    abSelId = r.id; abEditId = null;
+    abMsg(old ? '✅ 고쳤어요.' : '✅ ' + r.num + '번 ' + escapeHtmlAttr(r.name) + ' 추가 — 오른쪽 미리보기를 확인하고 🖨️ 출력을 누르세요.');
+    abRenderAll(true);
+    // 이어서 입력하기 좋게 새 줄 번호 칸으로
+    const n = document.getElementById('ab-n-num'); if (n) n.focus();
   }
+  function abEdit(id) {
+    abEditId = id; abSelId = id;
+    if ((abCfg().tab || 'input') !== 'input') abSetTab('input');
+    abRenderList(); abRenderPreview();
+    const el = document.getElementById('ab-e-detail'); if (el) el.focus();
+  }
+  function abCancelEdit() { abEditId = null; abRenderList(); }
   async function abDelete(id) {
     const r = abAllRecords().find(function(x) { return x.id === id; });
     if (!r) return;
@@ -10045,18 +10031,38 @@
     localStorage.removeItem(AB_REC_PREFIX + id);
     scheduleBackupWrite();
     if (abSelId === id) abSelId = null;
-    if (abEditId === id) abResetForm();
+    if (abEditId === id) abEditId = null;
     abRenderAll();
   }
-  function abSelect(id) { abSelId = id; abRenderList(); abRenderPreview(); }
-  function abFilter(num) { abFilterNum = num; abSetTab('input'); }
+  // 한 번 누르면 미리보기만 바꾼다(목록을 다시 그리지 않아 새 줄에 적던 내용이 그대로).
+  function abSelect(id) {
+    if (abEditId === id) return;
+    abSelId = id;
+    document.querySelectorAll('#ab-list tr[data-id]').forEach(function(tr) { tr.classList.toggle('ab-sel', tr.dataset.id === id); });
+    abRenderPreview();
+  }
+  function abFilter(num) {
+    abFilterNum = num; abEditId = null;
+    abSetCfg({ tab: 'input' }); abApplyTab();
+    abRenderAll(true); // 새 줄 번호도 그 학생으로
+  }
 
   // ----- 그리기 -----
-  function abRenderAll() {
+  // reset: 새 줄을 비울지(추가·반 바꿈). 아니면 적던 내용을 다시 넣어 준다.
+  function abRenderAll(reset) {
     if (document.getElementById('absence-page').style.display === 'none') return;
-    abRenderList(); abRenderStat(); abRenderHolidays(); abRenderPreview();
+    abRenderList(reset); abRenderStat(); abRenderHolidays(); abRenderPreview();
   }
-  function abRenderList() {
+  function abNeedClassHtml() { return '<div class="ab-empty">위에서 <b>학년·반</b>을 고르세요. (담임 선생님은 담임 반이 자동으로 골라져요.)</div>'; }
+  function abRenderList(reset) {
+    const el = document.getElementById('ab-list');
+    if (!abHasClass()) { el.innerHTML = abNeedClassHtml(); document.getElementById('ab-filter').style.display = 'none'; return; }
+    // 새 줄에 적던 값 보관
+    const keep = {};
+    if (!reset) ['num', 'reason', 'detail', 'from', 'to', 'days', 'written', 'proof'].forEach(function(k) {
+      const e = document.getElementById('ab-n-' + k); if (e) keep[k] = e.value;
+    });
+    const newTouched = !reset && document.getElementById('ab-n-days') ? document.getElementById('ab-n-days').dataset.touched : '';
     const all = abClassRecords();
     const idx = {}; all.forEach(function(r, i) { idx[r.id] = i + 1; });
     const rows = abFilterNum == null ? all : all.filter(function(r) { return r.num === abFilterNum; });
@@ -10066,25 +10072,42 @@
       fEl.innerHTML = '🔎 ' + abFilterNum + '번 ' + escapeHtmlAttr(abNameOf(abFilterNum) || (rows[0] && rows[0].name) || '') + ' 기록만 보는 중 ' +
         '<button class="ab-icon-btn" onclick="abFilter(null)">✕ 전체 보기</button>';
     } else fEl.style.display = 'none';
-    const el = document.getElementById('ab-list');
-    if (!rows.length) {
-      el.innerHTML = '<div class="ab-empty">' + (all.length ? '이 학생의 기록이 없어요.' : '아직 기록이 없어요. 위 칸을 채우고 <b>➕ 추가</b>를 누르세요.') + '</div>';
-      return;
-    }
-    let h = '<table class="ab-table"><thead><tr><th>연번</th><th>번호</th><th>이름</th><th>결석 사유</th><th>구체적인 사유</th><th>기간</th><th>일수</th><th>작성일</th><th>증빙서류</th><th></th></tr></thead><tbody>';
+    let h = '<table class="ab-table ab-grid"><colgroup><col style="width:40px"><col style="width:112px"><col style="width:106px"><col><col style="width:128px"><col style="width:128px">' +
+      '<col style="width:50px"><col style="width:128px"><col style="width:17%"><col style="width:64px"></colgroup>' +
+      '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr></thead><tbody>';
+    h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
+      abRowCells('ab-n-', { written: abToday(), num: abFilterNum != null ? abFilterNum : '' }) +
+      '<td><button class="top-btn accent" style="padding:5px 8px; font-size:12px; font-weight:800;" onclick="abSaveRow(\'ab-n-\')" title="추가 (Enter)">➕</button></td></tr>';
     rows.forEach(function(r) {
-      h += '<tr data-id="' + r.id + '" class="' + (r.id === abSelId ? 'ab-sel' : '') + '" onclick="abSelect(\'' + r.id + '\')">' +
-        '<td>' + idx[r.id] + '</td><td>' + r.num + '</td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(r.name || '') + '</td>' +
+      if (r.id === abEditId) {
+        h += '<tr class="ab-editrow" data-id="' + r.id + '"><td>' + idx[r.id] + '</td>' + abRowCells('ab-e-', r) +
+          '<td style="white-space:nowrap;"><button class="ab-icon-btn" title="저장 (Enter)" onclick="abSaveRow(\'ab-e-\')">💾</button> <button class="ab-icon-btn" title="취소 (Esc)" onclick="abCancelEdit()">✕</button></td></tr>';
+        return;
+      }
+      h += '<tr data-id="' + r.id + '" class="' + (r.id === abSelId ? 'ab-sel' : '') + '" onclick="abSelect(\'' + r.id + '\')" ondblclick="abEdit(\'' + r.id + '\')">' +
+        '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b>' + r.num + '</b> ' + escapeHtmlAttr(r.name || '') + '</td>' +
         '<td><span class="ab-reason" data-r="' + escapeHtmlAttr(r.reason) + '">' + escapeHtmlAttr(r.reason) + '</span></td>' +
-        '<td class="ab-l">' + escapeHtmlAttr(r.detail || '') + '</td><td style="white-space:nowrap;">' + abRange(r) + '</td>' +
+        '<td class="ab-l">' + escapeHtmlAttr(r.detail || '') + '</td><td>' + abShort(r.from) + '</td><td>' + (r.to && r.to !== r.from ? abShort(r.to) : '') + '</td>' +
         '<td>' + abDays(r) + (r.dm ? '<span title="직접 고친 일수">✎</span>' : '') + '</td><td>' + abShort(r.written) + '</td>' +
-        '<td class="ab-l" style="font-size:11.5px;">' + escapeHtmlAttr(r.proof || '') + '</td>' +
-        '<td style="white-space:nowrap;"><button class="ab-icon-btn" title="고치기" onclick="event.stopPropagation(); abEdit(\'' + r.id + '\')">✎</button> ' +
+        '<td class="ab-l" style="font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escapeHtmlAttr(r.proof || '') + '">' + escapeHtmlAttr(r.proof || '') + '</td>' +
+        '<td style="white-space:nowrap;"><button class="ab-icon-btn" title="이 자리에서 고치기" onclick="event.stopPropagation(); abEdit(\'' + r.id + '\')">✎</button> ' +
         '<button class="ab-icon-btn" title="지우기" onclick="event.stopPropagation(); abDelete(\'' + r.id + '\')">🗑</button></td></tr>';
     });
+    if (!rows.length) h += '<tr><td colspan="10" class="ab-empty" style="cursor:default;">' + (all.length ? '이 학생의 기록이 없어요.' : '아직 기록이 없어요. 맨 윗줄에 적고 Enter를 누르세요. 예전 엑셀 결석계가 있으면 위 <b>📥 엑셀 가져오기</b>.') + '</td></tr>';
     el.innerHTML = h + '</tbody></table>';
+    if (Object.keys(keep).length) {
+      Object.keys(keep).forEach(function(k) { const e = document.getElementById('ab-n-' + k); if (e) e.value = keep[k]; });
+      document.getElementById('ab-n-days').dataset.touched = newTouched || '';
+      abRowReasonList('ab-n-');
+    }
+  }
+  function abRowReasonList(p) {
+    const r = document.getElementById(p + 'reason'), l = document.getElementById(p + 'proofs');
+    if (r && l) l.innerHTML = (AB_PROOFS[r.value] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('');
   }
   function abRenderStat() {
+    const el = document.getElementById('ab-stat');
+    if (!abHasClass()) { el.innerHTML = abNeedClassHtml(); return; }
     const recs = abClassRecords();
     const by = {};
     recs.forEach(function(r) {
@@ -10096,7 +10119,6 @@
     const list = abRoster.map(function(s) { return by[s.num] ? Object.assign(by[s.num], { name: s.name }) : { num: s.num, name: s.name, d: {}, dates: [] }; });
     Object.keys(by).forEach(function(n) { if (!abRoster.some(function(s) { return s.num === Number(n); })) list.push(by[n]); });
     list.sort(function(a, b) { return a.num - b.num; });
-    const el = document.getElementById('ab-stat');
     if (!list.length) { el.innerHTML = '<div class="ab-empty">이 반 명렬표가 비어 있어요.</div>'; return; }
     const tot = {}; let totAll = 0;
     let h = '<div class="ab-muted" style="margin-bottom:8px;">줄을 누르면 그 학생 기록만 볼 수 있어요. 일수는 토·일·휴일을 뺀 날 수.</div>' +
@@ -10115,7 +10137,8 @@
     const y = abSchoolYear(), from = y + '-03-01', to = (y + 1) + '-02-28';
     const mine = abCfg().hol || {};
     const all = abHolidays();
-    const days = Object.keys(all).filter(function(d) { return d >= from && d <= to; }).sort();
+    // 토·일요일 휴일은 어차피 결석 일수에서 빠지므로 목록에도 안 보인다(엑셀 NETWORKDAYS와 같음).
+    const days = Object.keys(all).filter(function(d) { return d >= from && d <= to && !abIsWeekend(d); }).sort();
     const wd = ['일', '월', '화', '수', '목', '금', '토'];
     let h = '<table class="ab-table"><thead><tr><th>날짜</th><th>이름</th><th>어디서</th><th></th></tr></thead><tbody>';
     days.forEach(function(d) {
@@ -10128,15 +10151,92 @@
   function abAddHoliday() {
     const d = document.getElementById('ab-hol-date').value, n = document.getElementById('ab-hol-name').value.trim() || '휴일';
     if (!d) return customAlert('날짜를 고르세요.');
+    if (abIsWeekend(d)) return customAlert('토·일요일은 휴일로 더하지 않아도 결석 일수에서 빠져요.');
     const hol = Object.assign({}, abCfg().hol || {}); hol[d] = n;
     abSetCfg({ hol: hol });
     document.getElementById('ab-hol-date').value = ''; document.getElementById('ab-hol-name').value = '';
-    abOnDateChange(); abRenderAll();
+    abRenderAll();
   }
   function abRemoveHoliday(d) {
     const hol = Object.assign({}, abCfg().hol || {}); delete hol[d];
     abSetCfg({ hol: hol });
-    abOnDateChange(); abRenderAll();
+    abRenderAll();
+  }
+
+  // ----- 📥 예전 엑셀 결석계 가져오기 -----
+  // 엑셀 "결석현황입력" 시트 5행부터: A 연번, B 번호, C 이름, D 결석사유, E 구체적인 사유, F 시작, G 종료, H 결석일수, K 작성일, L 확인 방법.
+  // "학급명렬표" B1 학년, B2 반, L4~ 휴일 날짜(M 이름). 파일은 이 브라우저 안에서만 읽고, 가져온 기록만 개인 자료로 저장.
+  function abXlDate(v, fallbackYear) {
+    if (v === '' || v == null) return '';
+    if (typeof v === 'number' && v > 20000) { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); }
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})/);
+    if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+    m = s.match(/^(\d{1,2})[/.월\s]+(\d{1,2})/);
+    if (m) { const mo = Number(m[1]); const y = mo >= 3 ? fallbackYear : fallbackYear + 1; return y + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0'); }
+    return '';
+  }
+  async function abImportExcel(file) {
+    if (!file) return;
+    if (typeof XLSX === 'undefined') return customAlert('엑셀을 읽는 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
+    let wb;
+    try { wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); } catch (e) { return customAlert('엑셀 파일을 읽지 못했어요: ' + (e && e.message ? e.message : e)); }
+    const inSh = wb.Sheets['결석현황입력'], clSh = wb.Sheets['학급명렬표'];
+    if (!inSh) return customAlert('"결석현황입력" 시트가 없어요. 결석계 엑셀 파일이 맞는지 확인해 주세요.');
+    const cell = function(sh, a) { const c = sh && sh[a]; return c ? c.v : ''; };
+    let g = parseInt(cell(clSh, 'B1')) || null, c = parseInt(cell(clSh, 'B2')) || null;
+    const cur = abCfg();
+    if (!g || !c) { g = cur.g; c = cur.c; }
+    if (!g || !c) return customAlert('파일에 학년·반이 없어요. 위에서 학년·반을 먼저 고른 뒤 다시 가져오세요.');
+    // 칸 주소로 바로 읽는다(빈 줄이 있어도 엑셀의 행 번호 그대로).
+    const lastRow = function(sh) { return sh && sh['!ref'] ? XLSX.utils.decode_range(sh['!ref']).e.r + 1 : 0; };
+    const recs = [], skipped = {};
+    let fy = abSchoolYear();
+    for (let i = 5; i <= lastRow(inSh); i++) {
+      const num = parseInt(cell(inSh, 'B' + i)), reason = String(cell(inSh, 'D' + i) || '').trim();
+      if (!num || !reason) continue;
+      const from = abXlDate(cell(inSh, 'F' + i), fy);
+      if (!from) continue;
+      if (AB_REASONS.indexOf(reason) < 0) { skipped[reason] = (skipped[reason] || 0) + 1; continue; }
+      fy = abSchoolYear(from);
+      const h = cell(inSh, 'H' + i);
+      recs.push({ num: num, name: String(cell(inSh, 'C' + i) || '').trim(), reason: reason, detail: String(cell(inSh, 'E' + i) || '').trim(), from: from,
+        to: abXlDate(cell(inSh, 'G' + i), fy) || from, xlDays: typeof h === 'number' ? h : null, written: abXlDate(cell(inSh, 'K' + i), fy), proof: String(cell(inSh, 'L' + i) || '').trim() });
+    }
+    // 엑셀에 적어 둔 휴일(학급명렬표 L4~, 이름 M) 중 평일인데 여기 없는 날은 "직접 더한 휴일"로
+    const newHol = {};
+    if (clSh) {
+      const have = abHolidays();
+      for (let i = 4; i <= lastRow(clSh); i++) {
+        const d = abXlDate(cell(clSh, 'L' + i), abSchoolYear());
+        if (d && !abIsWeekend(d) && !have[d]) newHol[d] = String(cell(clSh, 'M' + i) || '휴일').trim() || '휴일';
+      }
+    }
+    const existing = abAllRecords().filter(function(r) { return r.g === g && r.c === c; });
+    const sig = function(r) { return [r.num, r.reason, r.from, r.to || r.from].join('|'); };
+    const seen = {}; existing.forEach(function(r) { seen[sig(r)] = true; });
+    const fresh = recs.filter(function(r) { if (seen[sig(r)]) return false; seen[sig(r)] = true; return true; });
+    const skipTxt = Object.keys(skipped).map(function(k) { return k + ' ' + skipped[k] + '건'; }).join(', ');
+    if (!recs.length) return customAlert('가져올 결석 기록이 없어요.' + (skipTxt ? ' (이 화면에서 안 쓰는 사유: ' + skipTxt + ')' : ''));
+    const ok = await customConfirm(g + '학년 ' + c + '반 결석 기록 ' + fresh.length + '건을 가져올까요?' +
+      (recs.length - fresh.length ? '\n(이미 있거나 파일 안에서 겹치는 ' + (recs.length - fresh.length) + '건은 건너뜀 — 번호·사유·기간이 같은 기록)' : '') +
+      (skipTxt ? '\n(이 화면에서 안 쓰는 사유는 빼고: ' + skipTxt + ')' : '') +
+      (Object.keys(newHol).length ? '\n엑셀에 적어 둔 휴일 ' + Object.keys(newHol).length + '일도 휴일 목록에 더합니다.' : ''));
+    if (!ok) return;
+    if (Object.keys(newHol).length) abSetCfg({ hol: Object.assign({}, abCfg().hol || {}, newHol) });
+    if (cur.g !== g || cur.c !== c) { abSetCfg({ g: g, c: c }); abFillClassSelects(); abFilterNum = null; await abLoadRoster(); }
+    const base = Date.now();
+    fresh.forEach(function(x, i) {
+      const r = { id: abNewId() + i, created: base + i, g: g, c: c, num: x.num, name: abNameOf(x.num) || x.name, reason: x.reason, detail: x.detail,
+        from: x.from, to: x.to, written: x.written, proof: x.proof };
+      // 엑셀이 센 일수와 다르면(휴일 목록이 달라서 등) 엑셀 값을 그대로 둔다 — 이미 낸 서류와 숫자가 달라지지 않게.
+      if (x.xlDays != null && x.xlDays !== abCountDays(r.from, r.to)) { r.dm = true; r.days = x.xlDays; }
+      try { localStorage.setItem(AB_REC_PREFIX + r.id, JSON.stringify(r)); } catch (e) {}
+    });
+    scheduleBackupWrite();
+    abSelId = null; abEditId = null;
+    abRenderAll(true);
+    abMsg('✅ 엑셀에서 ' + fresh.length + '건을 가져왔어요.');
   }
 
   // ----- 출력 미리보기 -----

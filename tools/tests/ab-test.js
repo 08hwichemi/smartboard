@@ -5,6 +5,15 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+// 엑셀 가져오기 검사용 SheetJS(index.html이 CDN에서 받는 것과 같은 0.18.5). 없으면 npm에서 한 번 받아 둠.
+const XLSXLIB = (() => {
+  const dir = path.join(require('os').tmpdir(), 'sb-test-xlsx');
+  const f = path.join(dir, 'package', 'dist', 'xlsx.full.min.js');
+  if (!fs.existsSync(f)) {
+    try { fs.mkdirSync(dir, { recursive: true }); require('child_process').execSync('npm pack xlsx@0.18.5 --silent && tar xzf xlsx-0.18.5.tgz', { cwd: dir, stdio: 'ignore' }); } catch (e) {}
+  }
+  return fs.existsSync(f) ? f : null;
+})();
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
@@ -164,6 +173,7 @@ async function openDevice(browser, name, uid, opts = {}) {
       return route.fulfill({ status: 404, body: '' });
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
+    if (url.includes('xlsx.full.min.js') && XLSXLIB) return route.fulfill({ body: fs.readFileSync(XLSXLIB), contentType: 'application/javascript' });
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -196,16 +206,17 @@ function check(label, cond, detail) {
   const shown = () => P.evaluate(() => document.getElementById('absence-page').style.display === 'flex');
   const recs = () => P.evaluate(() => abClassRecords());
   // 입력 칸 채우고 추가
-  async function add(o) {
-    await P.selectOption('#ab-f-num', String(o.num));
-    await P.selectOption('#ab-f-reason', o.reason);
-    await P.fill('#ab-f-detail', o.detail || '');
-    await P.fill('#ab-f-from', o.from); await P.dispatchEvent('#ab-f-from', 'change');
-    if (o.to) { await P.fill('#ab-f-to', o.to); await P.dispatchEvent('#ab-f-to', 'change'); }
-    if (o.days != null) await P.fill('#ab-f-days', String(o.days));
-    if (o.written) await P.fill('#ab-f-written', o.written);
-    if (o.proof != null) await P.fill('#ab-f-proof', o.proof);
-    await P.click('#ab-f-save'); await wait(150);
+  // 맨 윗줄(새 줄)에 적고 Enter
+  async function add(o, p = 'ab-n-') {
+    await P.selectOption('#' + p + 'num', String(o.num));
+    await P.selectOption('#' + p + 'reason', o.reason); await P.dispatchEvent('#' + p + 'reason', 'change');
+    await P.fill('#' + p + 'detail', o.detail || '');
+    await P.fill('#' + p + 'from', o.from); await P.dispatchEvent('#' + p + 'from', 'change');
+    if (o.to) { await P.fill('#' + p + 'to', o.to); await P.dispatchEvent('#' + p + 'to', 'change'); }
+    if (o.days != null) await P.fill('#' + p + 'days', String(o.days));
+    if (o.written) await P.fill('#' + p + 'written', o.written);
+    if (o.proof != null) await P.fill('#' + p + 'proof', o.proof);
+    await P.press('#' + p + 'detail', 'Enter'); await wait(150);
   }
   const cell = (c) => P.evaluate((c) => { const td = document.querySelector('#ab-paper [data-c="' + c + '"]'); return td ? td.textContent : null; }, c);
 
@@ -218,9 +229,9 @@ function check(label, cond, detail) {
   check('담임 반(3학년 1반)으로 시작', await P.evaluate(() => document.getElementById('ab-grade').value === '3' && document.getElementById('ab-class').value === '1'));
   check('양식 한 번 받음', formFetches.length === 1, formFetches);
   check('명렬표는 번호·이름만 받음(연락처 X)', studentSelects.length >= 1);
-  const opts = await P.evaluate(() => [...document.querySelectorAll('#ab-f-num option')].map(o => o.textContent));
+  const opts = await P.evaluate(() => [...document.querySelectorAll('#ab-n-num option')].map(o => o.textContent));
   check('번호 목록 = 명렬표 학생', opts.length === 6 && opts[1] === '1 가나다' && opts[5] === '5 파하가', opts);
-  check('작성일 기본 = 오늘', await P.inputValue('#ab-f-written') === await P.evaluate(() => abToday()));
+  check('작성일 기본 = 오늘', await P.inputValue('#ab-n-written') === await P.evaluate(() => abToday()));
   check('기록 없으면 안내', /아직 기록이 없어요/.test(await P.innerText('#ab-list')));
 
   // 결석 일수: 토·일·휴일 빼기
@@ -228,15 +239,19 @@ function check(label, cond, detail) {
   check('일수: 화~수 2 / 금~월 2(주말 뺌) / 5.4~6 2(어린이날 뺌) / 추석 연휴 걸친 9.23~28 2 / 하루 1', JSON.stringify(d) === '[2,2,2,2,1]', d);
 
   // 질병결석 추가
-  await P.selectOption('#ab-f-reason', '질병결석');
-  const dl = await P.evaluate(() => [...document.querySelectorAll('#ab-proof-list option')].map(o => o.value));
+  const dl = await P.evaluate(() => [...document.querySelectorAll('#ab-n-proofs option')].map(o => o.value));
   check('질병결석 증빙 목록 4개', dl.length === 4 && dl.includes('병원처방전'), dl);
-  await P.fill('#ab-f-from', '2026-03-03'); await P.dispatchEvent('#ab-f-from', 'change');
-  check('시작일 넣으면 종료일 같은 날 + 일수 자동', await P.inputValue('#ab-f-to') === '2026-03-03' && await P.inputValue('#ab-f-days') === '1');
+  await P.fill('#ab-n-from', '2026-03-03'); await P.dispatchEvent('#ab-n-from', 'change');
+  check('시작일 넣으면 종료일 같은 날 + 일수 자동', await P.inputValue('#ab-n-to') === '2026-03-03' && await P.inputValue('#ab-n-days') === '1');
+  // 입력칸이 한 줄(마우스 이동이 짧게): 새 줄 입력칸이 모두 같은 높이, 표 폭 1180px 이하
+  const lay = await P.evaluate(() => { const ins = [...document.querySelectorAll('tr.ab-new .ab-in')].map(e => { const r = e.getBoundingClientRect(); return (r.top + r.bottom) / 2; }); return { spread: Math.max(...ins) - Math.min(...ins), n: ins.length, w: document.querySelector('#ab-list table').getBoundingClientRect().width }; });
+  check('새 줄 입력칸 8개가 한 줄, 표 폭 제한', lay.spread < 3 && lay.n === 8 && lay.w <= 1181, lay);
+  // 한 줄 선택(미리보기)해도 새 줄에 적던 값 그대로
+  await P.fill('#ab-n-detail', '적던 중');
   await add({ num: 2, reason: '질병결석', detail: '복통', from: '2026-03-03', to: '2026-03-04', written: '2026-03-05', proof: '병원처방전' });
   let R = await recs();
   check('추가됨: 이름 자동, 일수 2', R.length === 1 && R[0].name === '라마바' && R[0].g === 3 && R[0].c === 1 && !R[0].dm && await P.evaluate(() => abDays(abClassRecords()[0])) === 2, R);
-  check('추가 후 입력 칸 비움', await P.inputValue('#ab-f-detail') === '' && await P.inputValue('#ab-f-num') === '');
+  check('추가 후 새 줄 비우고 번호 칸에 커서', await P.inputValue('#ab-n-detail') === '' && await P.inputValue('#ab-n-num') === '' && await P.evaluate(() => document.activeElement.id === 'ab-n-num'));
   check('방금 추가한 건 미리보기로 선택', await P.evaluate(() => document.querySelector('#ab-list tr.ab-sel') !== null));
   check('확인서 양식 한 장', await P.evaluate(() => document.querySelectorAll('#ab-paper table.xf').length === 1 && document.querySelector('#ab-paper table.xf').dataset.form === 'confirm'));
   check('확인서 값(엑셀 수식과 같음)',
@@ -259,13 +274,13 @@ function check(label, cond, detail) {
   check('숫자 칸은 엑셀처럼 오른쪽 정렬', await P.evaluate(() => document.querySelector('#ab-paper [data-c="L8"]').style.textAlign === 'right'));
   await P.locator('#absence-page').screenshot({ path: 'ab-trip.png' });
   // 첫 체험학습을 누르면 이전 누적 0
-  await P.click('#ab-list tbody tr:nth-child(2)'); await wait(150);
+  await P.click('#ab-list tbody tr[data-id]:nth-child(3)'); await wait(150);
   check('앞선 체험학습: 이전 누적 0, 담임확인 3일', await cell('L8') === '0' && await cell('I4') === '3일', [await cell('L8'), await cell('I4')]);
 
   // 연번 = 시작일 순
   await add({ num: 1, reason: '인정결석', detail: '독감', from: '2026-03-02', to: '2026-03-02' });
-  const list = await P.evaluate(() => [...document.querySelectorAll('#ab-list tbody tr')].map(tr => tr.children[0].textContent + ':' + tr.children[2].textContent));
-  check('연번은 시작일 순(나중에 넣어도 앞으로)', list[0] === '1:가나다' && list[1] === '2:라마바', list);
+  const list = await P.evaluate(() => [...document.querySelectorAll('#ab-list tbody tr[data-id]')].map(tr => tr.children[0].textContent + ':' + tr.children[1].textContent));
+  check('연번은 시작일 순(나중에 넣어도 앞으로)', list[0] === '1:1 가나다' && list[1] === '2:2 라마바', list);
   check('3/2는 대체공휴일 → 0일', await P.evaluate(() => abDays(abClassRecords()[0])) === 0);
 
   // 일수 직접 고치기
@@ -274,13 +289,23 @@ function check(label, cond, detail) {
   const man = R.find(r => r.reason === '기타결석');
   check('일수 직접 고치면 그 값(✎ 표시)', man.dm === true && man.days === 3 && /3✎/.test(await P.innerText('#ab-list')), man);
 
-  // 고치기
+  // 그 자리에서 고치기(두 번 누르기)
   const sid = R.find(r => r.reason === '질병결석').id;
-  await P.evaluate((id) => abEdit(id), sid); await wait(100);
-  check('고치기 → 칸에 값, 버튼 "수정 저장"', await P.inputValue('#ab-f-detail') === '복통' && /수정 저장/.test(await P.innerText('#ab-f-save')) && await P.inputValue('#ab-f-num') === '2');
-  await P.fill('#ab-f-detail', '장염'); await P.click('#ab-f-save'); await wait(150);
+  await P.fill('#ab-n-detail', '적던 중');
+  await P.click('#ab-list tr[data-id="' + sid + '"]'); await wait(100);
+  check('줄 한 번 누르기 → 미리보기만, 새 줄 적던 값 그대로', await P.inputValue('#ab-n-detail') === '적던 중' && await cell('J10') === '라마바');
+  await P.dblclick('#ab-list tr[data-id="' + sid + '"]'); await wait(150);
+  check('두 번 누르면 그 줄이 입력칸으로(위로 안 올라감)', await P.evaluate((id) => { const tr = document.querySelector('#ab-list tr.ab-editrow'); return !!tr && tr.dataset.id === id && document.getElementById('ab-e-detail').value === '복통' && document.getElementById('ab-e-num').value === '2' && document.activeElement.id === 'ab-e-detail'; }, sid));
+  check('고치는 동안에도 새 줄 적던 값 그대로', await P.inputValue('#ab-n-detail') === '적던 중');
+  await P.locator('#absence-page').screenshot({ path: 'ab-edit.png' });
+  await P.fill('#ab-e-detail', '엉뚱'); await P.press('#ab-e-detail', 'Escape'); await wait(100);
   R = await recs();
-  check('고친 내용 저장(새로 안 생김)', R.length === 5 && R.find(r => r.id === sid).detail === '장염', R.map(r => r.detail));
+  check('Esc → 취소(안 바뀜)', R.find(r => r.id === sid).detail === '복통' && await P.evaluate(() => !document.querySelector('#ab-list tr.ab-editrow')));
+  await P.click('#ab-list tr[data-id="' + sid + '"] button[title="이 자리에서 고치기"]'); await wait(100);
+  await P.fill('#ab-e-detail', '장염'); await P.press('#ab-e-detail', 'Enter'); await wait(150);
+  R = await recs();
+  check('✎ → 고치고 Enter 저장(새로 안 생김)', R.length === 5 && R.find(r => r.id === sid).detail === '장염' && await P.evaluate(() => !document.querySelector('#ab-list tr.ab-editrow')), R.map(r => r.detail));
+  await P.fill('#ab-n-detail', '');
 
   // 학생별 현황
   await P.click('#ab-tabs [data-tab="stat"]'); await wait(200);
@@ -291,13 +316,18 @@ function check(label, cond, detail) {
   check('합계 줄', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')) === '합계|2|0|3|5|10|', await P.evaluate(() => [...document.querySelectorAll('#ab-stat tfoot td')].map(t => t.textContent).join('|')));
   await P.locator('#absence-page').screenshot({ path: 'ab-stat.png' });
   await P.click('#ab-stat tbody tr:nth-child(4)'); await wait(200);
-  check('학생 줄 누르면 그 학생 기록만', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && document.querySelectorAll('#ab-list tbody tr').length === 2) && /4번 차카타 기록만/.test(await P.innerText('#ab-filter')));
+  check('학생 줄 누르면 그 학생 기록만(새 줄 번호도 그 학생)', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && document.querySelectorAll('#ab-list tbody tr[data-id]').length === 2 && document.getElementById('ab-n-num').value === '4') && /4번 차카타 기록만/.test(await P.innerText('#ab-filter')));
   await P.click('#ab-filter button'); await wait(100);
-  check('전체 보기', await P.evaluate(() => document.querySelectorAll('#ab-list tbody tr').length) === 5);
+  check('전체 보기', await P.evaluate(() => document.querySelectorAll('#ab-list tbody tr[data-id]').length) === 5);
 
   // 휴일 더하기 → 일수 바뀜
   await P.click('#ab-tabs [data-tab="hol"]'); await wait(150);
-  check('휴일 목록에 기본 공휴일', /어린이날/.test(await P.innerText('#ab-hol-list')));
+  const hl = await P.innerText('#ab-hol-list');
+  check('휴일 목록에 평일 공휴일(어린이날)', /어린이날/.test(hl), hl);
+  check('토·일요일 휴일은 목록에 없음(추석 9/26 토, 부처님오신날 5/24 일)', !/9\/26/.test(hl) && !/부처님오신날/.test(hl) && !/\((토|일)\)/.test(hl), hl);
+  await P.fill('#ab-hol-date', '2026-04-11'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(200);
+  await P.click('#custom-alert-overlay button').catch(() => {}); await wait(150);
+  check('토요일은 휴일로 안 더함', !JSON.parse(await ls(pc, 'ab-cfg')).hol || !JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-04-11']);
   await P.fill('#ab-hol-date', '2026-04-07'); await P.fill('#ab-hol-name', '재량휴업일'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(150);
   check('직접 더한 휴일 → 체험학습 4/6~8은 2일, 계정 자료에 저장', await P.evaluate(() => abDays(abClassRecords().find(r => r.from === '2026-04-06'))) === 2 && JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-04-07'] === '재량휴업일');
   await P.click('#ab-hol-list button'); await wait(150);
@@ -316,7 +346,7 @@ function check(label, cond, detail) {
   check('지우기 → 4건', (await recs()).length === 4, (await recs()).length);
 
   // 인쇄: 결석계 양식만, A4 원래 크기
-  await P.click('#ab-list tbody tr:nth-child(1)'); await wait(150);
+  await P.click('#ab-list tbody tr[data-id]'); await wait(150);
   await P.emulateMedia({ media: 'print' }); await wait(200);
   const pr = await P.evaluate(() => {
     const vis = (id) => { const e = document.getElementById(id); return e && getComputedStyle(e).display !== 'none'; };
@@ -338,18 +368,57 @@ function check(label, cond, detail) {
   await wait(3500);
   const pRecs = (await recs()).length, sRecs = [...items.values()].filter(r => r.key.startsWith('ab-r-') && r.value).length, msg = await P.innerText('#ab-f-msg');
   const dbg = await pc2.page.evaluate(() => ({ recs: abClassRecords().length, rows: document.querySelectorAll('#ab-list tbody tr').length, act: document.activeElement && document.activeElement.id, pend: remoteRefreshPending }));
-  check('한 기기에서 추가 → 펴 둔 다른 기기 목록에 바로', dbg.rows === 5, [dbg, pRecs, sRecs, msg]);
+  check('한 기기에서 추가 → 펴 둔 다른 기기 목록에 바로', dbg.rows === 6, [dbg, pRecs, sRecs, msg]);
 
   // 다른 선생님은 못 봄
   const other = await openDevice(browser, 'T2', T2);
   await other.page.click('#rail-absence-btn'); await wait(800);
   check('다른 선생님 계정엔 기록 없음', await other.page.evaluate(() => abAllRecords().length) === 0 && [...items.values()].filter(r => r.teacher_id === T2 && r.key.startsWith('ab-r-')).length === 0);
-  check('담임 아닌 선생님은 1학년 1반으로 시작', await other.page.evaluate(() => document.getElementById('ab-grade').value === '1' && document.getElementById('ab-class').value === '1'));
+  check('담임 아닌 선생님은 반을 고르기 전엔 아무것도 안 뜸', await other.page.evaluate(() => document.getElementById('ab-grade').value === '' && document.getElementById('ab-class').value === '' && !document.getElementById('ab-n-num') && /학년·반<\/b>을 고르세요/.test(document.getElementById('ab-list').innerHTML) && /고르세요/.test(document.getElementById('ab-stat').innerText)));
+  check('명렬표도 안 받음', !studentSelects.some(q => q === 'grade=1&class_no=1'), studentSelects);
+  await other.page.selectOption('#ab-grade', '3'); await wait(200);
+  check('학년만 고르면 반은 비워 둠', await other.page.evaluate(() => document.getElementById('ab-class').value === '' && !document.getElementById('ab-n-num')));
+  await other.page.selectOption('#ab-class', '1'); await wait(400);
+  check('반까지 고르면 그 반 명렬표 + 새 줄', await other.page.evaluate(() => document.querySelectorAll('#ab-n-num option').length === 6));
 
   // 반 바꾸기 기억
   await P.selectOption('#ab-grade', '1'); await wait(300);
-  check('반 바꾸면 그 반 기록만(없음), 기억', await P.evaluate(() => abClassRecords().length) === 0 && JSON.parse(await ls(pc, 'ab-cfg')).g === 1);
-  await P.selectOption('#ab-grade', '3'); await wait(300);
+  check('학년 바꾸면 반 다시 고르게, 기억', await P.evaluate(() => abClassRecords().length) === 0 && JSON.parse(await ls(pc, 'ab-cfg')).g === 1 && !JSON.parse(await ls(pc, 'ab-cfg')).c);
+  await P.selectOption('#ab-grade', '3'); await P.selectOption('#ab-class', '1'); await wait(300);
+
+  // 📥 예전 엑셀 가져오기 — 엑셀 결석계와 같은 모양(시트 이름·칸 위치)으로 만든 가짜 파일
+  if (XLSXLIB) {
+    const X = require(XLSXLIB);
+    const serial = (iso) => Math.round((Date.UTC(...iso.split('-').map((v, i) => i === 1 ? v - 1 : +v)) - Date.UTC(1899, 11, 30)) / 86400000);
+    const cls = [['학년', 3, '담임교사', '김교사'], ['반', 1], ['번호', '이름'], [1, '가나다', 0, 0, 0, 0, 0, 0, 0, 0, 0, serial('2026-11-20'), '재량휴업일'], [2, '라마바', 0, 0, 0, 0, 0, 0, 0, 0, 0, serial('2026-10-10'), '토요일']];
+    // 예전 기록 하나(4번 체험학습 4/6~4/8)와 같은 줄을 넣어 중복 건너뛰기 확인
+    const inp = [[], ['출력 연번', '', '', 3], [], ['연번', '번호', '이름', '결석사유', '구체적인 사유', '시작', '종료', '결석일수', '', '', '작성', '확인 방법', '담임 확인'],
+      [1, 3, '사아자', '질병결석', '감기', serial('2026-03-10'), serial('2026-03-11'), 2, '', '', serial('2026-03-12'), '병원처방전'],
+      [2, 5, '파하가', '교외체험학습', '여행', serial('2026-11-18'), serial('2026-11-20'), 2, '', '', serial('2026-11-10'), '교외체험학습 신청서'],
+      [3, 3, '사아자', '생리결석', '', serial('2026-04-01'), serial('2026-04-01'), 1],
+      [4, 4, '차카타', '교외체험학습', '가족 여행', serial('2026-04-06'), serial('2026-04-08'), 3, '', '', serial('2026-04-01'), '교외체험학습 신청서'],
+      [5, 1, '가나다', '인정결석', '폐렴', serial('2026-06-08'), serial('2026-06-10'), 5, '', '', serial('2026-06-11'), '의사소견서 또는 진단서'],
+      [6, '', '', '', '']];
+    const wbx = X.utils.book_new();
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet(cls), '학급명렬표');
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet(inp), '결석현황입력');
+    const xfile = path.join(require('os').tmpdir(), 'ab-import-test.xlsx');
+    fs.writeFileSync(xfile, X.write(wbx, { type: 'buffer', bookType: 'xlsx' }));
+    const before = (await recs()).length;
+    await P.setInputFiles('#ab-import-input', xfile); await wait(500);
+    const conf = await P.evaluate(() => { const o = document.getElementById('custom-confirm-overlay'); return o && getComputedStyle(o).display !== 'none' ? o.innerText : ''; });
+    check('가져오기 확인: 새 3건, 이미 있는 1건 건너뜀, 생리결석 빼고, 휴일 1일', /3학년 1반 결석 기록 3건/.test(conf) && /이미 있거나 파일 안에서 겹치는 1건/.test(conf) && /생리결석 1건/.test(conf) && /휴일 1일/.test(conf), conf);
+    await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(400);
+    R = await recs();
+    const im = R.filter(r => ['감기', '여행', '폐렴'].includes(r.detail));
+    check('가져온 3건 저장(이름은 명렬표, 날짜 그대로)', R.length === before + 3 && im.length === 3 && im.find(r => r.detail === '감기').name === '사아자' && im.find(r => r.detail === '감기').from === '2026-03-10' && im.find(r => r.detail === '감기').written === '2026-03-12', im);
+    check('엑셀 휴일(평일 재량휴업일)만 더함, 토요일은 안 더함', JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-11-20'] === '재량휴업일' && !JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-10-10']);
+    check('일수: 엑셀과 같으면 자동(체험 11/18~20 = 2), 다르면 엑셀 값 유지(폐렴 5 → ✎)', await P.evaluate(() => abDays(abClassRecords().find(r => r.detail === '여행'))) === 2 && im.find(r => r.detail === '폐렴').dm === true && im.find(r => r.detail === '폐렴').days === 5 && !im.find(r => r.detail === '여행').dm, im);
+    await P.setInputFiles('#ab-import-input', xfile); await wait(500);
+    const conf2 = await P.evaluate(() => { const o = document.getElementById('custom-confirm-overlay'); return o && getComputedStyle(o).display !== 'none' ? o.innerText : ''; });
+    check('같은 파일 또 가져오면 0건(중복 안 생김)', /기록 0건/.test(conf2), conf2);
+    await P.click('#custom-confirm-overlay button:has-text("취소")').catch(() => {}); await wait(200);
+  } else console.log('  (xlsx 라이브러리를 못 찾아 엑셀 가져오기 검사는 건너뜀)');
 
   // 닫기·다른 화면
   await P.click('#rail-leavepass-btn'); await wait(400);
