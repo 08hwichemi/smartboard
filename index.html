@@ -1123,6 +1123,10 @@
         <span id="sgb-prefix-bytes" style="flex:0 0 auto; font-size:12px; font-weight:700; color:var(--text-sub);"></span>
       </div>
       <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button class="top-btn" style="flex: 0 0 auto; padding:7px 14px;" onclick="clearSgb()">지우기</button>
+        <button class="top-btn" id="sgb-copy-btn" style="flex: 1; padding:7px; font-weight:800;" onclick="copySgb()">📋 복사 (나이스에 붙여 넣기)</button>
+      </div>
       <div class="sgb-count" id="sgb-count"></div>
       <div class="sgb-bar" id="sgb-bar"><div></div></div>
       <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px;"></div>
@@ -1133,9 +1137,7 @@
       자동 점검은 놓치는 것이 있을 수 있어요 — 최종 확인은 직접 해 주세요. · 쪽 번호는 「<span id="sgb-src"></span>」 기준.
     </div>
     <div style="display: flex; gap: 8px; margin-top: 10px;">
-      <button class="top-btn" style="flex: 0 0 auto; padding:8px 14px;" onclick="clearSgb()">지우기</button>
-      <button class="top-btn" id="sgb-copy-btn" style="flex: 1; padding:8px; font-weight:800;" onclick="copySgb()">📋 복사 (나이스에 붙여 넣기)</button>
-      <button class="top-btn accent" style="flex: 0 0 auto; padding:8px 18px;" onclick="closeSgb()">닫기</button>
+      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeSgb()">닫기</button>
     </div>
   </div>
 </div>

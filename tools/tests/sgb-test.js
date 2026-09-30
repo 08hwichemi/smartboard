@@ -287,6 +287,8 @@ function check(label, cond, detail) {
   await P.click('#sgb-copy-btn'); await wait(200);
   check('동아리에서 복사해도 본문만(동아리명 빼고)', await P.evaluate(() => window.__clip) === '첫 줄 탐구함.\n둘째 줄 발표함.', await P.evaluate(() => window.__clip));
   await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
+  const pos = await P.evaluate(() => { const t = document.getElementById('sgb-text').getBoundingClientRect(), b = document.getElementById('sgb-copy-btn').getBoundingClientRect(); return b.top - t.bottom; });
+  check('지우기·복사 버튼은 입력칸 바로 밑', pos >= 0 && pos < 20, pos);
   check('복사했다는 표시', /복사했어요/.test(await P.innerText('#sgb-copy-btn')));
   await wait(2000);
   check('잠시 뒤 버튼 글자 원래대로', /^📋 복사/.test(await P.innerText('#sgb-copy-btn')));
