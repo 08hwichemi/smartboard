@@ -508,6 +508,15 @@ function check(label, cond, detail) {
   });
   check('목록만 스크롤되고 탭·안내·알림은 제자리, 제목 줄·새 줄은 목록 맨 위에 고정', stick.listScrolled && stick.leftScroll === 0 && stick.gap === 0 && stick.inView && JSON.stringify(stick.tops) === JSON.stringify(before) && stick.pageFits, [stick, before]);
   await P.locator('#absence-page').screenshot({ path: 'ab-sticky.png' });
+  // 마우스 휠로 내려 보기(목록 위·탭 위 둘 다) — 실제로 쓰는 방식
+  await P.evaluate(() => { document.getElementById('ab-list').scrollTop = 0; }); await wait(100);
+  for (const q of ['#ab-list tbody tr', '#ab-tabs']) {
+    const b = await P.locator(q).first().boundingBox(); await P.mouse.move(b.x + 40, b.y + 5);
+    for (let k = 0; k < 6; k++) { await P.mouse.wheel(0, 300); await wait(60); }
+  }
+  const wheel = await P.evaluate(() => ({ list: document.getElementById('ab-list').scrollTop, left: document.getElementById('ab-left').scrollTop,
+    doc: document.scrollingElement.scrollTop, tops: ['#ab-tabs', '#ab-pane-input .ab-muted', '#ab-f-msg'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)) }));
+  check('마우스 휠로 내려도 목록만 움직이고 탭·안내는 그대로', wheel.list > 0 && wheel.left === 0 && wheel.doc === 0 && JSON.stringify(wheel.tops) === JSON.stringify(before), [wheel, before]);
   await P.selectOption('#ab-n-num', '1'); await P.press('#ab-n-detail', 'Enter'); await wait(150);
   const stickMsg = await P.evaluate(() => { const m = document.getElementById('ab-f-msg').getBoundingClientRect(); return { txt: document.getElementById('ab-f-msg').textContent, vis: m.top >= 0 && m.bottom <= innerHeight }; });
   check('내려간 채로 새 줄에서 Enter → 알림 글도 보임', /결석 시작 일자/.test(stickMsg.txt) && stickMsg.vis, stickMsg);
