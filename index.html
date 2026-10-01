@@ -909,7 +909,13 @@
     #fm-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
     #fm-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
     #fm-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; }
-    #fm-classes { gap: 5px; }
+    #fm-classes { gap: 3px; flex: 1; min-width: 0; flex-wrap: nowrap; }
+    #fm-classes.many { flex-wrap: wrap; }
+    #fm-classes .nt-chip { flex: 1 1 0; max-width: 34px; min-width: 0; padding: 3px 0; text-align: center; }
+    #fm-classes.many .nt-chip { flex: 0 0 28px; }
+    .fm-al { display: grid; grid-template-columns: 64px 1fr; gap: 6px 8px; align-items: center; font-size: 12px; }
+    .fm-al .top-btn-cluster { display: inline-flex; }
+    .fm-al .top-btn { font-size: 11px; padding: 3px 9px; }
     #fm-widths { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
     .fm-w { display: flex; align-items: center; gap: 5px; font-size: 12px; min-width: 0; }
     .fm-w span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -926,7 +932,6 @@
     .fm-tbl td { border: 0.12mm solid #000; padding: 0 0.5mm; text-align: center; vertical-align: middle; overflow: hidden; line-height: 1.3; box-sizing: border-box; word-break: break-all; }
     .fm-tbl tr.h td { background: #E5E5E5; font-weight: 700; }
     .fm-tbl tr.z td { background: #F2F2F2; }
-    .fm-tbl td.memo { text-align: left; }
     .fm-empty { text-align: center; color: var(--text-sub); font-size: 13px; padding: 60px 10px; line-height: 1.8; }
     @media (max-width: 1100px) { #fm-left { width: 320px; } }
     @media print {
@@ -2792,6 +2797,7 @@
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span class="nt-muted">한글 파일은 진짜 표·글자로 만들어져서 한글에서 그대로 고칠 수 있어요.</span>
       <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()">🖨️ 인쇄</button>
+      <button class="top-btn" id="fm-xlsx-btn" style="font-size:12px; padding:5px 12px;" onclick="fmDownloadXlsx()" title="엑셀(.xlsx)로 내려받기 — 반마다 한 시트, 1단">📊 엑셀</button>
       <button class="top-btn accent" id="fm-hwpx-btn" style="font-size:12px; padding:5px 14px;" onclick="fmDownloadHwpx()">⬇️ 한글 파일(.hwpx)</button>
     </div>
   </div>
@@ -2808,7 +2814,7 @@
             <select id="fm-grade" class="mini-select" style="width:74px;" onchange="fmOnGrade()"></select>
             <button class="nt-chip" id="fm-all-btn" onclick="fmAllClasses()">전체 반</button>
           </div>
-          <div class="nt-row" id="fm-classes"></div>
+          <div class="nt-row" style="flex-wrap:nowrap; align-items:flex-start;"><span style="flex:0 0 auto; padding-top:4px;">반</span><div class="nt-row" id="fm-classes"></div></div>
           <div class="nt-muted">명렬표의 번호·이름을 가져와요. 여러 반을 고르면 반마다 한 장씩 나와요.</div>
         </div>
         <div id="fm-src-manual" style="display:none; flex-direction:column; gap:8px;">
@@ -2840,6 +2846,10 @@
         <label class="nt-row" style="cursor:pointer;" title="자동 너비 칸(비고·체크 칸)이 남는 폭을 나눠 가져요. 끄면 표가 필요한 만큼만 차지하고 가운데에 놓여요."><input type="checkbox" id="fm-fill" onchange="fmSet({ fill: this.checked }); fmRender();"> 표를 종이 폭에 꽉 차게</label>
         <div id="fm-widths"></div>
         <div class="nt-muted" id="fm-width-info"></div>
+      </div>
+      <div class="nt-box" id="fm-align-box">
+        <div class="nt-title">↹ 정렬</div>
+        <div class="fm-al" id="fm-aligns"></div>
       </div>
       <div class="nt-box" id="fm-font-box">
         <div class="nt-title">🔤 글꼴 <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
@@ -12025,9 +12035,14 @@
   const FM_DEFAULT = {
     kind: 'roster', src: 'class', rG: null, rCs: [], manual: '', mLabel: '', title: '제출 확인', note: '', cols: '제출',
     showId: false, memo: true, zebra: true, colsN: 1, rowH: 0, fill: true, colW: {},
+    // 정렬(L·C·R): 제목, 반·인원 줄, 안내, 표(종이에서 위치), 이름 칸 글자, 비고 칸 글자
+    aT: 'C', aI: 'C', aN: 'L', aTb: 'C', aNm: 'C', aMm: 'L',
     tFont: '맑은 고딕', tSize: 20, bFont: '맑은 고딕', bSize: 11,
   };
   // A4(mm), 여백, 단 사이, 제목 아래 표까지 띄우는 간격, 표 줄 높이 한도
+  const FM_ALIGNS = [['aT', '제목'], ['aI', '반·인원'], ['aN', '안내'], ['aTb', '표 위치'], ['aNm', '이름 칸'], ['aMm', '비고 칸']];
+  const FM_ALIGN_CSS = { L: 'left', C: 'center', R: 'right' }, FM_ALIGN_HWP = { L: 'LEFT', C: 'CENTER', R: 'RIGHT' };
+  function fmCellAlign(c, col) { return col.key === 'name' ? c.aNm : col.key === 'memo' ? c.aMm : 'C'; }
   const FM_PAGE = { w: 210, h: 297, m: 15 }, FM_COL_GAP = 8, FM_TBL_GAP = 4, FM_ROW_MAX = 12, FM_PT = 0.3528;
   function fmCfg() {
     let v = {};
@@ -12039,6 +12054,7 @@
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
     if (c.src !== 'manual') c.src = 'class';
     if (!c.colW || typeof c.colW !== 'object') c.colW = {};
+    ['aT', 'aI', 'aN', 'aTb', 'aNm', 'aMm'].forEach(function(k) { if (['L', 'C', 'R'].indexOf(c[k]) < 0) c[k] = FM_DEFAULT[k]; });
     return c;
   }
   function fmSet(patch) {
@@ -12182,12 +12198,13 @@
   function fmFontCss(f) { return "font-family:'" + f.replace(/'/g, '') + "', 'Malgun Gothic', sans-serif;"; }
   function fmTableHtml(L, c, cl, list) {
     const z = c.zebra;
-    let h = '<table class="fm-tbl" style="width:' + L.tableW + 'mm; margin: 0 auto; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
+    const mg = c.aTb === 'L' ? '0 auto 0 0' : c.aTb === 'R' ? '0 0 0 auto' : '0 auto';
+    let h = '<table class="fm-tbl" style="width:' + L.tableW + 'mm; margin:' + mg + '; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
       L.cols.map(function(col) { return '<col style="width:' + col.w + 'mm;">'; }).join('') + '</colgroup>';
     h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) { return '<td>' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
     list.forEach(function(st, i) {
       h += '<tr' + (z && i % 2 === 1 ? ' class="z"' : '') + ' style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) {
-        return '<td' + (col.key === 'memo' ? ' class="memo"' : '') + '>' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
+        return '<td style="text-align:' + FM_ALIGN_CSS[fmCellAlign(c, col)] + ';">' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
       }).join('') + '</tr>';
     });
     return h + '</table>';
@@ -12205,9 +12222,9 @@
       cl.pages.forEach(function(chs, p) {
         let s = '<div class="fm-sheet" data-cls="' + cl.cls + '">';
         if (p === 0) {
-          s += '<div class="fm-hd"><div class="fm-title" style="' + fmFontCss(c.tFont) + ' font-size:' + c.tSize + 'pt;">' + ntEsc(c.title || '') + '</div>' +
-            '<div class="fm-info" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;">' + ntEsc(fmInfoText(cl)) + '</div></div>';
-          L.notes.forEach(function(t) { s += '<div class="fm-note" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;">' + (ntEsc(t) || '&nbsp;') + '</div>'; });
+          s += '<div class="fm-hd"><div class="fm-title" style="' + fmFontCss(c.tFont) + ' font-size:' + c.tSize + 'pt; text-align:' + FM_ALIGN_CSS[c.aT] + ';">' + ntEsc(c.title || '') + '</div>' +
+            '<div class="fm-info" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt; text-align:' + FM_ALIGN_CSS[c.aI] + ';">' + ntEsc(fmInfoText(cl)) + '</div></div>';
+          L.notes.forEach(function(t) { s += '<div class="fm-note" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt; text-align:' + FM_ALIGN_CSS[c.aN] + ';">' + (ntEsc(t) || '&nbsp;') + '</div>'; });
         }
         s += '<div class="fm-cols">' + chs.map(function(ch) { return '<div class="fm-col" style="width:' + L.tw + 'mm;">' + fmTableHtml(L, c, cl, ch) + '</div>'; }).join('') + '</div>';
         sheets.push(s + '</div>');
@@ -12244,7 +12261,7 @@
       box.dataset.sig = sig;
       box.innerHTML = L.cols.map(function(col) {
         return '<label class="fm-w" title="' + ntEsc(col.label) + ' 칸 너비(mm) — 비우면 자동"><span>' + ntEsc(col.label) + '</span>' +
-          '<input type="number" class="lp-input" min="5" max="180" step="0.5" data-wk="' + ntEsc(col.wk) + '" oninput="fmOnWidth(this)"> mm</label>';
+          '<input type="number" class="lp-input" min="5" max="180" step="0.5" data-wk="' + ntEsc(col.wk) + '" onfocus="fmWidthFocus(this)" onblur="fmWidthBlur(this)" oninput="fmOnWidth(this)"> mm</label>';
       }).join('');
     }
     box.querySelectorAll('input').forEach(function(inp, i) {
@@ -12293,6 +12310,10 @@
       customAlert('글꼴 목록 보기를 "허용"해야 불러올 수 있어요. 막았다면 주소창 왼쪽 자물쇠 → 글꼴에서 허용으로 바꿔 주세요.');
     }
   }
+  function fmSetAlign(k, v) { const o = {}; o[k] = v; fmSet(o); fmFillForm(); fmRender(); }
+  // 자동 너비 칸을 누르면 지금 너비를 넣어 줘서(골라 둠) 화살표·숫자로 거기서부터 바꾸게(안 그러면 최솟값부터 시작)
+  function fmWidthFocus(inp) { if (!inp.value && inp.placeholder) { inp.value = inp.placeholder; inp.select(); } }
+  function fmWidthBlur(inp) { if (!(inp.dataset.wk in fmCfg().colW)) inp.value = ''; } // 안 바꾸고 나가면 다시 자동(빈칸)
   function fmSetSrc(src) { fmSet({ src: src }); fmFillForm(); fmRender(); }
 
   // ----- 왼쪽 입력칸 -----
@@ -12313,8 +12334,9 @@
     const cs = window.classStructure || { classCounts: [] };
     const cnt = c.rG ? ((cs.classCounts && cs.classCounts[c.rG - 1]) || 1) : 0;
     let ch = '';
-    for (let k = 1; k <= cnt; k++) ch += '<button class="nt-chip' + (c.rCs.indexOf(k) >= 0 ? ' on' : '') + '" data-c="' + k + '" onclick="fmToggleClass(' + k + ')">' + k + '반</button>';
+    for (let k = 1; k <= cnt; k++) ch += '<button class="nt-chip' + (c.rCs.indexOf(k) >= 0 ? ' on' : '') + '" data-c="' + k + '" title="' + k + '반" onclick="fmToggleClass(' + k + ')">' + k + '</button>';
     document.getElementById('fm-classes').innerHTML = ch || '<span class="nt-muted">학년을 먼저 골라 주세요.</span>';
+    document.getElementById('fm-classes').classList.toggle('many', cnt > 12); // 반이 아주 많으면 두 줄로
     document.getElementById('fm-all-btn').style.display = cnt > 1 ? '' : 'none';
     const by = fmRosterFor(c);
     const total = by ? c.rCs.reduce(function(s, k) { return s + (by[k] || []).length; }, 0) : 0;
@@ -12328,6 +12350,11 @@
     }).join('');
     document.getElementById('fm-rowh').innerHTML = '줄 높이 ' + FM_ROWH.map(function(r) {
       return '<button class="nt-chip' + (Number(c.rowH) === r[0] ? ' on' : '') + '" data-v="' + r[0] + '" onclick="fmSet({ rowH: ' + r[0] + ' }); fmFillForm(); fmRender();"' + (r[0] ? ' title="' + r[0] + 'mm"' : ' title="한 반이 한 장에 들어가게 맞춰요"') + '>' + r[1] + '</button>';
+    }).join('');
+    document.getElementById('fm-aligns').innerHTML = FM_ALIGNS.map(function(a) {
+      return '<span>' + a[1] + '</span><span class="top-btn-cluster" data-k="' + a[0] + '">' + [['L', '왼쪽'], ['C', '가운데'], ['R', '오른쪽']].map(function(o) {
+        return '<button class="top-btn' + (c[a[0]] === o[0] ? ' theme-active' : '') + '" data-v="' + o[0] + '" onclick="fmSetAlign(\'' + a[0] + '\', \'' + o[0] + '\')">' + o[1] + '</button>';
+      }).join('') + '</span>';
     }).join('');
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
       const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
@@ -12452,17 +12479,18 @@
       fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [{ size: c.tSize, font: c.tFont, bold: true }, { size: c.bSize, font: c.bFont }, { size: c.bSize, font: c.bFont, bold: true }],
       paraPrs: [
-        { align: 'CENTER', line: 150, after: pt2(1.5) }, // 제목
-        { align: 'CENTER', line: 160 },                   // 반·인원
-        { align: 'LEFT', line: 160 },                     // 안내
-        { align: 'CENTER', line: 100, before: pt2(FM_TBL_GAP) }, // 표가 든 문단
-        { align: 'CENTER', line: 130 },                   // 표 칸(가운데)
-        { align: 'LEFT', line: 130 },                     // 표 칸(왼쪽 — 비고)
+        { align: FM_ALIGN_HWP[c.aT], line: 150, after: pt2(1.5) }, // 제목
+        { align: FM_ALIGN_HWP[c.aI], line: 160 },                   // 반·인원
+        { align: FM_ALIGN_HWP[c.aN], line: 160 },                   // 안내
+        { align: FM_ALIGN_HWP[c.aTb], line: 100, before: pt2(FM_TBL_GAP) }, // 표가 든 문단(표 위치)
+        { align: 'CENTER', line: 130 },                   // 표 칸 글자: 가운데·왼쪽·오른쪽
+        { align: 'LEFT', line: 130 },
+        { align: 'RIGHT', line: 130 },
       ],
       borderFills: [null, '#E5E5E5', '#F2F2F2'],
     });
     const CP_T = H.cp[0], CP_B = H.cp[1], CP_BB = H.cp[2];
-    const PP_T = H.pp[0], PP_I = H.pp[1], PP_N = H.pp[2], PP_TB = H.pp[3], PP_C = H.pp[4], PP_L = H.pp[5];
+    const PP_T = H.pp[0], PP_I = H.pp[1], PP_N = H.pp[2], PP_TB = H.pp[3], PP_CELL = { C: H.pp[4], L: H.pp[5], R: H.pp[6] };
     const BF = H.bf[0], BF_H = H.bf[1], BF_Z = H.bf[2];
     zip.file('Contents/header.xml', H.xml);
 
@@ -12491,7 +12519,7 @@
         tr += '<hp:tr>' + cells.map(function(txt, ci) {
           return '<hp:tc name="" header="' + (r === 0 ? 1 : 0) + '" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="' + bf + '">' +
             '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' +
-            P(L.cols[ci].key === 'memo' ? PP_L : PP_C, R(r === 0 ? CP_BB : CP_B, T(txt))) + '</hp:subList>' +
+            P(r === 0 ? PP_CELL.C : PP_CELL[fmCellAlign(c, L.cols[ci])], R(r === 0 ? CP_BB : CP_B, T(txt))) + '</hp:subList>' +
             '<hp:cellAddr colAddr="' + ci + '" rowAddr="' + r + '"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + W[ci] + '" height="' + RH + '"/>' +
             '<hp:cellMargin left="141" right="141" top="141" bottom="141"/></hp:tc>';
         }).join('') + '</hp:tr>';
@@ -12551,6 +12579,72 @@
       setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+    } finally { btn.disabled = false; }
+  }
+  // 엑셀: 반마다 한 시트, 1단(거르기·정렬하기 좋게). 제목·안내·머리 줄·테두리·번갈아 색·칸 너비·줄 높이·글꼴·정렬은 화면과 같게,
+  // A4 세로 한 쪽 폭에 맞춰 인쇄, 머리 줄은 쪽마다 반복·틀 고정. ExcelJS는 수업 변경 엑셀과 같이 누를 때만 받아 온다.
+  async function fmDownloadXlsx() {
+    const c = fmCfg(), msg = fmEmptyMsg(c);
+    if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
+    const btn = document.getElementById('fm-xlsx-btn');
+    btn.disabled = true;
+    try {
+      await sccLoadExcelJS();
+      const L = fmLayout(Object.assign({}, c, { colsN: 1 }));
+      const wb = new ExcelJS.Workbook();
+      const thin = { style: 'thin', color: { argb: 'FF000000' } }, border = { top: thin, left: thin, bottom: thin, right: thin };
+      const fill = function(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; };
+      const al = function(a) { return FM_ALIGN_CSS[a]; };
+      const used = {};
+      L.classes.forEach(function(cl) {
+        const base = String(cl.label).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28) || '명단'; // 시트 이름: 31자, 금지 문자 빼기
+        let nm = base, dup = 2;
+        while (used[nm]) nm = base.slice(0, 26) + ' ' + (dup++);
+        used[nm] = 1;
+        const n = L.cols.length;
+        const ws = wb.addWorksheet(nm, { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: c.aTb === 'C',
+          margins: { left: 0.59, right: 0.59, top: 0.59, bottom: 0.59, header: 0.3, footer: 0.3 } } });
+        ws.columns = L.cols.map(function(col) { return { width: Math.max(4, col.w / 1.85) }; }); // mm → 엑셀 칸 너비(글자 수)
+        let r = 0;
+        const line = function(text, font, align, h) {
+          r++; ws.mergeCells(r, 1, r, n);
+          const cell = ws.getCell(r, 1); cell.value = text; cell.font = font; cell.alignment = { horizontal: align, vertical: 'middle' };
+          ws.getRow(r).height = h;
+        };
+        line(c.title || '', { name: c.tFont, size: c.tSize, bold: true }, al(c.aT), c.tSize * 1.7);
+        line(fmInfoText(cl), { name: c.bFont, size: c.bSize }, al(c.aI), c.bSize * 1.6);
+        L.notes.forEach(function(t) { line(t, { name: c.bFont, size: c.bSize }, al(c.aN), c.bSize * 1.6); });
+        r++; ws.getRow(r).height = 8; // 표 위 빈 줄
+        const hr = ++r, rowPt = cl.rowH / FM_PT;
+        L.cols.forEach(function(col, i) {
+          const cell = ws.getCell(hr, i + 1);
+          cell.value = col.label; cell.font = { name: c.bFont, size: c.bSize, bold: true }; cell.fill = fill('E5E5E5'); cell.border = border;
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        });
+        ws.getRow(hr).height = rowPt;
+        const list = [].concat.apply([], cl.pages.map(function(chs) { return [].concat.apply([], chs); }));
+        list.forEach(function(st, k) {
+          r++;
+          L.cols.forEach(function(col, i) {
+            const cell = ws.getCell(r, i + 1), v = fmCellText(col, c, cl.cls, st);
+            cell.value = col.key === 'num' && /^\d+$/.test(v) ? Number(v) : v;
+            cell.font = { name: c.bFont, size: c.bSize }; cell.border = border;
+            cell.alignment = { horizontal: al(fmCellAlign(c, col)), vertical: 'middle', wrapText: true };
+            if (c.zebra && k % 2 === 1) cell.fill = fill('F2F2F2');
+          });
+          ws.getRow(r).height = rowPt;
+        });
+        ws.pageSetup.printTitlesRow = hr + ':' + hr;
+        ws.views = [{ state: 'frozen', ySplit: hr }];
+      });
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = fmFileName(c).replace(/\.hwpx$/, '.xlsx');
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) {
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
     } finally { btn.disabled = false; }
   }
   function fmPrint() {

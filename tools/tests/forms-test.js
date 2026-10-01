@@ -10,6 +10,8 @@ const html = fs.readFileSync(process.env.HTML_PATH || path.join(ROOT, 'index.htm
 // 앱은 JSZip을 CDN에서 받지만 여기선 CDN이 막혀 있어 로컬 파일을 대신 준다(없으면 한글 파일 검사만 건너뜀).
 const JSZIP_PATH = ['/opt/node-tools/node_modules/jszip/dist/jszip.min.js'].concat((process.env.NODE_PATH || '').split(':').map(p => path.join(p, 'jszip/dist/jszip.min.js'))).find(p => p && fs.existsSync(p));
 const JSZIP_JS = JSZIP_PATH ? fs.readFileSync(JSZIP_PATH, 'utf8') : '';
+// 엑셀 검사는 exceljs가 있을 때만(수업 변경 테스트와 같음 — npm i exceljs@4.4.0 후 NODE_PATH에 추가)
+let EXCELJS_PATH = ''; try { EXCELJS_PATH = require.resolve('exceljs/dist/exceljs.min.js'); } catch (e) {}
 
 // ---------- 가짜 서버 ----------
 const T1 = '11111111-1111-1111-1111-111111111111';
@@ -168,6 +170,7 @@ async function openDevice(browser, name, uid, opts = {}) {
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
     if (url.includes('/jszip') && JSZIP_JS) return route.fulfill({ body: JSZIP_JS, contentType: 'application/javascript' });
+    if (url.includes('/exceljs@') && EXCELJS_PATH) return route.fulfill({ body: fs.readFileSync(EXCELJS_PATH), contentType: 'application/javascript' });
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -383,6 +386,68 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   }
   await P.click('#fm-src-switch [data-src="class"]'); await P.waitForTimeout(400);
   check('반 명단으로 돌아가면 반 고르기(직접 입력한 명단은 남아 있음)', await P.isVisible('#fm-grade') && /한소희/.test((await cfgOf(hr)).manual));
+
+  // 반 고르기: 숫자만, 한 줄
+  const chipRow = await P.evaluate(() => { const b = [...document.querySelectorAll('#fm-classes .nt-chip')]; return { txt: b.map(x => x.textContent).join(','), tops: new Set(b.map(x => Math.round(x.getBoundingClientRect().top))).size }; });
+  await P.evaluate(() => document.getElementById('fm-class-box').scrollIntoView()); await P.screenshot({ path: 'fm-classes.png', clip: { x: 68, y: 100, width: 360, height: 300 } });
+  check('반은 숫자만(1~10), 10개 반도 한 줄', chipRow.txt === '1,2,3,4,5,6,7,8,9,10' && chipRow.tops === 1, chipRow);
+
+  // 정렬
+  await P.click('#fm-aligns [data-k="aT"] [data-v="L"]'); await P.click('#fm-aligns [data-k="aTb"] [data-v="R"]');
+  await P.click('#fm-aligns [data-k="aNm"] [data-v="L"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="R"]');
+  await P.uncheck('#fm-fill'); await P.waitForTimeout(300);
+  const al = await P.evaluate(() => { const sh = document.querySelector('#fm-pages .fm-sheet'), t = sh.querySelector('table.fm-tbl'), col = t.parentElement; return {
+    title: sh.querySelector('.fm-title').style.textAlign, info: sh.querySelector('.fm-info').style.textAlign,
+    right: Math.round(col.getBoundingClientRect().right - t.getBoundingClientRect().right), left: Math.round(t.getBoundingClientRect().left - col.getBoundingClientRect().left),
+    name: t.rows[1].cells[2].style.textAlign, num: t.rows[1].cells[0].style.textAlign, head: getComputedStyle(t.rows[0].cells[2]).textAlign }; });
+  await P.evaluate(() => document.getElementById('fm-align-box').scrollIntoView()); await P.screenshot({ path: 'fm-align.png' });
+  check('정렬: 제목 왼쪽, 반·인원 오른쪽, 표는 오른쪽, 이름 칸 왼쪽(번호·머리 줄은 가운데)', al.title === 'left' && al.info === 'right' && al.right === 0 && al.left > 10 && al.name === 'left' && al.num === 'center' && al.head === 'center', al);
+  if (JSZIP_JS) {
+    const hx = await P.evaluate(async () => {
+      const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg()));
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
+      const align = (id) => (head.match(new RegExp('<hh:paraPr id="' + id + '"[^>]*>\\s*<hh:align horizontal="(\\w+)"')) || [])[1];
+      const paras = [...sec.matchAll(/<hp:p id="\d+" paraPrIDRef="(\d+)"[^>]*>(?:(?!<hp:p ).)*?<hp:t>([^<]*)<\/hp:t>/g)].map(m => [align(m[1]), m[2]]);
+      const tblPara = sec.match(/<hp:p id="\d+" paraPrIDRef="(\d+)"[^>]*>(?:<hp:run[^>]*>(?:<hp:ctrl>.*?<\/hp:ctrl>)?<\/hp:run>)?<hp:run[^>]*><hp:tbl /);
+      return { title: (paras.find(p => p[1] === '현장체험학습 동의서') || [])[0], name: (paras.find(p => p[1] === '가나다') || [])[0], num: (paras.find(p => p[1] === '1') || [])[0], table: tblPara ? align(tblPara[1]) : null };
+    });
+    check('한글 파일도 같은 정렬(제목 LEFT, 표 문단 RIGHT, 이름 칸 LEFT, 번호 CENTER)', hx.title === 'LEFT' && hx.table === 'RIGHT' && hx.name === 'LEFT' && hx.num === 'CENTER', hx);
+  }
+  await P.click('#fm-aligns [data-k="aT"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aTb"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aNm"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="C"]');
+  await P.check('#fm-fill'); await P.waitForTimeout(200);
+
+  // 자동 너비 칸을 누르면 지금 너비에서 시작
+  await P.click('#fm-widths input[data-wk="name"]'); await P.waitForTimeout(100);
+  const startV = await P.inputValue('#fm-widths input[data-wk="name"]');
+  await P.keyboard.press('ArrowUp'); await P.waitForTimeout(200);
+  check('자동 너비 칸을 누르면 지금 너비(24.0)가 들어가고, ↑ 누르면 24.5로(최솟값 5부터 아님)', startV === '24.0' && (await cfgOf(hr)).colW.name === 24.5, [startV, (await cfgOf(hr)).colW]);
+  await P.click('#fm-width-box .nt-chip'); await P.waitForTimeout(200);
+  await P.click('#fm-widths input[data-wk="id"]'); await P.click('#fm-title'); await P.waitForTimeout(200);
+  check('누르기만 하고 안 바꾸면 자동 그대로', !('id' in (await cfgOf(hr)).colW) && (await P.inputValue('#fm-widths input[data-wk="id"]')) === '');
+
+  // 엑셀
+  if (!EXCELJS_PATH) console.log('  ⚠️ exceljs가 없어 엑셀 검사를 건너뜀 (npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
+  else {
+    await P.click('#fm-aligns [data-k="aMm"] [data-v="C"]'); await P.waitForTimeout(100);
+    const dlx = P.waitForEvent('download');
+    await P.click('#fm-xlsx-btn');
+    const xbuf = fs.readFileSync(await (await dlx).path());
+    const ExcelJS = require(path.join(path.dirname(EXCELJS_PATH), '..'));
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(xbuf);
+    const names = wb.worksheets.map(w => w.name);
+    const ws = wb.getWorksheet('3학년 3반');
+    const hdrRow = [...Array(ws.rowCount)].map((_, i) => i + 1).find(r => ws.getCell(r, 1).value === '번호');
+    const head = [1, 2, 3, 4, 5, 6].map(i => ws.getCell(hdrRow, i).value);
+    const last = ws.getRow(ws.rowCount);
+    check('엑셀: 반마다 한 시트, 제목·반(인원)·안내 두 줄, 머리 줄', names.join(',') === '3학년 1반,3학년 2반,3학년 3반' && ws.getCell(1, 1).value === '현장체험학습 동의서' && ws.getCell(2, 1).value === '3학년 3반 (45명)' && ws.getCell(3, 1).value === '10월 10일(금)까지 제출' && head.join('|') === '번호|학번|이름|동의서|회비|비고', [names, head]);
+    check('엑셀: 1단으로 45명 전부(번호는 숫자), 마지막 줄 45번', ws.rowCount === hdrRow + 45 && last.getCell(1).value === 45 && last.getCell(3).value === '학생3-45', [ws.rowCount, hdrRow]);
+    const hc = ws.getCell(hdrRow, 1), z = ws.getCell(hdrRow + 2, 1), nz = ws.getCell(hdrRow + 1, 1), tt = ws.getCell(1, 1);
+    check('엑셀: 머리 줄 굵게·회색, 번갈아 연한 회색, 테두리, 제목 글꼴·크기, 비고 가운데', hc.font.bold && hc.fill.fgColor.argb === 'FFE5E5E5' && z.fill && z.fill.fgColor.argb === 'FFF2F2F2' && !nz.fill.fgColor && hc.border.top.style === 'thin' &&
+      tt.font.name === '맑은 고딕' && tt.font.size === 24 && ws.getCell(hdrRow + 1, 6).alignment.horizontal === 'center', [hc.font, z.fill, tt.font]);
+    check('엑셀: 머리 줄 쪽마다 반복·틀 고정, A4 세로 폭 맞춤', ws.pageSetup.printTitlesRow === hdrRow + ':' + hdrRow && ws.views[0].ySplit === hdrRow && ws.pageSetup.paperSize === 9 && ws.pageSetup.fitToWidth === 1, [ws.pageSetup.printTitlesRow, ws.views]);
+    const widths = ws.columns.map(cl => cl.width);
+    check('엑셀: 칸 너비 비율이 화면과 같음(이름 > 번호)', widths[2] > widths[0] * 1.5 && widths.length === 6, widths);
+  }
 
   // 못 받는 반 → 안내, 다시 그려도 재요청 안 함
   failStudents = true;
