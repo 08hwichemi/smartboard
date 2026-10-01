@@ -411,7 +411,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('글꼴 목록에 경기천년제목·경기천년바탕 + 직접 입력', ['경기천년제목 Bold', '경기천년제목 Medium', '경기천년바탕 Regular', '경기천년바탕 Bold', '__custom'].every(f => fontOpts.includes(f)), fontOpts);
   await P.selectOption('#fm-tfont', '경기천년제목 Bold'); await P.selectOption('#fm-bfont', '경기천년바탕 Regular'); await P.waitForTimeout(200);
   let fc = await cfgOf(hr);
-  check('경기천년체 고르면 저장(이 PC에 없으면 첫 이름 그대로) + 없다는 안내', fc.tFont === '경기천년제목 Bold' && fc.bFont === '경기천년바탕 Regular' && /이 PC에 없어서/.test(await P.textContent('#fm-font-msg')), [fc.tFont, fc.bFont]);
+  await P.waitForTimeout(300); // "이 PC에 있나"는 local()로 불러 보고 나서 안내(비동기)
+  check('경기천년체 고르면 한글 이름으로 저장 + 못 찾는다는 안내 + 내 PC 글꼴 목록 버튼', fc.tFont === '경기천년제목 Bold' && fc.bFont === '경기천년바탕 Regular' && /이 PC에서 못 찾아서/.test(await P.textContent('#fm-font-msg')) && /내 PC 글꼴 목록/.test(await P.textContent('#fm-font-msg')), [fc.tFont, fc.bFont]);
   if (JSZIP_JS) {
     const faces = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const x = await zip.file('Contents/header.xml').async('string'); return (x.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/face="[^"]+"/g) || []).join(','); });
     check('한글 파일 글꼴에 경기천년제목 Bold·경기천년바탕 Regular', /경기천년제목 Bold/.test(faces) && /경기천년바탕 Regular/.test(faces), faces);
@@ -645,7 +646,23 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     const alias = await W.evaluate(async () => { const keep = localStorage.getItem('fm-ws'); localStorage.setItem('fm-ws', JSON.stringify(Object.assign(JSON.parse(keep), { tFont: '경기천년제목' })));
       const c = wsCfg(), zip = await JSZip.loadAsync(await wsBuildHwpx(c)), head = await zip.file('Contents/header.xml').async('string'); localStorage.setItem('fm-ws', keep);
       return { faces: head.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/face="[^"]+"/g).join(), css: fmFontCss(c.tFont) }; });
-    check('설정에 "경기천년제목"(크롬 이름)이 있어도 한글 파일엔 "경기천년제목 Bold", 미리보기는 두 이름 다 + 굵게', /"경기천년제목 Bold"/.test(alias.faces) && !/"경기천년제목"/.test(alias.faces) && /'경기천년제목 Bold', '경기천년제목'/.test(alias.css) && /font-weight:700/.test(alias.css), alias);
+    check('설정에 "경기천년제목"(크롬 이름)이 있어도 한글 파일엔 "경기천년제목 Bold", 미리보기는 local() 글꼴 + 굵기 든 이름만(다른 굵기로 잘못 보이지 않게) + 굵게',
+      /"경기천년제목 Bold"/.test(alias.faces) && !/"경기천년제목"/.test(alias.faces) && /^font-family:'fmF\d+', '경기천년제목 Bold'/.test(alias.css) && /GyeonggiTitleB/.test(alias.css) && !/'경기천년제목'/.test(alias.css) && /font-weight:700/.test(alias.css), alias);
+    // 부분별 글꼴 + 직접 입력: 과목명만 직접 적은 이름(그대로), 쪽 번호는 목록에서, 나머지는 머리·꼬리 글꼴
+    await W.click('#ws-fparts summary'); await W.selectOption('#ws-fp-subj', '__custom'); await W.fill('#ws-fp-subj-custom', '경기천년제목'); await W.waitForTimeout(100);
+    await W.selectOption('#ws-fp-num', '맑은 고딕'); await W.selectOption('#ws-tfont', '__custom'); await W.fill('#ws-tfont-custom', 'HY견고딕 직접'); await W.waitForTimeout(300);
+    const pf = await W.evaluate(async () => { const zip = await JSZip.loadAsync(await wsBuildHwpx(wsCfg())), head = await zip.file('Contents/header.xml').async('string'), sec = await zip.file('Contents/section0.xml').async('string');
+      const faces = {}; (head.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/<hh:font id="\d+" face="[^"]+"/g) || []).forEach(x => { const m = x.match(/id="(\d+)" face="([^"]+)"/); faces[m[1]] = m[2]; });
+      const cp = (id) => { const x = head.match(new RegExp('<hh:charPr id="' + id + '"[\\s\\S]*?</hh:charPr>'))[0]; return { face: faces[x.match(/hangul="(\d+)"/)[1]], bold: x.includes('<hh:bold/>') }; };
+      const runOf = (t) => cp(sec.match(new RegExp('<hp:run charPrIDRef="(\\d+)"><hp:t>' + t))[1]);
+      const prev = document.querySelector('#fm-pages .ws-band').innerHTML;
+      return { subj: runOf('화학Ⅱ'), sName: runOf('반응엔탈피와 열화학 반응식'), num: cp(sec.match(/<hp:run charPrIDRef="(\d+)"><hp:ctrl><hp:autoNum/)[1]), cfg: JSON.parse(localStorage.getItem('fm-ws')),
+        sel: document.getElementById('ws-fp-subj').value, inpShown: getComputedStyle(document.getElementById('ws-fp-subj-custom')).display !== 'none', prevFace: /fmF\d+/.test(prev) }; });
+    check('부분별 글꼴: 과목명 직접 입력 "경기천년제목"은 그대로(+진하게), 쪽 번호 맑은 고딕, 머리·꼬리 직접 입력 "HY견고딕 직접"은 소단원에 그대로, 상자·입력칸 표시',
+      pf.subj.face === '경기천년제목' && pf.subj.bold && pf.num.face === '맑은 고딕' && pf.sName.face === 'HY견고딕 직접' && pf.cfg.fpC.subj === true && pf.cfg.tFontC === true && pf.sel === '__custom' && pf.inpShown && pf.prevFace, pf);
+    await W.selectOption('#ws-fp-subj', ''); await W.selectOption('#ws-fp-num', ''); await W.selectOption('#ws-tfont', '경기천년제목 Bold'); await W.waitForTimeout(200);
+    const back = await W.evaluate(() => { const c = JSON.parse(localStorage.getItem('fm-ws')); return { fp: c.fp, tFont: c.tFont, tFontC: c.tFontC, shown: getComputedStyle(document.getElementById('ws-tfont-custom')).display }; });
+    check('"머리·꼬리와 같게"로 되돌리면 부분 글꼴 지움, 목록에서 고르면 직접 입력 칸 숨김', !Object.keys(back.fp).length && back.tFont === '경기천년제목 Bold' && !back.tFontC && back.shown === 'none', back);
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);

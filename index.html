@@ -966,6 +966,9 @@
     .fm-al .top-btn { padding: 3px 6px; line-height: 0; }
     .fm-al .top-btn svg { width: 14px; height: 12px; }
     .fm-fontrow { flex-wrap: nowrap; }
+    #ws-fparts summary { cursor: pointer; font-size: 13px; color: var(--text-sub); margin: 2px 0 4px; }
+    #ws-fparts .fm-fontrow { margin-top: 4px; }
+    #ws-fparts .fm-fl { width: 56px; }
     .fm-fontrow .fm-fl { flex: 0 0 auto; color: var(--text-sub); }
     .fm-fontrow select { flex: 1; min-width: 0; }
     .fm-fontrow input[type="number"].lp-input { width: 60px; flex: 0 0 auto; padding-left: 6px; padding-right: 2px; }
@@ -2996,8 +2999,11 @@
       </div>
       <div class="nt-box" id="ws-font-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
-        <div class="nt-row fm-fontrow" title="위 머리 띠·아래 쪽 번호 줄"><span class="fm-fl">머리·꼬리</span><select id="ws-tfont" class="mini-select" onchange="wsOnFont('tFont', this.value)"></select></div>
-        <div class="nt-row fm-fontrow" title="본문 제목 뼈대·본문"><span class="fm-fl">본문</span><select id="ws-bfont" class="mini-select" onchange="wsOnFont('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
+        <div class="nt-row fm-fontrow" title="위 머리 띠·아래 쪽 번호 줄(아래 '부분별로'에서 따로 고른 곳 빼고)"><span class="fm-fl">머리·꼬리</span><select id="ws-tfont" class="mini-select" onchange="wsOnFontPick('tFont', this.value)"></select></div>
+        <input type="text" id="ws-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="머리·꼬리 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom('tFont', this.value)">
+        <div class="nt-row fm-fontrow" title="본문 제목 뼈대·본문"><span class="fm-fl">본문</span><select id="ws-bfont" class="mini-select" onchange="wsOnFontPick('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
+        <input type="text" id="ws-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="본문 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom('bFont', this.value)">
+        <details id="ws-fparts"><summary title="대단원·소단원·수업명·과목명·꼬리 글·쪽 번호·NOTE">부분별 글꼴 따로 고르기</summary><div id="ws-fparts-rows"></div></details>
         <div class="nt-muted" id="ws-font-msg"></div>
       </div>
       </div>
@@ -12392,11 +12398,57 @@
   function fmInfoText(cl) { return cl.label + ' (' + cl.count + '명)'; }
 
   // ----- 미리보기 -----
-  // 미리보기 글꼴: 같은 글꼴의 여러 이름(크롬은 "경기천년제목", 한글은 "경기천년제목 Bold")을 다 적고, Bold 글꼴은 굵은 모양으로
+  // 글꼴 파일 속 다른 이름(전체 이름·PostScript 이름). 크롬은 "경기천년바탕 Bold" 같은 이름을 font-family로는 못 찾고(글꼴 묶음 이름 "경기천년바탕"만 앎)
+  // @font-face의 local()로는 찾는다 → 미리보기·"이 PC에 있나" 검사는 local()로 한다. 한글 파일에는 한글이 아는 이름(FM_FONTS의 n)을 적는다.
+  const FM_FONT_LOCAL = {
+    '맑은 고딕': ['Malgun Gothic', 'MalgunGothic', 'MalgunGothicRegular'],
+    '함초롬돋움': ['HCR Dotum', 'HCRDotum', 'HCR Dotum Regular', 'HCRDotum-Regular'], '함초롬바탕': ['HCR Batang', 'HCRBatang', 'HCR Batang Regular', 'HCRBatang-Regular'],
+    '경기천년제목 Bold': ['GyeonggiTitle Bold', 'GyeonggiTitleB', 'GyeonggiTitle-Bold'], '경기천년제목 Medium': ['GyeonggiTitle Medium', 'GyeonggiTitleM'],
+    '경기천년제목 Light': ['GyeonggiTitle Light', 'GyeonggiTitleL'], '경기천년바탕 Bold': ['GyeonggiBatang Bold', 'GyeonggiBatangB'],
+    '경기천년바탕 Regular': ['GyeonggiBatang Regular', 'GyeonggiBatangR', '경기천년바탕'],
+    '나눔고딕': ['NanumGothic', 'Nanum Gothic', 'NanumGothic Regular', 'NanumGothicRegular'], '나눔명조': ['NanumMyeongjo', 'Nanum Myeongjo', 'NanumMyeongjo Regular', 'NanumMyeongjoRegular'],
+    '굴림': ['Gulim', 'GulimChe'], '돋움': ['Dotum', 'DotumChe'], '바탕': ['Batang', 'BatangChe'],
+    'HY견고딕': ['HYGothic-Extra', 'HYGothic Extra', 'HY GyeonGothic'], 'HY헤드라인M': ['HYHeadLine-Medium', 'HYHeadLine Medium', 'HY HeadLine M'],
+  };
+  // 굵기가 이름에 든 글꼴(경기천년제목 Bold 등)은 묶음 이름("경기천년제목")으로 찾으면 다른 굵기만 있어도 찾아지니 굵기 든 이름만(GyeonggiTitleB 같은 PostScript 이름 포함)
+  function fmFontNamesExact(f) {
+    const e = fmFontEntry(f), wt = e && (e.n.match(/Bold|Medium|Light|Regular/) || [])[0];
+    return fmFontNames(f).filter(function(x) { return !wt || x.indexOf(wt) >= 0 || (/[A-Z]$/.test(x) && x.slice(-1) === wt[0]); });
+  }
+  // 같은 글꼴의 모든 이름(고른 이름, 한글 이름, 크롬이 아는 묶음 이름, 영어·PostScript 이름)
+  function fmFontNames(f) {
+    const e = fmFontEntry(f);
+    return [f].concat(e ? [e.n].concat(e.c || []).concat(FM_FONT_LOCAL[e.n] || []) : []).filter(function(x, i, a) { return x && a.indexOf(x) === i; });
+  }
+  function fmFontClean(v) { return String(v || '').replace(/["'<>;\\{}]/g, '').trim(); }
+  const fmFaceIds = {};
+  // 글꼴 이름 → local()로 찾는 미리보기용 글꼴 이름(fmF0, fmF1 …). 굵기 범위를 열어 두어 Bold 글꼴에 진하게가 또 겹치지 않게.
+  function fmFace(name) {
+    name = fmFontClean(name);
+    if (!name) return '';
+    if (fmFaceIds[name]) return fmFaceIds[name];
+    const id = 'fmF' + Object.keys(fmFaceIds).length, locals = fmFontNames(name);
+    let st = document.getElementById('fm-local-faces');
+    if (!st) { st = document.createElement('style'); st.id = 'fm-local-faces'; document.head.appendChild(st); }
+    st.appendChild(document.createTextNode('@font-face { font-family: "' + id + '"; font-weight: 100 900; src: ' + locals.map(function(x) { return 'local("' + x + '")'; }).join(', ') + '; }\n'));
+    fmFaceIds[name] = id;
+    return id;
+  }
+  // 미리보기 글꼴: local()로 찾은 글꼴 → 같은 글꼴의 다른 이름들 → 맑은 고딕. Bold 글꼴은 굵은 모양으로
   function fmFontCss(f) {
-    const e = fmFontEntry(f), names = e ? [e.n].concat(e.c || []).concat([f]) : [f];
-    return 'font-family:' + names.filter(function(x, i, a) { return a.indexOf(x) === i; }).map(function(x) { return "'" + x.replace(/'/g, '') + "'"; }).join(', ') + ", 'Malgun Gothic', sans-serif;" +
-      (e && e.c && /bold/i.test(e.n) ? ' font-weight:700;' : '');
+    const e = fmFontEntry(f), names = [fmFace(f)].concat(fmFontNamesExact(f));
+    return 'font-family:' + names.map(function(x) { return "'" + fmFontClean(x) + "'"; }).join(', ') + ", 'Malgun Gothic', sans-serif;" +
+      (/bold/i.test(e ? e.n : f) ? ' font-weight:700;' : '');
+  }
+  // 이 PC에 있는지: local()로 불러지거나, 크롬이 이름(또는 같은 글꼴의 다른 이름)으로 찾으면 있음
+  function fmFontAvail(f) {
+    if (fmFontNamesExact(f).some(ntFontInstalled)) return Promise.resolve(true);
+    if (!document.fonts || !document.fonts.load) return Promise.resolve(false);
+    return document.fonts.load('16px "' + fmFace(f) + '"').then(function(l) { return l.length > 0; }, function() { return false; });
+  }
+  function fmMissingFonts(list) {
+    list = list.filter(function(f, i, a) { return f && a.indexOf(f) === i; });
+    return Promise.all(list.map(fmFontAvail)).then(function(ok) { return list.filter(function(f, i) { return !ok[i]; }); });
   }
   // 한글 파일에 적을 글꼴 이름: 크롬이 찾은 다른 이름(예: "경기천년제목")을 한글이 아는 이름("경기천년제목 Bold")으로
   function fmHwpFont(f) { const e = fmFontEntry(f); return e ? e.n : f; }
@@ -12490,32 +12542,40 @@
     fmSet({ colW: w }); fmRender();
   }
   function fmResetWidths() { fmSet({ colW: {} }); fmRender(); }
-  function fmFontEntry(name) { return FM_FONTS.find(function(f) { return f.n === name || (f.c && f.c.indexOf(name) >= 0); }); }
+  function fmFontEntry(name) { return FM_FONTS.find(function(f) { return f.n === name || (f.c && f.c.indexOf(name) >= 0) || (FM_FONT_LOCAL[f.n] || []).indexOf(name) >= 0; }); }
   function fmOnFontPick(key, v) {
     const o = {};
     if (v === '__custom') { o[key + 'C'] = true; fmSet(o); fmFillForm(); const el = document.getElementById(key === 'tFont' ? 'fm-tfont-custom' : 'fm-bfont-custom'); el.focus(); return; }
     const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
-    const cands = e.c || [e.n];
-    o[key] = cands.find(function(f) { return ntFontInstalled(f); }) || cands[0]; o[key + 'C'] = false;
+    o[key] = e.n; o[key + 'C'] = false; // 한글이 아는 이름으로 저장(미리보기는 local()로 찾음)
     fmSet(o); fmFillForm(); fmRender();
   }
   function fmOnFontCustom(key, v) {
-    const name = String(v || '').replace(/["'<>;\\]/g, '').trim();
+    const name = fmFontClean(v);
     if (!name) return;
     const o = {}; o[key] = name; fmSet(o); fmFontMsg(fmCfg()); fmRender();
   }
-  function fmFontMsg(c) {
-    const missing = [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i && !ntFontInstalled(f); });
-    document.getElementById('fm-font-msg').innerHTML = (missing.length ? '<b>' + missing.map(ntEsc).join(', ') + '</b> — 이 PC에 없어서 미리보기는 다른 글꼴로 보여요. 한글 파일에는 이 이름 그대로 들어가서 그 글꼴이 있는 PC에선 제대로 나와요. ' : '') +
-      ((c.tFontC || c.bFontC) ? '<button class="nt-chip" onclick="fmLoadLocalFonts()" title="이 PC에 설치된 글꼴 이름 목록을 불러와요">💻 내 PC 글꼴 목록</button>' : '');
+  const FM_FONT_HELP = '한글에서 글꼴이 다르면 "✏️ 직접 입력"에 한글 글꼴 목록의 이름 그대로.';
+  // "이 PC에 없어요" 안내 + 내 PC 글꼴 목록 버튼(학습지 글꼴 칸도 같이 씀)
+  function fmFontMsgTo(elId, fonts) {
+    const el = document.getElementById(elId); if (!el) return;
+    const btn = '<button class="nt-chip" onclick="fmLoadLocalFonts()" title="이 PC에 설치된 글꼴 이름(한글에 적히는 전체 이름 포함)을 불러와요">💻 내 PC 글꼴 목록</button>';
+    el.innerHTML = FM_FONT_HELP + ' ' + btn;
+    fmMissingFonts(fonts).then(function(miss) {
+      el.innerHTML = (miss.length ? '<b>' + miss.map(ntEsc).join(', ') + '</b> — 이 PC에서 못 찾아서 미리보기는 다른 글꼴로 보여요. ' : '') + FM_FONT_HELP + ' ' + btn;
+    });
   }
+  function fmFontMsg(c) { fmFontMsgTo('fm-font-msg', [c.tFont, c.bFont]); }
   async function fmLoadLocalFonts() {
     if (!window.queryLocalFonts) return customAlert('이 브라우저에서는 PC 글꼴 목록을 불러올 수 없어요. 크롬·엣지 최신 판에서 되고, 안 되면 글꼴 이름을 직접 적어 주세요.');
     try {
       const fonts = await window.queryLocalFonts();
-      const fams = Array.from(new Set(fonts.map(function(f) { return f.family; }))).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
-      document.getElementById('fm-local-fonts').innerHTML = fams.map(function(f) { return '<option value="' + ntEsc(f) + '">'; }).join('');
-      customAlert('이 PC 글꼴 ' + fams.length + '개를 불러왔어요. 글꼴 이름 칸을 누르거나 몇 글자 적으면 목록이 나와요.');
+      // 묶음 이름("경기천년바탕")과 전체 이름("경기천년바탕 Bold" — 한글 글꼴 목록에 보이는 이름)을 다 넣는다
+      const names = Array.from(new Set([].concat.apply([], fonts.map(function(f) { return [f.family, f.fullName]; })).filter(Boolean))).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+      document.getElementById('fm-local-fonts').innerHTML = names.map(function(f) { return '<option value="' + ntEsc(f) + '">'; }).join('');
+      const gg = Array.from(new Set(fonts.filter(function(f) { return /경기천년|gyeonggi/i.test(f.family + ' ' + f.fullName); }).map(function(f) { return f.fullName; })));
+      customAlert('이 PC 글꼴 이름 ' + names.length + '개를 불러왔어요. "✏️ 직접 입력" 칸을 누르거나 몇 글자 적으면 목록이 나와요.' +
+        (gg.length ? '\n\n이 PC의 경기천년 글꼴: ' + gg.join(', ') : '\n\n이 PC에는 경기천년 글꼴이 없어요(한글에서도 다른 글꼴로 나와요).'));
     } catch (e) {
       customAlert('글꼴 목록 보기를 "허용"해야 불러올 수 있어요. 막았다면 주소창 왼쪽 자물쇠 → 글꼴에서 허용으로 바꿔 주세요.');
     }
@@ -12634,7 +12694,7 @@
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
       const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
       const sel = document.getElementById(k[1]);
-      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
+      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
         '<option value="__custom">✏️ 직접 입력</option>';
       sel.value = e ? e.n : '__custom';
       const inp = document.getElementById(k[1] + '-custom');
@@ -12682,7 +12742,6 @@
   // header.xml에 글꼴·글자 모양·문단 모양·테두리를 덧붙이고 새 번호를 돌려준다(기존 것은 그대로 — 한글 기본 스타일 목록 유지).
   function fmHeaderAdd(xml, spec) {
     const fontIds = {}; // lang → face → id
-    spec = Object.assign({}, spec, { fonts: spec.fonts.map(fmHwpFont), charPrs: (spec.charPrs || []).map(function(o) { return Object.assign({}, o, { font: fmHwpFont(o.font) }); }) });
     xml = xml.replace(/<hh:fontface lang="(\w+)" fontCnt="(\d+)">([\s\S]*?)<\/hh:fontface>/g, function(m, lang, cnt, body) {
       let n = parseInt(cnt), add = '';
       fontIds[lang] = {};
@@ -12780,9 +12839,10 @@
       const R = ch.length + 1;
       for (let r = 0; r < R; r++) for (let ci = 0; ci < NC; ci++) { const o = bfOf(r, R, ci), k = JSON.stringify(o); if (!(k in bfIdx)) { bfIdx[k] = bfSpecs.length; bfSpecs.push(o); } }
     }); }); });
+    const hT = c.tFontC ? c.tFont : fmHwpFont(c.tFont), hB = c.bFontC ? c.bFont : fmHwpFont(c.bFont); // 직접 입력은 적은 그대로
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
-      fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
-      charPrs: [{ size: c.tSize, font: c.tFont, bold: true }, { size: c.bSize, font: c.bFont }, { size: c.bSize, font: c.bFont, bold: true }],
+      fonts: [hT, hB].filter(function(f, i, a) { return a.indexOf(f) === i; }),
+      charPrs: [{ size: c.tSize, font: hT, bold: true }, { size: c.bSize, font: hB }, { size: c.bSize, font: hB, bold: true }],
       paraPrs: [
         { align: FM_ALIGN_HWP[c.aT], line: 150, after: pt2(1.5) }, // 제목
         { align: FM_ALIGN_HWP[c.aI], line: 160 },                   // 반·인원
@@ -13021,8 +13081,19 @@
     tFont: '경기천년제목 Bold', bFont: '경기천년바탕 Bold', bSize: 10, // 원본 학습지 글꼴(머리·꼬리 / 본문)
   };
   const WS_NUM_FONT = '함초롬돋움'; // 쪽 번호(원본처럼)
+  // 부분별 글꼴(비우면 머리·꼬리 글꼴, 쪽 번호는 함초롬돋움)
+  const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
+  // 그 부분에 쓸 글꼴: { n: 미리보기용 이름, h: 한글 파일에 적을 이름 } — 직접 입력한 이름은 적은 그대로
+  function wsFont(c, part) {
+    let n, cu;
+    if (part === 'body') { n = c.bFont; cu = c.bFontC; }
+    else if (c.fp[part]) { n = c.fp[part]; cu = c.fpC[part]; }
+    else if (part === 'num') { n = WS_NUM_FONT; cu = false; }
+    else { n = c.tFont; cu = c.tFontC; }
+    return { n: n, h: cu ? n : fmHwpFont(n) };
+  }
   // 글꼴 이름에 Bold가 있으면 진하게를 겹쳐 걸지 않는다(원본도 굵은 글꼴만 씀 — 겹치면 더 두껍고 어색함)
-  function wsBold(font, want) { return !!want && !/bold/i.test(fmHwpFont(font)); }
+  function wsBold(f, want) { return !!want && !/bold/i.test(f.h); } // f = wsFont(…)
   function wsCfg() {
     let v = {};
     try { v = JSON.parse(localStorage.getItem(WS_CFG_KEY) || '{}') || {}; } catch (e) {}
@@ -13039,6 +13110,10 @@
     if (!WS_THEMES.some(function(t) { return t[0] === c.theme; })) c.theme = 'mint';
     if (c.icon !== 'auto' && c.icon !== '' && !WS_ICONS.some(function(x) { return x[0] === c.icon; })) c.icon = 'auto';
     c.iconK = c.icon === 'auto' ? wsAutoIcon(c.subj) : c.icon;
+    c.tFont = fmFontClean(c.tFont) || WS_DEFAULT.tFont; c.bFont = fmFontClean(c.bFont) || WS_DEFAULT.bFont; c.tFontC = !!c.tFontC; c.bFontC = !!c.bFontC;
+    const fp = c.fp && typeof c.fp === 'object' ? c.fp : {}, fpC = c.fpC && typeof c.fpC === 'object' ? c.fpC : {};
+    c.fp = {}; c.fpC = {};
+    WS_FPARTS.forEach(function(x) { const v = fmFontClean(fp[x[0]]); if (v) { c.fp[x[0]] = v; c.fpC[x[0]] = !!fpC[x[0]]; } });
     return c;
   }
   function wsSet(patch, refill) {
@@ -13050,12 +13125,33 @@
     fmRender();
   }
   function wsOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; wsSet(o); }
-  function wsOnFont(key, v) {
+  // 글꼴 고르기: key = tFont·bFont 또는 부분(uno…). '' = 머리·꼬리와 같게(부분만), '__custom' = 직접 입력
+  function wsOnFontPick(key, v) {
+    const c = wsCfg(), o = {}, part = key !== 'tFont' && key !== 'bFont';
+    const put = function(name, cu) {
+      if (part) { const fp = Object.assign({}, c.fp), fpC = Object.assign({}, c.fpC); if (name) { fp[key] = name; fpC[key] = cu; } else { delete fp[key]; delete fpC[key]; } o.fp = fp; o.fpC = fpC; }
+      else { o[key] = name; o[key + 'C'] = cu; }
+    };
+    if (v === '__custom') {
+      put(part ? (c.fp[key] || wsFont(c, key).n) : c[key], true); wsSet(o, true);
+      const el = document.getElementById(part ? 'ws-fp-' + key + '-custom' : (key === 'tFont' ? 'ws-tfont-custom' : 'ws-bfont-custom'));
+      if (el) { el.focus(); el.select(); }
+      return;
+    }
+    if (v === '') { put('', false); wsSet(o, true); return; }
     const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
-    const o = {};
-    o[key] = e.n; // 한글이 아는 이름으로 저장(미리보기는 fmFontCss가 다른 이름도 찾음)
-    wsSet(o);
+    put(e.n, false); // 한글이 아는 이름으로 저장(미리보기는 local()로 찾음)
+    wsSet(o, true);
   }
+  function wsOnFontCustom(key, v) {
+    const name = fmFontClean(v); if (!name) return;
+    const c = wsCfg(), o = {};
+    if (key === 'tFont' || key === 'bFont') { o[key] = name; o[key + 'C'] = true; }
+    else { o.fp = Object.assign({}, c.fp); o.fpC = Object.assign({}, c.fpC); o.fp[key] = name; o.fpC[key] = true; }
+    wsSet(o);
+    wsFontMsg(wsCfg());
+  }
+  function wsFontMsg(c) { fmFontMsgTo('ws-font-msg', ['uno', 'sno', 'cls', 'subj', 'foot', 'num', 'note', 'body'].map(function(k) { return wsFont(c, k).n; })); }
   // 본문 제목 뼈대: 줄 앞 번호 모양으로 수준을 정한다
   function wsLevel(line) {
     const t = line.trim();
@@ -13108,26 +13204,26 @@
   function wsRender() {
     const c = wsCfg(), L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c);
     const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
-    const F = function(f) { return fmFontCss(f); };
+    const F = function(part) { return fmFontCss(wsFont(c, part).n); };
+    const W8 = function(part) { return ' font-weight:' + (wsBold(wsFont(c, part), true) ? 800 : 700) + ';'; }; // 진하게 칸: Bold 글꼴이면 글꼴 자체 굵기
     const abs = function(x, y, w, h) { return 'left:' + x + 'mm; top:' + y + 'mm; width:' + w + 'mm;' + (h != null ? ' height:' + h + 'mm;' : ''); };
     const b = L.band, line = '0.6mm solid #000';
-    const tw = wsBold(c.tFont, true) ? 800 : 700, bw = 700; // Bold 글꼴은 글꼴 자체 굵기(크롬은 같은 글꼴의 굵은 모양으로 그림)
-    const numF = "font-family:'" + WS_NUM_FONT + "', 'Malgun Gothic', sans-serif;";
-    const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F(c.tFont) + '"><colgroup>' +
+    const bw = 700;
+    const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F('uno') + '"><colgroup>' +
       (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
       '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
-      '<td style="font-size:12pt; text-align:center;">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt;">' + ntEsc(c.uName) + '</td>' +
+      '<td style="font-size:12pt; text-align:center; ' + F('uno') + '">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt; ' + F('uno') + '">' + ntEsc(c.uName) + '</td>' +
       '<td rowspan="2" class="ws-slash"></td>' +
       '<td rowspan="2" style="border-top:' + line + '; vertical-align:middle; padding-left:2mm;">' +
-      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + ';">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; font-weight:' + tw + '; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
-      '<tr style="height:9.5mm;"><td style="font-size:17pt; font-weight:' + tw + '; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; font-weight:' + tw + '; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
-    const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';' + F(c.tFont) + '">NOTE</div>' +
+      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + '; ' + F('cls') + '">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; text-align:right; ' + F('subj') + W8('subj') + '">' + ntEsc(c.subj) + '</div></td></tr>' +
+      '<tr style="height:9.5mm;"><td style="font-size:17pt; text-align:center; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sName) + '</td></tr></table>';
+    const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + '; ' + F('note') + '">NOTE</div>' +
       '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
     const foot = function(n) {
       const t = wsFootText(c, n);
-      const num = '<span style="font-size:16pt; ' + numF + '">' + n + '</span>';
-      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.tFont) + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
-        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <span style="font-size:12pt; font-weight:' + tw + ';">' + ntEsc(t[1]) + '</span></span>' + num
+      const num = '<span style="font-size:16pt; ' + F('num') + '">' + n + '</span>';
+      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F('foot') + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
+        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <span style="font-size:12pt;' + W8('foot') + '">' + ntEsc(t[1]) + '</span></span>' + num
           : num + '<span style="font-size:11pt;">' + ntEsc(t[0]) + '</span>') + '</div>';
     };
     const lines = wsLines(c);
@@ -13139,7 +13235,7 @@
         return (sp[0] ? '<span style="border:0.25mm solid #000; padding:0 0.8mm; margin-right:1.5mm; font-size:0.85em;">' + ntEsc(sp[0]) + '</span>' : '') + ntEsc(sp[1]);
       };
       const inner = first ? lines.map(function(x) {
-        return '<div style="' + F(c.bFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
+        return '<div style="' + F('body') + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
       }).join('') : '';
       return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-rule:0.12mm solid #ccc;' : '') + '">' + inner + '</div>';
     };
@@ -13177,14 +13273,29 @@
     document.getElementById('ws-theme').innerHTML = '색 ' + WS_THEMES.map(function(t) {
       return '<button class="ws-sw' + (c.theme === t[0] ? ' on' : '') + '" data-theme="' + t[0] + '" title="' + t[1] + '" style="background:' + t[2] + '; border-color:' + t[3] + ';" onclick="wsSet({ theme: \'' + t[0] + '\' }, true)"></button>';
     }).join('');
-    [['tFont', 'ws-tfont'], ['bFont', 'ws-bfont']].forEach(function(k) {
-      const sel = document.getElementById(k[1]), e = fmFontEntry(c[k[0]]);
-      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('');
-      sel.value = e ? e.n : '맑은 고딕';
-    });
-    const miss = [c.tFont, c.bFont].map(fmHwpFont).filter(function(f, i, a) { const e = fmFontEntry(f); return a.indexOf(f) === i && !(e && e.c || [f]).some(ntFontInstalled); });
-    document.getElementById('ws-font-msg').innerHTML = (miss.length ? '<b>' + miss.map(ntEsc).join(', ') + '</b> — 이 PC에 없어서 미리보기는 다른 글꼴로 보여요. 한글 파일에는 이 이름 그대로 들어가요. ' : '') +
-      '기본은 원본 학습지와 같은 경기천년제목·경기천년바탕 Bold예요.';
+    // 글꼴 상자: 목록 + ✏️ 직접 입력(고르면 아래 칸에 한글 글꼴 이름을 적음). 부분별은 맨 위가 "머리·꼬리와 같게"
+    const opts = function(first) {
+      return (first ? '<option value="">' + first + '</option>' : '') +
+        FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
+        '<option value="__custom">✏️ 직접 입력</option>';
+    };
+    const fillSel = function(selId, inpId, name, custom, first) {
+      const sel = document.getElementById(selId), inp = document.getElementById(inpId), e = !custom && name ? fmFontEntry(name) : null;
+      sel.innerHTML = opts(first);
+      sel.value = !name ? '' : e ? e.n : '__custom';
+      inp.style.display = name && !e ? '' : 'none';
+      if (document.activeElement !== inp) inp.value = name && !e ? name : '';
+    };
+    fillSel('ws-tfont', 'ws-tfont-custom', c.tFont, c.tFontC);
+    fillSel('ws-bfont', 'ws-bfont-custom', c.bFont, c.bFontC);
+    const rows = document.getElementById('ws-fparts-rows');
+    if (!rows.children.length) rows.innerHTML = WS_FPARTS.map(function(x) {
+      return '<div class="nt-row fm-fontrow"><span class="fm-fl">' + x[1] + '</span><select id="ws-fp-' + x[0] + '" class="mini-select" onchange="wsOnFontPick(\'' + x[0] + '\', this.value)"></select></div>' +
+        '<input type="text" id="ws-fp-' + x[0] + '-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="' + x[1] + ' 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom(\'' + x[0] + '\', this.value)">';
+    }).join('');
+    WS_FPARTS.forEach(function(x) { fillSel('ws-fp-' + x[0], 'ws-fp-' + x[0] + '-custom', c.fp[x[0]] || '', c.fpC[x[0]], x[0] === 'num' ? '함초롬돋움 (원본처럼)' : '머리·꼬리와 같게'); });
+    if (Object.keys(c.fp).length) document.getElementById('ws-fparts').open = true;
+    wsFontMsg(c);
   }
 
   // ----- 한글 파일 -----
@@ -13211,24 +13322,25 @@
     const nl = fmLn('solid', 0.3, th[3]), bl = K(0.12);
     const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null },
       { fill: null, s: { l: bl, r: bl, t: bl, b: bl }, slash: null }];
+    const FT = {}; ['uno', 'sno', 'cls', 'subj', 'foot', 'num', 'note', 'body'].forEach(function(k) { FT[k] = wsFont(c, k); }); // 부분별 글꼴(한글 이름)
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
-      fonts: [c.tFont, c.bFont, WS_NUM_FONT].filter(function(f, i, a) { return a.indexOf(f) === i; }),
+      fonts: Object.keys(FT).map(function(k) { return FT[k].h; }).filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [
-        { size: 13, font: c.tFont },                                     // 0 대단원
-        { size: 17, font: c.tFont, bold: wsBold(c.tFont, true) },        // 1 소단원
-        { size: 13, font: c.tFont, color: WS_CLS_COLOR },                // 2 수업명
-        { size: 19, font: c.tFont, bold: wsBold(c.tFont, true) },        // 3 과목명
-        { size: 9, font: c.tFont },                                      // 4 꼬리: 학교명
-        { size: 11, font: c.tFont },                                     // 5 꼬리: 대단원(짝수 쪽)
-        { size: 12, font: c.tFont, bold: wsBold(c.tFont, true) },        // 6 꼬리: 과목명(홀수 쪽)
-        { size: 16, font: WS_NUM_FONT },                                 // 7 쪽 번호
-        { size: 10, font: c.tFont, color: '#333333' },                   // 8 NOTE
-        { size: sz.h1, font: c.bFont, bold: wsBold(c.bFont, true) },     // 9 대제목
-        { size: sz.h2, font: c.bFont, bold: wsBold(c.bFont, true), color: th[4] }, // 10 중제목
-        { size: sz.h3, font: c.bFont, bold: wsBold(c.bFont, true) },     // 11 소제목
-        { size: sz.p, font: c.bFont },                                   // 12 항목·본문
-        { size: sz.h1 - 1.5, font: c.bFont, bold: wsBold(c.bFont, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
-        { size: 12, font: c.tFont },                                     // 14 대단원 번호
+        { size: 13, font: FT.uno.h },                                    // 0 대단원
+        { size: 17, font: FT.sno.h, bold: wsBold(FT.sno, true) },        // 1 소단원
+        { size: 13, font: FT.cls.h, color: WS_CLS_COLOR },               // 2 수업명
+        { size: 19, font: FT.subj.h, bold: wsBold(FT.subj, true) },      // 3 과목명
+        { size: 9, font: FT.foot.h },                                    // 4 꼬리: 학교명
+        { size: 11, font: FT.foot.h },                                   // 5 꼬리: 대단원(짝수 쪽)
+        { size: 12, font: FT.foot.h, bold: wsBold(FT.foot, true) },      // 6 꼬리: 과목명(홀수 쪽)
+        { size: 16, font: FT.num.h },                                    // 7 쪽 번호
+        { size: 10, font: FT.note.h, color: '#333333' },                 // 8 NOTE
+        { size: sz.h1, font: FT.body.h, bold: wsBold(FT.body, true) },   // 9 대제목
+        { size: sz.h2, font: FT.body.h, bold: wsBold(FT.body, true), color: th[4] }, // 10 중제목
+        { size: sz.h3, font: FT.body.h, bold: wsBold(FT.body, true) },   // 11 소제목
+        { size: sz.p, font: FT.body.h },                                 // 12 항목·본문
+        { size: sz.h1 - 1.5, font: FT.body.h, bold: wsBold(FT.body, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
+        { size: 12, font: FT.uno.h },                                    // 14 대단원 번호
       ],
       paraPrs: [
         { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
