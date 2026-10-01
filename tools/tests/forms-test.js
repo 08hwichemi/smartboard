@@ -641,6 +641,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       wf.school.face === '경기천년제목 Bold' && wf.school.pt === 9 && wf.subj.face === '경기천년제목 Bold' && !wf.subj.bold && wf.sName.face === '경기천년제목 Bold' && wf.sName.pt === 17 &&
       wf.h2.face === '경기천년바탕 Bold' && !wf.h2.bold && wf.num.face === '함초롬돋움' && wf.num.pt === 16, wf);
     check('한글 파일 위치는 머리말·꼬리말 문단 기준(종이 기준 쓰지 않음 — 한글이 여백만큼 밀어서), 머리 띠는 머리말 문단 바로 그 자리(0,0)', !wz.paperRel && /vertRelTo="PARA" horzRelTo="PARA"[^>]*vertOffset="0" horzOffset="0"/.test(wz.bandPos), wz.bandPos);
+    // 크롬이 찾은 다른 이름("경기천년제목")이 설정에 저장돼 있어도 한글 파일엔 한글이 아는 "경기천년제목 Bold"로(예전엔 그대로 들어가 한글이 대체 글꼴로 그렸음)
+    const alias = await W.evaluate(async () => { const keep = localStorage.getItem('fm-ws'); localStorage.setItem('fm-ws', JSON.stringify(Object.assign(JSON.parse(keep), { tFont: '경기천년제목' })));
+      const c = wsCfg(), zip = await JSZip.loadAsync(await wsBuildHwpx(c)), head = await zip.file('Contents/header.xml').async('string'); localStorage.setItem('fm-ws', keep);
+      return { faces: head.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/face="[^"]+"/g).join(), css: fmFontCss(c.tFont) }; });
+    check('설정에 "경기천년제목"(크롬 이름)이 있어도 한글 파일엔 "경기천년제목 Bold", 미리보기는 두 이름 다 + 굵게', /"경기천년제목 Bold"/.test(alias.faces) && !/"경기천년제목"/.test(alias.faces) && /'경기천년제목 Bold', '경기천년제목'/.test(alias.css) && /font-weight:700/.test(alias.css), alias);
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);

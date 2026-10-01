@@ -12392,7 +12392,14 @@
   function fmInfoText(cl) { return cl.label + ' (' + cl.count + '명)'; }
 
   // ----- 미리보기 -----
-  function fmFontCss(f) { return "font-family:'" + f.replace(/'/g, '') + "', 'Malgun Gothic', sans-serif;"; }
+  // 미리보기 글꼴: 같은 글꼴의 여러 이름(크롬은 "경기천년제목", 한글은 "경기천년제목 Bold")을 다 적고, Bold 글꼴은 굵은 모양으로
+  function fmFontCss(f) {
+    const e = fmFontEntry(f), names = e ? [e.n].concat(e.c || []).concat([f]) : [f];
+    return 'font-family:' + names.filter(function(x, i, a) { return a.indexOf(x) === i; }).map(function(x) { return "'" + x.replace(/'/g, '') + "'"; }).join(', ') + ", 'Malgun Gothic', sans-serif;" +
+      (e && e.c && /bold/i.test(e.n) ? ' font-weight:700;' : '');
+  }
+  // 한글 파일에 적을 글꼴 이름: 크롬이 찾은 다른 이름(예: "경기천년제목")을 한글이 아는 이름("경기천년제목 Bold")으로
+  function fmHwpFont(f) { const e = fmFontEntry(f); return e ? e.n : f; }
   function fmTableHtml(L, c, cl, list) {
     const z = c.zebra;
     const mg = c.aTb === 'L' ? '0 auto 0 0' : c.aTb === 'R' ? '0 0 0 auto' : '0 auto';
@@ -12675,6 +12682,7 @@
   // header.xml에 글꼴·글자 모양·문단 모양·테두리를 덧붙이고 새 번호를 돌려준다(기존 것은 그대로 — 한글 기본 스타일 목록 유지).
   function fmHeaderAdd(xml, spec) {
     const fontIds = {}; // lang → face → id
+    spec = Object.assign({}, spec, { fonts: spec.fonts.map(fmHwpFont), charPrs: (spec.charPrs || []).map(function(o) { return Object.assign({}, o, { font: fmHwpFont(o.font) }); }) });
     xml = xml.replace(/<hh:fontface lang="(\w+)" fontCnt="(\d+)">([\s\S]*?)<\/hh:fontface>/g, function(m, lang, cnt, body) {
       let n = parseInt(cnt), add = '';
       fontIds[lang] = {};
@@ -13014,7 +13022,7 @@
   };
   const WS_NUM_FONT = '함초롬돋움'; // 쪽 번호(원본처럼)
   // 글꼴 이름에 Bold가 있으면 진하게를 겹쳐 걸지 않는다(원본도 굵은 글꼴만 씀 — 겹치면 더 두껍고 어색함)
-  function wsBold(font, want) { return !!want && !/bold/i.test(font); }
+  function wsBold(font, want) { return !!want && !/bold/i.test(fmHwpFont(font)); }
   function wsCfg() {
     let v = {};
     try { v = JSON.parse(localStorage.getItem(WS_CFG_KEY) || '{}') || {}; } catch (e) {}
@@ -13044,8 +13052,8 @@
   function wsOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; wsSet(o); }
   function wsOnFont(key, v) {
     const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
-    const cands = e.c || [e.n], o = {};
-    o[key] = cands.find(function(f) { return ntFontInstalled(f); }) || cands[0];
+    const o = {};
+    o[key] = e.n; // 한글이 아는 이름으로 저장(미리보기는 fmFontCss가 다른 이름도 찾음)
     wsSet(o);
   }
   // 본문 제목 뼈대: 줄 앞 번호 모양으로 수준을 정한다
@@ -13103,7 +13111,7 @@
     const F = function(f) { return fmFontCss(f); };
     const abs = function(x, y, w, h) { return 'left:' + x + 'mm; top:' + y + 'mm; width:' + w + 'mm;' + (h != null ? ' height:' + h + 'mm;' : ''); };
     const b = L.band, line = '0.6mm solid #000';
-    const tw = wsBold(c.tFont, true) ? 800 : 400, bw = wsBold(c.bFont, true) ? 700 : 400; // Bold 글꼴은 글꼴 자체 굵기
+    const tw = wsBold(c.tFont, true) ? 800 : 700, bw = 700; // Bold 글꼴은 글꼴 자체 굵기(크롬은 같은 글꼴의 굵은 모양으로 그림)
     const numF = "font-family:'" + WS_NUM_FONT + "', 'Malgun Gothic', sans-serif;";
     const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F(c.tFont) + '"><colgroup>' +
       (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
@@ -13174,7 +13182,7 @@
       sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('');
       sel.value = e ? e.n : '맑은 고딕';
     });
-    const miss = [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i && !ntFontInstalled(f); });
+    const miss = [c.tFont, c.bFont].map(fmHwpFont).filter(function(f, i, a) { const e = fmFontEntry(f); return a.indexOf(f) === i && !(e && e.c || [f]).some(ntFontInstalled); });
     document.getElementById('ws-font-msg').innerHTML = (miss.length ? '<b>' + miss.map(ntEsc).join(', ') + '</b> — 이 PC에 없어서 미리보기는 다른 글꼴로 보여요. 한글 파일에는 이 이름 그대로 들어가요. ' : '') +
       '기본은 원본 학습지와 같은 경기천년제목·경기천년바탕 Bold예요.';
   }
