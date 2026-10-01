@@ -2996,8 +2996,9 @@
       </div>
       <div class="nt-box" id="ws-font-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
-        <div class="nt-row fm-fontrow"><span class="fm-fl">제목 글꼴</span><select id="ws-tfont" class="mini-select" onchange="wsOnFont('tFont', this.value)"></select></div>
-        <div class="nt-row fm-fontrow"><span class="fm-fl">본문 글꼴</span><select id="ws-bfont" class="mini-select" onchange="wsOnFont('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
+        <div class="nt-row fm-fontrow" title="위 머리 띠·아래 쪽 번호 줄"><span class="fm-fl">머리·꼬리</span><select id="ws-tfont" class="mini-select" onchange="wsOnFont('tFont', this.value)"></select></div>
+        <div class="nt-row fm-fontrow" title="본문 제목 뼈대·본문"><span class="fm-fl">본문</span><select id="ws-bfont" class="mini-select" onchange="wsOnFont('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
+        <div class="nt-muted" id="ws-font-msg"></div>
       </div>
       </div>
     </div>
@@ -12976,7 +12977,7 @@
     ['mint', '민트', '#DBF4EE', '#B0CFBA', '#2F5FAF'], ['sky', '하늘', '#DCEBFA', '#A9C8E8', '#2F5FAF'], ['lemon', '노랑', '#FFF4CC', '#E6D08A', '#A86400'],
     ['pink', '분홍', '#FBE3EA', '#E5B2C1', '#B0346A'], ['lilac', '보라', '#ECE4F8', '#C6B4E4', '#6A44B0'], ['gray', '회색', '#EEEEEE', '#C4C4C4', '#333333'],
   ]; // [키, 이름, NOTE 바탕, NOTE 테두리, 중제목 색]
-  const WS_CLS_COLOR = '#E07A5F'; // 수업명(원본 학습지처럼 주황빛)
+  const WS_CLS_COLOR = '#999999'; // 수업명: 원본 학습지처럼 연한 회색
   // 과목 아이콘(가로 120 × 세로 90, 굵은 테두리 + 단색 채우기). 한글 파일에는 PNG로 그려서 넣는다.
   const WS_K = 'stroke="#263238" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
   const WS_T = function(x, y, t, size, fill) { return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="800" text-anchor="middle" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif" fill="' + (fill || '#263238') + '">' + t + '</text>'; };
@@ -13008,9 +13009,12 @@
   function wsIconSvg(k, w, h) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"' + (w ? ' width="' + w + '" height="' + h + '"' : '') + '>' + ic[2] + '</svg>' : ''; }
   const WS_DEFAULT = {
     uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
-    paper: 'B4', land: false, mT: 10, mB: 10, mL: 14, mR: 14, start: 1, colsN: 1, note: true, noteW: 44, theme: 'mint',
-    tFont: '맑은 고딕', bFont: '맑은 고딕', bSize: 10,
+    paper: 'B4', land: false, mT: 14, mB: 8, mL: 14, mR: 16, start: 1, colsN: 1, note: true, noteW: 44, theme: 'mint',
+    tFont: '경기천년제목 Bold', bFont: '경기천년바탕 Bold', bSize: 10, // 원본 학습지 글꼴(머리·꼬리 / 본문)
   };
+  const WS_NUM_FONT = '함초롬돋움'; // 쪽 번호(원본처럼)
+  // 글꼴 이름에 Bold가 있으면 진하게를 겹쳐 걸지 않는다(원본도 굵은 글꼴만 씀 — 겹치면 더 두껍고 어색함)
+  function wsBold(font, want) { return !!want && !/bold/i.test(font); }
   function wsCfg() {
     let v = {};
     try { v = JSON.parse(localStorage.getItem(WS_CFG_KEY) || '{}') || {}; } catch (e) {}
@@ -13076,7 +13080,7 @@
   // 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다
   function wsLayout(c) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1];
-    const headH = 22, footH = 10, bandH = 16, gapN = 4;
+    const headH = 24, footH = 12, bandH = 16, gapN = 4; // 머리말 = 머리 띠 16 + 아래 간격 8mm
     const W = w - c.mL - c.mR;
     const noteW = c.note ? Math.min(c.noteW, W * 0.4) : 0;
     const bodyTop = c.mT + headH, bodyBot = h - c.mB - footH;
@@ -13099,32 +13103,35 @@
     const F = function(f) { return fmFontCss(f); };
     const abs = function(x, y, w, h) { return 'left:' + x + 'mm; top:' + y + 'mm; width:' + w + 'mm;' + (h != null ? ' height:' + h + 'mm;' : ''); };
     const b = L.band, line = '0.6mm solid #000';
+    const tw = wsBold(c.tFont, true) ? 800 : 400, bw = wsBold(c.bFont, true) ? 700 : 400; // Bold 글꼴은 글꼴 자체 굵기
+    const numF = "font-family:'" + WS_NUM_FONT + "', 'Malgun Gothic', sans-serif;";
     const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F(c.tFont) + '"><colgroup>' +
       (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
       '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
       '<td style="font-size:12pt; text-align:center;">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt;">' + ntEsc(c.uName) + '</td>' +
       '<td rowspan="2" class="ws-slash"></td>' +
-      '<td rowspan="2" style="border-top:' + line + '; vertical-align:' + (c.cls ? 'top' : 'middle') + '; padding-top:1mm;">' +
-      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + ';">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; font-weight:800; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
-      '<tr style="height:9.5mm;"><td style="font-size:17pt; font-weight:800; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; font-weight:800; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
+      '<td rowspan="2" style="border-top:' + line + '; vertical-align:middle; padding-left:2mm;">' +
+      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + ';">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; font-weight:' + tw + '; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
+      '<tr style="height:9.5mm;"><td style="font-size:17pt; font-weight:' + tw + '; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; font-weight:' + tw + '; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
     const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';' + F(c.tFont) + '">NOTE</div>' +
       '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
     const foot = function(n) {
       const t = wsFootText(c, n);
-      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.bFont) + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
-        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <b style="font-size:12pt;">' + ntEsc(t[1]) + '</b></span><span style="font-size:13pt; font-weight:800;">' + n + '</span>'
-          : '<span style="font-size:13pt; font-weight:800;">' + n + '</span><span style="font-size:11pt; font-weight:700;">' + ntEsc(t[0]) + '</span>') + '</div>';
+      const num = '<span style="font-size:16pt; ' + numF + '">' + n + '</span>';
+      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.tFont) + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
+        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <span style="font-size:12pt; font-weight:' + tw + ';">' + ntEsc(t[1]) + '</span></span>' + num
+          : num + '<span style="font-size:11pt;">' + ntEsc(t[0]) + '</span>') + '</div>';
     };
     const lines = wsLines(c);
     const body = function(first) {
-      const st = { h1: 'font-weight:800;', h2: 'font-weight:700; color:' + th[4] + ';', h3: 'font-weight:700; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
+      const st = { h1: 'font-weight:' + bw + ';', h2: 'font-weight:' + bw + '; color:' + th[4] + ';', h3: 'font-weight:' + bw + '; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
       const txt = function(x) {
         if (x.lv !== 'h1') return ntEsc(x.t) || '&nbsp;';
         const sp = wsH1Split(x.t);
         return (sp[0] ? '<span style="border:0.25mm solid #000; padding:0 0.8mm; margin-right:1.5mm; font-size:0.85em;">' + ntEsc(sp[0]) + '</span>' : '') + ntEsc(sp[1]);
       };
       const inner = first ? lines.map(function(x) {
-        return '<div style="' + F(x.lv === 'it' || x.lv === 'p' || x.lv === 'blank' ? c.bFont : c.tFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
+        return '<div style="' + F(c.bFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
       }).join('') : '';
       return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-rule:0.12mm solid #ccc;' : '') + '">' + inner + '</div>';
     };
@@ -13167,6 +13174,9 @@
       sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('');
       sel.value = e ? e.n : '맑은 고딕';
     });
+    const miss = [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i && !ntFontInstalled(f); });
+    document.getElementById('ws-font-msg').innerHTML = (miss.length ? '<b>' + miss.map(ntEsc).join(', ') + '</b> — 이 PC에 없어서 미리보기는 다른 글꼴로 보여요. 한글 파일에는 이 이름 그대로 들어가요. ' : '') +
+      '기본은 원본 학습지와 같은 경기천년제목·경기천년바탕 Bold예요.';
   }
 
   // ----- 한글 파일 -----
@@ -13194,23 +13204,23 @@
     const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null },
       { fill: null, s: { l: bl, r: bl, t: bl, b: bl }, slash: null }];
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
-      fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
+      fonts: [c.tFont, c.bFont, WS_NUM_FONT].filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [
-        { size: 13, font: c.tFont },                          // 0 대단원
-        { size: 17, font: c.tFont, bold: true },              // 1 소단원
-        { size: 13, font: c.tFont, color: WS_CLS_COLOR },     // 2 수업명
-        { size: 19, font: c.tFont, bold: true },              // 3 과목명
-        { size: 9, font: c.bFont },                           // 4 꼬리: 학교명
-        { size: 11, font: c.bFont, bold: true },              // 5 꼬리: 대단원(짝수 쪽)
-        { size: 12, font: c.bFont, bold: true },              // 6 꼬리: 과목명(홀수 쪽)
-        { size: 13, font: c.bFont, bold: true },              // 7 쪽 번호
-        { size: 10, font: c.tFont, color: '#333333' },        // 8 NOTE
-        { size: sz.h1, font: c.tFont, bold: true },           // 9 대제목
-        { size: sz.h2, font: c.tFont, bold: true, color: th[4] }, // 10 중제목
-        { size: sz.h3, font: c.tFont, bold: true },           // 11 소제목
-        { size: sz.p, font: c.bFont },                        // 12 항목·본문
-        { size: sz.h1 - 1.5, font: c.tFont, bold: true, bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
-        { size: 12, font: c.tFont },                          // 14 대단원 번호
+        { size: 13, font: c.tFont },                                     // 0 대단원
+        { size: 17, font: c.tFont, bold: wsBold(c.tFont, true) },        // 1 소단원
+        { size: 13, font: c.tFont, color: WS_CLS_COLOR },                // 2 수업명
+        { size: 19, font: c.tFont, bold: wsBold(c.tFont, true) },        // 3 과목명
+        { size: 9, font: c.tFont },                                      // 4 꼬리: 학교명
+        { size: 11, font: c.tFont },                                     // 5 꼬리: 대단원(짝수 쪽)
+        { size: 12, font: c.tFont, bold: wsBold(c.tFont, true) },        // 6 꼬리: 과목명(홀수 쪽)
+        { size: 16, font: WS_NUM_FONT },                                 // 7 쪽 번호
+        { size: 10, font: c.tFont, color: '#333333' },                   // 8 NOTE
+        { size: sz.h1, font: c.bFont, bold: wsBold(c.bFont, true) },     // 9 대제목
+        { size: sz.h2, font: c.bFont, bold: wsBold(c.bFont, true), color: th[4] }, // 10 중제목
+        { size: sz.h3, font: c.bFont, bold: wsBold(c.bFont, true) },     // 11 소제목
+        { size: sz.p, font: c.bFont },                                   // 12 항목·본문
+        { size: sz.h1 - 1.5, font: c.bFont, bold: wsBold(c.bFont, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
+        { size: 12, font: c.tFont },                                     // 14 대단원 번호
       ],
       paraPrs: [
         { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
@@ -13274,7 +13284,7 @@
     row1 += tc({ c: nC, r: 0, w: cw[nC], h: r1, bf: BFI('none'), paras: P(PP[2], R(CP[14], T(c.uNo))) });
     row1 += tc({ c: nC + 1, r: 0, w: cw[nC + 1], h: r1, bf: BFI('none'), paras: P(PP[0], R(CP[0], T(c.uName))) });
     row1 += tc({ c: nC + 2, r: 0, rs: 2, w: cw[nC + 2], h: hu(L.bandH), bf: BFI('slash'), paras: P(PP[0], R(CP[0], T(''))) });
-    row1 += tc({ c: nC + 3, r: 0, rs: 2, w: cw[nC + 3], h: hu(L.bandH), bf: BFI('top'), v: c.cls ? 'TOP' : 'CENTER', ml: 1.5, mr: 1,
+    row1 += tc({ c: nC + 3, r: 0, rs: 2, w: cw[nC + 3], h: hu(L.bandH), bf: BFI('top'), v: 'CENTER', ml: 2, mr: 1,
       paras: (c.cls ? P(PP[0], R(CP[2], T(c.cls))) : '') + P(PP[1], R(CP[3], T(c.subj))) });
     row2 += tc({ c: nC, r: 1, w: cw[nC], h: r2, bf: BFI('bottom'), paras: P(PP[2], R(CP[1], T(c.sNo))) });
     row2 += tc({ c: nC + 1, r: 1, w: cw[nC + 1], h: r2, bf: BFI('bottom'), paras: P(PP[0], R(CP[1], T(c.sName))) });

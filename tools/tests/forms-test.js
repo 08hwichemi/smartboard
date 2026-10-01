@@ -609,12 +609,15 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await W.screenshot({ path: 'ws-1600.png' });
   check('학습지 미리보기: B4 두 장(홀수·짝수 쪽), 머리 띠(아이콘·대단원·소단원·수업명·과목명), 꼬리(홀수 쪽 오른쪽 끝 "학교명 과목명 27" / 짝수 쪽 "28 대단원"), NOTE는 오른쪽 여백 안·본문은 NOTE 왼쪽',
     wsv.n === 2 && wsv.w === '257mm' && wsv.icon && /2 반응엔탈피와 화학 평형/.test(wsv.band) && /01 반응엔탈피와 열화학 반응식/.test(wsv.band) && /화학이랑 놀자/.test(wsv.band) && /화학Ⅱ/.test(wsv.band) &&
-    wsv.foot1 === '부광고등학교 화학Ⅱ 27' && wsv.foot2 === '28 2단원 반응엔탈피와 화학 평형' && wsv.noteRight === 14 && wsv.bodyRightOfNote, wsv);
+    wsv.foot1 === '부광고등학교 화학Ⅱ 27' && wsv.foot2 === '28 2단원 반응엔탈피와 화학 평형' && wsv.noteRight === 16 && wsv.bodyRightOfNote, wsv);
   check('본문 제목 뼈대가 첫 쪽에(대제목 번호는 네모 안), 둘째 쪽은 빈 틀', wsv.lines.join('|').replace(/^1반응/, '1 반응') === '1 반응엔탈피|1. 반응엔탈피|(1) 엔탈피|① 모든 물질은 에너지를 가지고 있다.|② 일정한 온도와 압력에서|(2) 반응엔탈피' && !wsv.hasBodyOnPage2, wsv.lines);
+  const top = await W.evaluate(() => { const sh = document.querySelector('#fm-pages .ws-sheet'), k = sh.getBoundingClientRect().width / 257, band = sh.querySelector('.ws-band'), note = sh.querySelector('.ws-note');
+    return { band: Math.round((band.getBoundingClientRect().top - sh.getBoundingClientRect().top) / k), gap: Math.round((note.getBoundingClientRect().top - band.getBoundingClientRect().bottom) / k), cls: getComputedStyle([...band.querySelectorAll('div')].find(d => /놀자/.test(d.textContent))).color }; });
+  check('원본 학습지 간격: 머리 띠는 위에서 14mm, 머리 띠 아래 NOTE까지 8mm, 수업명은 연한 회색', top.band === 14 && top.gap === 8 && top.cls === 'rgb(153, 153, 153)', top);
   check('과목명 "화학Ⅱ" → 아이콘 자동으로 화학', await W.evaluate(() => wsCfg().iconK) === 'chem');
   await W.click('#ws-note [data-note="0"]'); await W.waitForTimeout(200);
   const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
-  check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 14 = 229mm)', !noNote.note && Math.abs(noNote.bw - 229) < 0.01, noNote);
+  check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 16 = 227mm)', !noNote.note && Math.abs(noNote.bw - 227) < 0.01, noNote);
   await W.click('#ws-note [data-note="1"]'); await W.click('#ws-colsn [data-v="2"]'); await W.waitForTimeout(200);
   check('2단 + NOTE: 본문이 두 단', await W.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .ws-body')).columnCount) === '2');
   if (JSZIP_JS) {
@@ -626,9 +629,17 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
         styles: ['학습지 대제목', '학습지 중제목', '학습지 소제목', '학습지 항목', '학습지 본문'].every(n => head.includes('name="' + n + '"')), slash: /<hh:slash type="CENTER"/.test(head),
         paperRel: /RelTo="PAPER"/.test(sec), bandPos: (sec.match(/<hp:header [\s\S]*?<hp:pos ([^>]*)>/) || [])[1], box: /<hh:charPr id="\d+"[^>]*borderFillIDRef="(\d+)"/.test(head),
         margin: (sec.match(/<hp:margin [^>]*>/) || [])[0], page: (sec.match(/<hp:pagePr [^>]*>/) || [])[0], texts: ['화학이랑 놀자', '화학Ⅱ', '부광고등학교', '2단원 반응엔탈피와 화학 평형', '01', '반응엔탈피와 열화학 반응식', '① 모든 물질은 에너지를 가지고 있다.'].every(t => sec.includes('<hp:t>' + t)) }; });
-    check('학습지 한글 파일: 아이콘 PNG·목록, 머리말 1·꼬리말 홀/짝, 시작 쪽 27, 쪽 번호 2곳, NOTE 칸(글 뒤로 표) 1, 2단, 학습지 스타일 5개, 사선 칸, B4, 오른쪽 여백 = 14 + NOTE 44 + 4',
+    check('학습지 한글 파일: 아이콘 PNG·목록, 머리말 1·꼬리말 홀/짝, 시작 쪽 27, 쪽 번호 2곳, NOTE 칸(글 뒤로 표) 1, 2단, 학습지 스타일 5개, 사선 칸, B4, 오른쪽 여백 = 16 + NOTE 44 + 4',
       wz.first === 'mimetype' && wz.png && wz.hpf && wz.header === 1 && wz.odd && wz.even && wz.newNum && wz.autoNum === 2 && wz.rects === 1 && wz.cols === '2' && wz.styles && wz.slash && wz.texts &&
-      /width="72850" height="103181"/.test(wz.page) && /right="17575"/.test(wz.margin), wz);
+      /width="72850" height="103181"/.test(wz.page) && /right="18142"/.test(wz.margin), wz);
+    const wf = await W.evaluate(async () => { const zip = await JSZip.loadAsync(await wsBuildHwpx(wsCfg())); const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
+      const faces = {}; (head.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/<hh:font id="\d+" face="[^"]+"/g) || []).forEach(x => { const m = x.match(/id="(\d+)" face="([^"]+)"/); faces[m[1]] = m[2]; });
+      const cp = (id) => { const x = head.match(new RegExp('<hh:charPr id="' + id + '"[\\s\\S]*?</hh:charPr>'))[0]; return { face: faces[x.match(/hangul="(\d+)"/)[1]], pt: +x.match(/height="(\d+)"/)[1] / 100, bold: x.includes('<hh:bold/>') }; };
+      const runOf = (t) => cp(sec.match(new RegExp('<hp:run charPrIDRef="(\\d+)"><hp:t>' + t))[1]);
+      return { school: runOf('부광고등학교'), subj: runOf('화학Ⅱ'), sName: runOf('반응엔탈피와 열화학 반응식'), h2: runOf('1\\. 반응엔탈피'), num: cp(sec.match(/<hp:run charPrIDRef="(\d+)"><hp:ctrl><hp:autoNum/)[1]) }; });
+    check('한글 파일 글꼴이 원본 학습지와 같음: 머리·꼬리 경기천년제목 Bold(진하게 겹치지 않음), 본문 경기천년바탕 Bold, 쪽 번호 함초롬돋움 16pt',
+      wf.school.face === '경기천년제목 Bold' && wf.school.pt === 9 && wf.subj.face === '경기천년제목 Bold' && !wf.subj.bold && wf.sName.face === '경기천년제목 Bold' && wf.sName.pt === 17 &&
+      wf.h2.face === '경기천년바탕 Bold' && !wf.h2.bold && wf.num.face === '함초롬돋움' && wf.num.pt === 16, wf);
     check('한글 파일 위치는 머리말·꼬리말 문단 기준(종이 기준 쓰지 않음 — 한글이 여백만큼 밀어서), 머리 띠는 머리말 문단 바로 그 자리(0,0)', !wz.paperRel && /vertRelTo="PARA" horzRelTo="PARA"[^>]*vertOffset="0" horzOffset="0"/.test(wz.bandPos), wz.bandPos);
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
