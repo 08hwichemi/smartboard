@@ -355,6 +355,7 @@ function pdfInfo(buf) {
 
   // 🔐 사물함 이름표
   const texts = (pg) => pg.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
+  check('탭 이름·순서: 게시판 / 사물함 / 분리수거함(아이콘 없음)', (await P.evaluate(() => [...document.querySelectorAll('#nt-mode-switch .tab-btn')].map(b => b.textContent.trim()).join('/'))) === '게시판/사물함/분리수거함');
   await P.click('#nt-mode-switch [data-mode="locker"]'); await wait(300);
   check('사물함: 기본 6.7×2.1cm, 담임 아니면 학년·반 고르라는 안내(명렬표 안 받음)', await P.inputValue('#nt-w') === '6.7' && await P.inputValue('#nt-h') === '2.1' && await P.isVisible('#nt-lk-box') && !(await P.isVisible('#nt-rc-box')) && !(await P.isVisible('#nt-board-box')) && /학년·반/.test(await P.locator('#nt-pages').innerText()) && studentSelects.length === 0);
   check('반 목록은 학급 구성대로(3학년 10반)', await P.evaluate(() => document.querySelectorAll('#nt-lk-grade option').length === 4));
@@ -362,7 +363,10 @@ function pdfInfo(buf) {
   check('학급 구성대로 3학년 반 10개', await P.evaluate(() => document.querySelectorAll('#nt-lk-class option').length) === 11);
   await P.selectOption('#nt-lk-class', '1'); await wait(400);
   check('3학년 1반 → 명렬표 5명, 기본 "번호 이름"', JSON.stringify(await texts(P)) === JSON.stringify(['1번 가나다', '2번 라마바', '3번 사아자', '4번 차카타', '5번 파하가']) && /5명/.test(await P.textContent('#nt-lk-count')), await texts(P));
-  check('6.7×2.1cm → A4 가로 한 장에 28개(4×7)', /가로 한 장에 28개/.test(await P.textContent('#nt-fit-info')) && await P.evaluate(() => { const s = document.querySelector('#nt-pages .nt-sheet > svg'); return s.getAttribute('width') === '67mm' && s.getAttribute('height') === '21mm'; }), await P.textContent('#nt-fit-info'));
+  check('6.7×2.1cm → 사이 간격 없이 A4 가로 한 장에 36개(4×9)', /가로 한 장에 36개/.test(await P.textContent('#nt-fit-info')) && await P.evaluate(() => { const s = document.querySelector('#nt-pages .nt-sheet > svg'); return s.getAttribute('width') === '67mm' && s.getAttribute('height') === '21mm'; }), await P.textContent('#nt-fit-info'));
+  const lkPos = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => [parseFloat(s.style.left), parseFloat(s.style.top)]));
+  check('사물함은 이름표끼리 딱 붙음(옆 67mm·아래 21mm 간격), 모서리는 각지게·모서리 고르기 숨김', Math.abs(lkPos[1][0] - lkPos[0][0] - 67) < 0.01 && Math.abs(lkPos[4][1] - lkPos[0][1] - 21) < 0.01 &&
+    await P.evaluate(() => document.querySelector('#nt-pages svg rect[clip-path], #nt-pages svg clipPath rect').getAttribute('rx') === '0' && document.getElementById('nt-radius').parentElement.style.display === 'none'), lkPos.slice(0, 5));
   const fmtBtns = await P.evaluate(() => [...document.querySelectorAll('#nt-lk-fmt .nt-chip')].map(b => b.textContent));
   check('표시 버튼 4개, 이 반 첫 학생으로 예시', JSON.stringify(fmtBtns) === JSON.stringify(['30101', '1번 가나다', '30101 가나다', '가나다']), fmtBtns);
   await P.click('#nt-lk-fmt [data-v="id"]'); await wait(200);
@@ -378,7 +382,7 @@ function pdfInfo(buf) {
   await setFill(P, 74); await wait(200);
   await P.screenshot({ path: 'nt-locker.png' });
   await P.selectOption('#nt-lk-class', '2'); await wait(400);
-  check('3학년 2반(30명) → 30개, 종이 2장', await labels(P) === 30 && await sheets(P) === 2, [await labels(P), await sheets(P)]);
+  check('3학년 2반(30명) → 30개, 종이 1장(36개 들어감)', await labels(P) === 30 && await sheets(P) === 1, [await labels(P), await sheets(P)]);
   await P.click('#nt-presets .nt-chip:nth-child(2)'); await wait(200);
   const lc = await cfgOf(pc);
   check('사물함 크기 바꾸면 사물함만(게시판·분리수거 크기 그대로)', lc.lw === 8 && lc.lh === 2.5 && lc.w === 25 && lc.rw === 19, lc);

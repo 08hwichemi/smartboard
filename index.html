@@ -2639,9 +2639,9 @@
       <div style="font-weight: 800; font-size: 16px;">🏷️ 이름표</div>
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ntOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <div class="tab-switch" id="nt-mode-switch">
-        <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판 이름표</button>
-        <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">♻️ 분리수거함</button>
-        <button class="tab-btn" data-mode="locker" onclick="ntSetMode('locker')">🔐 사물함</button>
+        <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판</button>
+        <button class="tab-btn" data-mode="locker" onclick="ntSetMode('locker')">사물함</button>
+        <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">분리수거함</button>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
@@ -11100,7 +11100,7 @@
   // (세로·가로 중 한 장에 더 많이 들어가는 쪽). 설정·내용은 개인 자료 nt-cfg 하나(작음 — 학생 정보 없음).
   // 글꼴은 이미 받아 두는 웹 글꼴 + 이 PC에 설치된 글꼴 이름 직접 입력(인터넷으로 받는 것 없음).
   const NT_CFG_KEY = 'nt-cfg';
-  const NT_MARGIN = 8, NT_GAP = 4; // mm — A4 여백(엑셀 0.8cm), 이름표 사이
+  const NT_MARGIN = 8; // mm — A4 여백(엑셀 0.8cm). 이름표 사이 간격은 모드마다(NT_MODE_KEYS의 gap)
   const NT_FONTS = [
     { f: 'Pretendard', n: '프리텐다드', w: [400, 500, 600, 700, 800, 900] },
     { f: 'Noto Sans KR', n: '본고딕', w: [700, 900] },
@@ -11140,11 +11140,12 @@
     recycle: [[18, 8, ''], [28, 12, 'A4 가로 폭'], [19, 27, 'A4 한 장']],
     locker: [[6.7, 2.1, '우리 학교'], [8, 2.5, ''], [9, 3, '']],
   };
-  // 모드마다 따로 기억하는 값(크기·장수·색 방식)의 설정 키
+  // 모드마다 따로 기억하는 값(크기·장수·색 방식)의 설정 키와 이름표 사이 간격(mm)
+  // 사물함은 작아서 하나씩 자르기 불편 → 간격 없이 붙여서 칼로 한 줄씩 쭉 자르게
   const NT_MODE_KEYS = {
-    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', dw: 14.8, dh: 6.4 },
-    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', dw: 18, dh: 8 },
-    locker: { w: 'lw', h: 'lh', copies: 'lCopies', color: 'lColorMode', dw: 6.7, dh: 2.1 },
+    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', dw: 14.8, dh: 6.4, gap: 4 },
+    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', dw: 18, dh: 8, gap: 4 },
+    locker: { w: 'lw', h: 'lh', copies: 'lCopies', color: 'lColorMode', dw: 6.7, dh: 2.1, gap: 0 },
   };
   function ntMK(c) { return NT_MODE_KEYS[c.mode] || NT_MODE_KEYS.board; }
   // 사물함 이름표에 적는 모양(학번 = 학년 + 반 두 자리 + 번호 두 자리, 예 30101)
@@ -11378,7 +11379,8 @@
     const th = ntTheme(c.style, it.color);
     const g = ntGeom(w, h, c.style, !!it.icon, c.fillPct);
     const s = size || ntFitSize(it, g, fi.f, weight, lsEm, c.style);
-    const rx = Math.min(c.radius || 0, h / 2, w / 2), sw = c.style === 'pop' ? 0.5 : 0.3, hs = sw / 2;
+    // 사물함은 붙여 놓고 자르므로 늘 각지게(둥글면 이웃과 맞닿는 모서리에 흰 틈이 남음)
+    const rx = c.mode === 'locker' ? 0 : Math.min(c.radius || 0, h / 2, w / 2), sw = c.style === 'pop' ? 0.5 : 0.3, hs = sw / 2;
     const id = 'ntc' + (++ntClipSeq);
     let o = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" style="width:' + w + 'mm;height:' + h + 'mm;">';
     o += '<defs><clipPath id="' + id + '"><rect width="' + w + '" height="' + h + '" rx="' + rx + '"/></clipPath></defs>';
@@ -11434,11 +11436,12 @@
   }
 
   // ----- A4 배치 -----
-  function ntLayout(w, h) {
+  function ntLayout(w, h, gap) {
+    const gp = gap == null ? 4 : gap;
     const fit = function(pw, ph) {
       const uw = pw - NT_MARGIN * 2, uh = ph - NT_MARGIN * 2;
-      const cols = Math.floor((uw + NT_GAP) / (w + NT_GAP)), rows = Math.floor((uh + NT_GAP) / (h + NT_GAP));
-      return { pw: pw, ph: ph, cols: cols, rows: rows, per: cols * rows };
+      const cols = Math.floor((uw + gp) / (w + gp)), rows = Math.floor((uh + gp) / (h + gp));
+      return { pw: pw, ph: ph, cols: cols, rows: rows, per: cols * rows, gap: gp };
     };
     const p = fit(210, 297), l = fit(297, 210);
     if (!p.per && !l.per) return null;
@@ -11457,7 +11460,7 @@
     const c = ntCfg();
     const sz = ntSize(c), w = sz.w * 10, h = sz.h * 10; // mm
     const items = ntItems(c);
-    const lay = ntLayout(w, h);
+    const lay = ntLayout(w, h, ntMK(c).gap);
     const box = document.getElementById('nt-pages');
     const label = document.getElementById('nt-prev-label');
     const info = document.getElementById('nt-fit-info');
@@ -11489,14 +11492,14 @@
       for (let k = 0; k < copies; k++) all.push(svg);
     });
     // 한 장 안에서 가로는 가운데, 세로는 위에서부터(자를 때 장마다 자리가 같게)
-    const gw = lay.cols * w + (lay.cols - 1) * NT_GAP;
+    const gw = lay.cols * w + (lay.cols - 1) * lay.gap;
     const x0 = (lay.pw - gw) / 2;
     const sheets = [];
     for (let i = 0; i < all.length; i += lay.per) {
       let s = '<div class="nt-sheet" style="width:' + lay.pw + 'mm; height:' + (lay.ph - 0.3) + 'mm;">';
       all.slice(i, i + lay.per).forEach(function(svg, j) {
         const col = j % lay.cols, row = Math.floor(j / lay.cols);
-        s += svg.replace('<svg ', '<svg style="left:' + (x0 + col * (w + NT_GAP)) + 'mm; top:' + (NT_MARGIN + row * (h + NT_GAP)) + 'mm;" ').replace(/ style="width:([^"]*)"/, ' width="' + w + 'mm" height="' + h + 'mm"');
+        s += svg.replace('<svg ', '<svg style="left:' + (x0 + col * (w + lay.gap)) + 'mm; top:' + (NT_MARGIN + row * (h + lay.gap)) + 'mm;" ').replace(/ style="width:([^"]*)"/, ' width="' + w + 'mm" height="' + h + 'mm"');
       });
       sheets.push(s + '</div>');
     }
@@ -11567,6 +11570,7 @@
     wsel.value = String([400, 600, 700, 900].reduce(function(a, b) { return Math.abs(b - c.weight) < Math.abs(a - c.weight) ? b : a; }));
     wsel.disabled = !!(fi.w && fi.w.length < 2);
     wsel.title = wsel.disabled ? '이 글꼴은 굵기가 한 가지뿐이에요' : '';
+    document.getElementById('nt-radius').parentElement.style.display = lk ? 'none' : '';
     document.querySelectorAll('#nt-radius .top-btn').forEach(function(b) { b.classList.toggle('theme-active', Number(b.dataset.v) === Number(c.radius)); });
     // 분리수거 종류
     document.getElementById('nt-rc-list').innerHTML = NT_RC.map(function(r) {
@@ -11712,10 +11716,10 @@
     { selector: '#nt-font-box', before: ntTourBoard, title: '4단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기도 고르고, 글자 크기·자간은 바를 밀어서 원하는 만큼 조절해요.' },
     { selector: '#nt-design-box', before: ntTourBoard, title: '5단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
     { selector: '#nt-right', before: ntTourBoard, title: '6단계. 미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요.' },
-    { selector: '#nt-mode-switch', before: ntTourRecycle, title: '♻️ 분리수거함 이름표', desc: '위쪽 "분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요(게시판 이름표 내용은 따로 기억돼요).' },
-    { selector: '#nt-rc-box', before: ntTourRecycle, title: '분리수거 종류 고르기', desc: '만들 종류를 체크하면 아이콘과 함께 만들어지고, 색은 종류별로 들어가요. 목록에 없는 건 아래 칸에 직접 적어 더하고, 영어 이름(PLASTIC 등)은 켜고 끌 수 있어요.' },
-    { selector: '#nt-mode-switch', before: ntTourLocker, title: '🔐 사물함 이름표', desc: '"사물함"을 누르면 반 학생 전원의 사물함 이름표를 한 번에 만들어요. 크기는 기본 6.7 × 2.1cm이고 위 크기 칸에서 바꿀 수 있어요.' },
+    { selector: '#nt-mode-switch', before: ntTourLocker, title: '🔐 사물함 이름표', desc: '위쪽 "사물함"을 누르면 반 학생 전원의 사물함 이름표를 한 번에 만들어요(게시판 내용은 따로 기억돼요). 크기는 기본 6.7 × 2.1cm이고 위 크기 칸에서 바꿀 수 있어요. 사이 간격 없이 붙여 놓아서 칼로 한 줄씩 쭉 자르면 돼요.' },
     { selector: '#nt-lk-box', before: ntTourLocker, title: '학년·반과 표시 모양', desc: '학년·반을 고르면 명렬표에서 학생을 가져와요(담임 선생님은 담임 반이 자동). 표시는 학번(30101), 번호 이름(1번 홍길동), 학번 이름, 이름만 중에서 골라요.' },
+    { selector: '#nt-mode-switch', before: ntTourRecycle, title: '♻️ 분리수거함 이름표', desc: '위쪽 "분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요.' },
+    { selector: '#nt-rc-box', before: ntTourRecycle, title: '분리수거 종류 고르기', desc: '만들 종류를 체크하면 아이콘과 함께 만들어지고, 색은 종류별로 들어가요. 목록에 없는 건 아래 칸에 직접 적어 더하고, 영어 이름(PLASTIC 등)은 켜고 끌 수 있어요.' },
     { selector: '#nt-print-btn', title: '7단계. 출력', desc: '🖨️ 출력을 누르고, 인쇄 창에서 배율은 "기본값(100%)" 그대로 두세요 — 적은 크기(cm) 그대로 나와요. "PDF로 저장"을 고르면 파일로도 받을 수 있어요. 수고하셨습니다! 🎉' },
   ];
   function ntOpenTour() {
@@ -11765,7 +11769,7 @@
     const c = ntCfg();
     if (!ntItems(c).length) return customAlert(c.mode === 'recycle' ? '분리수거 종류를 먼저 체크해 주세요.' : c.mode === 'locker' ? '학년·반을 먼저 골라 주세요(명렬표에 학생이 있어야 해요).' : '내용에 이름을 먼저 적어 주세요.');
     const sz = ntSize(c);
-    if (!ntLayout(sz.w * 10, sz.h * 10)) return customAlert('이름표가 A4 종이보다 커서 인쇄할 수 없어요. 크기를 줄여 주세요.');
+    if (!ntLayout(sz.w * 10, sz.h * 10, ntMK(c).gap)) return customAlert('이름표가 A4 종이보다 커서 인쇄할 수 없어요. 크기를 줄여 주세요.');
     const fi = ntFontInfo(c);
     if (!fi.custom && document.fonts && document.fonts.load) {
       try { await Promise.race([document.fonts.load(ntWeight(c) + " 40px '" + fi.f + "'", ntItems(c).map(function(it) { return it.text; }).join('')), new Promise(function(r) { setTimeout(r, 3000); })]); } catch (e) {}
