@@ -248,7 +248,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('두 열일 때 옆 상자끼리 위·아래 선이 맞음(명단↔배치, 제목·안내↔칸 너비, 체크 칸↔정렬)', at1600.even && at1536.even, [at1600, at1536]);
   const at1920 = await colsAt(1920, 950);
   await P.screenshot({ path: 'fm-1920.png' });
-  check('1920px: 두 열·상자 줄 맞음·왼쪽 칸 안에서 스크롤 없음', at1920.cols === 2 && at1920.even && at1920.h <= (await P.evaluate(() => document.getElementById('fm-left').clientHeight)), at1920);
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 9999); await P.screenshot({ path: 'fm-1920b.png', clip: { x: 60, y: 400, width: 740, height: 550 } });
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 0);
+  const ch1920 = await P.evaluate(() => document.getElementById('fm-left').clientHeight);
+  check('1920px: 두 열·상자 줄 맞음·왼쪽 칸이 거의 한 화면(넘쳐도 60px 이내 — 여기선 글꼴 없음 안내가 더 있음)', at1920.cols === 2 && at1920.even && at1920.h <= ch1920 + 60, [at1920, ch1920]);
   await P.setViewportSize({ width: 1024, height: 700 }); await P.waitForTimeout(300);
   const nar = await P.evaluate(() => { const l = document.getElementById('fm-left'); return { over: l.scrollWidth - l.clientWidth, w: l.clientWidth,
     boxes: [...l.querySelectorAll('.nt-box')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.id) }; });
@@ -502,6 +505,71 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     const widths = ws.columns.map(cl => cl.width);
     check('엑셀: 칸 너비 비율이 화면과 같음(이름 > 번호)', widths[2] > widths[0] * 1.5 && widths.length === 6, widths);
   }
+
+  // 쪽 설정(한글 F7): 용지·방향·여백
+  const sheetMm = () => P.evaluate(() => { const sh = document.querySelector('#fm-pages .fm-sheet'); return { w: sh.style.width, h: sh.style.height, pad: sh.style.padding }; });
+  check('쪽 설정 기본: A4 세로, 여백 15mm(보통 켜짐)', JSON.stringify(await sheetMm()) === JSON.stringify({ w: '210mm', h: '297mm', pad: '15mm' }) && await P.evaluate(() => document.querySelector('#fm-mpre .nt-chip.on').textContent) === '보통', await sheetMm());
+  await P.click('#fm-paper [data-paper="B4"]'); await P.click('#fm-paper [data-land="1"]'); await P.waitForTimeout(200);
+  await setText(P, '#fm-margins input[data-k="mT"]', '20'); await setText(P, '#fm-margins input[data-k="mL"]', '25'); await P.waitForTimeout(300);
+  const pgB4 = await sheetMm(), pc = await cfgOf(hr);
+  check('B4 가로 + 위 20·왼쪽 25: 미리보기 364×257mm, 여백 그대로, 저장, "보통"은 꺼짐', pgB4.w === '364mm' && pgB4.h === '257mm' && pgB4.pad === '20mm 15mm 15mm 25mm' && pc.paper === 'B4' && pc.land === true && pc.mT === 20 && pc.mL === 25 &&
+    !(await P.evaluate(() => document.querySelector('#fm-mpre .nt-chip.on'))) && /B4 가로/.test(await P.textContent('#fm-prev-label')), [pgB4, pc]);
+  const twB4 = await P.evaluate(() => parseFloat(document.querySelector('#fm-pages table.fm-tbl').style.width));
+  check('표 폭 = 364 − 25 − 15 = 324mm(꽉 차게)', Math.abs(twB4 - 324) < 0.01, twB4);
+  if (JSZIP_JS) {
+    const pz = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const sec = await zip.file('Contents/section0.xml').async('string');
+      return [(sec.match(/<hp:pagePr [^>]*>/) || [])[0], (sec.match(/<hp:margin [^>]*>/) || [])[0]]; });
+    check('한글 파일: B4 세로 크기 + 가로 방향(NARROWLY), 여백 위 20·왼쪽 25·오른쪽 15mm', /landscape="NARROWLY"/.test(pz[0]) && /width="72850"/.test(pz[0]) && /height="103181"/.test(pz[0]) && /top="5669"/.test(pz[1]) && /left="7087"/.test(pz[1]) && /right="4252"/.test(pz[1]), pz);
+  }
+  await P.click('#fm-mpre [data-m="15"]'); await P.click('#fm-paper [data-paper="A4"]'); await P.click('#fm-paper [data-land="0"]'); await P.waitForTimeout(200);
+  check('여백 "보통" 누르면 네 쪽 15mm, A4 세로로 돌아옴', JSON.stringify(await sheetMm()) === JSON.stringify({ w: '210mm', h: '297mm', pad: '15mm' }) && await P.inputValue('#fm-margins input[data-k="mL"]') === '15');
+
+  // 표 선: 빠른 모양, 고칠 곳(여러 개) → 종류·굵기·색
+  const bds = () => P.evaluate(() => { const t = document.querySelector('#fm-pages table.fm-tbl'), cs = (r, c) => getComputedStyle(t.rows[r].cells[c]);
+    return { outTop: cs(0, 0).borderTopStyle + ' ' + cs(0, 0).borderTopWidth, headBot: cs(0, 1).borderBottomStyle, inH: cs(2, 1).borderTopStyle, inHw: parseFloat(cs(2, 1).borderTopWidth), inV: cs(2, 1).borderLeftStyle + ' ' + cs(2, 1).borderLeftColor, outLeft: cs(2, 0).borderLeftWidth }; });
+  await P.click('#fm-ln-pre [data-i="2"]'); await P.waitForTimeout(200);
+  let b = await bds();
+  check('빠른 모양 "제목칸 이중선": 바깥 0.4mm 실선, 제목칸 아래 이중선, 안쪽은 얇은 실선', b.outTop.startsWith('solid') && parseFloat(b.outTop.split(' ')[1]) > b.inHw && b.headBot === 'double' && b.inH === 'solid' && (await cfgOf(hr)).ln.h.t === 'double', b);
+  await P.click('#fm-ln-parts [data-part="o"]'); // 바깥은 빼고(하나뿐이면 안 빠짐 → 그대로)
+  await P.click('#fm-ln-parts [data-part="ih"]'); await P.click('#fm-ln-parts [data-part="iv"]'); await P.click('#fm-ln-parts [data-part="o"]'); await P.waitForTimeout(100);
+  const selParts = await P.evaluate(() => [...document.querySelectorAll('#fm-ln-parts .nt-chip.on')].map(x => x.dataset.part).join());
+  await P.selectOption('#fm-ln-type', 'dash'); await P.click('#fm-ln-colors [data-c="#1F4E9A"]'); await P.waitForTimeout(200);
+  b = await bds(); let lc = (await cfgOf(hr)).ln;
+  check('고칠 곳 여러 개(안쪽 가로·세로) 골라 파선·파랑 → 그 두 곳만 바뀜, 바깥·제목칸 아래는 그대로', selParts === 'ih,iv' && lc.ih.t === 'dash' && lc.iv.t === 'dash' && lc.ih.c === '#1F4E9A' && lc.o.t === 'solid' && lc.h.t === 'double' &&
+    b.inH === 'dashed' && b.inV === 'dashed rgb(31, 78, 154)' && b.headBot === 'double', [selParts, lc, b]);
+  await P.click('#fm-ln-parts [data-part="o"]'); await P.click('#fm-ln-parts [data-part="ih"]'); await P.click('#fm-ln-parts [data-part="iv"]'); // 바깥만(마지막 하나는 안 빠지니 바깥을 먼저 고름)
+  await P.selectOption('#fm-ln-type', 'none'); await P.waitForTimeout(200);
+  b = await bds();
+  check('바깥 테두리 "없음" → 바깥 선 안 보임, 굵기 칸은 못 고침', b.outLeft === '0px' && await P.isDisabled('#fm-ln-w') && !(await P.evaluate(() => document.querySelector('#fm-ln-pre .nt-chip.on'))), b);
+  if (JSZIP_JS) {
+    const lz = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const head = await zip.file('Contents/header.xml').async('string'), sec = await zip.file('Contents/section0.xml').async('string');
+      const bf = {}; [...head.matchAll(/<hh:borderFill id="(\d+)"[\s\S]*?<\/hh:borderFill>/g)].forEach(m => bf[m[1]] = m[0]);
+      const tbl = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/)[0], cells = [...tbl.matchAll(/<hp:tc [^>]*borderFillIDRef="(\d+)"[\s\S]*?<hp:cellAddr colAddr="(\d+)" rowAddr="(\d+)"/g)].map(m => ({ id: m[1], c: +m[2], r: +m[3] }));
+      const side = (r, c, k) => { const x = cells.find(q => q.r === r && q.c === c); return (bf[x.id].match(new RegExp('<hh:' + k + 'Border type="(\\w+)" width="([^"]+)" color="([^"]+)"')) || []).slice(1).join(' '); };
+      return { outLeft: side(1, 0, 'left'), headBot: side(0, 1, 'bottom'), inTop: side(2, 1, 'top'), inLeft: side(2, 1, 'left'), headFill: /faceColor="#E5E5E5"/.test(bf[cells.find(q => q.r === 0).id]), itemCnt: +head.match(/<hh:borderFills itemCnt="(\d+)"/)[1], maxId: Math.max(...Object.keys(bf).map(Number)) }; });
+    if (process.env.HWPX_OUT2) { // 선·쪽 설정을 바꾼 한글 파일도 저장(검사·그려 보기용) — B4 가로로 다시 만든다
+      const b64 = await P.evaluate(async () => { const c = Object.assign(fmCfg(), { paper: 'B4', land: true, colsN: 2 }); const bl = await fmBuildHwpx(c); const u8 = new Uint8Array(await bl.arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); });
+      fs.writeFileSync(process.env.HWPX_OUT2, Buffer.from(b64, 'base64'));
+    }
+    check('한글 파일 칸 테두리: 바깥 NONE, 제목칸 아래 DOUBLE_SLIM 0.5mm, 안쪽 DASH 파랑, 머리 줄 회색 배경, 테두리 개수 맞음', lz.outLeft.startsWith('NONE') && lz.headBot === 'DOUBLE_SLIM 0.5 mm #000000' && lz.inTop === 'DASH 0.12 mm #1F4E9A' && lz.inLeft === 'DASH 0.12 mm #1F4E9A' && lz.headFill && lz.itemCnt === lz.maxId, lz);
+  }
+  if (EXCELJS_PATH) {
+    const dlx2 = P.waitForEvent('download'); await P.click('#fm-xlsx-btn');
+    const ExcelJS = require(path.join(path.dirname(EXCELJS_PATH), '..'));
+    const wb2 = new ExcelJS.Workbook(); await wb2.xlsx.load(fs.readFileSync(await (await dlx2).path()));
+    const w2 = wb2.worksheets[0], hr2 = [...Array(w2.rowCount)].map((_, i) => i + 1).find(r => w2.getCell(r, 1).value === '번호');
+    const e = { headBot: (w2.getCell(hr2, 2).border.bottom || {}).style, inTop: (w2.getCell(hr2 + 2, 2).border.top || {}).style, inColor: ((w2.getCell(hr2 + 2, 2).border.top || {}).color || {}).argb, outLeft: w2.getCell(hr2 + 1, 1).border.left };
+    check('엑셀 테두리도 같게(제목칸 아래 이중선, 안쪽 파선 파랑, 바깥 없음)', e.headBot === 'double' && e.inTop === 'dashed' && e.inColor === 'FF1F4E9A' && !e.outLeft, e);
+  }
+  await P.click('#fm-ln-pre [data-i="1"]'); await P.waitForTimeout(200);
+  await P.emulateMedia({ media: 'print' });
+  // (getComputedStyle은 화면 픽셀로 깎아 보여서, 인쇄 때 화면용 px 대신 mm 쪽이 쓰이는지(--fms = 0)와 적힌 mm 값을 본다)
+  const prW = await P.evaluate(() => { const t = document.querySelector('#fm-pages table.fm-tbl'); return [getComputedStyle(document.getElementById('fm-pages')).getPropertyValue('--fms').trim(), t.rows[0].cells[0].style.borderTop]; });
+  await P.emulateMedia({ media: 'screen' });
+  const scW = await P.evaluate(() => getComputedStyle(document.getElementById('fm-pages')).getPropertyValue('--fms').trim());
+  check('인쇄 때는 선 굵기를 정확한 mm로(바깥 0.4mm), 화면에선 굵기 차이가 보이게 px로', prW[0] === '0' && scW === '1' && /0\.4mm/.test(prW[1]), [prW, scW]);
+  await P.click('#fm-ln-pre [data-i="0"]'); await P.waitForTimeout(200);
+  check('빠른 모양 "기본"으로 되돌리기', (await bds()).headBot === 'solid' && (await cfgOf(hr)).ln.o.w === 0.12);
 
   // 못 받는 반 → 안내, 다시 그려도 재요청 안 함
   failStudents = true;

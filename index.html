@@ -906,15 +906,29 @@
     #fm-left { width: clamp(320px, calc(100% - 780px), 720px); flex: 0 0 auto; overflow-y: auto; padding: 14px; box-sizing: border-box; border-right: 1px solid var(--border-color); container-type: inline-size; }
     #fm-grid { display: flex; flex-direction: column; gap: 12px; }
     #fm-grid > * { flex-shrink: 0; min-width: 0; }
+    /* 채우는 순서 번호: 1~3(꼭) 진한 동그라미, 4~8(필요할 때만) 테두리 동그라미 */
+    .fm-tt { display: inline-flex; align-items: center; gap: 6px; }
+    .fm-step { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); color: #fff; font-size: 11px; font-weight: 800; flex: 0 0 auto; border: 1.5px solid var(--accent-color); box-sizing: border-box; }
+    .fm-step.opt { background: transparent; color: var(--accent-color); }
+    .fm-guide { font-size: 12px; color: var(--text-sub); line-height: 1.6; margin: 0 2px 12px; }
+    .fm-guide .fm-step { width: 16px; height: 16px; font-size: 10px; margin-right: 2px; vertical-align: -3px; }
+    .fm-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
+    #fm-paper .fm-sep { width: 1px; height: 16px; background: var(--border-color); margin: 0 4px; }
+    .fm-ln-edit { gap: 6px; }
+    .fm-ln-edit select { width: auto; }
+    #fm-ln-colors { display: inline-flex; gap: 4px; }
+    .fm-sw { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--card-bg); box-shadow: 0 0 0 1px var(--border-color); cursor: pointer; padding: 0; }
+    .fm-sw.on { box-shadow: 0 0 0 2px var(--accent-color); }
+    #fm-ln-color { width: 28px; height: 22px; padding: 0; border: 1px solid var(--border-color); border-radius: 6px; background: none; cursor: pointer; }
     /* 두 열: 왼쪽 열 = 명단·제목·안내·체크 칸, 오른쪽 열 = 배치·칸 너비·정렬. 같은 줄의 두 상자는 높이를 맞춰 위·아래 선이 가지런하게 */
     @container (min-width: 600px) {
-      #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
+      #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
     #fm-left textarea.lp-input { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
     #fm-left input[type="text"].lp-input { width: 100%; box-sizing: border-box; }
     #fm-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
     #fm-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
-    #fm-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; }
+    #fm-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; --fms: 1; }
     #fm-classes { gap: 3px; flex: 1; min-width: 0; flex-wrap: nowrap; }
     #fm-classes.many { flex-wrap: wrap; }
     #fm-classes .nt-chip { flex: 1 1 0; max-width: 34px; min-width: 0; padding: 3px 0; text-align: center; }
@@ -936,6 +950,11 @@
     #fm-rowh-row .fm-rowh-in input.lp-input { width: 52px; padding-left: 6px; padding-right: 2px; }
     .fm-rowh-in input:placeholder-shown { color: var(--text-sub); }
     #fm-widths { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
+    #fm-margins { display: grid; grid-template-columns: repeat(4, auto minmax(34px, 1fr)); gap: 4px; align-items: center; font-size: 12px; }
+    #fm-margins label { display: contents; }
+    #fm-margins .lp-input { width: 100%; padding-left: 5px; padding-right: 1px; }
+    #fm-page-box .nt-chip, #fm-line-box .nt-chip { padding: 3px 8px; }
+    #fm-paper, #fm-mpre, #fm-ln-pre, #fm-ln-parts { gap: 4px; }
     .fm-w { display: flex; align-items: center; gap: 5px; font-size: 12px; min-width: 0; }
     .fm-w span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .fm-w input { width: 66px; padding-left: 6px; padding-right: 2px; }
@@ -960,7 +979,7 @@
     @media print {
       #fm-page-header, #fm-left, #fm-right-head { display: none !important; }
       body[data-print-target="forms"] #form-page, body[data-print-target="forms"] #fm-body, body[data-print-target="forms"] #fm-right, body[data-print-target="forms"] #fm-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
-      #fm-pages { zoom: 1 !important; display: block !important; padding: 0 !important; }
+      #fm-pages { zoom: 1 !important; display: block !important; padding: 0 !important; --fms: 0 !important; }
       .fm-sheet { box-shadow: none !important; margin: 0 !important; break-after: page; break-inside: avoid; }
       .fm-sheet:last-child { break-after: auto; }
     }
@@ -2826,9 +2845,10 @@
   </div>
   <div id="fm-body">
     <div id="fm-left">
+      <div class="fm-guide"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 차례로 채우면 바로 만들어져요. <b class="fm-step opt">4</b>~<b class="fm-step opt">8</b>은 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
       <div id="fm-grid">
       <div class="nt-box" id="fm-class-box">
-        <div class="nt-title">🏫 명단 <span class="nt-muted" id="fm-count"></span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🏫 명단</span> <span class="nt-muted" id="fm-count"></span></div>
         <div class="tab-switch" id="fm-src-switch" style="align-self:flex-start;">
           <button class="tab-btn active" data-src="class" onclick="fmSetSrc('class')">반 명단 불러오기</button>
           <button class="tab-btn" data-src="manual" onclick="fmSetSrc('manual')">직접 입력</button>
@@ -2848,7 +2868,7 @@
         </div>
       </div>
       <div class="nt-box" id="fm-text-box">
-        <div class="nt-title">✏️ 제목·안내 <span class="nt-muted">글꼴은 학교 PC에 있는 것</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>✏️ 제목·안내</span> <span class="nt-muted">글꼴은 학교 PC에 있는 것</span></div>
         <input type="text" id="fm-title" class="lp-input" placeholder="예) 현장체험학습 동의서 제출 확인" oninput="fmSet({ title: this.value }); fmRender();">
         <div class="nt-row fm-fontrow"><span class="fm-fl">제목 글꼴</span><select id="fm-tfont" class="mini-select" onchange="fmOnFontPick('tFont', this.value)"></select><input type="number" id="fm-tsize" class="lp-input" min="10" max="40" step="1" title="제목 글자 크기(pt)" oninput="fmOnSize('tSize', this.value, 10, 40)">pt</div>
         <input type="text" id="fm-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('tFont', this.value)">
@@ -2859,7 +2879,7 @@
         <div class="nt-muted" id="fm-font-msg"></div>
       </div>
       <div class="nt-box" id="fm-cols-box">
-        <div class="nt-title">☑️ 체크 칸 <span class="nt-muted">한 줄에 하나 · 최대 12개</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">3</b>☑️ 체크 칸</span> <span class="nt-muted">한 줄에 하나 · 최대 12개</span></div>
         <textarea id="fm-cols" class="lp-input" rows="3" placeholder="예)&#10;동의서&#10;회비" oninput="fmSet({ cols: this.value }); fmRender();"></textarea>
         <div class="nt-row fm-opts">
           <label><input type="checkbox" id="fm-showid" onchange="fmSet({ showId: this.checked }); fmRender();"> 학번 칸</label>
@@ -2867,21 +2887,43 @@
           <label title="줄마다 번갈아 연한 회색 — 체크할 때 줄이 안 헷갈리게"><input type="checkbox" id="fm-zebra" onchange="fmSet({ zebra: this.checked }); fmRender();"> 줄 번갈아 회색</label>
         </div>
       </div>
+      <div class="nt-box" id="fm-page-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
+        <div class="nt-row" id="fm-paper"></div>
+        <div class="nt-row" id="fm-mpre"></div>
+        <div id="fm-margins" title="여백(mm)">
+          <label>위<input type="number" class="lp-input" min="0" max="50" step="1" data-k="mT" oninput="fmOnMargin(this)"></label>
+          <label>아래<input type="number" class="lp-input" min="0" max="50" step="1" data-k="mB" oninput="fmOnMargin(this)"></label>
+          <label>왼쪽<input type="number" class="lp-input" min="0" max="50" step="1" data-k="mL" oninput="fmOnMargin(this)"></label>
+          <label>오른쪽<input type="number" class="lp-input" min="0" max="50" step="1" data-k="mR" oninput="fmOnMargin(this)"></label>
+        </div>
+      </div>
       <div class="nt-box" id="fm-layout-box">
-        <div class="nt-title">📐 배치</div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>📐 배치</span></div>
         <div class="nt-row" id="fm-colsn"></div>
         <div class="nt-row" id="fm-rowh-row"><span id="fm-rowh"></span><label class="fm-rowh-in" title="줄 높이를 mm로 직접 — 비우면 자동"><input type="number" id="fm-rowh-input" class="lp-input" min="5" max="30" step="0.5" onfocus="fmRowHFocus(this)" onblur="fmRowHBlur(this)" oninput="fmOnRowH(this.value)">mm</label></div>
         <div class="nt-muted" id="fm-fit-info"></div>
       </div>
       <div class="nt-box" id="fm-width-box">
-        <div class="nt-title">↔️ 칸 너비 <button class="nt-chip" onclick="fmResetWidths()" title="모든 칸을 자동 너비로">모두 자동</button></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>↔️ 칸 너비</span> <button class="nt-chip" onclick="fmResetWidths()" title="모든 칸을 자동 너비로">모두 자동</button></div>
         <label class="nt-row" style="cursor:pointer;" title="자동 너비 칸(비고·체크 칸)이 남는 폭을 나눠 가져요. 끄면 표가 필요한 만큼만 차지하고 가운데에 놓여요."><input type="checkbox" id="fm-fill" onchange="fmSet({ fill: this.checked }); fmRender();"> 표를 종이 폭에 꽉 차게</label>
         <div id="fm-widths"></div>
         <div class="nt-muted" id="fm-width-info"></div>
       </div>
       <div class="nt-box" id="fm-align-box">
-        <div class="nt-title">↹ 정렬</div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">7</b>↹ 정렬</span></div>
         <div class="fm-al" id="fm-aligns"></div>
+      </div>
+      <div class="nt-box" id="fm-line-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">8</b>📏 표 선</span> <span class="nt-muted">고칠 곳 → 종류·굵기·색</span></div>
+        <div class="nt-row" id="fm-ln-pre"></div>
+        <div class="nt-row" id="fm-ln-parts"></div>
+        <div class="nt-row fm-ln-edit">
+          <select id="fm-ln-type" class="mini-select" title="선 종류" onchange="fmLnSet('t', this.value)"></select>
+          <select id="fm-ln-w" class="mini-select" title="선 굵기" onchange="fmLnSet('w', parseFloat(this.value))"></select>
+          <span id="fm-ln-colors"></span>
+          <input type="color" id="fm-ln-color" title="다른 색 고르기" oninput="fmLnSet('c', this.value)">
+        </div>
       </div>
       </div>
     </div>
@@ -12062,7 +12104,53 @@
     // 정렬(L·C·R): 제목, 반·인원 줄, 안내, 표(종이에서 위치), 표 제목칸(머리 줄) 글자, 표 내용(학생 줄 모든 칸) 글자
     aT: 'C', aI: 'C', aN: 'L', aTb: 'C', aHd: 'C', aBd: 'C',
     tFont: '맑은 고딕', tSize: 20, bFont: '맑은 고딕', bSize: 11,
+    // 쪽 설정(한글 F7): 용지, 가로 방향, 여백(mm)
+    paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15,
+    // 표 선: o 바깥 테두리, h 제목칸 아래, ih 안쪽 가로선, iv 안쪽 세로선 — t 종류, w 굵기(mm), c 색
+    ln: null,
   };
+  const FM_PAPERS = { A4: [210, 297], B4: [257, 364], A3: [297, 420], B5: [182, 257] }; // 세로 기준 mm(B는 한국·일본 B판)
+  const FM_MARGIN_PRE = [[10, '좁게'], [15, '보통'], [20, '넓게']];
+  const FM_LN_TYPES = [['solid', '실선'], ['dot', '점선'], ['dash', '파선'], ['double', '이중선'], ['none', '없음']];
+  const FM_LN_W = [0.12, 0.2, 0.3, 0.4, 0.5, 0.7, 1];
+  const FM_LN_COLORS = [['#000000', '검정'], ['#555555', '진한 회색'], ['#999999', '회색'], ['#1F4E9A', '파랑'], ['#C00000', '빨강']];
+  const FM_LN_PARTS = [['o', '바깥', '표 맨 바깥 테두리'], ['h', '제목칸 아래', '제목칸과 첫 줄 사이'], ['ih', '안쪽 가로', '안쪽 가로선'], ['iv', '안쪽 세로', '안쪽 세로선']];
+  const fmLn = function(t, w, c) { return { t: t, w: w, c: c || '#000000' }; };
+  const FM_LN_PRESETS = [
+    ['기본', { o: fmLn('solid', 0.12), h: fmLn('solid', 0.12), ih: fmLn('solid', 0.12), iv: fmLn('solid', 0.12) }],
+    ['바깥 굵게', { o: fmLn('solid', 0.4), h: fmLn('solid', 0.12), ih: fmLn('solid', 0.12), iv: fmLn('solid', 0.12) }],
+    ['제목칸 이중선', { o: fmLn('solid', 0.4), h: fmLn('double', 0.5), ih: fmLn('solid', 0.12), iv: fmLn('solid', 0.12) }],
+    ['가로 점선', { o: fmLn('solid', 0.4), h: fmLn('solid', 0.12), ih: fmLn('dot', 0.12), iv: fmLn('solid', 0.12) }],
+    ['회색', { o: fmLn('solid', 0.2, '#555555'), h: fmLn('solid', 0.12, '#999999'), ih: fmLn('solid', 0.12, '#999999'), iv: fmLn('solid', 0.12, '#999999') }],
+  ];
+  function fmLines(v) {
+    const out = {};
+    FM_LN_PARTS.forEach(function(pt) {
+      const d = FM_LN_PRESETS[0][1][pt[0]], x = (v && v[pt[0]]) || {};
+      out[pt[0]] = {
+        t: FM_LN_TYPES.some(function(t) { return t[0] === x.t; }) ? x.t : d.t,
+        w: FM_LN_W.indexOf(Number(x.w)) >= 0 ? Number(x.w) : d.w,
+        c: /^#[0-9a-fA-F]{6}$/.test(x.c || '') ? x.c.toUpperCase() : d.c,
+      };
+    });
+    return out;
+  }
+  // 쪽: 용지 크기(방향 반영)와 여백(mm)
+  function fmPage(c) {
+    const p = FM_PAPERS[c.paper];
+    return { pw: p[0], ph: p[1], w: c.land ? p[1] : p[0], h: c.land ? p[0] : p[1], t: c.mT, b: c.mB, l: c.mL, r: c.mR };
+  }
+  // 셀 네 변의 선: 표 맨 바깥은 바깥 테두리, 제목칸과 첫 줄 사이는 제목칸 아래, 나머지는 안쪽 가로·세로선
+  function fmSides(ln, r, R, ci, C) {
+    return { t: r === 0 ? ln.o : r === 1 ? ln.h : ln.ih, b: r === R - 1 ? ln.o : r === 0 ? ln.h : ln.ih, l: ci === 0 ? ln.o : ln.iv, r: ci === C - 1 ? ln.o : ln.iv };
+  }
+  // 미리보기 선: 인쇄는 정확한 mm, 화면은 줄여 보여도(zoom) 굵기 차이가 보이게 정수 px(브라우저가 1px 아래로 깎아 굵은 선·얇은 선이 같아 보이던 것).
+  // --fms(화면 1·인쇄 0), --fmz(미리보기 배율)는 #fm-pages에 있음. 이중선은 두 줄로 보이게 화면 3px·인쇄 0.8mm 이상.
+  function fmBdCss(p) {
+    if (p.t === 'none') return 'none';
+    const dbl = p.t === 'double', mm = dbl ? Math.max(p.w, 0.8) : p.w, px = Math.max(dbl ? 3 : 1, Math.round(p.w * 3.78 + 0.4)) + 0.05;
+    return 'calc(var(--fms, 0) * ' + px + 'px / var(--fmz, 1) + (1 - var(--fms, 0)) * ' + mm + 'mm) ' + { solid: 'solid', dot: 'dotted', dash: 'dashed', double: 'double' }[p.t] + ' ' + p.c;
+  }
   // A4(mm), 여백, 단 사이, 제목 아래 표까지 띄우는 간격, 표 줄 높이 한도
   const FM_ALIGNS = [['aT', '제목'], ['aI', '반·인원'], ['aN', '안내'], ['aTb', '표 위치'], ['aHd', '표 제목칸'], ['aBd', '표 내용']];
   const FM_ALIGN_CSS = { L: 'left', C: 'center', R: 'right' }, FM_ALIGN_HWP = { L: 'LEFT', C: 'CENTER', R: 'RIGHT' };
@@ -12073,7 +12161,7 @@
       '<line x1="1" y1="2" x2="13" y2="2"/><line x1="' + a[1] + '" y1="6" x2="' + a[2] + '" y2="6"/><line x1="' + a[3] + '" y1="10" x2="' + a[4] + '" y2="10"/></g></svg>';
   });
   function fmCellAlign(c, head) { return head ? c.aHd : c.aBd; }
-  const FM_PAGE = { w: 210, h: 297, m: 15 }, FM_COL_GAP = 8, FM_TBL_GAP = 4, FM_ROW_MAX = 12, FM_PT = 0.3528;
+  const FM_COL_GAP = 8, FM_TBL_GAP = 4, FM_ROW_MAX = 12, FM_PT = 0.3528;
   function fmCfg() {
     let v = {};
     try { v = JSON.parse(localStorage.getItem(FM_CFG_KEY) || '{}') || {}; } catch (e) {}
@@ -12087,6 +12175,10 @@
     if (!v.aBd && v.aNm) c.aBd = v.aNm; // 예전 "이름 칸" 정렬을 "표 내용"으로
     FM_ALIGNS.forEach(function(a) { if (['L', 'C', 'R'].indexOf(c[a[0]]) < 0) c[a[0]] = FM_DEFAULT[a[0]]; });
     c.rowH = parseFloat(c.rowH) > 0 ? Math.min(30, Math.max(5, parseFloat(c.rowH))) : 0;
+    if (!FM_PAPERS[c.paper]) c.paper = 'A4';
+    c.land = !!c.land;
+    ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 50, 15); });
+    c.ln = fmLines(c.ln);
     return c;
   }
   function fmSet(patch) {
@@ -12191,10 +12283,10 @@
     return cols;
   }
   function fmLayout(c) {
-    const n = c.colsN, tw = (FM_PAGE.w - FM_PAGE.m * 2 - FM_COL_GAP * (n - 1)) / n;
+    const pg = fmPage(c), n = c.colsN, tw = (pg.w - pg.l - pg.r - FM_COL_GAP * (n - 1)) / n;
     const cols = fmColumns(c, tw), notes = fmNotes(c);
     const headH = fmLine(c.tSize, 1.5) + 1.5 + fmLine(c.bSize, 1.6) * (1 + notes.length);
-    const bodyH = FM_PAGE.h - FM_PAGE.m * 2 - 2; // 2mm는 한글에서 글자 높이가 조금 달라도 넘치지 않게 남기는 여유
+    const bodyH = pg.h - pg.t - pg.b - 2; // 2mm는 한글에서 글자 높이가 조금 달라도 넘치지 않게 남기는 여유
     const availFirst = bodyH - headH - FM_TBL_GAP, availNext = bodyH - FM_TBL_GAP;
     const minRow = Math.max(6.5, fmLine(c.bSize, 1.3) + 1.2);
     const classes = [];
@@ -12213,7 +12305,7 @@
       chunks.forEach(function(ch, j) { const pg = Math.floor(j / n); (pages[pg] = pages[pg] || []).push(ch); });
       classes.push({ cls: gr.cls, label: gr.label, count: list.length, rowH: rowH, pages: pages });
     });
-    return { n: n, tw: tw, tableW: fmSum(cols), cols: cols, notes: notes, classes: classes, minRow: minRow };
+    return { n: n, tw: tw, tableW: fmSum(cols), cols: cols, notes: notes, classes: classes, minRow: minRow, pg: pg };
   }
   function fmCellText(col, c, cls, st) {
     if (col.key === 'num') return String(st.num);
@@ -12230,10 +12322,12 @@
     const mg = c.aTb === 'L' ? '0 auto 0 0' : c.aTb === 'R' ? '0 0 0 auto' : '0 auto';
     let h = '<table class="fm-tbl" style="width:' + L.tableW + 'mm; margin:' + mg + '; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
       L.cols.map(function(col) { return '<col style="width:' + col.w + 'mm;">'; }).join('') + '</colgroup>';
-    h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) { return '<td style="text-align:' + FM_ALIGN_CSS[c.aHd] + ';">' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
+    const R = list.length + 1, C = L.cols.length;
+    const bd = function(r, ci) { const sd = fmSides(c.ln, r, R, ci, C); return 'border-top:' + fmBdCss(sd.t) + '; border-bottom:' + fmBdCss(sd.b) + '; border-left:' + fmBdCss(sd.l) + '; border-right:' + fmBdCss(sd.r) + ';'; };
+    h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col, ci) { return '<td style="text-align:' + FM_ALIGN_CSS[c.aHd] + '; ' + bd(0, ci) + '">' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
     list.forEach(function(st, i) {
-      h += '<tr' + (z && i % 2 === 1 ? ' class="z"' : '') + ' style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) {
-        return '<td style="text-align:' + FM_ALIGN_CSS[c.aBd] + ';">' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
+      h += '<tr' + (z && i % 2 === 1 ? ' class="z"' : '') + ' style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col, ci) {
+        return '<td style="text-align:' + FM_ALIGN_CSS[c.aBd] + '; ' + bd(i + 1, ci) + '">' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
       }).join('') + '</tr>';
     });
     return h + '</table>';
@@ -12249,7 +12343,7 @@
     let sheets = [];
     L.classes.forEach(function(cl) {
       cl.pages.forEach(function(chs, p) {
-        let s = '<div class="fm-sheet" data-cls="' + cl.cls + '">';
+        let s = '<div class="fm-sheet" data-cls="' + cl.cls + '" style="width:' + L.pg.w + 'mm; height:' + L.pg.h + 'mm; padding:' + L.pg.t + 'mm ' + L.pg.r + 'mm ' + L.pg.b + 'mm ' + L.pg.l + 'mm;">';
         if (p === 0) {
           s += '<div class="fm-hd"><div class="fm-title" style="' + fmFontCss(c.tFont) + ' font-size:' + c.tSize + 'pt; text-align:' + FM_ALIGN_CSS[c.aT] + ';">' + ntEsc(c.title || '') + '</div>' +
             '<div class="fm-info" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt; text-align:' + FM_ALIGN_CSS[c.aI] + ';">' + ntEsc(fmInfoText(cl)) + '</div></div>';
@@ -12264,7 +12358,7 @@
     info.textContent = '줄 높이 ' + (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1) + 'mm' + (c.rowH > 0 ? (c.rowH < L.minRow ? ' — 내용 글자 ' + c.bSize + 'pt가 들어가는 가장 낮은 높이(' + c.rowH + 'mm는 너무 낮음)' : '') : ' (한 장에 들어가게 자동)');
     const rin = document.getElementById('fm-rowh-input');
     rin.placeholder = (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1);
-    label.textContent = 'A4 세로 · ' + (c.src === 'manual' ? '명단 ' + L.classes[0].count + '명' : L.classes.length + '개 반') + ' · 종이 ' + sheets.length + '장';
+    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + (c.src === 'manual' ? '명단 ' + L.classes[0].count + '명' : L.classes.length + '개 반') + ' · 종이 ' + sheets.length + '장';
     fmFitPreview();
   }
   function fmEmptyMsg(c) {
@@ -12282,6 +12376,7 @@
     box.style.zoom = '';
     const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth);
     box.style.zoom = z > 0 ? String(z) : '';
+    box.style.setProperty('--fmz', z > 0 ? String(z) : '1');
   }
 
   // 칸 너비 입력: 칸 목록이 바뀔 때만 다시 만들고(입력 중 커서가 튀지 않게), 평소엔 자동 너비(회색 예시 글씨)만 고친다.
@@ -12354,6 +12449,45 @@
   }
   function fmRowHFocus(inp) { if (!inp.value && inp.placeholder) { inp.value = inp.placeholder; inp.select(); } }
   function fmRowHBlur(inp) { const r = fmCfg().rowH; inp.value = r > 0 ? r : ''; }
+  // ----- 쪽 설정·표 선 -----
+  function fmSetPage(patch) { fmSet(patch); fmFillForm(); fmRender(); }
+  function fmOnMargin(inp) {
+    const v = parseFloat(inp.value); if (!isFinite(v) || v < 0 || v > 50) return;
+    const o = {}; o[inp.dataset.k] = v; fmSet(o);
+    const c = fmCfg(), mAll = c.mT === c.mB && c.mT === c.mL && c.mT === c.mR ? c.mT : null;
+    document.querySelectorAll('#fm-mpre .nt-chip').forEach(function(b) { b.classList.toggle('on', Number(b.dataset.m) === mAll); });
+    fmRender();
+  }
+  let fmLnSel = ['o']; // 표 선에서 지금 고친 곳(여러 개 가능, 저장 안 함)
+  function fmLnSame(a, b) { return FM_LN_PARTS.every(function(p) { const x = a[p[0]], y = b[p[0]]; return x.t === y.t && x.w === y.w && x.c.toUpperCase() === y.c.toUpperCase(); }); }
+  function fmFillLines(c) {
+    document.getElementById('fm-ln-pre').innerHTML = '빠른 모양 ' + FM_LN_PRESETS.map(function(pr, i) {
+      return '<button class="nt-chip' + (fmLnSame(c.ln, pr[1]) ? ' on' : '') + '" data-i="' + i + '" onclick="fmLnPreset(' + i + ')">' + pr[0] + '</button>';
+    }).join('');
+    document.getElementById('fm-ln-parts').innerHTML = '고칠 곳 ' + FM_LN_PARTS.map(function(pt) {
+      return '<button class="nt-chip' + (fmLnSel.indexOf(pt[0]) >= 0 ? ' on' : '') + '" data-part="' + pt[0] + '" onclick="fmLnPart(\'' + pt[0] + '\')" title="' + pt[2] + ' — 누를 때마다 고르기·빼기, 여러 곳을 같이 고칠 수 있어요">' + pt[1] + '</button>';
+    }).join('');
+    const cur = c.ln[fmLnSel[0]];
+    const ts = document.getElementById('fm-ln-type'), ws = document.getElementById('fm-ln-w');
+    ts.innerHTML = FM_LN_TYPES.map(function(t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('');
+    ws.innerHTML = FM_LN_W.map(function(w) { return '<option value="' + w + '">' + (w === 1 ? '1.0' : w) + 'mm</option>'; }).join('');
+    ts.value = cur.t; ws.value = String(cur.w); ws.disabled = cur.t === 'none';
+    document.getElementById('fm-ln-colors').innerHTML = FM_LN_COLORS.map(function(col) {
+      return '<button class="fm-sw' + (cur.c.toUpperCase() === col[0] ? ' on' : '') + '" data-c="' + col[0] + '" style="background:' + col[0] + ';" title="' + col[1] + '" onclick="fmLnSet(\'c\', \'' + col[0] + '\')"></button>';
+    }).join('');
+    document.getElementById('fm-ln-color').value = cur.c.toLowerCase();
+  }
+  function fmLnPreset(i) { fmSet({ ln: JSON.parse(JSON.stringify(FM_LN_PRESETS[i][1])) }); fmFillLines(fmCfg()); fmRender(); }
+  function fmLnPart(k) {
+    const i = fmLnSel.indexOf(k);
+    if (i >= 0) { if (fmLnSel.length > 1) fmLnSel.splice(i, 1); } else fmLnSel.push(k);
+    fmFillLines(fmCfg());
+  }
+  function fmLnSet(prop, v) {
+    const ln = fmCfg().ln;
+    fmLnSel.forEach(function(k) { ln[k][prop] = v; if (prop === 't' && v === 'double' && ln[k].w < 0.4) ln[k].w = 0.5; }); // 이중선이 너무 가늘면 한 줄로 보여서
+    fmSet({ ln: ln }); fmFillLines(fmCfg()); fmRender();
+  }
   function fmSetSrc(src) { fmSet({ src: src }); fmFillForm(); fmRender(); }
 
   // ----- 왼쪽 입력칸 -----
@@ -12398,6 +12532,19 @@
         return '<button class="top-btn' + (c[a[0]] === o[0] ? ' theme-active' : '') + '" data-v="' + o[0] + '" title="' + a[1] + ' ' + o[1] + '" onclick="fmSetAlign(\'' + a[0] + '\', \'' + o[0] + '\')">' + FM_ALIGN_ICON[o[0]] + '</button>';
       }).join('') + '</span>';
     }).join('');
+    // 쪽 설정
+    const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
+    document.getElementById('fm-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
+      return chip(c.paper === k, 'data-paper="' + k + '" onclick="fmSetPage({ paper: \'' + k + '\' })"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
+    }).join('') + '<span class="fm-sep"></span>' + [[false, '세로'], [true, '가로']].map(function(o) {
+      return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="fmSetPage({ land: ' + o[0] + ' })"', o[1]);
+    }).join('');
+    const mAll = c.mT === c.mB && c.mT === c.mL && c.mT === c.mR ? c.mT : null;
+    document.getElementById('fm-mpre').innerHTML = '여백(mm) ' + FM_MARGIN_PRE.map(function(m) {
+      return chip(mAll === m[0], 'data-m="' + m[0] + '" onclick="fmSetPage({ mT: ' + m[0] + ', mB: ' + m[0] + ', mL: ' + m[0] + ', mR: ' + m[0] + ' })"', m[1], '네 쪽 모두 ' + m[0] + 'mm');
+    }).join('');
+    document.querySelectorAll('#fm-margins input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c[inp.dataset.k]; });
+    fmFillLines(c);
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
       const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
       const sel = document.getElementById(k[1]);
@@ -12479,10 +12626,15 @@
     const bfIds = [];
     xml = xml.replace(/<hh:borderFills itemCnt="(\d+)">([\s\S]*?)<\/hh:borderFills>/, function(m, cnt, body) {
       let n = parseInt(cnt), add = '';
-      spec.borderFills.forEach(function(fill) {
+      const HT = { solid: 'SOLID', dot: 'DOT', dash: 'DASH', double: 'DOUBLE_SLIM', none: 'NONE' };
+      spec.borderFills.forEach(function(bfs) {
+        const fill = bfs.fill;
         n++; bfIds.push(n);
         add += '<hh:borderFill id="' + n + '" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>' +
-          ['left', 'right', 'top', 'bottom'].map(function(k) { return '<hh:' + k + 'Border type="SOLID" width="0.12 mm" color="#000000"/>'; }).join('') +
+          [['left', 'l'], ['right', 'r'], ['top', 't'], ['bottom', 'b']].map(function(k) {
+            const p = bfs.s[k[1]];
+            return '<hh:' + k[0] + 'Border type="' + HT[p.t] + '" width="' + (p.w === 1 ? '1.0' : String(p.w)) + ' mm" color="' + p.c + '"/>';
+          }).join('') +
           '<hh:diagonal type="NONE" width="0.12 mm" color="#000000"/>' +
           (fill ? '<hc:fillBrush><hc:winBrush faceColor="' + fill + '" hatchColor="#FF000000" alpha="0"/></hc:fillBrush>' : '') + '</hh:borderFill>';
       });
@@ -12517,6 +12669,15 @@
     const L = fmLayout(c);
     const zip = await JSZip.loadAsync(await fmSkeleton());
     const pt2 = function(mm) { return mm / FM_PT; }; // mm → pt(문단 간격)
+    // 칸 테두리 모양(네 변 + 배경)을 표마다 미리 모아 header에 한 번씩만 넣는다. 0번은 표 자체용(기본 얇은 실선).
+    const NC = L.cols.length, bfIdx = {}, bfSpecs = [];
+    const plain = fmLn('solid', 0.12);
+    bfSpecs.push({ fill: null, s: { l: plain, r: plain, t: plain, b: plain } });
+    const bfOf = function(r, R, ci) { return { fill: r === 0 ? '#E5E5E5' : (c.zebra && r % 2 === 0 ? '#F2F2F2' : null), s: fmSides(c.ln, r, R, ci, NC) }; };
+    L.classes.forEach(function(cl) { cl.pages.forEach(function(chs) { chs.forEach(function(ch) {
+      const R = ch.length + 1;
+      for (let r = 0; r < R; r++) for (let ci = 0; ci < NC; ci++) { const o = bfOf(r, R, ci), k = JSON.stringify(o); if (!(k in bfIdx)) { bfIdx[k] = bfSpecs.length; bfSpecs.push(o); } }
+    }); }); });
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [{ size: c.tSize, font: c.tFont, bold: true }, { size: c.bSize, font: c.bFont }, { size: c.bSize, font: c.bFont, bold: true }],
@@ -12529,17 +12690,19 @@
         { align: 'LEFT', line: 130 },
         { align: 'RIGHT', line: 130 },
       ],
-      borderFills: [null, '#E5E5E5', '#F2F2F2'],
+      borderFills: bfSpecs,
     });
     const CP_T = H.cp[0], CP_B = H.cp[1], CP_BB = H.cp[2];
     const PP_T = H.pp[0], PP_I = H.pp[1], PP_N = H.pp[2], PP_TB = H.pp[3], PP_CELL = { C: H.pp[4], L: H.pp[5], R: H.pp[6] };
-    const BF = H.bf[0], BF_H = H.bf[1], BF_Z = H.bf[2];
+    const BF = H.bf[0];
     zip.file('Contents/header.xml', H.xml);
 
     const sec0 = await zip.file('Contents/section0.xml').async('string');
     const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
     const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
-      .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="0" footer="0" gutter="0" left="' + fmHu(FM_PAGE.m) + '" right="' + fmHu(FM_PAGE.m) + '" top="' + fmHu(FM_PAGE.m) + '" bottom="' + fmHu(FM_PAGE.m) + '"/>');
+      // 용지는 세로 크기 그대로 두고 방향만(한글: WIDELY = 세로, NARROWLY = 가로)
+      .replace(/<hp:pagePr [^>]*>/, function(m) { return m.replace(/landscape="\w+"/, 'landscape="' + (L.pg.w > L.pg.h ? 'NARROWLY' : 'WIDELY') + '"').replace(/ width="\d+"/, ' width="' + fmHu(L.pg.pw) + '"').replace(/ height="\d+"/, ' height="' + fmHu(L.pg.ph) + '"'); })
+      .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="0" footer="0" gutter="0" left="' + fmHu(L.pg.l) + '" right="' + fmHu(L.pg.r) + '" top="' + fmHu(L.pg.t) + '" bottom="' + fmHu(L.pg.b) + '"/>');
     let pid = 0, tid = 1000;
     const P = function(pp, runs, o) {
       o = o || {};
@@ -12557,8 +12720,8 @@
       const rows = [L.cols.map(function(col) { return col.label; })].concat(list.map(function(st) { return L.cols.map(function(col) { return fmCellText(col, c, cl.cls, st); }); }));
       let tr = '';
       rows.forEach(function(cells, r) {
-        const bf = r === 0 ? BF_H : (c.zebra && r % 2 === 0 ? BF_Z : BF);
         tr += '<hp:tr>' + cells.map(function(txt, ci) {
+          const bf = H.bf[bfIdx[JSON.stringify(bfOf(r, rows.length, ci))]];
           return '<hp:tc name="" header="' + (r === 0 ? 1 : 0) + '" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="' + bf + '">' +
             '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' +
             P(PP_CELL[fmCellAlign(c, r === 0)], R(r === 0 ? CP_BB : CP_B, T(txt))) + '</hp:subList>' +
@@ -12634,7 +12797,14 @@
       await sccLoadExcelJS();
       const L = fmLayout(Object.assign({}, c, { colsN: 1 }));
       const wb = new ExcelJS.Workbook();
-      const thin = { style: 'thin', color: { argb: 'FF000000' } }, border = { top: thin, left: thin, bottom: thin, right: thin };
+      // 표 선 → 엑셀 테두리(엑셀은 굵기가 가늘게·보통·굵게뿐이라 가까운 것으로)
+      const xb = function(p) {
+        if (p.t === 'none') return undefined;
+        const style = p.t === 'double' ? 'double' : p.t === 'dot' ? 'dotted' : p.t === 'dash' ? (p.w < 0.3 ? 'dashed' : 'mediumDashed') : (p.w < 0.3 ? 'thin' : p.w < 0.6 ? 'medium' : 'thick');
+        return { style: style, color: { argb: 'FF' + p.c.slice(1).toUpperCase() } };
+      };
+      const border = function(r, R, ci) { const sd = fmSides(c.ln, r, R, ci, L.cols.length), o = {}; [['top', 't'], ['bottom', 'b'], ['left', 'l'], ['right', 'r']].forEach(function(k) { const v = xb(sd[k[1]]); if (v) o[k[0]] = v; }); return o; };
+      const XL_PAPER = { A4: 9, A3: 8, B4: 12, B5: 13 }, inch = function(mm) { return Math.round(mm / 25.4 * 100) / 100; };
       const fill = function(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; };
       const al = function(a) { return FM_ALIGN_CSS[a]; };
       const used = {};
@@ -12644,8 +12814,8 @@
         while (used[nm]) nm = base.slice(0, 26) + ' ' + (dup++);
         used[nm] = 1;
         const n = L.cols.length;
-        const ws = wb.addWorksheet(nm, { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: c.aTb === 'C',
-          margins: { left: 0.59, right: 0.59, top: 0.59, bottom: 0.59, header: 0.3, footer: 0.3 } } });
+        const ws = wb.addWorksheet(nm, { pageSetup: { paperSize: XL_PAPER[c.paper], orientation: c.land ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: c.aTb === 'C',
+          margins: { left: inch(c.mL), right: inch(c.mR), top: inch(c.mT), bottom: inch(c.mB), header: 0.3, footer: 0.3 } } });
         ws.columns = L.cols.map(function(col) { return { width: Math.max(4, col.w / 1.85) }; }); // mm → 엑셀 칸 너비(글자 수)
         let r = 0;
         const line = function(text, font, align, h) {
@@ -12658,19 +12828,19 @@
         L.notes.forEach(function(t) { line(t, { name: c.bFont, size: c.bSize }, al(c.aN), c.bSize * 1.6); });
         r++; ws.getRow(r).height = 8; // 표 위 빈 줄
         const hr = ++r, rowPt = cl.rowH / FM_PT;
+        const list = [].concat.apply([], cl.pages.map(function(chs) { return [].concat.apply([], chs); }));
         L.cols.forEach(function(col, i) {
           const cell = ws.getCell(hr, i + 1);
-          cell.value = col.label; cell.font = { name: c.bFont, size: c.bSize, bold: true }; cell.fill = fill('E5E5E5'); cell.border = border;
+          cell.value = col.label; cell.font = { name: c.bFont, size: c.bSize, bold: true }; cell.fill = fill('E5E5E5'); cell.border = border(0, list.length + 1, i);
           cell.alignment = { horizontal: al(c.aHd), vertical: 'middle', wrapText: true };
         });
         ws.getRow(hr).height = rowPt;
-        const list = [].concat.apply([], cl.pages.map(function(chs) { return [].concat.apply([], chs); }));
         list.forEach(function(st, k) {
           r++;
           L.cols.forEach(function(col, i) {
             const cell = ws.getCell(r, i + 1), v = fmCellText(col, c, cl.cls, st);
             cell.value = col.key === 'num' && /^\d+$/.test(v) ? Number(v) : v;
-            cell.font = { name: c.bFont, size: c.bSize }; cell.border = border;
+            cell.font = { name: c.bFont, size: c.bSize }; cell.border = border(k + 1, list.length + 1, i);
             cell.alignment = { horizontal: al(c.aBd), vertical: 'middle', wrapText: true };
             if (c.zebra && k % 2 === 1) cell.fill = fill('F2F2F2');
           });
@@ -12695,7 +12865,8 @@
     fmRender();
     let st = document.getElementById('fm-page-style');
     if (!st) { st = document.createElement('style'); st.id = 'fm-page-style'; document.head.appendChild(st); }
-    st.textContent = '@media print { @page { size: A4 portrait; margin: 0; } }';
+    const pg = fmPage(c);
+    st.textContent = '@media print { @page { size: ' + pg.w + 'mm ' + pg.h + 'mm; margin: 0; } }';
     const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
     window.print();
