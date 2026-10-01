@@ -240,9 +240,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const two = Math.round(R('fm-class-box').top) === Math.round(R('fm-layout-box').top);
       return { left: l.clientWidth, cols: two ? 2 : 1,
         even: !two || pairs.every(p => Math.abs(R(p[0]).top - R(p[1]).top) < 1 && Math.abs(R(p[0]).bottom - R(p[1]).bottom) < 1),
-        over: l.scrollWidth - l.clientWidth, sheet: Math.round(sh.getBoundingClientRect().width), h: l.scrollHeight }; }); };
+        over: l.scrollWidth - l.clientWidth, sheet: Math.round(sh.getBoundingClientRect().width), h: l.scrollHeight, head: Math.round(R('fm-page-header').height) }; }); };
   const at1600 = await colsAt(1600, 1000), at1536 = await colsAt(1536, 730), at1366 = await colsAt(1366, 657);
   console.log('    1600px', JSON.stringify(at1600), '1536px', JSON.stringify(at1536), '1366px', JSON.stringify(at1366));
+  check('머리 줄(설명서·양식 탭·초기화·인쇄·내려받기)이 노트북(1366px)에서도 한 줄', at1366.head === at1600.head && at1366.head < 70, [at1366.head, at1600.head]);
   check('넓은 화면은 설정 상자를 두 열로(1600·1536px), 노트북(1366px)은 한 열 — 미리보기 A4는 거의 제 크기(700px 넘게)', at1600.cols === 2 && at1536.cols === 2 && at1366.cols === 1 &&
     [at1600, at1536, at1366].every(x => x.over <= 0 && x.sheet >= 700), [at1600, at1536, at1366]);
   check('두 열일 때 옆 상자끼리 위·아래 선이 맞음(명단↔배치, 제목·안내↔칸 너비, 체크 칸↔정렬)', at1600.even && at1536.even, [at1600, at1536]);
@@ -714,6 +715,26 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
   check('명렬표 수합 탭으로 돌아가면 명렬표 칸', await W.isVisible('#fm-grid') && !(await W.isVisible('#ws-grid')) && await W.isVisible('#fm-xlsx-btn'));
+
+  // ===== 🗑 초기화: 양식마다 따로 =====
+  await setText(W, '#fm-title', '초기화 전 제목'); await setText(W, '#fm-cols', '가\n나'); await W.click('#fm-paper [data-paper="B4"]'); await W.waitForTimeout(200);
+  const wsBefore = await W.evaluate(() => JSON.stringify(wsCfg()));
+  await W.click('#fm-reset-btn'); await W.waitForTimeout(150);
+  const rmsg = await W.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await W.click('#custom-confirm-overlay button:has-text("취소")'); await W.waitForTimeout(150);
+  check('초기화: 확인 창에 "명렬표 수합" — 취소하면 그대로', /명렬표 수합 설정/.test(rmsg) && (await cfgOf(t1)).title === '초기화 전 제목', rmsg);
+  await W.click('#fm-reset-btn'); await W.waitForTimeout(150); await W.click('#custom-confirm-overlay button:has-text("확인")'); await W.waitForTimeout(400);
+  const ra = await W.evaluate(() => { const c = fmCfg(); return { title: c.title, cols: c.cols, paper: c.paper, kind: c.kind, inp: document.getElementById('fm-title').value, grid: getComputedStyle(document.getElementById('fm-grid')).display !== 'none', ws: JSON.stringify(wsCfg()) }; });
+  check('명렬표 수합 초기화: 제목·체크 칸·용지가 기본값, 입력칸도 비워짐, 학습지 설정은 그대로', ra.title === '제출 확인' && ra.cols === '제출' && ra.paper === 'A4' && ra.kind === 'roster' && ra.inp === '제출 확인' && ra.grid && ra.ws === wsBefore, ra);
+  await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(300);
+  await W.evaluate(() => fmSet({ title: '학습지 초기화 확인용' })); // 명렬표 수합 설정 하나 바꿔 두고 학습지만 지워지는지
+  await W.click('#fm-reset-btn'); await W.waitForTimeout(150);
+  const rmsg2 = await W.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await W.click('#custom-confirm-overlay button:has-text("확인")'); await W.waitForTimeout(400);
+  const rb = await W.evaluate(() => { const c = wsCfg(); return { subj: c.subj, uName: c.uName, paper: c.paper, start: c.start, tFont: c.tFont, inp: document.getElementById('ws-subj').value, kind: fmCfg().kind, title: fmCfg().title, ws: getComputedStyle(document.getElementById('ws-grid')).display !== 'none' }; });
+  check('학습지 초기화: 확인 창에 "학습지", 과목·단원·용지·시작 쪽·글꼴 기본값, 학습지 탭 그대로, 명렬표 수합 설정은 그대로',
+    /학습지 설정/.test(rmsg2) && rb.subj === '' && rb.uName === '' && rb.paper === 'A4' && rb.start === 1 && rb.tFont === '한컴 윤고딕 240' && rb.inp === '' && rb.kind === 'ws' && rb.ws && rb.title === '학습지 초기화 확인용', [rmsg2, rb]);
+  await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
 
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);

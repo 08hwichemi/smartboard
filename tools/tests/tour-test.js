@@ -223,6 +223,7 @@ function show(name, seen) {
     ['시간표 만들기', '#rail-persontt-btn', () => ptOpenTour(), () => ptTourSteps.length],
     ['조퇴증', '#rail-leavepass-btn', () => lpOpenTour(), () => lpTourSteps.length],
     ['이름표', '#rail-nametag-btn', () => ntOpenTour(), () => ntTourSteps.length],
+    ['양식 만들기', '#rail-forms-btn', () => fmOpenTour(), () => fmTourSteps.length],
   ];
   for (const [name, btn, open, len] of pages) {
     await P.click(btn); await wait(700);
@@ -237,6 +238,10 @@ function show(name, seen) {
     if (name === '이름표') {
       check('이름표: 분리수거함 단계도 나옴', seen.some(s => s.title.includes('분리수거 종류')));
       check('이름표: 설명서 끝나면 원래 모드(게시판)로', await P.evaluate(() => ntCfg().mode === 'board' && document.getElementById('nt-board-box').style.display !== 'none'));
+    }
+    if (name === '양식 만들기') {
+      check('양식 만들기: 학습지 단계도 나옴', seen.some(s => s.title.includes('학습지')) && seen.some(s => s.title.includes('초기화')));
+      check('양식 만들기: 설명서 끝나면 원래 양식(명렬표 수합)으로', await P.evaluate(() => fmCfg().kind === 'roster' && document.getElementById('fm-grid').style.display !== 'none'));
     }
     await P.click(btn); await wait(400); // 홈으로
   }

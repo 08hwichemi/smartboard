@@ -2882,12 +2882,14 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📄 양식 만들기</div>
+      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="fmOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <div class="tab-switch" id="fm-kind-switch">
         <button class="tab-btn active" data-kind="roster" onclick="fmSetKind('roster')">명렬표 수합</button>
         <button class="tab-btn" data-kind="ws" onclick="fmSetKind('ws')">학습지</button>
       </div>
+      <button class="top-btn" id="fm-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="fmResetKind()">🗑 초기화</button>
     </div>
-    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div id="fm-out-btns" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span class="nt-muted">한글 파일은 진짜 표·글자로 만들어져서 한글에서 그대로 고칠 수 있어요.</span>
       <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()">🖨️ 인쇄</button>
       <button class="top-btn" id="fm-xlsx-btn" style="font-size:12px; padding:5px 12px;" onclick="fmDownloadXlsx()" title="엑셀(.xlsx)로 내려받기 — 반마다 한 시트, 1단">📊 엑셀</button>
@@ -13644,6 +13646,57 @@
     document.getElementById('ws-guide').style.display = ws ? '' : 'none';
     document.getElementById('ws-grid').style.display = ws ? '' : 'none';
     document.getElementById('fm-xlsx-btn').style.display = ws ? 'none' : '';
+    document.getElementById('fm-reset-btn').title = (ws ? '학습지' : '명렬표 수합') + ' 설정만 처음 상태로 되돌려요(다른 양식은 그대로)';
+  }
+  // 🗑 초기화: 지금 보고 있는 양식의 설정만 처음 상태로(양식마다 따로 — 다른 양식 설정은 그대로)
+  async function fmResetKind() {
+    const ws = fmCfg().kind === 'ws';
+    const msg = ws
+      ? '학습지 설정을 모두 처음 상태로 되돌릴까요?\n(단원·과목·본문 제목 뼈대·쪽 설정·배치·글꼴이 기본값으로 돌아가요. 명렬표 수합 설정은 그대로예요)'
+      : '명렬표 수합 설정을 모두 처음 상태로 되돌릴까요?\n(고른 반·직접 입력한 명단·제목·안내·체크 칸·쪽 설정·배치·칸 너비·정렬·표 선·글꼴이 기본값으로 돌아가요. 학습지 설정은 그대로예요)';
+    if (!(await customConfirm(msg))) return;
+    try { localStorage.setItem(ws ? WS_CFG_KEY : FM_CFG_KEY, JSON.stringify(ws ? {} : { kind: 'roster' })); } catch (e) {}
+    scheduleBackupWrite();
+    if (ws) { const fp = document.getElementById('ws-fparts'); if (fp) fp.open = false; } else fmLnSel = ['o'];
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    fmFillForm(); fmRender();
+  }
+
+  // ----- 양식 만들기 설명서 -----
+  // 명렬표 수합 → 학습지 순서로 보여 주고, 끝나면 원래 보던 양식으로 돌려놓는다.
+  let fmTourKind = null;
+  const fmTourRoster = function() { if (fmCfg().kind !== 'roster') fmSetKind('roster'); };
+  const fmTourWs = function() { if (fmCfg().kind !== 'ws') fmSetKind('ws'); };
+  const fmTourSteps = [
+    { selector: '#fm-page-header', before: fmTourRoster, title: '📄 양식 만들기에 오신 것을 환영해요!', desc: '선생님들이 한글로 매번 새로 만드는 양식을 몇 칸만 채워서 바로 만드는 화면이에요. 내려받은 한글 파일은 그림이 아니라 진짜 표·글자라서, 세세한 건 한글에서 평소처럼 고치면 돼요.' },
+    { selector: '#fm-kind-switch', before: fmTourRoster, title: '양식 고르기', desc: '위쪽에서 만들 양식을 골라요(명렬표 수합 / 학습지). 양식마다 적은 내용과 설정이 따로 기억돼서, 다음에 열면 그대로 이어서 쓸 수 있어요.' },
+    { selector: '#fm-reset-btn', before: fmTourRoster, title: '🗑 초기화', desc: '지금 보고 있는 양식의 설정만 처음 상태로 되돌려요. 명렬표 수합에서 누르면 명렬표 수합만, 학습지에서 누르면 학습지만 지워지고 다른 양식은 그대로예요.' },
+    { selector: '#fm-class-box', before: fmTourRoster, title: '1단계. 명단', desc: '"반 명단 불러오기"는 학년·반을 고르면 명렬표에서 번호·이름을 가져와요(담임 선생님은 담임 반으로 시작). 여러 반을 고르면 반마다 한 장씩 나와요. 방과후·동아리처럼 반이 아니면 "직접 입력"에 엑셀·한글 표를 그대로 붙여 넣어요.' },
+    { selector: '#fm-text-box', before: fmTourRoster, title: '2단계. 제목·안내', desc: '맨 위 제목과 그 아래 안내 글(없어도 돼요)을 적어요. 바로 아래에서 제목 글꼴·내용 글꼴과 크기를 골라요. 목록에 없는 글꼴은 "✏️ 직접 입력"에 한글 글꼴 목록에 보이는 이름 그대로 적으면 돼요.' },
+    { selector: '#fm-cols-box', before: fmTourRoster, title: '3단계. 체크 칸', desc: '확인할 것(동의서, 회비 …)을 한 줄에 하나씩 적으면 그만큼 칸이 생겨요(최대 12개). 학번 칸·비고 칸, 줄 번갈아 회색도 여기서 켜고 꺼요.' },
+    { selector: '#fm-page-box', before: fmTourRoster, title: '4단계. 쪽 설정 (필요할 때만)', desc: '용지(A4·B4 …), 세로/가로, 여백을 바꿔요. 한글의 편집 용지(F7)와 같아요.' },
+    { selector: '#fm-layout-box', before: fmTourRoster, title: '5단계. 배치 (필요할 때만)', desc: '다단(1~3단)과 줄 높이를 골라요. 줄 높이 "자동"은 한 반이 한 장에 들어가게 맞춰 주고, mm로 직접 적을 수도 있어요. 다단은 한글처럼 왼쪽 단부터 채워요.' },
+    { selector: '#fm-width-box', before: fmTourRoster, title: '6단계. 칸 너비 (필요할 때만)', desc: '칸마다 너비를 mm로 적어요. 비워 두면 자동이에요. "표를 종이 폭에 꽉 차게"를 끄면 표가 필요한 만큼만 차지해요.' },
+    { selector: '#fm-align-box', before: fmTourRoster, title: '7단계. 정렬 (필요할 때만)', desc: '제목·반·인원·안내, 표 위치, 표 제목칸·표 내용 글자를 왼쪽/가운데/오른쪽으로 맞춰요.' },
+    { selector: '#fm-line-box', before: fmTourRoster, title: '8단계. 표 선 (필요할 때만)', desc: '빠른 모양을 고르거나, 고칠 곳(바깥·제목칸 아래·안쪽 가로·안쪽 세로)을 누른 뒤 선 종류·굵기·색을 바꿔요.' },
+    { selector: '#fm-right', before: fmTourRoster, title: '미리보기', desc: '실제로 인쇄될 모습이에요. 반마다 한 장씩 나오고, 내려받은 한글 파일도 이 모양 그대로 나뉘어요.' },
+    { selector: '#fm-out-btns', before: fmTourRoster, title: '인쇄·내려받기', desc: '🖨️ 인쇄로 바로 뽑거나, 📊 엑셀(반마다 한 시트, 거르기·정렬하기 좋게) 또는 ⬇️ 한글 파일(.hwpx)로 내려받아 고쳐 써요.' },
+    { selector: '#fm-kind-switch', before: fmTourWs, title: '📚 학습지', desc: '"학습지"를 누르면 학습지 틀을 만들어요. 머리 띠(단원·과목)·쪽 번호·NOTE 칸 같은 틀과 제목 뼈대만 만들고, 내용은 내려받은 한글 파일에서 자유롭게 써요.' },
+    { selector: '#ws-unit-box', before: fmTourWs, title: '1단계. 단원', desc: '대단원·소단원 번호와 이름을 적으면 위쪽 머리 띠에 나와요. 대단원은 짝수 쪽 아래에도 나와요.' },
+    { selector: '#ws-subj-box', before: fmTourWs, title: '2단계. 과목', desc: '과목명·수업명(없으면 비워요)·학교명을 적고 아이콘을 골라요. "자동"은 과목명을 보고 알맞은 아이콘을 골라 주고, "더보기"에서 모든 아이콘을 볼 수 있어요.' },
+    { selector: '#ws-outline-box', before: fmTourWs, title: '3단계. 본문 제목 뼈대 (필요할 때만)', desc: '대제목(1)·중제목(1.)·소제목((1))·항목(①)을 칸에 적으면 번호는 저절로 붙어요. Enter는 아래 줄, Tab/Shift+Tab은 수준 바꾸기예요. 한글 파일에선 "학습지 대제목" 같은 스타일(F6)로 들어가서 이어 쓰기 쉬워요.' },
+    { selector: '#ws-page-box', before: fmTourWs, title: '4단계. 쪽 설정 (필요할 때만)', desc: '용지·방향·여백과 시작 쪽 번호를 정해요. 앞 단원에 이어지는 학습지라면 시작 쪽 번호를 바꿔 주세요.' },
+    { selector: '#ws-layout-box', before: fmTourWs, title: '5단계. 배치 (필요할 때만)', desc: '1단/2단(가운데 선 있음/없음), NOTE 칸 넣기/빼기, 색 테마를 골라요.' },
+    { selector: '#ws-font-box', before: fmTourWs, title: '6단계. 글꼴 (필요할 때만)', desc: '머리·꼬리 글꼴과 본문 글꼴·크기를 골라요. "부분별 글꼴 따로 고르기"를 펴면 대단원·과목명·쪽 번호 같은 부분마다 다른 글꼴을 쓸 수 있어요.' },
+    { selector: '#fm-right', before: fmTourWs, title: '미리보기', desc: '시작 쪽(홀수 쪽 모양)과 다음 쪽(짝수 쪽 모양) 두 장을 보여 줘요.' },
+    { selector: '#fm-hwpx-btn', before: fmTourWs, title: '한글 파일 내려받기', desc: '⬇️ 한글 파일(.hwpx)을 내려받아 한글에서 내용을 채우면 돼요. 글이 길어지면 머리 띠·NOTE 칸·쪽 번호와 함께 다음 쪽으로 자연스럽게 넘어가요. 수고하셨습니다! 🎉' },
+  ];
+  function fmOpenTour() {
+    fmTourKind = fmCfg().kind;
+    openPageTour(fmTourSteps, function() {
+      if (fmTourKind && fmCfg().kind !== fmTourKind && fmIsOpen()) fmSetKind(fmTourKind);
+      fmTourKind = null;
+    });
   }
 
   // ----- 화면 열기·닫기 -----
