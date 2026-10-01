@@ -285,6 +285,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.uncheck('#fm-memo'); await P.waitForTimeout(200);
   check('비고 끄기', !(await sheetsOf(P))[0].head.includes('비고'));
   await P.check('#fm-memo');
+  const w0 = await P.evaluate(() => ({ fill: fmCfg().fill, box: document.getElementById('fm-fill').checked, sum: [...document.querySelectorAll('#fm-pages table.fm-tbl col')].slice(0, 6).reduce((a, c) => a + parseFloat(c.style.width), 0) }));
+  check('"표를 종이 폭에 꽉 차게"는 기본 꺼짐 — 표는 필요한 만큼만(180mm보다 좁음)', !w0.fill && !w0.box && w0.sum < 179, w0);
+  await P.check('#fm-fill'); await P.waitForTimeout(200);
   const w = await P.evaluate(() => [...document.querySelectorAll('#fm-pages table.fm-tbl col')].slice(0, 6).map(c => parseFloat(c.style.width)));
   check('칸 폭 합 = 180mm(A4 − 여백 15mm×2)', Math.abs(w.reduce((a, b) => a + b, 0) - 180) < 0.01, w);
 

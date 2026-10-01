@@ -46,6 +46,8 @@
       --accent-secondary: #E0954A; --accent-secondary-soft: #FBEEDE; --accent-secondary-text: #A8672B; --on-accent-secondary: #FFFFFF; }
 
     body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+    /* 입력칸 예시 글씨(placeholder)는 연하게 — 진하면 진짜 적힌 내용처럼 보여서(10/1 사용자 요청). 테마마다 글자색(--text-sub)을 반쯤 비치게 */
+    input::placeholder, textarea::placeholder { color: var(--text-sub); opacity: 0.5; }
 
     /* ===== 왼쪽 아이콘 레일 ===== */
     #app-shell { display: flex; height: 100vh; overflow: hidden; }
@@ -1354,7 +1356,7 @@
     </div>
     <div class="rail-item" id="rail-forms-btn" title="양식 만들기" onclick="railToggle('rail-forms-btn', openForms)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg></div>
-      <div class="rail-label">양식</div>
+      <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">양식(beta)</div>
     </div>
     <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공용 기능과 구분해 둠 -->
     <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
@@ -3383,7 +3385,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-01.5';
+  var BUILD_ID = '2026-10-01.6';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -11481,15 +11483,15 @@
     { id: 'solid', n: '컬러' }, { id: 'line', n: '밑줄' },
   ];
   const NT_PRESETS = {
-    board: [[14.8, 6.4, '엑셀 기본'], [20, 7, ''], [28, 9, 'A4 가로 폭']],
-    recycle: [[18, 8, ''], [28, 12, 'A4 가로 폭'], [19, 27, 'A4 한 장']],
+    board: [[14.8, 4.4, '기본'], [14.8, 6.4, '엑셀'], [20, 7, ''], [28, 9, 'A4 가로 폭']], // 기본 세로 4.4(6.4는 글씨가 칸에 비해 작아 보여서)
+    recycle: [[18, 5, '기본'], [18, 8, ''], [28, 12, 'A4 가로 폭'], [19, 27, 'A4 한 장']],
     locker: [[6.7, 2.1, '우리 학교'], [8, 2.5, ''], [9, 3, '']],
   };
   // 모드마다 따로 기억하는 값(크기·장수·색 방식·글자 크기·자간·모두 같게)의 설정 키와 이름표 사이 간격(mm)
   // 사물함은 작아서 하나씩 자르기 불편 → 간격 없이 붙여서 칼로 한 줄씩 쭉 자르게
   const NT_MODE_KEYS = {
-    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', fillPct: 'fillPct', ls: 'ls', same: 'same', dw: 14.8, dh: 6.4, gap: 4 },
-    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', fillPct: 'rcFillPct', ls: 'rcLs', same: 'rcSame', dw: 18, dh: 8, gap: 4 },
+    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', fillPct: 'fillPct', ls: 'ls', same: 'same', dw: 14.8, dh: 4.4, gap: 4 },
+    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', fillPct: 'rcFillPct', ls: 'rcLs', same: 'rcSame', dw: 18, dh: 5, gap: 4 },
     locker: { w: 'lw', h: 'lh', copies: 'lCopies', color: 'lColorMode', fillPct: 'lFillPct', ls: 'lLs', same: 'lSame', dw: 6.7, dh: 2.1, gap: 0 },
   };
   const NT_TEXT_KEYS = ['fillPct', 'ls', 'same'];
@@ -11524,7 +11526,7 @@
     { id: 'food', n: '음식물', en: 'FOOD WASTE', c: '#6F9A35' },
   ];
   const NT_DEFAULT = {
-    mode: 'board', w: 14.8, h: 6.4, rw: 18, rh: 8, text: '', rcText: '', copies: 1, rcCopies: 1,
+    mode: 'board', w: 14.8, h: 4.4, rw: 18, rh: 5, text: '', rcText: '', copies: 1, rcCopies: 1,
     rc: NT_RC.filter(function(r) { return r.on; }).map(function(r) { return r.id; }), rcEng: true,
     lw: 6.7, lh: 2.1, lCopies: 1, lColorMode: 'cycle', lG: null, lC: null, lFmt: 'numname',
     font: 'Jua', custom: '', weight: 700, fillPct: 74, ls: 4, same: true,
@@ -12207,7 +12209,7 @@
   const FM_ROWH = [[0, '자동'], [7, '좁게'], [9, '보통'], [12, '넓게']];
   const FM_DEFAULT = {
     kind: 'roster', src: 'class', rG: null, rCs: [], manual: '', mLabel: '', title: '제출 확인', note: '', cols: '제출',
-    showId: false, memo: true, zebra: true, colsN: 1, rowH: 0, fill: true, colW: {},
+    showId: false, memo: true, zebra: true, colsN: 1, rowH: 0, fill: false, colW: {}, // fill: 표를 종이 폭에 꽉 차게(기본 끔 — 10/1 사용자 요청)
     // 정렬(L·C·R): 제목, 반·인원 줄, 안내, 표(종이에서 위치), 표 제목칸(머리 줄) 글자, 표 내용(학생 줄 모든 칸) 글자
     aT: 'C', aI: 'C', aN: 'L', aTb: 'C', aHd: 'C', aBd: 'C',
     tFont: '맑은 고딕', tSize: 20, bFont: '맑은 고딕', bSize: 11,

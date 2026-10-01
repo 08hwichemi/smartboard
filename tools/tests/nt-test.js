@@ -211,7 +211,7 @@ function pdfInfo(buf) {
   await P.click('#rail-nametag-btn'); await wait(300);
   check('누르면 이름표 화면 + 버튼 표시, 홈은 숨김', await shown() && await P.evaluate(() => document.getElementById('rail-nametag-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
   check('처음엔 입체 글씨 디자인·주아 글꼴(엑셀 양식처럼)', await P.evaluate(() => document.querySelector('#nt-styles .nt-style.on').innerText.includes('입체 글씨') && document.getElementById('nt-font-btn').innerText.includes('주아') && document.querySelector('#nt-font-menu .nt-font-opt.on').title === '주아'));
-  check('처음엔 게시판 모드·14.8×6.4cm(엑셀 기본)·안내 문구', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '6.4' && /한 줄에 하나씩/.test(await P.locator('#nt-pages').innerText()));
+  check('처음엔 게시판 모드·14.8×4.4cm(기본)·안내 문구', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '4.4' && /한 줄에 하나씩/.test(await P.locator('#nt-pages').innerText()));
   check('글꼴은 드롭다운(닫혀 있음) + 디자인 6가지', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none' && document.querySelectorAll('#nt-styles .nt-style').length === 6));
   await P.click('#nt-font-btn'); await wait(200);
   const menu = await P.evaluate(() => { const m = document.getElementById('nt-font-menu'); const opts = [...m.querySelectorAll('.nt-font-opt')]; const r = m.getBoundingClientRect();
@@ -226,9 +226,9 @@ function pdfInfo(buf) {
 
   // 내용 입력 → 바로 그려짐, 계정 자료에 저장
   await P.fill('#nt-text', '월간 일정표\n오늘의 메뉴\n\n  수능 D-Day  \n날씨&미세먼지\n일반 게시물\n시간표 변경 / TIMETABLE'); await wait(300);
-  check('빈 줄 빼고 6개, A4 세로 한 장에 4개 → 2장', await labels(P) === 6 && await sheets(P) === 2, [await labels(P), await sheets(P)]);
+  check('빈 줄 빼고 6개, A4 세로 한 장에 5개 → 2장', await labels(P) === 6 && await sheets(P) === 2, [await labels(P), await sheets(P)]);
   check('미리보기 안내: "A4 세로 · 이름표 6개 · 종이 2장"', (await P.textContent('#nt-prev-label')) === 'A4 세로 · 이름표 6개 · 종이 2장', await P.textContent('#nt-prev-label'));
-  check('크기 칸 옆 "A4 세로 한 장에 4개"', /세로 한 장에 4개/.test(await P.textContent('#nt-fit-info')));
+  check('크기 칸 옆 "A4 세로 한 장에 5개"(기본 14.8×4.4cm)', /세로 한 장에 5개/.test(await P.textContent('#nt-fit-info')));
   check('내용이 nt-cfg에 저장', (await cfgOf(pc)).text.split('\n').length === 7);
   const sub = await P.evaluate(() => { const s = [...document.querySelectorAll('#nt-pages .nt-sheet > svg')][5]; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => t.textContent); });
   check('" / " 뒤는 작은 부제로', sub.join('|') === '시간표 변경|TIMETABLE', sub);
@@ -237,7 +237,7 @@ function pdfInfo(buf) {
   check('"/"만 써도(띄어쓰기 없이) 부제, 앞이 비면 그대로', sub2.join(',') === '월간 일정표|MONTHLY,급식|MENU,/앞이 빈 줄|', sub2);
   // 실제 크기(mm)·배치
   const geo = await P.evaluate(() => { const sh = document.querySelector('.nt-sheet'); const s = sh.querySelector('svg'); return { sw: sh.style.width, w: s.getAttribute('width'), h: s.getAttribute('height'), left: s.style.left, top: s.style.top, top2: sh.querySelectorAll('svg')[1].style.top }; });
-  check('이름표 148×64mm, 가운데 정렬, 위 여백 8mm·사이 4mm', geo.sw === '210mm' && geo.w === '148mm' && geo.h === '64mm' && geo.left === '31mm' && geo.top === '8mm' && geo.top2 === '76mm', geo);
+  check('이름표 148×44mm, 가운데 정렬, 위 여백 8mm·사이 4mm', geo.sw === '210mm' && geo.w === '148mm' && geo.h === '44mm' && geo.left === '31mm' && geo.top === '8mm' && geo.top2 === '56mm', geo);
   // 글자가 칸 밖으로 안 나감
   const overflow = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }).every(Boolean); }));
   check('모든 글자가 이름표 안에 들어감', overflow.every(Boolean), overflow);
@@ -271,7 +271,7 @@ function pdfInfo(buf) {
   await P.fill('#nt-w', '30'); await P.fill('#nt-h', '30'); await wait(300);
   check('A4보다 크면 안내', /A4 종이보다 커요/.test(await P.locator('#nt-pages').innerText()));
   await P.click('#nt-presets .nt-chip:first-child'); await wait(300);
-  check('크기 버튼(14.8×6.4)', await P.inputValue('#nt-w') === '14.8' && (await cfgOf(pc)).w === 14.8);
+  check('크기 버튼(14.8×4.4 기본)', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '4.4' && (await cfgOf(pc)).w === 14.8);
   await P.fill('#nt-w', '9'); await P.fill('#nt-h', '5'); await wait(300);
   check('9×5cm → 한 장에 2열×5줄 = 10개', /한 장에 10개/.test(await P.textContent('#nt-fit-info')) && await sheets(P) === 1, await P.textContent('#nt-fit-info'));
 
@@ -325,7 +325,7 @@ function pdfInfo(buf) {
 
   // 분리수거함
   await P.click('#nt-mode-switch [data-mode="recycle"]'); await wait(300);
-  check('분리수거함: 기본 5종(일반쓰레기·플라스틱·비닐·종이·캔/유리), 18×8cm', await labels(P) === 5 && await P.inputValue('#nt-w') === '18' && await P.isVisible('#nt-rc-box') && !(await P.isVisible('#nt-board-box')));
+  check('분리수거함: 기본 5종(일반쓰레기·플라스틱·비닐·종이·캔/유리), 18×5cm', await labels(P) === 5 && await P.inputValue('#nt-w') === '18' && await P.inputValue('#nt-h') === '5' && await P.isVisible('#nt-rc-box') && !(await P.isVisible('#nt-board-box')));
   const rc = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => ({ t: [...s.querySelectorAll('text:not(.nt-sh)')].map(x => x.textContent).join('|'), icon: !!s.querySelector('circle + g path'), fill: s.querySelector('g[clip-path] rect:nth-child(2)').getAttribute('fill') })));
   check('아이콘 + 한글 + 영어', rc.map(r => r.t).join(',') === '일반쓰레기|GENERAL WASTE,플라스틱|PLASTIC,비닐|VINYL,종이|PAPER,캔/유리|CAN & GLASS' && rc.every(r => r.icon), rc);
   check('종류별 색(플라스틱 파랑)', rc[1].fill.toLowerCase() === '#3b6fd4' && new Set(rc.map(r => r.fill)).size === 5, rc.map(r => r.fill));
