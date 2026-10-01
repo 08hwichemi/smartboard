@@ -13,7 +13,7 @@ const T1 = '11111111-1111-1111-1111-111111111111';
 const T2 = '22222222-2222-2222-2222-222222222222';
 const teachers = {
   [T1]: { id: T1, name: '김교사', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null },
-  [T2]: { id: T2, name: '박교사', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null },
+  [T2]: { id: T2, name: '박교사', is_admin: false, must_change_password: false, role: '담임', homeroom_grade: 3, homeroom_class: 1 },
 };
 const items = new Map(); // teacher|key -> {teacher_id,key,value,updated_at}
 const history = [];
@@ -70,9 +70,19 @@ async function handleDb(pageInfo, req) {
     const students = []; for (let c = 1; c <= 2; c++) for (let n = 1; n <= 5; n++) students.push(mk(c, n));
     return { data: [{ grade: 2, students, updated_at: new Date().toISOString() }], error: null };
   }
+  if (table === 'students' && op === 'select') {
+    const g = filters.find(f => f.col === 'grade'), c = filters.find(f => f.col === 'class_no');
+    studentSelects.push(g && c ? g.val + '-' + c.val : '?');
+    if (g && Number(g.val) === 3 && c && Number(c.val) === 1) return { data: ['가나다', '라마바', '사아자', '차카타', '파하가'].map((n, i) => ({ number: i + 1, name: n })), error: null };
+    if (g && Number(g.val) === 3 && c && Number(c.val) === 2) return { data: Array.from({ length: 30 }, (_, i) => ({ number: i + 1, name: '학생' + (i + 1) })), error: null };
+    if (g && Number(g.val) === 3 && c && Number(c.val) === 3) return { data: null, error: { message: 'Failed to fetch' } }; // 못 받는 반
+    return { data: [], error: null };
+  }
+  if (table === 'app_settings' && filters.some(f => f.val === 'class_structure')) return { data: { value: { gradeCount: 3, classCounts: [8, 9, 10] } }, error: null };
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
   return { data: null, error: null };
 }
+const studentSelects = [];
 
 // ---------- 브라우저에 심는 가짜 supabase-js ----------
 const mockLib = `
@@ -239,12 +249,16 @@ function pdfInfo(buf) {
   sz = await mainSizes(P);
   check('끄면 이름마다 칸에 맞게(짧은 이름이 더 큼)', new Set(sz).size > 1 && sz[1] > sz[3], sz);
   await P.check('#nt-same'); await wait(200);
-  // 글자 크기 단계
+  // 글자 크기: 단계 버튼 대신 바(%)로 직접 조절
+  const setFill = (pg, v) => pg.evaluate((v) => { const r = document.getElementById('nt-fillr'); r.value = v; r.dispatchEvent(new Event('input', { bubbles: true })); }, v);
+  check('글자 크기는 바(기본 74%, 예전 "보통"과 같음), 단계 버튼 없음', await P.inputValue('#nt-fillr') === '74' && (await P.textContent('#nt-fill-val')) === '74%' && !(await P.$('#nt-fill')));
   const mid = (await mainSizes(P))[0];
-  await P.click('#nt-fill [data-v="l"]'); await wait(200);
+  await setFill(P, 90); await wait(200);
   const big = (await mainSizes(P))[0];
-  check('글자 크기 "크게" → 더 큼', big > mid * 1.1, [mid, big]);
-  await P.click('#nt-fill [data-v="m"]'); await wait(200);
+  await setFill(P, 50); await wait(200);
+  const small0 = (await mainSizes(P))[0];
+  check('바를 올리면 글자가 커지고 내리면 작아짐, 계정에 저장', big > mid * 1.1 && small0 < mid * 0.8 && (await cfgOf(pc)).fillPct === 50 && (await P.textContent('#nt-fill-val')) === '50%', [small0, mid, big]);
+  await setFill(P, 74); await wait(200);
 
   // 장수
   await P.fill('#nt-copies', '2'); await wait(200);
@@ -339,6 +353,50 @@ function pdfInfo(buf) {
   check('다른 기기에서 바꾸면 여기 이름표도 바로 바뀜', await labels(P) === 7, await labels(P));
   check('이름표 설정만 바뀌면 홈 화면은 다시 안 그림', await P.evaluate(() => window.__homeRedraw === 0));
 
+  // 🔐 사물함 이름표
+  const texts = (pg) => pg.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
+  await P.click('#nt-mode-switch [data-mode="locker"]'); await wait(300);
+  check('사물함: 기본 6.7×2.1cm, 담임 아니면 학년·반 고르라는 안내(명렬표 안 받음)', await P.inputValue('#nt-w') === '6.7' && await P.inputValue('#nt-h') === '2.1' && await P.isVisible('#nt-lk-box') && !(await P.isVisible('#nt-rc-box')) && !(await P.isVisible('#nt-board-box')) && /학년·반/.test(await P.locator('#nt-pages').innerText()) && studentSelects.length === 0);
+  check('반 목록은 학급 구성대로(3학년 10반)', await P.evaluate(() => document.querySelectorAll('#nt-lk-grade option').length === 4));
+  await P.selectOption('#nt-lk-grade', '3'); await wait(150);
+  check('학급 구성대로 3학년 반 10개', await P.evaluate(() => document.querySelectorAll('#nt-lk-class option').length) === 11);
+  await P.selectOption('#nt-lk-class', '1'); await wait(400);
+  check('3학년 1반 → 명렬표 5명, 기본 "번호 이름"', JSON.stringify(await texts(P)) === JSON.stringify(['1번 가나다', '2번 라마바', '3번 사아자', '4번 차카타', '5번 파하가']) && /5명/.test(await P.textContent('#nt-lk-count')), await texts(P));
+  check('6.7×2.1cm → A4 가로 한 장에 28개(4×7)', /가로 한 장에 28개/.test(await P.textContent('#nt-fit-info')) && await P.evaluate(() => { const s = document.querySelector('#nt-pages .nt-sheet > svg'); return s.getAttribute('width') === '67mm' && s.getAttribute('height') === '21mm'; }), await P.textContent('#nt-fit-info'));
+  const fmtBtns = await P.evaluate(() => [...document.querySelectorAll('#nt-lk-fmt .nt-chip')].map(b => b.textContent));
+  check('표시 버튼 4개, 이 반 첫 학생으로 예시', JSON.stringify(fmtBtns) === JSON.stringify(['30101', '1번 가나다', '30101 가나다', '가나다']), fmtBtns);
+  await P.click('#nt-lk-fmt [data-v="id"]'); await wait(200);
+  check('"학번" → 30101 …', (await texts(P)).join(',') === '30101,30102,30103,30104,30105' && (await cfgOf(pc)).lFmt === 'id', await texts(P));
+  await P.click('#nt-lk-fmt [data-v="idname"]'); await wait(200);
+  check('"학번 이름" → 30101 가나다', (await texts(P))[0] === '30101 가나다');
+  await P.click('#nt-lk-fmt [data-v="numname"]'); await wait(200);
+  const lkIn = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].every(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text')].every(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }); }));
+  check('작은 이름표에서도 글자가 칸 안에', lkIn);
+  const lkMid = (await mainSizes(P))[0];
+  await setFill(P, 50); await wait(200);
+  check('사물함에서도 글자 크기 바가 먹음', (await mainSizes(P))[0] < lkMid * 0.8);
+  await setFill(P, 74); await wait(200);
+  await P.screenshot({ path: 'nt-locker.png' });
+  await P.selectOption('#nt-lk-class', '2'); await wait(400);
+  check('3학년 2반(30명) → 30개, 종이 2장', await labels(P) === 30 && await sheets(P) === 2, [await labels(P), await sheets(P)]);
+  await P.click('#nt-presets .nt-chip:nth-child(2)'); await wait(200);
+  const lc = await cfgOf(pc);
+  check('사물함 크기 바꾸면 사물함만(게시판·분리수거 크기 그대로)', lc.lw === 8 && lc.lh === 2.5 && lc.w === 25 && lc.rw === 19, lc);
+  await P.fill('#nt-w', '6.7'); await P.fill('#nt-h', '2.1'); await wait(200);
+  const nSel = studentSelects.length;
+  await P.selectOption('#nt-lk-class', '3'); await wait(400);
+  for (let k = 0; k < 4; k++) { await setFill(P, 70 + k * 2); await wait(100); }
+  check('명렬표를 못 받으면 안내 + 다시 그려도 요청이 되풀이되지 않음', /불러오지 못했어요/.test(await P.locator('#nt-pages').innerText()) && studentSelects.length === nSel + 1, studentSelects.slice(nSel));
+  await setFill(P, 74);
+  await P.selectOption('#nt-lk-class', '1'); await wait(400);
+  check('반을 고를 때만 명렬표를 받음(표시·크기·글자 크기를 바꿔 다시 그려도 안 받음)', studentSelects.join(',') === '3-1,3-2,3-3,3-1' && (await texts(P)).length === 5, studentSelects);
+  // 담임 선생님: 담임 반으로 시작
+  const hr = await openDevice(browser, 'HR', T2);
+  await hr.page.click('#rail-nametag-btn'); await wait(300);
+  await hr.page.click('#nt-mode-switch [data-mode="locker"]'); await wait(500);
+  check('담임은 사물함을 열면 담임 반(3학년 1반) 학생으로 바로', await hr.page.inputValue('#nt-lk-grade') === '3' && await hr.page.inputValue('#nt-lk-class') === '1' && (await texts(hr.page)).length === 5, await texts(hr.page));
+  await hr.page.locator('#nt-right').screenshot({ path: 'nt-locker-pop.png' }); // 기본 디자인(입체 글씨·주아)
+
   // 닫기
   await P.click('#rail-nametag-btn'); await wait(300);
   check('같은 버튼 한 번 더 → 홈', !(await shown()) && await P.evaluate(() => document.getElementById('main-dashboard').style.display === 'grid'));
@@ -364,7 +422,7 @@ function pdfInfo(buf) {
   check('1366×768: 아래쪽에서 펼쳐도 목록이 화면 안', await small.page.evaluate(() => { const r = document.getElementById('nt-font-menu').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.height > 200; }));
   await small.page.screenshot({ path: 'nt-1366.png' });
 
-  const errs = [...pc.errors, ...pc2.errors, ...small.errors];
+  const errs = [...pc.errors, ...pc2.errors, ...small.errors, ...hr.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();
