@@ -598,11 +598,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(400);
   check('학습지 탭: 학습지 입력칸이 보이고 명렬표 칸·엑셀 버튼은 숨김', await W.isVisible('#ws-grid') && !(await W.isVisible('#fm-grid')) && !(await W.isVisible('#fm-xlsx-btn')) && (await cfgOf(t1)).kind === 'ws');
   const wsDef = await W.evaluate(() => { const c = wsCfg(); return { paper: c.paper, m: [c.mT, c.mB, c.mL, c.mR].join(), w: document.querySelector('#fm-pages .ws-sheet').style.width, num: wsFont(c, 'num').h, t: wsFont(c, 'uno').h,
-    numOpt: document.querySelector('#ws-fp-num option').textContent }; });
-  check('학습지 기본: A4, 여백 모두 15mm, 쪽 번호 글꼴은 머리·꼬리와 같게', wsDef.paper === 'A4' && wsDef.m === '15,15,15,15' && wsDef.w === '210mm' && wsDef.num === wsDef.t && wsDef.numOpt === '머리·꼬리와 같게', wsDef);
+    numOpt: document.querySelector('#ws-fp-num option').textContent, tFont: c.tFont, bFont: c.bFont, gap: c.gap, gapInp: document.getElementById('ws-gap').value }; });
+  check('학습지 기본: A4, 여백 모두 15mm, 쪽 번호 글꼴은 머리·꼬리와 같게, 머리·꼬리 한컴 윤고딕 240·본문 함초롬바탕, 제목 아래 빈 줄 0', wsDef.paper === 'A4' && wsDef.m === '15,15,15,15' && wsDef.w === '210mm' && wsDef.num === wsDef.t && wsDef.numOpt === '머리·꼬리와 같게' &&
+    wsDef.tFont === '한컴 윤고딕 240' && wsDef.bFont === '함초롬바탕' && wsDef.gap === 0 && wsDef.gapInp === '0', wsDef);
   // 아래 검사는 원본 학습지 모양(B4, 여백 위14·아래8·왼14·오른16)으로
   await W.click('#ws-paper [data-paper="B4"]');
   for (const [k, v] of [['mT', '14'], ['mB', '8'], ['mL', '14'], ['mR', '16']]) await setText(W, '#ws-margins input[data-k="' + k + '"]', v);
+  await W.selectOption('#ws-tfont', '경기천년제목 Bold'); await W.selectOption('#ws-bfont', '경기천년바탕 Bold'); await setText(W, '#ws-gap', '2');
   await setText(W, '#ws-uno', '2'); await setText(W, '#ws-uname', '반응엔탈피와 화학 평형');
   await setText(W, '#ws-sno', '01'); await setText(W, '#ws-sname', '반응엔탈피와 열화학 반응식');
   await setText(W, '#ws-subj', '화학Ⅱ'); await setText(W, '#ws-cls', '화학이랑 놀자'); await setText(W, '#ws-school', '부광고등학교');

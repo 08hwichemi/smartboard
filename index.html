@@ -13136,9 +13136,9 @@
   function wsAutoIcon(subj) { const s = String(subj || ''); const hit = WS_ICON_WORDS.find(function(w) { return new RegExp(w[1]).test(s); }); return hit ? hit[0] : 'sci'; }
   function wsIconSvg(k, w, h) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"' + (w ? ' width="' + w + '" height="' + h + '"' : '') + '>' + ic[2] + '</svg>' : ''; }
   const WS_DEFAULT = {
-    uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
+    uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 0,
     paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15, start: 1, colsN: 1, colLine: true, h2Color: false, note: true, noteW: 44, theme: 'mint',
-    tFont: '경기천년제목 Bold', bFont: '경기천년바탕 Bold', bSize: 10, // 원본 학습지 글꼴(머리·꼬리 / 본문)
+    tFont: '한컴 윤고딕 240', bFont: '함초롬바탕', bSize: 10, // 머리·꼬리 / 본문 글꼴(한글에 딸려 오는 글꼴이라 학교 PC에 거의 있음)
   };
   // 부분별 글꼴(비우면 머리·꼬리 글꼴)
   const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
@@ -13168,7 +13168,7 @@
       c.outline = wsOutlineFromRows(c.rows);
     }
     ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, WS_DEFAULT[k]); });
-    c.start = Math.round(ntNum(c.start, 1, 999, 1)); c.gap = Math.round(ntNum(c.gap, 0, 20, 2));
+    c.start = Math.round(ntNum(c.start, 1, 999, 1)); c.gap = Math.round(ntNum(c.gap, 0, 20, 0));
     c.colsN = c.colsN === 2 || c.colsN === '2' ? 2 : 1;
     c.noteW = ntNum(c.noteW, 30, 70, 44); c.bSize = ntNum(c.bSize, 8, 14, 10.5);
     if (!WS_THEMES.some(function(t) { return t[0] === c.theme; })) c.theme = 'mint';
