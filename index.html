@@ -12723,6 +12723,7 @@
         let s = cpTpl.replace(' id="0"', ' id="' + next() + '"').replace(/ height="\d+"/, ' height="' + Math.round(o.size * 100) + '"').replace(/ textColor="#\w+"/, ' textColor="' + (o.color || '#000000') + '"');
         s = s.replace(/<hh:fontRef [^>]*\/>/, '<hh:fontRef ' + FM_LANGS.map(function(l) { return l.toLowerCase() + '="' + ((fontIds[l] || {})[o.font] || 0) + '"'; }).join(' ') + '/>');
         s = s.replace('<hh:bold/>', '');
+        if (o.bfIdx != null) s = s.replace(/ borderFillIDRef="\d+"/, ' borderFillIDRef="' + bfIds[o.bfIdx] + '"'); // 글자 테두리
         if (o.bold) s = s.replace('<hh:underline ', '<hh:bold/><hh:underline ');
         return s;
       }).join('');
@@ -12972,9 +12973,10 @@
   // 다음 쪽으로 자연스럽게 넘어간다(예전 학습지는 쪽마다 큰 표 한 칸에 본문을 넣어 쪽을 넘기기 어려웠음).
   const WS_CFG_KEY = 'fm-ws';
   const WS_THEMES = [
-    ['mint', '민트', '#DBF4EE', '#B0CFBA'], ['sky', '하늘', '#DCEBFA', '#A9C8E8'], ['lemon', '노랑', '#FFF4CC', '#E6D08A'],
-    ['pink', '분홍', '#FBE3EA', '#E5B2C1'], ['lilac', '보라', '#ECE4F8', '#C6B4E4'], ['gray', '회색', '#EEEEEE', '#C4C4C4'],
-  ];
+    ['mint', '민트', '#DBF4EE', '#B0CFBA', '#2F5FAF'], ['sky', '하늘', '#DCEBFA', '#A9C8E8', '#2F5FAF'], ['lemon', '노랑', '#FFF4CC', '#E6D08A', '#A86400'],
+    ['pink', '분홍', '#FBE3EA', '#E5B2C1', '#B0346A'], ['lilac', '보라', '#ECE4F8', '#C6B4E4', '#6A44B0'], ['gray', '회색', '#EEEEEE', '#C4C4C4', '#333333'],
+  ]; // [키, 이름, NOTE 바탕, NOTE 테두리, 중제목 색]
+  const WS_CLS_COLOR = '#E07A5F'; // 수업명(원본 학습지처럼 주황빛)
   // 과목 아이콘(가로 120 × 세로 90, 굵은 테두리 + 단색 채우기). 한글 파일에는 PNG로 그려서 넣는다.
   const WS_K = 'stroke="#263238" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
   const WS_T = function(x, y, t, size, fill) { return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="800" text-anchor="middle" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif" fill="' + (fill || '#263238') + '">' + t + '</text>'; };
@@ -13007,7 +13009,7 @@
   const WS_DEFAULT = {
     uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
     paper: 'B4', land: false, mT: 10, mB: 10, mL: 14, mR: 14, start: 1, colsN: 1, note: true, noteW: 44, theme: 'mint',
-    tFont: '맑은 고딕', bFont: '맑은 고딕', bSize: 10.5,
+    tFont: '맑은 고딕', bFont: '맑은 고딕', bSize: 10,
   };
   function wsCfg() {
     let v = {};
@@ -13068,7 +13070,9 @@
     });
     return out;
   }
-  function wsSizes(c) { const b = c.bSize; return { h1: b + 3, h2: b + 1.5, h3: b + 0.5, it: b, p: b, blank: b }; }
+  function wsSizes(c) { const b = c.bSize; return { h1: b + 3, h2: b + 1, h3: b, it: b, p: b, blank: b }; }
+  // 대제목 "1 반응엔탈피" → 번호(네모 안)와 글로 나눔
+  function wsH1Split(t) { const m = String(t).match(/^(\d+)\s+(.*)$/); return m ? [m[1], m[2]] : ['', t]; }
   // 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다
   function wsLayout(c) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1];
@@ -13098,24 +13102,29 @@
     const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F(c.tFont) + '"><colgroup>' +
       (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
       '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
-      '<td style="font-size:11pt; font-weight:700; text-align:center;">' + ntEsc(c.uNo) + '</td><td style="font-size:11pt; font-weight:700;">' + ntEsc(c.uName) + '</td>' +
+      '<td style="font-size:12pt; text-align:center;">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt;">' + ntEsc(c.uName) + '</td>' +
       '<td rowspan="2" class="ws-slash"></td>' +
       '<td rowspan="2" style="border-top:' + line + '; vertical-align:' + (c.cls ? 'top' : 'middle') + '; padding-top:1mm;">' +
-      (c.cls ? '<div style="font-size:11pt; color:#8A8A8A;">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:17pt; font-weight:800; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
-      '<tr style="height:9.5mm;"><td style="font-size:15pt; font-weight:800; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:15pt; font-weight:800; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
+      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + ';">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; font-weight:800; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
+      '<tr style="height:9.5mm;"><td style="font-size:17pt; font-weight:800; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; font-weight:800; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
     const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';' + F(c.tFont) + '">NOTE</div>' +
       '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
     const foot = function(n) {
       const t = wsFootText(c, n);
-      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.bFont) + (n % 2 ? ' justify-content:space-between;' : '') + '">' +
-        '<span style="font-size:' + (n % 2 ? 9 : 12) + 'pt; font-weight:' + (n % 2 ? 400 : 800) + ';">' + n + '</span>' +
-        (n % 2 ? '<span style="font-size:10pt;">' + ntEsc(t[0]) + ' <b style="font-size:11pt;">' + ntEsc(t[1]) + '</b></span>' : '<span style="font-size:10pt; font-weight:700;">' + ntEsc(t[0]) + '</span>') + '</div>';
+      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.bFont) + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
+        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <b style="font-size:12pt;">' + ntEsc(t[1]) + '</b></span><span style="font-size:13pt; font-weight:800;">' + n + '</span>'
+          : '<span style="font-size:13pt; font-weight:800;">' + n + '</span><span style="font-size:11pt; font-weight:700;">' + ntEsc(t[0]) + '</span>') + '</div>';
     };
     const lines = wsLines(c);
     const body = function(first) {
-      const st = { h1: 'font-weight:800;', h2: 'font-weight:800;', h3: 'font-weight:700; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
+      const st = { h1: 'font-weight:800;', h2: 'font-weight:700; color:' + th[4] + ';', h3: 'font-weight:700; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
+      const txt = function(x) {
+        if (x.lv !== 'h1') return ntEsc(x.t) || '&nbsp;';
+        const sp = wsH1Split(x.t);
+        return (sp[0] ? '<span style="border:0.25mm solid #000; padding:0 0.8mm; margin-right:1.5mm; font-size:0.85em;">' + ntEsc(sp[0]) + '</span>' : '') + ntEsc(sp[1]);
+      };
       const inner = first ? lines.map(function(x) {
-        return '<div style="' + F(x.lv === 'it' || x.lv === 'p' || x.lv === 'blank' ? c.bFont : c.tFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + (ntEsc(x.t) || '&nbsp;') + '</div>';
+        return '<div style="' + F(x.lv === 'it' || x.lv === 'p' || x.lv === 'blank' ? c.bFont : c.tFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
       }).join('') : '';
       return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-rule:0.12mm solid #ccc;' : '') + '">' + inner + '</div>';
     };
@@ -13123,7 +13132,7 @@
       return '<div class="fm-sheet ws-sheet" data-page="' + n + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm;">' + band + note + body(first) + foot(n) + '</div>';
     };
     box.innerHTML = sheet(c.start, true) + sheet(c.start + 1, false);
-    const slashCss = 'linear-gradient(to top right, transparent calc(50% - 0.25mm), #000 calc(50% - 0.25mm), #000 calc(50% + 0.25mm), transparent calc(50% + 0.25mm))';
+    const slashCss = 'linear-gradient(to bottom right, transparent calc(50% - 0.25mm), #000 calc(50% - 0.25mm), #000 calc(50% + 0.25mm), transparent calc(50% + 0.25mm))';
     box.querySelectorAll('.ws-slash').forEach(function(td) { td.style.background = slashCss; });
     label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + c.start + '쪽(홀수 쪽 모양)·' + (c.start + 1) + '쪽(짝수 쪽 모양) 미리보기';
     document.getElementById('fm-fit-info').textContent = '';
@@ -13180,25 +13189,28 @@
     const zip = await JSZip.loadAsync(await fmSkeleton());
     const NONE = fmLn('none', 0.12), K = function(w) { return fmLn('solid', w); };
     const bfS = function(o) { return { fill: null, s: Object.assign({ l: NONE, r: NONE, t: NONE, b: NONE }, o || {}), slash: null }; };
-    const BF = { none: 0, bottom: 1, top: 2, slash: 3, note: 4 };
-    const nl = fmLn('solid', 0.3, th[3]);
-    const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null }];
+    const BF = { none: 0, bottom: 1, top: 2, slash: 3, note: 4, box: 5 };
+    const nl = fmLn('solid', 0.3, th[3]), bl = K(0.12);
+    const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null },
+      { fill: null, s: { l: bl, r: bl, t: bl, b: bl }, slash: null }];
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [
-        { size: 11, font: c.tFont, bold: true },              // 0 대단원
-        { size: 15, font: c.tFont, bold: true },              // 1 소단원
-        { size: 11, font: c.tFont, color: '#8A8A8A' },        // 2 수업명
-        { size: 17, font: c.tFont, bold: true },              // 3 과목명
-        { size: 9, font: c.bFont },                           // 4 꼬리(홀수 쪽 번호)
-        { size: 10, font: c.bFont },                          // 5 꼬리 글
-        { size: 11, font: c.bFont, bold: true },              // 6 꼬리 굵게(과목명·짝수 쪽)
-        { size: 12, font: c.bFont, bold: true },              // 7 짝수 쪽 번호
+        { size: 13, font: c.tFont },                          // 0 대단원
+        { size: 17, font: c.tFont, bold: true },              // 1 소단원
+        { size: 13, font: c.tFont, color: WS_CLS_COLOR },     // 2 수업명
+        { size: 19, font: c.tFont, bold: true },              // 3 과목명
+        { size: 9, font: c.bFont },                           // 4 꼬리: 학교명
+        { size: 11, font: c.bFont, bold: true },              // 5 꼬리: 대단원(짝수 쪽)
+        { size: 12, font: c.bFont, bold: true },              // 6 꼬리: 과목명(홀수 쪽)
+        { size: 13, font: c.bFont, bold: true },              // 7 쪽 번호
         { size: 10, font: c.tFont, color: '#333333' },        // 8 NOTE
         { size: sz.h1, font: c.tFont, bold: true },           // 9 대제목
-        { size: sz.h2, font: c.tFont, bold: true },           // 10 중제목
+        { size: sz.h2, font: c.tFont, bold: true, color: th[4] }, // 10 중제목
         { size: sz.h3, font: c.tFont, bold: true },           // 11 소제목
         { size: sz.p, font: c.bFont },                        // 12 항목·본문
+        { size: sz.h1 - 1.5, font: c.tFont, bold: true, bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
+        { size: 12, font: c.tFont },                          // 14 대단원 번호
       ],
       paraPrs: [
         { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
@@ -13223,8 +13235,10 @@
     const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
     const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
     const sub = function(inner, vAlign, w, h) { return '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="' + (vAlign || 'CENTER') + '" linkListIDRef="0" linkListNextIDRef="0" textWidth="' + (w || 0) + '" textHeight="' + (h || 0) + '" hasTextRef="0" hasNumRef="0">' + inner + '</hp:subList>'; };
-    // 종이 기준으로 띄운 개체 위치(mm)
-    const floatPos = function(x, y) { return '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="0" allowOverlap="1" holdAnchorAndSO="0" vertRelTo="PAPER" horzRelTo="PAPER" vertAlign="TOP" horzAlign="LEFT" vertOffset="' + hu(y) + '" horzOffset="' + hu(x) + '"/>'; };
+    // 띄운 개체 위치(mm): 머리말·꼬리말 문단 기준. (종이 기준으로 적었더니 한글이 머리말 자리 기준으로 계산해서 여백만큼 밀렸음)
+    // 머리말 문단 = (왼쪽 여백, 위 여백), 꼬리말 문단(위로 붙임) = (왼쪽 여백, 종이 높이 − 아래 여백 − 꼬리말 높이)
+    let origin = { x: 0, y: 0 };
+    const floatPos = function(x, y) { return '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="0" allowOverlap="1" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="' + hu(y - origin.y) + '" horzOffset="' + hu(x - origin.x) + '"/>'; };
     const tc = function(o) {
       return '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + o.bf + '">' + sub(o.paras, o.v, 0, 0) +
         '<hp:cellAddr colAddr="' + o.c + '" rowAddr="' + o.r + '"/><hp:cellSpan colSpan="' + (o.cs || 1) + '" rowSpan="' + (o.rs || 1) + '"/><hp:cellSz width="' + o.w + '" height="' + o.h + '"/>' +
@@ -13257,13 +13271,14 @@
       row1 += tc({ c: ci, r: 0, rs: 2, w: cw[ci], h: hu(L.bandH), bf: BFI('bottom'), paras: P(PP[2], R(CP[0], iconXml)) }); ci++;
     }
     const nC = ci;
-    row1 += tc({ c: nC, r: 0, w: cw[nC], h: r1, bf: BFI('none'), paras: P(PP[2], R(CP[0], T(c.uNo))) });
+    row1 += tc({ c: nC, r: 0, w: cw[nC], h: r1, bf: BFI('none'), paras: P(PP[2], R(CP[14], T(c.uNo))) });
     row1 += tc({ c: nC + 1, r: 0, w: cw[nC + 1], h: r1, bf: BFI('none'), paras: P(PP[0], R(CP[0], T(c.uName))) });
     row1 += tc({ c: nC + 2, r: 0, rs: 2, w: cw[nC + 2], h: hu(L.bandH), bf: BFI('slash'), paras: P(PP[0], R(CP[0], T(''))) });
     row1 += tc({ c: nC + 3, r: 0, rs: 2, w: cw[nC + 3], h: hu(L.bandH), bf: BFI('top'), v: c.cls ? 'TOP' : 'CENTER', ml: 1.5, mr: 1,
       paras: (c.cls ? P(PP[0], R(CP[2], T(c.cls))) : '') + P(PP[1], R(CP[3], T(c.subj))) });
     row2 += tc({ c: nC, r: 1, w: cw[nC], h: r2, bf: BFI('bottom'), paras: P(PP[2], R(CP[1], T(c.sNo))) });
     row2 += tc({ c: nC + 1, r: 1, w: cw[nC + 1], h: r2, bf: BFI('bottom'), paras: P(PP[0], R(CP[1], T(c.sName))) });
+    origin = { x: c.mL, y: c.mT };
     const bandXml = tbl([row1, row2], cw.length, BW, hu(L.bandH), b.x, b.y);
     // NOTE 칸: 머리말 속 표(제목 칸 + 빈 줄 + 긴 칸, 배경색), 글 뒤로 — 쪽마다 같은 자리에 깔린다
     let noteXml = '';
@@ -13277,15 +13292,16 @@
     }
     // 꼬리 띠: 홀수 쪽 [쪽 번호 … 학교명 과목명], 짝수 쪽 [쪽 번호 대단원]
     const pageNum = '<hp:ctrl><hp:autoNum num="1" numType="PAGE"><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar="" supscript="0"/></hp:autoNum></hp:ctrl>';
+    // 홀수 쪽: 오른쪽 끝에 "학교명 과목명  27", 짝수 쪽: 왼쪽에 "28  ○단원 대단원" (원본 학습지와 같게)
     const footTbl = function(odd) {
-      const f = L.foot, w1 = hu(16), w2 = hu(f.w) - w1, t = wsFootText(c, odd ? 1 : 2);
-      const cells = tc({ c: 0, r: 0, w: w1, h: hu(f.h), bf: BFI('none'), v: 'BOTTOM', ml: 0, paras: P(PP[0], R(CP[odd ? 4 : 7], pageNum + T(''))) }) +
-        tc({ c: 1, r: 0, w: w2, h: hu(f.h), bf: BFI('none'), v: 'BOTTOM', mr: 0,
-          paras: odd ? P(PP[1], R(CP[5], T(t[0] + ' ')) + R(CP[6], T(t[1]))) : P(PP[0], R(CP[6], T(t[0]))) });
-      return tbl([cells], 2, hu(f.w), hu(f.h), f.x, f.y);
+      const f = L.foot, t = wsFootText(c, odd ? 1 : 2);
+      const para = odd ? P(PP[1], R(CP[4], T(t[0] + ' ')) + R(CP[6], T(t[1] + '  ')) + R(CP[7], pageNum + T('')))
+        : P(PP[0], R(CP[7], pageNum + T('  ')) + R(CP[5], T(t[0])));
+      origin = { x: c.mL, y: L.h - c.mB - L.footH };
+      return tbl([tc({ c: 0, r: 0, w: hu(f.w), h: hu(f.h), bf: BFI('none'), v: 'BOTTOM', ml: 0, mr: 0, paras: para })], 1, hu(f.w), hu(f.h), f.x, f.y);
     };
     const hf = function(tag, id, type, inner, h) {
-      return '<hp:ctrl><hp:' + tag + ' id="' + id + '" applyPageType="' + type + '">' + sub(P(PP[0], R(CP[5], inner)), tag === 'header' ? 'TOP' : 'BOTTOM', hu(L.bodyW), hu(h)) + '</hp:' + tag + '></hp:ctrl>';
+      return '<hp:ctrl><hp:' + tag + ' id="' + id + '" applyPageType="' + type + '">' + sub(P(PP[0], R(CP[4], inner)), 'TOP', hu(L.bodyW), hu(h)) + '</hp:' + tag + '></hp:ctrl>';
     };
     const sec0 = await zip.file('Contents/section0.xml').async('string');
     const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
@@ -13300,7 +13316,9 @@
     let body = '';
     lines.forEach(function(x, i) {
       const lv = LV[x.lv];
-      body += P(PP[lv[0]], (i === 0 ? R(CP[lv[1]], ctrls) : '') + R(CP[lv[1]], T(x.t)), ST[lv[2]]);
+      let runs = R(CP[lv[1]], T(x.t));
+      if (x.lv === 'h1') { const sp = wsH1Split(x.t); if (sp[0]) runs = R(CP[13], T(' ' + sp[0] + ' ')) + R(CP[lv[1]], T(' ' + sp[1])); }
+      body += P(PP[lv[0]], (i === 0 ? R(CP[lv[1]], ctrls) : '') + runs, ST[lv[2]]);
     });
     zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
     // 아이콘 그림 + 목록(content.hpf)

@@ -607,10 +607,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       icon: !!sh[0].querySelector('.ws-band svg'), noteRight: Math.round((r.right - note.getBoundingClientRect().right) / k / 3.78), bodyRightOfNote: body.getBoundingClientRect().right <= note.getBoundingClientRect().left,
       lines: [...body.children].map(d => d.textContent.trim()).filter(Boolean), hasBodyOnPage2: !!sh[1].querySelector('.ws-body').children.length }; });
   await W.screenshot({ path: 'ws-1600.png' });
-  check('학습지 미리보기: B4 두 장(홀수·짝수 쪽), 머리 띠(아이콘·대단원·소단원·수업명·과목명), 꼬리(27 학교명 과목명 / 28 대단원), NOTE는 오른쪽 여백 안·본문은 NOTE 왼쪽',
+  check('학습지 미리보기: B4 두 장(홀수·짝수 쪽), 머리 띠(아이콘·대단원·소단원·수업명·과목명), 꼬리(홀수 쪽 오른쪽 끝 "학교명 과목명 27" / 짝수 쪽 "28 대단원"), NOTE는 오른쪽 여백 안·본문은 NOTE 왼쪽',
     wsv.n === 2 && wsv.w === '257mm' && wsv.icon && /2 반응엔탈피와 화학 평형/.test(wsv.band) && /01 반응엔탈피와 열화학 반응식/.test(wsv.band) && /화학이랑 놀자/.test(wsv.band) && /화학Ⅱ/.test(wsv.band) &&
-    wsv.foot1 === '27 부광고등학교 화학Ⅱ' && wsv.foot2 === '28 2단원 반응엔탈피와 화학 평형' && wsv.noteRight === 14 && wsv.bodyRightOfNote, wsv);
-  check('본문 제목 뼈대가 첫 쪽에, 둘째 쪽은 빈 틀', wsv.lines.join('|') === '1 반응엔탈피|1. 반응엔탈피|(1) 엔탈피|① 모든 물질은 에너지를 가지고 있다.|② 일정한 온도와 압력에서|(2) 반응엔탈피' && !wsv.hasBodyOnPage2, wsv.lines);
+    wsv.foot1 === '부광고등학교 화학Ⅱ 27' && wsv.foot2 === '28 2단원 반응엔탈피와 화학 평형' && wsv.noteRight === 14 && wsv.bodyRightOfNote, wsv);
+  check('본문 제목 뼈대가 첫 쪽에(대제목 번호는 네모 안), 둘째 쪽은 빈 틀', wsv.lines.join('|').replace(/^1반응/, '1 반응') === '1 반응엔탈피|1. 반응엔탈피|(1) 엔탈피|① 모든 물질은 에너지를 가지고 있다.|② 일정한 온도와 압력에서|(2) 반응엔탈피' && !wsv.hasBodyOnPage2, wsv.lines);
   check('과목명 "화학Ⅱ" → 아이콘 자동으로 화학', await W.evaluate(() => wsCfg().iconK) === 'chem');
   await W.click('#ws-note [data-note="0"]'); await W.waitForTimeout(200);
   const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
@@ -624,10 +624,12 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       return { first: names[0], png: png.length > 1000 && png[1] === 0x50, hpf: /id="image1" href="BinData\/image1.png" media-type="image\/png"/.test(hpf), header: (sec.match(/<hp:header /g) || []).length, odd: /applyPageType="ODD"/.test(sec), even: /applyPageType="EVEN"/.test(sec),
         newNum: /<hp:newNum num="27" numType="PAGE"\/>/.test(sec), autoNum: (sec.match(/numType="PAGE"><hp:autoNumFormat/g) || []).length, rects: (sec.match(/BEHIND_TEXT/g) || []).length, cols: (sec.match(/colCount="(\d)"/) || [])[1],
         styles: ['학습지 대제목', '학습지 중제목', '학습지 소제목', '학습지 항목', '학습지 본문'].every(n => head.includes('name="' + n + '"')), slash: /<hh:slash type="CENTER"/.test(head),
+        paperRel: /RelTo="PAPER"/.test(sec), bandPos: (sec.match(/<hp:header [\s\S]*?<hp:pos ([^>]*)>/) || [])[1], box: /<hh:charPr id="\d+"[^>]*borderFillIDRef="(\d+)"/.test(head),
         margin: (sec.match(/<hp:margin [^>]*>/) || [])[0], page: (sec.match(/<hp:pagePr [^>]*>/) || [])[0], texts: ['화학이랑 놀자', '화학Ⅱ', '부광고등학교', '2단원 반응엔탈피와 화학 평형', '01', '반응엔탈피와 열화학 반응식', '① 모든 물질은 에너지를 가지고 있다.'].every(t => sec.includes('<hp:t>' + t)) }; });
     check('학습지 한글 파일: 아이콘 PNG·목록, 머리말 1·꼬리말 홀/짝, 시작 쪽 27, 쪽 번호 2곳, NOTE 칸(글 뒤로 표) 1, 2단, 학습지 스타일 5개, 사선 칸, B4, 오른쪽 여백 = 14 + NOTE 44 + 4',
       wz.first === 'mimetype' && wz.png && wz.hpf && wz.header === 1 && wz.odd && wz.even && wz.newNum && wz.autoNum === 2 && wz.rects === 1 && wz.cols === '2' && wz.styles && wz.slash && wz.texts &&
       /width="72850" height="103181"/.test(wz.page) && /right="17575"/.test(wz.margin), wz);
+    check('한글 파일 위치는 머리말·꼬리말 문단 기준(종이 기준 쓰지 않음 — 한글이 여백만큼 밀어서), 머리 띠는 머리말 문단 바로 그 자리(0,0)', !wz.paperRel && /vertRelTo="PARA" horzRelTo="PARA"[^>]*vertOffset="0" horzOffset="0"/.test(wz.bandPos), wz.bandPos);
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
