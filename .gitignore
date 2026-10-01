@@ -1,0 +1,4 @@
+# 자동 테스트(tools/tests)가 저장소 맨 위에 남기는 확인용 화면 사진 — 올리지 않음
+/*.png
+!/apple-touch-icon.png
+!/favicon.png
