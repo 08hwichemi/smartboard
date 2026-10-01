@@ -927,11 +927,29 @@
     .ws-row .lp-input { flex: 1; min-width: 0; }
     .ws-lb { flex: 0 0 auto; width: 40px; color: var(--text-sub); }
     #ws-grid .ws-no { flex: 0 0 52px; width: 52px; padding-left: 6px; padding-right: 2px; }
+    #ws-ol-rows { display: flex; flex-direction: column; gap: 3px; max-height: 230px; overflow-y: auto; }
+    .ws-ol-row { display: flex; align-items: center; gap: 4px; }
+    .ws-ol-no { flex: 0 0 auto; min-width: 30px; text-align: right; font-weight: 700; font-size: 13px; color: var(--text-main); }
+    .ws-ol-row[data-lv="h1"] .ws-ol-no { font-size: 14px; } .ws-ol-row[data-lv="p"] .ws-ol-no { color: var(--text-sub); font-weight: 400; font-size: 11px; }
+    .ws-ol-row input { flex: 1; min-width: 0; padding: 4px 6px !important; }
+    .ws-ol-row[data-lv="h1"] input { font-weight: 700; }
+    .ws-ol-x { flex: 0 0 auto; border: none; background: none; color: var(--text-sub); cursor: pointer; font-size: 13px; padding: 0 2px; }
+    #ws-ol-add { gap: 4px; font-size: 12px; color: var(--text-sub); }
+    #ws-ol-add .nt-chip { padding: 2px 7px; }
     #ws-outline { resize: vertical; min-height: 90px; font-family: inherit; line-height: 1.5; }
     #ws-icons { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
     .ws-ic { width: 40px; height: 36px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; padding: 2px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-sub); font-family: inherit; }
     .ws-ic svg { width: 34px; height: 26px; }
     .ws-ic.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .ws-ic-more { line-height: 1.15; font-weight: 700; color: var(--accent-color); }
+    .ws-icp-box { width: 640px; max-width: 94vw; box-sizing: border-box; padding: 18px 20px; }
+    .ws-icp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 15px; }
+    .ws-icp-g { font-size: 12px; color: var(--text-sub); margin: 10px 0 4px; font-weight: 700; }
+    .ws-icp-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ws-icp { width: 92px; border: 1px solid var(--border-color); border-radius: 10px; background: #fff; padding: 6px 2px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: #333; }
+    .ws-icp svg { width: 56px; height: 42px; }
+    .ws-icp:hover { border-color: var(--accent-color); }
+    .ws-icp.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
     #ws-page-box .nt-chip, #ws-layout-box .nt-chip { padding: 3px 8px; }
     #ws-paper, #ws-colsn, #ws-note, #ws-theme { gap: 4px; }
     .fm-mgrid { display: grid; grid-template-columns: repeat(4, auto minmax(34px, 1fr)); gap: 4px; align-items: center; font-size: 12px; }
@@ -2974,10 +2992,15 @@
         <div class="ws-row" style="align-items:flex-start;"><span class="ws-lb" style="padding-top:4px;">아이콘</span><div id="ws-icons"></div></div>
       </div>
       <div class="nt-box" id="ws-outline-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>📝 본문 제목 뼈대</span> <span class="nt-muted">비워도 돼요</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>📝 본문 제목 뼈대</span> <span class="nt-muted">비워도 돼요 · <a href="#" id="ws-ol-mode" onclick="wsOlMode(); return false;"></a></span></div>
+        <div id="ws-ol-rows"></div>
+        <div class="nt-row" id="ws-ol-add">더하기
+          <button class="nt-chip" onclick="wsOlAdd('h1')" title="대제목: 1 ○○">1 대제목</button><button class="nt-chip" onclick="wsOlAdd('h2')" title="중제목: 1. ○○">1. 중제목</button>
+          <button class="nt-chip" onclick="wsOlAdd('h3')" title="소제목: (1) ○○">(1) 소제목</button><button class="nt-chip" onclick="wsOlAdd('it')" title="항목: ① ○○">① 항목</button><button class="nt-chip" onclick="wsOlAdd('p')" title="번호 없는 본문 줄">본문</button></div>
         <textarea id="ws-outline" class="lp-input" rows="5" placeholder="한 줄에 제목 하나 — 앞의 번호 모양으로 크기가 정해져요&#10;1 반응엔탈피&#10;1. 반응엔탈피&#10;(1) 엔탈피&#10;① 모든 물질은 에너지를 가지고 있다." oninput="wsSet({ outline: this.value })"></textarea>
         <div class="ws-row"><span class="ws-lb" style="width:auto;">제목 아래 빈 줄</span><input type="number" id="ws-gap" class="lp-input ws-no" min="0" max="20" step="1" oninput="wsSet({ gap: this.value })"><span class="nt-muted">줄</span></div>
-        <div class="nt-muted">"1 ○○" 대제목 · "1. ○○" 중제목 · "(1) ○○" 소제목 · "① ○○" 항목 — 한글에서 F6 스타일 "학습지 대제목…"으로 같은 모양을 이어 쓸 수 있어요.</div>
+        <div class="nt-row" id="ws-h2c"></div>
+        <div class="nt-muted" id="ws-ol-help"></div>
       </div>
       <div class="nt-box" id="ws-page-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
@@ -12170,7 +12193,7 @@
   const FM_CFG_KEY = 'fm-cfg';
   // 글꼴: n = 목록에 보이는 이름, c = PC마다 다를 수 있는 실제 글꼴 이름 후보(이 PC에 있는 것을 골라 저장 — 한글 파일에도 그 이름으로 들어감)
   const FM_FONTS = [
-    { n: '맑은 고딕' }, { n: '함초롬돋움' }, { n: '함초롬바탕' },
+    { n: '맑은 고딕' }, { n: '함초롬돋움' }, { n: '함초롬바탕' }, { n: '한컴 윤고딕 230' }, { n: '한컴 윤고딕 240' },
     { n: '경기천년제목 Bold', c: ['경기천년제목 Bold', '경기천년제목', '경기천년제목_Bold'] },
     { n: '경기천년제목 Medium', c: ['경기천년제목 Medium', '경기천년제목_Medium'] },
     { n: '경기천년제목 Light', c: ['경기천년제목 Light', '경기천년제목_Light'] },
@@ -12406,6 +12429,7 @@
     '경기천년제목 Bold': ['GyeonggiTitle Bold', 'GyeonggiTitleB', 'GyeonggiTitle-Bold'], '경기천년제목 Medium': ['GyeonggiTitle Medium', 'GyeonggiTitleM'],
     '경기천년제목 Light': ['GyeonggiTitle Light', 'GyeonggiTitleL'], '경기천년바탕 Bold': ['GyeonggiBatang Bold', 'GyeonggiBatangB'],
     '경기천년바탕 Regular': ['GyeonggiBatang Regular', 'GyeonggiBatangR', '경기천년바탕'],
+    '한컴 윤고딕 230': ['Hancom YoonGothic 230', 'HancomYoonGothic230', 'HYoonGothic230', 'YoonGothic230'], '한컴 윤고딕 240': ['Hancom YoonGothic 240', 'HancomYoonGothic240', 'HYoonGothic240', 'YoonGothic240'],
     '나눔고딕': ['NanumGothic', 'Nanum Gothic', 'NanumGothic Regular', 'NanumGothicRegular'], '나눔명조': ['NanumMyeongjo', 'Nanum Myeongjo', 'NanumMyeongjo Regular', 'NanumMyeongjoRegular'],
     '굴림': ['Gulim', 'GulimChe'], '돋움': ['Dotum', 'DotumChe'], '바탕': ['Batang', 'BatangChe'],
     'HY견고딕': ['HYGothic-Extra', 'HYGothic Extra', 'HY GyeonGothic'], 'HY헤드라인M': ['HYHeadLine-Medium', 'HYHeadLine Medium', 'HY HeadLine M'],
@@ -13090,11 +13114,30 @@
   const WS_ICON_WORDS = [['chem', '화학'], ['phys', '물리'], ['bio', '생명|생물'], ['earth', '지구'], ['math', '수학|미적|기하|확률|통계'], ['kor', '국어|문학|독서|화법|작문|언어'],
     ['eng', '영어|English'], ['hist', '역사|한국사|세계사|동아시아'], ['geo', '지리|여행'], ['econ', '경제|금융'], ['law', '법|정치'], ['soc', '사회|통합사회'], ['ethic', '윤리|도덕|철학'], ['music', '음악'], ['art', '미술'],
     ['pe', '체육|운동|스포츠'], ['info', '정보|컴퓨터|프로그래밍|AI|인공지능'], ['tech', '기술|가정|공학'], ['hanja', '한문'], ['lang', '일본어|중국어|독일어|프랑스어|스페인어|러시아어|아랍어|베트남어'], ['sci', '과학|탐구|실험']];
+  const WS_ICON_MAIN = ['chem', 'phys', 'bio', 'earth', 'math', 'kor', 'eng', 'soc', 'hist']; // 입력칸에 늘 보이는 아이콘
+  const WS_ICON_GROUPS = [['과학', ['chem', 'phys', 'phys2', 'phys3', 'phys4', 'bio', 'earth', 'sci']], ['수학', ['math', 'math2', 'math3', 'math4']], ['국어', ['kor', 'kor2', 'kor3', 'kor4']],
+    ['영어·외국어·한문', ['eng', 'lang', 'hanja']], ['사회·역사·윤리', ['soc', 'geo', 'geo2', 'law', 'pol', 'econ', 'hist', 'hist2', 'hist3', 'ethic', 'ethic2']], ['예체능·정보·기술', ['music', 'art', 'pe', 'info', 'tech']]];
+  // 아이콘 고르기 창(더보기): 과목별로 묶어서 이름과 함께
+  function wsIconPicker(open) {
+    let ov = document.getElementById('ws-icon-overlay');
+    if (!open) { if (ov) ov.style.display = 'none'; return; }
+    if (!ov) {
+      ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'ws-icon-overlay';
+      ov.onclick = function(e) { if (e.target === ov) wsIconPicker(false); };
+      document.body.appendChild(ov);
+    }
+    const cur = wsCfg().icon;
+    const btn = function(k) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<button class="ws-icp' + (cur === k ? ' on' : '') + '" data-ic="' + k + '" onclick="wsSet({ icon: \'' + k + '\' }, true); wsIconPicker(false);">' + wsIconSvg(k) + '<span>' + ic[1] + '</span></button>' : ''; };
+    ov.innerHTML = '<div class="modal-box ws-icp-box"><div class="ws-icp-head"><b>과목 아이콘 고르기</b><button class="nt-chip" onclick="wsIconPicker(false)">닫기 ✕</button></div>' +
+      WS_ICON_GROUPS.map(function(g) { return '<div class="ws-icp-g">' + g[0] + '</div><div class="ws-icp-row">' + g[1].map(btn).join('') + '</div>'; }).join('') + '</div>';
+    ov.style.display = 'flex';
+  }
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') wsIconPicker(false); });
   function wsAutoIcon(subj) { const s = String(subj || ''); const hit = WS_ICON_WORDS.find(function(w) { return new RegExp(w[1]).test(s); }); return hit ? hit[0] : 'sci'; }
   function wsIconSvg(k, w, h) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"' + (w ? ' width="' + w + '" height="' + h + '"' : '') + '>' + ic[2] + '</svg>' : ''; }
   const WS_DEFAULT = {
     uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
-    paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15, start: 1, colsN: 1, colLine: true, note: true, noteW: 44, theme: 'mint',
+    paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15, start: 1, colsN: 1, colLine: true, h2Color: false, note: true, noteW: 44, theme: 'mint',
     tFont: '경기천년제목 Bold', bFont: '경기천년바탕 Bold', bSize: 10, // 원본 학습지 글꼴(머리·꼬리 / 본문)
   };
   // 부분별 글꼴(비우면 머리·꼬리 글꼴)
@@ -13117,7 +13160,13 @@
     if (c.school == null) { const el = document.getElementById('ms-cfg-school'); c.school = (el && el.value) || ''; } // 처음엔 월간일정표의 학교명
     ['uNo', 'uName', 'sNo', 'sName', 'subj', 'cls', 'school', 'outline'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
     if (!FM_PAPERS[c.paper]) c.paper = 'A4';
-    c.land = !!c.land; c.note = c.note !== false; c.colLine = c.colLine !== false;
+    c.land = !!c.land; c.note = c.note !== false; c.colLine = c.colLine !== false; c.h2Color = c.h2Color === true;
+    // 본문 제목 뼈대: 칸으로 쓰기(rows, 번호 자동)가 기본, "글로 한꺼번에"(olText)면 outline 글 그대로
+    c.olText = c.olText === true;
+    if (!c.olText) {
+      c.rows = Array.isArray(c.rows) ? c.rows.filter(function(r) { return r && WS_OL_LV[r.lv]; }).map(function(r) { return { lv: r.lv, t: String(r.t == null ? '' : r.t) }; }) : wsRowsFromOutline(c.outline);
+      c.outline = wsOutlineFromRows(c.rows);
+    }
     ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, WS_DEFAULT[k]); });
     c.start = Math.round(ntNum(c.start, 1, 999, 1)); c.gap = Math.round(ntNum(c.gap, 0, 20, 2));
     c.colsN = c.colsN === 2 || c.colsN === '2' ? 2 : 1;
@@ -13167,6 +13216,82 @@
     wsFontMsg(wsCfg());
   }
   function wsFontMsg(c) { fmFontMsgTo('ws-font-msg', ['uno', 'sno', 'cls', 'subj', 'foot', 'num', 'note', 'body'].map(function(k) { return wsFont(c, k).n; })); }
+  // ----- 본문 제목 뼈대 칸(번호 자동) -----
+  const WS_OL_LV = { h1: '대제목', h2: '중제목', h3: '소제목', it: '항목', p: '본문' };
+  const WS_OL_ORDER = ['h1', 'h2', 'h3', 'it', 'p'];
+  function wsRowsFromOutline(text) {
+    return String(text || '').split(/\r?\n/).filter(function(l) { return l.trim(); }).map(function(l) {
+      const lv = wsLevel(l), t = l.trim();
+      const body = lv === 'h1' ? t.replace(/^\d+\s+/, '') : lv === 'h2' ? t.replace(/^\d+\.\s*/, '') : lv === 'h3' ? t.replace(/^\(\d+\)\s*/, '') : lv === 'it' ? t.replace(/^[①-⑳]\s*/, '') : t;
+      return { lv: lv, t: body };
+    });
+  }
+  // 줄마다 번호: 대제목 1, 2… / 중제목 1., 2.(대제목마다 새로) / 소제목 (1)(중제목마다 새로) / 항목 ①(소제목·중제목마다 새로)
+  function wsOlNumbers(rows) {
+    let a = 0, b = 0, d = 0, e = 0;
+    return rows.map(function(r) {
+      if (r.lv === 'h1') { a++; b = d = e = 0; return String(a); }
+      if (r.lv === 'h2') { b++; d = e = 0; return b + '.'; }
+      if (r.lv === 'h3') { d++; e = 0; return '(' + d + ')'; }
+      if (r.lv === 'it') { e++; return e <= 20 ? String.fromCharCode(0x245F + e) : '(' + e + ')'; }
+      return '';
+    });
+  }
+  // 칸 → 글(미리보기·한글 파일은 이 글로 만든다). 빈 제목 칸은 ○○로
+  function wsOutlineFromRows(rows) {
+    const no = wsOlNumbers(rows);
+    return rows.map(function(r, i) { const t = r.t.trim() || (r.lv === 'p' ? '' : '○○'); return no[i] ? no[i] + ' ' + t : t; }).filter(Boolean).join('\n');
+  }
+  function wsOlSave(rows, focus) {
+    wsSet({ rows: rows });
+    wsOlFill(wsCfg());
+    if (focus != null) { const el = document.querySelector('#ws-ol-rows .ws-ol-row[data-i="' + focus + '"] input'); if (el) { el.focus(); const n = el.value.length; el.setSelectionRange(n, n); } }
+  }
+  function wsOlAdd(lv, at) {
+    const rows = wsCfg().rows.slice(), i = at == null ? rows.length : at;
+    rows.splice(i, 0, { lv: lv, t: '' });
+    wsOlSave(rows, i);
+  }
+  function wsOlInput(i, v) { const rows = wsCfg().rows.slice(); if (!rows[i]) return; rows[i] = { lv: rows[i].lv, t: v }; wsSet({ rows: rows }); }
+  function wsOlDel(i) { const rows = wsCfg().rows.slice(); rows.splice(i, 1); wsOlSave(rows, rows.length ? Math.min(i, rows.length - 1) : null); }
+  // Enter = 아래에 줄 더하기, Tab/Shift+Tab = 한 단계 아래/위, 빈 칸에서 Backspace = 줄 지우기, ↑↓ = 칸 옮기기, Alt+↑↓ = 줄 순서 바꾸기
+  function wsOlKey(e, i) {
+    if (e.isComposing || e.keyCode === 229) return; // 한글 조합 중
+    const rows = wsCfg().rows.slice(), r = rows[i]; if (!r) return;
+    const k = WS_OL_ORDER.indexOf(r.lv);
+    if (e.key === 'Enter') { e.preventDefault(); wsOlAdd(r.lv === 'h1' ? 'h2' : r.lv, i + 1); }
+    else if (e.key === 'Tab') { e.preventDefault(); const nk = Math.max(0, Math.min(WS_OL_ORDER.length - 1, k + (e.shiftKey ? -1 : 1))); rows[i] = { lv: WS_OL_ORDER[nk], t: e.target.value }; wsOlSave(rows, i); }
+    else if (e.key === 'Backspace' && !e.target.value) { e.preventDefault(); wsOlDel(i); }
+    else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.altKey) {
+      e.preventDefault(); const j = i + (e.key === 'ArrowUp' ? -1 : 1); if (j < 0 || j >= rows.length) return;
+      rows[i] = { lv: r.lv, t: e.target.value }; const tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp; wsOlSave(rows, j);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      const el = document.querySelector('#ws-ol-rows .ws-ol-row[data-i="' + (i + (e.key === 'ArrowUp' ? -1 : 1)) + '"] input'); if (el) { e.preventDefault(); el.focus(); }
+    }
+  }
+  function wsOlFill(c) {
+    const box = document.getElementById('ws-ol-rows'), ta = document.getElementById('ws-outline');
+    document.getElementById('ws-ol-mode').textContent = c.olText ? '칸으로 쓰기' : '글로 한꺼번에 쓰기';
+    box.style.display = document.getElementById('ws-ol-add').style.display = c.olText ? 'none' : '';
+    ta.style.display = c.olText ? '' : 'none';
+    document.getElementById('ws-ol-help').textContent = c.olText
+      ? '"1 ○○" 대제목 · "1. ○○" 중제목 · "(1) ○○" 소제목 · "① ○○" 항목 — 한글에서 F6 스타일 "학습지 대제목…"으로 같은 모양을 이어 쓸 수 있어요.'
+      : '번호는 저절로 붙어요. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 아래·위, 빈 칸 Backspace = 지우기, Alt+↑↓ = 순서. 한글에서 F6 스타일 "학습지 대제목…"으로 이어 쓸 수 있어요.';
+    if (c.olText) return;
+    const no = wsOlNumbers(c.rows);
+    box.innerHTML = c.rows.length ? c.rows.map(function(r, i) {
+      const pad = { h1: 0, h2: 8, h3: 18, it: 28, p: 28 }[r.lv];
+      return '<div class="ws-ol-row" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;"><span class="ws-ol-no" title="' + WS_OL_LV[r.lv] + '">' + (no[i] || '본문') + '</span>' +
+        '<input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + WS_OL_LV[r.lv] + '" oninput="wsOlInput(' + i + ', this.value)" onkeydown="wsOlKey(event, ' + i + ')">' +
+        '<button class="ws-ol-x" title="이 줄 지우기" onclick="wsOlDel(' + i + ')">✕</button></div>';
+    }).join('') : '<div class="nt-muted">아래 단추로 제목 줄을 더해요. 비워 두면 빈 학습지예요.</div>';
+  }
+  // 칸으로 쓰기 ⇄ 글로 한꺼번에 쓰기
+  function wsOlMode() {
+    const c = wsCfg();
+    if (c.olText) wsSet({ olText: false, rows: wsRowsFromOutline(c.outline) }, true);
+    else wsSet({ olText: true, outline: c.outline }, true);
+  }
   // 본문 제목 뼈대: 줄 앞 번호 모양으로 수준을 정한다
   function wsLevel(line) {
     const t = line.trim();
@@ -13243,7 +13368,7 @@
     };
     const lines = wsLines(c);
     const body = function(first) {
-      const st = { h1: 'font-weight:' + bw + ';', h2: 'font-weight:' + bw + '; color:' + th[4] + ';', h3: 'font-weight:' + bw + '; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
+      const st = { h1: 'font-weight:' + bw + ';', h2: 'font-weight:' + bw + ';' + (c.h2Color ? ' color:' + th[4] + ';' : ''), h3: 'font-weight:' + bw + '; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
       const txt = function(x) {
         if (x.lv !== 'h1') return ntEsc(x.t) || '&nbsp;';
         const sp = wsH1Split(x.t);
@@ -13252,7 +13377,7 @@
       const inner = first ? lines.map(function(x) {
         return '<div style="' + F('body') + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
       }).join('') : '';
-      return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm;' + (c.colLine ? ' column-rule:0.12mm solid #bbb;' : '') : '') + '">' + inner + '</div>';
+      return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-fill:auto;' + (c.colLine ? ' background:linear-gradient(#bbb, #bbb) no-repeat center / 0.3mm 100%;' : '') : '') + '">' + inner + '</div>';
     };
     const sheet = function(n, first) {
       return '<div class="fm-sheet ws-sheet" data-page="' + n + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm;">' + band + note + body(first) + foot(n) + '</div>';
@@ -13271,12 +13396,20 @@
     const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
     setVal('ws-uno', c.uNo); setVal('ws-uname', c.uName); setVal('ws-sno', c.sNo); setVal('ws-sname', c.sName);
     setVal('ws-subj', c.subj); setVal('ws-cls', c.cls); setVal('ws-school', c.school); setVal('ws-outline', c.outline);
+    if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#ws-ol-rows')) wsOlFill(c);
     setVal('ws-gap', c.gap); setVal('ws-start', c.start); setVal('ws-bsize', c.bSize);
+    // 아이콘: 자주 쓰는 것만 보이고(지금 고른 것은 늘 보임) 나머지는 "더보기" 창에서
+    const icBtn = function(ic) { return '<button class="ws-ic' + (c.icon === ic[0] ? ' on' : '') + '" data-ic="' + ic[0] + '" title="' + ic[1] + '" onclick="wsSet({ icon: \'' + ic[0] + '\' }, true)">' + wsIconSvg(ic[0]) + '</button>'; };
+    const shown = WS_ICON_MAIN.concat(c.icon && c.icon !== 'auto' && WS_ICON_MAIN.indexOf(c.icon) < 0 ? [c.icon] : []);
     document.getElementById('ws-icons').innerHTML =
       '<button class="ws-ic' + (c.icon === 'auto' ? ' on' : '') + '" data-ic="auto" title="과목명을 보고 자동으로 (지금: ' + ((WS_ICONS.find(function(x) { return x[0] === wsAutoIcon(c.subj); }) || [])[1] || '') + ')" onclick="wsSet({ icon: \'auto\' }, true)">자동</button>' +
-      WS_ICONS.map(function(ic) { return '<button class="ws-ic' + (c.icon === ic[0] ? ' on' : '') + '" data-ic="' + ic[0] + '" title="' + ic[1] + '" onclick="wsSet({ icon: \'' + ic[0] + '\' }, true)">' + wsIconSvg(ic[0]) + '</button>'; }).join('') +
-      '<button class="ws-ic' + (c.icon === '' ? ' on' : '') + '" data-ic="" title="아이콘 없이" onclick="wsSet({ icon: \'\' }, true)">없음</button>';
+      shown.map(function(k) { return icBtn(WS_ICONS.find(function(x) { return x[0] === k; })); }).join('') +
+      '<button class="ws-ic' + (c.icon === '' ? ' on' : '') + '" data-ic="" title="아이콘 없이" onclick="wsSet({ icon: \'\' }, true)">없음</button>' +
+      '<button class="ws-ic ws-ic-more" id="ws-ic-more" title="아이콘 ' + WS_ICONS.length + '개 모두 보기" onclick="wsIconPicker(true)">더보기<br>' + WS_ICONS.length + '개</button>';
     const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
+    const th = wsTheme(c);
+    document.getElementById('ws-h2c').innerHTML = '중제목(1.) 글자 ' + chip(!c.h2Color, 'data-h2c="0" onclick="wsSet({ h2Color: false }, true)"', '검정') +
+      chip(c.h2Color, 'data-h2c="1" onclick="wsSet({ h2Color: true }, true)"', '<span style="color:' + th[4] + ';">색 테마</span>', 'NOTE 칸 색에 어울리는 글자 색');
     document.getElementById('ws-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
       return chip(c.paper === k, 'data-paper="' + k + '" onclick="wsSet({ paper: \'' + k + '\' }, true)"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
     }).join('') + '<span class="fm-sep" style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></span>' +
@@ -13354,7 +13487,7 @@
         { size: 16, font: FT.num.h },                                    // 7 쪽 번호
         { size: 10, font: FT.note.h, color: '#333333' },                 // 8 NOTE
         { size: sz.h1, font: FT.body.h, bold: wsBold(FT.body, true) },   // 9 대제목
-        { size: sz.h2, font: FT.body.h, bold: wsBold(FT.body, true), color: th[4] }, // 10 중제목
+        { size: sz.h2, font: FT.body.h, bold: wsBold(FT.body, true), color: c.h2Color ? th[4] : null }, // 10 중제목(기본 검정, 고르면 색 테마)
         { size: sz.h3, font: FT.body.h, bold: wsBold(FT.body, true) },   // 11 소제목
         { size: sz.p, font: FT.body.h },                                 // 12 항목·본문
         { size: sz.h1 - 1.5, font: FT.body.h, bold: wsBold(FT.body, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)

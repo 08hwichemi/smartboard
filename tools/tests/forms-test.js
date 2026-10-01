@@ -606,8 +606,22 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await setText(W, '#ws-uno', '2'); await setText(W, '#ws-uname', '반응엔탈피와 화학 평형');
   await setText(W, '#ws-sno', '01'); await setText(W, '#ws-sname', '반응엔탈피와 열화학 반응식');
   await setText(W, '#ws-subj', '화학Ⅱ'); await setText(W, '#ws-cls', '화학이랑 놀자'); await setText(W, '#ws-school', '부광고등학교');
+  check('본문 제목 뼈대: 기본은 칸으로 쓰기(글 상자 숨김)', await W.isVisible('#ws-ol-add') && !(await W.isVisible('#ws-outline')));
+  await W.click('#ws-ol-mode'); await W.waitForTimeout(150); // 글로 한꺼번에 쓰기
   await setText(W, '#ws-outline', '1 반응엔탈피\n1. 반응엔탈피\n(1) 엔탈피\n① 모든 물질은 에너지를 가지고 있다.\n② 일정한 온도와 압력에서\n(2) 반응엔탈피');
   await setText(W, '#ws-start', '27'); await W.waitForTimeout(400);
+  await W.click('#ws-ol-mode'); await W.waitForTimeout(200); // 다시 칸으로 → 글을 칸으로 나눔(번호는 저절로)
+  const ol = await W.evaluate(() => [...document.querySelectorAll('#ws-ol-rows .ws-ol-row')].map(r => r.dataset.lv + ':' + r.querySelector('.ws-ol-no').textContent + ':' + r.querySelector('input').value));
+  check('칸으로 쓰기: 글 → 칸(수준·번호·글), 번호는 저절로', ol.join('|') === 'h1:1:반응엔탈피|h2:1.:반응엔탈피|h3:(1):엔탈피|it:①:모든 물질은 에너지를 가지고 있다.|it:②:일정한 온도와 압력에서|h3:(2):반응엔탈피', ol);
+  // 칸 편집: (2) 줄에서 Enter → 아래에 소제목 (3), 글 쓰기, Tab → 항목 ①, 빈 칸 하나 더 만들고 Backspace → 지움
+  await W.click('#ws-ol-rows .ws-ol-row[data-i="5"] input'); await W.keyboard.press('End'); await W.keyboard.press('Enter'); await W.waitForTimeout(150);
+  await W.keyboard.type('정압 반응'); await W.keyboard.press('Tab'); await W.waitForTimeout(150);
+  await W.keyboard.press('Enter'); await W.waitForTimeout(150); await W.keyboard.press('Backspace'); await W.waitForTimeout(150);
+  await W.click('#ws-ol-add .nt-chip:nth-child(2)'); await W.waitForTimeout(150); await W.keyboard.type('엔트로피'); await W.waitForTimeout(300);
+  const ol2 = await W.evaluate(() => ({ rows: [...document.querySelectorAll('#ws-ol-rows .ws-ol-row')].slice(5).map(r => r.querySelector('.ws-ol-no').textContent + ' ' + r.querySelector('input').value), out: wsCfg().outline.split('\n').slice(5),
+    prev: [...document.querySelectorAll('#fm-pages .ws-body > div')].map(d => d.textContent.trim()).filter(Boolean).slice(-2) }));
+  check('칸 편집: Enter로 줄 더하기, Tab으로 한 단계 아래(①), 빈 칸 Backspace로 지우기, "1. 중제목" 단추로 2. — 미리보기에도', JSON.stringify(ol2.rows) === JSON.stringify(['(2) 반응엔탈피', '① 정압 반응', '2. 엔트로피']) && ol2.out.join('|') === '(2) 반응엔탈피|① 정압 반응|2. 엔트로피' && /엔트로피/.test(ol2.prev.join()), ol2);
+  await W.click('#ws-ol-rows .ws-ol-row[data-i="7"] .ws-ol-x'); await W.click('#ws-ol-rows .ws-ol-row[data-i="6"] .ws-ol-x'); await W.waitForTimeout(200);
   const wsv = await W.evaluate(() => { const sh = [...document.querySelectorAll('#fm-pages .ws-sheet')]; const r = sh[0].getBoundingClientRect(), k = r.width / (257 * 3.78);
     const note = sh[0].querySelector('.ws-note'), body = sh[0].querySelector('.ws-body');
     return { n: sh.length, w: sh[0].style.width, band: sh[0].querySelector('.ws-band').innerText.replace(/\s+/g, ' ').trim(), foot1: sh[0].querySelector('.ws-foot').innerText.replace(/\s+/g, ' ').trim(), foot2: sh[1].querySelector('.ws-foot').innerText.replace(/\s+/g, ' ').trim(),
@@ -626,12 +640,30 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
   check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 16 = 227mm)', !noNote.note && Math.abs(noNote.bw - 227) < 0.01, noNote);
   await W.click('#ws-note [data-note="1"]'); await W.click('#ws-colsn [data-v="2"]'); await W.waitForTimeout(200);
-  check('2단 + NOTE: 본문이 두 단, 가운데 선 있음(기본)', await W.evaluate(() => { const cs = getComputedStyle(document.querySelector('#fm-pages .ws-body')); return cs.columnCount === '2' && cs.columnRuleStyle === 'solid'; }));
+  check('2단 + NOTE: 본문이 두 단, 가운데 선 있음(기본)', await W.evaluate(() => { const cs = getComputedStyle(document.querySelector('#fm-pages .ws-body')); return cs.columnCount === '2' && /linear-gradient/.test(cs.backgroundImage); }));
   await W.click('#ws-colsn [data-cl="0"]'); await W.waitForTimeout(200);
-  const noLine = await W.evaluate(async () => ({ rule: getComputedStyle(document.querySelector('#fm-pages .ws-body')).columnRuleStyle, cfg: wsCfg().colLine,
+  const noLine = await W.evaluate(async () => ({ rule: getComputedStyle(document.querySelector('#fm-pages .ws-body')).backgroundImage, cfg: wsCfg().colLine,
     hwp: typeof JSZip === 'undefined' ? null : /<hp:colLine/.test(await (await JSZip.loadAsync(await wsBuildHwpx(wsCfg()))).file('Contents/section0.xml').async('string')) }));
   check('가운데 선 "없음" → 미리보기·한글 파일 모두 선 없음', noLine.rule === 'none' && noLine.cfg === false && noLine.hwp !== true, noLine);
   await W.click('#ws-colsn [data-cl="1"]'); await W.waitForTimeout(200);
+  // 2단 미리보기는 한글처럼 왼쪽 단부터 채움(예전엔 양쪽 단 높이를 맞추느라 "(1)"이 오른쪽 단으로 넘어갔음)
+  const cf = await W.evaluate(() => { const b = document.querySelector('#fm-pages .ws-body'), r = b.getBoundingClientRect(), mid = r.left + r.width / 2;
+    return { fill: getComputedStyle(b).columnFill, right: [...b.children].filter(d => d.textContent.trim() && d.getBoundingClientRect().left > mid).length }; });
+  check('2단 미리보기: 왼쪽 단부터 채움(짧은 글이 오른쪽 단으로 안 넘어감)', cf.fill === 'auto' && cf.right === 0, cf);
+  // 중제목 색: 기본 검정, "색 테마" 고르면 테마 색(미리보기·한글 파일)
+  const h2c = async () => W.evaluate(async () => { const d = [...document.querySelectorAll('#fm-pages .ws-body > div')].find(x => /^1\. /.test(x.textContent));
+    const head = typeof JSZip === 'undefined' ? '' : await (await JSZip.loadAsync(await wsBuildHwpx(wsCfg()))).file('Contents/header.xml').async('string');
+    return { css: getComputedStyle(d).color, hwp: /textColor="#2F5FAF"/.test(head) }; });
+  const h2a = await h2c(); await W.click('#ws-h2c [data-h2c="1"]'); await W.waitForTimeout(200); const h2b = await h2c(); await W.click('#ws-h2c [data-h2c="0"]'); await W.waitForTimeout(200);
+  check('중제목(1.) 글자: 기본 검정, "색 테마" 고르면 파랑(민트 테마) — 미리보기·한글 파일', h2a.css === 'rgb(0, 0, 0)' && !h2a.hwp && h2b.css === 'rgb(47, 95, 175)' && (h2b.hwp || !JSZIP_JS), [h2a, h2b]);
+  // 아이콘: 입력칸엔 일부(자동·9개·없음·더보기), 더보기 창에서 과목별로 35개 → 고르면 닫히고 입력칸에도 보임
+  const icN = await W.evaluate(() => document.querySelectorAll('#ws-icons .ws-ic').length);
+  await W.click('#ws-ic-more'); await W.waitForTimeout(200);
+  const pk = await W.evaluate(() => ({ vis: getComputedStyle(document.getElementById('ws-icon-overlay')).display, n: document.querySelectorAll('#ws-icon-overlay .ws-icp').length, groups: document.querySelectorAll('#ws-icon-overlay .ws-icp-g').length }));
+  await W.click('#ws-icon-overlay .ws-icp[data-ic="law"]'); await W.waitForTimeout(200);
+  const pk2 = await W.evaluate(() => ({ vis: getComputedStyle(document.getElementById('ws-icon-overlay')).display, icon: wsCfg().icon, shown: !!document.querySelector('#ws-icons .ws-ic.on[data-ic="law"]') }));
+  check('아이콘: 입력칸엔 12칸(자동·9개·없음·더보기), 더보기 창에 6묶음 35개, 고르면 창 닫히고 입력칸에도 보임', icN === 12 && pk.vis === 'flex' && pk.n === 35 && pk.groups === 6 && pk2.vis === 'none' && pk2.icon === 'law' && pk2.shown, [icN, pk, pk2]);
+  await W.evaluate(() => wsSet({ icon: 'auto' }, true));
   const autoIc = await W.evaluate(() => ['한국지리', '정치와 법', '경제', '사회·문화', '생활과 윤리', '물리학Ⅰ', '확률과 통계'].map(wsAutoIcon).join());
   check('아이콘 35개, 과목명 자동: 지리→지도, 정치와 법→저울, 경제→경제, 사회·문화→사회, 윤리, 물리, 수학', await W.evaluate(() => WS_ICONS.length) === 35 && autoIc === 'geo,law,econ,soc,ethic,phys,math', autoIc);
   if (JSZIP_JS) {
