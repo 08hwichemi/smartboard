@@ -217,6 +217,29 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('명렬표는 번호·이름만 요청(한 번)', studentSelects.join(' ') === '3:1', studentSelects);
   const names = await P.evaluate(() => [...document.querySelectorAll('#fm-pages table.fm-tbl tr')].slice(1, 3).map(tr => tr.cells[0].textContent + tr.cells[1].textContent));
   check('번호 순서대로 이름', names.join(',') === '1가나다,2라마바', names);
+  console.log('    (왼쪽 설정 칸 높이 ' + await P.evaluate(() => document.getElementById('fm-left').scrollHeight) + 'px)');
+  await P.screenshot({ path: 'fm-left.png', clip: { x: 60, y: 60, width: 400, height: 940 } });
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 9999); await P.screenshot({ path: 'fm-left2.png', clip: { x: 60, y: 60, width: 400, height: 940 } });
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 0);
+  const lay = await P.evaluate(() => {
+    const top = (id) => Math.round(document.getElementById(id).getBoundingClientRect().top);
+    const opts = [...document.querySelectorAll('#fm-cols-box .fm-opts label')];
+    const al = [...document.querySelectorAll('#fm-aligns > span:not(.top-btn-cluster)')];
+    return { h: document.getElementById('fm-left').scrollHeight, fontsInText: !!document.querySelector('#fm-text-box #fm-tfont') && !!document.querySelector('#fm-text-box #fm-bsize') && !document.getElementById('fm-font-box'),
+      order: top('fm-title') < top('fm-tfont') && top('fm-tfont') < top('fm-note') && top('fm-note') < top('fm-bfont'),
+      optRows: new Set(opts.map(l => Math.round(l.getBoundingClientRect().top))).size, opts: opts.length,
+      alRows: new Set(al.map(x => Math.round(x.getBoundingClientRect().top))).size, alLabels: al.map(x => x.textContent).join('|'),
+      rowhOne: new Set([...document.querySelectorAll('#fm-rowh .nt-chip'), document.getElementById('fm-rowh-input')].map(x => Math.round(x.getBoundingClientRect().top + x.getBoundingClientRect().height / 2))).size };
+  });
+  check('글꼴은 제목 칸 바로 아래·내용 글꼴은 안내 칸 바로 아래(따로 글꼴 상자 없음)', lay.fontsInText && lay.order, lay);
+  check('학번·비고·번갈아 회색은 한 줄, 정렬 6개는 두 개씩 세 줄, 줄 높이 버튼·직접 입력 한 줄', lay.opts === 3 && lay.optRows === 1 && lay.alRows === 3 && lay.alLabels === '제목|반·인원|안내|표 위치|표 제목칸|표 내용' && lay.rowhOne === 1, lay);
+  await P.setViewportSize({ width: 1024, height: 700 }); await P.waitForTimeout(300);
+  const nar = await P.evaluate(() => { const l = document.getElementById('fm-left'); return { over: l.scrollWidth - l.clientWidth, w: l.clientWidth,
+    boxes: [...l.querySelectorAll('.nt-box')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.id) }; });
+  await P.evaluate(() => document.getElementById('fm-align-box').scrollIntoView()); await P.screenshot({ path: 'fm-left-1024.png', clip: { x: 60, y: 0, width: 360, height: 700 } });
+  check('좁은 화면(1024px)에서도 왼쪽 설정 칸이 옆으로 안 넘침', nar.over <= 0 && !nar.boxes.length, nar);
+  await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 0);
 
   // 반 여러 개
   await P.click('#fm-classes [data-c="2"]'); await P.waitForTimeout(500);
@@ -259,7 +282,20 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   sh = await sheetsOf(P);
   const total = sh.reduce((s, x) => s + x.tables.reduce((a, b) => a + b - 1, 0), 0);
   check('45명·넓은 줄 → 여러 장, 학생 수 그대로, 다음 장은 제목 없이 표(머리 줄 다시)', sh.length >= 2 && total === 45 && sh[0].title && !sh[1].title && sh[1].head[0] === '번호' && sh.every(s => s.fits), sh.map(s => [s.title, s.tables, s.fits]));
-  const pagesWide = sh.length;
+  const pagesWide = sh.length, firstWide = sh[0].tables[0];
+  await P.click('#fm-rowh-input'); await P.waitForTimeout(100);
+  const rhStart = await P.inputValue('#fm-rowh-input');
+  await setText(P, '#fm-rowh-input', '15'); await P.waitForTimeout(300);
+  sh = await sheetsOf(P);
+  const rh15 = await P.evaluate(() => parseFloat(document.querySelector('#fm-pages table.fm-tbl tr').style.height));
+  check('줄 높이 직접 입력 15mm: 누르면 지금 높이(12)부터, 저장·미리보기 15mm, 버튼은 아무것도 안 켜짐, 한 장에 들어가는 줄 줄어듦', rhStart === '12' && (await cfgOf(hr)).rowH === 15 && rh15 === 15 && sh[0].tables[0] < firstWide && sh.every(s => s.fits) &&
+    sh.reduce((a, x) => a + x.tables.reduce((p, q) => p + q - 1, 0), 0) === 45 && await P.evaluate(() => !document.querySelector('#fm-rowh .nt-chip.on')), [rhStart, rh15, sh.map(s => s.tables), firstWide]);
+  await setText(P, '#fm-rowh-input', '3'); await P.waitForTimeout(200);
+  check('5mm보다 작게 적으면 자동으로 안 바뀌고 무시(자동)', (await cfgOf(hr)).rowH === 0);
+  await setText(P, '#fm-rowh-input', '6'); await P.waitForTimeout(200);
+  check('글자보다 낮은 높이는 가장 낮은 높이로 + 안내', /너무 낮음/.test(await P.textContent('#fm-fit-info')) && await P.evaluate(() => parseFloat(document.querySelector('#fm-pages table.fm-tbl tr').style.height)) >= 6.5, await P.textContent('#fm-fit-info'));
+  await setText(P, '#fm-rowh-input', '9'); await P.waitForTimeout(200);
+  check('적은 값이 버튼 값(9 = 보통)이면 그 버튼이 켜짐', await P.evaluate(() => (document.querySelector('#fm-rowh .nt-chip.on') || {}).textContent) === '보통');
   await P.click('#fm-rowh [data-v="0"]'); await P.waitForTimeout(300);
   sh = await sheetsOf(P);
   check('자동 줄 높이: 45명이면 1단은 읽을 수 있는 최소 높이(6.5mm)로 줄여도 넘쳐서 다음 장(넓게보다 적은 장), 모든 장이 종이 안', sh.length >= 2 && sh.length < pagesWide + 1 && sh.every(s => s.fits) && sh.reduce((a, x) => a + x.tables.reduce((p, q) => p + q - 1, 0), 0) === 45, sh.map(s => s.tables));
@@ -394,14 +430,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
 
   // 정렬
   await P.click('#fm-aligns [data-k="aT"] [data-v="L"]'); await P.click('#fm-aligns [data-k="aTb"] [data-v="R"]');
-  await P.click('#fm-aligns [data-k="aNm"] [data-v="L"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="R"]');
+  await P.click('#fm-aligns [data-k="aBd"] [data-v="L"]'); await P.click('#fm-aligns [data-k="aHd"] [data-v="R"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="R"]');
   await P.uncheck('#fm-fill'); await P.waitForTimeout(300);
   const al = await P.evaluate(() => { const sh = document.querySelector('#fm-pages .fm-sheet'), t = sh.querySelector('table.fm-tbl'), col = t.parentElement; return {
     title: sh.querySelector('.fm-title').style.textAlign, info: sh.querySelector('.fm-info').style.textAlign,
     right: Math.round(col.getBoundingClientRect().right - t.getBoundingClientRect().right), left: Math.round(t.getBoundingClientRect().left - col.getBoundingClientRect().left),
-    name: t.rows[1].cells[2].style.textAlign, num: t.rows[1].cells[0].style.textAlign, head: getComputedStyle(t.rows[0].cells[2]).textAlign }; });
+    name: t.rows[1].cells[2].style.textAlign, num: t.rows[1].cells[0].style.textAlign, head: getComputedStyle(t.rows[0].cells[2]).textAlign, head0: getComputedStyle(t.rows[0].cells[0]).textAlign }; });
   await P.evaluate(() => document.getElementById('fm-align-box').scrollIntoView()); await P.screenshot({ path: 'fm-align.png' });
-  check('정렬: 제목 왼쪽, 반·인원 오른쪽, 표는 오른쪽, 이름 칸 왼쪽(번호·머리 줄은 가운데)', al.title === 'left' && al.info === 'right' && al.right === 0 && al.left > 10 && al.name === 'left' && al.num === 'center' && al.head === 'center', al);
+  check('정렬: 제목 왼쪽, 반·인원 오른쪽, 표는 오른쪽, 표 내용(이름·번호 모두) 왼쪽, 표 제목칸 오른쪽', al.title === 'left' && al.info === 'right' && al.right === 0 && al.left > 10 && al.name === 'left' && al.num === 'left' && al.head === 'right' && al.head0 === 'right', al);
   if (JSZIP_JS) {
     const hx = await P.evaluate(async () => {
       const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg()));
@@ -409,11 +445,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const align = (id) => (head.match(new RegExp('<hh:paraPr id="' + id + '"[^>]*>\\s*<hh:align horizontal="(\\w+)"')) || [])[1];
       const paras = [...sec.matchAll(/<hp:p id="\d+" paraPrIDRef="(\d+)"[^>]*>(?:(?!<hp:p ).)*?<hp:t>([^<]*)<\/hp:t>/g)].map(m => [align(m[1]), m[2]]);
       const tblPara = sec.match(/<hp:p id="\d+" paraPrIDRef="(\d+)"[^>]*>(?:<hp:run[^>]*>(?:<hp:ctrl>.*?<\/hp:ctrl>)?<\/hp:run>)?<hp:run[^>]*><hp:tbl /);
-      return { title: (paras.find(p => p[1] === '현장체험학습 동의서') || [])[0], name: (paras.find(p => p[1] === '가나다') || [])[0], num: (paras.find(p => p[1] === '1') || [])[0], table: tblPara ? align(tblPara[1]) : null };
+      return { title: (paras.find(p => p[1] === '현장체험학습 동의서') || [])[0], name: (paras.find(p => p[1] === '가나다') || [])[0], num: (paras.find(p => p[1] === '1') || [])[0], head: (paras.find(p => p[1] === '번호') || [])[0], table: tblPara ? align(tblPara[1]) : null };
     });
-    check('한글 파일도 같은 정렬(제목 LEFT, 표 문단 RIGHT, 이름 칸 LEFT, 번호 CENTER)', hx.title === 'LEFT' && hx.table === 'RIGHT' && hx.name === 'LEFT' && hx.num === 'CENTER', hx);
+    check('한글 파일도 같은 정렬(제목 LEFT, 표 문단 RIGHT, 표 내용 LEFT, 표 제목칸 RIGHT)', hx.title === 'LEFT' && hx.table === 'RIGHT' && hx.name === 'LEFT' && hx.num === 'LEFT' && hx.head === 'RIGHT', hx);
   }
-  await P.click('#fm-aligns [data-k="aT"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aTb"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aNm"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="C"]');
+  await P.click('#fm-aligns [data-k="aT"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aTb"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aBd"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aHd"] [data-v="C"]'); await P.click('#fm-aligns [data-k="aI"] [data-v="C"]');
   await P.check('#fm-fill'); await P.waitForTimeout(200);
 
   // 자동 너비 칸을 누르면 지금 너비에서 시작
@@ -428,7 +464,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 엑셀
   if (!EXCELJS_PATH) console.log('  ⚠️ exceljs가 없어 엑셀 검사를 건너뜀 (npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
   else {
-    await P.click('#fm-aligns [data-k="aMm"] [data-v="C"]'); await P.waitForTimeout(100);
+    await P.click('#fm-aligns [data-k="aBd"] [data-v="C"]'); await P.waitForTimeout(100);
     const dlx = P.waitForEvent('download');
     await P.click('#fm-xlsx-btn');
     const xbuf = fs.readFileSync(await (await dlx).path());

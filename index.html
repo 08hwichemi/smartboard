@@ -913,9 +913,22 @@
     #fm-classes.many { flex-wrap: wrap; }
     #fm-classes .nt-chip { flex: 1 1 0; max-width: 34px; min-width: 0; padding: 3px 0; text-align: center; }
     #fm-classes.many .nt-chip { flex: 0 0 28px; }
-    .fm-al { display: grid; grid-template-columns: 64px 1fr; gap: 6px 8px; align-items: center; font-size: 12px; }
+    .fm-al { display: grid; grid-template-columns: auto auto auto auto; justify-content: space-between; gap: 6px 6px; align-items: center; font-size: 12px; }
     .fm-al .top-btn-cluster { display: inline-flex; }
-    .fm-al .top-btn { font-size: 11px; padding: 3px 9px; }
+    .fm-al .top-btn { padding: 3px 6px; line-height: 0; }
+    .fm-al .top-btn svg { width: 14px; height: 12px; }
+    .fm-fontrow { flex-wrap: nowrap; }
+    .fm-fontrow .fm-fl { flex: 0 0 auto; color: var(--text-sub); }
+    .fm-fontrow select { flex: 1; min-width: 0; }
+    .fm-fontrow input[type="number"].lp-input { width: 54px; flex: 0 0 auto; }
+    .fm-opts { gap: 4px 12px; }
+    .fm-opts label { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; }
+    #fm-rowh-row { gap: 6px; }
+    #fm-rowh { display: inline-flex; align-items: center; gap: 3px; }
+    #fm-rowh .nt-chip { padding: 3px 8px; }
+    .fm-rowh-in { display: inline-flex; align-items: center; gap: 3px; }
+    #fm-rowh-row .fm-rowh-in input.lp-input { width: 52px; padding-left: 6px; padding-right: 2px; }
+    .fm-rowh-in input:placeholder-shown { color: var(--text-sub); }
     #fm-widths { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
     .fm-w { display: flex; align-items: center; gap: 5px; font-size: 12px; min-width: 0; }
     .fm-w span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -933,7 +946,12 @@
     .fm-tbl tr.h td { background: #E5E5E5; font-weight: 700; }
     .fm-tbl tr.z td { background: #F2F2F2; }
     .fm-empty { text-align: center; color: var(--text-sub); font-size: 13px; padding: 60px 10px; line-height: 1.8; }
-    @media (max-width: 1100px) { #fm-left { width: 320px; } }
+    .fm-al > span:not(.top-btn-cluster) { white-space: nowrap; }
+    @media (max-width: 1100px) {
+      #fm-left { width: 320px; }
+      .fm-al .top-btn { padding: 3px 4px; }
+      #fm-rowh .nt-chip { padding: 3px 6px; }
+    }
     @media print {
       #fm-page-header, #fm-left, #fm-right-head { display: none !important; }
       body[data-print-target="forms"] #form-page, body[data-print-target="forms"] #fm-body, body[data-print-target="forms"] #fm-right, body[data-print-target="forms"] #fm-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
@@ -2824,21 +2842,29 @@
         </div>
       </div>
       <div class="nt-box" id="fm-text-box">
-        <div class="nt-title">✏️ 제목·안내</div>
+        <div class="nt-title">✏️ 제목·안내 <span class="nt-muted">글꼴은 학교 PC에 있는 것</span></div>
         <input type="text" id="fm-title" class="lp-input" placeholder="예) 현장체험학습 동의서 제출 확인" oninput="fmSet({ title: this.value }); fmRender();">
+        <div class="nt-row fm-fontrow"><span class="fm-fl">제목 글꼴</span><select id="fm-tfont" class="mini-select" onchange="fmOnFontPick('tFont', this.value)"></select><input type="number" id="fm-tsize" class="lp-input" min="10" max="40" step="1" title="제목 글자 크기(pt)" oninput="fmOnSize('tSize', this.value, 10, 40)">pt</div>
+        <input type="text" id="fm-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('tFont', this.value)">
         <textarea id="fm-note" class="lp-input" rows="2" placeholder="안내 (없어도 돼요)&#10;예) 10월 10일(금)까지 담임 선생님께 제출" oninput="fmSet({ note: this.value }); fmRender();"></textarea>
+        <div class="nt-row fm-fontrow" title="반·인원 줄, 안내, 표 글자에 써요"><span class="fm-fl">내용 글꼴</span><select id="fm-bfont" class="mini-select" onchange="fmOnFontPick('bFont', this.value)"></select><input type="number" id="fm-bsize" class="lp-input" min="8" max="16" step="0.5" title="내용(반·인원, 안내, 표) 글자 크기(pt)" oninput="fmOnSize('bSize', this.value, 8, 16)">pt</div>
+        <input type="text" id="fm-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="내용 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('bFont', this.value)">
+        <datalist id="fm-local-fonts"></datalist>
+        <div class="nt-muted" id="fm-font-msg"></div>
       </div>
       <div class="nt-box" id="fm-cols-box">
         <div class="nt-title">☑️ 체크 칸 <span class="nt-muted">한 줄에 하나 · 최대 12개</span></div>
         <textarea id="fm-cols" class="lp-input" rows="3" placeholder="예)&#10;동의서&#10;회비" oninput="fmSet({ cols: this.value }); fmRender();"></textarea>
-        <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="fm-showid" onchange="fmSet({ showId: this.checked }); fmRender();"> 학번 칸 넣기</label>
-        <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="fm-memo" onchange="fmSet({ memo: this.checked }); fmRender();"> 비고 칸 넣기</label>
-        <label class="nt-row" style="cursor:pointer;" title="체크할 때 줄이 안 헷갈리게"><input type="checkbox" id="fm-zebra" onchange="fmSet({ zebra: this.checked }); fmRender();"> 줄마다 번갈아 연한 회색</label>
+        <div class="nt-row fm-opts">
+          <label><input type="checkbox" id="fm-showid" onchange="fmSet({ showId: this.checked }); fmRender();"> 학번 칸</label>
+          <label><input type="checkbox" id="fm-memo" onchange="fmSet({ memo: this.checked }); fmRender();"> 비고 칸</label>
+          <label title="줄마다 번갈아 연한 회색 — 체크할 때 줄이 안 헷갈리게"><input type="checkbox" id="fm-zebra" onchange="fmSet({ zebra: this.checked }); fmRender();"> 줄 번갈아 회색</label>
+        </div>
       </div>
       <div class="nt-box" id="fm-layout-box">
         <div class="nt-title">📐 배치</div>
         <div class="nt-row" id="fm-colsn"></div>
-        <div class="nt-row" id="fm-rowh"></div>
+        <div class="nt-row" id="fm-rowh-row"><span id="fm-rowh"></span><label class="fm-rowh-in" title="줄 높이를 mm로 직접 — 비우면 자동"><input type="number" id="fm-rowh-input" class="lp-input" min="5" max="30" step="0.5" onfocus="fmRowHFocus(this)" onblur="fmRowHBlur(this)" oninput="fmOnRowH(this.value)">mm</label></div>
         <div class="nt-muted" id="fm-fit-info"></div>
       </div>
       <div class="nt-box" id="fm-width-box">
@@ -2850,15 +2876,6 @@
       <div class="nt-box" id="fm-align-box">
         <div class="nt-title">↹ 정렬</div>
         <div class="fm-al" id="fm-aligns"></div>
-      </div>
-      <div class="nt-box" id="fm-font-box">
-        <div class="nt-title">🔤 글꼴 <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
-        <div class="nt-row">제목 <select id="fm-tfont" class="mini-select" style="flex:1;" onchange="fmOnFontPick('tFont', this.value)"></select> <input type="number" id="fm-tsize" class="lp-input" min="10" max="40" step="1" style="width:58px;" oninput="fmOnSize('tSize', this.value, 10, 40)"> pt</div>
-        <input type="text" id="fm-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('tFont', this.value)">
-        <div class="nt-row">내용 <select id="fm-bfont" class="mini-select" style="flex:1;" onchange="fmOnFontPick('bFont', this.value)"></select> <input type="number" id="fm-bsize" class="lp-input" min="8" max="16" step="0.5" style="width:58px;" oninput="fmOnSize('bSize', this.value, 8, 16)"> pt</div>
-        <input type="text" id="fm-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="내용 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('bFont', this.value)">
-        <datalist id="fm-local-fonts"></datalist>
-        <div class="nt-muted" id="fm-font-msg"></div>
       </div>
     </div>
     <div id="fm-right">
@@ -12035,14 +12052,20 @@
   const FM_DEFAULT = {
     kind: 'roster', src: 'class', rG: null, rCs: [], manual: '', mLabel: '', title: '제출 확인', note: '', cols: '제출',
     showId: false, memo: true, zebra: true, colsN: 1, rowH: 0, fill: true, colW: {},
-    // 정렬(L·C·R): 제목, 반·인원 줄, 안내, 표(종이에서 위치), 이름 칸 글자, 비고 칸 글자
-    aT: 'C', aI: 'C', aN: 'L', aTb: 'C', aNm: 'C', aMm: 'L',
+    // 정렬(L·C·R): 제목, 반·인원 줄, 안내, 표(종이에서 위치), 표 제목칸(머리 줄) 글자, 표 내용(학생 줄 모든 칸) 글자
+    aT: 'C', aI: 'C', aN: 'L', aTb: 'C', aHd: 'C', aBd: 'C',
     tFont: '맑은 고딕', tSize: 20, bFont: '맑은 고딕', bSize: 11,
   };
   // A4(mm), 여백, 단 사이, 제목 아래 표까지 띄우는 간격, 표 줄 높이 한도
-  const FM_ALIGNS = [['aT', '제목'], ['aI', '반·인원'], ['aN', '안내'], ['aTb', '표 위치'], ['aNm', '이름 칸'], ['aMm', '비고 칸']];
+  const FM_ALIGNS = [['aT', '제목'], ['aI', '반·인원'], ['aN', '안내'], ['aTb', '표 위치'], ['aHd', '표 제목칸'], ['aBd', '표 내용']];
   const FM_ALIGN_CSS = { L: 'left', C: 'center', R: 'right' }, FM_ALIGN_HWP = { L: 'LEFT', C: 'CENTER', R: 'RIGHT' };
-  function fmCellAlign(c, col) { return col.key === 'name' ? c.aNm : col.key === 'memo' ? c.aMm : 'C'; }
+  // 정렬 버튼 그림(가로줄 셋 — 짧은 줄이 붙는 쪽이 정렬 방향)
+  const FM_ALIGN_ICON = {};
+  [['L', 1, 9, 1, 11], ['C', 3, 11, 2, 12], ['R', 5, 13, 3, 13]].forEach(function(a) {
+    FM_ALIGN_ICON[a[0]] = '<svg viewBox="0 0 14 12" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">' +
+      '<line x1="1" y1="2" x2="13" y2="2"/><line x1="' + a[1] + '" y1="6" x2="' + a[2] + '" y2="6"/><line x1="' + a[3] + '" y1="10" x2="' + a[4] + '" y2="10"/></g></svg>';
+  });
+  function fmCellAlign(c, head) { return head ? c.aHd : c.aBd; }
   const FM_PAGE = { w: 210, h: 297, m: 15 }, FM_COL_GAP = 8, FM_TBL_GAP = 4, FM_ROW_MAX = 12, FM_PT = 0.3528;
   function fmCfg() {
     let v = {};
@@ -12054,7 +12077,9 @@
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
     if (c.src !== 'manual') c.src = 'class';
     if (!c.colW || typeof c.colW !== 'object') c.colW = {};
-    ['aT', 'aI', 'aN', 'aTb', 'aNm', 'aMm'].forEach(function(k) { if (['L', 'C', 'R'].indexOf(c[k]) < 0) c[k] = FM_DEFAULT[k]; });
+    if (!v.aBd && v.aNm) c.aBd = v.aNm; // 예전 "이름 칸" 정렬을 "표 내용"으로
+    FM_ALIGNS.forEach(function(a) { if (['L', 'C', 'R'].indexOf(c[a[0]]) < 0) c[a[0]] = FM_DEFAULT[a[0]]; });
+    c.rowH = parseFloat(c.rowH) > 0 ? Math.min(30, Math.max(5, parseFloat(c.rowH))) : 0;
     return c;
   }
   function fmSet(patch) {
@@ -12201,10 +12226,10 @@
     const mg = c.aTb === 'L' ? '0 auto 0 0' : c.aTb === 'R' ? '0 0 0 auto' : '0 auto';
     let h = '<table class="fm-tbl" style="width:' + L.tableW + 'mm; margin:' + mg + '; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
       L.cols.map(function(col) { return '<col style="width:' + col.w + 'mm;">'; }).join('') + '</colgroup>';
-    h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) { return '<td>' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
+    h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) { return '<td style="text-align:' + FM_ALIGN_CSS[c.aHd] + ';">' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
     list.forEach(function(st, i) {
       h += '<tr' + (z && i % 2 === 1 ? ' class="z"' : '') + ' style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) {
-        return '<td style="text-align:' + FM_ALIGN_CSS[fmCellAlign(c, col)] + ';">' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
+        return '<td style="text-align:' + FM_ALIGN_CSS[c.aBd] + ';">' + ntEsc(fmCellText(col, c, cl.cls, st)) + '</td>';
       }).join('') + '</tr>';
     });
     return h + '</table>';
@@ -12232,7 +12257,9 @@
     });
     box.innerHTML = sheets.join('');
     const rows = L.classes.map(function(cl) { return cl.rowH; });
-    info.textContent = '줄 높이 ' + (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1) + 'mm' + (c.rowH > 0 ? '' : ' (한 장에 들어가게 자동)');
+    info.textContent = '줄 높이 ' + (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1) + 'mm' + (c.rowH > 0 ? (c.rowH < L.minRow ? ' — 내용 글자 ' + c.bSize + 'pt가 들어가는 가장 낮은 높이(' + c.rowH + 'mm는 너무 낮음)' : '') : ' (한 장에 들어가게 자동)');
+    const rin = document.getElementById('fm-rowh-input');
+    rin.placeholder = (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1);
     label.textContent = 'A4 세로 · ' + (c.src === 'manual' ? '명단 ' + L.classes[0].count + '명' : L.classes.length + '개 반') + ' · 종이 ' + sheets.length + '장';
     fmFitPreview();
   }
@@ -12314,6 +12341,15 @@
   // 자동 너비 칸을 누르면 지금 너비를 넣어 줘서(골라 둠) 화살표·숫자로 거기서부터 바꾸게(안 그러면 최솟값부터 시작)
   function fmWidthFocus(inp) { if (!inp.value && inp.placeholder) { inp.value = inp.placeholder; inp.select(); } }
   function fmWidthBlur(inp) { if (!(inp.dataset.wk in fmCfg().colW)) inp.value = ''; } // 안 바꾸고 나가면 다시 자동(빈칸)
+  // 줄 높이 직접 입력(mm): 비우면 자동. 칸 너비처럼 누르면 지금 높이부터.
+  function fmOnRowH(v) {
+    const n = parseFloat(v);
+    fmSet({ rowH: isFinite(n) && n >= 5 ? Math.min(30, n) : 0 });
+    document.querySelectorAll('#fm-rowh .nt-chip').forEach(function(b) { b.classList.toggle('on', Number(b.dataset.v) === fmCfg().rowH); });
+    fmRender();
+  }
+  function fmRowHFocus(inp) { if (!inp.value && inp.placeholder) { inp.value = inp.placeholder; inp.select(); } }
+  function fmRowHBlur(inp) { const r = fmCfg().rowH; inp.value = r > 0 ? r : ''; }
   function fmSetSrc(src) { fmSet({ src: src }); fmFillForm(); fmRender(); }
 
   // ----- 왼쪽 입력칸 -----
@@ -12349,11 +12385,13 @@
       return '<button class="nt-chip' + (c.colsN === n ? ' on' : '') + '" data-v="' + n + '" onclick="fmSet({ colsN: ' + n + ' }); fmFillForm(); fmRender();">' + n + '단</button>';
     }).join('');
     document.getElementById('fm-rowh').innerHTML = '줄 높이 ' + FM_ROWH.map(function(r) {
-      return '<button class="nt-chip' + (Number(c.rowH) === r[0] ? ' on' : '') + '" data-v="' + r[0] + '" onclick="fmSet({ rowH: ' + r[0] + ' }); fmFillForm(); fmRender();"' + (r[0] ? ' title="' + r[0] + 'mm"' : ' title="한 반이 한 장에 들어가게 맞춰요"') + '>' + r[1] + '</button>';
+      return '<button class="nt-chip' + (c.rowH === r[0] ? ' on' : '') + '" data-v="' + r[0] + '" onclick="fmSet({ rowH: ' + r[0] + ' }); fmFillForm(); fmRender();"' + (r[0] ? ' title="' + r[0] + 'mm"' : ' title="한 반이 한 장에 들어가게 맞춰요"') + '>' + r[1] + '</button>';
     }).join('');
+    setVal('fm-rowh-input', c.rowH > 0 ? c.rowH : '');
+    // 정렬: 두 항목씩 한 줄, 버튼은 한글처럼 줄 그림(왼쪽·가운데·오른쪽)
     document.getElementById('fm-aligns').innerHTML = FM_ALIGNS.map(function(a) {
       return '<span>' + a[1] + '</span><span class="top-btn-cluster" data-k="' + a[0] + '">' + [['L', '왼쪽'], ['C', '가운데'], ['R', '오른쪽']].map(function(o) {
-        return '<button class="top-btn' + (c[a[0]] === o[0] ? ' theme-active' : '') + '" data-v="' + o[0] + '" onclick="fmSetAlign(\'' + a[0] + '\', \'' + o[0] + '\')">' + o[1] + '</button>';
+        return '<button class="top-btn' + (c[a[0]] === o[0] ? ' theme-active' : '') + '" data-v="' + o[0] + '" title="' + a[1] + ' ' + o[1] + '" onclick="fmSetAlign(\'' + a[0] + '\', \'' + o[0] + '\')">' + FM_ALIGN_ICON[o[0]] + '</button>';
       }).join('') + '</span>';
     }).join('');
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
@@ -12519,7 +12557,7 @@
         tr += '<hp:tr>' + cells.map(function(txt, ci) {
           return '<hp:tc name="" header="' + (r === 0 ? 1 : 0) + '" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="' + bf + '">' +
             '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' +
-            P(r === 0 ? PP_CELL.C : PP_CELL[fmCellAlign(c, L.cols[ci])], R(r === 0 ? CP_BB : CP_B, T(txt))) + '</hp:subList>' +
+            P(PP_CELL[fmCellAlign(c, r === 0)], R(r === 0 ? CP_BB : CP_B, T(txt))) + '</hp:subList>' +
             '<hp:cellAddr colAddr="' + ci + '" rowAddr="' + r + '"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + W[ci] + '" height="' + RH + '"/>' +
             '<hp:cellMargin left="141" right="141" top="141" bottom="141"/></hp:tc>';
         }).join('') + '</hp:tr>';
@@ -12619,7 +12657,7 @@
         L.cols.forEach(function(col, i) {
           const cell = ws.getCell(hr, i + 1);
           cell.value = col.label; cell.font = { name: c.bFont, size: c.bSize, bold: true }; cell.fill = fill('E5E5E5'); cell.border = border;
-          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          cell.alignment = { horizontal: al(c.aHd), vertical: 'middle', wrapText: true };
         });
         ws.getRow(hr).height = rowPt;
         const list = [].concat.apply([], cl.pages.map(function(chs) { return [].concat.apply([], chs); }));
@@ -12629,7 +12667,7 @@
             const cell = ws.getCell(r, i + 1), v = fmCellText(col, c, cl.cls, st);
             cell.value = col.key === 'num' && /^\d+$/.test(v) ? Number(v) : v;
             cell.font = { name: c.bFont, size: c.bSize }; cell.border = border;
-            cell.alignment = { horizontal: al(fmCellAlign(c, col)), vertical: 'middle', wrapText: true };
+            cell.alignment = { horizontal: al(c.aBd), vertical: 'middle', wrapText: true };
             if (c.zebra && k % 2 === 1) cell.fill = fill('F2F2F2');
           });
           ws.getRow(r).height = rowPt;
