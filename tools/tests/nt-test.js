@@ -284,7 +284,7 @@ function pdfInfo(buf) {
   f = await fills();
   check('한 색으로 → 고른 색 하나(입체 글씨는 그 색의 파스텔)', new Set(f).size === 1 && f[0].toLowerCase() !== '#ffffff', f);
   await P.click('#nt-styles .nt-style:nth-child(5)'); await wait(200);
-  check('디자인 "컬러" → 색 바탕 + 흰 글씨', await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); return s.querySelector('g[clip-path] rect').getAttribute('fill').toLowerCase() === '#e07b39' && s.querySelector('text:not(.nt-sh)').getAttribute('fill') === '#fff'; }) && (await cfgOf(pc)).style === 'solid');
+  check('디자인 "컬러" → 색 바탕 + 흰 글씨', await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); return s.querySelector('g[clip-path] rect').getAttribute('fill').toLowerCase() === ntForWhite(NT_COLORS[2]).toLowerCase() && s.querySelector('text:not(.nt-sh)').getAttribute('fill') === '#fff'; }) && (await cfgOf(pc)).style === 'solid');
   await P.click('#nt-styles .nt-style:nth-child(6)'); await wait(200);
   const ul = await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); const t = s.querySelector('text:not(.nt-sh)').getBBox(); const r = [...s.querySelectorAll('rect')].pop().getBBox(); return { tw: t.width, rw: r.width, tx: t.x, rx: r.x }; });
   check('밑줄: 글자 전체 폭', Math.abs(ul.rw - ul.tw) < ul.tw * 0.08 && Math.abs(ul.rx - ul.tx) < ul.tw * 0.06, ul);
@@ -380,6 +380,35 @@ function pdfInfo(buf) {
   await setFill(P, 50); await wait(200);
   check('사물함에서도 글자 크기 바가 먹음', (await mainSizes(P))[0] < lkMid * 0.8);
   await setFill(P, 74); await wait(200);
+  // 글자 크기·자간·모두 같게는 모드마다 따로
+  await setFill(P, 92); await wait(200);
+  await P.evaluate(() => { const r = document.getElementById('nt-ls'); r.value = 36; r.dispatchEvent(new Event('input', { bubbles: true })); });
+  await P.uncheck('#nt-same'); await wait(200);
+  let sc = await cfgOf(pc);
+  check('사물함 글자 크기·자간·모두 같게를 바꿔도 게시판·분리수거함은 그대로', sc.lFillPct === 92 && sc.lLs === 36 && sc.lSame === false && sc.fillPct === 74 && sc.rcFillPct === 74 && sc.ls === 20 && sc.rcLs === 4 && sc.same === true && sc.rcSame === true, sc);
+  await P.click('#nt-mode-switch [data-mode="board"]'); await wait(300);
+  check('게시판 탭으로 가면 게시판 값(74%·자간 20·모두 같게)', await P.inputValue('#nt-fillr') === '74' && await P.inputValue('#nt-ls') === '20' && await P.isChecked('#nt-same'));
+  await setFill(P, 60); await wait(200);
+  await P.click('#nt-mode-switch [data-mode="locker"]'); await wait(300);
+  sc = await cfgOf(pc);
+  check('게시판을 바꿔도 사물함은 그대로(92%)', await P.inputValue('#nt-fillr') === '92' && sc.lFillPct === 92 && sc.fillPct === 60 && sc.rcFillPct === 74, sc);
+  await setFill(P, 74); await P.evaluate(() => { const r = document.getElementById('nt-ls'); r.value = 4; r.dispatchEvent(new Event('input', { bubbles: true })); }); await P.check('#nt-same');
+  await P.click('#nt-mode-switch [data-mode="board"]'); await wait(300); await setFill(P, 74);
+  await P.click('#nt-mode-switch [data-mode="locker"]'); await wait(300);
+  // 예전 설정(모드별 값 없음)은 게시판 값에서 시작
+  const legacy = await P.evaluate(() => { const old = localStorage.getItem('nt-cfg'); localStorage.setItem('nt-cfg', JSON.stringify({ mode: 'locker', fill: 'l' })); const c = ntCfg(); localStorage.setItem('nt-cfg', old); return c.fillPct; });
+  check('예전 설정(글자 크기 하나)은 모든 모드가 그 값에서 시작', legacy === 86, legacy);
+  // 12색: 같은 계열이 붙지 않게, 파스텔이어도 구별되게
+  const pal = await P.evaluate(() => {
+    const hue = (c) => ntHsl(c)[0], gap = (a, b) => { const d = Math.abs(hue(a) - hue(b)) % 360; return Math.min(d, 360 - d); };
+    const n = NT_COLORS.length, near = [];
+    for (let i = 0; i < n; i++) for (const k of [1, 4]) near.push(gap(NT_COLORS[i], NT_COLORS[(i + k) % n]));
+    const lab = (h) => { const v = parseInt(h.slice(1), 16); const [r, g, b] = [v >> 16 & 255, v >> 8 & 255, v & 255].map(x => { x /= 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; const X = f((r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047), Y = f(r * 0.2126 + g * 0.7152 + b * 0.0722), Z = f((r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883); return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)]; };
+    const tints = NT_COLORS.map(c => ntTheme('soft', c).bg); let minDE = 1e9;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const a = lab(tints[i]), b = lab(tints[j]); minDE = Math.min(minDE, Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])); }
+    return { minNear: Math.min(...near), minDE: Math.round(minDE * 10) / 10, solidOk: NT_COLORS.every(c => 1.05 / (ntLum(ntTheme('solid', c).bg) + 0.05) >= 3) };
+  });
+  check('12색: 옆·위아래(4칸 줄) 이름표는 색상이 90° 이상 다름, 파스텔 바탕끼리도 색 차이(ΔE) 10 이상, 컬러 디자인은 흰 글자가 읽힘', pal.minNear >= 90 && pal.minDE >= 10 && pal.solidOk, pal);
   await P.screenshot({ path: 'nt-locker.png' });
   await P.selectOption('#nt-lk-class', '2'); await wait(400);
   check('3학년 2반(30명) → 30개, 종이 1장(36개 들어감)', await labels(P) === 30 && await sheets(P) === 1, [await labels(P), await sheets(P)]);

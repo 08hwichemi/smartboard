@@ -2689,7 +2689,7 @@
       <div class="nt-box" id="nt-copies-box">
         <div class="nt-row" style="justify-content:space-between;">
           <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
-          <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSet({ same: this.checked }); ntRender();"> 글자 크기 모두 같게</label>
+          <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSetM('same', this.checked); ntRender();"> 글자 크기 모두 같게</label>
         </div>
       </div>
 
@@ -2710,8 +2710,8 @@
             <option value="400">보통</option><option value="600">조금 굵게</option><option value="700">굵게</option><option value="900">아주 굵게</option>
           </select>
         </div>
-        <div class="nt-row" title="이름표 칸에서 글자가 차지하는 크기">글자 크기 <input type="range" id="nt-fillr" min="30" max="100" step="2" style="flex:1;" oninput="ntSet({ fillPct: parseInt(this.value) }); ntRender();"> <span id="nt-fill-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
-        <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSet({ ls: parseInt(this.value) }); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
+        <div class="nt-row" title="이름표 칸에서 글자가 차지하는 크기">글자 크기 <input type="range" id="nt-fillr" min="30" max="100" step="2" style="flex:1;" oninput="ntSetM('fillPct', parseInt(this.value)); ntRender();"> <span id="nt-fill-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
+        <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSetM('ls', parseInt(this.value)); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
       </div>
 
       <div class="nt-box" id="nt-design-box">
@@ -11163,8 +11163,10 @@
     { f: 'Nanum Pen Script', n: '나눔손글씨 펜', w: [400] },
     { f: 'Cute Font', n: '귀여운', w: [400] },
   ];
-  // 자동 순환 12색(엑셀은 6색). 연한 바탕·진한 글씨는 이 색에서 섞어 만든다.
-  const NT_COLORS = ['#3B6FD4', '#2E9D6B', '#E07B39', '#7B5FD0', '#D9587A', '#1F9AA6', '#C9971A', '#4F5BD5', '#D24C4C', '#6F9A35', '#9C6B45', '#56657D'];
+  // 자동 순환 12색(엑셀은 6색): 색상환을 12칸으로 나눈 색(빨강·주황·노랑·연두·초록·청록·하늘·파랑·남색·보라·자주·분홍)을
+  // 한 번에 5칸씩 건너뛰는 순서로 둔다 → 옆 이름표는 색상환에서 120° 넘게, 4칸 줄의 위아래도 90° 넘게 떨어져 같은 계열이 붙지 않는다.
+  // 연한 바탕은 흰색을 섞지 않고 색상을 유지한 채 밝기만 올려서(ntPastel) 파스텔이어도 색이 구별되게 한다.
+  const NT_COLORS = ['#E03131', '#0CA678', '#AE3EC9', '#74B816', '#4263EB', '#F76707', '#1098AD', '#E64980', '#2F9E44', '#7048E8', '#F2B705', '#1C7ED6'];
   const NT_STYLES = [
     { id: 'pop', n: '입체 글씨' }, { id: 'minimal', n: '미니멀' }, { id: 'soft', n: '파스텔' }, { id: 'frame', n: '액자' },
     { id: 'solid', n: '컬러' }, { id: 'line', n: '밑줄' },
@@ -11174,13 +11176,14 @@
     recycle: [[18, 8, ''], [28, 12, 'A4 가로 폭'], [19, 27, 'A4 한 장']],
     locker: [[6.7, 2.1, '우리 학교'], [8, 2.5, ''], [9, 3, '']],
   };
-  // 모드마다 따로 기억하는 값(크기·장수·색 방식)의 설정 키와 이름표 사이 간격(mm)
+  // 모드마다 따로 기억하는 값(크기·장수·색 방식·글자 크기·자간·모두 같게)의 설정 키와 이름표 사이 간격(mm)
   // 사물함은 작아서 하나씩 자르기 불편 → 간격 없이 붙여서 칼로 한 줄씩 쭉 자르게
   const NT_MODE_KEYS = {
-    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', dw: 14.8, dh: 6.4, gap: 4 },
-    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', dw: 18, dh: 8, gap: 4 },
-    locker: { w: 'lw', h: 'lh', copies: 'lCopies', color: 'lColorMode', dw: 6.7, dh: 2.1, gap: 0 },
+    board: { w: 'w', h: 'h', copies: 'copies', color: 'colorMode', fillPct: 'fillPct', ls: 'ls', same: 'same', dw: 14.8, dh: 6.4, gap: 4 },
+    recycle: { w: 'rw', h: 'rh', copies: 'rcCopies', color: 'rcColorMode', fillPct: 'rcFillPct', ls: 'rcLs', same: 'rcSame', dw: 18, dh: 8, gap: 4 },
+    locker: { w: 'lw', h: 'lh', copies: 'lCopies', color: 'lColorMode', fillPct: 'lFillPct', ls: 'lLs', same: 'lSame', dw: 6.7, dh: 2.1, gap: 0 },
   };
+  const NT_TEXT_KEYS = ['fillPct', 'ls', 'same'];
   function ntMK(c) { return NT_MODE_KEYS[c.mode] || NT_MODE_KEYS.board; }
   // 사물함 이름표에 적는 모양(학번 = 학년 + 반 두 자리 + 번호 두 자리, 예 30101)
   const NT_LK_FMTS = [['id', '학번'], ['numname', '번호 이름'], ['idname', '학번 이름'], ['name', '이름만']];
@@ -11216,7 +11219,7 @@
     rc: NT_RC.filter(function(r) { return r.on; }).map(function(r) { return r.id; }), rcEng: true,
     lw: 6.7, lh: 2.1, lCopies: 1, lColorMode: 'cycle', lG: null, lC: null, lFmt: 'numname',
     font: 'Jua', custom: '', weight: 700, fillPct: 74, ls: 4, same: true,
-    style: 'pop', radius: 2, colorMode: 'cycle', rcColorMode: 'type', color: NT_COLORS[0],
+    style: 'pop', radius: 2, colorMode: 'cycle', rcColorMode: 'type', color: '#1C7ED6',
   };
   function ntCfg() {
     let v = {};
@@ -11226,7 +11229,22 @@
     // 예전 글자 크기 단계(작게/보통/크게) → 바(%)
     if (v.fillPct == null && v.fill) c.fillPct = { s: 60, m: 74, l: 86 }[v.fill] || 74;
     if (!NT_MODE_KEYS[c.mode]) c.mode = 'board';
+    // 글자 크기·자간·모두 같게는 모드마다 따로(예전엔 하나를 같이 써서 사물함 글씨를 키우면 게시판도 커졌음).
+    // 따로 정한 적 없는 모드는 예전 값(게시판 값)에서 시작하고, c.fillPct 등은 지금 모드의 값으로 돌려준다.
+    const mk = ntMK(c);
+    c.textBase = {};
+    NT_TEXT_KEYS.forEach(function(k) { c.textBase[k] = c[k]; if (c[mk[k]] == null) c[mk[k]] = c[k]; });
+    NT_TEXT_KEYS.forEach(function(k) { c[k] = c[mk[k]]; });
     return c;
+  }
+  // 지금 모드의 값만 바꾼다. 아직 따로 정한 적 없는 다른 모드는 지금 값으로 굳혀서 같이 따라 바뀌지 않게.
+  function ntSetM(field, value) {
+    const c = ntCfg(), p = {};
+    let raw = {};
+    try { raw = JSON.parse(localStorage.getItem(NT_CFG_KEY) || '{}') || {}; } catch (e) {}
+    Object.keys(NT_MODE_KEYS).forEach(function(m) { const k = NT_MODE_KEYS[m][field]; if (raw[k] == null) p[k] = c.textBase[field]; });
+    p[ntMK(c)[field]] = value;
+    ntSet(p);
   }
   function ntSet(patch) {
     let cur = {};
@@ -11285,17 +11303,38 @@
     const m = function(s) { return Math.round(ch(a, s) + (ch(b, s) - ch(a, s)) * t); };
     return '#' + ((1 << 24) + (m(16) << 16) + (m(8) << 8) + m(0)).toString(16).slice(1);
   }
+  function ntHsl(hex) {
+    const n = parseInt(hex.slice(1), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    if (!d) return [0, 0, l];
+    const h = mx === r ? ((g - b) / d + (g < b ? 6 : 0)) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, d / (1 - Math.abs(2 * l - 1)), l];
+  }
+  function ntHex(h, sat, l) {
+    const k = function(n) { return (n + h / 30) % 12; }, a = sat * Math.min(l, 1 - l);
+    const f = function(n) { return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))); };
+    return '#' + ((1 << 24) + (f(0) << 16) + (f(8) << 8) + f(4)).toString(16).slice(1);
+  }
+  // 같은 색상의 연한 색(밝기 l). 회색처럼 채도 없는 색은 그대로 밝게만.
+  function ntPastel(hex, l) { const v = ntHsl(hex); return ntHex(v[0], v[1] < 0.15 ? v[1] : Math.max(0.8, v[1]), l); }
+  // 흰 글자를 올려도 읽히게(노랑·연두·주황 바탕) 명암비 3 이상이 될 때까지 어둡게
+  function ntLum(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = function(x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+    return 0.2126 * ch(n >> 16 & 255) + 0.7152 * ch(n >> 8 & 255) + 0.0722 * ch(n & 255);
+  }
+  function ntForWhite(hex) { let c = hex; for (let i = 0; i < 8 && 1.05 / (ntLum(c) + 0.05) < 3; i++) c = ntMix(c, '#000000', 0.1); return c; }
   function ntTheme(style, c) {
-    const tint = ntMix(c, '#ffffff', 0.9), soft = ntMix(c, '#ffffff', 0.55), deep = ntMix(c, '#000000', 0.45);
+    const tint = ntPastel(c, 0.86), soft = ntPastel(c, 0.7), deep = ntMix(c, '#000000', 0.45);
     const ink = '#1F2430', line = '#C9CFD8';
     const T = {
       minimal: { bg: '#fff', stroke: line, ink: ink, sub: c, badge: tint, icon: c, accent: c },
       soft: { bg: tint, stroke: soft, ink: deep, sub: c, badge: '#fff', icon: c, accent: soft },
       frame: { bg: tint, stroke: soft, card: '#fff', cardStroke: c, ink: ink, sub: c, badge: tint, icon: c },
-      solid: { bg: c, stroke: c, ink: '#fff', sub: 'rgba(255,255,255,0.85)', badge: 'rgba(255,255,255,0.2)', icon: '#fff', hair: 'rgba(255,255,255,0.5)' },
+      solid: { bg: ntForWhite(c), stroke: ntForWhite(c), ink: '#fff', sub: 'rgba(255,255,255,0.85)', badge: 'rgba(255,255,255,0.2)', icon: '#fff', hair: 'rgba(255,255,255,0.5)' },
       line: { bg: '#fff', stroke: line, ink: ink, sub: c, badge: tint, icon: c, accent: c },
       // 예전 엑셀 양식 그대로: 파스텔 바탕 + 회색 바깥선, 안쪽 카드 + 검정 선, 흰 글자에 검정 테두리·그림자
-      pop: { bg: ntMix(c, '#ffffff', 0.8), stroke: '#B4BEC8', card: ntMix(c, '#ffffff', 0.72), cardStroke: '#141414', ink: '#fff', sub: '#222', badge: '#fff', icon: '#222' },
+      pop: { bg: ntPastel(c, 0.88), stroke: '#B4BEC8', card: ntPastel(c, 0.76), cardStroke: '#141414', ink: '#fff', sub: '#222', badge: '#fff', icon: '#222' },
     };
     return T[style] || T.minimal;
   }
@@ -11397,7 +11436,7 @@
     const aw = g.box.w * g.f, ah = g.box.h * g.f;
     let s = Math.min(aw / Math.max(mw, 0.01), ah / gh);
     let hf = gh + fx;
-    if (style === 'line') hf += 0.26;
+    if (style === 'line') hf += 0.3;
     if (it.sub) {
       const sw = ntMeasure(it.sub, 'Pretendard', 600).w * NT_SUB_RATIO + 0.1 * NT_SUB_RATIO * (Array.from(it.sub).length - 1);
       hf += NT_SUB_GAP + NT_SUB_RATIO * 0.75;
@@ -11443,7 +11482,7 @@
     const subS = s * NT_SUB_RATIO;
     const pop = c.style === 'pop';
     let blockH = s * (ga + gd + (pop ? NT_POP_EXTRA : 0));
-    if (c.style === 'line') blockH += s * 0.26;
+    if (c.style === 'line') blockH += s * 0.3;
     if (it.sub) blockH += s * NT_SUB_GAP + subS * 0.75;
     const cx = g.box.x + g.box.w / 2;
     let top = g.box.y + (g.box.h - blockH) / 2;
@@ -11458,9 +11497,9 @@
     let y2 = base + s * (gd + (pop ? NT_POP_EXTRA - NT_POP_STROKE / 2 : 0));
     if (c.style === 'line') {
       const n = Array.from(it.text).length, tw = s * (ntMeasure(it.text, fi.f, weight).w + lsEm * (n - 1));
-      const bw = tw, bh = Math.max(0.6, s * 0.06); // 글자 전체 폭으로 밑줄
+      const bw = tw, bh = Math.max(0.8, s * 0.1); // 글자 전체 폭으로, 색이 구별되게 두껍게
       o += '<rect x="' + (cx - bw / 2) + '" y="' + (y2 + s * 0.14) + '" width="' + bw + '" height="' + bh + '" rx="' + bh / 2 + '" fill="' + th.accent + '"/>';
-      y2 += s * 0.26;
+      y2 += s * 0.3;
     }
     if (it.sub) {
       const sls = subS * 0.1;
@@ -11563,7 +11602,7 @@
     box.style.zoom = z > 0 ? String(z) : '';
   }
   function ntRenderStylePicker(c) {
-    const col = c[ntMK(c).color] === 'one' ? c.color : NT_COLORS[0];
+    const col = c[ntMK(c).color] === 'one' ? c.color : '#1C7ED6';
     const fake = Object.assign({}, c);
     document.getElementById('nt-styles').innerHTML = NT_STYLES.map(function(st) {
       const cc = Object.assign({}, fake, { style: st.id, fillPct: 60 });
