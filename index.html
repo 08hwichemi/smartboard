@@ -729,6 +729,9 @@
     .lp-row label { font-size: 11px; font-weight: 700; color: var(--text-sub); flex-shrink: 0; display:block; margin-bottom:4px; }
     .lp-input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12px; outline: none; background: var(--card-bg); color: var(--text-main); box-sizing: border-box; font-family: inherit; }
     .lp-input:focus { border-color: var(--accent-color); }
+    /* 학교·학급 칸: 예시 글씨는 연하게, 비어 있으면 빨갛게 — 회색 예시를 이미 적힌 값으로 알고 그냥 인쇄하던 일이 있어서 */
+    #lp-sec-school .lp-input::placeholder, #lp-sec-class .lp-input::placeholder { color: #C3C7CF; opacity: 1; font-style: italic; }
+    #lp-sec-school .lp-input:placeholder-shown, #lp-sec-class .lp-input:placeholder-shown { border-color: var(--alert-border); background: var(--alert-bg); }
     .lp-field { flex: 1; min-width: 0; }
     .lp-field.lp-grow-3 { flex: 3; }
     .lp-field.lp-grow-1 { flex: 1.2; }
@@ -2476,7 +2479,7 @@
         <div class="lp-row">
           <div class="lp-field lp-grow-3">
             <label>학교명</label>
-            <input type="text" id="lp-cfg-school" class="lp-input" placeholder="OO고등학교" oninput="lpRender()">
+            <input type="text" id="lp-cfg-school" class="lp-input" placeholder="학교 이름을 적어 주세요" oninput="lpRender()">
           </div>
         </div>
       </div>
@@ -2486,21 +2489,21 @@
         <div class="lp-row">
           <div class="lp-field" style="flex:1.5;">
             <label>년도</label>
-            <input type="number" id="lp-cfg-year" class="lp-input" placeholder="2026" oninput="lpRender()">
+            <input type="number" id="lp-cfg-year" class="lp-input" placeholder="예) 2026" oninput="lpRender()">
           </div>
           <div class="lp-field">
             <label>학년</label>
-            <input type="text" id="lp-cfg-grade" class="lp-input" placeholder="3" oninput="lpRender()">
+            <input type="text" id="lp-cfg-grade" class="lp-input" placeholder="예) 3" oninput="lpRender()">
           </div>
           <div class="lp-field">
             <label>반</label>
-            <input type="text" id="lp-cfg-class" class="lp-input" placeholder="1" oninput="lpRender()">
+            <input type="text" id="lp-cfg-class" class="lp-input" placeholder="예) 1" oninput="lpRender()">
           </div>
         </div>
         <div class="lp-row">
           <div class="lp-field">
             <label>담임 성함 (도장 자동생성)</label>
-            <input type="text" id="lp-cfg-teacher" class="lp-input" placeholder="이용휘" oninput="lpRender()">
+            <input type="text" id="lp-cfg-teacher" class="lp-input" placeholder="담임 선생님 성함" oninput="lpRender()">
           </div>
         </div>
       </div>
@@ -10225,6 +10228,7 @@
         const saved = localStorage.getItem('lp-data');
         if (saved) lpApplyData(JSON.parse(saved));
       } catch (e) { /* 저장된 내용이 손상됐으면 그냥 빈 상태로 시작 */ }
+      lpFillDefaults();
     }
 
     if (!window.__lpAutoSaveBound) {
@@ -10234,6 +10238,21 @@
     }
 
     lpRender();
+  }
+
+  // 빈 칸만 알 수 있는 값으로 채운다(이미 적어 둔 값은 그대로): 학교 이름, 올해 학년도, 담임이면 담임 학년·반, 내 이름
+  function lpFillDefaults() {
+    const t = window.currentTeacher || {};
+    const now = new Date(), schoolYear = now.getMonth() + 1 >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const fill = function(id, v) { const el = document.getElementById(id); if (el && !el.value && v) { el.value = v; return true; } return false; };
+    let changed = fill('lp-cfg-school', '부광고등학교');
+    changed = fill('lp-cfg-year', String(schoolYear)) || changed;
+    if (t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
+      changed = fill('lp-cfg-grade', String(t.homeroom_grade)) || changed;
+      changed = fill('lp-cfg-class', String(t.homeroom_class)) || changed;
+    }
+    changed = fill('lp-cfg-teacher', t.name || '') || changed;
+    if (changed) lpAutoSave();
   }
 
   function lpPrevFont() {
@@ -10385,7 +10404,7 @@
   const lpTourSteps = [
     { selector: '#lp-page-header', title: '📋 조퇴증에 오신 것을 환영해요!', desc: '담임 도장이 찍힌 조퇴증 양식을 만들어 인쇄하는 화면이에요. 왼쪽 설정을 위에서부터 채우고, 오른쪽 미리보기를 확인한 뒤 인쇄하면 돼요.' },
     { selector: '#lp-sec-school', title: '1단계. 학교 정보', desc: '양식에 나올 학교 이름을 적어요.' },
-    { selector: '#lp-sec-class', title: '2단계. 학급 정보', desc: '연도·학년·반과 담임 선생님 이름을 적어요. 담임 이름은 도장 글자로도 쓰여요.' },
+    { selector: '#lp-sec-class', title: '2단계. 학급 정보', desc: '연도·학년·반과 담임 선생님 이름을 적어요. 처음엔 학교 이름·올해 학년도·내 이름(담임이면 학년·반도)이 미리 채워져요. 비어 있는 칸은 빨갛게 보이니 꼭 적어 주세요. 담임 이름은 도장 글자로도 쓰여요.' },
     { selector: '#lp-sec-font', title: '3단계. 도장 글꼴', desc: '도장에 들어갈 이름 글꼴을 골라요.' },
     { selector: '#lp-sec-stamp', title: '4단계. 도장 위치·크기·간격', desc: '슬라이더로 도장 안 이름의 위치와 크기, 글자 간격을 맞춰요. 🖼️ 도장 저장을 누르면 배경이 투명한 도장 그림 파일로 받을 수 있어요.' },
     { selector: '#lp-preview', title: '5단계. 미리보기', desc: '실제로 인쇄될 모습이에요.' },

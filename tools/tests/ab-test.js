@@ -556,6 +556,16 @@ function check(label, cond, detail) {
   // 닫기·다른 화면
   await P.click('#rail-leavepass-btn'); await wait(400);
   check('조퇴증 누르면 결석계 닫힘', !(await shown()) && await P.evaluate(() => document.getElementById('leavepass-page').style.display === 'flex' && !document.getElementById('rail-absence-btn').classList.contains('active')));
+  // 조퇴증: 회색 예시를 적힌 값으로 알고 그냥 인쇄하던 일 → 빈 칸은 아는 값으로 채우고, 그래도 빈 칸은 빨갛게
+  const lp = await P.evaluate(() => { const v = (id) => document.getElementById(id).value; const now = new Date(), sy = now.getMonth() + 1 >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    return { ok: v('lp-cfg-school') === '부광고등학교' && v('lp-cfg-year') === String(sy) && v('lp-cfg-grade') === '3' && v('lp-cfg-class') === '1' && v('lp-cfg-teacher') === '김교사',
+      printed: document.querySelector('.lp-pass-student-top').textContent.replace(/\s+/g, ' '), sy: sy }; });
+  check('조퇴증: 학교 이름·올해 학년도·담임 학년·반·이름이 미리 채워져 양식에 나옴', lp.ok && lp.printed === lp.sy + '학년도 3학년 1반', lp);
+  await P.fill('#lp-cfg-grade', ''); await wait(100);
+  await P.locator('#lp-sec-class').screenshot({ path: 'lp-empty.png' });
+  const lpRed = await P.evaluate(() => { const g = getComputedStyle(document.getElementById('lp-cfg-grade')), c = getComputedStyle(document.getElementById('lp-cfg-class')); return [g.backgroundColor, c.backgroundColor, document.getElementById('lp-cfg-grade').placeholder]; });
+  check('조퇴증: 비운 칸은 빨간 바탕 + "예)" 예시, 적힌 칸은 보통', lpRed[0] !== lpRed[1] && /^예\)/.test(lpRed[2]), lpRed);
+  await P.fill('#lp-cfg-grade', '3'); await wait(500);
   await P.click('#rail-absence-btn'); await wait(400);
   check('결석계 누르면 조퇴증 닫힘', await shown() && await P.evaluate(() => document.getElementById('leavepass-page').style.display === 'none'));
   await P.click('#rail-absence-btn'); await wait(300);
