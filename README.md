@@ -68,7 +68,7 @@
 
 | 테이블 | 용도 | 비고 |
 |---|---|---|
-| `notices` | 공지사항 | 좋아요·하트는 `bump_reaction()` 함수로 원자적으로 더하고 뺍니다 |
+| `notices` | 공지사항 | 좋아요·하트는 `bump_reaction()` 함수로 원자적으로 더하고 뺍니다(SECURITY DEFINER — 수정 RLS가 작성자·관리자만이라, 한 번에 ±1만 허용) |
 | `timetable` | 선생님 시간표 | `teacher_name` 유니크, `cells`는 35칸(월~금 × 1~7교시) jsonb 배열 |
 | `duty_roster` | 야자·급식·아침 감독표 세 개를 한 표로 | `board` 컬럼으로 구분(`'야자감독'`/`'급식감독'`/`'아침감독'`), `col_index`로 몇 번째 이름칸인지 |
 | `neis_timetable_snapshot` | 나이스 학급 시간표를 조회한 기록(스냅샷) | 아직 시험 조회 화면에서만 씀, 자세한 내용은 `docs/NEIS-시간표-연동-설계.md` |
