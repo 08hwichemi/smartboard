@@ -781,7 +781,9 @@
 
     /* ===== 📋 결석계 ===== */
     #ab-body { display: flex; flex: 1; min-height: 0; }
-    #ab-left { flex: 1; min-width: 0; overflow-y: auto; padding: 16px 20px; box-sizing: border-box; }
+    #ab-left { flex: 1; min-width: 0; overflow-y: auto; padding: 0 20px 16px; box-sizing: border-box; }
+    /* 위 여백을 padding 대신 탭 margin으로: padding이 있으면 고정된 머리 줄 위 틈으로 아래 줄이 비쳐 보임 */
+    #ab-tabs { margin: 16px 0 12px; }
     #ab-right { width: 470px; flex: 0 0 auto; border-left: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
     #ab-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
     #ab-paper-box { position: relative; overflow: hidden; }
@@ -796,7 +798,12 @@
     .ab-in:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
     .ab-in[type="date"] { padding: 4px 2px; font-size: 12px; letter-spacing: -0.2px; }
     .ab-in.ab-days { text-align: center; padding: 5px 2px; }
-    .ab-table tr.ab-new td { background: var(--accent-soft); border-bottom: 2px solid var(--accent-color); padding: 6px 4px; cursor: default; }
+    .ab-table tr.ab-new td { background: var(--accent-soft); box-shadow: inset 0 -2px 0 var(--accent-color); padding: 6px 4px 8px; cursor: default; }
+    /* 입력 표: 알림 줄·제목 줄·새 줄을 묶어 위에 고정 — 아래로 내려 봐도 바로 새로 적을 수 있게 */
+    #ab-list .ab-grid { border-collapse: separate; border-spacing: 0; }
+    #ab-list .ab-grid thead { position: sticky; top: 0; z-index: 3; }
+    #ab-list .ab-grid thead th { position: static; }
+    .ab-table tr.ab-bar td { background: var(--bg-color); padding: 0 0 4px; border: 0; text-align: left; cursor: default; }
     .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
     .ab-table tr.ab-new:hover, .ab-table tr.ab-editrow:hover { background: none; }
     .ab-table.ab-grid { table-layout: fixed; }
@@ -819,7 +826,7 @@
     .ab-icon-btn { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
     .ab-icon-btn:hover { border-color: var(--accent-color); }
     /* 작은 화면(1366 등)에선 미리보기 칸을 줄여 입력 표의 "구체적인 사유" 칸이 찌그러지지 않게 */
-    @media (max-width: 1500px) { #ab-right { width: 360px; } #ab-left { padding: 14px 12px; } }
+    @media (max-width: 1500px) { #ab-right { width: 360px; } #ab-left { padding: 0 12px 14px; } #ab-tabs { margin-top: 14px; } }
     .ab-num { display: inline-block; min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; }
     #ab-list select.ab-in { font-variant-numeric: tabular-nums; }
     #ab-list td.ab-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2582,7 +2589,7 @@
   </div>
   <div id="ab-body">
     <div id="ab-left">
-      <div class="top-btn-cluster" id="ab-tabs" style="margin-bottom: 12px;">
+      <div class="top-btn-cluster" id="ab-tabs">
         <button class="top-btn theme-active" data-tab="input" onclick="abSetTab('input')">✏️ 결석 현황 입력</button>
         <button class="top-btn" data-tab="stat" onclick="abSetTab('stat')">📊 학생별 현황</button>
         <button class="top-btn" data-tab="hol" onclick="abSetTab('hol')">📅 휴일</button>
@@ -2590,7 +2597,6 @@
 
       <div id="ab-pane-input" class="ab-pane">
         <div class="ab-muted" style="margin-bottom:8px;">맨 윗줄에 적고 <b>Enter</b>(또는 ➕)로 추가 · 기록 줄은 <b>두 번 누르거나 ✎</b>로 그 자리에서 고치기(Enter 저장, Esc 취소) · 줄을 한 번 누르면 오른쪽에 출력 미리보기</div>
-        <div id="ab-f-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div id="ab-filter" style="display:none;"></div>
         <div id="ab-list"></div>
       </div>
@@ -10683,7 +10689,9 @@
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
     d.dataset.touched = d.value !== '' && Number(d.value) !== abCountDays(f.value, t.value) ? '1' : '';
   }
-  function abMsg(t) { const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
+  // 알림 글은 고정된 표 머리(ab-bar 줄) 안에 있어서 표를 다시 그려도 남도록 따로 기억
+  let abMsgHtml = '';
+  function abMsg(t) { abMsgHtml = t; const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
   function abSaveRow(p) {
     const c = abCfg();
     if (!c.g || !c.c) { abMsg('⚠️ 위에서 학년·반을 먼저 고르세요.'); return; }
@@ -10784,10 +10792,11 @@
     } else fEl.style.display = 'none';
     let h = '<table class="ab-table ab-grid"><colgroup><col style="width:32px"><col style="width:106px"><col style="width:94px"><col><col style="width:108px"><col style="width:108px">' +
       '<col style="width:42px"><col style="width:108px"><col style="width:13%"><col style="width:58px"></colgroup>' +
-      '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr></thead><tbody>';
+      '<thead><tr class="ab-bar"><td colspan="10"><div id="ab-f-msg" class="ab-muted" style="min-height:16px;">' + abMsgHtml + '</div></td></tr>' +
+      '<tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr>';
     h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
       abRowCells('ab-n-', { num: abFilterNum != null ? abFilterNum : '' }) +
-      '<td><button class="top-btn accent" style="padding:5px 8px; font-size:12px; font-weight:800;" onclick="abSaveRow(\'ab-n-\')" title="추가 (Enter)">➕</button></td></tr>';
+      '<td><button class="top-btn accent" style="padding:5px 8px; font-size:12px; font-weight:800;" onclick="abSaveRow(\'ab-n-\')" title="추가 (Enter)">➕</button></td></tr></thead><tbody>';
     rows.forEach(function(r) {
       if (r.id === abEditId) {
         h += '<tr class="ab-editrow" data-id="' + r.id + '"><td>' + idx[r.id] + '</td>' + abRowCells('ab-e-', r) +

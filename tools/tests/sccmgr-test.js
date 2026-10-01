@@ -257,8 +257,9 @@ function check(label, cond, detail) {
   // ---- 주 옮기기: 날짜 칸·◀ ▶, 오른쪽을 직접 옮기면 그 뒤론 따로 ----
   const dr = await P.evaluate(() => {
     const r = sccDateRange();
-    const next = new Date(); next.setDate(next.getDate() + 14); while (next.getDay() !== 3) next.setDate(next.getDate() + 1);
     const ymd = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    // 2주 뒤 수요일 = 이번 주 월요일(주말이면 다음 주 월요일, 앱과 같게) + 16일 — 목~일에 돌려도 3주 뒤가 되지 않게
+    const next = new Date(sccAddDays(sccMondayOf(ymd(new Date())), 16) + 'T00:00:00');
     const far = new Date(); far.setDate(far.getDate() + 90);
     const sat = new Date(next); sat.setDate(sat.getDate() + 3);
     return { r, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next), inputMax: document.getElementById('scc-week-a').max, prevOff: document.getElementById('scc-week-a-prev').disabled };

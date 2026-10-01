@@ -296,7 +296,7 @@ function check(label, cond, detail) {
   check('숫자 칸은 엑셀처럼 오른쪽 정렬', await P.evaluate(() => document.querySelector('#ab-paper [data-c="L8"]').style.textAlign === 'right'));
   await P.locator('#absence-page').screenshot({ path: 'ab-trip.png' });
   // 첫 체험학습을 누르면 이전 누적 0
-  await P.click('#ab-list tbody tr[data-id]:nth-child(3)'); await wait(150);
+  await P.click('#ab-list tbody tr[data-id]:nth-child(2)'); await wait(150);
   check('앞선 체험학습: 이전 누적 0, 담임확인 3일', await cell('L8') === '0' && await cell('I4') === '3일', [await cell('L8'), await cell('I4')]);
 
   // 연번 = 시작일 순
@@ -428,8 +428,8 @@ function check(label, cond, detail) {
   await P.click('#ab-tabs [data-tab="stat"]'); await P.click('#ab-tabs [data-tab="input"]'); await wait(1500);
   check('탭 바꾸기는 서버로 안 올림', !/"tab"/.test(serverVal(T1, 'ab-cfg') || ''), serverVal(T1, 'ab-cfg'));
   const pRecs = (await recs()).length, sRecs = [...items.values()].filter(r => r.key.startsWith('ab-r-') && r.value).length, msg = await P.innerText('#ab-f-msg');
-  const dbg = await pc2.page.evaluate(() => ({ recs: abClassRecords().length, rows: document.querySelectorAll('#ab-list tbody tr').length, act: document.activeElement && document.activeElement.id, pend: remoteRefreshPending }));
-  check('한 기기에서 추가 → 펴 둔 다른 기기 목록에 바로', dbg.rows === 6, [dbg, pRecs, sRecs, msg]);
+  const dbg = await pc2.page.evaluate(() => ({ recs: abClassRecords().length, rows: document.querySelectorAll('#ab-list tbody tr[data-id]').length, act: document.activeElement && document.activeElement.id, pend: remoteRefreshPending }));
+  check('한 기기에서 추가 → 펴 둔 다른 기기 목록에 바로', dbg.rows === 5, [dbg, pRecs, sRecs, msg]);
 
   // 다른 선생님은 못 봄
   const other = await openDevice(browser, 'T2', T2);
@@ -494,6 +494,21 @@ function check(label, cond, detail) {
   check('작은 화면(1366×768)은 줄을 20px까지만 줄이고(읽을 수 있게) 조금 스크롤', fit2.rh === 20, fit2);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
   await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
+
+  // 아래로 내려도 알림 줄·제목 줄·새 줄은 위에 고정(9/30 사용자 요청)
+  await P.setViewportSize({ width: 1366, height: 420 }); await wait(300);
+  await P.evaluate(() => { const l = document.getElementById('ab-left'); l.scrollTop = l.scrollHeight; }); await wait(150);
+  const stick = await P.evaluate(() => {
+    const l = document.getElementById('ab-left').getBoundingClientRect(), hd = document.querySelector('#ab-list thead').getBoundingClientRect();
+    const nr = document.querySelector('#ab-list tr.ab-new').getBoundingClientRect(), th = document.querySelector('#ab-list thead th').getBoundingClientRect();
+    return { scrolled: document.getElementById('ab-left').scrollTop > 0, gap: Math.round(hd.top - l.top), thVisible: th.top >= l.top - 1, newBottom: Math.round(nr.bottom - l.top), inView: nr.bottom <= l.bottom };
+  });
+  check('아래로 내려도 제목 줄·새 줄이 맨 위에 고정(틈 없음)', stick.scrolled && stick.gap === 0 && stick.thVisible && stick.inView, stick);
+  await P.locator('#absence-page').screenshot({ path: 'ab-sticky.png' });
+  await P.selectOption('#ab-n-num', '1'); await P.press('#ab-n-detail', 'Enter'); await wait(150);
+  const stickMsg = await P.evaluate(() => { const l = document.getElementById('ab-left').getBoundingClientRect(), m = document.getElementById('ab-f-msg').getBoundingClientRect(); return { txt: document.getElementById('ab-f-msg').textContent, vis: m.top >= l.top - 1 && m.bottom <= l.bottom }; });
+  check('내려간 채로 고정된 새 줄에서 Enter → 알림 글도 보임', /결석 시작 일자/.test(stickMsg.txt) && stickMsg.vis, stickMsg);
+  await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
 
   // 🗑 초기화: 이 반 기록만, 두 번 확인
   await P.selectOption('#ab-class', '1'); await wait(300);
