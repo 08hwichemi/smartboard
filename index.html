@@ -12479,6 +12479,25 @@
   }
   // 한글 파일에 적을 글꼴 이름: 크롬이 찾은 다른 이름(예: "경기천년제목")을 한글이 아는 이름("경기천년제목 Bold")으로
   function fmHwpFont(f) { const e = fmFontEntry(f); return e ? e.n : f; }
+  // 글꼴 목록에는 이 PC에 있는 글꼴만(없는 글꼴을 고르면 한글에서도 다른 글꼴로 나와서). 지금 고른 글꼴은 없어도 "(이 PC에 없음)"으로 남겨 둔다.
+  // 한 번만 검사하고(null = 아직 검사 중 → 전부 보임), 끝나면 양식 화면을 다시 채운다. 목록에 없는 글꼴은 "✏️ 직접 입력"으로 쓸 수 있음.
+  let fmFontMissing = null, fmFontCheckP = null;
+  function fmCheckFonts() {
+    if (fmFontCheckP) return fmFontCheckP;
+    fmFontCheckP = (window.__fmAllFontsAvail ? Promise.resolve([]) : fmMissingFonts(FM_FONTS.map(function(f) { return f.n; }))).then(function(miss) {
+      fmFontMissing = miss;
+      if (miss.length && fmIsOpen()) fmFillForm();
+      return miss;
+    });
+    return fmFontCheckP;
+  }
+  function fmFontOptions(cur) {
+    fmCheckFonts();
+    return FM_FONTS.filter(function(f) { return !fmFontMissing || fmFontMissing.indexOf(f.n) < 0 || f.n === cur; }).map(function(f) {
+      const gone = fmFontMissing && fmFontMissing.indexOf(f.n) >= 0;
+      return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + (gone ? ' (이 PC에 없음)' : '') + '</option>';
+    }).join('');
+  }
   function fmTableHtml(L, c, cl, list) {
     const z = c.zebra;
     const mg = c.aTb === 'L' ? '0 auto 0 0' : c.aTb === 'R' ? '0 0 0 auto' : '0 auto';
@@ -12721,8 +12740,7 @@
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
       const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
       const sel = document.getElementById(k[1]);
-      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
-        '<option value="__custom">✏️ 직접 입력</option>';
+      sel.innerHTML = fmFontOptions(e ? e.n : '') + '<option value="__custom">✏️ 직접 입력</option>';
       sel.value = e ? e.n : '__custom';
       const inp = document.getElementById(k[1] + '-custom');
       inp.style.display = e ? 'none' : '';
@@ -13428,14 +13446,12 @@
       return '<button class="ws-sw' + (c.theme === t[0] ? ' on' : '') + '" data-theme="' + t[0] + '" title="' + t[1] + '" style="background:' + t[2] + '; border-color:' + t[3] + ';" onclick="wsSet({ theme: \'' + t[0] + '\' }, true)"></button>';
     }).join('');
     // 글꼴 상자: 목록 + ✏️ 직접 입력(고르면 아래 칸에 한글 글꼴 이름을 적음). 부분별은 맨 위가 "머리·꼬리와 같게"
-    const opts = function(first) {
-      return (first ? '<option value="">' + first + '</option>' : '') +
-        FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
-        '<option value="__custom">✏️ 직접 입력</option>';
+    const opts = function(first, cur) {
+      return (first ? '<option value="">' + first + '</option>' : '') + fmFontOptions(cur) + '<option value="__custom">✏️ 직접 입력</option>';
     };
     const fillSel = function(selId, inpId, name, custom, first) {
       const sel = document.getElementById(selId), inp = document.getElementById(inpId), e = !custom && name ? fmFontEntry(name) : null;
-      sel.innerHTML = opts(first);
+      sel.innerHTML = opts(first, e ? e.n : '');
       sel.value = !name ? '' : e ? e.n : '__custom';
       inp.style.display = name && !e ? '' : 'none';
       if (document.activeElement !== inp) inp.value = name && !e ? name : '';

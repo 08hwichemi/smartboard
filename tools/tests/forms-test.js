@@ -152,6 +152,8 @@ async function openDevice(browser, name, uid, opts = {}) {
   page.on('pageerror', e => errors.push(String(e)));
   info.errors = errors;
   await page.exposeFunction('__db', (q) => handleDb(info, q));
+  // 이 샌드박스엔 한글 글꼴이 하나도 없어서, 글꼴 목록 검사(이 PC에 없는 글꼴 빼기)를 끄고 모든 글꼴이 있는 것처럼(realFonts면 진짜로 검사)
+  if (!opts.realFonts) await page.addInitScript(() => { window.__fmAllFontsAvail = true; });
   if (opts.preload) {
     await page.addInitScript((obj) => {
       if (sessionStorage.getItem('__preloaded')) return;
@@ -735,6 +737,16 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('학습지 초기화: 확인 창에 "학습지", 과목·단원·용지·시작 쪽·글꼴 기본값, 학습지 탭 그대로, 명렬표 수합 설정은 그대로',
     /학습지 설정/.test(rmsg2) && rb.subj === '' && rb.uName === '' && rb.paper === 'A4' && rb.start === 1 && rb.tFont === '한컴 윤고딕 240' && rb.inp === '' && rb.kind === 'ws' && rb.ws && rb.title === '학습지 초기화 확인용', [rmsg2, rb]);
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
+
+  // ===== 이 PC에 없는 글꼴은 목록에서 빼기(여기 샌드박스엔 목록 글꼴이 하나도 없음) =====
+  const rf = await openDevice(browser, '글꼴없는PC', T1, { realFonts: true });
+  await rf.page.click('#rail-forms-btn'); await rf.page.waitForTimeout(1500);
+  const fl = await rf.page.evaluate(() => { const o = (id) => [...document.getElementById(id).options].map(x => x.textContent); return { t: o('fm-tfont'), b: o('fm-bfont'), cur: fmCfg().tFont }; });
+  check('이 PC에 없는 글꼴은 목록에서 빠짐 — 지금 고른 글꼴만 "(이 PC에 없음)"으로 남고 ✏️ 직접 입력은 늘 있음',
+    fl.t.length === 2 && fl.t[0] === fl.cur + ' (이 PC에 없음)' && fl.t[1] === '✏️ 직접 입력' && fl.b.length === 2, fl);
+  await rf.page.click('#fm-kind-switch [data-kind="ws"]'); await rf.page.waitForTimeout(400);
+  const wfl = await rf.page.evaluate(() => { const o = (id) => [...document.getElementById(id).options].map(x => x.textContent); return { t: o('ws-tfont'), num: o('ws-fp-num') }; });
+  check('학습지 글꼴 목록도 같음(부분별은 "머리·꼬리와 같게" + 직접 입력)', wfl.t.join("|") === "한컴 윤고딕 240 (이 PC에 없음)|✏️ 직접 입력" && wfl.num.join('|') === '머리·꼬리와 같게|✏️ 직접 입력', wfl);
 
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
