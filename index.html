@@ -13052,15 +13052,32 @@
   const WS_ICONS = [
     ['chem', '화학', '<path d="M34 14h16M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="#E9EEF1" ' + WS_K + '/><path d="M27 58h30l5 12a6 6 0 0 1-5 8H27a6 6 0 0 1-5-8z" fill="#EF5350"/><path d="M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="none" ' + WS_K + '/><rect x="72" y="22" width="14" height="54" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M74 50h10v19a5 5 0 0 1-10 0z" fill="#FFCA28"/><rect x="72" y="22" width="14" height="54" rx="7" fill="none" ' + WS_K + '/><rect x="94" y="30" width="14" height="46" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M96 54h10v15a5 5 0 0 1-10 0z" fill="#42A5F5"/><rect x="94" y="30" width="14" height="46" rx="7" fill="none" ' + WS_K + '/><circle cx="36" cy="66" r="3" fill="#263238"/><circle cx="56" cy="8" r="3" fill="none" stroke="#263238" stroke-width="3"/>'],
     ['phys', '물리', '<ellipse cx="60" cy="45" rx="44" ry="15" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(60 60 45)" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(-60 60 45)" fill="none" ' + WS_K + '/><circle cx="60" cy="45" r="9" fill="#FF7043" ' + WS_K + '/><circle cx="104" cy="45" r="5" fill="#42A5F5"/><circle cx="38" cy="83" r="5" fill="#42A5F5"/><circle cx="38" cy="7" r="5" fill="#42A5F5"/>'],
+    ['phys2', '물리(자석)', '<path d="M28 12v38a32 32 0 0 0 64 0V12H72v38a12 12 0 0 1-24 0V12z" fill="#EF5350" ' + WS_K + '/><path d="M28 12h20v14H28zM72 12h20v14H72z" fill="#ECEFF1" ' + WS_K + '/><path d="M16 18H4M116 18h-12M18 6l-8-5M102 6l8-5" ' + WS_K + '/>'],
+    ['phys3', '물리(전구)', '<path d="M60 6a26 26 0 0 0-16 46c4 4 6 8 6 12h20c0-4 2-8 6-12A26 26 0 0 0 60 6z" fill="#FFEE58" ' + WS_K + '/><rect x="48" y="64" width="24" height="16" rx="3" fill="#B0BEC5" ' + WS_K + '/><path d="M50 72h20M52 38l8 10 8-10M60 48v16" fill="none" ' + WS_K + '/><path d="M14 32h12M94 32h12M24 8l8 8M96 8l-8 8" ' + WS_K + '/>'],
+    ['phys4', '물리(진자)', '<path d="M18 8h84" ' + WS_K + ' stroke-width="7"/><path d="M60 8v60" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M30 66Q60 86 90 66" fill="none" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M60 8l28 54" ' + WS_K + '/><circle cx="90" cy="66" r="12" fill="#42A5F5" ' + WS_K + '/>'],
     ['bio', '생명과학', '<path d="M20 80C20 40 50 12 100 10c0 50-28 72-70 70z" fill="#66BB6A" ' + WS_K + '/><path d="M24 78C44 58 64 40 92 18M46 58h18M56 46l2-14M70 34h12" fill="none" ' + WS_K + '/>'],
     ['earth', '지구과학', '<circle cx="88" cy="22" r="11" fill="#FFCA28" ' + WS_K + '/><path d="M6 80l30-48 18 26 14-18 26 40z" fill="#8D6E63" ' + WS_K + '/><path d="M28 45l8-13 8 12-8 4z" fill="#FFFFFF" ' + WS_K + '/><path d="M6 80h108" ' + WS_K + '/>'],
     ['sci', '과학', '<circle cx="50" cy="40" r="26" fill="#E3F2FD" ' + WS_K + '/><path d="M70 60l26 26" ' + WS_K + ' stroke-width="9"/><path d="M38 46l8-14 8 10 8-6" fill="none" ' + WS_K + '/><circle cx="96" cy="14" r="4" fill="#FFCA28"/><circle cx="14" cy="76" r="4" fill="#EF5350"/>'],
     ['math', '수학', '<rect x="14" y="10" width="44" height="34" rx="6" fill="#42A5F5" ' + WS_K + '/><rect x="62" y="10" width="44" height="34" rx="6" fill="#FFCA28" ' + WS_K + '/><rect x="14" y="48" width="44" height="34" rx="6" fill="#66BB6A" ' + WS_K + '/><rect x="62" y="48" width="44" height="34" rx="6" fill="#EF5350" ' + WS_K + '/>' + WS_T(36, 38, '+', 30, '#fff') + WS_T(84, 38, '−', 30) + WS_T(36, 76, '×', 30, '#fff') + WS_T(84, 76, '÷', 30, '#fff')],
+    ['math2', '수학(자·각도기)', '<path d="M10 82V12l62 70z" fill="#FFCA28" ' + WS_K + '/><path d="M22 70V42l26 28z" fill="#FFFFFF" ' + WS_K + '/><path d="M60 82a28 28 0 0 1 56 0z" fill="#81D4FA" ' + WS_K + '/><path d="M88 82V68M70 64l6 6M106 64l-6 6" ' + WS_K + '/>'],
+    ['math3', '수학(그래프)', '<rect x="6" y="4" width="108" height="82" rx="8" fill="#E8F5E9" ' + WS_K + '/><path d="M16 76h90M26 82V12" fill="none" ' + WS_K + '/><path d="M30 70C48 70 52 22 72 22s28 26 32 38" fill="none" stroke="#EF5350" stroke-width="6" stroke-linecap="round"/><circle cx="72" cy="22" r="6" fill="#42A5F5" ' + WS_K + '/>'],
+    ['math4', '수학(π·√)', '<rect x="8" y="8" width="104" height="74" rx="10" fill="#EDE7F6" ' + WS_K + '/>' + WS_T(36, 64, 'π', 46, '#5E35B1') + '<path d="M62 50h6l8 18 12-44h20" fill="none" ' + WS_K + '/>' + WS_T(98, 62, 'x', 24) + ''],
     ['kor', '국어', '<path d="M10 20c18-6 34-6 50 4 16-10 32-10 50-4v58c-18-6-34-6-50 4-16-10-32-10-50-4z" fill="#FFF8E1" ' + WS_K + '/><path d="M60 24v58" ' + WS_K + '/><path d="M20 36h28M20 48h28M72 36h28M72 48h20" stroke="#90A4AE" stroke-width="3" stroke-linecap="round"/><path d="M84 54l20-34 8 5-20 34-10 5z" fill="#EF5350" ' + WS_K + '/>'],
+    ['kor2', '국어(붓)', '<path d="M94 4l14 14-40 40-14-14z" fill="#A1887F" ' + WS_K + '/><path d="M54 44l14 14c-6 10-22 16-34 14 0-14 8-24 20-28z" fill="#263238" ' + WS_K + '/><path d="M8 82c16-10 30-2 46-8" fill="none" stroke="#263238" stroke-width="7" stroke-linecap="round"/>'],
+    ['kor3', '국어(원고지)', '<rect x="8" y="10" width="104" height="70" rx="4" fill="#FFF8E1" ' + WS_K + '/><path d="M34 10v70M60 10v70M86 10v70M8 45h104" stroke="#E57373" stroke-width="2.5"/>' + WS_T(21, 37, '가', 20) + WS_T(47, 37, '나', 20) + WS_T(73, 37, '다', 20) + WS_T(21, 72, '라', 20) + ''],
+    ['kor4', '국어(말)', '<path d="M60 8C32 8 10 24 10 44c0 12 8 22 20 28l-4 14 18-10c5 1 10 2 16 2 28 0 50-16 50-34S88 8 60 8z" fill="#FFCCBC" ' + WS_K + '/>' + WS_T(60, 56, '가나', 30, '#D84315') + ''],
     ['eng', '영어', '<path d="M12 14h96a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H48L28 82V66H12a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6z" fill="#E3F2FD" ' + WS_K + '/>' + WS_T(60, 52, 'ABC', 30, '#1E88E5')],
     ['soc', '사회', '<circle cx="60" cy="45" r="36" fill="#81D4FA" ' + WS_K + '/><path d="M36 22c10 4 6 16 16 18s4 14 14 14M70 12c-4 10 8 12 6 22s14 6 16 16" fill="none" ' + WS_K + '/><path d="M24 45h72M60 9c-14 20-14 52 0 72M60 9c14 20 14 52 0 72" fill="none" stroke="#263238" stroke-width="2.5"/>'],
+    ['geo', '지리(지도)', '<path d="M6 24l34-10 40 10 34-10v58l-34 10-40-10-34 10z" fill="#C5E1A5" ' + WS_K + '/><path d="M40 14v58M80 24v58" fill="none" ' + WS_K + '/><path d="M60 4a16 16 0 0 0-16 16c0 14 16 30 16 30s16-16 16-30A16 16 0 0 0 60 4z" fill="#EF5350" ' + WS_K + '/><circle cx="60" cy="20" r="6" fill="#FFFFFF" ' + WS_K + '/>'],
+    ['geo2', '지리(나침반)', '<circle cx="60" cy="45" r="38" fill="#ECEFF1" ' + WS_K + '/><circle cx="60" cy="45" r="29" fill="none" stroke="#90A4AE" stroke-width="3"/><path d="M60 16l10 29H50z" fill="#EF5350" ' + WS_K + '/><path d="M60 74l10-29H50z" fill="#FFFFFF" ' + WS_K + '/><circle cx="60" cy="45" r="4" fill="#263238"/>'],
+    ['law', '일반사회(법)', '<path d="M60 12v62M20 22h80" ' + WS_K + '/><path d="M20 22L8 52M20 22l12 30M100 22L88 52M100 22l12 30" ' + WS_K + ' stroke-width="3"/><path d="M4 52a16 10 0 0 0 32 0zM84 52a16 10 0 0 0 32 0z" fill="#FFCA28" ' + WS_K + '/><circle cx="60" cy="10" r="6" fill="#FFCA28" ' + WS_K + '/><path d="M42 84h36l-8-10H50z" fill="#8D6E63" ' + WS_K + '/>'],
+    ['pol', '정치(투표)', '<rect x="46" y="6" width="28" height="38" rx="2" fill="#FFFFFF" ' + WS_K + '/><path d="M52 22l6 6 10-12" fill="none" stroke="#EF5350" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="40" width="88" height="44" rx="4" fill="#42A5F5" ' + WS_K + '/><path d="M40 40h40" stroke="#263238" stroke-width="7" stroke-linecap="round"/>'],
+    ['econ', '경제', '<rect x="12" y="58" width="16" height="26" fill="#90CAF9" ' + WS_K + '/><rect x="36" y="44" width="16" height="40" fill="#90CAF9" ' + WS_K + '/><rect x="60" y="30" width="16" height="54" fill="#90CAF9" ' + WS_K + '/><path d="M12 44l26-18 18 10 30-26M74 10h12v12" fill="none" stroke="#EF5350" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="98" cy="66" r="17" fill="#FFCA28" ' + WS_K + '/>' + WS_T(98, 74, '₩', 20) + ''],
     ['hist', '역사', '<path d="M18 30L60 10l42 20z" fill="#FFCA28" ' + WS_K + '/><path d="M24 34h72M30 38v32M48 38v32M72 38v32M90 38v32M18 76h84M14 84h92" fill="none" ' + WS_K + '/>'],
+    ['hist2', '역사(두루마리)', '<rect x="22" y="14" width="76" height="62" fill="#FFF3E0" ' + WS_K + '/><path d="M40 28v34M54 28v34M68 28v34M82 28v22" stroke="#5D4037" stroke-width="4" stroke-linecap="round"/><rect x="12" y="6" width="96" height="13" rx="6.5" fill="#A1887F" ' + WS_K + '/><rect x="12" y="71" width="96" height="13" rx="6.5" fill="#A1887F" ' + WS_K + '/>'],
+    ['hist3', '역사(모래시계)', '<path d="M36 10c0 22 20 28 20 35S36 58 36 80h48c0-22-20-28-20-35s20-13 20-35z" fill="#E3F2FD" ' + WS_K + '/><path d="M44 76c4-12 12-16 16-16s12 4 16 16zM48 22h24c-4 8-10 12-12 16-2-4-8-8-12-16z" fill="#FFCA28"/><path d="M28 8h64M28 82h64" ' + WS_K + ' stroke-width="7"/>'],
     ['ethic', '윤리', '<path d="M60 80S14 54 14 30a20 20 0 0 1 46-10 20 20 0 0 1 46 10c0 24-46 50-46 50z" fill="#F48FB1" ' + WS_K + '/><path d="M96 8v12M90 14h12M18 70v8M14 74h8" ' + WS_K + '/>'],
+    ['ethic2', '윤리(생각)', '<circle cx="50" cy="50" r="32" fill="#E1BEE7" ' + WS_K + '/>' + WS_T(50, 66, '?', 44, '#6A1B9A') + '<circle cx="92" cy="18" r="10" fill="#E1BEE7" ' + WS_K + '/><circle cx="106" cy="40" r="5" fill="#E1BEE7" ' + WS_K + '/>'],
     ['music', '음악', '<path d="M42 66V18l56-10v48" fill="none" ' + WS_K + '/><path d="M42 30l56-10" ' + WS_K + ' stroke-width="7"/><ellipse cx="32" cy="68" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/><ellipse cx="88" cy="58" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/>'],
     ['art', '미술', '<path d="M60 8C30 8 8 26 8 48s18 34 34 30c10-2 6-14 16-16s16 6 26 2c18-6 30-18 26-34C106 18 86 8 60 8z" fill="#FFE0B2" ' + WS_K + '/><circle cx="34" cy="34" r="7" fill="#EF5350"/><circle cx="58" cy="24" r="7" fill="#FFCA28"/><circle cx="82" cy="30" r="7" fill="#42A5F5"/><circle cx="30" cy="56" r="7" fill="#66BB6A"/>'],
     ['pe', '체육', '<circle cx="60" cy="45" r="36" fill="#FF8A3D" ' + WS_K + '/><path d="M24 45h72M60 9v72M34 20c12 14 12 36 0 50M86 20c-12 14-12 36 0 50" fill="none" ' + WS_K + '/>'],
@@ -13071,24 +13088,22 @@
   ];
   // 과목명으로 아이콘 고르기(직접 고르면 그대로)
   const WS_ICON_WORDS = [['chem', '화학'], ['phys', '물리'], ['bio', '생명|생물'], ['earth', '지구'], ['math', '수학|미적|기하|확률|통계'], ['kor', '국어|문학|독서|화법|작문|언어'],
-    ['eng', '영어|English'], ['hist', '역사|한국사|세계사|동아시아'], ['soc', '사회|지리|경제|정치|법|통합사회'], ['ethic', '윤리|도덕|철학'], ['music', '음악'], ['art', '미술'],
+    ['eng', '영어|English'], ['hist', '역사|한국사|세계사|동아시아'], ['geo', '지리|여행'], ['econ', '경제|금융'], ['law', '법|정치'], ['soc', '사회|통합사회'], ['ethic', '윤리|도덕|철학'], ['music', '음악'], ['art', '미술'],
     ['pe', '체육|운동|스포츠'], ['info', '정보|컴퓨터|프로그래밍|AI|인공지능'], ['tech', '기술|가정|공학'], ['hanja', '한문'], ['lang', '일본어|중국어|독일어|프랑스어|스페인어|러시아어|아랍어|베트남어'], ['sci', '과학|탐구|실험']];
   function wsAutoIcon(subj) { const s = String(subj || ''); const hit = WS_ICON_WORDS.find(function(w) { return new RegExp(w[1]).test(s); }); return hit ? hit[0] : 'sci'; }
   function wsIconSvg(k, w, h) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"' + (w ? ' width="' + w + '" height="' + h + '"' : '') + '>' + ic[2] + '</svg>' : ''; }
   const WS_DEFAULT = {
     uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
-    paper: 'B4', land: false, mT: 14, mB: 8, mL: 14, mR: 16, start: 1, colsN: 1, note: true, noteW: 44, theme: 'mint',
+    paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15, start: 1, colsN: 1, colLine: true, note: true, noteW: 44, theme: 'mint',
     tFont: '경기천년제목 Bold', bFont: '경기천년바탕 Bold', bSize: 10, // 원본 학습지 글꼴(머리·꼬리 / 본문)
   };
-  const WS_NUM_FONT = '함초롬돋움'; // 쪽 번호(원본처럼)
-  // 부분별 글꼴(비우면 머리·꼬리 글꼴, 쪽 번호는 함초롬돋움)
+  // 부분별 글꼴(비우면 머리·꼬리 글꼴)
   const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
   // 그 부분에 쓸 글꼴: { n: 미리보기용 이름, h: 한글 파일에 적을 이름 } — 직접 입력한 이름은 적은 그대로
   function wsFont(c, part) {
     let n, cu;
     if (part === 'body') { n = c.bFont; cu = c.bFontC; }
     else if (c.fp[part]) { n = c.fp[part]; cu = c.fpC[part]; }
-    else if (part === 'num') { n = WS_NUM_FONT; cu = false; }
     else { n = c.tFont; cu = c.tFontC; }
     return { n: n, h: cu ? n : fmHwpFont(n) };
   }
@@ -13101,8 +13116,8 @@
     const c = Object.assign({}, WS_DEFAULT, v);
     if (c.school == null) { const el = document.getElementById('ms-cfg-school'); c.school = (el && el.value) || ''; } // 처음엔 월간일정표의 학교명
     ['uNo', 'uName', 'sNo', 'sName', 'subj', 'cls', 'school', 'outline'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
-    if (!FM_PAPERS[c.paper]) c.paper = 'B4';
-    c.land = !!c.land; c.note = c.note !== false;
+    if (!FM_PAPERS[c.paper]) c.paper = 'A4';
+    c.land = !!c.land; c.note = c.note !== false; c.colLine = c.colLine !== false;
     ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, WS_DEFAULT[k]); });
     c.start = Math.round(ntNum(c.start, 1, 999, 1)); c.gap = Math.round(ntNum(c.gap, 0, 20, 2));
     c.colsN = c.colsN === 2 || c.colsN === '2' ? 2 : 1;
@@ -13237,7 +13252,7 @@
       const inner = first ? lines.map(function(x) {
         return '<div style="' + F('body') + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + txt(x) + '</div>';
       }).join('') : '';
-      return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-rule:0.12mm solid #ccc;' : '') + '">' + inner + '</div>';
+      return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm;' + (c.colLine ? ' column-rule:0.12mm solid #bbb;' : '') : '') + '">' + inner + '</div>';
     };
     const sheet = function(n, first) {
       return '<div class="fm-sheet ws-sheet" data-page="' + n + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm;">' + band + note + body(first) + foot(n) + '</div>';
@@ -13267,7 +13282,10 @@
     }).join('') + '<span class="fm-sep" style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></span>' +
       [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="wsSet({ land: ' + o[0] + ' }, true)"', o[1]); }).join('');
     document.querySelectorAll('#ws-margins input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c[inp.dataset.k]; });
-    document.getElementById('ws-colsn').innerHTML = '다단 ' + [1, 2].map(function(n) { return chip(c.colsN === n, 'data-v="' + n + '" onclick="wsSet({ colsN: ' + n + ' }, true)"', n + '단'); }).join('');
+    document.getElementById('ws-colsn').innerHTML = '다단 ' + [1, 2].map(function(n) { return chip(c.colsN === n, 'data-v="' + n + '" onclick="wsSet({ colsN: ' + n + ' }, true)"', n + '단'); }).join('') +
+      (c.colsN > 1 ? '<span class="nt-muted" style="margin-left:6px;">가운데 선</span>' + [[true, '있음'], [false, '없음']].map(function(o) {
+        return chip(c.colLine === o[0], 'data-cl="' + (o[0] ? 1 : 0) + '" onclick="wsSet({ colLine: ' + o[0] + ' }, true)"', o[1], '두 단 사이 세로선');
+      }).join('') : '');
     document.getElementById('ws-note').innerHTML = 'NOTE 칸 ' + chip(c.note, 'data-note="1" onclick="wsSet({ note: true }, true)"', '넣기') + chip(!c.note, 'data-note="0" onclick="wsSet({ note: false }, true)"', '빼기') +
       (c.note ? '<span class="nt-muted" style="margin-left:6px;">너비</span>' + [[36, '좁게'], [44, '보통'], [54, '넓게']].map(function(o) { return chip(c.noteW === o[0], 'data-nw="' + o[0] + '" onclick="wsSet({ noteW: ' + o[0] + ' }, true)"', o[1], o[0] + 'mm'); }).join('') : '');
     document.getElementById('ws-theme').innerHTML = '색 ' + WS_THEMES.map(function(t) {
@@ -13293,7 +13311,7 @@
       return '<div class="nt-row fm-fontrow"><span class="fm-fl">' + x[1] + '</span><select id="ws-fp-' + x[0] + '" class="mini-select" onchange="wsOnFontPick(\'' + x[0] + '\', this.value)"></select></div>' +
         '<input type="text" id="ws-fp-' + x[0] + '-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="' + x[1] + ' 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom(\'' + x[0] + '\', this.value)">';
     }).join('');
-    WS_FPARTS.forEach(function(x) { fillSel('ws-fp-' + x[0], 'ws-fp-' + x[0] + '-custom', c.fp[x[0]] || '', c.fpC[x[0]], x[0] === 'num' ? '함초롬돋움 (원본처럼)' : '머리·꼬리와 같게'); });
+    WS_FPARTS.forEach(function(x) { fillSel('ws-fp-' + x[0], 'ws-fp-' + x[0] + '-custom', c.fp[x[0]] || '', c.fpC[x[0]], '머리·꼬리와 같게'); });
     if (Object.keys(c.fp).length) document.getElementById('ws-fparts').open = true;
     wsFontMsg(c);
   }
@@ -13438,7 +13456,7 @@
     const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
       .replace(/<hp:pagePr [^>]*>/, function(m) { return m.replace(/landscape="\w+"/, 'landscape="' + (c.land ? 'NARROWLY' : 'WIDELY') + '"').replace(/ width="\d+"/, ' width="' + hu(L.pw) + '"').replace(/ height="\d+"/, ' height="' + hu(L.ph) + '"'); })
       .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="' + hu(L.headH) + '" footer="' + hu(L.footH) + '" gutter="0" left="' + hu(c.mL) + '" right="' + hu(c.mR + (L.note ? L.note.w + 4 : 0)) + '" top="' + hu(c.mT) + '" bottom="' + hu(c.mB) + '"/>');
-    const colPr = '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="' + c.colsN + '" sameSz="1" sameGap="' + (c.colsN > 1 ? hu(8) : 0) + '">' + (c.colsN > 1 ? '<hp:colLine type="SOLID" width="0.12 mm" color="#BBBBBB"/>' : '') + '</hp:colPr></hp:ctrl>';
+    const colPr = '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="' + c.colsN + '" sameSz="1" sameGap="' + (c.colsN > 1 ? hu(8) : 0) + '">' + (c.colsN > 1 && c.colLine ? '<hp:colLine type="SOLID" width="0.12 mm" color="#BBBBBB"/>' : '') + '</hp:colPr></hp:ctrl>';
     const ctrls = secPr + colPr + hf('header', 1, 'BOTH', bandXml + noteXml + T(''), L.headH) + hf('footer', 2, 'ODD', footTbl(true) + T(''), L.footH) + hf('footer', 3, 'EVEN', footTbl(false) + T(''), L.footH) +
       '<hp:ctrl><hp:newNum num="' + c.start + '" numType="PAGE"/></hp:ctrl>';
     const lines = wsLines(c);

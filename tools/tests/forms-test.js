@@ -597,6 +597,12 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const W = t1.page;
   await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(400);
   check('학습지 탭: 학습지 입력칸이 보이고 명렬표 칸·엑셀 버튼은 숨김', await W.isVisible('#ws-grid') && !(await W.isVisible('#fm-grid')) && !(await W.isVisible('#fm-xlsx-btn')) && (await cfgOf(t1)).kind === 'ws');
+  const wsDef = await W.evaluate(() => { const c = wsCfg(); return { paper: c.paper, m: [c.mT, c.mB, c.mL, c.mR].join(), w: document.querySelector('#fm-pages .ws-sheet').style.width, num: wsFont(c, 'num').h, t: wsFont(c, 'uno').h,
+    numOpt: document.querySelector('#ws-fp-num option').textContent }; });
+  check('학습지 기본: A4, 여백 모두 15mm, 쪽 번호 글꼴은 머리·꼬리와 같게', wsDef.paper === 'A4' && wsDef.m === '15,15,15,15' && wsDef.w === '210mm' && wsDef.num === wsDef.t && wsDef.numOpt === '머리·꼬리와 같게', wsDef);
+  // 아래 검사는 원본 학습지 모양(B4, 여백 위14·아래8·왼14·오른16)으로
+  await W.click('#ws-paper [data-paper="B4"]');
+  for (const [k, v] of [['mT', '14'], ['mB', '8'], ['mL', '14'], ['mR', '16']]) await setText(W, '#ws-margins input[data-k="' + k + '"]', v);
   await setText(W, '#ws-uno', '2'); await setText(W, '#ws-uname', '반응엔탈피와 화학 평형');
   await setText(W, '#ws-sno', '01'); await setText(W, '#ws-sname', '반응엔탈피와 열화학 반응식');
   await setText(W, '#ws-subj', '화학Ⅱ'); await setText(W, '#ws-cls', '화학이랑 놀자'); await setText(W, '#ws-school', '부광고등학교');
@@ -620,7 +626,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
   check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 16 = 227mm)', !noNote.note && Math.abs(noNote.bw - 227) < 0.01, noNote);
   await W.click('#ws-note [data-note="1"]'); await W.click('#ws-colsn [data-v="2"]'); await W.waitForTimeout(200);
-  check('2단 + NOTE: 본문이 두 단', await W.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .ws-body')).columnCount) === '2');
+  check('2단 + NOTE: 본문이 두 단, 가운데 선 있음(기본)', await W.evaluate(() => { const cs = getComputedStyle(document.querySelector('#fm-pages .ws-body')); return cs.columnCount === '2' && cs.columnRuleStyle === 'solid'; }));
+  await W.click('#ws-colsn [data-cl="0"]'); await W.waitForTimeout(200);
+  const noLine = await W.evaluate(async () => ({ rule: getComputedStyle(document.querySelector('#fm-pages .ws-body')).columnRuleStyle, cfg: wsCfg().colLine,
+    hwp: typeof JSZip === 'undefined' ? null : /<hp:colLine/.test(await (await JSZip.loadAsync(await wsBuildHwpx(wsCfg()))).file('Contents/section0.xml').async('string')) }));
+  check('가운데 선 "없음" → 미리보기·한글 파일 모두 선 없음', noLine.rule === 'none' && noLine.cfg === false && noLine.hwp !== true, noLine);
+  await W.click('#ws-colsn [data-cl="1"]'); await W.waitForTimeout(200);
+  const autoIc = await W.evaluate(() => ['한국지리', '정치와 법', '경제', '사회·문화', '생활과 윤리', '물리학Ⅰ', '확률과 통계'].map(wsAutoIcon).join());
+  check('아이콘 35개, 과목명 자동: 지리→지도, 정치와 법→저울, 경제→경제, 사회·문화→사회, 윤리, 물리, 수학', await W.evaluate(() => WS_ICONS.length) === 35 && autoIc === 'geo,law,econ,soc,ethic,phys,math', autoIc);
   if (JSZIP_JS) {
     const wz = await W.evaluate(async () => { const zip = await JSZip.loadAsync(await wsBuildHwpx(wsCfg())); const names = Object.keys(zip.files);
       const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string'), hpf = await zip.file('Contents/content.hpf').async('string');
@@ -638,9 +651,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const cp = (id) => { const x = head.match(new RegExp('<hh:charPr id="' + id + '"[\\s\\S]*?</hh:charPr>'))[0]; return { face: faces[x.match(/hangul="(\d+)"/)[1]], pt: +x.match(/height="(\d+)"/)[1] / 100, bold: x.includes('<hh:bold/>') }; };
       const runOf = (t) => cp(sec.match(new RegExp('<hp:run charPrIDRef="(\\d+)"><hp:t>' + t))[1]);
       return { school: runOf('부광고등학교'), subj: runOf('화학Ⅱ'), sName: runOf('반응엔탈피와 열화학 반응식'), h2: runOf('1\\. 반응엔탈피'), num: cp(sec.match(/<hp:run charPrIDRef="(\d+)"><hp:ctrl><hp:autoNum/)[1]) }; });
-    check('한글 파일 글꼴이 원본 학습지와 같음: 머리·꼬리 경기천년제목 Bold(진하게 겹치지 않음), 본문 경기천년바탕 Bold, 쪽 번호 함초롬돋움 16pt',
+    check('한글 파일 글꼴이 원본 학습지와 같음: 머리·꼬리 경기천년제목 Bold(진하게 겹치지 않음), 본문 경기천년바탕 Bold, 쪽 번호는 머리·꼬리와 같게 16pt',
       wf.school.face === '경기천년제목 Bold' && wf.school.pt === 9 && wf.subj.face === '경기천년제목 Bold' && !wf.subj.bold && wf.sName.face === '경기천년제목 Bold' && wf.sName.pt === 17 &&
-      wf.h2.face === '경기천년바탕 Bold' && !wf.h2.bold && wf.num.face === '함초롬돋움' && wf.num.pt === 16, wf);
+      wf.h2.face === '경기천년바탕 Bold' && !wf.h2.bold && wf.num.face === '경기천년제목 Bold' && wf.num.pt === 16, wf);
     check('한글 파일 위치는 머리말·꼬리말 문단 기준(종이 기준 쓰지 않음 — 한글이 여백만큼 밀어서), 머리 띠는 머리말 문단 바로 그 자리(0,0)', !wz.paperRel && /vertRelTo="PARA" horzRelTo="PARA"[^>]*vertOffset="0" horzOffset="0"/.test(wz.bandPos), wz.bandPos);
     // 크롬이 찾은 다른 이름("경기천년제목")이 설정에 저장돼 있어도 한글 파일엔 한글이 아는 "경기천년제목 Bold"로(예전엔 그대로 들어가 한글이 대체 글꼴로 그렸음)
     const alias = await W.evaluate(async () => { const keep = localStorage.getItem('fm-ws'); localStorage.setItem('fm-ws', JSON.stringify(Object.assign(JSON.parse(keep), { tFont: '경기천년제목' })));
