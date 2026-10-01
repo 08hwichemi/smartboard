@@ -51,7 +51,6 @@
     #app-shell { display: flex; height: 100vh; overflow: hidden; }
     #app-rail { width: 68px; flex: 0 0 auto; background: var(--card-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 5px; box-sizing: border-box; }
     #app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-    .rail-logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent-color); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; margin-bottom: 8px; }
     .rail-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 48px; padding: 9px 0; border-radius: 12px; cursor: pointer; color: var(--text-sub); text-decoration: none; }
     .rail-item:hover { background: var(--bg-color); color: var(--text-main); }
     .rail-item.active { background: var(--accent-soft); color: var(--accent-color); }
@@ -66,15 +65,14 @@
     #app-rail::-webkit-scrollbar { display: none; }
     @media (max-height: 860px) {
       #app-rail { gap: 0; padding: 6px 0; }
-      #app-rail .rail-logo { margin-bottom: 2px; }
       #app-rail .rail-item { padding: 4px 0; gap: 2px; flex-shrink: 0; }
       #app-rail .rail-sep { margin: 1px 0; }
-      #app-rail #app-version { padding-bottom: 3px !important; line-height: 1.15 !important; font-size: 10px !important; }
     }
 
     /* ===== 상단 바 ===== */
     .top-bar-row { flex: 0 0 auto; height: 70px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); }
     .main-title { font-size: 19px; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px; white-space: nowrap; }
+    .ver-badge { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; margin-right: 12px; }
     .credit-badge { padding: 4px 10px; border-radius: 6px; background: var(--text-main); color: var(--card-bg); font-size: 11px; font-weight: 700; letter-spacing: 0.2px;}
 
     .top-center-bar {
@@ -100,8 +98,12 @@
       .top-center-bar { gap: 7px; }
       .top-center-progress-track { width: 110px; }
     }
-    @media (max-width: 1300px) {
+    /* 저작권 표시 옆에 판 표시가 생겨서 노트북(1366) 화면에선 가운데 "지금 이 시간"이 잘렸음 → 1500px 아래에선 이름표·막대·배지를 줄임 */
+    @media (max-width: 1500px) {
       .tc-label { display: none; }
+      .top-center-progress-track { width: 52px; }
+      .credit-badge { font-size: 10px; padding: 3px 7px; }
+      .ver-badge { font-size: 10px; }
     }
 
     /* ===== 관리 바로가기 + 감독알림 줄 ===== */
@@ -1322,7 +1324,6 @@
 
 <div id="app-shell">
   <div id="app-rail">
-    <div class="rail-logo">부광</div>
     <div class="rail-item active" id="rail-home-btn" title="홈" onclick="goHome()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
@@ -1370,7 +1371,6 @@
       <div class="rail-label">결석계</div>
     </div>
     <div style="flex: 1;"></div>
-    <div style="text-align:center; font-size:11px; font-weight:700; color:var(--text-sub); padding-bottom:8px; line-height:1.4;" id="app-version">-</div>
     <div class="rail-item" id="rail-settings-btn" style="display:none;" title="관리자 설정" onclick="railToggle('rail-settings-btn', showSettingsPage)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
       <div class="rail-label">설정</div>
@@ -1382,6 +1382,7 @@
       <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
         <div class="main-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px; margin-right:5px; color:var(--accent-color);"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg>부광고 스마트보드</div>
         <div class="credit-badge" style="white-space:nowrap;">ⓒ 2026. 이용휘 All rights reserved.</div>
+        <div class="ver-badge" id="app-version" title="지금 쓰는 판">-</div>
       </div>
 
       <div class="top-center-bar">
@@ -3435,7 +3436,7 @@
   function paintVersion() {
     var m = /^(\d{4})-(\d{2})-(\d{2})\.(\d+)$/.exec(BUILD_ID);
     var el = document.getElementById('app-version');
-    if (el) el.innerHTML = m ? (m[1] + '<br>' + m[2] + '.' + m[3] + '<br>Ver.' + m[4]) : ('v' + BUILD_ID);
+    if (el) el.textContent = m ? (m[1] + '.' + m[2] + '.' + m[3] + ' Ver.' + m[4]) : ('v' + BUILD_ID); // 상단 저작권 표시 오른쪽에 한 줄로
     var mEl = document.getElementById('m-version-footer-text');
     if (mEl) mEl.innerText = BUILD_ID;
   }
