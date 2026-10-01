@@ -218,8 +218,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const names = await P.evaluate(() => [...document.querySelectorAll('#fm-pages table.fm-tbl tr')].slice(1, 3).map(tr => tr.cells[0].textContent + tr.cells[1].textContent));
   check('번호 순서대로 이름', names.join(',') === '1가나다,2라마바', names);
   console.log('    (왼쪽 설정 칸 높이 ' + await P.evaluate(() => document.getElementById('fm-left').scrollHeight) + 'px)');
-  await P.screenshot({ path: 'fm-left.png', clip: { x: 60, y: 60, width: 400, height: 940 } });
-  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 9999); await P.screenshot({ path: 'fm-left2.png', clip: { x: 60, y: 60, width: 400, height: 940 } });
+  await P.screenshot({ path: 'fm-left.png', clip: { x: 60, y: 60, width: 1540, height: 940 } });
+  await P.evaluate(() => document.getElementById('fm-left').scrollTop = 9999); await P.screenshot({ path: 'fm-left2.png', clip: { x: 60, y: 60, width: 1540, height: 940 } });
   await P.evaluate(() => document.getElementById('fm-left').scrollTop = 0);
   const lay = await P.evaluate(() => {
     const top = (id) => Math.round(document.getElementById(id).getBoundingClientRect().top);
@@ -233,6 +233,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   });
   check('글꼴은 제목 칸 바로 아래·내용 글꼴은 안내 칸 바로 아래(따로 글꼴 상자 없음)', lay.fontsInText && lay.order, lay);
   check('학번·비고·번갈아 회색은 한 줄, 정렬 6개는 두 개씩 세 줄, 줄 높이 버튼·직접 입력 한 줄', lay.opts === 3 && lay.optRows === 1 && lay.alRows === 3 && lay.alLabels === '제목|반·인원|안내|표 위치|표 제목칸|표 내용' && lay.rowhOne === 1, lay);
+  const colsAt = async (w, h) => { await P.setViewportSize({ width: w, height: h }); await P.waitForTimeout(300);
+    return P.evaluate(() => { const l = document.getElementById('fm-left'), sh = document.querySelector('#fm-pages .fm-sheet');
+      return { left: l.clientWidth, cols: new Set([...l.querySelectorAll('.fm-lcol')].map(c => Math.round(c.getBoundingClientRect().top))).size === 1 ? 2 : 1,
+        over: l.scrollWidth - l.clientWidth, sheet: Math.round(sh.getBoundingClientRect().width), h: l.scrollHeight }; }); };
+  const at1600 = await colsAt(1600, 1000), at1536 = await colsAt(1536, 730), at1366 = await colsAt(1366, 657);
+  console.log('    1600px', JSON.stringify(at1600), '1536px', JSON.stringify(at1536), '1366px', JSON.stringify(at1366));
+  check('넓은 화면은 설정 상자를 두 열로(1600·1536px), 노트북(1366px)은 한 열 — 미리보기 A4는 거의 제 크기(700px 넘게)', at1600.cols === 2 && at1536.cols === 2 && at1366.cols === 1 &&
+    [at1600, at1536, at1366].every(x => x.over <= 0 && x.sheet >= 700), [at1600, at1536, at1366]);
   await P.setViewportSize({ width: 1024, height: 700 }); await P.waitForTimeout(300);
   const nar = await P.evaluate(() => { const l = document.getElementById('fm-left'); return { over: l.scrollWidth - l.clientWidth, w: l.clientWidth,
     boxes: [...l.querySelectorAll('.nt-box')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.id) }; });
@@ -269,11 +277,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 다단
   await P.click('#fm-colsn [data-v="2"]'); await P.waitForTimeout(300);
   sh = await sheetsOf(P);
-  check('2단: 30명 반이 15명씩 두 표로 한 장', sh[1].tables.join() === '16,16' && sh.length === 2, sh.map(s => s.tables));
+  const colFill = await P.evaluate(() => { const s = document.querySelectorAll('#fm-pages .fm-sheet')[1], t = s.querySelector('table.fm-tbl'), r = s.getBoundingClientRect(), k = r.width / (210 * 3.78);
+    return (r.bottom - 15 * 3.78 * k - t.getBoundingClientRect().bottom) / k / 3.78; }); // 왼쪽 표 아래 남은 높이(mm)
+  check('2단: 한글처럼 왼쪽 단을 끝까지 채우고 나머지가 오른쪽(30명 → 18·12명, 한 장)', sh[1].tables.join() === '19,13' && sh.length === 2 && sh[1].fits && colFill < 12 + 2, [sh.map(s => s.tables), colFill]);
   const tw2 = await P.evaluate(() => parseFloat(document.querySelectorAll('#fm-pages table.fm-tbl')[2].style.width));
   check('2단 표 폭 = (180 − 단 사이 8) ÷ 2 = 86mm', Math.abs(tw2 - 86) < 0.01, tw2);
   await P.click('#fm-colsn [data-v="3"]'); await P.waitForTimeout(300);
-  check('3단: 10명씩 세 표', (await sheetsOf(P))[1].tables.join() === '11,11,11');
+  check('3단: 고르게 나누지 않고 왼쪽 단부터 채움(30명 → 18·12명, 셋째 단은 빔)', (await sheetsOf(P))[1].tables.join() === '19,13');
   await P.click('#fm-colsn [data-v="1"]'); await P.waitForTimeout(300);
 
   // 큰 반(45명) + 넓은 줄 → 다음 쪽으로, 다음 쪽은 표만
@@ -354,8 +364,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       };
     }, buf.toString('base64'));
     check('XML이 올바르고 필요한 파일이 다 있음(미리보기 그림은 뺌)', !info.bad && ['mimetype', 'version.xml', 'Contents/header.xml', 'Contents/section0.xml', 'Contents/content.hpf', 'META-INF/container.xml', 'settings.xml'].every(n => info.names.includes(n)) && !info.names.includes('Preview/PrvImage.png'), info.names);
-    check('표: 3반 × 2단 = 6개, 반 인원 + 머리 줄, 머리 줄 반복, 칸 폭 합 = 표 폭', info.tables.length === 6 && info.tables.map(t => t[0]).join() === '4,3,16,16,24,23' && info.tables.every(t => t[2] === t[0] && t[1] === 6 && t[3] === '1') && info.cellWidthsOk, info.tables);
-    check('다단: 제목은 1단, 표는 2단 / 반마다 새 쪽(쪽 나누기 2), 둘째 표는 단 나누기(3)', info.secPr === 1 && info.cols.join() === '1,2,1,2,1,2' && info.pageBreaks === 2 && info.colBreaks === 3, info);
+    check('표: 3반 2단(왼쪽 단부터 채움 — 5명 반은 한 표) = 5개, 반 인원 + 머리 줄, 머리 줄 반복, 칸 폭 합 = 표 폭', info.tables.length === 5 && info.tables.map(t => t[0]).join() === '6,19,13,24,23' && info.tables.every(t => t[2] === t[0] && t[1] === 6 && t[3] === '1') && info.cellWidthsOk, info.tables);
+    check('다단: 제목은 1단, 표는 2단 / 반마다 새 쪽(쪽 나누기 2), 둘째 표는 단 나누기(2)', info.secPr === 1 && info.cols.join() === '1,2,1,2,1,2' && info.pageBreaks === 2 && info.colBreaks === 2, info);
     check('글꼴이 header에 들어감(함초롬바탕 = 기본에 있음, 맑은 고딕 추가) + 개수 맞음', info.fonts.includes('함초롬바탕') && info.fonts.includes('맑은 고딕') && info.fontCnt === info.fonts.length && info.counts.every(c => c[0] === c[1]), info);
     check('글자: 제목·이름·학번이 들어감, 미리보기 글도', info.hasTitle && info.hasName && info.hasId && /현장체험학습/.test(info.prv), info);
   }
