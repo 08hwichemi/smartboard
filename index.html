@@ -903,9 +903,13 @@
     /* ===== 📄 양식 만들기 ===== */
     #fm-body { display: flex; flex: 1; min-height: 0; }
     /* 왼쪽 설정 칸: 오른쪽 미리보기에 A4 한 장(약 780px)을 남기고 나머지를 씀(320~720px). 넓으면 상자를 두 열로 → 세로 스크롤이 줄어듦 */
-    #fm-left { width: clamp(320px, calc(100% - 780px), 720px); flex: 0 0 auto; overflow-y: auto; padding: 14px; box-sizing: border-box; border-right: 1px solid var(--border-color); display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; gap: 12px; }
-    .fm-lcol { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-    .fm-lcol > * { flex-shrink: 0; }
+    #fm-left { width: clamp(320px, calc(100% - 780px), 720px); flex: 0 0 auto; overflow-y: auto; padding: 14px; box-sizing: border-box; border-right: 1px solid var(--border-color); container-type: inline-size; }
+    #fm-grid { display: flex; flex-direction: column; gap: 12px; }
+    #fm-grid > * { flex-shrink: 0; min-width: 0; }
+    /* 두 열: 왼쪽 열 = 명단·제목·안내·체크 칸, 오른쪽 열 = 배치·칸 너비·정렬. 같은 줄의 두 상자는 높이를 맞춰 위·아래 선이 가지런하게 */
+    @container (min-width: 600px) {
+      #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
+    }
     #fm-left textarea.lp-input { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
     #fm-left input[type="text"].lp-input { width: 100%; box-sizing: border-box; }
     #fm-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
@@ -2822,7 +2826,7 @@
   </div>
   <div id="fm-body">
     <div id="fm-left">
-      <div class="fm-lcol">
+      <div id="fm-grid">
       <div class="nt-box" id="fm-class-box">
         <div class="nt-title">🏫 명단 <span class="nt-muted" id="fm-count"></span></div>
         <div class="tab-switch" id="fm-src-switch" style="align-self:flex-start;">
@@ -2863,8 +2867,6 @@
           <label title="줄마다 번갈아 연한 회색 — 체크할 때 줄이 안 헷갈리게"><input type="checkbox" id="fm-zebra" onchange="fmSet({ zebra: this.checked }); fmRender();"> 줄 번갈아 회색</label>
         </div>
       </div>
-      </div>
-      <div class="fm-lcol">
       <div class="nt-box" id="fm-layout-box">
         <div class="nt-title">📐 배치</div>
         <div class="nt-row" id="fm-colsn"></div>

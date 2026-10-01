@@ -235,12 +235,20 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('학번·비고·번갈아 회색은 한 줄, 정렬 6개는 두 개씩 세 줄, 줄 높이 버튼·직접 입력 한 줄', lay.opts === 3 && lay.optRows === 1 && lay.alRows === 3 && lay.alLabels === '제목|반·인원|안내|표 위치|표 제목칸|표 내용' && lay.rowhOne === 1, lay);
   const colsAt = async (w, h) => { await P.setViewportSize({ width: w, height: h }); await P.waitForTimeout(300);
     return P.evaluate(() => { const l = document.getElementById('fm-left'), sh = document.querySelector('#fm-pages .fm-sheet');
-      return { left: l.clientWidth, cols: new Set([...l.querySelectorAll('.fm-lcol')].map(c => Math.round(c.getBoundingClientRect().top))).size === 1 ? 2 : 1,
+      const R = (id) => document.getElementById(id).getBoundingClientRect();
+      const pairs = [['fm-class-box', 'fm-layout-box'], ['fm-text-box', 'fm-width-box'], ['fm-cols-box', 'fm-align-box']];
+      const two = Math.round(R('fm-class-box').top) === Math.round(R('fm-layout-box').top);
+      return { left: l.clientWidth, cols: two ? 2 : 1,
+        even: !two || pairs.every(p => Math.abs(R(p[0]).top - R(p[1]).top) < 1 && Math.abs(R(p[0]).bottom - R(p[1]).bottom) < 1),
         over: l.scrollWidth - l.clientWidth, sheet: Math.round(sh.getBoundingClientRect().width), h: l.scrollHeight }; }); };
   const at1600 = await colsAt(1600, 1000), at1536 = await colsAt(1536, 730), at1366 = await colsAt(1366, 657);
   console.log('    1600px', JSON.stringify(at1600), '1536px', JSON.stringify(at1536), '1366px', JSON.stringify(at1366));
   check('넓은 화면은 설정 상자를 두 열로(1600·1536px), 노트북(1366px)은 한 열 — 미리보기 A4는 거의 제 크기(700px 넘게)', at1600.cols === 2 && at1536.cols === 2 && at1366.cols === 1 &&
     [at1600, at1536, at1366].every(x => x.over <= 0 && x.sheet >= 700), [at1600, at1536, at1366]);
+  check('두 열일 때 옆 상자끼리 위·아래 선이 맞음(명단↔배치, 제목·안내↔칸 너비, 체크 칸↔정렬)', at1600.even && at1536.even, [at1600, at1536]);
+  const at1920 = await colsAt(1920, 950);
+  await P.screenshot({ path: 'fm-1920.png' });
+  check('1920px: 두 열·상자 줄 맞음·왼쪽 칸 안에서 스크롤 없음', at1920.cols === 2 && at1920.even && at1920.h <= (await P.evaluate(() => document.getElementById('fm-left').clientHeight)), at1920);
   await P.setViewportSize({ width: 1024, height: 700 }); await P.waitForTimeout(300);
   const nar = await P.evaluate(() => { const l = document.getElementById('fm-left'); return { over: l.scrollWidth - l.clientWidth, w: l.clientWidth,
     boxes: [...l.querySelectorAll('.nt-box')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.id) }; });
