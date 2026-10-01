@@ -921,7 +921,35 @@
     .fm-sw.on { box-shadow: 0 0 0 2px var(--accent-color); }
     #fm-ln-color { width: 28px; height: 22px; padding: 0; border: 1px solid var(--border-color); border-radius: 6px; background: none; cursor: pointer; }
     /* 두 열: 왼쪽 열 = 명단·제목·안내·체크 칸, 오른쪽 열 = 배치·칸 너비·정렬. 같은 줄의 두 상자는 높이를 맞춰 위·아래 선이 가지런하게 */
+    #ws-grid { display: flex; flex-direction: column; gap: 12px; }
+    #ws-grid > * { flex-shrink: 0; min-width: 0; }
+    .ws-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .ws-row .lp-input { flex: 1; min-width: 0; }
+    .ws-lb { flex: 0 0 auto; width: 40px; color: var(--text-sub); }
+    #ws-grid .ws-no { flex: 0 0 52px; width: 52px; padding-left: 6px; padding-right: 2px; }
+    #ws-outline { resize: vertical; min-height: 90px; font-family: inherit; line-height: 1.5; }
+    #ws-icons { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+    .ws-ic { width: 40px; height: 36px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; padding: 2px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-sub); font-family: inherit; }
+    .ws-ic svg { width: 34px; height: 26px; }
+    .ws-ic.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    #ws-page-box .nt-chip, #ws-layout-box .nt-chip { padding: 3px 8px; }
+    #ws-paper, #ws-colsn, #ws-note, #ws-theme { gap: 4px; }
+    .fm-mgrid { display: grid; grid-template-columns: repeat(4, auto minmax(34px, 1fr)); gap: 4px; align-items: center; font-size: 12px; }
+    .fm-mgrid label { display: contents; }
+    .fm-mgrid .lp-input { width: 100%; padding-left: 5px; padding-right: 1px; }
+    .ws-sw { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; padding: 0; }
+    .ws-sw.on { box-shadow: 0 0 0 2px var(--accent-color); }
+    /* 학습지 미리보기(mm 절대 위치 — 한글 파일과 같은 계산) */
+    .fm-sheet.ws-sheet { position: relative; padding: 0; }
+    .ws-abs { position: absolute; box-sizing: border-box; }
+    .ws-band { border-collapse: collapse; table-layout: fixed; }
+    .ws-band td { padding: 0 1mm; overflow: hidden; white-space: nowrap; vertical-align: middle; line-height: 1.1; }
+    .ws-note { display: flex; align-items: center; justify-content: center; font-size: 10pt; color: #333; }
+    .ws-body { overflow: hidden; line-height: 1.6; }
+    .ws-body > div { break-inside: avoid; white-space: pre-wrap; }
+    .ws-foot { display: flex; align-items: flex-end; gap: 3mm; white-space: nowrap; }
     @container (min-width: 600px) {
+      #ws-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
       #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
     #fm-left textarea.lp-input { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
@@ -2833,7 +2861,8 @@
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📄 양식 만들기</div>
       <div class="tab-switch" id="fm-kind-switch">
-        <button class="tab-btn active" data-kind="roster">명렬표 수합</button>
+        <button class="tab-btn active" data-kind="roster" onclick="fmSetKind('roster')">명렬표 수합</button>
+        <button class="tab-btn" data-kind="ws" onclick="fmSetKind('ws')">학습지</button>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -2845,7 +2874,7 @@
   </div>
   <div id="fm-body">
     <div id="fm-left">
-      <div class="fm-guide"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 차례로 채우면 바로 만들어져요. <b class="fm-step opt">4</b>~<b class="fm-step opt">8</b>은 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="fm-guide"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 차례로 채우면 바로 만들어져요. <b class="fm-step opt">4</b>~<b class="fm-step opt">8</b>은 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
       <div id="fm-grid">
       <div class="nt-box" id="fm-class-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🏫 명단</span> <span class="nt-muted" id="fm-count"></span></div>
@@ -2924,6 +2953,51 @@
           <span id="fm-ln-colors"></span>
           <input type="color" id="fm-ln-color" title="다른 색 고르기" oninput="fmLnSet('c', this.value)">
         </div>
+      </div>
+      </div>
+      <div class="fm-guide" id="ws-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b> 단원·과목만 적으면 학습지 틀이 만들어져요. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 필요할 때만 — 내려받은 한글 파일에서 내용을 자유롭게 써 주세요.</div>
+      <div id="ws-grid" style="display:none;">
+      <div class="nt-box" id="ws-unit-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📚 단원</span> <span class="nt-muted">위 머리 띠에 나와요</span></div>
+        <div class="ws-row"><span class="ws-lb">대단원</span><input type="text" id="ws-uno" class="lp-input ws-no" placeholder="2" oninput="wsSet({ uNo: this.value })"><input type="text" id="ws-uname" class="lp-input" placeholder="반응엔탈피와 화학 평형" oninput="wsSet({ uName: this.value })"></div>
+        <div class="ws-row"><span class="ws-lb">소단원</span><input type="text" id="ws-sno" class="lp-input ws-no" placeholder="01" oninput="wsSet({ sNo: this.value })"><input type="text" id="ws-sname" class="lp-input" placeholder="반응엔탈피와 열화학 반응식" oninput="wsSet({ sName: this.value })"></div>
+        <div class="nt-muted">대단원은 짝수 쪽 아래에도 "○단원 …"으로 나와요.</div>
+      </div>
+      <div class="nt-box" id="ws-subj-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>🏷️ 과목</span> <span class="nt-muted">쪽 번호·학교명·과목명은 늘 나와요</span></div>
+        <div class="ws-row"><span class="ws-lb">과목명</span><input type="text" id="ws-subj" class="lp-input" placeholder="화학Ⅱ" oninput="wsSet({ subj: this.value }, true)"></div>
+        <div class="ws-row"><span class="ws-lb">수업명</span><input type="text" id="ws-cls" class="lp-input" placeholder="화학이랑 놀자 (없으면 비워 두세요)" oninput="wsSet({ cls: this.value })"></div>
+        <div class="ws-row"><span class="ws-lb">학교명</span><input type="text" id="ws-school" class="lp-input" placeholder="○○고등학교" oninput="wsSet({ school: this.value })"></div>
+        <div class="ws-row" style="align-items:flex-start;"><span class="ws-lb" style="padding-top:4px;">아이콘</span><div id="ws-icons"></div></div>
+      </div>
+      <div class="nt-box" id="ws-outline-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>📝 본문 제목 뼈대</span> <span class="nt-muted">비워도 돼요</span></div>
+        <textarea id="ws-outline" class="lp-input" rows="5" placeholder="한 줄에 제목 하나 — 앞의 번호 모양으로 크기가 정해져요&#10;1 반응엔탈피&#10;1. 반응엔탈피&#10;(1) 엔탈피&#10;① 모든 물질은 에너지를 가지고 있다." oninput="wsSet({ outline: this.value })"></textarea>
+        <div class="ws-row"><span class="ws-lb" style="width:auto;">제목 아래 빈 줄</span><input type="number" id="ws-gap" class="lp-input ws-no" min="0" max="20" step="1" oninput="wsSet({ gap: this.value })"><span class="nt-muted">줄</span></div>
+        <div class="nt-muted">"1 ○○" 대제목 · "1. ○○" 중제목 · "(1) ○○" 소제목 · "① ○○" 항목 — 한글에서 F6 스타일 "학습지 대제목…"으로 같은 모양을 이어 쓸 수 있어요.</div>
+      </div>
+      <div class="nt-box" id="ws-page-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
+        <div class="nt-row" id="ws-paper"></div>
+        <div id="ws-margins" class="fm-mgrid" title="여백(mm)">
+          <label>위<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mT" oninput="wsOnNum(this, 0, 40)"></label>
+          <label>아래<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mB" oninput="wsOnNum(this, 0, 40)"></label>
+          <label>왼쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mL" oninput="wsOnNum(this, 0, 40)"></label>
+          <label>오른쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mR" oninput="wsOnNum(this, 0, 40)"></label>
+        </div>
+        <div class="ws-row"><span class="ws-lb" style="width:auto;">시작 쪽 번호</span><input type="number" id="ws-start" class="lp-input ws-no" min="1" max="999" step="1" data-k="start" oninput="wsOnNum(this, 1, 999)"></div>
+      </div>
+      <div class="nt-box" id="ws-layout-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>📐 배치</span></div>
+        <div class="nt-row" id="ws-colsn"></div>
+        <div class="nt-row" id="ws-note"></div>
+        <div class="nt-row" id="ws-theme"></div>
+        <div class="nt-muted">NOTE 칸은 쪽마다 같은 자리에 깔리는 바탕 상자예요. 본문은 표가 아니라 글이라서 다음 쪽으로 자연스럽게 넘어가요.</div>
+      </div>
+      <div class="nt-box" id="ws-font-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
+        <div class="nt-row fm-fontrow"><span class="fm-fl">제목 글꼴</span><select id="ws-tfont" class="mini-select" onchange="wsOnFont('tFont', this.value)"></select></div>
+        <div class="nt-row fm-fontrow"><span class="fm-fl">본문 글꼴</span><select id="ws-bfont" class="mini-select" onchange="wsOnFont('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
       </div>
       </div>
     </div>
@@ -12171,6 +12245,7 @@
     c.colsN = Math.min(3, Math.max(1, parseInt(c.colsN) || 1));
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
     if (c.src !== 'manual') c.src = 'class';
+    if (c.kind !== 'ws') c.kind = 'roster';
     if (!c.colW || typeof c.colW !== 'object') c.colW = {};
     if (!v.aBd && v.aNm) c.aBd = v.aNm; // 예전 "이름 칸" 정렬을 "표 내용"으로
     FM_ALIGNS.forEach(function(a) { if (['L', 'C', 'R'].indexOf(c[a[0]]) < 0) c[a[0]] = FM_DEFAULT[a[0]]; });
@@ -12334,6 +12409,7 @@
   }
   function fmRender() {
     if (!fmIsOpen()) return;
+    if (fmCfg().kind === 'ws') { wsRender(); return; }
     const c = fmCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     const info = document.getElementById('fm-fit-info');
     const msg = fmEmptyMsg(c);
@@ -12493,6 +12569,8 @@
   // ----- 왼쪽 입력칸 -----
   function fmFillForm() {
     let c = fmCfg();
+    fmShowKind(c.kind);
+    if (c.kind === 'ws') { wsFillForm(); return; }
     // 처음엔 담임 반으로
     const t = window.currentTeacher;
     if (!c.rG && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) { fmSet({ rG: t.homeroom_grade, rCs: [t.homeroom_class] }); c = fmCfg(); }
@@ -12630,19 +12708,19 @@
       spec.borderFills.forEach(function(bfs) {
         const fill = bfs.fill;
         n++; bfIds.push(n);
-        add += '<hh:borderFill id="' + n + '" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>' +
+        add += '<hh:borderFill id="' + n + '" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="' + (bfs.slash ? 'CENTER' : 'NONE') + '" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>' +
           [['left', 'l'], ['right', 'r'], ['top', 't'], ['bottom', 'b']].map(function(k) {
             const p = bfs.s[k[1]];
             return '<hh:' + k[0] + 'Border type="' + HT[p.t] + '" width="' + (p.w === 1 ? '1.0' : String(p.w)) + ' mm" color="' + p.c + '"/>';
           }).join('') +
-          '<hh:diagonal type="NONE" width="0.12 mm" color="#000000"/>' +
+          '<hh:diagonal type="SOLID" width="' + (bfs.slash ? bfs.slash + ' mm' : '0.12 mm') + '" color="#000000"/>' +
           (fill ? '<hc:fillBrush><hc:winBrush faceColor="' + fill + '" hatchColor="#FF000000" alpha="0"/></hc:fillBrush>' : '') + '</hh:borderFill>';
       });
       return '<hh:borderFills itemCnt="' + n + '">' + body + add + '</hh:borderFills>';
     });
     const cpIds = append('charProperties', function(next) {
       return spec.charPrs.map(function(o) {
-        let s = cpTpl.replace(' id="0"', ' id="' + next() + '"').replace(/ height="\d+"/, ' height="' + Math.round(o.size * 100) + '"');
+        let s = cpTpl.replace(' id="0"', ' id="' + next() + '"').replace(/ height="\d+"/, ' height="' + Math.round(o.size * 100) + '"').replace(/ textColor="#\w+"/, ' textColor="' + (o.color || '#000000') + '"');
         s = s.replace(/<hh:fontRef [^>]*\/>/, '<hh:fontRef ' + FM_LANGS.map(function(l) { return l.toLowerCase() + '="' + ((fontIds[l] || {})[o.font] || 0) + '"'; }).join(' ') + '/>');
         s = s.replace('<hh:bold/>', '');
         if (o.bold) s = s.replace('<hh:underline ', '<hh:bold/><hh:underline ');
@@ -12654,7 +12732,9 @@
         let s = ppTpl.replace(' id="0"', ' id="' + next() + '"').replace(/horizontal="\w+"/, 'horizontal="' + o.align + '"');
         // 한글 2016 이후 단위(hp:case)와 예전 단위(hp:default, 값이 두 배) 둘 다 맞춘다
         const fix = function(part, k) {
-          return part.replace(/<hc:prev value="-?\d+"/, '<hc:prev value="' + Math.round((o.before || 0) * 100 * k) + '"')
+          return part.replace(/<hc:intent value="-?\d+"/, '<hc:intent value="' + Math.round((o.indent || 0) * 100 * k) + '"')
+            .replace(/<hc:left value="-?\d+"/, '<hc:left value="' + Math.round((o.left || 0) * 100 * k) + '"')
+            .replace(/<hc:prev value="-?\d+"/, '<hc:prev value="' + Math.round((o.before || 0) * 100 * k) + '"')
             .replace(/<hc:next value="-?\d+"/, '<hc:next value="' + Math.round((o.after || 0) * 100 * k) + '"')
             .replace(/<hh:lineSpacing type="\w+" value="\d+"/, '<hh:lineSpacing type="PERCENT" value="' + o.line + '"');
         };
@@ -12662,7 +12742,19 @@
         return s;
       }).join('');
     });
-    return { xml: xml, cp: cpIds, pp: ppIds, bf: bfIds };
+    // 스타일: [{ name, pp: paraPrs 순번, cp: charPrs 순번, next: styles 순번 }] → 기존 스타일 뒤에 이어 붙임
+    const stIds = [];
+    if (spec.styles && spec.styles.length) {
+      xml = xml.replace(/<hh:styles itemCnt="(\d+)">([\s\S]*?)<\/hh:styles>/, function(m, cnt, body) {
+        const base = parseInt(cnt);
+        const add = spec.styles.map(function(st, i) {
+          stIds.push(base + i);
+          return '<hh:style id="' + (base + i) + '" type="PARA" name="' + fmX(st.name) + '" engName="" paraPrIDRef="' + ppIds[st.pp] + '" charPrIDRef="' + cpIds[st.cp] + '" nextStyleIDRef="' + (base + (st.next != null ? st.next : i)) + '" langID="1042" lockForm="0"/>';
+        }).join('');
+        return '<hh:styles itemCnt="' + (base + spec.styles.length) + '">' + body + add + '</hh:styles>';
+      });
+    }
+    return { xml: xml, cp: cpIds, pp: ppIds, bf: bfIds, st: stIds };
   }
   async function fmBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
@@ -12772,6 +12864,7 @@
     return ((c.title || '명렬표').trim() + ' ' + cls).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
   }
   async function fmDownloadHwpx() {
+    if (fmCfg().kind === 'ws') return wsDownloadHwpx();
     const c = fmCfg(), msg = fmEmptyMsg(c);
     if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     const btn = document.getElementById('fm-hwpx-btn');
@@ -12860,16 +12953,397 @@
     } finally { btn.disabled = false; }
   }
   function fmPrint() {
-    const c = fmCfg(), msg = fmEmptyMsg(c);
+    const c = fmCfg(), msg = c.kind === 'ws' ? '' : fmEmptyMsg(c);
     if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     fmRender();
     let st = document.getElementById('fm-page-style');
     if (!st) { st = document.createElement('style'); st.id = 'fm-page-style'; document.head.appendChild(st); }
-    const pg = fmPage(c);
+    const pg = c.kind === 'ws' ? wsLayout(wsCfg()) : fmPage(c);
     st.textContent = '@media print { @page { size: ' + pg.w + 'mm ' + pg.h + 'mm; margin: 0; } }';
     const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
     window.print();
+  }
+
+  // ===== 📄 양식: 학습지 틀 =====
+  // 선생님이 내용을 한글에서 자유롭게 쓰도록 "틀"만 만든다: 위 머리 띠(아이콘·대단원·소단원·사선·수업명·과목명),
+  // 아래 쪽 번호(홀수 쪽: 학교명·과목명 / 짝수 쪽: 대단원), 오른쪽 NOTE 칸, 본문 제목 뼈대(한글 스타일로).
+  // NOTE 칸·머리 띠·꼬리 띠는 머리말/꼬리말 안의 "종이 기준" 개체라 쪽마다 같은 자리에 나오고, 본문은 그냥 글이라
+  // 다음 쪽으로 자연스럽게 넘어간다(예전 학습지는 쪽마다 큰 표 한 칸에 본문을 넣어 쪽을 넘기기 어려웠음).
+  const WS_CFG_KEY = 'fm-ws';
+  const WS_THEMES = [
+    ['mint', '민트', '#DBF4EE', '#B0CFBA'], ['sky', '하늘', '#DCEBFA', '#A9C8E8'], ['lemon', '노랑', '#FFF4CC', '#E6D08A'],
+    ['pink', '분홍', '#FBE3EA', '#E5B2C1'], ['lilac', '보라', '#ECE4F8', '#C6B4E4'], ['gray', '회색', '#EEEEEE', '#C4C4C4'],
+  ];
+  // 과목 아이콘(가로 120 × 세로 90, 굵은 테두리 + 단색 채우기). 한글 파일에는 PNG로 그려서 넣는다.
+  const WS_K = 'stroke="#263238" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  const WS_T = function(x, y, t, size, fill) { return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="800" text-anchor="middle" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif" fill="' + (fill || '#263238') + '">' + t + '</text>'; };
+  const WS_ICONS = [
+    ['chem', '화학', '<path d="M34 14h16M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="#E9EEF1" ' + WS_K + '/><path d="M27 58h30l5 12a6 6 0 0 1-5 8H27a6 6 0 0 1-5-8z" fill="#EF5350"/><path d="M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="none" ' + WS_K + '/><rect x="72" y="22" width="14" height="54" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M74 50h10v19a5 5 0 0 1-10 0z" fill="#FFCA28"/><rect x="72" y="22" width="14" height="54" rx="7" fill="none" ' + WS_K + '/><rect x="94" y="30" width="14" height="46" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M96 54h10v15a5 5 0 0 1-10 0z" fill="#42A5F5"/><rect x="94" y="30" width="14" height="46" rx="7" fill="none" ' + WS_K + '/><circle cx="36" cy="66" r="3" fill="#263238"/><circle cx="56" cy="8" r="3" fill="none" stroke="#263238" stroke-width="3"/>'],
+    ['phys', '물리', '<ellipse cx="60" cy="45" rx="44" ry="15" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(60 60 45)" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(-60 60 45)" fill="none" ' + WS_K + '/><circle cx="60" cy="45" r="9" fill="#FF7043" ' + WS_K + '/><circle cx="104" cy="45" r="5" fill="#42A5F5"/><circle cx="38" cy="83" r="5" fill="#42A5F5"/><circle cx="38" cy="7" r="5" fill="#42A5F5"/>'],
+    ['bio', '생명과학', '<path d="M20 80C20 40 50 12 100 10c0 50-28 72-70 70z" fill="#66BB6A" ' + WS_K + '/><path d="M24 78C44 58 64 40 92 18M46 58h18M56 46l2-14M70 34h12" fill="none" ' + WS_K + '/>'],
+    ['earth', '지구과학', '<circle cx="88" cy="22" r="11" fill="#FFCA28" ' + WS_K + '/><path d="M6 80l30-48 18 26 14-18 26 40z" fill="#8D6E63" ' + WS_K + '/><path d="M28 45l8-13 8 12-8 4z" fill="#FFFFFF" ' + WS_K + '/><path d="M6 80h108" ' + WS_K + '/>'],
+    ['sci', '과학', '<circle cx="50" cy="40" r="26" fill="#E3F2FD" ' + WS_K + '/><path d="M70 60l26 26" ' + WS_K + ' stroke-width="9"/><path d="M38 46l8-14 8 10 8-6" fill="none" ' + WS_K + '/><circle cx="96" cy="14" r="4" fill="#FFCA28"/><circle cx="14" cy="76" r="4" fill="#EF5350"/>'],
+    ['math', '수학', '<rect x="14" y="10" width="44" height="34" rx="6" fill="#42A5F5" ' + WS_K + '/><rect x="62" y="10" width="44" height="34" rx="6" fill="#FFCA28" ' + WS_K + '/><rect x="14" y="48" width="44" height="34" rx="6" fill="#66BB6A" ' + WS_K + '/><rect x="62" y="48" width="44" height="34" rx="6" fill="#EF5350" ' + WS_K + '/>' + WS_T(36, 38, '+', 30, '#fff') + WS_T(84, 38, '−', 30) + WS_T(36, 76, '×', 30, '#fff') + WS_T(84, 76, '÷', 30, '#fff')],
+    ['kor', '국어', '<path d="M10 20c18-6 34-6 50 4 16-10 32-10 50-4v58c-18-6-34-6-50 4-16-10-32-10-50-4z" fill="#FFF8E1" ' + WS_K + '/><path d="M60 24v58" ' + WS_K + '/><path d="M20 36h28M20 48h28M72 36h28M72 48h20" stroke="#90A4AE" stroke-width="3" stroke-linecap="round"/><path d="M84 54l20-34 8 5-20 34-10 5z" fill="#EF5350" ' + WS_K + '/>'],
+    ['eng', '영어', '<path d="M12 14h96a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H48L28 82V66H12a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6z" fill="#E3F2FD" ' + WS_K + '/>' + WS_T(60, 52, 'ABC', 30, '#1E88E5')],
+    ['soc', '사회', '<circle cx="60" cy="45" r="36" fill="#81D4FA" ' + WS_K + '/><path d="M36 22c10 4 6 16 16 18s4 14 14 14M70 12c-4 10 8 12 6 22s14 6 16 16" fill="none" ' + WS_K + '/><path d="M24 45h72M60 9c-14 20-14 52 0 72M60 9c14 20 14 52 0 72" fill="none" stroke="#263238" stroke-width="2.5"/>'],
+    ['hist', '역사', '<path d="M18 30L60 10l42 20z" fill="#FFCA28" ' + WS_K + '/><path d="M24 34h72M30 38v32M48 38v32M72 38v32M90 38v32M18 76h84M14 84h92" fill="none" ' + WS_K + '/>'],
+    ['ethic', '윤리', '<path d="M60 80S14 54 14 30a20 20 0 0 1 46-10 20 20 0 0 1 46 10c0 24-46 50-46 50z" fill="#F48FB1" ' + WS_K + '/><path d="M96 8v12M90 14h12M18 70v8M14 74h8" ' + WS_K + '/>'],
+    ['music', '음악', '<path d="M42 66V18l56-10v48" fill="none" ' + WS_K + '/><path d="M42 30l56-10" ' + WS_K + ' stroke-width="7"/><ellipse cx="32" cy="68" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/><ellipse cx="88" cy="58" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/>'],
+    ['art', '미술', '<path d="M60 8C30 8 8 26 8 48s18 34 34 30c10-2 6-14 16-16s16 6 26 2c18-6 30-18 26-34C106 18 86 8 60 8z" fill="#FFE0B2" ' + WS_K + '/><circle cx="34" cy="34" r="7" fill="#EF5350"/><circle cx="58" cy="24" r="7" fill="#FFCA28"/><circle cx="82" cy="30" r="7" fill="#42A5F5"/><circle cx="30" cy="56" r="7" fill="#66BB6A"/>'],
+    ['pe', '체육', '<circle cx="60" cy="45" r="36" fill="#FF8A3D" ' + WS_K + '/><path d="M24 45h72M60 9v72M34 20c12 14 12 36 0 50M86 20c-12 14-12 36 0 50" fill="none" ' + WS_K + '/>'],
+    ['info', '정보', '<rect x="10" y="10" width="100" height="58" rx="6" fill="#263238" ' + WS_K + '/><path d="M46 68l-4 14h36l-4-14M34 82h52" fill="none" ' + WS_K + '/>' + WS_T(60, 50, '&lt;/&gt;', 26, '#66BB6A')],
+    ['tech', '기술·가정', '<path d="M14 44L44 18l30 26v38H14z" fill="#FFE082" ' + WS_K + '/><rect x="36" y="58" width="16" height="24" fill="#8D6E63" ' + WS_K + '/><circle cx="88" cy="56" r="14" fill="#B0BEC5" ' + WS_K + '/><path d="M88 34v8M88 70v8M66 56h8M102 56h8M73 41l6 6M97 65l6 6M73 71l6-6M97 47l6-6" ' + WS_K + '/><circle cx="88" cy="56" r="5" fill="#fff" ' + WS_K + '/>'],
+    ['hanja', '한문', '<rect x="22" y="6" width="76" height="78" rx="8" fill="#FFEBEE" ' + WS_K + '/>' + WS_T(60, 64, '漢', 50, '#C62828')],
+    ['lang', '제2외국어', '<path d="M8 12h56a5 5 0 0 1 5 5v28a5 5 0 0 1-5 5H34L20 62V50H8a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5z" fill="#FFF59D" ' + WS_K + '/><path d="M112 34H58a5 5 0 0 0-5 5v28a5 5 0 0 0 5 5h28l14 12V72h12a5 5 0 0 0 5-5V39a5 5 0 0 0-5-5z" fill="#B3E5FC" ' + WS_K + '/>' + WS_T(36, 40, 'Hi', 22) + WS_T(85, 62, 'あ', 22)],
+  ];
+  // 과목명으로 아이콘 고르기(직접 고르면 그대로)
+  const WS_ICON_WORDS = [['chem', '화학'], ['phys', '물리'], ['bio', '생명|생물'], ['earth', '지구'], ['math', '수학|미적|기하|확률|통계'], ['kor', '국어|문학|독서|화법|작문|언어'],
+    ['eng', '영어|English'], ['hist', '역사|한국사|세계사|동아시아'], ['soc', '사회|지리|경제|정치|법|통합사회'], ['ethic', '윤리|도덕|철학'], ['music', '음악'], ['art', '미술'],
+    ['pe', '체육|운동|스포츠'], ['info', '정보|컴퓨터|프로그래밍|AI|인공지능'], ['tech', '기술|가정|공학'], ['hanja', '한문'], ['lang', '일본어|중국어|독일어|프랑스어|스페인어|러시아어|아랍어|베트남어'], ['sci', '과학|탐구|실험']];
+  function wsAutoIcon(subj) { const s = String(subj || ''); const hit = WS_ICON_WORDS.find(function(w) { return new RegExp(w[1]).test(s); }); return hit ? hit[0] : 'sci'; }
+  function wsIconSvg(k, w, h) { const ic = WS_ICONS.find(function(x) { return x[0] === k; }); return ic ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"' + (w ? ' width="' + w + '" height="' + h + '"' : '') + '>' + ic[2] + '</svg>' : ''; }
+  const WS_DEFAULT = {
+    uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 2,
+    paper: 'B4', land: false, mT: 10, mB: 10, mL: 14, mR: 14, start: 1, colsN: 1, note: true, noteW: 44, theme: 'mint',
+    tFont: '맑은 고딕', bFont: '맑은 고딕', bSize: 10.5,
+  };
+  function wsCfg() {
+    let v = {};
+    try { v = JSON.parse(localStorage.getItem(WS_CFG_KEY) || '{}') || {}; } catch (e) {}
+    if (!v || typeof v !== 'object') v = {};
+    const c = Object.assign({}, WS_DEFAULT, v);
+    if (c.school == null) { const el = document.getElementById('ms-cfg-school'); c.school = (el && el.value) || ''; } // 처음엔 월간일정표의 학교명
+    ['uNo', 'uName', 'sNo', 'sName', 'subj', 'cls', 'school', 'outline'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
+    if (!FM_PAPERS[c.paper]) c.paper = 'B4';
+    c.land = !!c.land; c.note = c.note !== false;
+    ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, WS_DEFAULT[k]); });
+    c.start = Math.round(ntNum(c.start, 1, 999, 1)); c.gap = Math.round(ntNum(c.gap, 0, 20, 2));
+    c.colsN = c.colsN === 2 || c.colsN === '2' ? 2 : 1;
+    c.noteW = ntNum(c.noteW, 30, 70, 44); c.bSize = ntNum(c.bSize, 8, 14, 10.5);
+    if (!WS_THEMES.some(function(t) { return t[0] === c.theme; })) c.theme = 'mint';
+    if (c.icon !== 'auto' && c.icon !== '' && !WS_ICONS.some(function(x) { return x[0] === c.icon; })) c.icon = 'auto';
+    c.iconK = c.icon === 'auto' ? wsAutoIcon(c.subj) : c.icon;
+    return c;
+  }
+  function wsSet(patch, refill) {
+    let cur = {};
+    try { cur = JSON.parse(localStorage.getItem(WS_CFG_KEY) || '{}') || {}; } catch (e) {}
+    try { localStorage.setItem(WS_CFG_KEY, JSON.stringify(Object.assign(cur, patch))); } catch (e) {}
+    scheduleBackupWrite();
+    if (refill) wsFillForm();
+    fmRender();
+  }
+  function wsOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; wsSet(o); }
+  function wsOnFont(key, v) {
+    const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
+    const cands = e.c || [e.n], o = {};
+    o[key] = cands.find(function(f) { return ntFontInstalled(f); }) || cands[0];
+    wsSet(o);
+  }
+  // 본문 제목 뼈대: 줄 앞 번호 모양으로 수준을 정한다
+  function wsLevel(line) {
+    const t = line.trim();
+    if (!t) return 'blank';
+    if (/^\d+\.\s*/.test(t)) return 'h2';
+    if (/^\d+\s+\S/.test(t)) return 'h1';
+    if (/^\(\d+\)/.test(t)) return 'h3';
+    if (/^[①-⑳]/.test(t)) return 'it';
+    return 'p';
+  }
+  const WS_DEPTH = { h1: 1, h2: 2, h3: 3, it: 4, p: 4, blank: 9 };
+  // 줄 목록 + 제목 아래 빈 줄(바로 아래가 더 깊은 제목이면 띄우지 않음)
+  function wsLines(c) {
+    const src = c.outline.split(/\r?\n/).map(function(l) { return l.replace(/\s+$/, ''); });
+    while (src.length && !src[src.length - 1].trim()) src.pop();
+    const out = [];
+    src.forEach(function(l, i) {
+      const lv = wsLevel(l);
+      out.push({ lv: lv, t: l.trim() });
+      if (lv === 'blank') return;
+      const nx = src[i + 1] != null ? wsLevel(src[i + 1]) : null;
+      if (nx && nx !== 'blank' && WS_DEPTH[nx] > WS_DEPTH[lv] && lv !== 'it' && lv !== 'p') return;
+      for (let k = 0; k < c.gap; k++) out.push({ lv: 'blank', t: '' });
+    });
+    return out;
+  }
+  function wsSizes(c) { const b = c.bSize; return { h1: b + 3, h2: b + 1.5, h3: b + 0.5, it: b, p: b, blank: b }; }
+  // 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다
+  function wsLayout(c) {
+    const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1];
+    const headH = 22, footH = 10, bandH = 16, gapN = 4;
+    const W = w - c.mL - c.mR;
+    const noteW = c.note ? Math.min(c.noteW, W * 0.4) : 0;
+    const bodyTop = c.mT + headH, bodyBot = h - c.mB - footH;
+    const iconW = c.iconK ? 22 : 0, numW = 12, slashW = 9, rightW = Math.min(62, Math.max(40, W * 0.26));
+    return {
+      w: w, h: h, pw: p[0], ph: p[1], W: W, headH: headH, footH: footH, bandH: bandH,
+      bodyX: c.mL, bodyTop: bodyTop, bodyW: W - (noteW ? noteW + gapN : 0), bodyH: bodyBot - bodyTop,
+      note: noteW ? { x: c.mL + W - noteW, y: bodyTop, w: noteW, h: bodyBot - bodyTop, th: 7 } : null,
+      band: { x: c.mL, y: c.mT, iconW: iconW, numW: numW, slashW: slashW, rightW: rightW, titleW: W - iconW - numW - slashW - rightW },
+      foot: { x: c.mL, y: h - c.mB - 7, w: W, h: 7 },
+    };
+  }
+  function wsTheme(c) { return WS_THEMES.find(function(t) { return t[0] === c.theme; }) || WS_THEMES[0]; }
+  function wsFootText(c, n) { return n % 2 ? [c.school, c.subj] : [(c.uNo ? c.uNo + '단원 ' : '') + c.uName]; }
+
+  // ----- 미리보기(홀수 쪽·짝수 쪽 두 장) -----
+  function wsRender() {
+    const c = wsCfg(), L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c);
+    const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
+    const F = function(f) { return fmFontCss(f); };
+    const abs = function(x, y, w, h) { return 'left:' + x + 'mm; top:' + y + 'mm; width:' + w + 'mm;' + (h != null ? ' height:' + h + 'mm;' : ''); };
+    const b = L.band, line = '0.6mm solid #000';
+    const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F(c.tFont) + '"><colgroup>' +
+      (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
+      '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
+      '<td style="font-size:11pt; font-weight:700; text-align:center;">' + ntEsc(c.uNo) + '</td><td style="font-size:11pt; font-weight:700;">' + ntEsc(c.uName) + '</td>' +
+      '<td rowspan="2" class="ws-slash"></td>' +
+      '<td rowspan="2" style="border-top:' + line + '; vertical-align:' + (c.cls ? 'top' : 'middle') + '; padding-top:1mm;">' +
+      (c.cls ? '<div style="font-size:11pt; color:#8A8A8A;">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:17pt; font-weight:800; text-align:right;">' + ntEsc(c.subj) + '</div></td></tr>' +
+      '<tr style="height:9.5mm;"><td style="font-size:15pt; font-weight:800; text-align:center; border-bottom:' + line + ';">' + ntEsc(c.sNo) + '</td><td style="font-size:15pt; font-weight:800; border-bottom:' + line + ';">' + ntEsc(c.sName) + '</td></tr></table>';
+    const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';' + F(c.tFont) + '">NOTE</div>' +
+      '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
+    const foot = function(n) {
+      const t = wsFootText(c, n);
+      return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F(c.bFont) + (n % 2 ? ' justify-content:space-between;' : '') + '">' +
+        '<span style="font-size:' + (n % 2 ? 9 : 12) + 'pt; font-weight:' + (n % 2 ? 400 : 800) + ';">' + n + '</span>' +
+        (n % 2 ? '<span style="font-size:10pt;">' + ntEsc(t[0]) + ' <b style="font-size:11pt;">' + ntEsc(t[1]) + '</b></span>' : '<span style="font-size:10pt; font-weight:700;">' + ntEsc(t[0]) + '</span>') + '</div>';
+    };
+    const lines = wsLines(c);
+    const body = function(first) {
+      const st = { h1: 'font-weight:800;', h2: 'font-weight:800;', h3: 'font-weight:700; padding-left:2mm;', it: 'padding-left:5mm;', p: 'padding-left:5mm;', blank: '' };
+      const inner = first ? lines.map(function(x) {
+        return '<div style="' + F(x.lv === 'it' || x.lv === 'p' || x.lv === 'blank' ? c.bFont : c.tFont) + ' font-size:' + sz[x.lv] + 'pt; ' + st[x.lv] + (x.lv === 'h1' ? ' margin-top:2mm;' : x.lv === 'h2' ? ' margin-top:1.5mm;' : '') + '">' + (ntEsc(x.t) || '&nbsp;') + '</div>';
+      }).join('') : '';
+      return '<div class="ws-abs ws-body" style="' + abs(L.bodyX, L.bodyTop, L.bodyW, L.bodyH) + (c.colsN > 1 ? ' column-count:2; column-gap:8mm; column-rule:0.12mm solid #ccc;' : '') + '">' + inner + '</div>';
+    };
+    const sheet = function(n, first) {
+      return '<div class="fm-sheet ws-sheet" data-page="' + n + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm;">' + band + note + body(first) + foot(n) + '</div>';
+    };
+    box.innerHTML = sheet(c.start, true) + sheet(c.start + 1, false);
+    const slashCss = 'linear-gradient(to top right, transparent calc(50% - 0.25mm), #000 calc(50% - 0.25mm), #000 calc(50% + 0.25mm), transparent calc(50% + 0.25mm))';
+    box.querySelectorAll('.ws-slash').forEach(function(td) { td.style.background = slashCss; });
+    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + c.start + '쪽(홀수 쪽 모양)·' + (c.start + 1) + '쪽(짝수 쪽 모양) 미리보기';
+    document.getElementById('fm-fit-info').textContent = '';
+    fmFitPreview();
+  }
+
+  // ----- 왼쪽 입력칸 -----
+  function wsFillForm() {
+    const c = wsCfg();
+    const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    setVal('ws-uno', c.uNo); setVal('ws-uname', c.uName); setVal('ws-sno', c.sNo); setVal('ws-sname', c.sName);
+    setVal('ws-subj', c.subj); setVal('ws-cls', c.cls); setVal('ws-school', c.school); setVal('ws-outline', c.outline);
+    setVal('ws-gap', c.gap); setVal('ws-start', c.start); setVal('ws-bsize', c.bSize);
+    document.getElementById('ws-icons').innerHTML =
+      '<button class="ws-ic' + (c.icon === 'auto' ? ' on' : '') + '" data-ic="auto" title="과목명을 보고 자동으로 (지금: ' + ((WS_ICONS.find(function(x) { return x[0] === wsAutoIcon(c.subj); }) || [])[1] || '') + ')" onclick="wsSet({ icon: \'auto\' }, true)">자동</button>' +
+      WS_ICONS.map(function(ic) { return '<button class="ws-ic' + (c.icon === ic[0] ? ' on' : '') + '" data-ic="' + ic[0] + '" title="' + ic[1] + '" onclick="wsSet({ icon: \'' + ic[0] + '\' }, true)">' + wsIconSvg(ic[0]) + '</button>'; }).join('') +
+      '<button class="ws-ic' + (c.icon === '' ? ' on' : '') + '" data-ic="" title="아이콘 없이" onclick="wsSet({ icon: \'\' }, true)">없음</button>';
+    const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
+    document.getElementById('ws-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
+      return chip(c.paper === k, 'data-paper="' + k + '" onclick="wsSet({ paper: \'' + k + '\' }, true)"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
+    }).join('') + '<span class="fm-sep" style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></span>' +
+      [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="wsSet({ land: ' + o[0] + ' }, true)"', o[1]); }).join('');
+    document.querySelectorAll('#ws-margins input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c[inp.dataset.k]; });
+    document.getElementById('ws-colsn').innerHTML = '다단 ' + [1, 2].map(function(n) { return chip(c.colsN === n, 'data-v="' + n + '" onclick="wsSet({ colsN: ' + n + ' }, true)"', n + '단'); }).join('');
+    document.getElementById('ws-note').innerHTML = 'NOTE 칸 ' + chip(c.note, 'data-note="1" onclick="wsSet({ note: true }, true)"', '넣기') + chip(!c.note, 'data-note="0" onclick="wsSet({ note: false }, true)"', '빼기') +
+      (c.note ? '<span class="nt-muted" style="margin-left:6px;">너비</span>' + [[36, '좁게'], [44, '보통'], [54, '넓게']].map(function(o) { return chip(c.noteW === o[0], 'data-nw="' + o[0] + '" onclick="wsSet({ noteW: ' + o[0] + ' }, true)"', o[1], o[0] + 'mm'); }).join('') : '');
+    document.getElementById('ws-theme').innerHTML = '색 ' + WS_THEMES.map(function(t) {
+      return '<button class="ws-sw' + (c.theme === t[0] ? ' on' : '') + '" data-theme="' + t[0] + '" title="' + t[1] + '" style="background:' + t[2] + '; border-color:' + t[3] + ';" onclick="wsSet({ theme: \'' + t[0] + '\' }, true)"></button>';
+    }).join('');
+    [['tFont', 'ws-tfont'], ['bFont', 'ws-bfont']].forEach(function(k) {
+      const sel = document.getElementById(k[1]), e = fmFontEntry(c[k[0]]);
+      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('');
+      sel.value = e ? e.n : '맑은 고딕';
+    });
+  }
+
+  // ----- 한글 파일 -----
+  // 과목 아이콘을 PNG로(가로 480 × 세로 360)
+  function wsIconPng(k) {
+    return new Promise(function(res, rej) {
+      const img = new Image();
+      img.onload = function() {
+        const cv = document.createElement('canvas'); cv.width = 480; cv.height = 360;
+        cv.getContext('2d').drawImage(img, 0, 0, 480, 360);
+        cv.toBlob(function(b) { b ? b.arrayBuffer().then(res, rej) : rej(new Error('png')); }, 'image/png');
+      };
+      img.onerror = function() { rej(new Error('icon')); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(wsIconSvg(k, 480, 360));
+    });
+  }
+  async function wsBuildHwpx(c) {
+    if (typeof JSZip === 'undefined') throw new Error('JSZip');
+    const L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c), hu = fmHu;
+    const zip = await JSZip.loadAsync(await fmSkeleton());
+    const NONE = fmLn('none', 0.12), K = function(w) { return fmLn('solid', w); };
+    const bfS = function(o) { return { fill: null, s: Object.assign({ l: NONE, r: NONE, t: NONE, b: NONE }, o || {}), slash: null }; };
+    const BF = { none: 0, bottom: 1, top: 2, slash: 3, note: 4 };
+    const nl = fmLn('solid', 0.3, th[3]);
+    const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null }];
+    const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
+      fonts: [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i; }),
+      charPrs: [
+        { size: 11, font: c.tFont, bold: true },              // 0 대단원
+        { size: 15, font: c.tFont, bold: true },              // 1 소단원
+        { size: 11, font: c.tFont, color: '#8A8A8A' },        // 2 수업명
+        { size: 17, font: c.tFont, bold: true },              // 3 과목명
+        { size: 9, font: c.bFont },                           // 4 꼬리(홀수 쪽 번호)
+        { size: 10, font: c.bFont },                          // 5 꼬리 글
+        { size: 11, font: c.bFont, bold: true },              // 6 꼬리 굵게(과목명·짝수 쪽)
+        { size: 12, font: c.bFont, bold: true },              // 7 짝수 쪽 번호
+        { size: 10, font: c.tFont, color: '#333333' },        // 8 NOTE
+        { size: sz.h1, font: c.tFont, bold: true },           // 9 대제목
+        { size: sz.h2, font: c.tFont, bold: true },           // 10 중제목
+        { size: sz.h3, font: c.tFont, bold: true },           // 11 소제목
+        { size: sz.p, font: c.bFont },                        // 12 항목·본문
+      ],
+      paraPrs: [
+        { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
+        { align: 'JUSTIFY', line: 160, before: 8, after: 2 },             // 3 대제목
+        { align: 'JUSTIFY', line: 160, before: 5, after: 1 },             // 4 중제목
+        { align: 'JUSTIFY', line: 160, before: 2, left: 6 },              // 5 소제목
+        { align: 'JUSTIFY', line: 160, left: 14 },                        // 6 항목
+        { align: 'JUSTIFY', line: 160, left: 14 },                        // 7 본문
+      ],
+      borderFills: borderFills,
+      styles: [
+        { name: '학습지 대제목', pp: 3, cp: 9, next: 4 }, { name: '학습지 중제목', pp: 4, cp: 10, next: 4 }, { name: '학습지 소제목', pp: 5, cp: 11, next: 4 },
+        { name: '학습지 항목', pp: 6, cp: 12, next: 3 }, { name: '학습지 본문', pp: 7, cp: 12, next: 4 },
+      ],
+    });
+    zip.file('Contents/header.xml', H.xml);
+    const CP = H.cp, PP = H.pp, ST = H.st, BFI = function(k) { return H.bf[BF[k]]; };
+    const LV = { h1: [3, 9, 0], h2: [4, 10, 1], h3: [5, 11, 2], it: [6, 12, 3], p: [7, 12, 4], blank: [7, 12, 4] }; // 문단 모양·글자 모양·스타일 순번
+
+    let pid = 0, oid = 2000;
+    const P = function(pp, runs, st) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="' + (st || 0) + '" pageBreak="0" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
+    const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
+    const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
+    const sub = function(inner, vAlign, w, h) { return '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="' + (vAlign || 'CENTER') + '" linkListIDRef="0" linkListNextIDRef="0" textWidth="' + (w || 0) + '" textHeight="' + (h || 0) + '" hasTextRef="0" hasNumRef="0">' + inner + '</hp:subList>'; };
+    // 종이 기준으로 띄운 개체 위치(mm)
+    const floatPos = function(x, y) { return '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="0" allowOverlap="1" holdAnchorAndSO="0" vertRelTo="PAPER" horzRelTo="PAPER" vertAlign="TOP" horzAlign="LEFT" vertOffset="' + hu(y) + '" horzOffset="' + hu(x) + '"/>'; };
+    const tc = function(o) {
+      return '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + o.bf + '">' + sub(o.paras, o.v, 0, 0) +
+        '<hp:cellAddr colAddr="' + o.c + '" rowAddr="' + o.r + '"/><hp:cellSpan colSpan="' + (o.cs || 1) + '" rowSpan="' + (o.rs || 1) + '"/><hp:cellSz width="' + o.w + '" height="' + o.h + '"/>' +
+        '<hp:cellMargin left="' + hu(o.ml != null ? o.ml : 1) + '" right="' + hu(o.mr != null ? o.mr : 1) + '" top="0" bottom="0"/></hp:tc>';
+    };
+    const tbl = function(rows, nCols, W, Hh, x, y, wrap) {
+      return '<hp:tbl id="' + (oid++) + '" zOrder="' + (oid) + '" numberingType="TABLE" textWrap="' + (wrap || 'IN_FRONT_OF_TEXT') + '" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="NONE" repeatHeader="0" rowCnt="' + rows.length + '" colCnt="' + nCols + '" cellSpacing="0" borderFillIDRef="' + BFI('none') + '" noAdjust="0">' +
+        '<hp:sz width="' + W + '" widthRelTo="ABSOLUTE" height="' + Hh + '" heightRelTo="ABSOLUTE" protect="0"/>' + floatPos(x, y) +
+        '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + rows.map(function(r) { return '<hp:tr>' + r + '</hp:tr>'; }).join('') + '</hp:tbl>';
+    };
+    // 머리 띠: [아이콘][번호][제목][사선][수업명·과목명] — 2줄
+    const b = L.band, cw = [];
+    if (b.iconW) cw.push(hu(b.iconW));
+    cw.push(hu(b.numW), hu(b.titleW), hu(b.slashW), hu(b.rightW));
+    const BW = cw.reduce(function(a, x) { return a + x; }, 0), r1 = hu(6.5), r2 = hu(L.bandH) - r1;
+    let ci = 0, row1 = '', row2 = '';
+    let iconXml = '';
+    if (b.iconW) {
+      const iw = hu(b.iconW - 3), ih = Math.round(iw * 0.75), ow = 480 * 75, oh = 360 * 75;
+      iconXml = '<hp:pic id="' + (oid++) + '" zOrder="' + oid + '" numberingType="PICTURE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" href="" groupLevel="0" instid="' + (oid + 50000) + '" reverse="0">' +
+        '<hp:offset x="0" y="0"/><hp:orgSz width="' + ow + '" height="' + oh + '"/><hp:curSz width="' + iw + '" height="' + ih + '"/><hp:flip horizontal="0" vertical="0"/>' +
+        '<hp:rotationInfo angle="0" centerX="' + Math.round(iw / 2) + '" centerY="' + Math.round(ih / 2) + '" rotateimage="1"/>' +
+        '<hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:scaMatrix e1="' + (iw / ow).toFixed(6) + '" e2="0" e3="0" e4="0" e5="' + (ih / oh).toFixed(6) + '" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo>' +
+        '<hc:img binaryItemIDRef="image1" bright="0" contrast="0" effect="REAL_PIC" alpha="0"/>' +
+        '<hp:imgRect><hc:pt0 x="0" y="0"/><hc:pt1 x="' + ow + '" y="0"/><hc:pt2 x="' + ow + '" y="' + oh + '"/><hc:pt3 x="0" y="' + oh + '"/></hp:imgRect>' +
+        '<hp:imgClip left="0" right="' + ow + '" top="0" bottom="' + oh + '"/><hp:inMargin left="0" right="0" top="0" bottom="0"/><hp:imgDim dimwidth="' + ow + '" dimheight="' + oh + '"/><hp:effects/>' +
+        '<hp:sz width="' + iw + '" widthRelTo="ABSOLUTE" height="' + ih + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+        '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+        '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:shapeComment>과목 아이콘</hp:shapeComment></hp:pic>';
+      row1 += tc({ c: ci, r: 0, rs: 2, w: cw[ci], h: hu(L.bandH), bf: BFI('bottom'), paras: P(PP[2], R(CP[0], iconXml)) }); ci++;
+    }
+    const nC = ci;
+    row1 += tc({ c: nC, r: 0, w: cw[nC], h: r1, bf: BFI('none'), paras: P(PP[2], R(CP[0], T(c.uNo))) });
+    row1 += tc({ c: nC + 1, r: 0, w: cw[nC + 1], h: r1, bf: BFI('none'), paras: P(PP[0], R(CP[0], T(c.uName))) });
+    row1 += tc({ c: nC + 2, r: 0, rs: 2, w: cw[nC + 2], h: hu(L.bandH), bf: BFI('slash'), paras: P(PP[0], R(CP[0], T(''))) });
+    row1 += tc({ c: nC + 3, r: 0, rs: 2, w: cw[nC + 3], h: hu(L.bandH), bf: BFI('top'), v: c.cls ? 'TOP' : 'CENTER', ml: 1.5, mr: 1,
+      paras: (c.cls ? P(PP[0], R(CP[2], T(c.cls))) : '') + P(PP[1], R(CP[3], T(c.subj))) });
+    row2 += tc({ c: nC, r: 1, w: cw[nC], h: r2, bf: BFI('bottom'), paras: P(PP[2], R(CP[1], T(c.sNo))) });
+    row2 += tc({ c: nC + 1, r: 1, w: cw[nC + 1], h: r2, bf: BFI('bottom'), paras: P(PP[0], R(CP[1], T(c.sName))) });
+    const bandXml = tbl([row1, row2], cw.length, BW, hu(L.bandH), b.x, b.y);
+    // NOTE 칸: 머리말 속 표(제목 칸 + 빈 줄 + 긴 칸, 배경색), 글 뒤로 — 쪽마다 같은 자리에 깔린다
+    let noteXml = '';
+    if (L.note) {
+      const n = L.note, NW = hu(n.w), h1 = hu(n.th), h2 = hu(2), h3 = hu(n.h) - h1 - h2;
+      noteXml = tbl([
+        tc({ c: 0, r: 0, w: NW, h: h1, bf: BFI('note'), paras: P(PP[2], R(CP[8], T('NOTE'))) }),
+        tc({ c: 0, r: 1, w: NW, h: h2, bf: BFI('none'), paras: P(PP[0], R(CP[8], T(''))) }),
+        tc({ c: 0, r: 2, w: NW, h: h3, bf: BFI('note'), v: 'TOP', paras: P(PP[0], R(CP[8], T(''))) }),
+      ], 1, NW, hu(n.h), n.x, n.y, 'BEHIND_TEXT');
+    }
+    // 꼬리 띠: 홀수 쪽 [쪽 번호 … 학교명 과목명], 짝수 쪽 [쪽 번호 대단원]
+    const pageNum = '<hp:ctrl><hp:autoNum num="1" numType="PAGE"><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar="" supscript="0"/></hp:autoNum></hp:ctrl>';
+    const footTbl = function(odd) {
+      const f = L.foot, w1 = hu(16), w2 = hu(f.w) - w1, t = wsFootText(c, odd ? 1 : 2);
+      const cells = tc({ c: 0, r: 0, w: w1, h: hu(f.h), bf: BFI('none'), v: 'BOTTOM', ml: 0, paras: P(PP[0], R(CP[odd ? 4 : 7], pageNum + T(''))) }) +
+        tc({ c: 1, r: 0, w: w2, h: hu(f.h), bf: BFI('none'), v: 'BOTTOM', mr: 0,
+          paras: odd ? P(PP[1], R(CP[5], T(t[0] + ' ')) + R(CP[6], T(t[1]))) : P(PP[0], R(CP[6], T(t[0]))) });
+      return tbl([cells], 2, hu(f.w), hu(f.h), f.x, f.y);
+    };
+    const hf = function(tag, id, type, inner, h) {
+      return '<hp:ctrl><hp:' + tag + ' id="' + id + '" applyPageType="' + type + '">' + sub(P(PP[0], R(CP[5], inner)), tag === 'header' ? 'TOP' : 'BOTTOM', hu(L.bodyW), hu(h)) + '</hp:' + tag + '></hp:ctrl>';
+    };
+    const sec0 = await zip.file('Contents/section0.xml').async('string');
+    const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
+    const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
+      .replace(/<hp:pagePr [^>]*>/, function(m) { return m.replace(/landscape="\w+"/, 'landscape="' + (c.land ? 'NARROWLY' : 'WIDELY') + '"').replace(/ width="\d+"/, ' width="' + hu(L.pw) + '"').replace(/ height="\d+"/, ' height="' + hu(L.ph) + '"'); })
+      .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="' + hu(L.headH) + '" footer="' + hu(L.footH) + '" gutter="0" left="' + hu(c.mL) + '" right="' + hu(c.mR + (L.note ? L.note.w + 4 : 0)) + '" top="' + hu(c.mT) + '" bottom="' + hu(c.mB) + '"/>');
+    const colPr = '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="' + c.colsN + '" sameSz="1" sameGap="' + (c.colsN > 1 ? hu(8) : 0) + '">' + (c.colsN > 1 ? '<hp:colLine type="SOLID" width="0.12 mm" color="#BBBBBB"/>' : '') + '</hp:colPr></hp:ctrl>';
+    const ctrls = secPr + colPr + hf('header', 1, 'BOTH', bandXml + noteXml + T(''), L.headH) + hf('footer', 2, 'ODD', footTbl(true) + T(''), L.footH) + hf('footer', 3, 'EVEN', footTbl(false) + T(''), L.footH) +
+      '<hp:ctrl><hp:newNum num="' + c.start + '" numType="PAGE"/></hp:ctrl>';
+    const lines = wsLines(c);
+    if (!lines.length) lines.push({ lv: 'blank', t: '' });
+    let body = '';
+    lines.forEach(function(x, i) {
+      const lv = LV[x.lv];
+      body += P(PP[lv[0]], (i === 0 ? R(CP[lv[1]], ctrls) : '') + R(CP[lv[1]], T(x.t)), ST[lv[2]]);
+    });
+    zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
+    // 아이콘 그림 + 목록(content.hpf)
+    let hpf = (await zip.file('Contents/content.hpf').async('string'))
+      .replace(/<opf:title\/>|<opf:title>[\s\S]*?<\/opf:title>/, '<opf:title>' + fmX(wsTitle(c)) + '</opf:title>')
+      .replace(/synthetic-fixture-author/g, fmX((window.currentTeacher && window.currentTeacher.name) || ''))
+      .replace(/(<opf:meta name="(?:CreatedDate|ModifiedDate)" content="text">)[^<]*/g, '$1' + new Date().toISOString().replace(/\.\d+Z$/, 'Z'))
+      .replace(/(<opf:meta name="date" content="text">)[^<]*/, '$1');
+    if (b.iconW) {
+      zip.file('BinData/image1.png', await wsIconPng(c.iconK));
+      hpf = hpf.replace('<opf:item id="section0"', '<opf:item id="image1" href="BinData/image1.png" media-type="image/png" isEmbeded="1"/><opf:item id="section0"');
+    }
+    zip.file('Contents/content.hpf', hpf);
+    zip.file('Preview/PrvText.txt', [wsTitle(c)].concat(lines.map(function(x) { return x.t; })).join('\r\n').slice(0, 1000));
+    zip.remove('Preview/PrvImage.png');
+    zip.file('mimetype', 'application/hwp+zip', { compression: 'STORE' });
+    return zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  }
+  function wsTitle(c) { return [c.sNo, c.sName].filter(Boolean).join(' ') || [c.uNo, c.uName].filter(Boolean).join(' ') || '학습지'; }
+  async function wsDownloadHwpx() {
+    const c = wsCfg();
+    const btn = document.getElementById('fm-hwpx-btn');
+    btn.disabled = true;
+    try {
+      const blob = await wsBuildHwpx(c);
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) {
+      customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+    } finally { btn.disabled = false; }
+  }
+  // 양식 종류(명렬표 수합 / 학습지) 바꾸기
+  function fmSetKind(k) { fmSet({ kind: k === 'ws' ? 'ws' : 'roster' }); fmFillForm(); fmRender(); }
+  function fmShowKind(kind) {
+    const ws = kind === 'ws';
+    document.querySelectorAll('#fm-kind-switch .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.kind === kind); });
+    document.getElementById('fm-guide').style.display = ws ? 'none' : '';
+    document.getElementById('fm-grid').style.display = ws ? 'none' : '';
+    document.getElementById('ws-guide').style.display = ws ? '' : 'none';
+    document.getElementById('ws-grid').style.display = ws ? '' : 'none';
+    document.getElementById('fm-xlsx-btn').style.display = ws ? 'none' : '';
   }
 
   // ----- 화면 열기·닫기 -----

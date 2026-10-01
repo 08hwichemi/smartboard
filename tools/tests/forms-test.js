@@ -591,6 +591,48 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await t1.page.click('#rail-forms-btn'); await t1.page.waitForTimeout(400);
   check('담임이 아니면 학년·반을 고르라는 안내', /학년·반/.test(await t1.page.locator('#fm-pages').innerText()));
 
+  // ===== 학습지 틀 =====
+  await t1.page.setViewportSize({ width: 1600, height: 1000 });
+  const W = t1.page;
+  await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(400);
+  check('학습지 탭: 학습지 입력칸이 보이고 명렬표 칸·엑셀 버튼은 숨김', await W.isVisible('#ws-grid') && !(await W.isVisible('#fm-grid')) && !(await W.isVisible('#fm-xlsx-btn')) && (await cfgOf(t1)).kind === 'ws');
+  await setText(W, '#ws-uno', '2'); await setText(W, '#ws-uname', '반응엔탈피와 화학 평형');
+  await setText(W, '#ws-sno', '01'); await setText(W, '#ws-sname', '반응엔탈피와 열화학 반응식');
+  await setText(W, '#ws-subj', '화학Ⅱ'); await setText(W, '#ws-cls', '화학이랑 놀자'); await setText(W, '#ws-school', '부광고등학교');
+  await setText(W, '#ws-outline', '1 반응엔탈피\n1. 반응엔탈피\n(1) 엔탈피\n① 모든 물질은 에너지를 가지고 있다.\n② 일정한 온도와 압력에서\n(2) 반응엔탈피');
+  await setText(W, '#ws-start', '27'); await W.waitForTimeout(400);
+  const wsv = await W.evaluate(() => { const sh = [...document.querySelectorAll('#fm-pages .ws-sheet')]; const r = sh[0].getBoundingClientRect(), k = r.width / (257 * 3.78);
+    const note = sh[0].querySelector('.ws-note'), body = sh[0].querySelector('.ws-body');
+    return { n: sh.length, w: sh[0].style.width, band: sh[0].querySelector('.ws-band').innerText.replace(/\s+/g, ' ').trim(), foot1: sh[0].querySelector('.ws-foot').innerText.replace(/\s+/g, ' ').trim(), foot2: sh[1].querySelector('.ws-foot').innerText.replace(/\s+/g, ' ').trim(),
+      icon: !!sh[0].querySelector('.ws-band svg'), noteRight: Math.round((r.right - note.getBoundingClientRect().right) / k / 3.78), bodyRightOfNote: body.getBoundingClientRect().right <= note.getBoundingClientRect().left,
+      lines: [...body.children].map(d => d.textContent.trim()).filter(Boolean), hasBodyOnPage2: !!sh[1].querySelector('.ws-body').children.length }; });
+  await W.screenshot({ path: 'ws-1600.png' });
+  check('학습지 미리보기: B4 두 장(홀수·짝수 쪽), 머리 띠(아이콘·대단원·소단원·수업명·과목명), 꼬리(27 학교명 과목명 / 28 대단원), NOTE는 오른쪽 여백 안·본문은 NOTE 왼쪽',
+    wsv.n === 2 && wsv.w === '257mm' && wsv.icon && /2 반응엔탈피와 화학 평형/.test(wsv.band) && /01 반응엔탈피와 열화학 반응식/.test(wsv.band) && /화학이랑 놀자/.test(wsv.band) && /화학Ⅱ/.test(wsv.band) &&
+    wsv.foot1 === '27 부광고등학교 화학Ⅱ' && wsv.foot2 === '28 2단원 반응엔탈피와 화학 평형' && wsv.noteRight === 14 && wsv.bodyRightOfNote, wsv);
+  check('본문 제목 뼈대가 첫 쪽에, 둘째 쪽은 빈 틀', wsv.lines.join('|') === '1 반응엔탈피|1. 반응엔탈피|(1) 엔탈피|① 모든 물질은 에너지를 가지고 있다.|② 일정한 온도와 압력에서|(2) 반응엔탈피' && !wsv.hasBodyOnPage2, wsv.lines);
+  check('과목명 "화학Ⅱ" → 아이콘 자동으로 화학', await W.evaluate(() => wsCfg().iconK) === 'chem');
+  await W.click('#ws-note [data-note="0"]'); await W.waitForTimeout(200);
+  const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
+  check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 14 = 229mm)', !noNote.note && Math.abs(noNote.bw - 229) < 0.01, noNote);
+  await W.click('#ws-note [data-note="1"]'); await W.click('#ws-colsn [data-v="2"]'); await W.waitForTimeout(200);
+  check('2단 + NOTE: 본문이 두 단', await W.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .ws-body')).columnCount) === '2');
+  if (JSZIP_JS) {
+    const wz = await W.evaluate(async () => { const zip = await JSZip.loadAsync(await wsBuildHwpx(wsCfg())); const names = Object.keys(zip.files);
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string'), hpf = await zip.file('Contents/content.hpf').async('string');
+      const png = await zip.file('BinData/image1.png').async('uint8array');
+      return { first: names[0], png: png.length > 1000 && png[1] === 0x50, hpf: /id="image1" href="BinData\/image1.png" media-type="image\/png"/.test(hpf), header: (sec.match(/<hp:header /g) || []).length, odd: /applyPageType="ODD"/.test(sec), even: /applyPageType="EVEN"/.test(sec),
+        newNum: /<hp:newNum num="27" numType="PAGE"\/>/.test(sec), autoNum: (sec.match(/numType="PAGE"><hp:autoNumFormat/g) || []).length, rects: (sec.match(/BEHIND_TEXT/g) || []).length, cols: (sec.match(/colCount="(\d)"/) || [])[1],
+        styles: ['학습지 대제목', '학습지 중제목', '학습지 소제목', '학습지 항목', '학습지 본문'].every(n => head.includes('name="' + n + '"')), slash: /<hh:slash type="CENTER"/.test(head),
+        margin: (sec.match(/<hp:margin [^>]*>/) || [])[0], page: (sec.match(/<hp:pagePr [^>]*>/) || [])[0], texts: ['화학이랑 놀자', '화학Ⅱ', '부광고등학교', '2단원 반응엔탈피와 화학 평형', '01', '반응엔탈피와 열화학 반응식', '① 모든 물질은 에너지를 가지고 있다.'].every(t => sec.includes('<hp:t>' + t)) }; });
+    check('학습지 한글 파일: 아이콘 PNG·목록, 머리말 1·꼬리말 홀/짝, 시작 쪽 27, 쪽 번호 2곳, NOTE 칸(글 뒤로 표) 1, 2단, 학습지 스타일 5개, 사선 칸, B4, 오른쪽 여백 = 14 + NOTE 44 + 4',
+      wz.first === 'mimetype' && wz.png && wz.hpf && wz.header === 1 && wz.odd && wz.even && wz.newNum && wz.autoNum === 2 && wz.rects === 1 && wz.cols === '2' && wz.styles && wz.slash && wz.texts &&
+      /width="72850" height="103181"/.test(wz.page) && /right="17575"/.test(wz.margin), wz);
+    if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
+  }
+  await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
+  check('명렬표 수합 탭으로 돌아가면 명렬표 칸', await W.isVisible('#fm-grid') && !(await W.isVisible('#ws-grid')) && await W.isVisible('#fm-xlsx-btn'));
+
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
   console.log(failures === 0 ? '\n모든 검사 통과' : '\n실패 ' + failures + '건');
