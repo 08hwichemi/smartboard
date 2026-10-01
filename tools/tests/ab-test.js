@@ -495,19 +495,25 @@ function check(label, cond, detail) {
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
   await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
 
-  // 아래로 내려도 알림 줄·제목 줄·새 줄은 위에 고정(9/30 사용자 요청)
-  await P.setViewportSize({ width: 1366, height: 420 }); await wait(300);
-  await P.evaluate(() => { const l = document.getElementById('ab-left'); l.scrollTop = l.scrollHeight; }); await wait(150);
+  // 결석 현황 입력: 목록만 스크롤 — 탭·안내·알림·제목 줄·새 줄은 제자리(10/1 사용자 요청)
+  await P.setViewportSize({ width: 1366, height: 520 }); await wait(300);
+  const before = await P.evaluate(() => ['#ab-tabs', '#ab-pane-input .ab-muted', '#ab-f-msg'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)));
+  await P.evaluate(() => { const l = document.getElementById('ab-list'); l.scrollTop = l.scrollHeight; }); await wait(150);
   const stick = await P.evaluate(() => {
-    const l = document.getElementById('ab-left').getBoundingClientRect(), hd = document.querySelector('#ab-list thead').getBoundingClientRect();
-    const nr = document.querySelector('#ab-list tr.ab-new').getBoundingClientRect(), th = document.querySelector('#ab-list thead th').getBoundingClientRect();
-    return { scrolled: document.getElementById('ab-left').scrollTop > 0, gap: Math.round(hd.top - l.top), thVisible: th.top >= l.top - 1, newBottom: Math.round(nr.bottom - l.top), inView: nr.bottom <= l.bottom };
+    const L = document.getElementById('ab-list'), l = L.getBoundingClientRect(), hd = document.querySelector('#ab-list thead').getBoundingClientRect();
+    const nr = document.querySelector('#ab-list tr.ab-new').getBoundingClientRect();
+    return { listScrolled: L.scrollTop > 0, leftScroll: document.getElementById('ab-left').scrollTop, gap: Math.round(hd.top - l.top), inView: nr.bottom <= l.bottom,
+      tops: ['#ab-tabs', '#ab-pane-input .ab-muted', '#ab-f-msg'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)),
+      pageFits: document.getElementById('ab-left').getBoundingClientRect().bottom <= innerHeight + 1 };
   });
-  check('아래로 내려도 제목 줄·새 줄이 맨 위에 고정(틈 없음)', stick.scrolled && stick.gap === 0 && stick.thVisible && stick.inView, stick);
+  check('목록만 스크롤되고 탭·안내·알림은 제자리, 제목 줄·새 줄은 목록 맨 위에 고정', stick.listScrolled && stick.leftScroll === 0 && stick.gap === 0 && stick.inView && JSON.stringify(stick.tops) === JSON.stringify(before) && stick.pageFits, [stick, before]);
   await P.locator('#absence-page').screenshot({ path: 'ab-sticky.png' });
   await P.selectOption('#ab-n-num', '1'); await P.press('#ab-n-detail', 'Enter'); await wait(150);
-  const stickMsg = await P.evaluate(() => { const l = document.getElementById('ab-left').getBoundingClientRect(), m = document.getElementById('ab-f-msg').getBoundingClientRect(); return { txt: document.getElementById('ab-f-msg').textContent, vis: m.top >= l.top - 1 && m.bottom <= l.bottom }; });
-  check('내려간 채로 고정된 새 줄에서 Enter → 알림 글도 보임', /결석 시작 일자/.test(stickMsg.txt) && stickMsg.vis, stickMsg);
+  const stickMsg = await P.evaluate(() => { const m = document.getElementById('ab-f-msg').getBoundingClientRect(); return { txt: document.getElementById('ab-f-msg').textContent, vis: m.top >= 0 && m.bottom <= innerHeight }; });
+  check('내려간 채로 새 줄에서 Enter → 알림 글도 보임', /결석 시작 일자/.test(stickMsg.txt) && stickMsg.vis, stickMsg);
+  await P.click('#ab-tabs [data-tab="hol"]'); await wait(150);
+  check('다른 탭(휴일)은 예전처럼 왼쪽 칸 전체가 스크롤', await P.evaluate(() => !document.getElementById('ab-left').classList.contains('ab-fix') && getComputedStyle(document.getElementById('ab-left')).overflowY === 'auto'));
+  await P.click('#ab-tabs [data-tab="input"]'); await wait(150);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
 
   // 🗑 초기화: 이 반 기록만, 두 번 확인

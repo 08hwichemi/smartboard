@@ -799,11 +799,15 @@
     .ab-in[type="date"] { padding: 4px 2px; font-size: 12px; letter-spacing: -0.2px; }
     .ab-in.ab-days { text-align: center; padding: 5px 2px; }
     .ab-table tr.ab-new td { background: var(--accent-soft); box-shadow: inset 0 -2px 0 var(--accent-color); padding: 6px 4px 8px; cursor: default; }
-    /* 입력 표: 알림 줄·제목 줄·새 줄을 묶어 위에 고정 — 아래로 내려 봐도 바로 새로 적을 수 있게 */
+    /* 결석 현황 입력 탭: 탭·안내·알림은 제자리, 목록(#ab-list)만 스크롤 — 제목 줄·새 줄은 목록 맨 위에 고정해서
+       아래로 내려 봐도 위로 다시 올리지 않고 바로 새로 적을 수 있게 */
+    #ab-left.ab-fix { display: flex; flex-direction: column; overflow: hidden; }
+    #ab-left.ab-fix #ab-tabs, #ab-left.ab-fix #ab-pane-input > div:not(#ab-list) { flex: 0 0 auto; }
+    #ab-left.ab-fix #ab-pane-input { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
+    #ab-left.ab-fix #ab-list { flex: 1; min-height: 0; overflow-y: auto; }
     #ab-list .ab-grid { border-collapse: separate; border-spacing: 0; }
     #ab-list .ab-grid thead { position: sticky; top: 0; z-index: 3; }
     #ab-list .ab-grid thead th { position: static; }
-    .ab-table tr.ab-bar td { background: var(--bg-color); padding: 0 0 4px; border: 0; text-align: left; cursor: default; }
     .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
     .ab-table tr.ab-new:hover, .ab-table tr.ab-editrow:hover { background: none; }
     .ab-table.ab-grid { table-layout: fixed; }
@@ -2597,6 +2601,7 @@
 
       <div id="ab-pane-input" class="ab-pane">
         <div class="ab-muted" style="margin-bottom:8px;">맨 윗줄에 적고 <b>Enter</b>(또는 ➕)로 추가 · 기록 줄은 <b>두 번 누르거나 ✎</b>로 그 자리에서 고치기(Enter 저장, Esc 취소) · 줄을 한 번 누르면 오른쪽에 출력 미리보기</div>
+        <div id="ab-f-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div id="ab-filter" style="display:none;"></div>
         <div id="ab-list"></div>
       </div>
@@ -10630,6 +10635,7 @@
     const tab = abTab;
     document.querySelectorAll('#ab-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
     ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
+    document.getElementById('ab-left').classList.toggle('ab-fix', tab === 'input');
     if (tab === 'stat') abFitStat();
   }
 
@@ -10689,9 +10695,7 @@
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
     d.dataset.touched = d.value !== '' && Number(d.value) !== abCountDays(f.value, t.value) ? '1' : '';
   }
-  // 알림 글은 고정된 표 머리(ab-bar 줄) 안에 있어서 표를 다시 그려도 남도록 따로 기억
-  let abMsgHtml = '';
-  function abMsg(t) { abMsgHtml = t; const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
+  function abMsg(t) { const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
   function abSaveRow(p) {
     const c = abCfg();
     if (!c.g || !c.c) { abMsg('⚠️ 위에서 학년·반을 먼저 고르세요.'); return; }
@@ -10792,8 +10796,7 @@
     } else fEl.style.display = 'none';
     let h = '<table class="ab-table ab-grid"><colgroup><col style="width:32px"><col style="width:106px"><col style="width:94px"><col><col style="width:108px"><col style="width:108px">' +
       '<col style="width:42px"><col style="width:108px"><col style="width:13%"><col style="width:58px"></colgroup>' +
-      '<thead><tr class="ab-bar"><td colspan="10"><div id="ab-f-msg" class="ab-muted" style="min-height:16px;">' + abMsgHtml + '</div></td></tr>' +
-      '<tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr>';
+      '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr>';
     h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
       abRowCells('ab-n-', { num: abFilterNum != null ? abFilterNum : '' }) +
       '<td><button class="top-btn accent" style="padding:5px 8px; font-size:12px; font-weight:800;" onclick="abSaveRow(\'ab-n-\')" title="추가 (Enter)">➕</button></td></tr></thead><tbody>';
