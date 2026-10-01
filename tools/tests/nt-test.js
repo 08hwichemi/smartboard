@@ -398,17 +398,21 @@ function pdfInfo(buf) {
   // 예전 설정(모드별 값 없음)은 게시판 값에서 시작
   const legacy = await P.evaluate(() => { const old = localStorage.getItem('nt-cfg'); localStorage.setItem('nt-cfg', JSON.stringify({ mode: 'locker', fill: 'l' })); const c = ntCfg(); localStorage.setItem('nt-cfg', old); return c.fillPct; });
   check('예전 설정(글자 크기 하나)은 모든 모드가 그 값에서 시작', legacy === 86, legacy);
-  // 12색: 같은 계열이 붙지 않게, 파스텔이어도 구별되게
+  // 12색: 예전 파스텔과 같은 밝기, 같은 계열이 붙지 않게, 옆 이름표끼리는 확실히 구별
   const pal = await P.evaluate(() => {
-    const hue = (c) => ntHsl(c)[0], gap = (a, b) => { const d = Math.abs(hue(a) - hue(b)) % 360; return Math.min(d, 360 - d); };
-    const n = NT_COLORS.length, near = [];
-    for (let i = 0; i < n; i++) for (const k of [1, 4]) near.push(gap(NT_COLORS[i], NT_COLORS[(i + k) % n]));
+    const hue = (c) => ntOk(c)[2] * 180 / Math.PI, gap = (a, b) => { const d = Math.abs(hue(a) - hue(b)) % 360; return Math.min(d, 360 - d); };
     const lab = (h) => { const v = parseInt(h.slice(1), 16); const [r, g, b] = [v >> 16 & 255, v >> 8 & 255, v & 255].map(x => { x /= 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; const X = f((r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047), Y = f(r * 0.2126 + g * 0.7152 + b * 0.0722), Z = f((r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883); return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)]; };
-    const tints = NT_COLORS.map(c => ntTheme('soft', c).bg); let minDE = 1e9;
-    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const a = lab(tints[i]), b = lab(tints[j]); minDE = Math.min(minDE, Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])); }
-    return { minNear: Math.min(...near), minDE: Math.round(minDE * 10) / 10, solidOk: NT_COLORS.every(c => 1.05 / (ntLum(ntTheme('solid', c).bg) + 0.05) >= 3) };
+    const dE = (a, b) => { a = lab(a); b = lab(b); return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); };
+    const n = NT_COLORS.length, tints = NT_COLORS.map(c => ntTheme('soft', c).bg);
+    let minHue = 360, minNb = 1e9, minAll = 1e9;
+    for (let i = 0; i < n; i++) {
+      for (const k of [1, 4]) { minHue = Math.min(minHue, gap(NT_COLORS[i], NT_COLORS[(i + k) % n])); minNb = Math.min(minNb, dE(tints[i], tints[(i + k) % n])); }
+      for (let j = i + 1; j < n; j++) minAll = Math.min(minAll, dE(tints[i], tints[j]));
+    }
+    const r1 = (x) => Math.round(x * 10) / 10;
+    return { minHue: Math.round(minHue), minNb: r1(minNb), minAll: r1(minAll), minL: r1(Math.min(...tints.map(t => lab(t)[0]))), solidOk: NT_COLORS.every(c => 1.05 / (ntLum(ntTheme('solid', c).bg) + 0.05) >= 3) };
   });
-  check('12색: 옆·위아래(4칸 줄) 이름표는 색상이 90° 이상 다름, 파스텔 바탕끼리도 색 차이(ΔE) 10 이상, 컬러 디자인은 흰 글자가 읽힘', pal.minNear >= 90 && pal.minDE >= 10 && pal.solidOk, pal);
+  check('12색: 연한 바탕은 예전 파스텔처럼 밝게(L* 93 이상), 옆·위아래(4칸 줄)는 색상 110° 이상·색 차이 ΔE 10 이상, 12색 어느 둘도 예전보다 구별(ΔE 3 이상), 컬러 디자인은 흰 글자가 읽힘', pal.minL >= 93 && pal.minHue >= 110 && pal.minNb >= 10 && pal.minAll >= 3 && pal.solidOk, pal);
   await P.screenshot({ path: 'nt-locker.png' });
   await P.selectOption('#nt-lk-class', '2'); await wait(400);
   check('3학년 2반(30명) → 30개, 종이 1장(36개 들어감)', await labels(P) === 30 && await sheets(P) === 1, [await labels(P), await sheets(P)]);
