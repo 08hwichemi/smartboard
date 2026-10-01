@@ -486,12 +486,20 @@ function check(label, cond, detail) {
   await P.evaluate(() => { window.classStructure = { gradeCount: 3, classCounts: [8, 8, 8] }; abFillClassSelects(); });
   await P.selectOption('#ab-class', '2'); await wait(400);
   await P.click('#ab-tabs [data-tab="stat"]'); await wait(200);
-  const fit = await P.evaluate(() => { const l = document.getElementById('ab-left'), t = document.querySelector('#ab-stat table'); return { rows: t.tBodies[0].rows.length, fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
+  const fit = await P.evaluate(() => { const l = document.getElementById('ab-stat'), t = document.querySelector('#ab-stat table'); return { sh: l.scrollHeight, ch: l.clientHeight, th: t.tHead.offsetHeight, tf: t.tFoot.offsetHeight, tb: t.tBodies[0].offsetHeight, tt: t.offsetHeight, rows: t.tBodies[0].rows.length, fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
   check('28명이 스크롤 없이 한 화면, 줄 높이 24px 이상', fit.rows === 28 && fit.fits && fit.rh >= 24, fit);
   await P.locator('#absence-page').screenshot({ path: 'ab-stat28.png' });
   await P.setViewportSize({ width: 1366, height: 768 }); await wait(300);
-  const fit2 = await P.evaluate(() => { const l = document.getElementById('ab-left'), t = document.querySelector('#ab-stat table'); return { fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
+  const fit2 = await P.evaluate(() => { const l = document.getElementById('ab-stat'), t = document.querySelector('#ab-stat table'); return { fits: l.scrollHeight <= l.clientHeight + 1, rh: t.tBodies[0].rows[0].getBoundingClientRect().height }; });
   check('작은 화면(1366×768)은 줄을 20px까지만 줄이고(읽을 수 있게) 조금 스크롤', fit2.rh === 20, fit2);
+  const sBefore = await P.evaluate(() => Math.round(document.getElementById('ab-tabs').getBoundingClientRect().top));
+  { const b = await P.locator('#ab-stat tbody tr').first().boundingBox(); await P.mouse.move(b.x + 40, b.y + 5); }
+  for (let k = 0; k < 6; k++) { await P.mouse.wheel(0, 300); await wait(60); }
+  const st = await P.evaluate(() => { const L = document.getElementById('ab-stat'), r = L.getBoundingClientRect(), t = L.querySelector('table');
+    return { list: L.scrollTop, left: document.getElementById('ab-left').scrollTop, tabs: Math.round(document.getElementById('ab-tabs').getBoundingClientRect().top),
+      thGap: Math.round(t.tHead.rows[0].cells[0].getBoundingClientRect().top - r.top), footGap: Math.round(r.bottom - t.tFoot.getBoundingClientRect().bottom) }; });
+  check('학생별 현황이 스크롤될 땐 목록만, 탭 그대로, 제목 줄·합계 줄 고정', st.list > 0 && st.left === 0 && st.tabs === sBefore && st.thGap === 0 && Math.abs(st.footGap) <= 1, [st, sBefore]);
+  await P.locator('#absence-page').screenshot({ path: 'ab-sticky-stat.png' });
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
   await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
 
@@ -520,8 +528,16 @@ function check(label, cond, detail) {
   await P.selectOption('#ab-n-num', '1'); await P.press('#ab-n-detail', 'Enter'); await wait(150);
   const stickMsg = await P.evaluate(() => { const m = document.getElementById('ab-f-msg').getBoundingClientRect(); return { txt: document.getElementById('ab-f-msg').textContent, vis: m.top >= 0 && m.bottom <= innerHeight }; });
   check('내려간 채로 새 줄에서 Enter → 알림 글도 보임', /결석 시작 일자/.test(stickMsg.txt) && stickMsg.vis, stickMsg);
-  await P.click('#ab-tabs [data-tab="hol"]'); await wait(150);
-  check('다른 탭(휴일)은 예전처럼 왼쪽 칸 전체가 스크롤', await P.evaluate(() => !document.getElementById('ab-left').classList.contains('ab-fix') && getComputedStyle(document.getElementById('ab-left')).overflowY === 'auto'));
+  // 휴일 탭도 같은 방식: 탭·안내·더하기 칸은 제자리, 목록만 스크롤(제목 줄 고정)
+  await P.click('#ab-tabs [data-tab="hol"]'); await wait(200);
+  const hBefore = await P.evaluate(() => ['#ab-tabs', '#ab-hol-date'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)));
+  { const b = await P.locator('#ab-hol-list tbody tr').first().boundingBox(); await P.mouse.move(b.x + 40, b.y + 5); }
+  for (let k = 0; k < 6; k++) { await P.mouse.wheel(0, 300); await wait(60); }
+  const hol = await P.evaluate(() => { const L = document.getElementById('ab-hol-list'), th = document.querySelector('#ab-hol-list th').getBoundingClientRect();
+    return { list: L.scrollTop, left: document.getElementById('ab-left').scrollTop, thGap: Math.round(th.top - L.getBoundingClientRect().top),
+      tops: ['#ab-tabs', '#ab-hol-date'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)) }; });
+  check('휴일 탭: 목록만 스크롤, 탭·휴일 더하기 칸 그대로, 제목 줄 고정', hol.list > 0 && hol.left === 0 && hol.thGap === 0 && JSON.stringify(hol.tops) === JSON.stringify(hBefore), [hol, hBefore]);
+  await P.locator('#absence-page').screenshot({ path: 'ab-sticky-hol.png' });
   await P.click('#ab-tabs [data-tab="input"]'); await wait(150);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
 

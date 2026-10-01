@@ -781,9 +781,12 @@
 
     /* ===== 📋 결석계 ===== */
     #ab-body { display: flex; flex: 1; min-height: 0; }
-    #ab-left { flex: 1; min-width: 0; overflow-y: auto; padding: 0 20px 16px; box-sizing: border-box; }
-    /* 위 여백을 padding 대신 탭 margin으로: padding이 있으면 고정된 머리 줄 위 틈으로 아래 줄이 비쳐 보임 */
-    #ab-tabs { margin: 16px 0 12px; }
+    /* 세 탭 모두: 탭·안내·입력칸은 제자리, 아래 목록(.ab-scroll)만 스크롤 — 목록의 제목 줄은 그 안에서 맨 위에 고정 */
+    #ab-left { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 16px; box-sizing: border-box; }
+    #ab-tabs { margin: 16px 0 12px; flex: 0 0 auto; }
+    #ab-left .ab-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
+    #ab-left .ab-pane > div { flex: 0 0 auto; }
+    #ab-left .ab-pane > .ab-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     #ab-right { width: 470px; flex: 0 0 auto; border-left: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
     #ab-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
     #ab-paper-box { position: relative; overflow: hidden; }
@@ -799,19 +802,13 @@
     .ab-in[type="date"] { padding: 4px 2px; font-size: 12px; letter-spacing: -0.2px; }
     .ab-in.ab-days { text-align: center; padding: 5px 2px; }
     .ab-table tr.ab-new td { background: var(--accent-soft); box-shadow: inset 0 -2px 0 var(--accent-color); padding: 6px 4px 8px; cursor: default; }
-    /* 결석 현황 입력 탭: 탭·안내·알림은 제자리, 목록(#ab-list)만 스크롤 — 제목 줄·새 줄은 목록 맨 위에 고정해서
-       아래로 내려 봐도 위로 다시 올리지 않고 바로 새로 적을 수 있게 */
-    #ab-left.ab-fix { display: flex; flex-direction: column; overflow: hidden; }
-    #ab-left.ab-fix #ab-tabs, #ab-left.ab-fix #ab-pane-input > div:not(#ab-list) { flex: 0 0 auto; }
-    #ab-left.ab-fix #ab-pane-input { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
-    #ab-left.ab-fix #ab-list { flex: 1; min-height: 0; overflow-y: auto; }
-    #ab-list .ab-grid { border-collapse: separate; border-spacing: 0; }
+    /* 입력 표는 제목 줄과 "새" 줄을 함께 고정 — 아래로 내려 봐도 위로 다시 올리지 않고 바로 새로 적을 수 있게 */
     #ab-list .ab-grid thead { position: sticky; top: 0; z-index: 3; }
     #ab-list .ab-grid thead th { position: static; }
     .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
     .ab-table tr.ab-new:hover, .ab-table tr.ab-editrow:hover { background: none; }
     .ab-table.ab-grid { table-layout: fixed; }
-    .ab-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--card-bg); }
+    .ab-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); }
     .ab-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 7px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 1; }
     .ab-table td { padding: 7px 6px; border-bottom: 1px solid var(--border-color); text-align: center; vertical-align: middle; }
     .ab-table td.ab-l { text-align: left; }
@@ -820,7 +817,7 @@
     .ab-table tr.ab-sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
     .ab-stat-table tbody td { height: var(--ab-rh, 28px); padding-top: 0; padding-bottom: 0; font-size: var(--ab-fs, 12.5px); box-sizing: border-box; }
     .ab-stat-table thead th, .ab-stat-table tfoot td { padding-top: 5px; padding-bottom: 5px; }
-    .ab-table tfoot td { font-weight: 800; border-top: 2px solid var(--border-color); background: var(--tt-bg); }
+    .ab-table tfoot td { font-weight: 800; border-top: 2px solid var(--border-color); background: var(--tt-bg); position: sticky; bottom: 0; z-index: 1; }
     .ab-table .ab-zero { color: var(--text-sub); opacity: 0.45; }
     .ab-reason { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 11px; font-weight: 800; white-space: nowrap; background: var(--tt-bg); }
     .ab-reason[data-r="질병결석"] { background: #FDE2E1; color: #B42318; }
@@ -2603,11 +2600,12 @@
         <div class="ab-muted" style="margin-bottom:8px;">맨 윗줄에 적고 <b>Enter</b>(또는 ➕)로 추가 · 기록 줄은 <b>두 번 누르거나 ✎</b>로 그 자리에서 고치기(Enter 저장, Esc 취소) · 줄을 한 번 누르면 오른쪽에 출력 미리보기</div>
         <div id="ab-f-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div id="ab-filter" style="display:none;"></div>
-        <div id="ab-list"></div>
+        <div id="ab-list" class="ab-scroll"></div>
       </div>
 
       <div id="ab-pane-stat" class="ab-pane" style="display:none;">
-        <div id="ab-stat"></div>
+        <div id="ab-stat-note" class="ab-muted" style="margin-bottom:8px; display:none;"><b>📅 결석 일자 확인</b>을 누르면 그 학생의 결석 현황 입력 자료를 봐요. 일수는 토·일·휴일을 뺀 날 수.</div>
+        <div id="ab-stat" class="ab-scroll"></div>
       </div>
 
       <div id="ab-pane-hol" class="ab-pane" style="display:none;">
@@ -2618,7 +2616,7 @@
           <input type="text" id="ab-hol-name" class="lp-input" style="width:160px;" placeholder="이름 (예: 재량휴업일)">
           <button class="top-btn" style="padding:6px 12px;" onclick="abAddHoliday()">➕ 휴일 더하기</button>
         </div>
-        <div id="ab-hol-list"></div>
+        <div id="ab-hol-list" class="ab-scroll"></div>
       </div>
     </div>
 
@@ -10635,7 +10633,6 @@
     const tab = abTab;
     document.querySelectorAll('#ab-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
     ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
-    document.getElementById('ab-left').classList.toggle('ab-fix', tab === 'input');
     if (tab === 'stat') abFitStat();
   }
 
@@ -10830,6 +10827,7 @@
   }
   function abRenderStat() {
     const el = document.getElementById('ab-stat');
+    document.getElementById('ab-stat-note').style.display = 'none';
     if (!abHasClass()) { el.innerHTML = abNeedClassHtml(); return; }
     const recs = abClassRecords();
     const by = {};
@@ -10844,8 +10842,7 @@
     list.sort(function(a, b) { return a.num - b.num; });
     if (!list.length) { el.innerHTML = '<div class="ab-empty">이 반 명렬표가 비어 있어요.</div>'; return; }
     const tot = {}; let totAll = 0;
-    let h = '<div class="ab-muted" style="margin-bottom:8px;"><b>📅 결석 일자 확인</b>을 누르면 그 학생의 결석 현황 입력 자료를 봐요. 일수는 토·일·휴일을 뺀 날 수.</div>' +
-      '<table class="ab-table ab-stat-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
+    let h = '<table class="ab-table ab-stat-table"><thead><tr><th>번호</th><th>이름</th>' + AB_REASONS.map(function(x) { return '<th>' + x + '</th>'; }).join('') + '<th>결석 합계</th><th>결석 일자</th></tr></thead><tbody>';
     list.forEach(function(s) {
       let sum = 0;
       h += '<tr style="cursor:default;"><td><span class="ab-num" style="min-width:2.4em;">' + s.num + '번</span></td><td style="font-weight:700; white-space:nowrap;">' + escapeHtmlAttr(s.name || '') + '</td>';
@@ -10856,15 +10853,17 @@
     });
     h += '</tbody><tfoot><tr><td colspan="2">합계</td>' + AB_REASONS.map(function(x) { return '<td>' + (tot[x] || 0) + '</td>'; }).join('') + '<td>' + totAll + '</td><td></td></tr></tfoot></table>';
     el.innerHTML = h;
+    document.getElementById('ab-stat-note').style.display = '';
     abFitStat();
   }
   // 학생별 현황은 스크롤 없이 반 전체가 한 화면에 보이게: 남은 높이 ÷ 학생 수로 줄 높이를 정한다(20~34px, 글씨도 따라 줄임).
   function abFitStat() {
-    const t = document.querySelector('#ab-stat .ab-stat-table'), left = document.getElementById('ab-left');
-    if (!t || !left.clientHeight || document.getElementById('ab-pane-stat').style.display === 'none') return;
+    // 목록 칸(#ab-stat, 이것만 스크롤)의 높이 ÷ 학생 수
+    const t = document.querySelector('#ab-stat .ab-stat-table'), box = document.getElementById('ab-stat');
+    if (!t || !box.clientHeight || document.getElementById('ab-pane-stat').style.display === 'none') return;
     const n = t.tBodies[0].rows.length;
-    const fixed = t.getBoundingClientRect().top - left.getBoundingClientRect().top + left.scrollTop + t.tHead.offsetHeight + t.tFoot.offsetHeight + 24;
-    const rh = Math.max(20, Math.min(34, Math.floor((left.clientHeight - fixed) / Math.max(n, 1))));
+    const fixed = t.tHead.offsetHeight + t.tFoot.offsetHeight + 2;
+    const rh = Math.max(20, Math.min(34, Math.floor((box.clientHeight - fixed) / Math.max(n, 1))));
     t.style.setProperty('--ab-rh', rh + 'px');
     t.style.setProperty('--ab-fs', Math.max(11, Math.min(13, rh * 0.5)) + 'px');
   }
