@@ -910,6 +910,11 @@
     #fm-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
     #fm-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; }
     #fm-classes { gap: 5px; }
+    #fm-widths { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
+    .fm-w { display: flex; align-items: center; gap: 5px; font-size: 12px; min-width: 0; }
+    .fm-w span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fm-w input { width: 66px; padding-left: 6px; padding-right: 2px; }
+    .fm-w input:placeholder-shown { color: var(--text-sub); }
     .fm-sheet { width: 210mm; height: 297mm; box-sizing: border-box; padding: 15mm; background: #fff; color: #000; box-shadow: 0 2px 12px rgba(0,0,0,0.12); overflow: hidden; flex: 0 0 auto; }
     .fm-hd { text-align: center; }
     .fm-title { font-weight: 700; line-height: 1.5; margin-bottom: 1.5mm; white-space: pre-wrap; }
@@ -2793,13 +2798,24 @@
   <div id="fm-body">
     <div id="fm-left">
       <div class="nt-box" id="fm-class-box">
-        <div class="nt-title">🏫 반 <span class="nt-muted" id="fm-count"></span></div>
-        <div class="nt-row">
-          <select id="fm-grade" class="mini-select" style="width:74px;" onchange="fmOnGrade()"></select>
-          <button class="nt-chip" id="fm-all-btn" onclick="fmAllClasses()">전체 반</button>
+        <div class="nt-title">🏫 명단 <span class="nt-muted" id="fm-count"></span></div>
+        <div class="tab-switch" id="fm-src-switch" style="align-self:flex-start;">
+          <button class="tab-btn active" data-src="class" onclick="fmSetSrc('class')">반 명단 불러오기</button>
+          <button class="tab-btn" data-src="manual" onclick="fmSetSrc('manual')">직접 입력</button>
         </div>
-        <div class="nt-row" id="fm-classes"></div>
-        <div class="nt-muted">명렬표의 번호·이름을 가져와요. 여러 반을 고르면 반마다 한 장씩 나와요.</div>
+        <div id="fm-src-class" style="display:flex; flex-direction:column; gap:8px;">
+          <div class="nt-row">
+            <select id="fm-grade" class="mini-select" style="width:74px;" onchange="fmOnGrade()"></select>
+            <button class="nt-chip" id="fm-all-btn" onclick="fmAllClasses()">전체 반</button>
+          </div>
+          <div class="nt-row" id="fm-classes"></div>
+          <div class="nt-muted">명렬표의 번호·이름을 가져와요. 여러 반을 고르면 반마다 한 장씩 나와요.</div>
+        </div>
+        <div id="fm-src-manual" style="display:none; flex-direction:column; gap:8px;">
+          <input type="text" id="fm-mlabel" class="lp-input" placeholder="명단 이름 (예: 방과후 수학 A반)" oninput="fmSet({ mLabel: this.value }); fmRender();">
+          <textarea id="fm-manual" class="lp-input" rows="6" placeholder="한 줄에 한 명 — 엑셀·한글 표를 그대로 복사해 붙여 넣어도 돼요&#10;예)&#10;1 홍길동&#10;2 김철수&#10;30103 이영희" oninput="fmSet({ manual: this.value }); fmRender();"></textarea>
+          <div class="nt-muted">번호가 없으면 위에서부터 1, 2, 3…으로 붙여요. 다섯 자리 숫자(30103)는 학번으로 읽어요.</div>
+        </div>
       </div>
       <div class="nt-box" id="fm-text-box">
         <div class="nt-title">✏️ 제목·안내</div>
@@ -2819,10 +2835,20 @@
         <div class="nt-row" id="fm-rowh"></div>
         <div class="nt-muted" id="fm-fit-info"></div>
       </div>
+      <div class="nt-box" id="fm-width-box">
+        <div class="nt-title">↔️ 칸 너비 <button class="nt-chip" onclick="fmResetWidths()" title="모든 칸을 자동 너비로">모두 자동</button></div>
+        <label class="nt-row" style="cursor:pointer;" title="자동 너비 칸(비고·체크 칸)이 남는 폭을 나눠 가져요. 끄면 표가 필요한 만큼만 차지하고 가운데에 놓여요."><input type="checkbox" id="fm-fill" onchange="fmSet({ fill: this.checked }); fmRender();"> 표를 종이 폭에 꽉 차게</label>
+        <div id="fm-widths"></div>
+        <div class="nt-muted" id="fm-width-info"></div>
+      </div>
       <div class="nt-box" id="fm-font-box">
         <div class="nt-title">🔤 글꼴 <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
-        <div class="nt-row">제목 <select id="fm-tfont" class="mini-select" style="flex:1;" onchange="fmSet({ tFont: this.value }); fmRender();"></select> <input type="number" id="fm-tsize" class="lp-input" min="10" max="40" step="1" style="width:58px;" oninput="fmOnSize('tSize', this.value, 10, 40)"> pt</div>
-        <div class="nt-row">내용 <select id="fm-bfont" class="mini-select" style="flex:1;" onchange="fmSet({ bFont: this.value }); fmRender();"></select> <input type="number" id="fm-bsize" class="lp-input" min="8" max="16" step="0.5" style="width:58px;" oninput="fmOnSize('bSize', this.value, 8, 16)"> pt</div>
+        <div class="nt-row">제목 <select id="fm-tfont" class="mini-select" style="flex:1;" onchange="fmOnFontPick('tFont', this.value)"></select> <input type="number" id="fm-tsize" class="lp-input" min="10" max="40" step="1" style="width:58px;" oninput="fmOnSize('tSize', this.value, 10, 40)"> pt</div>
+        <input type="text" id="fm-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('tFont', this.value)">
+        <div class="nt-row">내용 <select id="fm-bfont" class="mini-select" style="flex:1;" onchange="fmOnFontPick('bFont', this.value)"></select> <input type="number" id="fm-bsize" class="lp-input" min="8" max="16" step="0.5" style="width:58px;" oninput="fmOnSize('bSize', this.value, 8, 16)"> pt</div>
+        <input type="text" id="fm-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="내용 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="fmOnFontCustom('bFont', this.value)">
+        <datalist id="fm-local-fonts"></datalist>
+        <div class="nt-muted" id="fm-font-msg"></div>
       </div>
     </div>
     <div id="fm-right">
@@ -11985,11 +12011,20 @@
   // 한글 파일 바탕: forms/hwpx/skeleton.hwpx(빈 한글 문서 — python-hwpx, Apache-2.0)를 JSZip으로 열어
   // header.xml에 글꼴·글자 모양·문단 모양·테두리만 더하고 section0.xml(본문)을 새로 써서 다시 묶는다.
   const FM_CFG_KEY = 'fm-cfg';
-  const FM_FONTS = ['맑은 고딕', '함초롬돋움', '함초롬바탕', '나눔고딕', '나눔명조', '굴림', '돋움', '바탕', 'HY견고딕', 'HY헤드라인M'];
+  // 글꼴: n = 목록에 보이는 이름, c = PC마다 다를 수 있는 실제 글꼴 이름 후보(이 PC에 있는 것을 골라 저장 — 한글 파일에도 그 이름으로 들어감)
+  const FM_FONTS = [
+    { n: '맑은 고딕' }, { n: '함초롬돋움' }, { n: '함초롬바탕' },
+    { n: '경기천년제목 Bold', c: ['경기천년제목 Bold', '경기천년제목', '경기천년제목_Bold'] },
+    { n: '경기천년제목 Medium', c: ['경기천년제목 Medium', '경기천년제목_Medium'] },
+    { n: '경기천년제목 Light', c: ['경기천년제목 Light', '경기천년제목_Light'] },
+    { n: '경기천년바탕 Bold', c: ['경기천년바탕 Bold', '경기천년바탕_Bold'] },
+    { n: '경기천년바탕 Regular', c: ['경기천년바탕 Regular', '경기천년바탕', '경기천년바탕_Regular'] },
+    { n: '나눔고딕' }, { n: '나눔명조' }, { n: '굴림' }, { n: '돋움' }, { n: '바탕' }, { n: 'HY견고딕' }, { n: 'HY헤드라인M' },
+  ];
   const FM_ROWH = [[0, '자동'], [7, '좁게'], [9, '보통'], [12, '넓게']];
   const FM_DEFAULT = {
-    kind: 'roster', rG: null, rCs: [], title: '제출 확인', note: '', cols: '제출',
-    showId: false, memo: true, zebra: true, colsN: 1, rowH: 0,
+    kind: 'roster', src: 'class', rG: null, rCs: [], manual: '', mLabel: '', title: '제출 확인', note: '', cols: '제출',
+    showId: false, memo: true, zebra: true, colsN: 1, rowH: 0, fill: true, colW: {},
     tFont: '맑은 고딕', tSize: 20, bFont: '맑은 고딕', bSize: 11,
   };
   // A4(mm), 여백, 단 사이, 제목 아래 표까지 띄우는 간격, 표 줄 높이 한도
@@ -12002,6 +12037,8 @@
     c.rCs = Array.isArray(c.rCs) ? c.rCs.map(Number).filter(function(k) { return k > 0; }).sort(function(a, b) { return a - b; }) : [];
     c.colsN = Math.min(3, Math.max(1, parseInt(c.colsN) || 1));
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
+    if (c.src !== 'manual') c.src = 'class';
+    if (!c.colW || typeof c.colW !== 'object') c.colW = {};
     return c;
   }
   function fmSet(patch) {
@@ -12046,25 +12083,66 @@
     return a;
   }
   function fmLine(pt, ls) { return pt * FM_PT * ls; }
+  // 직접 입력한 명단: 한 줄에 한 명. 엑셀·한글 표를 복사하면 칸 사이가 탭이라 탭·쉼표로 먼저 나누고, 아니면 띄어쓰기로.
+  // 숫자 다섯 자리는 학번(끝 두 자리가 번호), 숫자 세 개(학년 반 번호)도 학번으로, 숫자 하나면 번호. 번호가 없으면 위에서부터 이어서.
+  const FM_HEAD_WORDS = ['번호', '이름', '성명', '학번', '학년', '반', '비고', '학생', '학생명'];
+  function fmParseManual(text) {
+    const out = [];
+    String(text || '').split(/\r?\n/).forEach(function(line) {
+      let cells = line.split(/\t|,/).map(function(t) { return t.trim(); }).filter(Boolean);
+      if (cells.length === 1) cells = cells[0].split(/\s+/);
+      const nums = [], words = [];
+      cells.forEach(function(t) {
+        const m = t.match(/^(\d+)(번)?$/);
+        if (m) nums.push(m[1]); else words.push(t);
+      });
+      if (!words.length || words.every(function(w) { return FM_HEAD_WORDS.indexOf(w) >= 0; })) return;
+      let num = null, id = '';
+      const five = nums.find(function(t) { return t.length === 5; });
+      if (five) { id = five; num = parseInt(five.slice(3), 10); }
+      else if (nums.length >= 3) {
+        const g = nums.slice(-3).map(Number);
+        id = String(g[0]) + String(g[1]).padStart(2, '0') + String(g[2]).padStart(2, '0'); num = g[2];
+      } else if (nums.length) num = parseInt(nums[nums.length - 1], 10);
+      out.push({ num: num, name: words.join(' '), id: id });
+    });
+    let next = 1;
+    out.forEach(function(st) { if (st.num == null || !isFinite(st.num)) st.num = next; next = st.num + 1; });
+    return out;
+  }
+  // 명단 묶음(반마다 한 장). 직접 입력이면 하나.
+  function fmGroups(c) {
+    if (c.src === 'manual') return [{ cls: 'm', label: (c.mLabel || '').trim() || '명단', list: fmParseManual(c.manual) }];
+    const by = fmRosterFor(c) || {};
+    return c.rCs.map(function(k) { return { cls: k, label: c.rG + '학년 ' + k + '반', list: by[k] || [] }; });
+  }
+  function fmSum(cols) { return cols.reduce(function(s, x) { return s + x.w; }, 0); }
+  // 칸 너비(mm): 번호·학번·이름은 고정, 체크 칸은 이름이 한 줄에 들어갈 만큼, 비고 25. 직접 적은 너비(colW)가 있으면 그대로.
+  // "종이 폭에 꽉 차게"면 남는 폭을 자동 칸이 나눠 가짐(체크 칸은 22mm까지, 나머지는 비고). 종이보다 넓으면 비율대로 줄임.
   function fmColumns(c, tw) {
     const checks = fmChecks(c), narrow = tw < 100; // 2·3단이면 번호·학번 칸을 좁게
-    const cols = [{ key: 'num', label: '번호', w: narrow ? 10 : 12 }];
-    if (c.showId) cols.push({ key: 'id', label: '학번', w: narrow ? 15 : 17 });
-    cols.push({ key: 'name', label: '이름', w: tw < 70 ? 20 : 24 });
-    const rest = tw - cols.reduce(function(s, x) { return s + x.w; }, 0), n = checks.length;
-    let cw = 0;
-    if (c.memo && n) {
-      // 체크 칸은 이름이 한 줄에 들어갈 만큼은 주고(비고에서 덜어 옴), 비고는 10mm 넘게 남긴다
-      const need = Math.max.apply(null, checks.map(function(lb) { return Array.from(lb).length; })) * c.bSize * FM_PT + 2.5;
-      cw = Math.min(22, Math.max(rest * 0.62 / n, need), (rest - 10) / n);
-    } else if (n) cw = rest / n;
-    checks.forEach(function(lb) { cols.push({ key: 'chk', label: lb, w: cw }); });
-    if (c.memo) cols.push({ key: 'memo', label: '비고', w: rest - cw * n });
-    else if (!n) cols[cols.length - 1].w += rest;
+    const cols = [{ key: 'num', wk: 'num', label: '번호', w: narrow ? 10 : 12 }];
+    if (c.showId) cols.push({ key: 'id', wk: 'id', label: '학번', w: narrow ? 15 : 17 });
+    cols.push({ key: 'name', wk: 'name', label: '이름', w: tw < 70 ? 20 : 24 });
+    checks.forEach(function(lb) { cols.push({ key: 'chk', wk: 'chk:' + lb, label: lb, w: Math.min(30, Math.max(12, Array.from(lb).length * c.bSize * FM_PT + 2.5)) }); });
+    if (c.memo) cols.push({ key: 'memo', wk: 'memo', label: '비고', w: 25 });
+    cols.forEach(function(col) { const v = parseFloat(c.colW[col.wk]); if (isFinite(v) && v >= 5) { col.w = Math.min(180, v); col.fixed = true; } });
+    const extra = tw - fmSum(cols);
+    if (c.fill && extra > 0) {
+      const memo = cols.find(function(x) { return x.key === 'memo' && !x.fixed; });
+      const chks = cols.filter(function(x) { return x.key === 'chk' && !x.fixed; });
+      if (memo) {
+        const share = chks.length ? extra * 0.4 / chks.length : 0;
+        chks.forEach(function(x) { x.w += Math.max(0, Math.min(22 - x.w, share)); });
+        memo.w += tw - fmSum(cols);
+      } else if (chks.length) chks.forEach(function(x) { x.w += extra / chks.length; });
+      else { const nm = cols.find(function(x) { return x.key === 'name' && !x.fixed; }); if (nm) nm.w += extra; }
+    }
+    const sum = fmSum(cols);
+    if (sum > tw) cols.forEach(function(x) { x.w = x.w * tw / sum; });
     return cols;
   }
   function fmLayout(c) {
-    const by = fmRosterFor(c) || {};
     const n = c.colsN, tw = (FM_PAGE.w - FM_PAGE.m * 2 - FM_COL_GAP * (n - 1)) / n;
     const cols = fmColumns(c, tw), notes = fmNotes(c);
     const headH = fmLine(c.tSize, 1.5) + 1.5 + fmLine(c.bSize, 1.6) * (1 + notes.length);
@@ -12072,8 +12150,8 @@
     const availFirst = bodyH - headH - FM_TBL_GAP, availNext = bodyH - FM_TBL_GAP;
     const minRow = Math.max(6.5, fmLine(c.bSize, 1.3) + 1.2);
     const classes = [];
-    c.rCs.forEach(function(k) {
-      const list = by[k] || [];
+    fmGroups(c).forEach(function(gr) {
+      const list = gr.list;
       const per = Math.max(1, Math.ceil(list.length / n));
       let rowH = c.rowH > 0 ? Math.max(c.rowH, minRow) : Math.min(FM_ROW_MAX, Math.max(minRow, availFirst / (per + 1)));
       rowH = Math.floor(rowH * 10) / 10; // 내림(올리면 한 줄이 다음 장으로 넘어갈 수 있음)
@@ -12088,13 +12166,13 @@
       if (!chunks.length) chunks.push([]);
       const pages = [];
       chunks.forEach(function(ch, j) { const pg = Math.floor(j / n); (pages[pg] = pages[pg] || []).push(ch); });
-      classes.push({ cls: k, label: c.rG + '학년 ' + k + '반', count: list.length, rowH: rowH, pages: pages });
+      classes.push({ cls: gr.cls, label: gr.label, count: list.length, rowH: rowH, pages: pages });
     });
-    return { n: n, tw: tw, cols: cols, notes: notes, classes: classes, minRow: minRow };
+    return { n: n, tw: tw, tableW: fmSum(cols), cols: cols, notes: notes, classes: classes, minRow: minRow };
   }
   function fmCellText(col, c, cls, st) {
     if (col.key === 'num') return String(st.num);
-    if (col.key === 'id') return String(c.rG) + String(cls).padStart(2, '0') + String(st.num).padStart(2, '0');
+    if (col.key === 'id') return st.id || (cls === 'm' ? '' : String(c.rG) + String(cls).padStart(2, '0') + String(st.num).padStart(2, '0'));
     if (col.key === 'name') return st.name;
     return '';
   }
@@ -12104,7 +12182,7 @@
   function fmFontCss(f) { return "font-family:'" + f.replace(/'/g, '') + "', 'Malgun Gothic', sans-serif;"; }
   function fmTableHtml(L, c, cl, list) {
     const z = c.zebra;
-    let h = '<table class="fm-tbl" style="width:' + L.tw + 'mm; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
+    let h = '<table class="fm-tbl" style="width:' + L.tableW + 'mm; margin: 0 auto; ' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;"><colgroup>' +
       L.cols.map(function(col) { return '<col style="width:' + col.w + 'mm;">'; }).join('') + '</colgroup>';
     h += '<tr class="h" style="height:' + cl.rowH + 'mm;">' + L.cols.map(function(col) { return '<td>' + ntEsc(col.label) + '</td>'; }).join('') + '</tr>';
     list.forEach(function(st, i) {
@@ -12119,8 +12197,9 @@
     const c = fmCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     const info = document.getElementById('fm-fit-info');
     const msg = fmEmptyMsg(c);
-    if (msg) { box.innerHTML = '<div class="fm-empty">' + msg + '</div>'; box.style.zoom = ''; label.textContent = ''; info.textContent = ''; return; }
+    if (msg) { box.innerHTML = '<div class="fm-empty">' + msg + '</div>'; box.style.zoom = ''; label.textContent = ''; info.textContent = ''; fmRenderWidths(fmLayout(c), c); return; }
     const L = fmLayout(c);
+    fmRenderWidths(L, c);
     let sheets = [];
     L.classes.forEach(function(cl) {
       cl.pages.forEach(function(chs, p) {
@@ -12130,17 +12209,18 @@
             '<div class="fm-info" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;">' + ntEsc(fmInfoText(cl)) + '</div></div>';
           L.notes.forEach(function(t) { s += '<div class="fm-note" style="' + fmFontCss(c.bFont) + ' font-size:' + c.bSize + 'pt;">' + (ntEsc(t) || '&nbsp;') + '</div>'; });
         }
-        s += '<div class="fm-cols">' + chs.map(function(ch) { return '<div class="fm-col">' + fmTableHtml(L, c, cl, ch) + '</div>'; }).join('') + '</div>';
+        s += '<div class="fm-cols">' + chs.map(function(ch) { return '<div class="fm-col" style="width:' + L.tw + 'mm;">' + fmTableHtml(L, c, cl, ch) + '</div>'; }).join('') + '</div>';
         sheets.push(s + '</div>');
       });
     });
     box.innerHTML = sheets.join('');
     const rows = L.classes.map(function(cl) { return cl.rowH; });
-    info.textContent = '줄 높이 ' + (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1) + 'mm' + (c.rowH > 0 ? '' : ' (한 장에 들어가게 자동)') + ' · 표 폭 ' + L.tw.toFixed(0) + 'mm';
-    label.textContent = 'A4 세로 · ' + L.classes.length + '개 반 · 종이 ' + sheets.length + '장';
+    info.textContent = '줄 높이 ' + (rows.length ? Math.min.apply(null, rows) : 0).toFixed(1) + 'mm' + (c.rowH > 0 ? '' : ' (한 장에 들어가게 자동)');
+    label.textContent = 'A4 세로 · ' + (c.src === 'manual' ? '명단 ' + L.classes[0].count + '명' : L.classes.length + '개 반') + ' · 종이 ' + sheets.length + '장';
     fmFitPreview();
   }
   function fmEmptyMsg(c) {
+    if (c.src === 'manual') return fmParseManual(c.manual).length ? '' : '왼쪽 <b>직접 입력</b> 칸에 명단을 붙여 넣어 주세요.<br>한 줄에 한 명 — 예) 1 홍길동';
     if (!c.rG || !c.rCs.length) return '왼쪽에서 <b>학년·반</b>을 골라 주세요.<br>명렬표의 번호·이름으로 수합용 명렬표가 만들어져요.';
     if (fmRoster.failedKey === fmRosterKey(c) && fmRoster.loading !== fmRosterKey(c)) return '명렬표를 불러오지 못했어요. 인터넷 연결을 확인하고 반을 다시 골라 주세요.';
     if (!fmRosterFor(c)) return '명렬표를 불러오는 중…';
@@ -12156,6 +12236,65 @@
     box.style.zoom = z > 0 ? String(z) : '';
   }
 
+  // 칸 너비 입력: 칸 목록이 바뀔 때만 다시 만들고(입력 중 커서가 튀지 않게), 평소엔 자동 너비(회색 예시 글씨)만 고친다.
+  function fmRenderWidths(L, c) {
+    const box = document.getElementById('fm-widths');
+    const sig = L.cols.map(function(col) { return col.wk; }).join('|');
+    if (box.dataset.sig !== sig) {
+      box.dataset.sig = sig;
+      box.innerHTML = L.cols.map(function(col) {
+        return '<label class="fm-w" title="' + ntEsc(col.label) + ' 칸 너비(mm) — 비우면 자동"><span>' + ntEsc(col.label) + '</span>' +
+          '<input type="number" class="lp-input" min="5" max="180" step="0.5" data-wk="' + ntEsc(col.wk) + '" oninput="fmOnWidth(this)"> mm</label>';
+      }).join('');
+    }
+    box.querySelectorAll('input').forEach(function(inp, i) {
+      const col = L.cols[i], v = c.colW[col.wk];
+      inp.placeholder = col.w.toFixed(1);
+      if (document.activeElement !== inp) inp.value = v != null && v !== '' ? v : '';
+    });
+    document.getElementById('fm-fill').checked = !!c.fill;
+    const max = L.tw;
+    document.getElementById('fm-width-info').textContent = '표 폭 ' + L.tableW.toFixed(1) + 'mm / 최대 ' + max.toFixed(0) + 'mm' + (L.n > 1 ? ' (' + L.n + '단 한 단)' : '') +
+      (fmSum(L.cols.map(function(col) { const v = parseFloat(c.colW[col.wk]); return { w: isFinite(v) && v >= 5 ? v : 0 }; })) > max + 0.01 ? ' — 적은 너비가 더 넓어서 비율대로 줄였어요' : '');
+  }
+  function fmOnWidth(inp) {
+    const c = fmCfg(), w = Object.assign({}, c.colW), v = parseFloat(inp.value);
+    if (isFinite(v) && v >= 5) w[inp.dataset.wk] = Math.min(180, v); else delete w[inp.dataset.wk];
+    fmSet({ colW: w }); fmRender();
+  }
+  function fmResetWidths() { fmSet({ colW: {} }); fmRender(); }
+  function fmFontEntry(name) { return FM_FONTS.find(function(f) { return f.n === name || (f.c && f.c.indexOf(name) >= 0); }); }
+  function fmOnFontPick(key, v) {
+    const o = {};
+    if (v === '__custom') { o[key + 'C'] = true; fmSet(o); fmFillForm(); const el = document.getElementById(key === 'tFont' ? 'fm-tfont-custom' : 'fm-bfont-custom'); el.focus(); return; }
+    const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
+    const cands = e.c || [e.n];
+    o[key] = cands.find(function(f) { return ntFontInstalled(f); }) || cands[0]; o[key + 'C'] = false;
+    fmSet(o); fmFillForm(); fmRender();
+  }
+  function fmOnFontCustom(key, v) {
+    const name = String(v || '').replace(/["'<>;\\]/g, '').trim();
+    if (!name) return;
+    const o = {}; o[key] = name; fmSet(o); fmFontMsg(fmCfg()); fmRender();
+  }
+  function fmFontMsg(c) {
+    const missing = [c.tFont, c.bFont].filter(function(f, i, a) { return a.indexOf(f) === i && !ntFontInstalled(f); });
+    document.getElementById('fm-font-msg').innerHTML = (missing.length ? '<b>' + missing.map(ntEsc).join(', ') + '</b> — 이 PC에 없어서 미리보기는 다른 글꼴로 보여요. 한글 파일에는 이 이름 그대로 들어가서 그 글꼴이 있는 PC에선 제대로 나와요. ' : '') +
+      ((c.tFontC || c.bFontC) ? '<button class="nt-chip" onclick="fmLoadLocalFonts()" title="이 PC에 설치된 글꼴 이름 목록을 불러와요">💻 내 PC 글꼴 목록</button>' : '');
+  }
+  async function fmLoadLocalFonts() {
+    if (!window.queryLocalFonts) return customAlert('이 브라우저에서는 PC 글꼴 목록을 불러올 수 없어요. 크롬·엣지 최신 판에서 되고, 안 되면 글꼴 이름을 직접 적어 주세요.');
+    try {
+      const fonts = await window.queryLocalFonts();
+      const fams = Array.from(new Set(fonts.map(function(f) { return f.family; }))).sort(function(a, b) { return a.localeCompare(b, 'ko'); });
+      document.getElementById('fm-local-fonts').innerHTML = fams.map(function(f) { return '<option value="' + ntEsc(f) + '">'; }).join('');
+      customAlert('이 PC 글꼴 ' + fams.length + '개를 불러왔어요. 글꼴 이름 칸을 누르거나 몇 글자 적으면 목록이 나와요.');
+    } catch (e) {
+      customAlert('글꼴 목록 보기를 "허용"해야 불러올 수 있어요. 막았다면 주소창 왼쪽 자물쇠 → 글꼴에서 허용으로 바꿔 주세요.');
+    }
+  }
+  function fmSetSrc(src) { fmSet({ src: src }); fmFillForm(); fmRender(); }
+
   // ----- 왼쪽 입력칸 -----
   function fmFillForm() {
     let c = fmCfg();
@@ -12163,6 +12302,11 @@
     const t = window.currentTeacher;
     if (!c.rG && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) { fmSet({ rG: t.homeroom_grade, rCs: [t.homeroom_class] }); c = fmCfg(); }
     const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    const manual = c.src === 'manual';
+    document.querySelectorAll('#fm-src-switch .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.src === c.src); });
+    document.getElementById('fm-src-class').style.display = manual ? 'none' : 'flex';
+    document.getElementById('fm-src-manual').style.display = manual ? 'flex' : 'none';
+    setVal('fm-manual', c.manual || ''); setVal('fm-mlabel', c.mLabel || '');
     const gs = document.getElementById('fm-grade');
     gs.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(c.rG);
     gs.value = c.rG ? String(c.rG) : '';
@@ -12174,7 +12318,7 @@
     document.getElementById('fm-all-btn').style.display = cnt > 1 ? '' : 'none';
     const by = fmRosterFor(c);
     const total = by ? c.rCs.reduce(function(s, k) { return s + (by[k] || []).length; }, 0) : 0;
-    document.getElementById('fm-count').textContent = by && c.rCs.length ? c.rCs.length + '개 반 · 학생 ' + total + '명' : '';
+    document.getElementById('fm-count').textContent = manual ? (fmParseManual(c.manual).length ? fmParseManual(c.manual).length + '명' : '') : by && c.rCs.length ? c.rCs.length + '개 반 · 학생 ' + total + '명' : '';
     setVal('fm-title', c.title || ''); setVal('fm-note', c.note || ''); setVal('fm-cols', c.cols || '');
     document.getElementById('fm-showid').checked = !!c.showId;
     document.getElementById('fm-memo').checked = !!c.memo;
@@ -12185,11 +12329,19 @@
     document.getElementById('fm-rowh').innerHTML = '줄 높이 ' + FM_ROWH.map(function(r) {
       return '<button class="nt-chip' + (Number(c.rowH) === r[0] ? ' on' : '') + '" data-v="' + r[0] + '" onclick="fmSet({ rowH: ' + r[0] + ' }); fmFillForm(); fmRender();"' + (r[0] ? ' title="' + r[0] + 'mm"' : ' title="한 반이 한 장에 들어가게 맞춰요"') + '>' + r[1] + '</button>';
     }).join('');
-    const opts = function(sel) { return FM_FONTS.map(function(f) { return '<option value="' + f + '"' + (f === sel ? ' selected' : '') + ' style="font-family:\'' + f + '\';">' + f + '</option>'; }).join(''); };
-    document.getElementById('fm-tfont').innerHTML = opts(c.tFont);
-    document.getElementById('fm-bfont').innerHTML = opts(c.bFont);
+    [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
+      const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
+      const sel = document.getElementById(k[1]);
+      sel.innerHTML = FM_FONTS.map(function(f) { return '<option value="' + f.n + '" style="font-family:\'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>'; }).join('') +
+        '<option value="__custom">✏️ 직접 입력</option>';
+      sel.value = e ? e.n : '__custom';
+      const inp = document.getElementById(k[1] + '-custom');
+      inp.style.display = e ? 'none' : '';
+      setVal(k[1] + '-custom', e ? '' : cur);
+    });
     setVal('fm-tsize', c.tSize); setVal('fm-bsize', c.bSize);
-    fmLoadRoster();
+    fmFontMsg(c);
+    if (!manual) fmLoadRoster();
   }
   function fmOnGrade() {
     const g = parseInt(document.getElementById('fm-grade').value) || null;
@@ -12328,7 +12480,7 @@
     const colCtrl = function(n) { return '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="' + n + '" sameSz="1" sameGap="' + (n > 1 ? fmHu(FM_COL_GAP) : 0) + '"/></hp:ctrl>'; };
     // 칸 폭(정수 HWPUNIT)의 합이 표 폭과 꼭 같게
     const W = L.cols.map(function(col) { return fmHu(col.w); });
-    const TW = fmHu(L.tw);
+    const TW = fmHu(L.tableW);
     W[W.length - 1] += TW - W.reduce(function(a, b) { return a + b; }, 0);
     const table = function(cl, list) {
       const RH = fmHu(cl.rowH);
@@ -12383,7 +12535,7 @@
     return zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE', compressionOptions: { level: 6 } });
   }
   function fmFileName(c) {
-    const cls = c.rCs.length === 1 ? c.rG + '학년 ' + c.rCs[0] + '반' : c.rG + '학년 ' + c.rCs.join('·') + '반';
+    const cls = c.src === 'manual' ? ((c.mLabel || '').trim() || '명단') : c.rCs.length === 1 ? c.rG + '학년 ' + c.rCs[0] + '반' : c.rG + '학년 ' + c.rCs.join('·') + '반';
     return ((c.title || '명렬표').trim() + ' ' + cls).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
   }
   async function fmDownloadHwpx() {

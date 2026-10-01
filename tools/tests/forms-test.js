@@ -321,6 +321,69 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     check('글자: 제목·이름·학번이 들어감, 미리보기 글도', info.hasTitle && info.hasName && info.hasId && /현장체험학습/.test(info.prv), info);
   }
 
+  // 칸 너비: 직접 적기·꽉 차게 끄기·모두 자동
+  await P.click('#fm-colsn [data-v="1"]'); await P.waitForTimeout(200);
+  const colW = () => P.evaluate(() => [...document.querySelectorAll('#fm-pages table.fm-tbl')[0].querySelectorAll('col')].map(c => +parseFloat(c.style.width).toFixed(1)));
+  const tblBox = () => P.evaluate(() => { const t = document.querySelector('#fm-pages table.fm-tbl'), col = t.parentElement; return { w: parseFloat(t.style.width), left: t.getBoundingClientRect().left - col.getBoundingClientRect().left, right: col.getBoundingClientRect().right - t.getBoundingClientRect().right }; });
+  const wl = await P.evaluate(() => [...document.querySelectorAll('#fm-widths .fm-w span')].map(s => s.textContent));
+  check('칸 너비 입력칸: 칸마다 하나(번호·학번·이름·체크 칸·비고)', wl.join('|') === '번호|학번|이름|동의서|회비|비고', wl);
+  await P.fill('#fm-widths input[data-wk="chk:회비"]', '30'); await P.waitForTimeout(200);
+  let cw = await colW();
+  check('체크 칸 너비를 적으면 그 너비(30mm), 나머지는 비고가 채워 여전히 180mm', cw[4] === 30 && Math.abs(cw.reduce((a, b) => a + b, 0) - 180) < 0.1, cw);
+  await P.fill('#fm-widths input[data-wk="memo"]', '20'); await P.uncheck('#fm-fill'); await P.waitForTimeout(200);
+  cw = await colW(); let tb = await tblBox();
+  check('비고 20mm + "꽉 차게" 끄기 → 표가 필요한 만큼만(180mm보다 좁게), 가운데', cw[5] === 20 && tb.w < 179 && Math.abs(tb.left - tb.right) < 1, [cw, tb]);
+  check('자동 칸은 회색 예시로 지금 너비가 보임', await P.evaluate(() => document.querySelector('#fm-widths input[data-wk="name"]').placeholder) === '24.0');
+  await P.fill('#fm-widths input[data-wk="name"]', '170'); await P.waitForTimeout(200);
+  tb = await tblBox();
+  check('적은 너비 합이 종이보다 넓으면 비율대로 줄여서 180mm 안', tb.w <= 180.01 && /비율대로 줄였어요/.test(await P.textContent('#fm-width-info')), [tb, await P.textContent('#fm-width-info')]);
+  await P.fill('#fm-widths input[data-wk="name"]', ''); await P.waitForTimeout(200);
+  if (JSZIP_JS) {
+    const narrowW = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const x = await zip.file('Contents/section0.xml').async('string'); return [+x.match(/<hp:sz width="(\d+)"/)[1], fmHu(fmLayout(fmCfg()).tableW)]; });
+    check('한글 파일 표 폭도 같은 폭(꽉 차게 끈 너비)', narrowW[0] === narrowW[1] && narrowW[0] < 50000, narrowW);
+  }
+  await P.click('#fm-width-box .nt-chip'); await P.check('#fm-fill'); await P.waitForTimeout(200);
+  cw = await colW();
+  check('"모두 자동" → 다시 180mm, 입력칸 비움', Math.abs(cw.reduce((a, b) => a + b, 0) - 180) < 0.1 && (await cfgOf(hr)).colW && !Object.keys((await cfgOf(hr)).colW).length, cw);
+
+  // 글꼴: 경기천년체, 직접 입력
+  const fontOpts = await P.evaluate(() => [...document.querySelectorAll('#fm-tfont option')].map(o => o.value));
+  check('글꼴 목록에 경기천년제목·경기천년바탕 + 직접 입력', ['경기천년제목 Bold', '경기천년제목 Medium', '경기천년바탕 Regular', '경기천년바탕 Bold', '__custom'].every(f => fontOpts.includes(f)), fontOpts);
+  await P.selectOption('#fm-tfont', '경기천년제목 Bold'); await P.selectOption('#fm-bfont', '경기천년바탕 Regular'); await P.waitForTimeout(200);
+  let fc = await cfgOf(hr);
+  check('경기천년체 고르면 저장(이 PC에 없으면 첫 이름 그대로) + 없다는 안내', fc.tFont === '경기천년제목 Bold' && fc.bFont === '경기천년바탕 Regular' && /이 PC에 없어서/.test(await P.textContent('#fm-font-msg')), [fc.tFont, fc.bFont]);
+  if (JSZIP_JS) {
+    const faces = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const x = await zip.file('Contents/header.xml').async('string'); return (x.match(/<hh:fontface lang="HANGUL"[\s\S]*?<\/hh:fontface>/)[0].match(/face="[^"]+"/g) || []).join(','); });
+    check('한글 파일 글꼴에 경기천년제목 Bold·경기천년바탕 Regular', /경기천년제목 Bold/.test(faces) && /경기천년바탕 Regular/.test(faces), faces);
+  }
+  await P.selectOption('#fm-tfont', '__custom'); await P.waitForTimeout(200);
+  check('직접 입력을 고르면 이름 칸이 보임', await P.isVisible('#fm-tfont-custom'));
+  await P.fill('#fm-tfont-custom', '우리학교체'); await P.waitForTimeout(200);
+  check('직접 적은 글꼴 이름으로 저장·미리보기', (await cfgOf(hr)).tFont === '우리학교체' && /우리학교체/.test(await P.evaluate(() => document.querySelector('#fm-pages .fm-title').style.fontFamily)) && await P.inputValue('#fm-tfont') === '__custom');
+  await P.selectOption('#fm-tfont', '맑은 고딕'); await P.waitForTimeout(200);
+  check('목록 글꼴로 돌아가면 이름 칸 숨김', !(await P.isVisible('#fm-tfont-custom')) && (await cfgOf(hr)).tFont === '맑은 고딕');
+
+  // 직접 입력 명단(엑셀·한글 표 복사)
+  const before = studentSelects.length;
+  await P.click('#fm-src-switch [data-src="manual"]'); await P.waitForTimeout(200);
+  check('"직접 입력" → 명단 칸, 비어 있으면 안내', await P.isVisible('#fm-manual') && !(await P.isVisible('#fm-grade')) && /직접 입력/.test(await P.locator('#fm-pages').innerText()));
+  await setText(P, '#fm-mlabel', '방과후 A반');
+  await setText(P, '#fm-manual', '번호\t이름\n1\t홍길동\n2\t김철수\n30103 이영희\n박민수\n\n5번 최지우\n3\t1\t7\t한소희');
+  await P.waitForTimeout(300);
+  await P.evaluate(() => { document.getElementById('fm-widths').scrollIntoView(); });
+  await P.screenshot({ path: 'fm-manual.png' });
+  const mrows = await P.evaluate(() => [...document.querySelectorAll('#fm-pages table.fm-tbl tr')].slice(1).map(tr => [...tr.cells].slice(0, 3).map(c => c.textContent).join(' ')));
+  sh = await sheetsOf(P);
+  check('붙여 넣은 명단: 머리 줄 건너뜀, 탭·띄어쓰기, 학번(30103 → 3번), 번호 없으면 이어서, "5번", 학년 반 번호', mrows.join(',') === '1  홍길동,2  김철수,3 30103 이영희,4  박민수,5  최지우,7 30107 한소희', mrows);
+  check('한 장, 정보 줄은 명단 이름(6명), 서버에 학생 요청 안 함', sh.length === 1 && sh[0].info === '방과후 A반 (6명)' && studentSelects.length === before, [sh, studentSelects.length - before]);
+  check('파일 이름: 제목 + 명단 이름', await P.evaluate(() => fmFileName(fmCfg())) === '현장체험학습 동의서 방과후 A반.hwpx');
+  if (JSZIP_JS) {
+    const mt = await P.evaluate(async () => { const zip = await JSZip.loadAsync(await fmBuildHwpx(fmCfg())); const x = await zip.file('Contents/section0.xml').async('string'); return [(x.match(/<hp:tbl /g) || []).length, /한소희/.test(x), /방과후 A반 \(6명\)/.test(x)]; });
+    check('직접 입력 명단으로 한글 파일', mt[0] === 1 && mt[1] && mt[2], mt);
+  }
+  await P.click('#fm-src-switch [data-src="class"]'); await P.waitForTimeout(400);
+  check('반 명단으로 돌아가면 반 고르기(직접 입력한 명단은 남아 있음)', await P.isVisible('#fm-grade') && /한소희/.test((await cfgOf(hr)).manual));
+
   // 못 받는 반 → 안내, 다시 그려도 재요청 안 함
   failStudents = true;
   await P.click('#fm-classes [data-c="4"]'); await P.waitForTimeout(500);
