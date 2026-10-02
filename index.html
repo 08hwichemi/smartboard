@@ -2899,7 +2899,7 @@
       <div id="fm-ready-box" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; width:100%; margin-top:6px; padding:8px 10px; border:1.5px solid var(--accent-color); border-radius:10px; background:var(--accent-soft); font-size:12px;">
         <span>📥 파일이 준비됐어요 — <b id="fm-ready-name"></b></span>
         <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="fmSavePending()">파일 저장</button>
-        <span style="color:var(--text-sub);">(만드는 데 시간이 걸려 브라우저가 자동 내려받기를 막을 수 있어서, 한 번 더 눌러 받아요)</span>
+        <span style="color:var(--text-sub);">(만드는 데 시간이 걸려 브라우저가 자동 저장을 막을 수 있어서, 한 번 더 눌러 받아요)</span>
       </div>
     </div>
   </div>
@@ -3390,7 +3390,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-02.2';
+  var BUILD_ID = '2026-10-02.3';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -12785,7 +12785,8 @@
   let fmSkeletonP = null;
   function fmSkeleton() {
     if (!fmSkeletonP) {
-      fmSkeletonP = fetch('forms/hwpx/skeleton.hwpx').then(function(r) { if (!r.ok) throw new Error('skeleton ' + r.status); return r.arrayBuffer(); });
+      fmStage = '한글 바탕 파일 받는 중';
+      fmSkeletonP = fetch('forms/hwpx/skeleton.hwpx').then(function(r) { if (!r.ok) throw new Error('skeleton ' + r.status); return r.arrayBuffer(); }).then(function(b) { fmStage = '파일 만드는 중'; return b; });
       fmSkeletonP.catch(function() { fmSkeletonP = null; });
     }
     return fmSkeletonP;
@@ -12880,7 +12881,10 @@
   async function fmBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
     const L = fmLayout(c);
-    const zip = await JSZip.loadAsync(await fmSkeleton());
+    fmStage = '한글 바탕 파일 받는 중';
+    const skel = await fmSkeleton();
+    fmStage = '파일 만드는 중';
+    const zip = await JSZip.loadAsync(skel);
     const pt2 = function(mm) { return mm / FM_PT; }; // mm → pt(문단 간격)
     // 칸 테두리 모양(네 변 + 배경)을 표마다 미리 모아 header에 한 번씩만 넣는다. 0번은 표 자체용(기본 얇은 실선).
     const NC = L.cols.length, bfIdx = {}, bfSpecs = [];
@@ -12998,51 +13002,76 @@
     if (/skeleton/.test(m)) return '\n\n원인: 한글 바탕 파일(forms/hwpx/skeleton.hwpx)을 못 받았어요(' + m + ').';
     return m ? '\n\n원인: ' + m.slice(0, 200) : '';
   }
-  let fmPendingFile = null; // { url, name } — "📥 파일 저장" 단추로 받을 파일
+  let fmPendingFile = null; // { blob, name } — "📥 파일 저장" 단추로 받을 파일
+  let fmStage = '';         // 지금 무엇을 기다리는지(오래 걸릴 때 안내용)
+  // 파일 저장 — ① 크롬·엣지의 "저장 대화상자"(showSaveFilePicker): 내려받기 관리자를 거치지 않아 자동 내려받기 차단이나 보안 정책에
+  // 덜 걸린다(사용자가 취소하면 조용히 끝). 안 되면 ② 예전처럼 <a download>로 내려받기. 자동화(테스트)에선 대화상자를 못 쓰니 ②.
+  async function fmSaveNow(blob, name) {
+    if (window.showSaveFilePicker && !navigator.webdriver && !window.__fmNoPicker) {
+      const ext = name.slice(name.lastIndexOf('.'));
+      try {
+        const accept = {}; accept[blob.type || 'application/octet-stream'] = [ext];
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext === '.xlsx' ? '엑셀 파일' : '한글 파일', accept: accept }] });
+        const w = await h.createWritable(); await w.write(blob); await w.close();
+        return 'picker';
+      } catch (e) {
+        if (e && e.name === 'AbortError') return 'cancel';   // 사용자가 취소
+        try { console.warn('[양식] 저장 대화상자를 못 써서 내려받기로', e); } catch (x) {}
+      }
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    return 'download';
+  }
   function fmSaveBlob(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const go = function() {
-      const a = document.createElement('a');
-      a.href = url; a.download = name; a.rel = 'noopener';
-      document.body.appendChild(a); a.click(); a.remove();
-    };
     // 누른 지 오래됐으면(크롬: 5초) 자동 내려받기로 막힐 수 있으니 단추를 보여 준다. userActivation이 없는 브라우저는 바로 받는다.
     const active = !navigator.userActivation || navigator.userActivation.isActive;
-    if (active) { go(); setTimeout(function() { URL.revokeObjectURL(url); }, 60000); return; }
-    if (fmPendingFile) { try { URL.revokeObjectURL(fmPendingFile.url); } catch (e) {} }
-    fmPendingFile = { url: url, name: name, go: go };
+    if (active) return fmSaveNow(blob, name);
+    fmPendingFile = { blob: blob, name: name };
     const box = document.getElementById('fm-ready-box');
     if (box) { box.style.display = 'flex'; document.getElementById('fm-ready-name').textContent = name; }
+    return Promise.resolve('ready');
   }
   function fmSavePending() {
     if (!fmPendingFile) return;
-    fmPendingFile.go();
-    const url = fmPendingFile.url; fmPendingFile = null;
+    const f = fmPendingFile; fmPendingFile = null;
     const box = document.getElementById('fm-ready-box'); if (box) box.style.display = 'none';
-    setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    fmSaveNow(f.blob, f.name);
+  }
+  // 단추를 눌렀는데 12초가 지나도 안 끝나면 무엇을 기다리는지 알려 준다("아무 일도 없음"이 되지 않게).
+  function fmSlowTimer() {
+    return setTimeout(function() {
+      customAlert('파일을 만드는 데 시간이 오래 걸려요 — 지금 "' + (fmStage || '파일 만드는 중') + '".\n인터넷이 느리거나 학교 망에서 막혀 있을 수 있어요. 조금 더 기다려도 안 되면 새로고침한 뒤 다시 눌러 주세요.');
+    }, 12000);
   }
   async function fmDownloadHwpx() {
     if (fmCfg().kind === 'ws') return wsDownloadHwpx();
     const btn = document.getElementById('fm-hwpx-btn');
+    let timer = null;
     try {
       const c = fmCfg(), msg = fmEmptyMsg(c);
       if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
-      btn.disabled = true;
+      btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
       const blob = await fmBuildHwpx(c);
-      fmSaveBlob(blob, fmFileName(c));
+      clearTimeout(timer); timer = null;
+      await fmSaveBlob(blob, fmFileName(c));
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
-    } finally { btn.disabled = false; }
+    } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
   // 엑셀: 반마다 한 시트, 1단(거르기·정렬하기 좋게). 제목·안내·머리 줄·테두리·번갈아 색·칸 너비·줄 높이·글꼴·정렬은 화면과 같게,
   // A4 세로 한 쪽 폭에 맞춰 인쇄, 머리 줄은 쪽마다 반복·틀 고정. ExcelJS는 수업 변경 엑셀과 같이 누를 때만 받아 온다.
   async function fmDownloadXlsx() {
     const btn = document.getElementById('fm-xlsx-btn');
+    let timer = null;
     try {
       const c = fmCfg(), msg = fmEmptyMsg(c);
       if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
-      btn.disabled = true;
+      btn.disabled = true; timer = fmSlowTimer(); fmStage = '엑셀 도구 받는 중';
       await sccLoadExcelJS();
+      fmStage = '엑셀 파일 만드는 중';
       const L = fmLayout(Object.assign({}, c, { colsN: 1 }));
       const wb = new ExcelJS.Workbook();
       // 표 선 → 엑셀 테두리(엑셀은 굵기가 가늘게·보통·굵게뿐이라 가까운 것으로)
@@ -13099,10 +13128,11 @@
       });
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      fmSaveBlob(blob, fmFileName(c).replace(/\.hwpx$/, '.xlsx'));
+      clearTimeout(timer); timer = null;
+      await fmSaveBlob(blob, fmFileName(c).replace(/\.hwpx$/, '.xlsx'));
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
-    } finally { btn.disabled = false; }
+    } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
   function fmPrint() {
     const c = fmCfg(), msg = c.kind === 'ws' ? '' : fmEmptyMsg(c);
@@ -13522,7 +13552,10 @@
   async function wsBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
     const L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c), hu = fmHu;
-    const zip = await JSZip.loadAsync(await fmSkeleton());
+    fmStage = '한글 바탕 파일 받는 중';
+    const skel = await fmSkeleton();
+    fmStage = '파일 만드는 중';
+    const zip = await JSZip.loadAsync(skel);
     const NONE = fmLn('none', 0.12), K = function(w) { return fmLn('solid', w); };
     const bfS = function(o) { return { fill: null, s: Object.assign({ l: NONE, r: NONE, t: NONE, b: NONE }, o || {}), slash: null }; };
     const BF = { none: 0, bottom: 1, top: 2, slash: 3, note: 4, box: 5 };
@@ -13677,14 +13710,16 @@
   function wsTitle(c) { return [c.sNo, c.sName].filter(Boolean).join(' ') || [c.uNo, c.uName].filter(Boolean).join(' ') || '학습지'; }
   async function wsDownloadHwpx() {
     const btn = document.getElementById('fm-hwpx-btn');
+    let timer = null;
     try {
       const c = wsCfg();
-      btn.disabled = true;
+      btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
       const blob = await wsBuildHwpx(c);
-      fmSaveBlob(blob, ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx');
+      clearTimeout(timer); timer = null;
+      await fmSaveBlob(blob, ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx');
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
-    } finally { btn.disabled = false; }
+    } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
   // 양식 종류(명렬표 수합 / 학습지) 바꾸기
   function fmSetKind(k) { fmSet({ kind: k === 'ws' ? 'ws' : 'roster' }); fmFillForm(); fmRender(); }
