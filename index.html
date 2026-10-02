@@ -469,6 +469,10 @@
     #se-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
     #se-tabs { margin: 12px 0 8px; flex: 0 0 auto; display: inline-flex; }
     /* 자율/진로 고르기는 세 탭 모두 같은 자리(탭 바로 아래)에 고정 — 아래 내용만 바뀐다. */
+    /* 구역 나누기: 홈 위젯처럼 회색 바탕 위 흰 상자(테두리·둥근 모서리) — 표·학생 목록·편집 구역마다 하나씩 */
+    .se-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; }
+    .se-sbox { padding: 10px 14px 12px; margin-bottom: 12px; }
+    .se-sbox > .se-sec:first-child { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); font-size: 13.5px; color: var(--text-main); }
     #se-kind-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 0 0 auto; margin-bottom: 8px; }
     #se-tabs .top-btn { font-weight: 800; }
     .se-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -493,6 +497,10 @@
     .se-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); min-width: 100%; }
     .se-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 6px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 2; }
     .se-table td { padding: 4px 4px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+    .se-table td + td, .se-table th + th { border-left: 1px solid var(--border-color); }
+    .se-table tbody tr:last-child td { border-bottom: 0; }
+    /* 번호·이름 칸은 옅은 색으로 — 학생 줄과 글 칸이 한눈에 갈림 */
+    .se-table td.se-c.se-left, .se-table td.se-c.se-name { background: var(--tt-bg); }
     .se-table td.se-c { text-align: center; white-space: nowrap; padding-top: 8px; font-weight: 700; }
     .se-table th.se-left, .se-table td.se-left { position: sticky; left: 0; background: var(--card-bg); z-index: 1; }
     .se-table th.se-left { z-index: 3; background: var(--tt-bg); }
@@ -500,7 +508,8 @@
     .se-cell:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); min-height: 150px; }
     .se-bytes { font-size: 10.5px; color: var(--text-sub); font-weight: 700; text-align: right; margin-top: 1px; }
     .se-bytes.over { color: var(--alert); }
-    #se-students { width: 250px; flex: 0 0 auto; border-right: 1px solid var(--border-color); overflow-y: auto; min-height: 0; }
+    #se-students { width: 250px; flex: 0 0 auto; overflow-y: auto; min-height: 0; }
+    #se-students .se-stu:last-child { border-bottom: 0; }
     .se-stu { display: grid; grid-template-columns: 26px 1fr auto auto; gap: 5px; padding: 6px 8px; cursor: pointer; border-bottom: 1px solid var(--border-color); align-items: center; font-size: 12.5px; }
     .se-stu:hover { background: var(--accent-soft); }
     .se-stu.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
@@ -510,9 +519,9 @@
     .se-dot.over { background: #FDE2E1; color: #B42318; }
     .se-dot.empty { opacity: .55; }
     .se-dot.draft { box-shadow: 0 0 0 1.5px #D97706; }
-    #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; padding-left: 22px; }
-    #se-edit-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 8px; }
-    #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 10px 0; }
+    #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; padding-left: 16px; }
+    #se-edit-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 12px; flex: 0 0 auto; }
+    #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 4px 2px 0; }
     .se-sec { font-size: 12.5px; font-weight: 800; color: var(--accent-color); margin: 10px 0 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .se-card { display: block; border: 1px solid var(--border-color); border-radius: 9px; padding: 7px 10px; margin-bottom: 6px; cursor: pointer; background: var(--card-bg); }
     .se-card.on { border-color: var(--accent-color); background: var(--accent-soft); }
@@ -538,7 +547,7 @@
     #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #se-save-state.dirty { color: #B45309; }
     @media (max-width: 1100px) { #se-students { width: 190px; } .se-stu { grid-template-columns: 24px 1fr; } .se-stu .se-dot { display: none; } }
-    @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; border-right: 0; border-bottom: 1px solid var(--border-color); } #se-editor { padding-left: 0; padding-top: 6px; } #se-main { padding: 0 10px 10px; } }
+    @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; } #se-editor { padding-left: 0; padding-top: 10px; } #se-main { padding: 0 10px 10px; } }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -1406,7 +1415,7 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
     </div>
-    <div class="rail-item" title="명렬표" onclick="openStudentRoster()">
+    <div class="rail-item" id="rail-roster-btn" title="명렬표" onclick="openStudentRoster()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
     </div>
@@ -3163,19 +3172,19 @@
 
       <div id="se-pane-src" class="se-pane">
         <div id="se-src-msg" class="se-muted" style="min-height:16px; margin-bottom:4px;"></div>
-        <div class="se-scroll" id="se-src-list"></div>
+        <div class="se-scroll se-box" id="se-src-list"></div>
       </div>
 
       <div id="se-pane-edit" class="se-pane" style="display:none;">
         <div id="se-edit-body" style="display:flex; flex:1; min-height:0;">
-          <div id="se-students"></div>
+          <div id="se-students" class="se-box"></div>
           <div id="se-editor"></div>
         </div>
       </div>
 
       <div id="se-pane-final" class="se-pane" style="display:none;">
         <div id="se-final-note" class="se-muted" style="margin-bottom:6px;"></div>
-        <div class="se-scroll" id="se-final-list"></div>
+        <div class="se-scroll se-box" id="se-final-list"></div>
       </div>
     </div>
   </div>
@@ -4093,6 +4102,10 @@
   // (사용자 요청: 숨겨져 있고 창이 작아서 불편하다 — 홈 화면 자리를 통째로 설정으로 바꾸는 게 낫다).
   // 그래서 #main-dashboard ↔ #settings-page를 스위치하고, 왼쪽 레일의 활성 표시도 같이 옮긴다.
   // 왼쪽 레일 버튼을 한 번 더 누르면(이미 그 화면이 열려 있으면) 홈으로 돌아간다 — 명렬표와 같은 동작.
+  // 명렬표·단축키·생기부는 지금 화면 위에 창처럼 뜨는 패널 — 이 버튼을 눌렀다고 밑의 화면(결석계·이름표·양식·편집기 등)을 닫으면
+  // 패널을 닫았을 때 빈 화면만 남는다. 세 패널은 서로 닫아 주므로 한 번에 하나만 뜬다.
+  const RAIL_OVERLAY_IDS = ['rail-roster-btn', 'rail-hwpkeys-btn', 'rail-sgb-btn'];
+  function railOpensOverlay(item) { return !!item && RAIL_OVERLAY_IDS.indexOf(item.id) !== -1; }
   function railToggle(btnId, openFn) {
     const btn = document.getElementById(btnId);
     if (btn && btn.classList.contains('active')) { goHome(); return; }
@@ -5681,6 +5694,14 @@
   }
 
   function closeStudentRoster() { document.getElementById('roster-overlay').style.display = 'none'; }
+  // 명렬표를 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(단축키·생기부와 같게).
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-roster-btn') closeStudentRoster();
+    }, true);
+  });
 
   // ===== ⌨️ 단축키 (한글 / 엑셀 / 윈도우) =====
   // 사용자가 준 "한글 단축Key" 표(PDF)를 옮긴 것. 키 적는 법: "+"는 함께 누르기, ","는 떼고 이어서
@@ -11603,7 +11624,7 @@
     const rail = document.getElementById('app-rail');
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
-      if (item && item.id !== 'rail-absence-btn') closeAbsencePage();
+      if (item && item.id !== 'rail-absence-btn' && !railOpensOverlay(item)) closeAbsencePage();
     }, true);
   });
 
@@ -12353,7 +12374,7 @@
     const rail = document.getElementById('app-rail');
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
-      if (item && item.id !== 'rail-nametag-btn') closeNametagPage();
+      if (item && item.id !== 'rail-nametag-btn' && !railOpensOverlay(item)) closeNametagPage();
     }, true);
   });
 
@@ -12626,7 +12647,7 @@
       }).join('') +
       '<th class="se-addcol"><button class="se-addbtn" id="se-add-area" title="부서에서 받은 활동 하나가 한 열이 돼요" onclick="seAddArea(\'' + kind + '\')">＋ 영역 추가</button></th></tr></thead><tbody>';
     seRoster.forEach(function(s, i) {
-      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
+      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c se-name">' + escapeHtmlAttr(s.name) + '</td>';
       areas.forEach(function(a) {
         const k = seSrcKey(s.num, a.id), v = seGet(k);
         html += '<td><textarea class="se-cell" rows="3" data-key="' + k + '" data-num="' + s.num + '" data-area="' + a.id + '" placeholder="받은 문장" spellcheck="false"' +
@@ -12736,7 +12757,7 @@
     const i = seRoster.indexOf(s);
     const draft = seDraftText(s.num, kind);
     const lim = seLimitBytes(kind);
-    let html = '<div id="se-edit-head">' +
+    let html = '<div id="se-edit-head" class="se-box">' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
       '<div style="font-weight:800; font-size:15px;">' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</div>' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(1)"' + (i >= seRoster.length - 1 ? ' disabled' : '') + '>다음 ▶</button>' +
@@ -12745,7 +12766,7 @@
     // 받은 내용
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
     const joined = chosen.map(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }).join(' ');
-    html += '<div class="se-sec"><span>📥 받은 내용 — 넣을 것을 체크</span><span class="se-muted">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(seBytes(joined)) + '</b>바이트 / ' + seFmt(lim) + '</span></div>';
+    html += '<div class="se-box se-sbox" id="se-box-src"><div class="se-sec"><span>📥 받은 내용 — 넣을 것을 체크</span><span class="se-muted">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(seBytes(joined)) + '</b>바이트 / ' + seFmt(lim) + '</span></div>';
     if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "📥 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
     areas.forEach(function(a) {
       const v = seGet(seSrcKey(s.num, a.id));
@@ -12755,19 +12776,19 @@
         '<span>' + escapeHtmlAttr(a.name) + '</span>' + (none ? '<span class="se-bytes">(비어 있음)</span>' : seBytesHtml(v, 0)) + '</div>' +
         (none ? '' : '<div class="se-card-text">' + escapeHtmlAttr(v) + '</div>') + '</label>';
     });
-    html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div>';
+    html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div></div>';
     // 편집 칸
-    html += '<div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 편집 칸 — 다듬은 뒤 📊 최종에 넣기</span></div>';
+    html += '<div class="se-box se-sbox" id="se-box-draft"><div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 편집 칸 — 다듬은 뒤 📊 최종에 넣기</span></div>';
     html += '<textarea id="se-draft" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
       ' oninput="seOnDraftInput(this)" onchange="seOnDraftChange(this)" onblur="seOnDraftChange(this)">' + escapeHtmlAttr(draft) + '</textarea>';
     html += '<div style="display:flex; gap:8px; margin-top:6px;"><button class="top-btn" style="flex:1 1 0; padding:7px;" onclick="seClearDraft()">지우기</button>' +
       '<button class="top-btn" id="se-copy-btn" style="flex:1 1 0; padding:7px; font-weight:800;" onclick="seCopyDraft()">📋 복사</button>' +
       '<button class="top-btn" id="se-put-btn" style="flex:1.4 1 0; padding:7px; font-weight:800; border:1.5px solid var(--accent-color); background:var(--accent-soft); color:var(--accent-color);" onclick="sePutFinal()">📊 최종에 넣기</button></div>';
     html += '<div id="se-put-state"></div>';
-    html += '<div class="sgb-count" id="se-count"></div><div class="sgb-bar" id="se-bar"><div></div></div><div id="se-result"></div>';
+    html += '<div class="sgb-count" id="se-count"></div><div class="sgb-bar" id="se-bar"><div></div></div><div id="se-result"></div></div>';
     // 메모
-    html += '<div class="se-sec" style="margin-top:14px;"><span>📝 메모</span><span class="se-muted">예: 진로독서 줄이고, 아카데미아 메인 — 나한테만 보이는 메모</span></div>' +
-      '<input type="text" id="se-memo" data-num="' + s.num + '" value="' + escapeHtmlAttr(st.memo) + '" placeholder="이 학생 메모" onchange="seSetSt(' + s.num + ', { memo: this.value.trim() })">';
+    html += '<div class="se-box se-sbox" id="se-box-memo"><div class="se-sec"><span>📝 메모</span><span class="se-muted">예: 진로독서 줄이고, 아카데미아 메인 — 나한테만 보이는 메모</span></div>' +
+      '<input type="text" id="se-memo" data-num="' + s.num + '" value="' + escapeHtmlAttr(st.memo) + '" placeholder="이 학생 메모" onchange="seSetSt(' + s.num + ', { memo: this.value.trim() })"></div>';
     html += '</div>';
     ed.innerHTML = html;
     seRenderFinCount();
@@ -12902,7 +12923,7 @@
       '<thead><tr><th class="se-left">번호</th><th>이름</th>' +
       kinds.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' 최종 <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th>바이트</th><th>복사</th>'; }).join('') + '<th>편집</th></tr></thead><tbody>';
     seRoster.forEach(function(s) {
-      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
+      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c se-name">' + escapeHtmlAttr(s.name) + '</td>';
       kinds.forEach(function(k) {
         const t = seGet(seFinKey(s.num, k)), d = seHasDraft(s.num, k);
         if (t.trim()) { stat[k].n++; if (seBytes(t) > seLimitBytes(k)) stat[k].over++; }
@@ -13119,7 +13140,7 @@
     const rail = document.getElementById('app-rail');
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
-      if (item && item.id !== 'rail-sgb-btn') closeSePage();
+      if (item && !railOpensOverlay(item)) closeSePage();
     }, true);
   });
 
@@ -14747,7 +14768,7 @@
     const rail = document.getElementById('app-rail');
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
-      if (item && item.id !== 'rail-forms-btn') closeFormPage();
+      if (item && item.id !== 'rail-forms-btn' && !railOpensOverlay(item)) closeFormPage();
     }, true);
   });
 
