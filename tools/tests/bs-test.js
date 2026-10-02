@@ -245,6 +245,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     rows: [...document.querySelectorAll('#bs-rows .bs-crow')].map(r => [r.dataset.id, (r.querySelector('input[data-c="g"]') || {}).value, (r.querySelector('input[data-c="g"]') || {}).disabled, r.querySelector('input[data-c="d"]').value, r.querySelector('.bs-ct').textContent].join('/')),
     times: bsRows(bsCfg()).map(r => r.n + ' ' + r.s + '-' + r.e) }));
   const c0 = await cl();
+  const lefts = (sel) => P.evaluate((sel) => new Set([...document.querySelectorAll('#bs-rows .bs-row')].map(r => r.querySelector(sel)).filter(Boolean).map(e => Math.round(e.getBoundingClientRect().left))).size, sel);
+  check('칸 줄 맞춤: 교시 줄·특별 줄의 쉬는·분·시간 칸이 같은 자리(사용자: 표 정렬이 안 맞음)', (await lefts('.bs-gap')) === 1 && (await lefts('.bs-min')) === 1 && (await lefts('.bs-ct')) === 1);
+  check('글꼴 고르기는 세부 설정 밖(바로 보임)', await P.evaluate(() => document.getElementById('bs-tfont').checkVisibility() && !document.getElementById('bs-tfont').closest('#bs-more')));
   check('⏱️ 분으로 계산이 기본: 시작 08:40, 교시 사이 쉬는 시간 10분, 줄마다 쉬는·분·시간(첫 줄 쉬는 칸은 막힘), 교시→교시 10분·4교시→중식 0분', c0.on && c0.start === '08:40' && c0.brk === '10' &&
     c0.rows[0] === 'x0//true/10/08:40 ~ 08:50' && c0.rows[1] === 'p0/0/false/50/08:50 ~ 09:40' && c0.rows[2] === 'p1/10/false/50/09:50 ~ 10:40' && c0.rows[5] === 'x1/0/false/50/12:40 ~ 13:30' && c0.rows[11] === 'x4/10/false/70/18:50 ~ 20:00', c0.rows);
   const cset = async (sel, v) => { await P.fill(sel, v); await P.dispatchEvent(sel, 'input'); await P.dispatchEvent(sel, 'change'); await P.waitForTimeout(150); };
@@ -265,6 +268,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.evaluate(() => document.activeElement.blur()); await P.waitForTimeout(300); // 시작 칸을 빠져나온 뒤(사라지면서 "바뀜"이 늦게 와 다시 계산되지 않게)
   await P.evaluate(() => { localStorage.setItem('fm-bs', '{}'); scheduleBackupWrite(); bsFillForm(); fmRender(); }); await P.waitForTimeout(200);
   await P.click('#bs-calc [data-calc="0"]'); await P.waitForTimeout(200);
+  check('🕘 시각 직접에서도 시작·끝 칸 줄 맞춤', (await lefts('.bs-t[data-f="s"]')) === 1 && (await lefts('.bs-t[data-f="e"]')) === 1);
   check('🕘 시각 직접: 줄마다 시작·끝 칸', await P.evaluate(() => document.querySelectorAll('#bs-rows .bs-t').length === 24 && !document.getElementById('bs-start') && bsCfg().normal.calc === false));
   const ed = await P.evaluate(() => [...document.querySelectorAll('#bs-rows .bs-row')].map(r => [r.dataset.k, (r.querySelector('.bs-pn') || r.querySelector('.bs-n')).textContent || r.querySelector('.bs-n').value, [...r.querySelectorAll('.bs-t')].map(x => x.value + '/' + x.placeholder).join(' ')]));
   check('시간 칸: 표와 같은 순서, 교시는 빈칸 + 회색 일과 시간(placeholder), 조회·중식·청소도 빈칸 + 교시에 맞춘 회색 시간, 자기주도학습은 적은 시간', ed.length === 12 && ed[1][0] === 'p' && ed[1][2] === '/08:50 /09:40' && ed[0][1] === '조회' && ed[0][2] === '/08:40 /08:50' && ed[5][1] === '중식' && ed[5][2] === '/12:40 /13:30' && ed[10][2] === '17:30/시작 18:40/끝', ed.slice(0, 11));
@@ -367,7 +371,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const fs1 = (await prev()).fs;
   await P.click('#bs-bigger'); await P.waitForTimeout(150);
   const s2 = await P.evaluate(() => { const c = bsCfg(); return [c.tSize, c.hSize, c.nSize, c.tmSize, c.mSize].join(); });
-  check('시간 글씨 30pt, A+ 크게 → 모두 1pt씩(지금 크기 안내도)', fs1[1] === '40px' && s2 === '31,23,25,31,23' && /제목 31 · 시간 31pt/.test(await P.textContent('#bs-size-now')), [fs1, s2]);
+  check('시간 글씨 30pt, 시간 글씨 A+ → 표 글씨(머리 줄·구분·시간·분)만 1pt씩, 제목은 그대로(지금 크기 안내도)', fs1[1] === '40px' && s2 === '30,23,25,31,23' && (await P.textContent('#bs-size-now')) === '31pt', [fs1, s2]);
+  await P.click('#bs-t-bigger'); await P.click('#bs-t-bigger'); await P.waitForTimeout(150);
+  const s3 = await P.evaluate(() => { const c = bsCfg(); return [c.tSize, c.hSize, c.nSize, c.tmSize, c.mSize].join(); });
+  check('제목 글씨 A+ 두 번 → 제목만 32pt(표 글씨는 그대로)', s3 === '32,23,25,31,23' && (await P.textContent('#bs-t-now')) === '32pt' && await P.evaluate(() => Math.abs(parseFloat(getComputedStyle(document.querySelector('#fm-pages .bs-title')).fontSize) - 32 * 4 / 3) < 0.1), [s3, await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .bs-title')).fontSize)]);
+  await P.click('#bs-t-smaller'); await P.click('#bs-t-smaller');
   await P.click('#bs-smaller'); await P.click('#bs-bold'); await P.waitForTimeout(150);
   check('표 글씨 굵게 끄기', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages table.bs-main tr:last-child td')).fontWeight === '400'));
   await P.click('#bs-bold');

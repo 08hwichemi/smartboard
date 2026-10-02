@@ -1060,6 +1060,9 @@
     .bs-tt-text { font-size: 7px; font-weight: 800; text-align: center; margin-bottom: 2px; }
     #bs-more summary { cursor: pointer; font-size: 12px; color: var(--text-sub); font-weight: 700; padding: 2px 0; }
     .bs-more-in { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .bs-szrow { gap: 5px; }
+    .bs-szl, #bs-font-box .fm-fontrow .fm-fl { width: 58px; flex: none; }
+    .bs-szv { min-width: 38px; text-align: center; font-size: 12px; }
     .bs-hl { width: 64px !important; flex: 1 1 0; min-width: 0; }
     .bs-w { display: inline-flex; align-items: center; gap: 3px; }
     .bs-w input { width: 52px; padding-left: 5px; padding-right: 1px; }
@@ -1084,6 +1087,11 @@
     .bs-brk { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
     .bs-brk .bs-num { width: 46px; padding-left: 4px; padding-right: 0; }
     .bs-row .ws-ol-x { flex: 0 0 18px; }
+    /* 줄마다 칸 폭을 똑같이(격자) — 교시 줄(글씨)과 특별 줄(이름 칸·고르기·✕)이 어긋나지 않게(사용자: "표 정렬이 안 맞는다") */
+    #bs-rows .bs-row { display: grid; grid-template-columns: minmax(0, 1fr) 48px 10px 48px 30px 66px 18px; gap: 3px; align-items: center; }
+    #bs-rows .bs-crow, #bs-rows .bs-chead { grid-template-columns: minmax(0, 1fr) 42px 42px 84px 66px 18px; }
+    #bs-rows .bs-row > * { width: 100%; min-width: 0; box-sizing: border-box; margin: 0; }
+    #bs-rows .bs-row > .ws-ol-x { padding: 0; }
     .bs-row[data-k="lunch"], .bs-row[data-k="clean"], .bs-row[data-k="meet"], .bs-row[data-k="self"], .bs-row[data-k="etc"] { background: var(--hover-bg, rgba(127,127,127,.08)); border-radius: 6px; }
     .bs-theme { display: inline-flex; align-items: center; gap: 4px; }
     .bs-tsw { display: inline-flex; border: 1px solid var(--border-color); border-radius: 3px; overflow: hidden; }
@@ -3329,17 +3337,18 @@
       </div>
       <div class="nt-box" id="bs-font-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>🔤 글씨·종이</span> <span class="nt-muted">필요할 때만</span></div>
-        <div class="nt-row">글씨<button class="nt-chip" id="bs-smaller" onclick="bsSizeAll(-1)" title="모든 글씨 1pt 작게">A− 작게</button><button class="nt-chip" id="bs-bigger" onclick="bsSizeAll(1)" title="모든 글씨 1pt 크게">A+ 크게</button><span class="nt-muted" id="bs-size-now"></span></div>
+        <div class="nt-row bs-szrow"><span class="bs-szl">제목 글씨</span><button class="nt-chip" id="bs-t-smaller" onclick="bsSizeAll(-1, 't')" title="제목 1pt 작게">A−</button><b class="bs-szv" id="bs-t-now"></b><button class="nt-chip" id="bs-t-bigger" onclick="bsSizeAll(1, 't')" title="제목 1pt 크게">A+</button></div>
+        <div class="nt-row bs-szrow"><span class="bs-szl">시간 글씨</span><button class="nt-chip" id="bs-smaller" onclick="bsSizeAll(-1, 'b')" title="표 글씨(머리 줄·구분·시간·분) 1pt 작게">A−</button><b class="bs-szv" id="bs-size-now"></b><button class="nt-chip" id="bs-bigger" onclick="bsSizeAll(1, 'b')" title="표 글씨(머리 줄·구분·시간·분) 1pt 크게">A+</button><span class="nt-muted">구분·분도 같이</span></div>
+        <div class="nt-row fm-fontrow" title="제목"><span class="fm-fl">제목 글꼴</span><select id="bs-tfont" class="mini-select" onchange="bsOnFontPick('tFont', this.value)"></select></div>
+        <input type="text" id="bs-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsOnFontCustom('tFont', this.value)">
+        <div class="nt-row fm-fontrow" title="표 글씨"><span class="fm-fl">표 글꼴</span><select id="bs-bfont" class="mini-select" onchange="bsOnFontPick('bFont', this.value)"></select></div>
+        <input type="text" id="bs-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="표 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsOnFontCustom('bFont', this.value)">
+        <div class="nt-muted" id="bs-font-msg"></div>
         <div class="nt-row" id="bs-paper"></div>
         <div class="nt-row"><label class="pe-chk"><input type="checkbox" id="bs-showmin" onchange="bsSet({ showMin: this.checked }, true)">"분" 칸 넣기</label></div>
         <details id="bs-more">
-          <summary>세부 설정 — 글꼴·글씨 크기·시간 표기·칸 너비·줄 높이·여백</summary>
+          <summary>세부 설정 — 칸마다 글씨 크기·시간 표기·머리 줄·칸 너비·줄 높이·여백</summary>
           <div class="bs-more-in">
-            <div class="nt-row fm-fontrow" title="제목"><span class="fm-fl">제목</span><select id="bs-tfont" class="mini-select" onchange="bsOnFontPick('tFont', this.value)"></select></div>
-            <input type="text" id="bs-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsOnFontCustom('tFont', this.value)">
-            <div class="nt-row fm-fontrow" title="표 글씨"><span class="fm-fl">표</span><select id="bs-bfont" class="mini-select" onchange="bsOnFontPick('bFont', this.value)"></select></div>
-            <input type="text" id="bs-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="표 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsOnFontCustom('bFont', this.value)">
-            <div class="nt-muted" id="bs-font-msg"></div>
             <div class="bs-sgrid" id="bs-sizes"><label>제목<input type="number" class="lp-input" id="bs-tSize" min="14" max="60" step="1" oninput="bsOnNum(this, 'tSize', 14, 60)"></label><label>머리 줄<input type="number" class="lp-input" id="bs-hSize" min="8" max="40" step="1" oninput="bsOnNum(this, 'hSize', 8, 40)"></label><label>구분<input type="number" class="lp-input" id="bs-nSize" min="8" max="44" step="1" oninput="bsOnNum(this, 'nSize', 8, 44)"></label><label>시간<input type="number" class="lp-input" id="bs-tmSize" min="8" max="48" step="1" oninput="bsOnNum(this, 'tmSize', 8, 48)"></label><label>분<input type="number" class="lp-input" id="bs-mSize" min="8" max="44" step="1" oninput="bsOnNum(this, 'mSize', 8, 44)"></label></div>
             <div class="nt-row"><label class="pe-chk"><input type="checkbox" id="bs-bold" onchange="bsSet({ bold: this.checked }, true)">표 글씨 굵게</label><span class="nt-muted">크기는 pt</span></div>
             <div class="nt-row" id="bs-time"></div>
@@ -16205,7 +16214,7 @@
       return '<button class="bs-dcard' + (c.design === d.k ? ' on' : '') + '" data-design="' + d.k + '" onclick="bsSet({ design: \'' + d.k + '\' }, true)" title="' + ntEsc(d.d) + '">' + bsThumb(c, d) + '<span>' + d.n + '</span></button>';
     }).join('');
     // ④ 글씨·종이
-    document.getElementById('bs-size-now').textContent = '제목 ' + c.tSize + ' · 시간 ' + c.tmSize + 'pt';
+    document.getElementById('bs-t-now').textContent = c.tSize + 'pt'; document.getElementById('bs-size-now').textContent = c.tmSize + 'pt';
     // 세부 설정(접어 둠): 시간 표기·머리 줄·칸 너비·표 폭
     document.getElementById('bs-time').innerHTML = '시간 ' + [[' - '], [' ~ '], [' – ']].map(function(x) {
       return chip(c.sep === x[0], 'data-sep="' + x[0].trim() + '" onclick="bsSet({ sep: \'' + x[0] + '\' }, true)"', (c.pad ? '08:40' : '8:40') + x[0] + (c.pad ? '08:50' : '8:50'));
@@ -16264,8 +16273,12 @@
   }
   function bsOnNum(inp, k, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[k] = v; bsSet(o); bsInfoFill(); }
   function bsOnPageNum(inp) { bsOnNum(inp, inp.dataset.k, 0, 40); }
-  // 글씨 모두 크게/작게(1pt씩)
-  function bsSizeAll(d) { const c = bsCfg(), o = {}; BS_SIZES.forEach(function(s) { o[s[0]] = Math.min(s[3], Math.max(s[2], c[s[0]] + d)); }); bsSet(o, true); }
+  // 글씨 크게/작게(1pt씩): which = 't' 제목만 / 'b' 표 글씨(머리 줄·구분·시간·분 함께) / 없으면 모두
+  function bsSizeAll(d, which) {
+    const c = bsCfg(), o = {};
+    BS_SIZES.forEach(function(s) { if (!which || (which === 't') === (s[0] === 'tSize')) o[s[0]] = Math.min(s[3], Math.max(s[2], c[s[0]] + d)); });
+    bsSet(o, true);
+  }
   function bsOnFontPick(key, v) {
     const c = bsCfg(), o = {};
     if (v === '__custom') { o[key] = c[key]; o[key + 'C'] = true; bsSet(o, true); const el = document.getElementById(key === 'tFont' ? 'bs-tfont-custom' : 'bs-bfont-custom'); if (el) { el.focus(); el.select(); } return; }
