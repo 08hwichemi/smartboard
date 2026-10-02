@@ -266,8 +266,9 @@ handleDb = async function(pageInfo, req) {
   const kbSrc = await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.dataset.kind).join());
   check('자율/진로 버튼은 자료 입력·편집·최종 모두 같은 자리, "전체"는 최종 탭에만', pos.src === pos.edit && pos.edit === pos.final && kb === 'a,p,all' && kbSrc === 'a,p', { pos, kb, kbSrc });
   // 영역 1개여도 표 폭은 영역 3개일 때처럼(한 칸이 화면 끝까지 늘어나지 않게)
-  const w1 = await P.evaluate(() => ({ cell: document.querySelector('#se-src-list textarea.se-cell').getBoundingClientRect().width, list: document.getElementById('se-src-list').clientWidth }));
+  const w1 = await P.evaluate(() => { const l = document.getElementById('se-src-list'), t = l.querySelector('table'); return { cell: l.querySelector('textarea.se-cell').getBoundingClientRect().width, list: document.getElementById('se-pane-src').clientWidth, box: l.getBoundingClientRect().width, table: t.getBoundingClientRect().width }; });
   check('영역 1개: 칸 폭 ≈ (화면 − 번호·이름·추가 열) / 3', Math.abs(w1.cell - (w1.list - 234) / 3) < 16, w1);
+  check('흰 상자도 표 폭에 맞춰 줄어듦(오른쪽에 빈 흰 칸 없음)', w1.box < w1.list - 100 && Math.abs(w1.box - w1.table) < 4, w1);
 
   // ---- 영역 추가·이름 바꾸기(표 머리에서) ----
   await P.click('#se-add-area'); await wait(200);
@@ -415,6 +416,8 @@ handleDb = async function(pageInfo, req) {
   await P.click('#se-kind [data-kind="p"]'); await wait(300);
   check('진로만: 진로 열만, 글 칸 폭은 전체일 때와 같음(한 줄이 너무 길지 않게)', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)) &&
     Math.abs(wAll - await P.evaluate(() => document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt').getBoundingClientRect().width)) < 3, wAll);
+  const fb = await P.evaluate(() => { const l = document.getElementById('se-final-list'); return { box: l.getBoundingClientRect().width, table: l.querySelector('table').getBoundingClientRect().width, pane: document.getElementById('se-pane-final').clientWidth }; });
+  check('진로만: 흰 상자도 표 폭에 맞춰 줄어듦(오른쪽 빈 흰 칸 없음)', fb.box < fb.pane - 100 && Math.abs(fb.box - fb.table) < 4, fb);
   const pOnly = await P.evaluate(() => [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td')].map(t => t.textContent.trim()));
   const pb = sgbBytesOf('진로독서 프로젝트로 책을 읽고 토론함.');
   check('바이트 칸에 쓴 바이트 / 한도 + 남은 바이트', pOnly[2] === '진로독서 프로젝트로 책을 읽고 토론함.' && pOnly[3] === pb + ' / 1,500' + (1500 - pb).toLocaleString('ko-KR') + ' 남음', pOnly);
@@ -469,32 +472,37 @@ handleDb = async function(pageInfo, req) {
       }));
       const buf = Buffer.from(got.b64, 'base64');
       const xb = X.read(buf, { type: 'buffer' });
-      const fromA1 = (sh) => X.utils.encode_range({ s: { r: 0, c: 0 }, e: X.utils.decode_range(sh['!ref']).e });   // 비어 있는 A열도 세게(칸 번호 그대로)
-      const dd = X.utils.sheet_to_json(xb.Sheets['데이터'], { header: 1, range: fromA1(xb.Sheets['데이터']) }), ff = X.utils.sheet_to_json(xb.Sheets['최종'], { header: 1 });
-      check('엑셀 내려받기: 데이터(1행 자율 D·진로 L, 2행 영역 이름, 번호·이름) + 최종(번호·이름·자율·바이트·진로·바이트)', /^자율진로_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '데이터,최종' && dd[0][3] === '자율' && dd[0][11] === '진로' && dd[1][1] === '번호' && dd[1][3] === '1인 1역할' && dd[1][11] === '진로 독서' && dd[1][12] === '큐리어톤' && dd[2][1] === 1 && dd[2][3] === '교실 문단속을 맡아 성실히 수행함.' && ff[0].join() === '번호,이름,자율,바이트,진로,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, d: dd.slice(0, 3), f: ff.slice(0, 2) });
+      const rows = (n) => X.utils.sheet_to_json(xb.Sheets[n], { header: 1, defval: '' });
+      const sa = rows('자율 입력'), sp = rows('진로 입력'), ff = X.utils.sheet_to_json(xb.Sheets['최종'], { header: 1 });
+      check('엑셀 내려받기: 자율 입력·진로 입력 시트 따로(1행 번호·이름·영역 이름) + 최종(번호·이름·자율·바이트·진로·바이트)', /^자율진로_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '자율 입력,진로 입력,최종' &&
+        sa[0].join() === '번호,이름,1인 1역할,자치 활동,좌우명' && sa[1][0] === 1 && sa[1][1] === '가나다' && sa[1][2] === '교실 문단속을 맡아 성실히 수행함.' && sa[1][4] === '엑셀 1번 좌우명' &&
+        sp[0].join() === '번호,이름,진로 독서,큐리어톤' && sp[1][3] === '엑셀 1번 큐리어톤' && sa.length === 6 && sp.length === 6 &&
+        ff[0].join() === '번호,이름,자율,바이트,진로,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, sheets: xb.SheetNames, a: sa.slice(0, 2), p: sp.slice(0, 2), f: ff.slice(0, 2) });
       const EJ = require(path.join(path.dirname(EXCELJS_PATH), '..'));
       const ew = new EJ.Workbook(); await ew.xlsx.load(buf);
-      const ed = ew.getWorksheet('데이터'), ef = ew.getWorksheet('최종');
+      const ed = ew.getWorksheet('자율 입력'), ep = ew.getWorksheet('진로 입력'), ef = ew.getWorksheet('최종');
       const fmt = {
-        dW: ed.getColumn(4).width, fW: [ef.getColumn(3).width, ef.getColumn(4).width], wrapD: ed.getCell('D3').alignment && ed.getCell('D3').alignment.wrapText, wrapF: ef.getCell('C2').alignment && ef.getCell('C2').alignment.wrapText,
-        top: ef.getCell('C2').alignment && ef.getCell('C2').alignment.vertical, filterD: ed.autoFilter, filterF: ef.autoFilter, viewF: ef.views && ef.views[0], viewD: ed.views && ed.views[0],
-        bold: ef.getCell('A1').font && ef.getCell('A1').font.bold, border: !!(ef.getCell('C2').border && ef.getCell('C2').border.top), merged: ed.getCell('E1').isMerged,
+        dW: ed.getColumn(3).width, pW: ep.getColumn(3).width, fW: [ef.getColumn(3).width, ef.getColumn(4).width], wrapD: ed.getCell('C2').alignment && ed.getCell('C2').alignment.wrapText, wrapF: ef.getCell('C2').alignment && ef.getCell('C2').alignment.wrapText,
+        top: ef.getCell('C2').alignment && ef.getCell('C2').alignment.vertical, filterD: ed.autoFilter, filterP: ep.autoFilter, filterF: ef.autoFilter, viewF: ef.views && ef.views[0], viewD: ed.views && ed.views[0], viewP: ep.views && ep.views[0],
+        bold: ef.getCell('A1').font && ef.getCell('A1').font.bold, border: !!(ef.getCell('C2').border && ef.getCell('C2').border.top),
         formula: ef.getCell('D2').formula, result: ef.getCell('D2').result, cf: (ef.conditionalFormattings || []).map(c => c.ref + ':' + c.rules[0].formulae[0]).join('|'),
-        h2: ef.getRow(2).height, h3: ef.getRow(3).height, landscape: ef.pageSetup.orientation, fit: ef.pageSetup.fitToWidth
+        h2: ef.getRow(2).height, h3: ef.getRow(3).height, landscape: ef.pageSetup.orientation, fit: ef.pageSetup.fitToWidth, active: ew.views && ew.views[0] && ew.views[0].activeTab
       };
-      check('엑셀 서식: 칸 너비(영역 40·최종 70), 줄바꿈·위 맞춤, 머리 굵게·테두리, 자율 머리 병합', fmt.dW === 40 && fmt.fW[0] === 70 && fmt.fW[1] === 10 && fmt.wrapD && fmt.wrapF && fmt.top === 'top' && fmt.bold && fmt.border && fmt.merged, fmt);
-      check('엑셀 서식: 필터·틀 고정(데이터 3열·2행, 최종 2열·1행)', fmt.filterD && fmt.filterF && fmt.viewF.state === 'frozen' && fmt.viewF.ySplit === 1 && fmt.viewF.xSplit === 2 && fmt.viewD.ySplit === 2 && fmt.viewD.xSplit === 3, fmt);
+      check('엑셀 서식: 칸 너비(영역 40·최종 70), 줄바꿈·위 맞춤, 머리 굵게·테두리', fmt.dW === 40 && fmt.pW === 40 && fmt.fW[0] === 70 && fmt.fW[1] === 10 && fmt.wrapD && fmt.wrapF && fmt.top === 'top' && fmt.bold && fmt.border, fmt);
+      check('엑셀 서식: 세 시트 모두 필터·틀 고정(번호·이름 2열·머리 1행), 열면 최종 시트', fmt.filterD && fmt.filterP && fmt.filterF && [fmt.viewF, fmt.viewD, fmt.viewP].every(v => v && v.state === 'frozen' && v.ySplit === 1 && v.xSplit === 2) && fmt.active === 2, fmt);
       check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|F2:F6:1500' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
       // 내려받은 파일을 다시 가져오면 다 이미 적힌 칸이라 아무것도 안 바뀜(왕복)
       const rt = path.join(require('os').tmpdir(), 'se-roundtrip.xlsx');
       fs.writeFileSync(rt, buf);
       const beforeRt = await P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-')).sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
+      // 진로 칸 하나를 지워 두고 가져오면 그 칸만 다시 채워져야 함(새 "진로 입력" 시트를 실제로 읽는지)
+      await P.evaluate(() => localStorage.removeItem('se-src-3-1-1-' + seAreas('p').find(a => a.name === '큐리어톤').id));
       await P.setInputFiles('#se-import-input', rt); await wait(800);
       try { fs.unlinkSync(rt); } catch (e) {}
       const rtMsg = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
       await P.click('#custom-alert-overlay button'); await wait(200);
       const afterRt = await P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-')).sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
-      check('내려받은 파일 다시 가져오기: 영역·내용 그대로(왕복)', /받은 내용 0칸, 완성본 0칸/.test(rtMsg) && beforeRt === afterRt, rtMsg);
+      check('내려받은 파일 다시 가져오기: 지운 진로 칸 하나만 다시 채움, 나머지 영역·내용 그대로(왕복)', /자율 3개, 진로 2개/.test(rtMsg) && /받은 내용 1칸, 완성본 0칸/.test(rtMsg) && beforeRt === afterRt, rtMsg);
     } else console.log('  ⚠️ exceljs가 없어 엑셀 내려받기 검사를 건너뜀 (npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
   } else console.log('  ⚠️ 엑셀 검사 건너뜀(xlsx 라이브러리 없음)');
 
