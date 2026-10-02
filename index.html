@@ -1067,6 +1067,7 @@
     .bs-w { display: inline-flex; align-items: center; gap: 3px; }
     .bs-w input { width: 52px; padding-left: 5px; padding-right: 1px; }
     #bs-grid .nt-chip { padding: 3px 8px; }
+    #bs-tools .nt-chip { font-size: 11px; padding: 2px 8px; }
     #bs-rows { display: flex; flex-direction: column; gap: 3px; }
     .bs-row { display: flex; align-items: center; gap: 4px; font-size: 12px; }
     .bs-row { gap: 3px; }
@@ -3322,7 +3323,7 @@
         <div class="ws-row" id="bs-sub-row"><span class="ws-lb">부제</span><input type="text" id="bs-sub" class="lp-input" placeholder="없어도 돼요 — 예) 2026학년도 2학기" oninput="bsSetText('sub', this.value)"></div>
       </div>
       <div class="nt-box" id="bs-rows-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>⏰ 시간</span> <span class="nt-muted">시간 순서대로 표에 나와요</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>⏰ 시간</span> <span id="bs-tools"></span></div>
         <div class="nt-row" id="bs-np"></div>
         <div class="nt-row" id="bs-calc"></div>
         <div id="bs-rows"></div>
@@ -16196,9 +16197,10 @@
     if (!ready) return;
     setVal('bs-title', m.title); setVal('bs-sub', m.sub);
     // 시간 줄
-    document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('') +
-      sep + (c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="고친 교시 시간을 지우고 관리자 일과 시간대로">↺ 일과 시간대로</button>'
-        : '<button class="nt-chip" id="bs-copy-normal" onclick="bsCopyNormal()" title="평상시 시정표의 줄·시간을 그대로 가져와 고쳐 써요">평상시에서 가져오기</button>');
+    document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('');
+    // 되돌리기 단추는 상자 제목 오른쪽에(교시 수 줄에 두면 단축 수업에서 줄이 넘어감 — 사용자)
+    document.getElementById('bs-tools').innerHTML = c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="고친 교시 시간을 지우고 관리자 일과 시간대로">↺ 일과 시간대로</button>'
+      : '<button class="nt-chip" id="bs-copy-normal" onclick="bsCopyNormal()" title="평상시 시정표의 줄·시간을 그대로 가져와 고쳐 써요">↺ 평상시에서 가져오기</button>';
     document.getElementById('bs-calc').innerHTML = '시간 ' + chip(m.calc, 'data-calc="1" onclick="bsModeSet(function(m) { m.calc = true; }, true)"', '⏱️ 분으로 계산', '시작 시각과 줄마다 분만 적으면 시간이 저절로') +
       chip(!m.calc, 'data-calc="0" onclick="bsModeSet(function(m) { m.calc = false; }, true)"', '🕘 시각 직접', '줄마다 시작·끝 시각을 직접 적기') +
       (m.calc ? sep + '시작 <input type="text" class="lp-input bs-t" id="bs-start" inputmode="numeric" maxlength="5" oninput="bsCalcEdit(\'start\', this.value)" onchange="this.value = bsTimeNorm(this.value); bsCalcEdit(\'start\', this.value)">' +

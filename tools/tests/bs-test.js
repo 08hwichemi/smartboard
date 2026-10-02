@@ -307,6 +307,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const dd = await P.evaluate(() => ({ focus: document.activeElement.classList.contains('bs-n'), info: document.getElementById('bs-info').textContent }));
   check('＋ 직접: 이름 칸에 바로 커서, 시간이 빈 줄은 안내("시간을 확인해 주세요")', dd.focus && /시간을 확인해 주세요/.test(dd.info), dd);
   await P.click('#bs-rows .bs-row[data-id="x5"] .ws-ol-x'); await P.waitForTimeout(150);
+  const npOne = () => P.evaluate(() => { const r = document.getElementById('bs-np'), chips = [...r.querySelectorAll('.nt-chip')]; return chips.every(x => Math.abs(x.getBoundingClientRect().top - chips[0].getBoundingClientRect().top) < 2) && !r.querySelector('#bs-reset-times, #bs-copy-normal'); });
+  check('교시 수 줄은 한 줄(되돌리기 단추는 상자 제목 오른쪽)', await npOne() && await P.evaluate(() => !!document.querySelector('#bs-tools #bs-reset-times')));
   await P.click('#bs-np [data-np="6"]'); await P.waitForTimeout(150);
   check('교시 수 6 → 7교시 줄 빠짐', !(await prev()).rows.some(r => r.startsWith('7교시')));
   await P.click('#bs-np [data-np="7"]'); await P.waitForTimeout(150);
@@ -396,6 +398,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 단축 수업: 처음엔 평상시 줄·시간을 옮겨 놓고, 고치면 단축만
   await P.click('#bs-modes [data-mode="short"]'); await P.waitForTimeout(250);
   const s0 = await prev();
+  check('단축 수업에서도 교시 수 줄은 한 줄("평상시에서 가져오기"는 제목 오른쪽)', await npOne() && await P.evaluate(() => !!document.querySelector('#bs-tools #bs-copy-normal')));
   check('⏱️ 단축 수업: 처음엔 평상시 줄·시간 그대로(제목 "… 단축 수업 시정표"), 분으로 계산(교시 50분)', s0.title === '부광고등학교 단축 수업 시정표(2학기)' && s0.rows[2] === '1교시|08:50 - 09:40|50분' &&
     await P.evaluate(() => !!document.querySelector('#bs-calc [data-calc="1"].on') && document.querySelector('#bs-rows .bs-row[data-id="p0"] input[data-c="d"]').value === '50' && !!document.getElementById('bs-copy-normal')), [s0.title, s0.rows.slice(0, 3)]);
   for (let i = 0; i < 7; i++) await cset('#bs-rows .bs-row[data-id="p' + i + '"] input[data-c="d"]', '40');
