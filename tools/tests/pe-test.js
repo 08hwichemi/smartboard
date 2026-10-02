@@ -1,4 +1,4 @@
-// 레일 "양식" → 📝 수행평가(보고서): 탭 전환, 머리 표(제목·학번·이름 / 반·번호·이름 / 없음, 둘째 줄 주제), 항목(번호 자동 0/1부터·빈 줄 수·Enter·붙여 넣기),
+// 레일 "양식" → 📝 수행평가(보고서·원고지·단어 시험): 탭 전환, 머리 표(제목·학번·이름 / 반·번호·이름 / 없음, 둘째 줄 주제), 항목(번호 자동 0/1부터·빈 줄 수·Enter·붙여 넣기),
 // 쪽 나누기(머리 표는 첫 쪽만), 준비 중 종류, 초기화(수행평가만), 서버 저장, 한글 파일(표 칸·폭·글·쪽 설정).
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -11,6 +11,15 @@ const JSZIP_PATH = ['/opt/node-tools/node_modules/jszip/dist/jszip.min.js'].conc
 const JSZIP_JS = JSZIP_PATH ? fs.readFileSync(JSZIP_PATH, 'utf8') : '';
 // 엑셀 검사는 exceljs가 있을 때만(수업 변경 테스트와 같음 — npm i exceljs@4.4.0 후 NODE_PATH에 추가)
 let EXCELJS_PATH = ''; try { EXCELJS_PATH = require.resolve('exceljs/dist/exceljs.min.js'); } catch (e) {}
+// 단어 시험 엑셀 올리기 검사용 SheetJS(index.html이 CDN에서 받는 것과 같은 0.18.5 — 결석계 테스트와 같은 곳에 한 번 받아 둠)
+const XLSXLIB = (() => {
+  const dir = path.join(require('os').tmpdir(), 'sb-test-xlsx');
+  const f = path.join(dir, 'package', 'dist', 'xlsx.full.min.js');
+  if (!fs.existsSync(f)) {
+    try { fs.mkdirSync(dir, { recursive: true }); require('child_process').execSync('npm pack xlsx@0.18.5 --silent && tar xzf xlsx-0.18.5.tgz', { cwd: dir, stdio: 'ignore' }); } catch (e) {}
+  }
+  return fs.existsSync(f) ? f : null;
+})();
 
 // ---------- 가짜 서버 ----------
 const T1 = '11111111-1111-1111-1111-111111111111';
@@ -169,6 +178,7 @@ async function openDevice(browser, name, uid, opts = {}) {
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
     if (url.includes('/jszip') && JSZIP_JS) return route.fulfill({ body: JSZIP_JS, contentType: 'application/javascript' });
+    if (url.includes('xlsx.full.min.js') && XLSXLIB) return route.fulfill({ body: fs.readFileSync(XLSXLIB), contentType: 'application/javascript' });
     if (url.includes('/exceljs@') && EXCELJS_PATH) return route.fulfill({ body: fs.readFileSync(EXCELJS_PATH), contentType: 'application/javascript' });
     return route.abort();
   });
@@ -219,7 +229,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       fit: sh.every(s => { const r = s.getBoundingClientRect(), k = r.width / s.offsetWidth, ps = s.querySelectorAll('.pe-p'); return !ps.length || ps[ps.length - 1].getBoundingClientRect().bottom <= r.bottom - parseFloat(s.style.paddingBottom) * 3.78 * k + 1; }) }; });
   const d0 = await prev();
   const types = await P.evaluate(() => [...document.querySelectorAll('#pe-types .nt-chip')].map(b => [b.dataset.type, b.classList.contains('on'), /준비 중/.test(b.textContent)]));
-  check('기본: 보고서, 단어 시험만 "준비 중"', JSON.stringify(types) === JSON.stringify([['report', true, false], ['ms', false, false], ['word', false, true]]), types);
+  check('기본: 보고서, 세 종류 모두 쓸 수 있음("준비 중" 없음)', JSON.stringify(types) === JSON.stringify([['report', true, false], ['ms', false, false], ['word', false, false]]), types);
   check('기본 미리보기: A4 한 장, 머리 표 [제목|학번|빈칸|이름|빈칸] + "주제 : ", 항목 1.~3. 아래 빈 줄 4개씩', d0.n === 1 && d0.w === '210mm' && JSON.stringify(d0.head[0]) === JSON.stringify([['', '학번', '', '이름', ''], ['주제 : ']]) &&
     d0.paras[0].join('|') === ['1. ', '', '', '', '', '2. ', '', '', '', '', '3. ', '', '', '', ''].join('|'), d0);
 
@@ -366,13 +376,147 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('다시 원고지로 가면 원고지 제목·반·번호·이름 그대로', await P.evaluate(() => document.getElementById('pe-title').value === '논술 수행평가' && document.querySelector('#pe-who .on').dataset.who === 'cn'));
   await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
 
-  // 준비 중 종류
+  // ===== 🔤 단어 시험 =====
   await P.evaluate(() => { window.__alerts = []; window.customAlert = async (m) => { window.__alerts.push(m); }; });
-  await P.click('#pe-types [data-type="word"]'); await P.waitForTimeout(200);
-  const soon = await P.evaluate(() => ({ msg: document.getElementById('fm-pages').textContent, sheets: document.querySelectorAll('#fm-pages .pe-sheet').length }));
+  await P.click('#pe-types [data-type="word"]'); await P.waitForTimeout(300);
+  const wPrev = () => P.evaluate(() => { const sh = [...document.querySelectorAll('#fm-pages .pe-sheet')];
+    return { n: sh.length, key: sh.map(s => s.classList.contains('pe-keysheet')), w: sh[0].style.width,
+      head: sh.map(s => { const t = s.querySelector('.pe-head'); return t ? [...t.rows[0].cells].map(c => c.textContent).join('|') : null; }),
+      keyT: sh.map(s => (s.querySelector('.pe-wkeyt') || {}).textContent || ''), note: sh.map(s => [...s.querySelectorAll('.pe-note')].map(x => x.textContent).join('/')),
+      tbl: sh.map(s => { const t = s.querySelector('table.pe-wt'); return t ? [...t.rows].map(r => [...r.cells].map(c => c.className.replace('pe-w', '') + ':' + c.textContent).join('|')) : null; }),
+      span: [...document.querySelectorAll('#fm-pages table.pe-wt tr.pe-wh td')].map(c => c.colSpan).join(),
+      rowH: (document.querySelector('#fm-pages table.pe-wt tr:nth-child(2)') || { style: {} }).style.height,
+      fit: sh.every(s => { const r = s.getBoundingClientRect(), k = r.width / s.offsetWidth, t = s.querySelector('table.pe-wt'); return !t || t.getBoundingClientRect().bottom <= r.bottom - parseFloat(s.style.paddingBottom) * 3.78 * k + 1; }),
+      box: getComputedStyle(document.getElementById('pe-word-box')).display, items: getComputedStyle(document.getElementById('pe-items-box')).display, ms: getComputedStyle(document.getElementById('pe-ms-box')).display,
+      info: document.getElementById('pe-w-info').textContent, label: document.getElementById('fm-prev-label').textContent, title: document.getElementById('pe-title').value }; });
+  const w0 = await wPrev();
+  check('단어 시험: 단어 칸만 보임, 처음엔 따로 기억하는 빈 머리 표(A4·반·번호·이름·점수 "/ 0"), 머리 줄만 있는 표 + 안내',
+    w0.box !== 'none' && w0.items === 'none' && w0.ms === 'none' && w0.n === 1 && w0.w === '210mm' && w0.title === '' && w0.head[0] === '|반||번호||이름||점수|/ 0' &&
+    w0.tbl[0].length === 1 && w0.tbl[0][0] === ':번호|:영어|:뜻|gap:|:번호|:영어|:뜻' && /아직 단어가 없어요/.test(w0.info) && /단어 없음/.test(w0.label), w0);
   await P.click('#fm-hwpx-btn'); await P.waitForTimeout(200);
-  check('단어 시험(준비 중): 미리보기에 안내, 한글 파일 누르면 안내 창', /다음 단계/.test(soon.msg) && soon.sheets === 0 && await P.evaluate(() => window.__alerts.some(m => /다음 단계/.test(m))), soon);
+  check('단어가 없으면 한글 파일을 누를 때 안내만', await P.evaluate(() => window.__alerts.some(m => /단어를 먼저/.test(m))));
+  // 엑셀에서 복사한 것처럼(머리 줄·번호 칸·품사 칸·빈 칸·탭 없는 줄·중복·뜻 없는 줄)
+  const W1 = ['번호\t단어\t품사\t뜻', '1\tapple\tn.\t사과', '2\tbeautiful\tadj.\t아름다운', '3\tlook after\t\t돌보다', 'achieve 성취하다', 'borrow (v.)\t빌리다', 'consider\t(v.) 고려하다', 'decide | 결정하다', 'Apple\t사과', 'enough', 'answer\t답'].join('\n');
+  await setText(P, '#pe-w-text', W1); await setText(P, '#pe-title', '3월 영어 단어 시험'); await setText(P, '#pe-w-note', '다음 영어 단어의 뜻을 쓰시오.'); await P.waitForTimeout(300);
+  const parsed = await P.evaluate(() => peWordParse(peCfg()).all.map(w => w.q + '/' + w.pos + '/' + w.a).join(', '));
+  check('단어 읽기: 머리 줄·번호 칸 빼고, 품사 칸·"(v.)"·"(v.) 뜻"은 품사로, 탭 없으면 " | "나 영어 뒤 한글로 나눔, "answer ⇥ 답"은 머리 줄 아님',
+    parsed === 'apple/n./사과, beautiful/adj./아름다운, look after//돌보다, achieve//성취하다, borrow/v./빌리다, consider/v./고려하다, decide//결정하다, Apple//사과, enough//, answer//답', parsed);
+  const w1 = await wPrev();
+  check('2단·원래 순서: 왼쪽 단 1~5번, 오른쪽 6~10번, 품사는 단어 옆 (n.), 답 칸은 빈칸, 점수 "/ 10", 안내 글, 정답지는 다음 쪽(빨간 답)',
+    w1.n === 2 && w1.key.join() === 'false,true' && w1.head[0] === '3월 영어 단어 시험|반||번호||이름||점수|/ 10' && w1.note[0] === '다음 영어 단어의 뜻을 쓰시오.' &&
+    w1.tbl[0][1] === 'no:1|q:apple (n.)|a:|gap:|no:6|q:consider (v.)|a:' && w1.tbl[0][5] === 'no:5|q:borrow (v.)|a:|gap:|no:10|q:answer|a:' && w1.tbl[0].length === 6 &&
+    w1.keyT[1] === '정답 — 3월 영어 단어 시험' && w1.tbl[1][1] === 'no:1|q:apple (n.)|key:사과|gap:|no:6|q:consider (v.)|key:고려하다' && w1.head[1] === null && w1.fit, w1);
+  check('안내: 단어 개수·중복(Apple)·뜻 빈 줄·쪽 수, 중복 지우기 단추가 보임', /단어 10개/.test(w1.info) && /중복 1개\(Apple\)/.test(w1.info) && /뜻 칸이 빈 줄 1개/.test(w1.info) && /시험지 1쪽 \+ 정답지 1쪽/.test(w1.info) &&
+    await P.evaluate(() => getComputedStyle(document.getElementById('pe-w-dedupe')).display !== 'none'), w1.info);
+  await P.click('#pe-w-dedupe'); await P.waitForTimeout(200);
+  check('중복 지우기: 둘째 Apple 줄만 빠지고(첫 apple은 그대로) 단어 칸 글도 바뀜', await P.evaluate(() => peWordParse(peCfg()).all.length === 9 && !/^Apple\t/m.test(document.getElementById('pe-w-text').value) && /apple\tn\./.test(document.getElementById('pe-w-text').value) && getComputedStyle(document.getElementById('pe-w-dedupe')).display === 'none'));
+  // Tab 키 = 칸 나누기
+  await P.click('#pe-w-text'); await P.keyboard.press('Control+End'); await P.keyboard.type('\nzone'); await P.keyboard.press('Tab'); await P.keyboard.type('구역'); await P.waitForTimeout(200);
+  check('단어 칸에서 Tab은 칸 나누기(다음 칸으로 안 넘어감)', await P.evaluate(() => /\nzone\t구역$/.test(peCfg().wText) && document.activeElement.id === 'pe-w-text' && peWordParse(peCfg()).all.length === 10));
+  // 문제 방향
+  await P.click('#pe-w-dir [data-wdir="aq"]'); await P.click('#pe-w-hint'); await P.waitForTimeout(200);
+  const w2 = await wPrev();
+  check('뜻 → 영어 + 첫 글자 힌트: 머리 줄 "뜻|영어", 문제 칸 "(n.) 사과", 답 칸 회색 힌트 "a _ _ _ _", 두 낱말은 낱말마다, 정답지는 영어',
+    w2.tbl[0][0] === ':번호|:뜻|:영어|gap:|:번호|:뜻|:영어' && w2.tbl[0][1].startsWith('no:1|q:(n.) 사과|hint:a _ _ _ _|') && w2.tbl[0][3].startsWith('no:3|q:돌보다|hint:l _ _ _   a _ _ _ _|') && w2.tbl[1][1].startsWith('no:1|q:(n.) 사과|key:apple|'), w2.tbl);
+  await P.click('#pe-w-dir [data-wdir="mix"]'); await P.waitForTimeout(200);
+  const w3 = await wPrev();
+  check('반반 섞기: 머리 줄 "문제|답", 1번 영어→뜻(힌트 없음), 2번 뜻→영어(힌트)', w3.tbl[0][0].startsWith(':번호|:문제|:답|') && w3.tbl[0][1].startsWith('no:1|q:apple (n.)|a:|') && w3.tbl[0][2].startsWith('no:2|q:(adj.) 아름다운|hint:b _ _ _ _ _ _ _ _|'), w3.tbl[0].slice(0, 3));
+  await P.click('#pe-w-pos'); await P.waitForTimeout(150);
+  check('품사 보이기 끄면 (n.) 없이', (await wPrev()).tbl[0][1].startsWith('no:1|q:apple|'));
+  await P.click('#pe-w-pos'); await P.click('#pe-w-dir [data-wdir="qa"]');
+  // 배치·칸 높이·출제 개수·섞기
+  await P.click('#pe-w-cols [data-wcols="1"]'); await P.click('#pe-w-cols [data-wrowh="11"]'); await P.waitForTimeout(200);
+  const w4 = await wPrev();
+  check('1단·칸 높이 넓게: 한 줄에 번호|영어|뜻 세 칸, 10줄, 줄 높이 11mm', w4.tbl[0].length === 11 && w4.tbl[0][1] === 'no:1|q:apple (n.)|a:' && w4.rowH === '11mm', w4.tbl[0].slice(0, 2).concat(w4.rowH));
+  await P.click('#pe-w-cols [data-wcols="2"]'); await P.click('#pe-w-cols [data-wrowh="9"]');
+  await P.fill('#pe-w-pick-in', '4'); await P.dispatchEvent('#pe-w-pick-in', 'change'); await P.waitForTimeout(200);
+  const w5 = await wPrev(), pick = await P.evaluate(() => peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i));
+  check('4개만 무작위로: 점수 "/ 4", 4문제, 뽑힌 단어는 원래 순서대로, 안내 "10개 중 4개 출제"', w5.head[0].endsWith('점수|/ 4') && pick.length === 4 && pick.every((x, k) => !k || x > pick[k - 1]) && /단어 10개 중 4개 출제/.test(w5.info), [w5.head[0], pick, w5.info]);
+  await P.click('#pe-w-pick [data-wpick="0"]'); await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
+  const sh1 = await P.evaluate(() => [peCfg().wSeed, peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join()]);
+  const sh1b = await P.evaluate(() => peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join());
+  await P.click('#pe-w-orig'); await P.waitForTimeout(200);
+  check('🔀 순서 섞기: 순서가 바뀌고(같은 씨앗이면 늘 같은 순서), ↺ 원래 순서로 되돌림', sh1[0] > 0 && sh1[1] !== '0,1,2,3,4,5,6,7,8,9' && sh1[1] === sh1b && sh1[1].split(',').sort().join() === '0,1,2,3,4,5,6,7,8,9' &&
+    await P.evaluate(() => peCfg().wSeed === 0 && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'), sh1);
+  // A형·B형
+  await P.click('#pe-w-ab'); await P.waitForTimeout(200);
+  const w6 = await wPrev();
+  const abOrd = await P.evaluate(() => peWordSets(peCfg(), peWordParse(peCfg())).map(s => s.items.map(w => w.i).join()));
+  check('A형·B형: 시험지 A·B(머리 표 제목에 (A형)/(B형)), 정답지 A·B — 4쪽, 두 판은 같은 단어·다른 순서', w6.n === 4 && w6.key.join() === 'false,false,true,true' && w6.head[0].startsWith('3월 영어 단어 시험 (A형)|') && w6.head[1].startsWith('3월 영어 단어 시험 (B형)|') &&
+    w6.keyT[2] === '정답 — 3월 영어 단어 시험 (A형)' && w6.keyT[3] === '정답 — 3월 영어 단어 시험 (B형)' && abOrd[0] !== abOrd[1] && abOrd[0].split(',').sort().join() === abOrd[1].split(',').sort().join() && /A형·B형/.test(w6.label), [w6.head, w6.keyT, abOrd]);
+  // 따라 쓰기
+  await P.click('#pe-w-dir [data-wdir="trace"]'); await P.waitForTimeout(200);
+  const w7 = await wPrev();
+  check('✏️ 따라 쓰기: 한 판·1단·정답지·점수 칸 없음, 머리 줄 "따라 쓰기"가 3칸 합침, 단어·뜻 보이고 쓰는 칸 3개', w7.n === 1 && w7.head[0] === '3월 영어 단어 시험|반||번호||이름|' && w7.tbl[0][0] === ':번호|:영어|:뜻|:따라 쓰기' &&
+    w7.span === '1,1,1,3' && w7.tbl[0][1] === 'no:1|q:apple (n.)|a:사과|t:|t:|t:' && await P.evaluate(() => document.getElementById('pe-w-ab').disabled && document.getElementById('pe-w-key').disabled), [w7.head, w7.tbl[0].slice(0, 2), w7.span]);
+  await P.click('#pe-w-trace [data-wtrace="2"]'); await P.waitForTimeout(150);
+  check('따라 쓰기 2번', (await wPrev()).tbl[0][1] === 'no:1|q:apple (n.)|a:사과|t:|t:');
+  if (JSZIP_JS) {
+    const tz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await peBuildHwpx(peCfg()))).file('Contents/section0.xml').async('string');
+      const g = sec.match(/<hp:tbl [^>]*colCnt="5"[\s\S]*?<\/hp:tbl>/); return { g: !!g, span: g && /colSpan="2"/.test(g[0]), heads: (sec.match(/<hp:tbl /g) || []).length }; });
+    check('따라 쓰기 한글 파일: 표 5칸(번호·영어·뜻·쓰기 2), 머리 줄 "따라 쓰기" 합친 칸, 머리 표 하나', tz.g && tz.span && tz.heads === 2, tz);
+  }
+  await P.click('#pe-w-dir [data-wdir="qa"]'); await P.waitForTimeout(150);
+  if (JSZIP_JS) {
+    const wz = await P.evaluate(async () => { const c = peCfg(), L = peLayout(c), zip = await JSZip.loadAsync(await peBuildHwpx(c));
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
+      let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
+      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g), grids = tbls.filter(t => /colCnt="7"/.test(t)), heads = tbls.filter(t => /rowCnt="1" colCnt="9"/.test(t));
+      const sumW = (row) => [...row.matchAll(/<hp:cellSz width="(\d+)"/g)].reduce((a, m) => a + +m[1], 0);
+      const hgt = (t) => +t.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1], rowsH = (t) => t.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g).reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0);
+      return { xml: ok, pages: L.pages.length, grids: grids.length, heads: heads.length, rows: grids.map(t => +t.match(/rowCnt="(\d+)"/)[1]).join(),
+        w: grids.every(t => t.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g).every(r => sumW(r) === +t.match(/<hp:sz width="(\d+)"/)[1])), h: grids.every(t => hgt(t) === rowsH(t)),
+        brk: (sec.match(/pageBreak="1"/g) || []).length, titles: ['3월 영어 단어 시험 (A형)', '3월 영어 단어 시험 (B형)', '정답 — 3월 영어 단어 시험 (A형)', '정답 — 3월 영어 단어 시험 (B형)', '다음 영어 단어의 뜻을 쓰시오.', 'apple (n.)', '사과', '/ 10', '점수'].filter(t => !sec.includes('<hp:t>' + fmX(t) + '</hp:t>')),
+        red: /textColor="#C0392B"/.test(head), fill: /faceColor="#EEEEEE"/.test(head), a4: /width="59528" height="84189"/.test(sec), margin: /left="4252" right="4252" top="4252" bottom="4252"/.test(sec) }; });
+    check('단어 시험 한글 파일(A·B형 + 정답지): XML 올바름, 쪽마다 7칸 표(2단 + 사이 칸), 판마다 머리 표, 머리 줄 + 5줄, 칸 폭 합 = 표 폭, 표 높이 = 줄 높이 합, 쪽 나누기 3번, 제목·안내·답, 빨간 답·회색 머리 줄, A4·여백 15',
+      wz.xml && wz.pages === 4 && wz.grids === 4 && wz.heads === 2 && wz.rows === '6,6,6,6' && wz.w && wz.h && wz.brk === 3 && !wz.titles.length && wz.red && wz.fill && wz.a4 && wz.margin, wz);
+    if (process.env.WORD_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await peBuildHwpx(peCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WORD_OUT, Buffer.from(b64, 'base64')); }
+  }
+  await P.click('#pe-w-ab'); await P.waitForTimeout(150);
+  // 일반(문제 | 답) + 칸 이름
+  await P.click('#pe-w-kind [data-wkind="gen"]'); await setText(P, '#pe-w-qname', '한자'); await setText(P, '#pe-w-aname', '뜻과 음'); await P.waitForTimeout(200);
+  const w8 = await wPrev();
+  const g8 = await P.evaluate(() => ({ trace: !!document.querySelector('#pe-w-dir [data-wdir="trace"]'), en: getComputedStyle(document.getElementById('pe-w-en')).display, dir: document.querySelector('#pe-w-dir [data-wdir="qa"]').textContent }));
+  check('일반(문제 | 답): 따라 쓰기·힌트·품사 없음, 칸 이름을 바꾸면 머리 줄·문제 방향 단추도 그 이름', !g8.trace && g8.en === 'none' && g8.dir === '한자 → 뜻과 음' && w8.tbl[0][0] === ':번호|:한자|:뜻과 음|gap:|:번호|:한자|:뜻과 음' && w8.tbl[0][1].startsWith('no:1|q:apple|'), [g8, w8.tbl[0].slice(0, 2)]);
+  await setText(P, '#pe-w-qname', ''); await setText(P, '#pe-w-aname', ''); await P.click('#pe-w-kind [data-wkind="en"]'); await P.waitForTimeout(150);
+  // 쪽 나누기: 단어가 많으면 다음 쪽(머리 줄 되풀이, 머리 표는 판의 첫 쪽만), 쪽마다 아래 여백 안
+  await setText(P, '#pe-w-text', Array.from({ length: 70 }, (_, i) => 'word' + (i + 1) + '\t뜻' + (i + 1)).join('\n')); await P.waitForTimeout(300);
+  const w9 = await wPrev();
+  const nos = w9.tbl.filter((t, i) => !w9.key[i]).flatMap(t => t.slice(1).flatMap(r => r.split('|').filter(x => x.startsWith('no:')).map(x => +x.slice(3)).filter(Boolean)));
+  check('70개: 시험지 2쪽 + 정답지 2쪽, 둘째 쪽은 머리 표 없이 머리 줄부터, 1~70번 빠짐없이(쪽마다 왼쪽 단 먼저), 아래 여백 안', w9.n === 4 && w9.head[0] && w9.head[1] === null && w9.tbl[1][0].startsWith(':번호') &&
+    nos.slice().sort((a, b) => a - b).join() === Array.from({ length: 70 }, (_, i) => i + 1).join() && w9.fit && /시험지 2쪽 \+ 정답지 2쪽/.test(w9.info), [w9.n, w9.info, nos.slice(0, 6)]);
+  // 따로 기억: 보고서 제목·B4는 그대로
+  await P.waitForTimeout(2500);
+  const svw = JSON.parse(serverVal(T2, 'fm-pe') || '{}');
+  check('단어 시험은 머리 표·쪽 설정을 따로(word_ 키), 단어·설정은 내 계정(fm-pe)에 저장', svw.word_title === '3월 영어 단어 시험' && svw.title === '화학 기사 탐구(기사 1개당 2쪽 작성)' && svw.paper === 'B4' && !('word_paper' in svw) && /word70\t뜻70/.test(svw.wText) && svw.wNote === '다음 영어 단어의 뜻을 쓰시오.', { word_title: svw.word_title, title: svw.title, paper: svw.paper });
+  // 📂 파일 올리기: 엑셀(.xlsx, 첫 시트가 비면 다음 시트)·CSV(EUC-KR)
+  if (XLSXLIB) {
+    const X = require(XLSXLIB);
+    const wbx = X.utils.book_new();
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet([]), '빈 시트');
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet([['번호', '단어', '뜻'], [1, 'apple', '사과'], [2, 'river', '강'], [3, 'mountain', '산'], [], [4, 'ocean', '바다']]), '3월');
+    const xfile = path.join(require('os').tmpdir(), 'pe-word-test.xlsx');
+    fs.writeFileSync(xfile, X.write(wbx, { type: 'buffer', bookType: 'xlsx' }));
+    let confirmMsg = '';
+    await P.evaluate(() => { window.customConfirm = async (m) => { window.__wcm = m; return true; }; });
+    await P.setInputFiles('#pe-w-file', xfile); await P.waitForTimeout(500);
+    confirmMsg = await P.evaluate(() => window.__wcm || '');
+    const fx = await P.evaluate(() => peWordParse(peCfg()).all.map(w => w.q + '=' + w.a).join(','));
+    check('엑셀 파일 올리기: 이미 단어가 있으면 바꿀지 묻고(확인 = 바꾸기), 내용 있는 첫 시트에서 4개(번호 칸은 단어 칸에 그대로, 머리 줄·빈 줄은 뺌)', /단어 70개를 파일\(3월 시트\)의 단어 4개로/.test(confirmMsg) && fx === 'apple=사과,river=강,mountain=산,ocean=바다' &&
+      await P.evaluate(() => document.getElementById('pe-w-text').value === '1\tapple\t사과\n2\triver\t강\n3\tmountain\t산\n4\tocean\t바다'), [confirmMsg, fx]);
+    // CSV(EUC-KR — 한글 엑셀에서 "CSV로 저장"한 파일), 취소 = 뒤에 이어 붙이기
+    const iconv = (() => { try { return require('iconv-lite'); } catch (e) { return null; } })();
+    const csv = '단어,뜻\r\nsun,해\r\n"moon, star","달, 별"\r\n';
+    const cfile = path.join(require('os').tmpdir(), 'pe-word-test.csv');
+    fs.writeFileSync(cfile, iconv ? iconv.encode(csv, 'euc-kr') : Buffer.from('﻿' + csv, 'utf8'));
+    await P.evaluate(() => { window.customConfirm = async (m) => false; });
+    await P.setInputFiles('#pe-w-file', cfile); await P.waitForTimeout(500);
+    const cx = await P.evaluate(() => peWordParse(peCfg()).all.map(w => w.q + '=' + w.a).join(','));
+    check('CSV 올리기(' + (iconv ? 'EUC-KR' : 'UTF-8') + '): 따옴표 칸 안 쉼표 그대로, 취소 = 지금 단어 뒤에 이어 붙임', cx === 'apple=사과,river=강,mountain=산,ocean=바다,sun=해,moon, star=달, 별', cx);
+  } else console.log('  ⚠️ xlsx 라이브러리 없음 — 파일 올리기 검사 건너뜀');
+  await P.screenshot({ path: 'pe-word.png' });
   await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
+  check('보고서로 돌아오면 보고서 제목·B4 그대로', await P.evaluate(() => document.getElementById('pe-title').value === '화학 기사 탐구(기사 1개당 2쪽 작성)' && peCfg().paper === 'B4' && getComputedStyle(document.getElementById('pe-word-box')).display === 'none'));
 
   // 초기화: 수행평가만
   const wsBefore = await ls(hr, 'fm-ws');
