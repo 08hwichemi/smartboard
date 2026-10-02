@@ -600,6 +600,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await t1.page.setViewportSize({ width: 1600, height: 1000 });
   const W = t1.page;
   await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(400);
+  // 10/2: 아이콘 SVG에 stroke-width가 두 번 들어간 것(sci·phys4·law·hist3·music)은 화면엔 멀쩡해도 한글 파일용 PNG 변환에서 실패 →
+  // 과목을 비우면(기본 sci) 학습지 한글 파일 내려받기가 조용히 안 됐음. 모든 아이콘이 PNG로 바뀌는지 + 한 태그에 같은 속성이 두 번 없는지.
+  const icChk = await W.evaluate(async () => { const fail = [], dup = []; for (const ic of WS_ICONS) {
+    try { await wsIconPng(ic[0]); } catch (e) { fail.push(ic[0]); }
+    const doc = new DOMParser().parseFromString(wsIconSvg(ic[0], 480, 360), 'image/svg+xml'); if (doc.querySelector('parsererror')) dup.push(ic[0]); }
+    return { n: WS_ICONS.length, fail, dup }; });
+  check('학습지 아이콘 ' + icChk.n + '개 모두 한글 파일용 PNG로 바뀜(SVG가 올바른 XML — 같은 속성 두 번 없음)', icChk.n > 30 && !icChk.fail.length && !icChk.dup.length, icChk);
   check('학습지 탭: 학습지 입력칸이 보이고 명렬표 칸·엑셀 버튼은 숨김', await W.isVisible('#ws-grid') && !(await W.isVisible('#fm-grid')) && !(await W.isVisible('#fm-xlsx-btn')) && (await cfgOf(t1)).kind === 'ws');
   const wsDef = await W.evaluate(() => { const c = wsCfg(); return { paper: c.paper, m: [c.mT, c.mB, c.mL, c.mR].join(), w: document.querySelector('#fm-pages .ws-sheet').style.width, num: wsFont(c, 'num').h, t: wsFont(c, 'uno').h,
     numOpt: document.querySelector('#ws-fp-num option').textContent, tFont: c.tFont, bFont: c.bFont, gap: c.gap, gapInp: document.getElementById('ws-gap').value }; });

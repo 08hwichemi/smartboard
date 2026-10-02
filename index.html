@@ -2953,11 +2953,6 @@
       <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()">🖨️ 인쇄</button>
       <button class="top-btn" id="fm-xlsx-btn" style="font-size:12px; padding:5px 12px;" onclick="fmDownloadXlsx()" title="엑셀(.xlsx)로 내려받기 — 반마다 한 시트, 1단">📊 엑셀</button>
       <button class="top-btn accent" id="fm-hwpx-btn" style="font-size:12px; padding:5px 14px;" onclick="fmDownloadHwpx()">⬇️ 한글 파일(.hwpx)</button>
-      <div id="fm-ready-box" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; width:100%; margin-top:6px; padding:8px 10px; border:1.5px solid var(--accent-color); border-radius:10px; background:var(--accent-soft); font-size:12px;">
-        <span>📥 파일이 준비됐어요 — <b id="fm-ready-name"></b></span>
-        <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="fmSavePending()">파일 저장</button>
-        <span style="color:var(--text-sub);">(만드는 데 시간이 걸려 브라우저가 자동 저장을 막을 수 있어서, 한 번 더 눌러 받아요)</span>
-      </div>
     </div>
   </div>
   <div id="fm-body">
@@ -3505,7 +3500,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-02.3';
+  var BUILD_ID = '2026-10-02.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13774,49 +13769,21 @@
     if (/skeleton/.test(m)) return '\n\n원인: 한글 바탕 파일(forms/hwpx/skeleton.hwpx)을 못 받았어요(' + m + ').';
     return m ? '\n\n원인: ' + m.slice(0, 200) : '';
   }
-  let fmPendingFile = null; // { blob, name } — "📥 파일 저장" 단추로 받을 파일
   let fmStage = '';         // 지금 무엇을 기다리는지(오래 걸릴 때 안내용)
-  // 파일 저장 — ① 크롬·엣지의 "저장 대화상자"(showSaveFilePicker): 내려받기 관리자를 거치지 않아 자동 내려받기 차단이나 보안 정책에
-  // 덜 걸린다(사용자가 취소하면 조용히 끝). 안 되면 ② 예전처럼 <a download>로 내려받기. 자동화(테스트)에선 대화상자를 못 쓰니 ②.
-  async function fmSaveNow(blob, name) {
-    if (window.showSaveFilePicker && !navigator.webdriver && !window.__fmNoPicker) {
-      const ext = name.slice(name.lastIndexOf('.'));
-      try {
-        const accept = {}; accept[blob.type || 'application/octet-stream'] = [ext];
-        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext === '.xlsx' ? '엑셀 파일' : '한글 파일', accept: accept }] });
-        const w = await h.createWritable(); await w.write(blob); await w.close();
-        return 'picker';
-      } catch (e) {
-        if (e && e.name === 'AbortError') return 'cancel';   // 사용자가 취소
-        try { console.warn('[양식] 저장 대화상자를 못 써서 내려받기로', e); } catch (x) {}
-      }
-    }
+  // 파일 저장 — 수업 변경 엑셀·백업과 똑같이 <a download>로 누르면 바로 내려받는다.
+  // (판 .3에서 잠깐 "다른 이름으로 저장" 창을 먼저 띄웠으나, 사용자 PC에서 저장 창이 뜨고 파일이 비어 보이는(.crswap 임시 파일이 남는)
+  //  문제가 있어 되돌림 — 사용자: "어제처럼 누르면 내려받게". 이 PC에선 <a download>가 정상(수업 변경·백업이 같은 방식).)
+  function fmSaveNow(blob, name) {
     const url = URL.createObjectURL(blob), a = document.createElement('a');
-    a.href = url; a.download = name; a.rel = 'noopener';
+    a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
-    return 'download';
   }
-  function fmSaveBlob(blob, name) {
-    // 누른 지 오래됐으면(크롬: 5초) 자동 내려받기로 막힐 수 있으니 단추를 보여 준다. userActivation이 없는 브라우저는 바로 받는다.
-    const active = !navigator.userActivation || navigator.userActivation.isActive;
-    if (active) return fmSaveNow(blob, name);
-    fmPendingFile = { blob: blob, name: name };
-    const box = document.getElementById('fm-ready-box');
-    if (box) { box.style.display = 'flex'; document.getElementById('fm-ready-name').textContent = name; }
-    return Promise.resolve('ready');
-  }
-  function fmSavePending() {
-    if (!fmPendingFile) return;
-    const f = fmPendingFile; fmPendingFile = null;
-    const box = document.getElementById('fm-ready-box'); if (box) box.style.display = 'none';
-    fmSaveNow(f.blob, f.name);
-  }
-  // 단추를 눌렀는데 12초가 지나도 안 끝나면 무엇을 기다리는지 알려 준다("아무 일도 없음"이 되지 않게).
+  // 눌렀는데 15초가 지나도 안 끝나면 무엇을 기다리는지 알려 준다("아무 일도 없음"이 되지 않게 — 숨은 멈춤을 드러냄).
   function fmSlowTimer() {
     return setTimeout(function() {
-      customAlert('파일을 만드는 데 시간이 오래 걸려요 — 지금 "' + (fmStage || '파일 만드는 중') + '".\n인터넷이 느리거나 학교 망에서 막혀 있을 수 있어요. 조금 더 기다려도 안 되면 새로고침한 뒤 다시 눌러 주세요.');
-    }, 12000);
+      customAlert('파일을 만드는 데 시간이 오래 걸려요 — 지금 "' + (fmStage || '파일 만드는 중') + '".\n새로고침한 뒤 다시 눌러 주세요(화면 위에 "새 버전이 있습니다" 띠가 있으면 꼭 새로고침).');
+    }, 15000);
   }
   async function fmDownloadHwpx() {
     if (fmCfg().kind === 'ws') return wsDownloadHwpx();
@@ -13828,7 +13795,7 @@
       btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
       const blob = await fmBuildHwpx(c);
       clearTimeout(timer); timer = null;
-      await fmSaveBlob(blob, fmFileName(c));
+      fmSaveNow(blob, fmFileName(c));
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
@@ -13901,7 +13868,7 @@
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       clearTimeout(timer); timer = null;
-      await fmSaveBlob(blob, fmFileName(c).replace(/\.hwpx$/, '.xlsx'));
+      fmSaveNow(blob, fmFileName(c).replace(/\.hwpx$/, '.xlsx'));
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
@@ -13932,16 +13899,19 @@
   const WS_CLS_COLOR = '#999999'; // 수업명: 원본 학습지처럼 연한 회색
   // 과목 아이콘(가로 120 × 세로 90, 굵은 테두리 + 단색 채우기). 한글 파일에는 PNG로 그려서 넣는다.
   const WS_K = 'stroke="#263238" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  // 굵기만 다른 선 — WS_K 뒤에 stroke-width를 또 붙이면 같은 속성이 두 번이 되어, 화면(HTML)에선 멀쩡해도 한글 파일용 PNG로 바꿀 때(SVG=XML)
+  // "잘못된 그림"으로 실패한다(10/2: sci·phys4·law·hist3·music 아이콘 → 학습지 한글 파일 내려받기 실패). 그래서 굵기를 한 번만 넣는다.
+  const WS_KW = function(w) { return 'stroke="#263238" stroke-width="' + w + '" stroke-linejoin="round" stroke-linecap="round"'; };
   const WS_T = function(x, y, t, size, fill) { return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="800" text-anchor="middle" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif" fill="' + (fill || '#263238') + '">' + t + '</text>'; };
   const WS_ICONS = [
     ['chem', '화학', '<path d="M34 14h16M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="#E9EEF1" ' + WS_K + '/><path d="M27 58h30l5 12a6 6 0 0 1-5 8H27a6 6 0 0 1-5-8z" fill="#EF5350"/><path d="M38 14v20L22 70a6 6 0 0 0 5 8h30a6 6 0 0 0 5-8L46 34V14" fill="none" ' + WS_K + '/><rect x="72" y="22" width="14" height="54" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M74 50h10v19a5 5 0 0 1-10 0z" fill="#FFCA28"/><rect x="72" y="22" width="14" height="54" rx="7" fill="none" ' + WS_K + '/><rect x="94" y="30" width="14" height="46" rx="7" fill="#E9EEF1" ' + WS_K + '/><path d="M96 54h10v15a5 5 0 0 1-10 0z" fill="#42A5F5"/><rect x="94" y="30" width="14" height="46" rx="7" fill="none" ' + WS_K + '/><circle cx="36" cy="66" r="3" fill="#263238"/><circle cx="56" cy="8" r="3" fill="none" stroke="#263238" stroke-width="3"/>'],
     ['phys', '물리', '<ellipse cx="60" cy="45" rx="44" ry="15" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(60 60 45)" fill="none" ' + WS_K + '/><ellipse cx="60" cy="45" rx="44" ry="15" transform="rotate(-60 60 45)" fill="none" ' + WS_K + '/><circle cx="60" cy="45" r="9" fill="#FF7043" ' + WS_K + '/><circle cx="104" cy="45" r="5" fill="#42A5F5"/><circle cx="38" cy="83" r="5" fill="#42A5F5"/><circle cx="38" cy="7" r="5" fill="#42A5F5"/>'],
     ['phys2', '물리(자석)', '<path d="M28 12v38a32 32 0 0 0 64 0V12H72v38a12 12 0 0 1-24 0V12z" fill="#EF5350" ' + WS_K + '/><path d="M28 12h20v14H28zM72 12h20v14H72z" fill="#ECEFF1" ' + WS_K + '/><path d="M16 18H4M116 18h-12M18 6l-8-5M102 6l8-5" ' + WS_K + '/>'],
     ['phys3', '물리(전구)', '<path d="M60 6a26 26 0 0 0-16 46c4 4 6 8 6 12h20c0-4 2-8 6-12A26 26 0 0 0 60 6z" fill="#FFEE58" ' + WS_K + '/><rect x="48" y="64" width="24" height="16" rx="3" fill="#B0BEC5" ' + WS_K + '/><path d="M50 72h20M52 38l8 10 8-10M60 48v16" fill="none" ' + WS_K + '/><path d="M14 32h12M94 32h12M24 8l8 8M96 8l-8 8" ' + WS_K + '/>'],
-    ['phys4', '물리(진자)', '<path d="M18 8h84" ' + WS_K + ' stroke-width="7"/><path d="M60 8v60" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M30 66Q60 86 90 66" fill="none" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M60 8l28 54" ' + WS_K + '/><circle cx="90" cy="66" r="12" fill="#42A5F5" ' + WS_K + '/>'],
+    ['phys4', '물리(진자)', '<path d="M18 8h84" ' + WS_KW(7) + '/><path d="M60 8v60" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M30 66Q60 86 90 66" fill="none" stroke="#90A4AE" stroke-width="3" stroke-dasharray="5 5"/><path d="M60 8l28 54" ' + WS_K + '/><circle cx="90" cy="66" r="12" fill="#42A5F5" ' + WS_K + '/>'],
     ['bio', '생명과학', '<path d="M20 80C20 40 50 12 100 10c0 50-28 72-70 70z" fill="#66BB6A" ' + WS_K + '/><path d="M24 78C44 58 64 40 92 18M46 58h18M56 46l2-14M70 34h12" fill="none" ' + WS_K + '/>'],
     ['earth', '지구과학', '<circle cx="88" cy="22" r="11" fill="#FFCA28" ' + WS_K + '/><path d="M6 80l30-48 18 26 14-18 26 40z" fill="#8D6E63" ' + WS_K + '/><path d="M28 45l8-13 8 12-8 4z" fill="#FFFFFF" ' + WS_K + '/><path d="M6 80h108" ' + WS_K + '/>'],
-    ['sci', '과학', '<circle cx="50" cy="40" r="26" fill="#E3F2FD" ' + WS_K + '/><path d="M70 60l26 26" ' + WS_K + ' stroke-width="9"/><path d="M38 46l8-14 8 10 8-6" fill="none" ' + WS_K + '/><circle cx="96" cy="14" r="4" fill="#FFCA28"/><circle cx="14" cy="76" r="4" fill="#EF5350"/>'],
+    ['sci', '과학', '<circle cx="50" cy="40" r="26" fill="#E3F2FD" ' + WS_K + '/><path d="M70 60l26 26" ' + WS_KW(9) + '/><path d="M38 46l8-14 8 10 8-6" fill="none" ' + WS_K + '/><circle cx="96" cy="14" r="4" fill="#FFCA28"/><circle cx="14" cy="76" r="4" fill="#EF5350"/>'],
     ['math', '수학', '<rect x="14" y="10" width="44" height="34" rx="6" fill="#42A5F5" ' + WS_K + '/><rect x="62" y="10" width="44" height="34" rx="6" fill="#FFCA28" ' + WS_K + '/><rect x="14" y="48" width="44" height="34" rx="6" fill="#66BB6A" ' + WS_K + '/><rect x="62" y="48" width="44" height="34" rx="6" fill="#EF5350" ' + WS_K + '/>' + WS_T(36, 38, '+', 30, '#fff') + WS_T(84, 38, '−', 30) + WS_T(36, 76, '×', 30, '#fff') + WS_T(84, 76, '÷', 30, '#fff')],
     ['math2', '수학(자·각도기)', '<path d="M10 82V12l62 70z" fill="#FFCA28" ' + WS_K + '/><path d="M22 70V42l26 28z" fill="#FFFFFF" ' + WS_K + '/><path d="M60 82a28 28 0 0 1 56 0z" fill="#81D4FA" ' + WS_K + '/><path d="M88 82V68M70 64l6 6M106 64l-6 6" ' + WS_K + '/>'],
     ['math3', '수학(그래프)', '<rect x="6" y="4" width="108" height="82" rx="8" fill="#E8F5E9" ' + WS_K + '/><path d="M16 76h90M26 82V12" fill="none" ' + WS_K + '/><path d="M30 70C48 70 52 22 72 22s28 26 32 38" fill="none" stroke="#EF5350" stroke-width="6" stroke-linecap="round"/><circle cx="72" cy="22" r="6" fill="#42A5F5" ' + WS_K + '/>'],
@@ -13954,15 +13924,15 @@
     ['soc', '사회', '<circle cx="60" cy="45" r="36" fill="#81D4FA" ' + WS_K + '/><path d="M36 22c10 4 6 16 16 18s4 14 14 14M70 12c-4 10 8 12 6 22s14 6 16 16" fill="none" ' + WS_K + '/><path d="M24 45h72M60 9c-14 20-14 52 0 72M60 9c14 20 14 52 0 72" fill="none" stroke="#263238" stroke-width="2.5"/>'],
     ['geo', '지리(지도)', '<path d="M6 24l34-10 40 10 34-10v58l-34 10-40-10-34 10z" fill="#C5E1A5" ' + WS_K + '/><path d="M40 14v58M80 24v58" fill="none" ' + WS_K + '/><path d="M60 4a16 16 0 0 0-16 16c0 14 16 30 16 30s16-16 16-30A16 16 0 0 0 60 4z" fill="#EF5350" ' + WS_K + '/><circle cx="60" cy="20" r="6" fill="#FFFFFF" ' + WS_K + '/>'],
     ['geo2', '지리(나침반)', '<circle cx="60" cy="45" r="38" fill="#ECEFF1" ' + WS_K + '/><circle cx="60" cy="45" r="29" fill="none" stroke="#90A4AE" stroke-width="3"/><path d="M60 16l10 29H50z" fill="#EF5350" ' + WS_K + '/><path d="M60 74l10-29H50z" fill="#FFFFFF" ' + WS_K + '/><circle cx="60" cy="45" r="4" fill="#263238"/>'],
-    ['law', '일반사회(법)', '<path d="M60 12v62M20 22h80" ' + WS_K + '/><path d="M20 22L8 52M20 22l12 30M100 22L88 52M100 22l12 30" ' + WS_K + ' stroke-width="3"/><path d="M4 52a16 10 0 0 0 32 0zM84 52a16 10 0 0 0 32 0z" fill="#FFCA28" ' + WS_K + '/><circle cx="60" cy="10" r="6" fill="#FFCA28" ' + WS_K + '/><path d="M42 84h36l-8-10H50z" fill="#8D6E63" ' + WS_K + '/>'],
+    ['law', '일반사회(법)', '<path d="M60 12v62M20 22h80" ' + WS_K + '/><path d="M20 22L8 52M20 22l12 30M100 22L88 52M100 22l12 30" ' + WS_KW(3) + '/><path d="M4 52a16 10 0 0 0 32 0zM84 52a16 10 0 0 0 32 0z" fill="#FFCA28" ' + WS_K + '/><circle cx="60" cy="10" r="6" fill="#FFCA28" ' + WS_K + '/><path d="M42 84h36l-8-10H50z" fill="#8D6E63" ' + WS_K + '/>'],
     ['pol', '정치(투표)', '<rect x="46" y="6" width="28" height="38" rx="2" fill="#FFFFFF" ' + WS_K + '/><path d="M52 22l6 6 10-12" fill="none" stroke="#EF5350" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="40" width="88" height="44" rx="4" fill="#42A5F5" ' + WS_K + '/><path d="M40 40h40" stroke="#263238" stroke-width="7" stroke-linecap="round"/>'],
     ['econ', '경제', '<rect x="12" y="58" width="16" height="26" fill="#90CAF9" ' + WS_K + '/><rect x="36" y="44" width="16" height="40" fill="#90CAF9" ' + WS_K + '/><rect x="60" y="30" width="16" height="54" fill="#90CAF9" ' + WS_K + '/><path d="M12 44l26-18 18 10 30-26M74 10h12v12" fill="none" stroke="#EF5350" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="98" cy="66" r="17" fill="#FFCA28" ' + WS_K + '/>' + WS_T(98, 74, '₩', 20) + ''],
     ['hist', '역사', '<path d="M18 30L60 10l42 20z" fill="#FFCA28" ' + WS_K + '/><path d="M24 34h72M30 38v32M48 38v32M72 38v32M90 38v32M18 76h84M14 84h92" fill="none" ' + WS_K + '/>'],
     ['hist2', '역사(두루마리)', '<rect x="22" y="14" width="76" height="62" fill="#FFF3E0" ' + WS_K + '/><path d="M40 28v34M54 28v34M68 28v34M82 28v22" stroke="#5D4037" stroke-width="4" stroke-linecap="round"/><rect x="12" y="6" width="96" height="13" rx="6.5" fill="#A1887F" ' + WS_K + '/><rect x="12" y="71" width="96" height="13" rx="6.5" fill="#A1887F" ' + WS_K + '/>'],
-    ['hist3', '역사(모래시계)', '<path d="M36 10c0 22 20 28 20 35S36 58 36 80h48c0-22-20-28-20-35s20-13 20-35z" fill="#E3F2FD" ' + WS_K + '/><path d="M44 76c4-12 12-16 16-16s12 4 16 16zM48 22h24c-4 8-10 12-12 16-2-4-8-8-12-16z" fill="#FFCA28"/><path d="M28 8h64M28 82h64" ' + WS_K + ' stroke-width="7"/>'],
+    ['hist3', '역사(모래시계)', '<path d="M36 10c0 22 20 28 20 35S36 58 36 80h48c0-22-20-28-20-35s20-13 20-35z" fill="#E3F2FD" ' + WS_K + '/><path d="M44 76c4-12 12-16 16-16s12 4 16 16zM48 22h24c-4 8-10 12-12 16-2-4-8-8-12-16z" fill="#FFCA28"/><path d="M28 8h64M28 82h64" ' + WS_KW(7) + '/>'],
     ['ethic', '윤리', '<path d="M60 80S14 54 14 30a20 20 0 0 1 46-10 20 20 0 0 1 46 10c0 24-46 50-46 50z" fill="#F48FB1" ' + WS_K + '/><path d="M96 8v12M90 14h12M18 70v8M14 74h8" ' + WS_K + '/>'],
     ['ethic2', '윤리(생각)', '<circle cx="50" cy="50" r="32" fill="#E1BEE7" ' + WS_K + '/>' + WS_T(50, 66, '?', 44, '#6A1B9A') + '<circle cx="92" cy="18" r="10" fill="#E1BEE7" ' + WS_K + '/><circle cx="106" cy="40" r="5" fill="#E1BEE7" ' + WS_K + '/>'],
-    ['music', '음악', '<path d="M42 66V18l56-10v48" fill="none" ' + WS_K + '/><path d="M42 30l56-10" ' + WS_K + ' stroke-width="7"/><ellipse cx="32" cy="68" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/><ellipse cx="88" cy="58" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/>'],
+    ['music', '음악', '<path d="M42 66V18l56-10v48" fill="none" ' + WS_K + '/><path d="M42 30l56-10" ' + WS_KW(7) + '/><ellipse cx="32" cy="68" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/><ellipse cx="88" cy="58" rx="12" ry="9" fill="#AB47BC" ' + WS_K + '/>'],
     ['art', '미술', '<path d="M60 8C30 8 8 26 8 48s18 34 34 30c10-2 6-14 16-16s16 6 26 2c18-6 30-18 26-34C106 18 86 8 60 8z" fill="#FFE0B2" ' + WS_K + '/><circle cx="34" cy="34" r="7" fill="#EF5350"/><circle cx="58" cy="24" r="7" fill="#FFCA28"/><circle cx="82" cy="30" r="7" fill="#42A5F5"/><circle cx="30" cy="56" r="7" fill="#66BB6A"/>'],
     ['pe', '체육', '<circle cx="60" cy="45" r="36" fill="#FF8A3D" ' + WS_K + '/><path d="M24 45h72M60 9v72M34 20c12 14 12 36 0 50M86 20c-12 14-12 36 0 50" fill="none" ' + WS_K + '/>'],
     ['info', '정보', '<rect x="10" y="10" width="100" height="58" rx="6" fill="#263238" ' + WS_K + '/><path d="M46 68l-4 14h36l-4-14M34 82h52" fill="none" ' + WS_K + '/>' + WS_T(60, 50, '&lt;/&gt;', 26, '#66BB6A')],
@@ -14488,7 +14458,7 @@
       btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
       const blob = await wsBuildHwpx(c);
       clearTimeout(timer); timer = null;
-      await fmSaveBlob(blob, ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx');
+      fmSaveNow(blob, ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx');
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
