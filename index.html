@@ -1104,6 +1104,28 @@
     .bs-sgrid .lp-input { width: 100%; padding-left: 5px; padding-right: 1px; }
     #bs-rowh-in { width: 56px; flex: none; padding-left: 5px; }
     .bs-tbl { border-collapse: collapse; table-layout: fixed; margin: 0 auto; }
+    /* 📝 시험 기간: 미리보기(칸 안 줄은 직접 나눈 그대로 — 넘치면 잘림, 한글에선 "한 줄로 입력") · 입력칸 */
+    .bs-ex-tbl td { padding: 0 1mm; line-height: 1.12; white-space: nowrap; word-break: keep-all; }
+    .bs-ex-ln { overflow: hidden; }
+    .bs-ex-row { display: grid; grid-template-columns: 36px 26px 50px 10px 50px minmax(0, 1fr); gap: 4px; align-items: center; font-size: 12px; margin-bottom: 3px; }
+    #fm-left .bs-ex-row .bs-t { width: 100%; text-align: center; padding-left: 3px; padding-right: 3px; box-sizing: border-box; }
+    .bs-ex-pn { font-weight: 700; white-space: nowrap; }
+    .bs-ex-lb { color: #C00000; font-weight: 700; }
+    .bs-ex-calc { font-size: 11px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+    .bs-ex-calc b { color: var(--text-main); }
+    .bs-ex-warn { color: #C00000; }
+    #bs-ex-pre .bs-num, #bs-ex-paper .bs-num { width: 50px; padding-left: 4px; padding-right: 0; flex: none; }
+    #bs-ex-days { display: flex; flex-direction: column; gap: 8px; margin: 6px 0; }
+    .bs-ex-day { border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+    .bs-ex-dh { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .bs-ex-dh b { color: #C00000; min-width: 38px; }
+    #fm-left .bs-ex-date { width: 132px; flex: none; padding-left: 5px; }
+    .bs-ex-wd { font-size: 12px; font-weight: 700; flex: 1; }
+    .bs-ex-p { display: grid; grid-template-columns: 40px minmax(0, 1fr) 26px; gap: 4px; align-items: center; font-size: 12px; }
+    .bs-ex-sjs { display: flex; gap: 4px; min-width: 0; }
+    .bs-ex-sjw { display: flex; align-items: center; gap: 2px; flex: 1 1 0; min-width: 0; }
+    #fm-left .bs-ex-sj { width: 100%; min-width: 0; flex: 1 1 auto; padding-left: 5px; padding-right: 2px; }
+    .bs-ex-p .nt-chip.bs-ex-plus { padding: 2px 0; width: 26px; text-align: center; }
     .bs-tbl td { text-align: center; vertical-align: middle; padding: 0 1mm; line-height: 1.2; word-break: break-all; overflow: hidden; color: #000; }
     .bs-sub { margin: 0 auto; text-align: center; color: #000; }
     /* 단어 시험 */
@@ -3312,11 +3334,11 @@
         <div class="nt-muted" id="pe-font-msg"></div>
       </div>
       </div>
-      <div class="fm-guide" id="bs-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b> 시정표를 고르고 시간 줄을 확인하면 바로 만들어져요. <b class="fm-step opt">3</b>에서 디자인만 골라 주세요 — <b class="fm-step opt">4</b>는 필요할 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="bs-guide" style="display:none;"></div>
       <div id="bs-grid" style="display:none;">
       <div class="bs-col">
       <div class="nt-box" id="bs-mode-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🔔 시정표</span> <span class="nt-muted">평상시·단축 수업은 따로 기억해요</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🔔 시정표</span> <span class="nt-muted">평상시·단축 수업·시험 기간은 따로 기억해요</span></div>
         <div class="nt-row" id="bs-modes"></div>
         <div class="nt-muted" id="bs-mode-help"></div>
         <div class="ws-row" id="bs-title-row"><span class="ws-lb">제목</span><input type="text" id="bs-title" class="lp-input" placeholder="부광고등학교 시정표" oninput="bsSetText('title', this.value)"></div>
@@ -3330,8 +3352,30 @@
         <div class="nt-row" id="bs-add"></div>
         <div class="nt-muted" id="bs-info"></div>
       </div>
+      <!-- 📝 시험 기간: ② 본령 시간(예비령·준비령은 저절로) ④ 넣을 쪽·글씨·종이 / 오른쪽 ③ 일차별 과목 -->
+      <div class="nt-box" id="bs-ex-bell-box" style="display:none;">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>⏰ 시험 시간</span> <span class="nt-muted">본령만 적으면 예비령·준비령은 저절로</span></div>
+        <div class="nt-row" id="bs-ex-np"></div>
+        <div class="nt-row" id="bs-ex-pre"></div>
+        <div id="bs-ex-periods"></div>
+      </div>
+      <div class="nt-box" id="bs-ex-opt-box" style="display:none;">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>🔤 글씨·종이</span> <span class="nt-muted">필요할 때만</span></div>
+        <div class="nt-row" id="bs-ex-pages"></div>
+        <div class="nt-row bs-szrow"><span class="bs-szl">글씨</span><button class="nt-chip" id="bs-ex-smaller" onclick="bsExScale(-1)" title="글씨를 모두 5% 작게">A−</button><b class="bs-szv" id="bs-ex-scale"></b><button class="nt-chip" id="bs-ex-bigger" onclick="bsExScale(1)" title="글씨를 모두 5% 크게">A+</button><span class="nt-muted">100% = 칸에 들어가는 가장 큰 글씨</span></div>
+        <div class="nt-row fm-fontrow" title="모든 글씨"><span class="fm-fl">글꼴</span><select id="bs-ex-font" class="mini-select" onchange="bsExFontPick(this.value)"></select></div>
+        <input type="text" id="bs-ex-font-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsExFontCustom(this.value)">
+        <div class="nt-muted" id="bs-ex-font-msg"></div>
+        <div class="nt-row" id="bs-ex-paper"></div>
+      </div>
       </div>
       <div class="bs-col">
+      <div class="nt-box" id="bs-ex-days-box" style="display:none;">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">3</b>📅 일차별 시간표</span> <span class="nt-muted">하루 한 장 · 두 과목은 ＋</span></div>
+        <div class="ws-row"><span class="ws-lb">시험명</span><input type="text" id="bs-ex-name" class="lp-input" placeholder="1차시험" oninput="bsSetText('name', this.value)" title="제목이 &quot;1차시험 1일차 시간표&quot;처럼 나와요"></div>
+        <div id="bs-ex-days"></div>
+        <div class="nt-row"><button class="nt-chip" id="bs-ex-add-day" onclick="bsExAddDay()" title="다음 일차(날짜는 앞 일차 다음 평일)">＋ 일차 더하기</button></div>
+      </div>
       <div class="nt-box" id="bs-design-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>🎨 디자인</span> <span class="nt-muted">마음에 드는 것을 하나 골라요</span></div>
         <div class="bs-designs" id="bs-designs"></div>
@@ -14290,6 +14334,7 @@
             .replace(/<hc:next value="-?\d+"/, '<hc:next value="' + Math.round((o.after || 0) * 100 * k) + '"')
             .replace(/<hh:lineSpacing type="\w+" value="\d+"/, '<hh:lineSpacing type="PERCENT" value="' + o.line + '"');
         };
+        if (o.squeeze) s = s.replace('lineWrap="BREAK"', 'lineWrap="SQUEEZE"'); // 한 줄로 입력(넘치면 자간을 줄여 한 줄)
         s = s.replace(/<hp:case[\s\S]*?<\/hp:case>/, function(m) { return fix(m, 1); }).replace(/<hp:default>[\s\S]*?<\/hp:default>/, function(m) { return fix(m, 2); });
         return s;
       }).join('');
@@ -14540,12 +14585,12 @@
   }
   function fmPrint() {
     const c = fmCfg(), msg = c.kind === 'roster' ? fmEmptyMsg(c) : c.kind === 'pe' && !PE_READY[peCfg().type] ? '이 종류는 다음 단계에서 만들어요. 지금은 📄 보고서를 쓸 수 있어요.'
-      : c.kind === 'bs' && !BS_READY[bsCfg().mode] ? '시험 기간 시정표는 선생님 양식을 받아서 다음에 만들어요. 지금은 평상시·단축 수업 시정표를 쓸 수 있어요.' : '';
+      : c.kind === 'bs' && bsCfg().mode === 'exam' && !bsExLayout(bsCfg()).pages.length ? '④ 글씨·종이에서 넣을 쪽(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.' : '';
     if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     fmRender();
     let st = document.getElementById('fm-page-style');
     if (!st) { st = document.createElement('style'); st.id = 'fm-page-style'; document.head.appendChild(st); }
-    const pg = c.kind === 'ws' ? wsLayout(wsCfg()) : c.kind === 'pe' ? peLayout(peCfg()) : c.kind === 'bs' ? bsLayout(bsCfg()) : fmPage(c);
+    const pg = c.kind === 'ws' ? wsLayout(wsCfg()) : c.kind === 'pe' ? peLayout(peCfg()) : c.kind === 'bs' ? (bsCfg().mode === 'exam' ? bsExLayout(bsCfg()) : bsLayout(bsCfg())) : fmPage(c);
     st.textContent = '@media print { @page { size: ' + pg.w + 'mm ' + pg.h + 'mm; margin: 0; } }';
     const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
@@ -15927,12 +15972,12 @@
   // 교실·복도에 붙이는 시정표(구분 | 시간 | 분). 사용자가 엑셀로 만들던 "부광고등학교 시정표"를 한글 파일로 — 디자인 고르기·글씨 크기 조절.
   // 평상시: 교시 시간은 관리자 "일과 시간"에서 가져오고(고친 칸만 이 시정표에 따로), 조회·중식·청소·자기주도학습 같은 줄을 더 넣는다.
   // 단축 수업: 교시마다 시간을 직접 적는다(사용자: "단축수업이면 각 교시별로 시간 설정이 필요") — 평상시와 따로 기억.
-  // 시험 기간(시정 + 요일별 과목)은 사용자 양식을 받은 뒤 만든다. 쉬는 시간 줄은 넣지 않음(사용자).
+  // 시험 기간: 사용자 한글 양식(정기고사 시정표 + 일차별 시간표)을 그대로 — 아래 "📝 시험 기간" 묶음(bsEx*). 쉬는 시간 줄은 넣지 않음(사용자).
   // 한 장짜리: 제목(상자/표에 붙이기/글씨만/밑줄) + 표 하나, 줄 높이는 기본으로 종이에 꽉 차게(게시용).
   const BS_CFG_KEY = 'fm-bs';
   const BS_MODES = [['normal', '🏫 평상시', '처음엔 관리자 설정의 일과 시간을 가져와요. 시작 시각과 줄마다 분만 고치면 뒤 시간이 저절로 계산돼요(이 시정표만 바뀌어요).'],
-    ['short', '⏱️ 단축 수업', '처음엔 평상시 시간을 옮겨 놓아요. 교시 분을 40으로 바꾸면 뒤 시간이 모두 따라 바뀌어요. 평상시와 따로 기억해요.'], ['exam', '📝 시험 기간', '시험 시정·요일별 과목 — 선생님 양식을 받아 다음에 만들어요.']];
-  const BS_READY = { normal: true, short: true };
+    ['short', '⏱️ 단축 수업', '처음엔 평상시 시간을 옮겨 놓아요. 교시 분을 40으로 바꾸면 뒤 시간이 모두 따라 바뀌어요. 평상시와 따로 기억해요.'], ['exam', '📝 시험 기간', '정기고사 시정표(예비령·준비령·본령)와 일차별 시간표를 한 장씩 만들어요. 본령 시간만 적으면 예비령(10분 전)·준비령(5분 전)은 저절로 계산돼요.']];
+  const BS_READY = { normal: true, short: true, exam: true };
   const BS_KINDS = [['p', '교시'], ['meet', '조회·종례'], ['lunch', '중식'], ['clean', '청소'], ['self', '자습'], ['etc', '기타']];
   const BS_PRESETS = [['조회', 'meet'], ['중식', 'lunch'], ['청소', 'clean'], ['종례', 'meet'], ['자기주도학습1', 'self'], ['자기주도학습2', 'self'], ['방과후', 'etc']];
   // 디자인(완성 세트) — 짜임·제목 모양·선 굵기·색(제목·머리 줄·강조·선·줄 종류별)을 미리 어울리게 맞춘 것 중에서 하나만 고른다.
@@ -15969,6 +16014,8 @@
     tSize: 30, hSize: 22, nSize: 24, tmSize: 26, mSize: 22,
     fill: true, rowH: 15, paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15,
   };
+  const BS_GUIDE = '<b class="fm-step">1</b><b class="fm-step">2</b> 시정표를 고르고 시간 줄을 확인하면 바로 만들어져요. <b class="fm-step opt">3</b>에서 디자인만 골라 주세요 — <b class="fm-step opt">4</b>는 필요할 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b>';
+  const BS_GUIDE_EXAM = '<b class="fm-step">1</b> 📝 시험 기간을 고르고 <b class="fm-step">2</b> 본령 시간, <b class="fm-step">3</b> 일차별 과목을 적으면 바로 만들어져요 — <b class="fm-step opt">4</b>는 필요할 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b>';
   function bsClassTimes() { return window.classTimes || DEFAULT_TIMES; }
   function bsTimeNorm(v) {
     v = String(v || '').trim().replace(/[^0-9:]/g, '');
@@ -16011,6 +16058,9 @@
     const ns = bsRows(c, 'normal'), nt = c.normal.title;
     c.short = bsModeClean(v.short, { title: nt.indexOf('시정표') >= 0 ? nt.replace(/시정표(?!.*시정표)/, '단축 수업 시정표') : nt + ' (단축 수업)', sub: c.normal.sub, nP: c.normal.nP,
       periods: ns.filter(function(r) { return r.k === 'p'; }).sort(function(a, b) { return a.i - b.i; }).map(function(r) { return { s: r.s, e: r.e }; }), extras: c.normal.extras.map(function(x) { return Object.assign({}, x); }) });
+    c.exam = bsExClean(v.exam); // 시험 기간(디자인·글씨·종이도 따로 — 사용자 양식 그대로)
+    // 설명서 동안은 단계마다 보여 줄 시정표(평상시/시험 기간)로 — 시험 기간 단계는 사용자 양식 예시(저장 안 함)
+    if (fmDemo && fmDemo.bsMode) { c.mode = fmDemo.bsMode; if (c.mode === 'exam') c.exam = bsExClean(BS_EX_DEMO); }
     // 디자인 세트가 짜임·제목 모양·선 굵기를 정함(예전 따로 고르던 theme·style·colors·zebra·outer는 안 씀)
     if (!BS_DESIGNS.some(function(d) { return d.k === c.design; })) c.design = 'classic';
     const dz = bsDesign(c); c.style = dz.style; c.tStyle = dz.tStyle; c.line = dz.line;
@@ -16153,6 +16203,7 @@
   }
   function bsRender() {
     const c = bsCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
+    if (c.mode === 'exam') return bsExRender(c);
     if (!BS_READY[c.mode]) {
       box.innerHTML = '<div class="fm-empty">📝 시험 기간 시정표는 선생님 양식(한글 파일)을 받아서 다음에 만들어요.<br>지금은 <b>🏫 평상시</b>·<b>⏱️ 단축 수업</b>을 쓸 수 있어요.</div>';
       label.textContent = ''; document.getElementById('fm-fit-info').textContent = '';
@@ -16192,10 +16243,15 @@
       return chip(c.mode === x[0], 'data-mode="' + x[0] + '" onclick="bsSet({ mode: \'' + x[0] + '\' }, true)"', x[1] + (BS_READY[x[0]] ? '' : ' <span class="pe-soon">준비 중</span>'), x[2]);
     }).join('');
     document.getElementById('bs-mode-help').textContent = BS_MODES.find(function(x) { return x[0] === c.mode; })[2];
-    const ready = !!BS_READY[c.mode];
-    ['bs-title-row', 'bs-sub-row', 'bs-rows-box', 'bs-design-box', 'bs-font-box'].forEach(function(id) { document.getElementById(id).style.display = ready ? '' : 'none'; });
+    const ready = !!BS_READY[c.mode], exam = c.mode === 'exam';
+    ['bs-title-row', 'bs-sub-row', 'bs-rows-box', 'bs-design-box', 'bs-font-box'].forEach(function(id) { document.getElementById(id).style.display = ready && (!exam || id === 'bs-title-row') ? '' : 'none'; });
+    ['bs-ex-bell-box', 'bs-ex-days-box', 'bs-ex-opt-box'].forEach(function(id) { document.getElementById(id).style.display = exam ? '' : 'none'; });
+    document.getElementById('bs-guide').innerHTML = exam ? BS_GUIDE_EXAM : BS_GUIDE;
+    document.getElementById('bs-title').placeholder = exam ? '정기고사 시정표' : '부광고등학교 시정표';
     if (!ready) return;
-    setVal('bs-title', m.title); setVal('bs-sub', m.sub);
+    setVal('bs-title', m.title);
+    if (exam) return bsExFill(c);
+    setVal('bs-sub', m.sub);
     // 시간 줄
     document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('');
     // 되돌리기 단추는 상자 제목 오른쪽에(교시 수 줄에 두면 단축 수업에서 줄이 넘어감 — 사용자)
@@ -16268,7 +16324,7 @@
   }
   function bsInfoFill(c) {
     c = c || bsCfg();
-    if (!BS_READY[c.mode]) return;
+    if (!BS_READY[c.mode] || c.mode === 'exam') return;
     const L = bsLayout(c), bad = L.rows.filter(function(r) { return !bsDur(r); }).map(function(r) { return r.n || '(이름 없음)'; });
     document.getElementById('bs-info').textContent = L.rows.length + '줄 · 줄 높이 ' + (Math.round(L.rowHs[0] * 10) / 10 || 0) + 'mm' + (bad.length ? ' · ⚠️ 시간을 확인해 주세요: ' + bad.join(', ') : '') +
       (L.over ? ' · ⚠️ 한 장을 넘어요(글씨·줄 높이를 줄여 주세요)' : '') + (L.tooLow ? ' · 글씨보다 낮아서 글씨에 맞췄어요' : '');
@@ -16508,18 +16564,394 @@
   }
   async function bsDownloadHwpx() {
     const c = bsCfg();
-    if (!BS_READY[c.mode]) return customAlert('시험 기간 시정표는 선생님 양식을 받아서 다음에 만들어요. 지금은 평상시·단축 수업 시정표를 쓸 수 있어요.');
+    if (c.mode === 'exam' && !bsExLayout(c).pages.length) return customAlert('④ 글씨·종이에서 넣을 쪽(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.');
     const btn = document.getElementById('fm-hwpx-btn');
     let timer = null;
     try {
       btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
-      const blob = await bsBuildHwpx(c);
+      const exam = c.mode === 'exam', blob = exam ? await bsExBuildHwpx(c) : await bsBuildHwpx(c);
       clearTimeout(timer); timer = null;
-      fmSaveNow(blob, ((c[c.mode].title || '시정표').trim() + '.hwpx').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' '));
+      fmSaveNow(blob, ((exam ? bsExFileTitle(c.exam) : c[c.mode].title || '시정표').trim() + '.hwpx').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' '));
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
+
+  // ===== 🔔 시정표 · 📝 시험 기간(정기고사 시정표 + 일차별 시간표) =====
+  // 사용자가 한글로 만들던 양식 그대로(디자인은 "이대로 만들어도 돼"): 한 장에 표 하나, 종이에 꽉 차게, 멀리서도 보이게 글씨는 칸에 들어가는 가장 크게.
+  // ① 정기고사 시정표: 교시 | 예비 시각 · 준비 시각 / 본령 시작∼끝(빨강) — 본령만 적으면 예비령(10분 전)·준비령(5분 전)은 저절로(쉬는 시간 줄은 없음).
+  // ② 일차별 시간표: "1차시험 [N일차(빨강)] 시간표" — 일자(4월/27일/(월)) | 교시 | 과목. 같은 교시에 두 과목(반마다 다른 선택 과목)이면 과목 칸을 옆으로 나눔.
+  // 원본: A4 세로·여백 5mm, 글꼴 경기천년제목 Bold, 제목·머리 줄 회색(#F2F2F2), 제목 위아래 굵은 선 + 빈 띠 줄, 머리 줄 아래 이중선, 바깥 왼쪽·오른쪽 선 없음.
+  const BS_EX_MAXP = 5, BS_EX_MAXD = 10, BS_EX_MAXS = 3;
+  const BS_EX_GRAY = '#F2F2F2', BS_EX_RED = '#FF0000';
+  // 디자인 데모(설명서): 사용자 양식 내용
+  const BS_EX_DEMO = { title: '정기고사 시정표', nP: 3, periods: [{ s: '09:10', e: '10:00' }, { s: '10:20', e: '11:10' }, { s: '11:30', e: '12:20' }], name: '1차시험',
+    days: [{ d: '2026-04-27', sj: [['자습'], ['영어독해와 작문'], ['한국지리']] }, { d: '2026-04-28', sj: [['동아시아사'], ['경제수학'], ['통합수학', '미적분']] },
+      { d: '2026-04-29', sj: [['자습'], ['사회문화'], ['기하']] }, { d: '2026-04-30', sj: [['자습'], ['화법과작문'], ['생활과윤리']] }] };
+  function bsExDefault() {
+    return { title: '정기고사 시정표', nP: 3, periods: [], pre: 10, ready: 5, name: '1차시험', days: [], bell: true, day: true,
+      font: '경기천년제목 Bold', fontC: false, scale: 100, paper: 'A4', margin: 5 };
+  }
+  function bsExSjPad(sj) {
+    sj = (Array.isArray(sj) ? sj : []).slice(0, BS_EX_MAXP).map(function(a) { a = (Array.isArray(a) ? a : [a]).slice(0, BS_EX_MAXS).map(function(s) { return String(s == null ? '' : s); }); return a.length ? a : ['']; });
+    while (sj.length < BS_EX_MAXP) sj.push(['']);
+    return sj;
+  }
+  function bsExClean(v) {
+    const d = bsExDefault(), m = Object.assign({}, d, v && typeof v === 'object' ? v : {});
+    m.title = String(m.title == null ? '' : m.title); m.name = String(m.name == null ? '' : m.name);
+    m.nP = Math.round(ntNum(m.nP, 1, BS_EX_MAXP, 3));
+    m.pre = Math.round(ntNum(m.pre, 1, 60, 10)); m.ready = Math.round(ntNum(m.ready, 0, 59, 5));
+    // 본령 시간: 적어 둔 것은 그대로, 아직 없는 교시는 앞 교시 끝 + 20분부터 같은 길이로(원본: 10:00 끝 → 10:20 본령)
+    const ps = Array.isArray(m.periods) ? m.periods : [];
+    m.periods = [];
+    for (let i = 0; i < BS_EX_MAXP; i++) {
+      const p = ps[i];
+      if (p && typeof p === 'object') { m.periods.push({ s: String(p.s || ''), e: String(p.e || '') }); continue; }
+      if (!i) { m.periods.push({ s: '09:10', e: '10:00' }); continue; }
+      const q = m.periods[i - 1], qs = minutesOf(q.s), qe = minutesOf(q.e), dur = qs != null && qe != null && qe > qs ? qe - qs : 50;
+      m.periods.push(qe != null ? { s: bsHM(qe + 20), e: bsHM(qe + 20 + dur) } : { s: '', e: '' });
+    }
+    m.days = (Array.isArray(m.days) ? m.days : []).filter(function(x) { return x && typeof x === 'object'; }).slice(0, BS_EX_MAXD)
+      .map(function(x) { return { d: /^\d{4}-\d{2}-\d{2}$/.test(x.d || '') ? x.d : '', sj: bsExSjPad(x.sj) }; });
+    if (!m.days.length) m.days = [{ d: '', sj: bsExSjPad([]) }];
+    m.bell = m.bell !== false; m.day = m.day !== false;
+    m.font = fmFontClean(m.font) || d.font; m.fontC = !!m.fontC;
+    m.scale = Math.round(ntNum(m.scale, 50, 100, 100) / 5) * 5;
+    if (!FM_PAPERS[m.paper]) m.paper = 'A4';
+    m.margin = ntNum(m.margin, 0, 30, 5);
+    return m;
+  }
+  // 예비령·준비령 = 본령 시작에서 pre·ready분 전
+  function bsExBells(m, i) { const p = m.periods[i] || {}, s = minutesOf(p.s); return { pre: s != null ? bsHM(s - m.pre) : '', ready: s != null ? bsHM(s - m.ready) : '', s: s != null ? p.s : '', e: minutesOf(p.e) != null ? p.e : '' }; }
+  function bsExDate(d) {
+    const x = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); if (!x) return null;
+    const dt = new Date(+x[1], +x[2] - 1, +x[3]);
+    return { m: +x[2], d: +x[3], wd: '일월화수목금토'[dt.getDay()] };
+  }
+  // 글자 폭(em) 어림(조금 넉넉히) — 한글 1, 숫자 0.6, ":" 0.35, "∼" 0.8, 띄어쓰기 0.5(한글 글꼴은 띄어쓰기가 넓은 편) …
+  // 그래도 넘치면 한글에서는 칸이 "한 줄로 입력"이라 자간이 줄어 한 줄을 지킴(줄이 늘어 표가 다음 쪽으로 밀리지 않게)
+  function bsExEm(t) {
+    let em = 0;
+    for (const ch of String(t || '')) em += ch === '∼' ? 0.8 : /[0-9]/.test(ch) ? 0.6 : ch === ':' ? 0.35 : ch === ' ' ? 0.5 : /[()]/.test(ch) ? 0.4 : ch.codePointAt(0) >= 0x1100 ? 1 : 0.62;
+    return em;
+  }
+  // 줄들이 칸(w×h mm)에 들어가는 가장 큰 글씨(pt, cap 이하)
+  function bsExFitSize(lines, cap, w, h) {
+    if (!lines.length) return Math.max(6, Math.floor(cap));
+    const em = Math.max.apply(null, lines.map(function(l) { return bsExEm(l); }).concat([0.5]));
+    return Math.max(6, Math.floor(Math.min(cap, (w - 3) / (em * FM_PT), (h - 2) / (lines.length * FM_PT * 1.2))));
+  }
+  // 과목 이름을 1~3줄로 나눠 가장 크게 되는 것(띄어쓰기가 있으면 거기서, 없으면 글자 수를 고르게 — 원본 "영어독해와/작문", "통합/수학")
+  function bsExSplit(t, cap, w, h) {
+    t = String(t || '').trim();
+    if (!t) return { lines: [], size: Math.floor(cap) };
+    let best = { lines: [t], size: bsExFitSize([t], cap, w, h) };
+    const words = t.split(/\s+/);
+    for (let k = 2; k <= 3; k++) {
+      const toks = words.length >= k ? words : Array.from(t.replace(/\s+/g, ''));
+      if (toks.length < k) break;
+      const sepr = words.length >= k ? ' ' : '';
+      let cand = null;
+      // 나눌 자리 고르기: 줄마다 폭이 가장 고른 것(토큰이 많지 않아 다 해 봄)
+      const tryCut = function(start, left, acc) {
+        if (left === 1) { const all = acc.concat([toks.slice(start).join(sepr)]), short = !sepr && all.some(function(l) { return l.length < 2; }); const mx = Math.max.apply(null, all.map(bsExEm)) + (short ? 100 : 0); if (!cand || mx < cand.mx) cand = { lines: all, mx: mx }; return; }
+        for (let i = start + 1; i <= toks.length - left + 1; i++) tryCut(i, left - 1, acc.concat([toks.slice(start, i).join(sepr)]));
+      };
+      tryCut(0, k, []);
+      if (!sepr && cand.lines.some(function(l) { return l.length < 2; })) continue; // 한 글자만 남는 줄은 안 만듦("미/적분" ✕)
+      const size = bsExFitSize(cand.lines, cap, w, h);
+      if (size > best.size * 1.1) best = { lines: cand.lines, size: size }; // 줄을 나눠서 눈에 띄게 커질 때만
+    }
+    return best;
+  }
+  function bsExLcm(a, b) { const g = function(x, y) { return y ? g(y, x % y) : x; }; return a * b / g(a, b); }
+  // ----- 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다 -----
+  // 쪽마다 { kind, cw: 칸 폭[], rh: 줄 높이[], cells: [{ r, c, rs, cs, lines: [[{ t, red }]], size, fill, bd: { t, b, l, r } }] }
+  function bsExLayout(c) {
+    const m = c.exam, P = FM_PAPERS[m.paper], w = P[0], h = P[1], mg = m.margin, W = w - mg * 2, H = h - mg * 2;
+    const r1 = function(x) { return Math.round(x * 10) / 10; };
+    const tw = r1(W), kW = tw / 198.6, kH = (H - BS_SAFE) / 284, sc = m.scale / 100;
+    const O = fmLn('solid', 1), I = fmLn('solid', 0.12), D = fmLn('double', 0.5), M = fmLn('solid', 0.7);
+    const titleH = r1(21.6 * kH), gapH = r1(3.8 * kH), headH = r1(13.9 * kH), body = H - BS_SAFE - titleH - gapH - headH;
+    const sum = function(a, i, n) { return a.slice(i, i + n).reduce(function(x, y) { return x + y; }, 0); };
+    const fitCell = function(cw, rh, x, text, cap, multi) {
+      const cwid = sum(cw, x.c, x.cs || 1), chgt = sum(rh, x.r, x.rs || 1);
+      let lines, size;
+      if (Array.isArray(text)) { lines = text.filter(function(l) { return l; }); size = bsExFitSize(lines, cap * kW, cwid, chgt); lines = lines.map(function(l) { return [{ t: l }]; }); }
+      else if (multi) { const s = bsExSplit(text, cap * kW, cwid, chgt); size = s.size; lines = s.lines.map(function(l) { return [{ t: l }]; }); }
+      else { const t = String(text || ''); size = bsExFitSize(t ? [t] : [], cap * kW, cwid, chgt); lines = t ? [[{ t: t, red: x.red }]] : []; }
+      return Object.assign({ rs: 1, cs: 1, fill: '', bd: {} }, x, { lines: lines, size: Math.max(6, Math.floor(size * sc)) });
+    };
+    const titleCell = function(cw, rh, runs, n) {
+      const t = runs.map(function(x) { return x.t; }).join('');
+      const size = bsExFitSize(t ? [t] : [], 47 * kW, sum(cw, 0, n), rh[0]);
+      return { r: 0, c: 0, rs: 1, cs: n, lines: t ? [runs] : [], size: Math.max(6, Math.floor(size * sc)), fill: BS_EX_GRAY, bd: { t: O, b: O } };
+    };
+    const pages = [];
+    // ① 정기고사 시정표: 교시 | 예비 | 시각 | 준비 | 시각 / 본령 | 시작∼끝 — 교시마다 두 줄(예비·준비 46% : 본령 54%)
+    if (m.bell) {
+      const cw = [20, 24, 64.7, 25.3].map(function(x) { return r1(x * kW); }); cw.push(r1(tw - cw.reduce(function(a, b) { return a + b; }, 0)));
+      const per = body / m.nP, rh = [titleH, gapH, headH];
+      for (let i = 0; i < m.nP; i++) rh.push(r1(per * 0.46), r1(per * 0.54));
+      rh[rh.length - 1] = r1(H - BS_SAFE - rh.slice(0, -1).reduce(function(a, b) { return a + b; }, 0));
+      const cells = [titleCell(cw, rh, [{ t: m.title }], 5), { r: 1, c: 0, cs: 5, rs: 1, lines: [], size: 1, fill: '', bd: { t: O, b: O } },
+        fitCell(cw, rh, { r: 2, c: 0, fill: BS_EX_GRAY, bd: { t: O, b: D, r: I } }, '교시', 28), fitCell(cw, rh, { r: 2, c: 1, cs: 4, fill: BS_EX_GRAY, bd: { t: O, b: D, l: I } }, '타종 및 시간', 28)];
+      for (let i = 0; i < m.nP; i++) {
+        const a = 3 + i * 2, tp = i ? M : D, bt = i === m.nP - 1 ? O : M, b = bsExBells(m, i);
+        cells.push(fitCell(cw, rh, { r: a, c: 0, rs: 2, bd: { t: tp, b: bt, r: I } }, String(i + 1), 37),
+          fitCell(cw, rh, { r: a, c: 1, bd: { t: tp, b: I, l: I, r: I } }, '예비', 37), fitCell(cw, rh, { r: a, c: 2, bd: { t: tp, b: I, l: I, r: I } }, b.pre, 57),
+          fitCell(cw, rh, { r: a, c: 3, bd: { t: tp, b: I, l: I, r: I } }, '준비', 37), fitCell(cw, rh, { r: a, c: 4, bd: { t: tp, b: I, l: I } }, b.ready, 57),
+          fitCell(cw, rh, { r: a + 1, c: 1, bd: { t: I, b: bt, l: I, r: I } }, '본령', 37),
+          fitCell(cw, rh, { r: a + 1, c: 2, cs: 3, red: true, bd: { t: I, b: bt, l: I } }, b.s || b.e ? b.s + '∼' + b.e : '', 71));
+      }
+      // 같은 종류 칸은 같은 크기로(교시마다 들쭉날쭉하지 않게)
+      [[1, 3], [2, 4]].forEach(function(cols) {
+        const xs = cells.filter(function(x) { return x.r >= 3 && (x.r - 3) % 2 === 0 && cols.indexOf(x.c) >= 0 && x.lines.length; });
+        const mn = Math.min.apply(null, xs.map(function(x) { return x.size; }).concat([999])); xs.forEach(function(x) { x.size = mn; });
+      });
+      [function(x) { return x.r >= 3 && (x.r - 3) % 2 === 1 && x.c === 1; }, function(x) { return x.r >= 3 && (x.r - 3) % 2 === 1 && x.c === 2 && x.lines.length; }, function(x) { return x.r >= 3 && x.c === 0; }].forEach(function(f) {
+        const xs = cells.filter(f), mn = Math.min.apply(null, xs.map(function(x) { return x.size; }).concat([999])); xs.forEach(function(x) { x.size = mn; });
+      });
+      pages.push({ kind: 'bell', cw: cw, rh: rh, cells: cells, label: m.title || '정기고사 시정표' });
+    }
+    // ② 일차별 시간표: 일자 | 교시 | 과목(같은 교시 여러 과목이면 칸을 나눔 — 칸 수는 그날 과목 수들의 최소공배수)
+    if (m.day) m.days.forEach(function(dy, di) {
+      const cnt = dy.sj.slice(0, m.nP).map(function(a) { return Math.max(1, a.length); }), L = cnt.reduce(bsExLcm, 1);
+      const cw = [r1(33.9 * kW), r1(22.4 * kW)], sw = tw - cw[0] - cw[1];
+      for (let k = 0; k < L; k++) cw.push(r1(sw / L));
+      cw[cw.length - 1] = r1(tw - cw.slice(0, -1).reduce(function(a, b) { return a + b; }, 0));
+      const rh = [titleH, gapH, headH], per = r1(body / m.nP);
+      for (let i = 0; i < m.nP; i++) rh.push(per);
+      rh[rh.length - 1] = r1(H - BS_SAFE - rh.slice(0, -1).reduce(function(a, b) { return a + b; }, 0));
+      const nC = 2 + L, dt = bsExDate(dy.d), name = m.name.trim();
+      const cells = [titleCell(cw, rh, [{ t: name ? name + ' ' : '' }, { t: (di + 1) + '일차', red: true }, { t: ' 시간표' }].filter(function(x) { return x.t; }), nC),
+        { r: 1, c: 0, cs: nC, rs: 1, lines: [], size: 1, fill: '', bd: { t: O, b: O } },
+        fitCell(cw, rh, { r: 2, c: 0, fill: BS_EX_GRAY, bd: { t: O, b: D, r: I } }, '일자', 28), fitCell(cw, rh, { r: 2, c: 1, fill: BS_EX_GRAY, bd: { t: O, b: D, l: I, r: I } }, '교시', 28),
+        fitCell(cw, rh, { r: 2, c: 2, cs: L, fill: BS_EX_GRAY, bd: { t: O, b: D, l: I } }, '과목', 28),
+        fitCell(cw, rh, { r: 3, c: 0, rs: m.nP, bd: { t: D, b: O, r: I } }, dt ? [dt.m + '월', dt.d + '일', '(' + dt.wd + ')'] : [], 42)];
+      const nums = [];
+      for (let i = 0; i < m.nP; i++) {
+        const r = 3 + i, tp = i ? I : D, bt = i === m.nP - 1 ? O : I, n = cnt[i], span = L / n;
+        const x = fitCell(cw, rh, { r: r, c: 1, bd: { t: tp, b: bt, l: I, r: I } }, String(i + 1), 37); nums.push(x); cells.push(x);
+        for (let k = 0; k < n; k++) cells.push(fitCell(cw, rh, { r: r, c: 2 + k * span, cs: span, bd: { t: tp, b: bt, l: I, r: k === n - 1 ? null : I } }, (dy.sj[i] || [])[k] || '', 78, true));
+      }
+      const mn = Math.min.apply(null, nums.map(function(x) { return x.size; })); nums.forEach(function(x) { x.size = mn; });
+      pages.push({ kind: 'day', day: di, cw: cw, rh: rh, cells: cells, label: (di + 1) + '일차' });
+    });
+    return { w: w, h: h, pw: w, ph: h, mg: mg, tw: tw, pages: pages };
+  }
+  function bsExFont(m) { return { n: m.font, h: m.fontC ? m.font : fmHwpFont(m.font) }; }
+  // 굵기가 이름에 든 글꼴(… Bold, HY강B, 헤드라인·견고딕)은 그대로, 아니면 굵게(멀리서 보이게)
+  function bsExBold(m) { return !/Bold|ExtraBold|Black|Heavy|B$|헤드라인|견고딕|굵/.test(m.font); }
+  function bsExRender(c) {
+    const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label'), m = c.exam;
+    const L = bsExLayout(c);
+    if (!L.pages.length) {
+      box.innerHTML = '<div class="fm-empty">④ 글씨·종이에서 <b>넣을 쪽</b>(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.</div>';
+      label.textContent = ''; document.getElementById('fm-fit-info').textContent = ''; return;
+    }
+    const font = fmFontCss(bsExFont(m).n), wt = bsExBold(m) ? 800 : 700;
+    const bd = function(s) { return s ? fmBdCss(s) : 'none'; };
+    box.innerHTML = L.pages.map(function(pg, pi) {
+      let h = '<div class="fm-sheet bs-sheet bs-ex-sheet" data-page="' + (pi + 1) + '" data-kind="' + pg.kind + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + L.mg + 'mm;">' +
+        '<table class="bs-tbl bs-ex-tbl" style="width:' + L.tw + 'mm; ' + font + ' font-weight:' + wt + ';"><colgroup>' + pg.cw.map(function(x) { return '<col style="width:' + x + 'mm">'; }).join('') + '</colgroup>';
+      pg.rh.forEach(function(rh, r) {
+        h += '<tr style="height:' + rh + 'mm;">' + pg.cells.filter(function(x) { return x.r === r; }).sort(function(a, b) { return a.c - b.c; }).map(function(x) {
+          return '<td' + (x.rs > 1 ? ' rowspan="' + x.rs + '"' : '') + (x.cs > 1 ? ' colspan="' + x.cs + '"' : '') + (r === 0 ? ' class="bs-title"' : '') + ' style="' + (x.fill ? 'background:' + x.fill + '; ' : '') + 'font-size:' + x.size + 'pt;' +
+            ' border-top:' + bd(x.bd.t) + '; border-bottom:' + bd(x.bd.b) + '; border-left:' + bd(x.bd.l) + '; border-right:' + bd(x.bd.r) + ';">' +
+            x.lines.map(function(ln) { return '<div class="bs-ex-ln">' + ln.map(function(run) { return run.red ? '<span style="color:' + BS_EX_RED + '">' + ntEsc(run.t) + '</span>' : ntEsc(run.t); }).join('') + '</div>'; }).join('') + '</td>';
+        }).join('') + '</tr>';
+      });
+      return h + '</table></div>';
+    }).join('');
+    label.textContent = m.paper + ' 세로 · ' + L.pages.length + '장 미리보기';
+    document.getElementById('fm-fit-info').textContent = '';
+    fmFitPreview();
+  }
+  // ----- 한글 파일: 쪽마다 표 하나(둘째 쪽부터 쪽 나누기). 칸 안 줄은 문단 하나씩(직접 나눈 줄 그대로), 칸·문단은 "한 줄로 입력"(넘치면 자간을 줄여 한 줄) -----
+  async function bsExBuildHwpx(c) {
+    if (typeof JSZip === 'undefined') throw new Error('JSZip');
+    const L = bsExLayout(c), m = c.exam, hu = fmHu;
+    if (!L.pages.length) throw new Error('쪽 없음');
+    fmStage = '한글 바탕 파일 받는 중';
+    const skel = await fmSkeleton();
+    fmStage = '파일 만드는 중';
+    const zip = await JSZip.loadAsync(skel);
+    const hf = bsExFont(m).h, bold = bsExBold(m);
+    const NONE = fmLn('none', 0.12), Ln = function(s) { return s || NONE; };
+    const bfs = [{ fill: null, s: { l: NONE, r: NONE, t: NONE, b: NONE } }], bfKey = {}, cps = [], cpKey = {};
+    const bfOf = function(x) {
+      const d = x.bd || {}, k = JSON.stringify([d.t, d.b, d.l, d.r, x.fill || '']);
+      if (!(k in bfKey)) { bfKey[k] = bfs.length; bfs.push({ fill: x.fill || null, s: { t: Ln(d.t), b: Ln(d.b), l: Ln(d.l), r: Ln(d.r) } }); }
+      return bfKey[k];
+    };
+    const cpOf = function(size, red) {
+      const o = { size: size, font: hf, color: red ? BS_EX_RED : '#000000', bold: bold }, k = JSON.stringify(o);
+      if (!(k in cpKey)) { cpKey[k] = cps.length; cps.push(o); }
+      return cpKey[k];
+    };
+    const cpTiny = cpOf(1, false);
+    L.pages.forEach(function(pg) { pg.cells.forEach(function(x) { x._bf = bfOf(x); x._cp = cpOf(x.size, false); x._cpR = cpOf(x.size, true); }); });
+    const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), { fonts: [hf], charPrs: cps, paraPrs: [{ align: 'CENTER', line: 100, squeeze: true }], borderFills: bfs });
+    zip.file('Contents/header.xml', H.xml);
+    const PP_C = H.pp[0], CP_TINY = H.cp[cpTiny];
+    const sec0 = await zip.file('Contents/section0.xml').async('string');
+    const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
+    const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
+      .replace(/<hp:pagePr [^>]*>/, function(x) { return x.replace(/landscape="\w+"/, 'landscape="WIDELY"').replace(/ width="\d+"/, ' width="' + hu(L.pw) + '"').replace(/ height="\d+"/, ' height="' + hu(L.ph) + '"'); })
+      .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="0" footer="0" gutter="0" left="' + hu(L.mg) + '" right="' + hu(L.mg) + '" top="' + hu(L.mg) + '" bottom="' + hu(L.mg) + '"/>');
+    let pid = 0, tid = 1000;
+    const P = function(runs, page) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + PP_C + '" styleIDRef="0" pageBreak="' + (page ? 1 : 0) + '" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
+    const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
+    const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
+    const table = function(pg) {
+      const TW = hu(L.tw), CW = pg.cw.map(hu), RH = pg.rh.map(hu), nC = CW.length;
+      CW[nC - 1] += TW - CW.reduce(function(a, b) { return a + b; }, 0);
+      const sumI = function(a, i, n) { return a.slice(i, i + n).reduce(function(x, y) { return x + y; }, 0); };
+      let xml = '';
+      RH.forEach(function(rh, r) {
+        xml += '<hp:tr>' + pg.cells.filter(function(x) { return x.r === r; }).sort(function(a, b) { return a.c - b.c; }).map(function(x) {
+          const paras = x.lines.length ? x.lines.map(function(ln) { return P(ln.map(function(run) { return R(H.cp[run.red ? x._cpR : x._cp], T(run.t)); }).join('')); }).join('') : P(R(x.r === 1 ? CP_TINY : H.cp[x._cp], T('')));
+          return '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + H.bf[x._bf] + '">' +
+            '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="SQUEEZE" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + paras + '</hp:subList>' +
+            '<hp:cellAddr colAddr="' + x.c + '" rowAddr="' + r + '"/><hp:cellSpan colSpan="' + x.cs + '" rowSpan="' + x.rs + '"/><hp:cellSz width="' + sumI(CW, x.c, x.cs) + '" height="' + sumI(RH, r, x.rs) + '"/>' +
+            '<hp:cellMargin left="' + hu(1) + '" right="' + hu(1) + '" top="0" bottom="0"/></hp:tc>';
+        }).join('') + '</hp:tr>';
+      });
+      return '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + RH.length + '" colCnt="' + nC + '" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
+        '<hp:sz width="' + TW + '" widthRelTo="ABSOLUTE" height="' + RH.reduce(function(a, b) { return a + b; }, 0) + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+        '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+        '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + xml + '</hp:tbl>';
+    };
+    const head = R(CP_TINY, secPr + '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl>');
+    const body = L.pages.map(function(pg, pi) { return P((pi ? '' : head) + R(CP_TINY, table(pg)), pi > 0); }).join('');
+    zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
+    const name = bsExFileTitle(m);
+    const hpf = (await zip.file('Contents/content.hpf').async('string'))
+      .replace(/<opf:title\/>|<opf:title>[\s\S]*?<\/opf:title>/, '<opf:title>' + fmX(name) + '</opf:title>')
+      .replace(/synthetic-fixture-author/g, fmX((window.currentTeacher && window.currentTeacher.name) || ''))
+      .replace(/(<opf:meta name="(?:CreatedDate|ModifiedDate)" content="text">)[^<]*/g, '$1' + new Date().toISOString().replace(/\.\d+Z$/, 'Z'))
+      .replace(/(<opf:meta name="date" content="text">)[^<]*/, '$1');
+    zip.file('Contents/content.hpf', hpf);
+    zip.file('Preview/PrvText.txt', L.pages.map(function(pg) { return pg.cells.map(function(x) { return x.lines.map(function(ln) { return ln.map(function(r) { return r.t; }).join(''); }).join(' '); }).filter(Boolean).join(' '); }).join('\r\n').slice(0, 1000));
+    zip.remove('Preview/PrvImage.png');
+    zip.file('mimetype', 'application/hwp+zip', { compression: 'STORE' });
+    return zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  }
+  function bsExFileTitle(m) { return (m.bell ? m.title.trim() || '정기고사 시정표' : (m.name.trim() ? m.name.trim() + ' ' : '') + '시간표'); }
+  // ----- 왼쪽 입력칸 -----
+  function bsExFill(c) {
+    const m = c.exam;
+    const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + ntEsc(title) + '"' : '') + '>' + label + '</button>'; };
+    const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    document.getElementById('bs-ex-np').innerHTML = '교시 수 ' + [1, 2, 3, 4, 5].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('');
+    document.getElementById('bs-ex-pre').innerHTML = '예비령 <input type="number" class="lp-input bs-num" id="bs-ex-pre-in" min="1" max="60" step="1" oninput="bsExNum(\'pre\', this.value, 1, 60)">분 전 · 준비령 ' +
+      '<input type="number" class="lp-input bs-num" id="bs-ex-ready-in" min="0" max="59" step="1" oninput="bsExNum(\'ready\', this.value, 0, 59)">분 전';
+    setVal('bs-ex-pre-in', m.pre); setVal('bs-ex-ready-in', m.ready);
+    if (!bsExTyping('bs-ex-periods')) bsExPeriodsFill(c);
+    setVal('bs-ex-name', m.name);
+    if (!bsExTyping('bs-ex-days')) bsExDaysFill(c);
+    document.getElementById('bs-ex-add-day').disabled = m.days.length >= BS_EX_MAXD;
+    // ④ 넣을 쪽·글씨·글꼴·종이
+    document.getElementById('bs-ex-pages').innerHTML = '넣을 쪽 <label class="pe-chk"><input type="checkbox" id="bs-ex-bell-on"' + (m.bell ? ' checked' : '') + ' onchange="bsModeSet(function(m) { m.bell = ' + '!m.bell; }, true)">정기고사 시정표</label>' +
+      '<label class="pe-chk"><input type="checkbox" id="bs-ex-day-on"' + (m.day ? ' checked' : '') + ' onchange="bsModeSet(function(m) { m.day = !m.day; }, true)">일차별 시간표</label>';
+    document.getElementById('bs-ex-scale').textContent = m.scale + '%';
+    document.getElementById('bs-ex-smaller').disabled = m.scale <= 50; document.getElementById('bs-ex-bigger').disabled = m.scale >= 100;
+    const sel = document.getElementById('bs-ex-font'), inp = document.getElementById('bs-ex-font-custom'), e = !m.fontC ? fmFontEntry(m.font) : null;
+    sel.innerHTML = fmFontOptions() + '<option value="__custom">✏️ 직접 입력</option>';
+    sel.value = e ? e.n : '__custom';
+    inp.style.display = e ? 'none' : '';
+    if (document.activeElement !== inp) inp.value = e ? '' : m.font;
+    fmFontMsgTo('bs-ex-font-msg', [m.font]);
+    document.getElementById('bs-ex-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
+      return chip(m.paper === k, 'data-paper="' + k + '" onclick="bsModeSet(function(m) { m.paper = \'' + k + '\'; }, true)"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
+    }).join('') + '<span class="pe-sep"></span>여백 <input type="number" class="lp-input bs-num" id="bs-ex-margin" min="0" max="30" step="1" oninput="bsExNum(\'margin\', this.value, 0, 30)">mm';
+    setVal('bs-ex-margin', m.margin);
+  }
+  function bsExTyping(id) { const a = document.activeElement; return !!(a && a.closest && a.closest('#' + id) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
+  function bsExNum(k, v, lo, hi) { const n = parseFloat(v); if (!isFinite(n) || n < lo || n > hi) return; bsModeSet(function(m) { m[k] = n; }); bsExCalcTexts(); }
+  // 본령 시간: [N교시] [시작] ∼ [끝] → 예비 08:00 · 준비 08:05
+  function bsExPeriodsFill(c) {
+    const m = c.exam;
+    document.getElementById('bs-ex-periods').innerHTML = m.periods.slice(0, m.nP).map(function(p, i) {
+      const t = function(f) { return '<input type="text" class="lp-input bs-t" inputmode="numeric" maxlength="5" data-f="' + f + '" value="' + ntEsc(p[f]) + '" placeholder="' + (f === 's' ? '시작' : '끝') + '" onfocus="bsExTimeFocus(' + i + ')" oninput="bsExTime(' + i + ', \'' + f + '\', this.value)" onchange="bsExTimeDone(this, ' + i + ', \'' + f + '\')">'; };
+      return '<div class="bs-ex-row" data-p="' + i + '"><span class="bs-ex-pn">' + (i + 1) + '교시</span><span class="bs-ex-lb">본령</span>' + t('s') + '<span class="nt-muted">∼</span>' + t('e') + '<span class="bs-ex-calc"></span></div>';
+    }).join('');
+    bsExCalcTexts();
+  }
+  function bsExCalcTexts() {
+    const m = bsCfg().exam;
+    document.querySelectorAll('#bs-ex-periods .bs-ex-row').forEach(function(row) {
+      const i = +row.dataset.p, b = bsExBells(m, i), s = minutesOf(b.s), e = minutesOf(b.e);
+      const el = row.querySelector('.bs-ex-calc');
+      el.innerHTML = b.s ? '예비 <b>' + b.pre + '</b> · 준비 <b>' + b.ready + '</b>' : '<span class="bs-ex-warn">시작 시각을 적어 주세요</span>';
+      el.title = b.s ? '예비령 ' + b.pre + ' · 준비령 ' + b.ready + (s != null && e != null && e > s ? ' · 시험 ' + (e - s) + '분' : '') : '';
+    });
+  }
+  function bsExTime(i, f, v) { bsModeSet(function(m) { m.periods[i][f] = String(v || '').trim(); }); bsExCalcTexts(); }
+  // 칸을 벗어나면 "910" → 09:10, 시작을 고치면 끝도 같은 시험 시간(분)만큼 따라 옮김(고치기 전 시각은 칸에 들어갈 때 기억 — 치는 동안 이미 저장되므로)
+  let bsExPrev = null;
+  function bsExTimeFocus(i) { const p = bsCfg().exam.periods[i] || {}; bsExPrev = { i: i, s: p.s, e: p.e }; }
+  function bsExTimeDone(el, i, f) {
+    const v = bsTimeNorm(el.value), pv = bsExPrev && bsExPrev.i === i ? bsExPrev : null, os = pv ? minutesOf(pv.s) : null, oe = pv ? minutesOf(pv.e) : null;
+    el.value = v;
+    bsModeSet(function(m) {
+      m.periods[i][f] = v;
+      const ns = minutesOf(v);
+      if (f === 's' && ns != null && os != null && oe != null && oe > os && minutesOf(m.periods[i].e) === oe) m.periods[i].e = bsHM(ns + oe - os);
+    });
+    bsExPrev = null;
+    setTimeout(function() { if (!bsExTyping('bs-ex-periods')) bsExPeriodsFill(bsCfg()); }, 0);
+  }
+  // 일차별 과목: 일차마다 날짜 + 교시마다 과목(＋로 같은 교시에 과목 더하기 — 반마다 다른 선택 과목)
+  function bsExDaysFill(c) {
+    const m = c.exam;
+    document.getElementById('bs-ex-days').innerHTML = m.days.map(function(dy, di) {
+      const dt = bsExDate(dy.d);
+      let h = '<div class="bs-ex-day" data-day="' + di + '"><div class="bs-ex-dh"><b>' + (di + 1) + '일차</b>' +
+        '<input type="date" class="lp-input bs-ex-date" value="' + ntEsc(dy.d) + '" onchange="bsExDay(' + di + ', this.value)"><span class="bs-ex-wd">' + (dt ? '(' + dt.wd + ')' : '') + '</span>' +
+        (m.days.length > 1 ? '<button class="ws-ol-x" title="이 일차 지우기" onclick="bsExDelDay(' + di + ')">✕</button>' : '') + '</div>';
+      for (let i = 0; i < m.nP; i++) {
+        const sj = dy.sj[i] || [''];
+        h += '<div class="bs-ex-p" data-p="' + i + '"><span class="bs-ex-pn">' + (i + 1) + '교시</span><span class="bs-ex-sjs">' + sj.map(function(s, k) {
+          return '<span class="bs-ex-sjw"><input type="text" class="lp-input bs-ex-sj" data-s="' + k + '" value="' + ntEsc(s) + '" placeholder="' + (k ? '같은 교시 다른 과목' : '과목 (자습·비우기 가능)') + '" oninput="bsExSubj(' + di + ', ' + i + ', ' + k + ', this.value)">' +
+            (k ? '<button class="ws-ol-x" title="이 과목 지우기" onclick="bsExDelSubj(' + di + ', ' + i + ', ' + k + ')">✕</button>' : '') + '</span>';
+        }).join('') + '</span>' + (sj.length < BS_EX_MAXS ? '<button class="nt-chip bs-ex-plus" title="같은 교시에 과목 하나 더(반마다 다른 과목을 볼 때 — 칸을 옆으로 나눠요)" onclick="bsExAddSubj(' + di + ', ' + i + ')">＋</button>' : '<span class="bs-ex-plus"></span>') + '</div>';
+      }
+      return h + '</div>';
+    }).join('');
+  }
+  function bsExDay(di, v) { bsModeSet(function(m) { if (m.days[di]) m.days[di].d = v; }, true); }
+  function bsExSubj(di, i, k, v) { bsModeSet(function(m) { const sj = m.days[di] && m.days[di].sj[i]; if (sj) sj[k] = v; }); }
+  function bsExAddSubj(di, i) {
+    bsModeSet(function(m) { const sj = m.days[di] && m.days[di].sj[i]; if (sj && sj.length < BS_EX_MAXS) sj.push(''); }, true);
+    const el = document.querySelectorAll('#bs-ex-days .bs-ex-day[data-day="' + di + '"] .bs-ex-p[data-p="' + i + '"] .bs-ex-sj'); if (el.length) el[el.length - 1].focus();
+  }
+  function bsExDelSubj(di, i, k) { bsModeSet(function(m) { const sj = m.days[di] && m.days[di].sj[i]; if (sj && sj.length > 1) sj.splice(k, 1); }, true); }
+  // 일차 더하기: 날짜는 앞 일차 다음 평일
+  function bsExAddDay() {
+    bsModeSet(function(m) {
+      if (m.days.length >= BS_EX_MAXD) return;
+      const last = m.days[m.days.length - 1], x = /^(\d{4})-(\d{2})-(\d{2})$/.exec((last && last.d) || '');
+      let d = '';
+      if (x) { const dt = new Date(+x[1], +x[2] - 1, +x[3]); do dt.setDate(dt.getDate() + 1); while (dt.getDay() === 0 || dt.getDay() === 6); d = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); }
+      m.days.push({ d: d, sj: bsExSjPad([]) });
+    }, true);
+    const days = document.querySelectorAll('#bs-ex-days .bs-ex-day'), el = days.length && days[days.length - 1].querySelector('.bs-ex-sj'); if (el) el.focus();
+  }
+  async function bsExDelDay(di) {
+    const dy = bsCfg().exam.days[di]; if (!dy) return;
+    if (dy.sj.some(function(a) { return a.some(function(s) { return s.trim(); }); }) && !(await customConfirm((di + 1) + '일차를 지울까요?\n(적어 둔 과목도 같이 지워져요)'))) return;
+    bsModeSet(function(m) { if (m.days.length > 1) m.days.splice(di, 1); }, true);
+  }
+  function bsExScale(d) { bsModeSet(function(m) { m.scale = Math.min(100, Math.max(50, m.scale + d * 5)); }, true); }
+  function bsExFontPick(v) {
+    if (v === '__custom') { bsModeSet(function(m) { m.fontC = true; }, true); const el = document.getElementById('bs-ex-font-custom'); if (el) { el.focus(); el.select(); } return; }
+    const e = FM_FONTS.find(function(f) { return f.n === v; }); if (!e) return;
+    bsModeSet(function(m) { m.font = e.n; m.fontC = false; }, true);
+  }
+  function bsExFontCustom(v) { const name = fmFontClean(v); if (!name) return; bsModeSet(function(m) { m.font = name; m.fontC = true; }); fmFontMsgTo('bs-ex-font-msg', [name]); }
 
   // 양식 종류(명렬표 수합 / 학습지 / 수행평가 / 시정표) 바꾸기
   const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표' };
@@ -16537,7 +16969,7 @@
   async function fmResetKind() {
     const kind = fmCfg().kind, ws = kind === 'ws';
     const msg = kind === 'bs'
-      ? '시정표 설정을 모두 처음 상태로 되돌릴까요?\n(평상시·단축 수업 줄과 시간, 제목, 디자인·글씨·쪽 설정이 기본값으로 돌아가요. 관리자 일과 시간과 다른 양식 설정은 그대로예요)'
+      ? '시정표 설정을 모두 처음 상태로 되돌릴까요?\n(평상시·단축 수업 줄과 시간, 시험 기간 시간·일차별 과목, 제목, 디자인·글씨·쪽 설정이 기본값으로 돌아가요. 관리자 일과 시간과 다른 양식 설정은 그대로예요)'
       : kind === 'pe'
       ? '수행평가 설정을 모두 처음 상태로 되돌릴까요?\n(종류·머리 표·항목·쪽 설정·글꼴이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
       : ws
@@ -16585,7 +17017,9 @@
   // 수행평가 예시: 보고서 단계는 PE_DEMO, 원고지 단계는 PE_DEMO_MS
   const fmTourPeAs = function(demo) { return function() { fmDemoSet(true); fmDemo.pe = demo; if (fmCfg().kind !== 'pe') fmSetKind('pe'); else { fmFillForm(); fmRender(); } }; };
   const fmTourPe = fmTourPeAs(PE_DEMO), fmTourPeMs = fmTourPeAs(PE_DEMO_MS), fmTourPeWord = fmTourPeAs(PE_DEMO_WORD);
-  const fmTourBs = function() { fmDemoSet(true); if (fmCfg().kind !== 'bs') fmSetKind('bs'); else { fmFillForm(); fmRender(); } }; // 시정표는 선생님 설정 그대로 보여 줌(바꾸지 않음)
+  // 시정표: 평상시 단계는 선생님 설정 그대로(바꾸지 않음 — 지금 보던 게 시험 기간이어도 평상시로 보여 줌), 시험 기간 단계는 사용자 양식 예시(BS_EX_DEMO)
+  const fmTourBsAs = function(mode) { return function() { fmDemoSet(true); fmDemo.bsMode = mode; if (fmCfg().kind !== 'bs') fmSetKind('bs'); else { fmFillForm(); fmRender(); } }; };
+  const fmTourBs = fmTourBsAs('normal'), fmTourBsExam = fmTourBsAs('exam');
   const fmTourSteps = [
     { selector: '#fm-page-header', before: fmTourRoster, title: '📄 양식 만들기에 오신 것을 환영해요!', desc: '선생님들이 한글로 매번 새로 만드는 양식을 몇 칸만 채워서 바로 만드는 화면이에요. 지금은 네 가지 — 📋 명렬표 수합(반 명단 체크표), 📚 학습지(학습지 틀), 📝 수행평가(보고서·원고지·단어 시험), 🔔 시정표를 만들 수 있어요. 설명서 동안은 예시 내용으로 채워서 보여 드려요(저장되지 않아요).' },
     { selector: '#fm-kind-switch', before: fmTourRoster, title: '양식 고르기', desc: '위쪽에서 만들 양식을 골라요. 양식마다 적은 내용과 설정이 따로 기억돼서, 다음에 열면 그대로 이어서 쓸 수 있어요.' },
@@ -16619,6 +17053,10 @@
     { selector: '#bs-rows-box', before: fmTourBs, title: '🔔 시정표 · 2단계. 시간', desc: '⏱️ 분으로 계산(기본): 시작 시각과 줄마다 "분"만 적으면 시간이 위에서부터 저절로 계산돼요. 교시와 교시 사이는 "교시 사이 쉬는 시간"(10분)이 들어가고, 중식·청소처럼 바로 붙는 줄은 0분이에요. 저녁 시간처럼 따로 쉬는 곳은 그 줄의 "쉬는" 칸에 적어요. 단축 수업은 교시 분만 40으로 바꾸면 돼요. 🕘 시각 직접으로 바꾸면 줄마다 시작·끝 시각을 적을 수 있어요. "줄 더하기"로 조회·종례·방과후 등을 더하고 ✕로 지워요.' },
     { selector: '#bs-design-box', before: fmTourBs, title: '🔔 시정표 · 3단계. 디자인', desc: '작은 그림을 보고 마음에 드는 디자인을 하나 누르면 끝이에요. 제목 모양·선·중식·청소 색까지 서로 어울리게 맞춰 둔 세트라 따로 고를 것이 없어요(클래식은 지금 쓰던 엑셀 모양, 흑백은 흑백 인쇄용).' },
     { selector: '#bs-font-box', before: fmTourBs, title: '🔔 시정표 · 4단계. 글씨·종이', desc: '글씨가 크거나 작으면 A−/A+로 한꺼번에, 종이(A4·B4·A3·B5)와 "분" 칸만 바로 고를 수 있어요. 글꼴·글씨 크기 하나씩·시간 표기(08:40 - 08:50 / ~)·머리 줄 글·칸 너비·줄 높이·여백은 "세부 설정"을 눌러 펼치면 있어요. 줄 높이는 기본으로 종이에 꽉 차게 늘어나고, 한 장을 넘으면 알려 줘요.' },
+    { selector: '#bs-mode-box', before: fmTourBsExam, title: '🔔 시정표 · 📝 시험 기간', desc: '📝 시험 기간을 고르면 정기고사 때 교실에 붙이는 두 가지를 만들어요 — 🔔 정기고사 시정표(교시마다 예비령·준비령·본령)와 📅 일차별 시간표(하루에 한 장, 일자·교시·과목). 오른쪽은 예시예요. 멀리서도 보이게 글씨는 칸에 들어가는 가장 크게, 표는 종이 한 장에 꽉 차게 맞춰져요.' },
+    { selector: '#bs-ex-bell-box', before: fmTourBsExam, title: '🔔 시험 기간 · 2단계. 시험 시간', desc: '교시 수(보통 3, 4교시 학교도 있어요)를 고르고 교시마다 본령 시작·끝만 적어요(예: 910 → 09:10). 예비령(10분 전)·준비령(5분 전)은 저절로 계산돼요. 몇 분 전인지는 위 칸에서 바꿀 수 있어요. 시작을 고치면 끝도 같은 시험 시간만큼 따라가요.' },
+    { selector: '#bs-ex-days-box', before: fmTourBsExam, title: '🔔 시험 기간 · 3단계. 일차별 시간표', desc: '일차마다 날짜를 고르고 교시마다 과목을 적어요(요일은 저절로). 같은 교시에 반마다 다른 과목을 보면 ＋를 눌러 과목을 더해요 — 과목 칸이 옆으로 나뉘어요(예시 2일차 3교시: 통합수학 | 미적분). "＋ 일차 더하기"는 다음 평일 날짜로 한 장을 더해요. 제목은 "시험 이름 + N일차 시간표"예요.' },
+    { selector: '#bs-ex-opt-box', before: fmTourBsExam, title: '🔔 시험 기간 · 4단계. 글씨·종이 (필요할 때만)', desc: '정기고사 시정표·일차별 시간표 중 넣을 쪽만 고를 수 있어요. 글씨는 처음부터 칸에 들어가는 가장 큰 크기(100%)라 A−로 줄이기만 해요. 글꼴(기본 경기천년제목 Bold)·용지·여백도 여기서 바꿔요.' },
     { selector: '#fm-hwpx-btn', before: fmTourBs, title: '🔔 시정표 · 한글 파일 내려받기', desc: '⬇️ 한글 파일로 받으면 색·선이 그대로인 진짜 표라 한글에서 바로 고쳐 쓸 수 있어요. 🖨️ 인쇄로 바로 뽑아도 돼요. 설명서를 닫으면 예시는 사라지고 선생님 설정과 원래 보던 양식으로 돌아가요. 수고하셨습니다! 🎉' },
   ];
   function fmOpenTour() {
