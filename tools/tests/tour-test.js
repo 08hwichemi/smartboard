@@ -256,6 +256,25 @@ function show(name, seen) {
   await P.evaluate(() => goHome()); await wait(200);
   check('설명서 중 홈으로 가면 닫힘', await P.evaluate(() => document.getElementById('tour-overlay').style.display === 'none' && tourMode === 'dashboard'));
 
+  // 양식 만들기 설명서: 명렬표 수합·학습지마다 "이런 걸 만들어요" 완성 예시 → 닫으면 원래 설정(예시는 저장 안 함)
+  await P.click('#rail-forms-btn'); await wait(600);
+  const before = await P.evaluate(() => ({ fm: localStorage.getItem('fm-cfg'), ws: localStorage.getItem('fm-ws'), title: fmCfg().title }));
+  await P.evaluate(() => fmOpenTour()); await wait(300);
+  const goTo = async (txt) => { for (let k = 0; k < 30; k++) { if ((await P.evaluate(() => document.getElementById('tour-card-title').innerText)).includes(txt)) return true; await P.click('#tour-next-btn'); await wait(250); } return false; };
+  const ex1 = await goTo('명렬표 수합 — 이런 걸 만들어요'); await wait(300); await P.screenshot({ path: 'tour-fm-demo1.png' });
+  const r1 = await P.evaluate(() => ({ prev: document.getElementById('fm-pages').innerText, titleInp: document.getElementById('fm-title').value, roster: !!document.querySelector('#fm-pages table.fm-tbl'), grid: document.getElementById('fm-grid').style.display !== 'none' }));
+  check('양식 설명서: 명렬표 수합 완성 예시(제목·명단 15명·동의서·회비 칸)가 미리보기·입력칸에 보임', ex1 && r1.roster && r1.grid && /현장체험학습 동의서 제출 확인/.test(r1.prev) && /권나은/.test(r1.prev) && /회비/.test(r1.prev) && r1.titleInp === '현장체험학습 동의서 제출 확인', r1);
+  const ex2 = await goTo('학습지 — 이런 걸 만들어요'); await wait(300); await P.screenshot({ path: 'tour-fm-demo2.png' });
+  const r2 = await P.evaluate(() => ({ prev: document.getElementById('fm-pages').innerText, ws: document.getElementById('ws-grid').style.display !== 'none', subj: document.getElementById('ws-subj').value }));
+  check('양식 설명서: 학습지 완성 예시(통합과학 2단원 원소와 원자 + 제목 뼈대)가 보임', ex2 && r2.ws && r2.subj === '통합과학' && /원소와 원자/.test(r2.prev) && /원자의 구조/.test(r2.prev), r2);
+  const titles = await P.evaluate(() => fmTourSteps.map(s => s.title));
+  check('양식 설명서: 단계 제목에 어느 양식인지(📋 명렬표 수합 · / 📚 학습지 ·)', titles.filter(t => t.startsWith('📋 명렬표 수합 ·')).length === 9 && titles.filter(t => t.startsWith('📚 학습지 ·')).length === 7, titles);
+  await P.evaluate(() => closePageTour()); await wait(300);
+  const after = await P.evaluate(() => ({ fm: localStorage.getItem('fm-cfg'), ws: localStorage.getItem('fm-ws'), title: fmCfg().title, inp: document.getElementById('fm-title').value, kind: fmCfg().kind, prev: document.getElementById('fm-pages').innerText }));
+  check('양식 설명서 닫으면 예시 사라지고 원래 설정·원래 탭(저장된 값도 그대로)', after.ws === before.ws && after.title === before.title && after.inp === before.title && after.kind === 'roster' && !/권나은|현장체험학습/.test(after.prev) &&
+    JSON.parse(after.fm || '{}').title === JSON.parse(before.fm || '{}').title, [before, after]);
+  await P.click('#rail-forms-btn'); await wait(300);
+
   check('페이지 오류 없음', pc.errors.length === 0, pc.errors);
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();
