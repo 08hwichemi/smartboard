@@ -1027,6 +1027,7 @@
     /* 두 열: 왼쪽 열 = 명단·제목·안내·체크 칸, 오른쪽 열 = 배치·칸 너비·정렬. 같은 줄의 두 상자는 높이를 맞춰 위·아래 선이 가지런하게 */
     #ws-grid { display: flex; flex-direction: column; gap: 12px; }
     #ws-grid > * { flex-shrink: 0; min-width: 0; }
+    .ws-fw { display: inline-block; width: 0.5em; } /* 학습지 반·번호·이름 칸의 고정폭 빈칸 */
     .ws-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
     .ws-row .lp-input { flex: 1; min-width: 0; }
     .ws-lb { flex: 0 0 auto; width: 40px; color: var(--text-sub); }
@@ -3089,6 +3090,7 @@
         <div class="ws-row"><span class="ws-lb">대단원</span><input type="text" id="ws-uno" class="lp-input ws-no" placeholder="2" oninput="wsSet({ uNo: this.value })"><input type="text" id="ws-uname" class="lp-input" placeholder="반응엔탈피와 화학 평형" oninput="wsSet({ uName: this.value })"></div>
         <div class="ws-row"><span class="ws-lb">소단원</span><input type="text" id="ws-sno" class="lp-input ws-no" placeholder="01" oninput="wsSet({ sNo: this.value })"><input type="text" id="ws-sname" class="lp-input" placeholder="반응엔탈피와 열화학 반응식" oninput="wsSet({ sName: this.value })"></div>
         <div class="nt-muted">대단원은 짝수 쪽 아래에도 "○단원 …"으로 나와요.</div>
+        <label class="ws-row" id="ws-stu-row" style="cursor:pointer;"><input type="checkbox" id="ws-stu" onchange="wsSet({ stu: this.checked })"><span style="flex:none; white-space:nowrap;">반·번호·이름 칸 넣기</span><span class="nt-muted">— 학생이 직접 쓰는 빈칸</span></label>
       </div>
       <div class="nt-box" id="ws-subj-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>🏷️ 과목</span> <span class="nt-muted">쪽 번호·학교명·과목명은 늘 나와요</span></div>
@@ -14395,10 +14397,16 @@
   const WS_DEFAULT = {
     uNo: '1', uName: '', sNo: '01', sName: '', subj: '', cls: '', school: null, icon: 'auto', outline: '', gap: 0,
     paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15, start: 1, colsN: 1, colLine: true, h2Color: false, note: true, noteW: 44, theme: 'mint',
+    stu: false, // 머리 띠 가운데 "(  )반 (  )번 / 이름 : (  )" 빈칸 — 학생이 직접 씀(기본은 빼기)
     tFont: '한컴 윤고딕 240', bFont: '함초롬바탕', bSize: 10, // 머리·꼬리 / 본문 글꼴(한글에 딸려 오는 글꼴이라 학교 PC에 거의 있음)
   };
   // 부분별 글꼴(비우면 머리·꼬리 글꼴)
-  const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
+  const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['stu', '반·번호·이름'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
+  // 반·번호·이름 칸(학생이 손으로 채우는 빈칸). "_" = 고정폭 빈칸(한글의 Alt+Space, 글꼴과 상관없이 늘 반 글자 폭) —
+  // 보통 띄어쓰기는 글꼴마다 폭이 달라 한글에서 줄이 넘어가거나 빈칸이 좁아질 수 있어서.
+  const WS_STU_LINES = ['(_____)반___(_____)번', '이름_:_(______________)'];
+  function wsStuHtml(t) { return t.split('_').map(ntEsc).join('<span class="ws-fw"></span>'); }
+  function wsStuHwp(t) { return '<hp:t>' + t.split('_').map(fmX).join('<hp:fwSpace/>') + '</hp:t>'; }
   // 그 부분에 쓸 글꼴: { n: 미리보기용 이름, h: 한글 파일에 적을 이름 } — 직접 입력한 이름은 적은 그대로
   function wsFont(c, part) {
     let n, cu;
@@ -14417,7 +14425,7 @@
     if (c.school == null) { const el = document.getElementById('ms-cfg-school'); c.school = (el && el.value) || ''; } // 처음엔 월간일정표의 학교명
     ['uNo', 'uName', 'sNo', 'sName', 'subj', 'cls', 'school', 'outline'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
     if (!FM_PAPERS[c.paper]) c.paper = 'A4';
-    c.land = !!c.land; c.note = c.note !== false; c.colLine = c.colLine !== false; c.h2Color = c.h2Color === true;
+    c.land = !!c.land; c.note = c.note !== false; c.colLine = c.colLine !== false; c.h2Color = c.h2Color === true; c.stu = c.stu === true;
     // 본문 제목 뼈대: 칸으로 쓰기(rows, 번호 자동)가 기본, "글로 한꺼번에"(olText)면 outline 글 그대로
     c.olText = c.olText === true;
     if (!c.olText) {
@@ -14472,7 +14480,7 @@
     wsSet(o);
     wsFontMsg(wsCfg());
   }
-  function wsFontMsg(c) { fmFontMsgTo('ws-font-msg', ['uno', 'sno', 'cls', 'subj', 'foot', 'num', 'note', 'body'].map(function(k) { return wsFont(c, k).n; })); }
+  function wsFontMsg(c) { fmFontMsgTo('ws-font-msg', ['uno', 'sno', 'stu', 'cls', 'subj', 'foot', 'num', 'note', 'body'].map(function(k) { return wsFont(c, k).n; })); }
   // ----- 본문 제목 뼈대 칸(번호 자동) -----
   const WS_OL_LV = { h1: '대제목', h2: '중제목', h3: '소제목', it: '항목', p: '본문' };
   const WS_OL_ORDER = ['h1', 'h2', 'h3', 'it', 'p'];
@@ -14586,11 +14594,12 @@
     const noteW = c.note ? Math.min(c.noteW, W * 0.4) : 0;
     const bodyTop = c.mT + headH, bodyBot = h - c.mB - footH;
     const iconW = c.iconK ? 22 : 0, numW = 12, slashW = 9, rightW = Math.min(62, Math.max(40, W * 0.26));
+    const stuW = c.stu ? 42 : 0; // 반·번호·이름 칸: 제목과 사선 사이, 제목 폭에서 떼어 씀
     return {
       w: w, h: h, pw: p[0], ph: p[1], W: W, headH: headH, footH: footH, bandH: bandH,
       bodyX: c.mL, bodyTop: bodyTop, bodyW: W - (noteW ? noteW + gapN : 0), bodyH: bodyBot - bodyTop,
       note: noteW ? { x: c.mL + W - noteW, y: bodyTop, w: noteW, h: bodyBot - bodyTop, th: 7 } : null,
-      band: { x: c.mL, y: c.mT, iconW: iconW, numW: numW, slashW: slashW, rightW: rightW, titleW: W - iconW - numW - slashW - rightW },
+      band: { x: c.mL, y: c.mT, iconW: iconW, numW: numW, slashW: slashW, rightW: rightW, stuW: stuW, titleW: W - iconW - numW - stuW - slashW - rightW },
       foot: { x: c.mL, y: h - c.mB - 7, w: W, h: 7 },
     };
   }
@@ -14607,13 +14616,15 @@
     const b = L.band, line = '0.6mm solid #000';
     const bw = 700;
     const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F('uno') + '"><colgroup>' +
-      (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm"><col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
+      (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm">' + (b.stuW ? '<col style="width:' + b.stuW + 'mm">' : '') + '<col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
       '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
       '<td style="font-size:12pt; text-align:center; ' + F('uno') + '">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt; ' + F('uno') + '">' + ntEsc(c.uName) + '</td>' +
+      (b.stuW ? '<td class="ws-stu" style="font-size:10pt; white-space:nowrap; vertical-align:bottom; padding-left:1mm; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[0]) + '</td>' : '') +
       '<td rowspan="2" class="ws-slash"></td>' +
       '<td rowspan="2" style="border-top:' + line + '; vertical-align:middle; padding-left:2mm;">' +
       (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + '; ' + F('cls') + '">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; text-align:right; ' + F('subj') + W8('subj') + '">' + ntEsc(c.subj) + '</div></td></tr>' +
-      '<tr style="height:9.5mm;"><td style="font-size:17pt; text-align:center; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sName) + '</td></tr></table>';
+      '<tr style="height:9.5mm;"><td style="font-size:17pt; text-align:center; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sName) + '</td>' +
+      (b.stuW ? '<td class="ws-stu" style="font-size:10pt; white-space:nowrap; padding-left:1mm; border-bottom:' + line + '; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[1]) + '</td>' : '') + '</tr></table>';
     const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + '; ' + F('note') + '">NOTE</div>' +
       '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
     const foot = function(n) {
@@ -14655,6 +14666,7 @@
     setVal('ws-subj', c.subj); setVal('ws-cls', c.cls); setVal('ws-school', c.school); setVal('ws-outline', c.outline);
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#ws-ol-rows')) wsOlFill(c);
     setVal('ws-gap', c.gap); setVal('ws-start', c.start); setVal('ws-bsize', c.bSize);
+    document.getElementById('ws-stu').checked = c.stu;
     // 아이콘: 자주 쓰는 것만 보이고(지금 고른 것은 늘 보임) 나머지는 "더보기" 창에서
     const icBtn = function(ic) { return '<button class="ws-ic' + (c.icon === ic[0] ? ' on' : '') + '" data-ic="' + ic[0] + '" title="' + ic[1] + '" onclick="wsSet({ icon: \'' + ic[0] + '\' }, true)">' + wsIconSvg(ic[0]) + '</button>'; };
     const shown = WS_ICON_MAIN.concat(c.icon && c.icon !== 'auto' && WS_ICON_MAIN.indexOf(c.icon) < 0 ? [c.icon] : []);
@@ -14731,7 +14743,7 @@
     const nl = fmLn('solid', 0.3, th[3]), bl = K(0.12);
     const borderFills = [bfS(), bfS({ b: K(0.6) }), bfS({ t: K(0.6) }), Object.assign(bfS(), { slash: 0.4 }), { fill: th[2], s: { l: nl, r: nl, t: nl, b: nl }, slash: null },
       { fill: null, s: { l: bl, r: bl, t: bl, b: bl }, slash: null }];
-    const FT = {}; ['uno', 'sno', 'cls', 'subj', 'foot', 'num', 'note', 'body'].forEach(function(k) { FT[k] = wsFont(c, k); }); // 부분별 글꼴(한글 이름)
+    const FT = {}; ['uno', 'sno', 'stu', 'cls', 'subj', 'foot', 'num', 'note', 'body'].forEach(function(k) { FT[k] = wsFont(c, k); }); // 부분별 글꼴(한글 이름)
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: Object.keys(FT).map(function(k) { return FT[k].h; }).filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [
@@ -14750,6 +14762,7 @@
         { size: sz.p, font: FT.body.h },                                 // 12 항목·본문
         { size: sz.h1 - 1.5, font: FT.body.h, bold: wsBold(FT.body, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
         { size: 12, font: FT.uno.h },                                    // 14 대단원 번호
+        { size: 10, font: FT.stu.h, bold: wsBold(FT.stu, true) },        // 15 반·번호·이름 칸
       ],
       paraPrs: [
         { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
@@ -14788,10 +14801,12 @@
         '<hp:sz width="' + W + '" widthRelTo="ABSOLUTE" height="' + Hh + '" heightRelTo="ABSOLUTE" protect="0"/>' + floatPos(x, y) +
         '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + rows.map(function(r) { return '<hp:tr>' + r + '</hp:tr>'; }).join('') + '</hp:tbl>';
     };
-    // 머리 띠: [아이콘][번호][제목][사선][수업명·과목명] — 2줄
+    // 머리 띠: [아이콘][번호][제목][반·번호·이름(넣을 때만)][사선][수업명·과목명] — 2줄
     const b = L.band, cw = [];
     if (b.iconW) cw.push(hu(b.iconW));
-    cw.push(hu(b.numW), hu(b.titleW), hu(b.slashW), hu(b.rightW));
+    cw.push(hu(b.numW), hu(b.titleW));
+    if (b.stuW) cw.push(hu(b.stuW));
+    cw.push(hu(b.slashW), hu(b.rightW));
     const BW = cw.reduce(function(a, x) { return a + x; }, 0), r1 = hu(6.5), r2 = hu(L.bandH) - r1;
     let ci = 0, row1 = '', row2 = '';
     let iconXml = '';
@@ -14812,11 +14827,14 @@
     const nC = ci;
     row1 += tc({ c: nC, r: 0, w: cw[nC], h: r1, bf: BFI('none'), paras: P(PP[2], R(CP[14], T(c.uNo))) });
     row1 += tc({ c: nC + 1, r: 0, w: cw[nC + 1], h: r1, bf: BFI('none'), paras: P(PP[0], R(CP[0], T(c.uName))) });
-    row1 += tc({ c: nC + 2, r: 0, rs: 2, w: cw[nC + 2], h: hu(L.bandH), bf: BFI('slash'), paras: P(PP[0], R(CP[0], T(''))) });
-    row1 += tc({ c: nC + 3, r: 0, rs: 2, w: cw[nC + 3], h: hu(L.bandH), bf: BFI('top'), v: 'CENTER', ml: 2, mr: 1,
+    const sC = b.stuW ? nC + 2 : -1, kC = nC + (b.stuW ? 3 : 2); // 반·번호·이름 칸, 사선 칸 순번
+    if (b.stuW) row1 += tc({ c: sC, r: 0, w: cw[sC], h: r1, bf: BFI('none'), v: 'BOTTOM', paras: P(PP[0], R(CP[15], wsStuHwp(WS_STU_LINES[0]))) });
+    row1 += tc({ c: kC, r: 0, rs: 2, w: cw[kC], h: hu(L.bandH), bf: BFI('slash'), paras: P(PP[0], R(CP[0], T(''))) });
+    row1 += tc({ c: kC + 1, r: 0, rs: 2, w: cw[kC + 1], h: hu(L.bandH), bf: BFI('top'), v: 'CENTER', ml: 2, mr: 1,
       paras: (c.cls ? P(PP[0], R(CP[2], T(c.cls))) : '') + P(PP[1], R(CP[3], T(c.subj))) });
     row2 += tc({ c: nC, r: 1, w: cw[nC], h: r2, bf: BFI('bottom'), paras: P(PP[2], R(CP[1], T(c.sNo))) });
     row2 += tc({ c: nC + 1, r: 1, w: cw[nC + 1], h: r2, bf: BFI('bottom'), paras: P(PP[0], R(CP[1], T(c.sName))) });
+    if (b.stuW) row2 += tc({ c: sC, r: 1, w: cw[sC], h: r2, bf: BFI('bottom'), paras: P(PP[0], R(CP[15], wsStuHwp(WS_STU_LINES[1]))) });
     origin = { x: c.mL, y: c.mT };
     const bandXml = tbl([row1, row2], cw.length, BW, hu(L.bandH), b.x, b.y);
     // NOTE 칸: 머리말 속 표(제목 칸 + 빈 줄 + 긴 칸, 배경색), 글 뒤로 — 쪽마다 같은 자리에 깔린다

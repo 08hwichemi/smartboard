@@ -649,6 +649,32 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     return { band: Math.round((band.getBoundingClientRect().top - sh.getBoundingClientRect().top) / k), gap: Math.round((note.getBoundingClientRect().top - band.getBoundingClientRect().bottom) / k), cls: getComputedStyle([...band.querySelectorAll('div')].find(d => /놀자/.test(d.textContent))).color }; });
   check('원본 학습지 간격: 머리 띠는 위에서 14mm, 머리 띠 아래 NOTE까지 8mm, 수업명은 연한 회색', top.band === 14 && top.gap === 8 && top.cls === 'rgb(153, 153, 153)', top);
   check('과목명 "화학Ⅱ" → 아이콘 자동으로 화학', await W.evaluate(() => wsCfg().iconK) === 'chem');
+  // 반·번호·이름 칸(학생이 직접 쓰는 빈칸): 기본은 빼기, 체크하면 제목과 사선 사이에
+  const stu0 = await W.evaluate(() => ({ cfg: wsCfg().stu, chk: document.getElementById('ws-stu').checked, cells: document.querySelectorAll('#fm-pages .ws-stu').length }));
+  check('반·번호·이름 칸: 기본은 빼기(체크 꺼짐, 미리보기에 없음)', stu0.cfg === false && stu0.chk === false && stu0.cells === 0, stu0);
+  const bandW0 = await W.evaluate(() => document.querySelector('#fm-pages .ws-band').getBoundingClientRect().width);
+  await W.click('#ws-stu'); await W.waitForTimeout(250);
+  const stu1 = await W.evaluate(() => { const sh = document.querySelector('#fm-pages .ws-sheet'), band = sh.querySelector('.ws-band'), cells = [...band.querySelectorAll('.ws-stu')];
+    const r = (el) => el.getBoundingClientRect(), title = [...band.querySelectorAll('td')].find(td => /반응엔탈피와 열화학/.test(td.textContent)), slash = band.querySelector('.ws-slash'), subj = [...band.querySelectorAll('div')].find(d => d.textContent === '화학Ⅱ');
+    return { cfg: wsCfg().stu, saved: JSON.parse(localStorage.getItem('fm-ws')).stu, n: cells.length, t: cells.map(c => c.textContent), fw: cells.map(c => c.querySelectorAll('.ws-fw').length).join(), fwW: (() => { const f = cells[0].querySelector('.ws-fw'); return Math.round(f.getBoundingClientRect().width / (parseFloat(getComputedStyle(f).fontSize) * sh.getBoundingClientRect().width / sh.offsetWidth) * 100) / 100; })(), pages: document.querySelectorAll('#fm-pages .ws-stu').length,
+      order: r(title).right <= r(cells[1]).left + 0.5 && r(cells[1]).right <= r(slash).left + 0.5 && r(slash).right <= r(subj).left + 0.5, line: getComputedStyle(cells[1]).borderBottomStyle, line0: getComputedStyle(cells[0]).borderBottomStyle,
+      fit: cells.every(c => c.scrollWidth <= c.clientWidth + 1), bandW: r(band).width }; });
+  await W.screenshot({ path: 'ws-stu.png' });
+  check('체크하면 머리 띠 제목과 사선 사이에 "(  )반 (  )번" / "이름 : (  )" (괄호 안은 반 글자 폭 고정 빈칸 5·5·14개, 두 쪽 모두, 아래 줄만 밑줄, 칸 안에 들어감, 띠 전체 폭은 그대로)',
+    stu1.cfg === true && stu1.saved === true && stu1.n === 2 && stu1.t[0] === '()반()번' && stu1.t[1] === '이름:()' && stu1.fw === '13,16' && stu1.fwW === 0.5 && stu1.pages === 4 && stu1.order && stu1.line === 'solid' && stu1.line0 === 'none' && stu1.fit && Math.abs(stu1.bandW - bandW0) < 1, stu1);
+  if (JSZIP_JS) {
+    const sz = await W.evaluate(async () => { const sec = await (await JSZip.loadAsync(await wsBuildHwpx(wsCfg()))).file('Contents/section0.xml').async('string');
+      const band = sec.match(/<hp:header [\s\S]*?<hp:tbl [\s\S]*?<\/hp:tbl>/)[0], tblW = +band.match(/<hp:tbl [\s\S]*?<hp:sz width="(\d+)"/)[1];
+      const cells = [...band.matchAll(/<hp:tc [\s\S]*?<\/hp:tc>/g)].map(m => m[0]), row0 = band.split('</hp:tr>')[0];
+      const w0 = [...row0.matchAll(/<hp:cellSz width="(\d+)"/g)].reduce((a, m) => a + +m[1], 0);
+      const cellOf = (t) => cells.find(c => c.includes('<hp:t>' + t + '</hp:t>'));
+      const fw = (n) => '<hp:fwSpace/>'.repeat(n);
+      const a = cellOf('(' + fw(5) + ')반' + fw(3) + '(' + fw(5) + ')번'), b = cellOf('이름' + fw(1) + ':' + fw(1) + '(' + fw(14) + ')');
+      return { cols: +band.match(/colCnt="(\d+)"/)[1], w0, tblW, a: a && a.match(/colAddr="(\d+)" rowAddr="(\d+)"/).slice(1).join(), b: b && b.match(/colAddr="(\d+)" rowAddr="(\d+)"/).slice(1).join(), slash: (cells.find(c => /colAddr="4" rowAddr="0"/.test(c)) || '').includes('<hp:t/>') }; });
+    check('한글 파일: 머리 띠 표 6칸(아이콘·번호·제목·반번호이름·사선·과목), 반·번호 칸 (3,0)·이름 칸 (3,1), 빈칸은 한글 고정폭 빈칸(hp:fwSpace), 첫 줄 칸 폭 합 = 표 폭', sz.cols === 6 && sz.a === '3,0' && sz.b === '3,1' && sz.slash && sz.w0 === sz.tblW, sz);
+  }
+  await W.click('#ws-stu'); await W.waitForTimeout(200);
+  check('체크를 끄면 다시 없음', await W.evaluate(() => !document.querySelector('#fm-pages .ws-stu') && wsCfg().stu === false));
   await W.click('#ws-note [data-note="0"]'); await W.waitForTimeout(200);
   const noNote = await W.evaluate(() => ({ note: !!document.querySelector('#fm-pages .ws-note'), bw: parseFloat(document.querySelector('#fm-pages .ws-body').style.width) }));
   check('NOTE 빼기 → NOTE 상자 없고 본문이 넓어짐(257 − 14 − 16 = 227mm)', !noNote.note && Math.abs(noNote.bw - 227) < 0.01, noNote);
