@@ -12199,14 +12199,20 @@
   let fmDemo = null; // 설명서의 완성 예시 { fm, ws } — fmCfg()·wsCfg()가 읽을 때만 덧씌움(아래 "양식 만들기 설명서")
   // 글꼴: n = 목록에 보이는 이름, c = PC마다 다를 수 있는 실제 글꼴 이름 후보(이 PC에 있는 것을 골라 저장 — 한글 파일에도 그 이름으로 들어감)
   const FM_FONTS = [
-    { n: '맑은 고딕' }, { n: '함초롬돋움' }, { n: '함초롬바탕' }, { n: '한컴 윤고딕 230' }, { n: '한컴 윤고딕 240' },
-    { n: '경기천년제목 Bold', c: ['경기천년제목 Bold', '경기천년제목', '경기천년제목_Bold'] },
-    { n: '경기천년제목 Medium', c: ['경기천년제목 Medium', '경기천년제목_Medium'] },
-    { n: '경기천년제목 Light', c: ['경기천년제목 Light', '경기천년제목_Light'] },
-    { n: '경기천년바탕 Bold', c: ['경기천년바탕 Bold', '경기천년바탕_Bold'] },
-    { n: '경기천년바탕 Regular', c: ['경기천년바탕 Regular', '경기천년바탕', '경기천년바탕_Regular'] },
-    { n: '나눔고딕' }, { n: '나눔명조' }, { n: '굴림' }, { n: '돋움' }, { n: '바탕' }, { n: 'HY견고딕' }, { n: 'HY헤드라인M' },
+    // g: hnc = 한글(한컴오피스)에 딸려 오는 글꼴 — 한글이 깔린 PC면 한글 파일에서 늘 제대로 나온다(한글 안에만 설치돼서 크롬은 못 볼 수 있음 → PC 검사로 빼지 않음)
+    //    win = 윈도우 기본 글꼴, add = 따로 설치해야 하는 글꼴(그 PC에 없으면 한글에서도 다른 글꼴로 나옴)
+    { n: '함초롬돋움', g: 'hnc' }, { n: '함초롬바탕', g: 'hnc' }, { n: '한컴 윤고딕 230', g: 'hnc' }, { n: '한컴 윤고딕 240', g: 'hnc' },
+    { n: 'HY견고딕', g: 'hnc' }, { n: 'HY헤드라인M', g: 'hnc' }, { n: 'HY강B', g: 'hnc' }, { n: 'HY강M', g: 'hnc' },
+    { n: 'HY나무B', g: 'hnc' }, { n: 'HY나무M', g: 'hnc' }, { n: 'HY나무L', g: 'hnc' }, { n: 'HY바다M', g: 'hnc' }, { n: 'HY바다L', g: 'hnc' }, { n: 'HY크리스탈M', g: 'hnc' },
+    { n: '맑은 고딕', g: 'win' }, { n: '굴림', g: 'win' }, { n: '돋움', g: 'win' }, { n: '바탕', g: 'win' },
+    { n: '경기천년제목 Bold', g: 'add', c: ['경기천년제목 Bold', '경기천년제목', '경기천년제목_Bold'] },
+    { n: '경기천년제목 Medium', g: 'add', c: ['경기천년제목 Medium', '경기천년제목_Medium'] },
+    { n: '경기천년제목 Light', g: 'add', c: ['경기천년제목 Light', '경기천년제목_Light'] },
+    { n: '경기천년바탕 Bold', g: 'add', c: ['경기천년바탕 Bold', '경기천년바탕_Bold'] },
+    { n: '경기천년바탕 Regular', g: 'add', c: ['경기천년바탕 Regular', '경기천년바탕', '경기천년바탕_Regular'] },
+    { n: '나눔고딕', g: 'add' }, { n: '나눔명조', g: 'add' },
   ];
+  const FM_FONT_GROUPS = [['hnc', '한글 기본 글꼴 — 한글이 깔린 PC면 다 나와요'], ['win', '윈도우 기본 글꼴'], ['add', '따로 설치하는 글꼴 — 그 PC에 깔려 있어야 해요']];
   const FM_ROWH = [[0, '자동'], [7, '좁게'], [9, '보통'], [12, '넓게']];
   const FM_DEFAULT = {
     kind: 'roster', src: 'class', rG: null, rCs: [], manual: '', mLabel: '', title: '제출 확인', note: '', cols: '제출',
@@ -12482,23 +12488,12 @@
   }
   // 한글 파일에 적을 글꼴 이름: 크롬이 찾은 다른 이름(예: "경기천년제목")을 한글이 아는 이름("경기천년제목 Bold")으로
   function fmHwpFont(f) { const e = fmFontEntry(f); return e ? e.n : f; }
-  // 글꼴 목록에는 이 PC에 있는 글꼴만(없는 글꼴을 고르면 한글에서도 다른 글꼴로 나와서). 지금 고른 글꼴은 없어도 "(이 PC에 없음)"으로 남겨 둔다.
-  // 한 번만 검사하고(null = 아직 검사 중 → 전부 보임), 끝나면 양식 화면을 다시 채운다. 목록에 없는 글꼴은 "✏️ 직접 입력"으로 쓸 수 있음.
-  let fmFontMissing = null, fmFontCheckP = null;
-  function fmCheckFonts() {
-    if (fmFontCheckP) return fmFontCheckP;
-    fmFontCheckP = (window.__fmAllFontsAvail ? Promise.resolve([]) : fmMissingFonts(FM_FONTS.map(function(f) { return f.n; }))).then(function(miss) {
-      fmFontMissing = miss;
-      if (miss.length && fmIsOpen()) fmFillForm();
-      return miss;
-    });
-    return fmFontCheckP;
-  }
-  function fmFontOptions(cur) {
-    fmCheckFonts();
-    return FM_FONTS.filter(function(f) { return !fmFontMissing || fmFontMissing.indexOf(f.n) < 0 || f.n === cur; }).map(function(f) {
-      const gone = fmFontMissing && fmFontMissing.indexOf(f.n) >= 0;
-      return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + (gone ? ' (이 PC에 없음)' : '') + '</option>';
+  // 글꼴 목록(묶음별). PC마다 검사해서 빼지 않는다 — 한글 기본 글꼴은 크롬이 못 봐도 한글에서는 늘 나와서(10/2 사용자).
+  function fmFontOptions() {
+    return FM_FONT_GROUPS.map(function(g) {
+      return '<optgroup label="' + g[1] + '">' + FM_FONTS.filter(function(f) { return f.g === g[0]; }).map(function(f) {
+        return '<option value="' + f.n + '" style="font-family:\'' + fmFace(f.n) + '\', \'' + (f.c ? f.c[0] : f.n) + '\';">' + f.n + '</option>';
+      }).join('') + '</optgroup>';
     }).join('');
   }
   function fmTableHtml(L, c, cl, list) {
@@ -12610,8 +12605,12 @@
     const el = document.getElementById(elId); if (!el) return;
     const btn = '<button class="nt-chip" onclick="fmLoadLocalFonts()" title="이 PC에 설치된 글꼴 이름(한글에 적히는 전체 이름 포함)을 불러와요">💻 내 PC 글꼴 목록</button>';
     el.innerHTML = FM_FONT_HELP + ' ' + btn;
+    // 한글·윈도우 기본 글꼴은 한글에서 늘 나오니 "못 찾음" 경고는 따로 설치하는 글꼴(과 직접 적은 글꼴)만. 한글 기본 글꼴을 크롬이 못 보면 미리보기만 비슷한 글꼴이라고 알림.
+    const grp = function(f) { const e = fmFontEntry(f); return e ? e.g : 'custom'; };
     fmMissingFonts(fonts).then(function(miss) {
-      el.innerHTML = (miss.length ? '<b>' + miss.map(ntEsc).join(', ') + '</b> — 이 PC에서 못 찾아서 미리보기는 다른 글꼴로 보여요. ' : '') + FM_FONT_HELP + ' ' + btn;
+      const warn = miss.filter(function(f) { return grp(f) === 'add' || grp(f) === 'custom'; }), soft = miss.filter(function(f) { return grp(f) === 'hnc'; });
+      el.innerHTML = (warn.length ? '<b>' + warn.map(ntEsc).join(', ') + '</b> — 이 PC에서 못 찾아서 미리보기는 다른 글꼴로 보여요(한글에도 없으면 한글 파일도 다른 글꼴로 나와요). ' : '') +
+        (soft.length ? '<b>' + soft.map(ntEsc).join(', ') + '</b> — 한글 기본 글꼴이라 한글 파일에서는 제대로 나와요(미리보기만 비슷한 글꼴). ' : '') + FM_FONT_HELP + ' ' + btn;
     });
   }
   function fmFontMsg(c) { fmFontMsgTo('fm-font-msg', [c.tFont, c.bFont]); }
@@ -12743,7 +12742,7 @@
     [['tFont', 'fm-tfont'], ['bFont', 'fm-bfont']].forEach(function(k) {
       const cur = c[k[0]], e = c[k[0] + 'C'] ? null : fmFontEntry(cur);
       const sel = document.getElementById(k[1]);
-      sel.innerHTML = fmFontOptions(e ? e.n : '') + '<option value="__custom">✏️ 직접 입력</option>';
+      sel.innerHTML = fmFontOptions() + '<option value="__custom">✏️ 직접 입력</option>';
       sel.value = e ? e.n : '__custom';
       const inp = document.getElementById(k[1] + '-custom');
       inp.style.display = e ? 'none' : '';
@@ -13449,12 +13448,12 @@
       return '<button class="ws-sw' + (c.theme === t[0] ? ' on' : '') + '" data-theme="' + t[0] + '" title="' + t[1] + '" style="background:' + t[2] + '; border-color:' + t[3] + ';" onclick="wsSet({ theme: \'' + t[0] + '\' }, true)"></button>';
     }).join('');
     // 글꼴 상자: 목록 + ✏️ 직접 입력(고르면 아래 칸에 한글 글꼴 이름을 적음). 부분별은 맨 위가 "머리·꼬리와 같게"
-    const opts = function(first, cur) {
-      return (first ? '<option value="">' + first + '</option>' : '') + fmFontOptions(cur) + '<option value="__custom">✏️ 직접 입력</option>';
+    const opts = function(first) {
+      return (first ? '<option value="">' + first + '</option>' : '') + fmFontOptions() + '<option value="__custom">✏️ 직접 입력</option>';
     };
     const fillSel = function(selId, inpId, name, custom, first) {
       const sel = document.getElementById(selId), inp = document.getElementById(inpId), e = !custom && name ? fmFontEntry(name) : null;
-      sel.innerHTML = opts(first, e ? e.n : '');
+      sel.innerHTML = opts(first);
       sel.value = !name ? '' : e ? e.n : '__custom';
       inp.style.display = name && !e ? '' : 'none';
       if (document.activeElement !== inp) inp.value = name && !e ? name : '';

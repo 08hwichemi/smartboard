@@ -152,8 +152,6 @@ async function openDevice(browser, name, uid, opts = {}) {
   page.on('pageerror', e => errors.push(String(e)));
   info.errors = errors;
   await page.exposeFunction('__db', (q) => handleDb(info, q));
-  // 이 샌드박스엔 한글 글꼴이 하나도 없어서, 글꼴 목록 검사(이 PC에 없는 글꼴 빼기)를 끄고 모든 글꼴이 있는 것처럼(realFonts면 진짜로 검사)
-  if (!opts.realFonts) await page.addInitScript(() => { window.__fmAllFontsAvail = true; });
   if (opts.preload) {
     await page.addInitScript((obj) => {
       if (sessionStorage.getItem('__preloaded')) return;
@@ -741,15 +739,20 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     /학습지 설정/.test(rmsg2) && rb.subj === '' && rb.uName === '' && rb.paper === 'A4' && rb.start === 1 && rb.tFont === '한컴 윤고딕 240' && rb.inp === '' && rb.kind === 'ws' && rb.ws && rb.title === '학습지 초기화 확인용', [rmsg2, rb]);
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
 
-  // ===== 이 PC에 없는 글꼴은 목록에서 빼기(여기 샌드박스엔 목록 글꼴이 하나도 없음) =====
-  const rf = await openDevice(browser, '글꼴없는PC', T1, { realFonts: true });
-  await rf.page.click('#rail-forms-btn'); await rf.page.waitForTimeout(1500);
-  const fl = await rf.page.evaluate(() => { const o = (id) => [...document.getElementById(id).options].map(x => x.textContent); return { t: o('fm-tfont'), b: o('fm-bfont'), cur: fmCfg().tFont }; });
-  check('이 PC에 없는 글꼴은 목록에서 빠짐 — 지금 고른 글꼴만 "(이 PC에 없음)"으로 남고 ✏️ 직접 입력은 늘 있음',
-    fl.t.length === 2 && fl.t[0] === fl.cur + ' (이 PC에 없음)' && fl.t[1] === '✏️ 직접 입력' && fl.b.length === 2, fl);
+  // ===== 글꼴 목록: PC 검사로 빼지 않음(한글 기본 글꼴은 크롬이 못 봐도 한글에선 나옴), 묶음별 =====
+  const rf = await openDevice(browser, '글꼴없는PC', T1); // 이 샌드박스엔 한글 글꼴이 하나도 없음
+  await rf.page.click('#rail-forms-btn'); await rf.page.waitForTimeout(1200);
+  const fl = await rf.page.evaluate(() => { const sel = document.getElementById('fm-tfont');
+    return { groups: [...sel.querySelectorAll('optgroup')].map(g => g.label.split(' — ')[0] + ':' + g.children.length), opts: [...sel.options].map(o => o.textContent) }; });
+  check('글꼴 목록: 이 PC에 없어도 다 나옴(묶음 3개: 한글 기본 14·윈도우 4·따로 설치 7) + 직접 입력, 한컴 글꼴(HY강·HY나무·HY바다·HY크리스탈) 들어 있음',
+    fl.groups.join() === '한글 기본 글꼴:14,윈도우 기본 글꼴:4,따로 설치하는 글꼴:7' && fl.opts.length === 26 && fl.opts[25] === '✏️ 직접 입력' &&
+    ['한컴 윤고딕 240', '함초롬돋움', '함초롬바탕', 'HY강B', 'HY바다M', 'HY나무B', 'HY크리스탈M', '나눔명조'].every(n => fl.opts.includes(n)) && !fl.opts.some(o => /없음/.test(o)), fl);
+  await rf.page.selectOption('#fm-tfont', '한컴 윤고딕 240'); await rf.page.selectOption('#fm-bfont', '나눔명조'); await rf.page.waitForTimeout(500);
+  const fmsg = await rf.page.textContent('#fm-font-msg');
+  check('안내: 한글 기본 글꼴(한컴 윤고딕 240)은 "한글 파일에서는 제대로 나와요", 따로 설치하는 글꼴(나눔명조)만 "못 찾아서"', /나눔명조 — 이 PC에서 못 찾아서/.test(fmsg) && /한컴 윤고딕 240 — 한글 기본 글꼴이라 한글 파일에서는 제대로/.test(fmsg) && !/한컴 윤고딕 240[^—]*— 이 PC에서 못 찾아서/.test(fmsg), fmsg);
   await rf.page.click('#fm-kind-switch [data-kind="ws"]'); await rf.page.waitForTimeout(400);
-  const wfl = await rf.page.evaluate(() => { const o = (id) => [...document.getElementById(id).options].map(x => x.textContent); return { t: o('ws-tfont'), num: o('ws-fp-num') }; });
-  check('학습지 글꼴 목록도 같음(부분별은 "머리·꼬리와 같게" + 직접 입력)', wfl.t.join("|") === "한컴 윤고딕 240 (이 PC에 없음)|✏️ 직접 입력" && wfl.num.join('|') === '머리·꼬리와 같게|✏️ 직접 입력', wfl);
+  const wfl = await rf.page.evaluate(() => ({ t: document.getElementById('ws-tfont').options.length, num: [...document.getElementById('ws-fp-num').options].map(x => x.textContent) }));
+  check('학습지 글꼴 목록도 같음(부분별은 맨 위 "머리·꼬리와 같게")', wfl.t === 26 && wfl.num[0] === '머리·꼬리와 같게' && wfl.num.length === 27, wfl);
 
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
