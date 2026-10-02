@@ -2953,6 +2953,11 @@
       <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()">🖨️ 인쇄</button>
       <button class="top-btn" id="fm-xlsx-btn" style="font-size:12px; padding:5px 12px;" onclick="fmDownloadXlsx()" title="엑셀(.xlsx)로 내려받기 — 반마다 한 시트, 1단">📊 엑셀</button>
       <button class="top-btn accent" id="fm-hwpx-btn" style="font-size:12px; padding:5px 14px;" onclick="fmDownloadHwpx()">⬇️ 한글 파일(.hwpx)</button>
+      <div id="fm-ready-box" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; width:100%; margin-top:6px; padding:8px 10px; border:1.5px solid var(--accent-color); border-radius:10px; background:var(--accent-soft); font-size:12px;">
+        <span>📥 파일이 준비됐어요 — <b id="fm-ready-name"></b></span>
+        <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="fmSavePending()">파일 저장</button>
+        <span style="color:var(--text-sub);">(만드는 데 시간이 걸려 브라우저가 자동 내려받기를 막을 수 있어서, 한 번 더 눌러 받아요)</span>
+      </div>
     </div>
   </div>
   <div id="fm-body">
@@ -3500,7 +3505,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-02.1';
+  var BUILD_ID = '2026-10-02.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13752,26 +13757,51 @@
     const cls = c.src === 'manual' ? ((c.mLabel || '').trim() || '명단') : c.rCs.length === 1 ? c.rG + '학년 ' + c.rCs[0] + '반' : c.rG + '학년 ' + c.rCs.join('·') + '반';
     return ((c.title || '명렬표').trim() + ' ' + cls).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
   }
-  // 실패 안내 뒤에 붙이는 원인 한 줄 — 외부 도구(JSZip·ExcelJS, cdn.jsdelivr.net)를 못 받은 것인지, 바탕 파일을 못 받은 것인지 구분되게.
+  // ----- 파일 내려받기(한글·엑셀 공통) -----
+  // 사용자 제보(10/2): 인쇄는 되는데 한글·엑셀 내려받기만 안 됨 — 재현은 안 됐지만, 생길 수 있는 원인을 모두 막는다.
+  // ① 파일을 만드는 데 몇 초 걸리면(엑셀 도구 받기, 첫 바탕 파일 받기) 크롬이 "사용자가 누른 지 5초"를 넘겨 자동 내려받기로 보고
+  //    막을 수 있다(학교 PC 정책이면 조용히 막힘) → 그럴 땐 바로 내려받지 않고 "📥 파일 저장" 단추를 보여 주고 그걸 누르면 받는다.
+  // ② 실패하면 안내창에 원인을 함께 보여 준다(어디서 막혔는지 알 수 있게). ③ 바탕 파일·엑셀 도구는 양식 화면을 열 때 미리 받아 둔다.
   function fmErrNote(e) {
     const m = String(e && e.message ? e.message : e || '');
-    if (m === 'JSZip') return '\n\n원인: 한글 파일 도구(JSZip)를 못 받았어요 — 이 PC·망에서 cdn.jsdelivr.net이 막혀 있을 수 있어요.';
+    try { console.error('[양식 내려받기]', e); } catch (x) {}
+    if (m === 'JSZip') return '\n\n원인: 한글 파일 도구(JSZip)를 못 받았어요 — cdn.jsdelivr.net이 막혀 있을 수 있어요.';
     if (/엑셀 도구/.test(m)) return '\n\n원인: ' + m + '(cdn.jsdelivr.net)';
-    if (/skeleton|바탕/.test(m)) return '\n\n원인: 한글 바탕 파일(forms/hwpx/skeleton.hwpx)을 못 받았어요.';
-    return m ? '\n\n원인: ' + m.slice(0, 160) : '';
+    if (/skeleton/.test(m)) return '\n\n원인: 한글 바탕 파일(forms/hwpx/skeleton.hwpx)을 못 받았어요(' + m + ').';
+    return m ? '\n\n원인: ' + m.slice(0, 200) : '';
+  }
+  let fmPendingFile = null; // { url, name } — "📥 파일 저장" 단추로 받을 파일
+  function fmSaveBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const go = function() {
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+    };
+    // 누른 지 오래됐으면(크롬: 5초) 자동 내려받기로 막힐 수 있으니 단추를 보여 준다. userActivation이 없는 브라우저는 바로 받는다.
+    const active = !navigator.userActivation || navigator.userActivation.isActive;
+    if (active) { go(); setTimeout(function() { URL.revokeObjectURL(url); }, 60000); return; }
+    if (fmPendingFile) { try { URL.revokeObjectURL(fmPendingFile.url); } catch (e) {} }
+    fmPendingFile = { url: url, name: name, go: go };
+    const box = document.getElementById('fm-ready-box');
+    if (box) { box.style.display = 'flex'; document.getElementById('fm-ready-name').textContent = name; }
+  }
+  function fmSavePending() {
+    if (!fmPendingFile) return;
+    fmPendingFile.go();
+    const url = fmPendingFile.url; fmPendingFile = null;
+    const box = document.getElementById('fm-ready-box'); if (box) box.style.display = 'none';
+    setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
   }
   async function fmDownloadHwpx() {
     if (fmCfg().kind === 'ws') return wsDownloadHwpx();
-    const c = fmCfg(), msg = fmEmptyMsg(c);
-    if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     const btn = document.getElementById('fm-hwpx-btn');
-    btn.disabled = true;
     try {
+      const c = fmCfg(), msg = fmEmptyMsg(c);
+      if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
+      btn.disabled = true;
       const blob = await fmBuildHwpx(c);
-      const url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href = url; a.download = fmFileName(c);
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+      fmSaveBlob(blob, fmFileName(c));
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
@@ -13779,11 +13809,11 @@
   // 엑셀: 반마다 한 시트, 1단(거르기·정렬하기 좋게). 제목·안내·머리 줄·테두리·번갈아 색·칸 너비·줄 높이·글꼴·정렬은 화면과 같게,
   // A4 세로 한 쪽 폭에 맞춰 인쇄, 머리 줄은 쪽마다 반복·틀 고정. ExcelJS는 수업 변경 엑셀과 같이 누를 때만 받아 온다.
   async function fmDownloadXlsx() {
-    const c = fmCfg(), msg = fmEmptyMsg(c);
-    if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     const btn = document.getElementById('fm-xlsx-btn');
-    btn.disabled = true;
     try {
+      const c = fmCfg(), msg = fmEmptyMsg(c);
+      if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
+      btn.disabled = true;
       await sccLoadExcelJS();
       const L = fmLayout(Object.assign({}, c, { colsN: 1 }));
       const wb = new ExcelJS.Workbook();
@@ -13841,10 +13871,7 @@
       });
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href = url; a.download = fmFileName(c).replace(/\.hwpx$/, '.xlsx');
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+      fmSaveBlob(blob, fmFileName(c).replace(/\.hwpx$/, '.xlsx'));
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
@@ -14421,15 +14448,12 @@
   }
   function wsTitle(c) { return [c.sNo, c.sName].filter(Boolean).join(' ') || [c.uNo, c.uName].filter(Boolean).join(' ') || '학습지'; }
   async function wsDownloadHwpx() {
-    const c = wsCfg();
     const btn = document.getElementById('fm-hwpx-btn');
-    btn.disabled = true;
     try {
+      const c = wsCfg();
+      btn.disabled = true;
       const blob = await wsBuildHwpx(c);
-      const url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href = url; a.download = ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+      fmSaveBlob(blob, ((c.subj ? c.subj + ' ' : '') + wsTitle(c) + ' 학습지').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx');
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
@@ -14546,6 +14570,9 @@
     fmRender();
     // 반 목록은 관리자 "학급 구성"으로 만든다 — 아직 안 받았으면 받고 다시 채움
     if (!window.classStructure) ensureClassStructureLoaded().then(function() { if (fmIsOpen()) { fmFillForm(); fmRender(); } });
+    // 한글 바탕 파일·엑셀 도구를 미리 받아 둔다 — 단추를 누른 뒤 바로 내려받게(오래 걸리면 크롬이 자동 내려받기로 보고 막을 수 있음)
+    try { fmSkeleton().catch(function() {}); } catch (e) {}
+    try { sccLoadExcelJS().catch(function() {}); } catch (e) {}
   }
   // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다.
   document.addEventListener('DOMContentLoaded', function() {
