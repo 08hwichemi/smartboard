@@ -510,9 +510,9 @@
     .se-dot.over { background: #FDE2E1; color: #B42318; }
     .se-dot.empty { opacity: .55; }
     .se-dot.draft { box-shadow: 0 0 0 1.5px #D97706; }
-    #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; padding-left: 22px; }
     #se-edit-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 8px; }
-    #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 10px 16px; }
+    #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 10px 0; }
     .se-sec { font-size: 12.5px; font-weight: 800; color: var(--accent-color); margin: 10px 0 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .se-card { display: block; border: 1px solid var(--border-color); border-radius: 9px; padding: 7px 10px; margin-bottom: 6px; cursor: pointer; background: var(--card-bg); }
     .se-card.on { border-color: var(--accent-color); background: var(--accent-soft); }
@@ -538,7 +538,7 @@
     #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #se-save-state.dirty { color: #B45309; }
     @media (max-width: 1100px) { #se-students { width: 190px; } .se-stu { grid-template-columns: 24px 1fr; } .se-stu .se-dot { display: none; } }
-    @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; border-right: 0; border-bottom: 1px solid var(--border-color); } #se-main { padding: 0 10px 10px; } }
+    @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; border-right: 0; border-bottom: 1px solid var(--border-color); } #se-editor { padding-left: 0; padding-top: 6px; } #se-main { padding: 0 10px 10px; } }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -12569,8 +12569,8 @@
   }
   function seSetTab(tab) { seSetCfg({ tab: tab }); seRenderAll(); }
   // kind = 'a' | 'p' | 'all'(최종 탭에서만 — 자율·진로 함께 보기). 자료 입력·편집 탭은 마지막으로 고른 자율/진로를 그대로 씀.
-  function seSetKind(kind) { seSetCfg(kind === 'all' ? { finAll: true } : { kind: kind, finAll: false }); seRenderAll(); }
-  function seFinAll() { return !!seCfg().finAll; }
+  function seSetKind(kind) { seSetCfg(kind === 'all' ? { finAll: true } : seTab() === 'final' ? { kind: kind, finAll: false } : { kind: kind }); seRenderAll(); }
+  function seFinAll() { return seCfg().finAll !== false; }   // 최종 탭은 처음엔 "전체"(자율·진로 나란히)
   const SE_HINTS = {
     src: '부서에서 받은 문장을 학생·영역별로 넣어요. 영역(열)은 표 머리에서 <b>＋ 영역 추가</b>, 이름을 누르면 바꾸기. 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 <b>아래·오른쪽으로 이어서</b> 채워져요.',
     edit: '받은 내용을 체크해 합친 뒤 다듬고, 다 되면 <b>📊 최종에 넣기</b>를 눌러요(복사·붙여 넣기 필요 없음). <b>📋 복사</b>는 나이스에 바로 붙여 넣을 때.',
@@ -12895,7 +12895,9 @@
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); document.getElementById('se-final-note').textContent = ''; return; }
     const kinds = seFinAll() ? SE_KINDS : [seKind()];
     const stat = { a: { n: 0, over: 0, draft: 0 }, p: { n: 0, over: 0, draft: 0 } };
-    let html = '<table class="se-table se-fin-table"><colgroup><col style="width:40px;"><col style="width:64px;">' +
+    // 한 가지만 볼 때도 글 칸 폭은 "전체"일 때와 같게(화면 끝까지 늘어나면 한 줄이 너무 길어 읽기 힘듦).
+    const tw = kinds.length === 1 ? ' style="width:calc(280px + (100% - 416px) / 2); min-width:640px;"' : '';
+    let html = '<table class="se-table se-fin-table"' + tw + '><colgroup><col style="width:40px;"><col style="width:64px;">' +
       kinds.map(function() { return '<col><col style="width:96px;"><col style="width:40px;">'; }).join('') + '<col style="width:40px;"></colgroup>' +
       '<thead><tr><th class="se-left">번호</th><th>이름</th>' +
       kinds.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' 최종 <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th>바이트</th><th>복사</th>'; }).join('') + '<th>편집</th></tr></thead><tbody>';
@@ -13018,32 +13020,99 @@
       (kept ? '\n· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요' : '') +
       (names.length && seRoster.length && !seRoster.some(function(s) { return names.some(function(n) { return n.num === s.num; }); }) ? '\n⚠️ 파일의 번호가 이 반 명렬표와 하나도 안 맞아요. 학년·반을 확인하세요.' : ''));
   }
-  function seExportExcel() {
+  // 📊 엑셀 내려받기: 칸 너비·줄바꿈·테두리·머리 색·틀 고정·필터·인쇄(A4 가로 폭 맞춤)까지 넣으려고 ExcelJS를 쓴다(누를 때만 받아 옴).
+  // 모양은 가져오기와 왕복되게 그대로: 데이터 시트 1행 "자율"(D열부터)·"진로"(L열부터, 자율 영역이 많으면 그 뒤 한 칸 띄고), 2행 번호·이름·영역 이름 /
+  // 최종 시트 1행 번호·이름·자율·바이트·진로·바이트. 바이트는 사용자 엑셀과 같은 식 (LENB-LEN)*3+LEN*2-LENB(한글 3·영문 1) — 엑셀에서 고쳐도 바로 다시 셈.
+  async function seExportExcel() {
     if (!seClassKey() || !seRoster.length) return customAlert('내려받을 자료가 없어요.');
-    if (typeof XLSX === 'undefined') return customAlert('엑셀 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
-    const all = seAllAreas(), c = seCfg();
-    const pStart = Math.max(11, 3 + all.a.length + 1);   // 자율은 D열부터, 진로는 L열부터(자율 영역이 많으면 그 뒤 한 칸 띄고)
-    const row1 = [], row2 = ['', '번호', '이름'];
-    row1[3] = '자율'; row1[pStart] = '진로';
-    all.a.forEach(function(a, i) { row2[3 + i] = a.name; });
-    all.p.forEach(function(a, i) { row2[pStart + i] = a.name; });
-    const data = [row1, row2];
-    const fin = [['번호', '이름', '자율', '바이트', '진로', '바이트']];
-    seRoster.forEach(function(s) {
-      const r = ['', s.num, s.name];
-      all.a.forEach(function(a, i) { r[3 + i] = seGet(seSrcKey(s.num, a.id)); });
-      all.p.forEach(function(a, i) { r[pStart + i] = seGet(seSrcKey(s.num, a.id)); });
-      data.push(r);
-      const fa = seGet(seFinKey(s.num, 'a')), fp = seGet(seFinKey(s.num, 'p'));
-      fin.push([s.num, s.name, fa, seBytes(fa), fp, seBytes(fp)]);
-    });
-    const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.aoa_to_sheet(data), ws2 = XLSX.utils.aoa_to_sheet(fin);
-    ws1['!cols'] = [{ wch: 3 }, { wch: 6 }, { wch: 9 }].concat(row2.slice(3).map(function() { return { wch: 32 }; }));
-    ws2['!cols'] = [{ wch: 6 }, { wch: 9 }, { wch: 80 }, { wch: 8 }, { wch: 80 }, { wch: 8 }];
-    XLSX.utils.book_append_sheet(wb, ws1, '데이터');
-    XLSX.utils.book_append_sheet(wb, ws2, '최종');
-    XLSX.writeFile(wb, '자율진로_' + c.g + '-' + c.c + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    try {
+      await sccLoadExcelJS();
+      const all = seAllAreas(), c = seCfg();
+      const pStart = Math.max(12, 4 + all.a.length + 1);   // 1부터 세는 열 번호: 자율 D(4)~, 진로 L(12)~
+      const lastCol = Math.max(pStart + all.p.length - 1, 4 + all.a.length - 1, 3);
+      const wb = new ExcelJS.Workbook();
+      const FONT = '맑은 고딕';
+      const fill = function(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; };
+      const thin = { style: 'thin', color: { argb: 'FFBFBFBF' } };
+      const box = { top: thin, left: thin, bottom: thin, right: thin };
+      const head = function(cell, v, bg) {
+        cell.value = v; cell.font = { name: FONT, size: 10, bold: true }; cell.fill = fill(bg || 'E7EEF6'); cell.border = box;
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      };
+      const body = function(cell, v, center) {
+        cell.value = v; cell.font = { name: FONT, size: 10 }; cell.border = box;
+        cell.alignment = center ? { horizontal: 'center', vertical: 'top' } : { horizontal: 'left', vertical: 'top', wrapText: true };
+      };
+      const page = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+      // 칸 높이: 엑셀은 줄바꿈된 칸 높이를 스스로 안 늘리므로 글 길이로 어림잡아 준다(한 줄 ≈ 칸 너비만큼의 글자, 한글은 2칸).
+      const lines = function(text, width) {
+        return String(text || '').split('\n').reduce(function(n, ln) {
+          let w = 0; for (const ch of ln) w += ch.charCodeAt(0) > 0x2E7F ? 2 : 1;
+          return n + Math.max(1, Math.ceil(w / Math.max(1, width - 1)));
+        }, 0);
+      };
+      const fit = function(row, cells) { row.height = Math.min(409, Math.max(18, 14.5 * Math.max.apply(null, cells.map(function(x) { return lines(x[0], x[1]); })) + 4)); };
+
+      // ---- 데이터 ----
+      const AW = 40;
+      const d = wb.addWorksheet('데이터', { pageSetup: Object.assign({}, page, { printTitlesRow: '1:2' }), views: [{ state: 'frozen', xSplit: 3, ySplit: 2 }] });
+      const dCols = [{ width: 3 }, { width: 6 }, { width: 9 }];
+      for (let i = 4; i <= lastCol; i++) dCols.push({ width: (i >= 4 && i < 4 + all.a.length) || (i >= pStart && i < pStart + all.p.length) ? AW : 3 });
+      d.columns = dCols;
+      const band = function(col, n, label, bg) {
+        if (!n) return;
+        if (n > 1) d.mergeCells(1, col, 1, col + n - 1);
+        head(d.getCell(1, col), label, bg);
+      };
+      band(4, all.a.length, '자율', 'D9EAD3');
+      band(pStart, all.p.length, '진로', 'FCE5CD');
+      d.getRow(1).height = 20;
+      head(d.getCell(2, 2), '번호'); head(d.getCell(2, 3), '이름');
+      all.a.forEach(function(a, i) { head(d.getCell(2, 4 + i), a.name); });
+      all.p.forEach(function(a, i) { head(d.getCell(2, pStart + i), a.name); });
+      d.getRow(2).height = 22;
+      seRoster.forEach(function(st, k) {
+        const r = d.getRow(3 + k), cells = [];
+        body(r.getCell(2), st.num, true); body(r.getCell(3), st.name, true);
+        all.a.forEach(function(a, i) { const v = seGet(seSrcKey(st.num, a.id)); body(r.getCell(4 + i), v); cells.push([v, AW]); });
+        all.p.forEach(function(a, i) { const v = seGet(seSrcKey(st.num, a.id)); body(r.getCell(pStart + i), v); cells.push([v, AW]); });
+        fit(r, cells.length ? cells : [['', AW]]);
+      });
+      d.autoFilter = { from: { row: 2, column: 2 }, to: { row: 2 + seRoster.length, column: lastCol } };
+
+      // ---- 최종 ----
+      const TW = 70, la = seLimitBytes('a'), lp = seLimitBytes('p');
+      const f = wb.addWorksheet('최종', { pageSetup: Object.assign({}, page, { printTitlesRow: '1:1' }), views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }] });
+      f.columns = [{ width: 6 }, { width: 9 }, { width: TW }, { width: 10 }, { width: TW }, { width: 10 }];
+      head(f.getCell(1, 1), '번호'); head(f.getCell(1, 2), '이름');
+      head(f.getCell(1, 3), '자율', 'D9EAD3'); head(f.getCell(1, 4), '바이트');
+      head(f.getCell(1, 5), '진로', 'FCE5CD'); head(f.getCell(1, 6), '바이트');
+      f.getCell(1, 4).note = '자율 한도 ' + la + '바이트(' + (la / 3) + '자) — 넘으면 빨간색';
+      f.getCell(1, 6).note = '진로 한도 ' + lp + '바이트(' + (lp / 3) + '자) — 넘으면 빨간색';
+      f.getRow(1).height = 22;
+      const bytesF = function(col, r) { const x = col + r; return '(LENB(' + x + ')-LEN(' + x + '))*3+LEN(' + x + ')*2-LENB(' + x + ')'; };
+      seRoster.forEach(function(st, k) {
+        const rn = 2 + k, r = f.getRow(rn);
+        const fa = seGet(seFinKey(st.num, 'a')), fp = seGet(seFinKey(st.num, 'p'));
+        body(r.getCell(1), st.num, true); body(r.getCell(2), st.name, true);
+        body(r.getCell(3), fa); body(r.getCell(5), fp);
+        body(r.getCell(4), { formula: bytesF('C', rn), result: seBytes(fa) }, true);
+        body(r.getCell(6), { formula: bytesF('E', rn), result: seBytes(fp) }, true);
+        r.getCell(4).numFmt = r.getCell(6).numFmt = '#,##0';
+        fit(r, [[fa, TW], [fp, TW]]);
+      });
+      const lastRow = 1 + seRoster.length;
+      const over = function(lim) { return [{ type: 'cellIs', operator: 'greaterThan', formulae: [lim], style: { font: { color: { argb: 'FFC00000' }, bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFDE2E1' } } } }]; };
+      f.addConditionalFormatting({ ref: 'D2:D' + lastRow, rules: over(la) });
+      f.addConditionalFormatting({ ref: 'F2:F' + lastRow, rules: over(lp) });
+      f.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastRow, column: 6 } };
+      wb.views = [{ activeTab: 1 }];   // 열면 최종 시트부터
+
+      const buf = await wb.xlsx.writeBuffer();
+      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '자율진로_' + c.g + '-' + c.c + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    } catch (e) {
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
+    }
   }
   // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(생기부 버튼은 패널을 위에 띄우므로 그대로).
   document.addEventListener('DOMContentLoaded', function() {

@@ -14,6 +14,8 @@ const XLSXLIB = (() => {
   }
   return fs.existsSync(f) ? f : null;
 })();
+// 엑셀 내려받기(ExcelJS) 검사는 exceljs가 있을 때만(forms-test와 같음 — npm i exceljs@4.4.0 후 NODE_PATH에 추가)
+let EXCELJS_PATH = ''; try { EXCELJS_PATH = require.resolve('exceljs/dist/exceljs.min.js'); } catch (e) {}
 const html = fs.readFileSync(process.env.HTML_PATH || path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
@@ -189,6 +191,7 @@ async function openDevice(browser, name, uid, opts = {}) {
       return route.fulfill({ body: JSON.stringify({ SchoolSchedule: [{ head: [] }, { row }] }), contentType: 'application/json' });
     }
     if (url.includes('xlsx.full.min.js') && XLSXLIB) return route.fulfill({ body: fs.readFileSync(XLSXLIB), contentType: 'application/javascript' });
+    if (url.includes('/exceljs@') && EXCELJS_PATH) return route.fulfill({ body: fs.readFileSync(EXCELJS_PATH), contentType: 'application/javascript' });
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -407,7 +410,11 @@ handleDb = async function(pageInfo, req) {
 
   // ---- 최종 탭 ----
   await P.click('#se-tabs [data-tab="final"]'); await wait(300);
-  check('최종 탭: 지금 고른 진로만 보임', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)));
+  check('최종 탭은 처음엔 "전체"(자율·진로 나란히) — 편집 탭에서 자율/진로를 바꿔도 그대로', await P.evaluate(() => document.querySelector('#se-kind [data-kind="all"]').classList.contains('theme-active') && /자율 최종/.test(document.querySelector('#se-final-list thead').textContent) && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent)));
+  const wAll = await P.evaluate(() => document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt[data-kind="p"]').getBoundingClientRect().width);
+  await P.click('#se-kind [data-kind="p"]'); await wait(300);
+  check('진로만: 진로 열만, 글 칸 폭은 전체일 때와 같음(한 줄이 너무 길지 않게)', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)) &&
+    Math.abs(wAll - await P.evaluate(() => document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt').getBoundingClientRect().width)) < 3, wAll);
   const pOnly = await P.evaluate(() => [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td')].map(t => t.textContent.trim()));
   const pb = sgbBytesOf('진로독서 프로젝트로 책을 읽고 토론함.');
   check('바이트 칸에 쓴 바이트 / 한도 + 남은 바이트', pOnly[2] === '진로독서 프로젝트로 책을 읽고 토론함.' && pOnly[3] === pb + ' / 1,500' + (1500 - pb).toLocaleString('ko-KR') + ' 남음', pOnly);
@@ -453,12 +460,42 @@ handleDb = async function(pageInfo, req) {
     check('엑셀 가져오기: 같은 이름 영역은 그대로 쓰고 새 영역(좌우명·큐리어톤) 추가', imp.a.join() === '1인 1역할,자치 활동,좌우명' && imp.p.join() === '진로 독서,큐리어톤', imp);
     check('엑셀 가져오기: 빈 칸만 채우고 이미 적힌 칸(1번 역할·1번 완성본)은 그대로', imp.r1 === '교실 문단속을 맡아 성실히 수행함.' && imp.m1 === '엑셀 1번 좌우명' && imp.c1 === '엑셀 1번 큐리어톤' && imp.r4 === '엑셀 4번 역할' && imp.c4 === '엑셀 4번 큐리어톤' && imp.f1a === '가'.repeat(501) && imp.f1p === '진로독서 프로젝트로 책을 읽고 토론함.' && imp.f4a === '4번 최종 자율', imp);
     check('가져오기 안내문', /자율 2개, 진로 2개/.test(msg) && /받은 내용 4칸, 완성본 1칸/.test(msg) && /이미 적힌 칸 4개/.test(msg), msg);
-    // 내려받기: 데이터·최종 시트 구조
-    const dl = await P.evaluate(() => new Promise((res) => {
-      const orig = XLSX.writeFile; XLSX.writeFile = (wb, name) => { XLSX.writeFile = orig; const d = XLSX.utils.sheet_to_json(wb.Sheets['데이터'], { header: 1 }), f = XLSX.utils.sheet_to_json(wb.Sheets['최종'], { header: 1 }); res({ name, d, f, sheets: wb.SheetNames }); };
-      seExportExcel();
-    }));
-    check('엑셀 내려받기: 데이터(1행 자율 D·진로 L, 2행 영역 이름, 번호·이름) + 최종(번호·이름·자율·바이트·진로·바이트)', /^자율진로_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(dl.name) && dl.sheets.join() === '데이터,최종' && dl.d[0][3] === '자율' && dl.d[0][11] === '진로' && dl.d[1][1] === '번호' && dl.d[1][3] === '1인 1역할' && dl.d[1][11] === '진로 독서' && dl.d[1][12] === '큐리어톤' && dl.d[2][1] === 1 && dl.d[2][3] === '교실 문단속을 맡아 성실히 수행함.' && dl.f[0].join() === '번호,이름,자율,바이트,진로,바이트' && dl.f[1][3] === 1503 && dl.f[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && dl.f.length === 6, { name: dl.name, d: dl.d.slice(0, 3), f: dl.f.slice(0, 2) });
+    // 내려받기(ExcelJS): 데이터·최종 시트 구조 + 서식(칸 너비·줄바꿈·필터·틀 고정·바이트 식·넘으면 빨강)
+    if (EXCELJS_PATH) {
+      const got = await P.evaluate(() => new Promise((res) => {
+        const orig = window.fmSaveNow;
+        window.fmSaveNow = async (blob, name) => { window.fmSaveNow = orig; const b = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); res({ name, b64: btoa(s) }); };
+        seExportExcel();
+      }));
+      const buf = Buffer.from(got.b64, 'base64');
+      const xb = X.read(buf, { type: 'buffer' });
+      const fromA1 = (sh) => X.utils.encode_range({ s: { r: 0, c: 0 }, e: X.utils.decode_range(sh['!ref']).e });   // 비어 있는 A열도 세게(칸 번호 그대로)
+      const dd = X.utils.sheet_to_json(xb.Sheets['데이터'], { header: 1, range: fromA1(xb.Sheets['데이터']) }), ff = X.utils.sheet_to_json(xb.Sheets['최종'], { header: 1 });
+      check('엑셀 내려받기: 데이터(1행 자율 D·진로 L, 2행 영역 이름, 번호·이름) + 최종(번호·이름·자율·바이트·진로·바이트)', /^자율진로_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '데이터,최종' && dd[0][3] === '자율' && dd[0][11] === '진로' && dd[1][1] === '번호' && dd[1][3] === '1인 1역할' && dd[1][11] === '진로 독서' && dd[1][12] === '큐리어톤' && dd[2][1] === 1 && dd[2][3] === '교실 문단속을 맡아 성실히 수행함.' && ff[0].join() === '번호,이름,자율,바이트,진로,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, d: dd.slice(0, 3), f: ff.slice(0, 2) });
+      const EJ = require(path.join(path.dirname(EXCELJS_PATH), '..'));
+      const ew = new EJ.Workbook(); await ew.xlsx.load(buf);
+      const ed = ew.getWorksheet('데이터'), ef = ew.getWorksheet('최종');
+      const fmt = {
+        dW: ed.getColumn(4).width, fW: [ef.getColumn(3).width, ef.getColumn(4).width], wrapD: ed.getCell('D3').alignment && ed.getCell('D3').alignment.wrapText, wrapF: ef.getCell('C2').alignment && ef.getCell('C2').alignment.wrapText,
+        top: ef.getCell('C2').alignment && ef.getCell('C2').alignment.vertical, filterD: ed.autoFilter, filterF: ef.autoFilter, viewF: ef.views && ef.views[0], viewD: ed.views && ed.views[0],
+        bold: ef.getCell('A1').font && ef.getCell('A1').font.bold, border: !!(ef.getCell('C2').border && ef.getCell('C2').border.top), merged: ed.getCell('E1').isMerged,
+        formula: ef.getCell('D2').formula, result: ef.getCell('D2').result, cf: (ef.conditionalFormattings || []).map(c => c.ref + ':' + c.rules[0].formulae[0]).join('|'),
+        h2: ef.getRow(2).height, h3: ef.getRow(3).height, landscape: ef.pageSetup.orientation, fit: ef.pageSetup.fitToWidth
+      };
+      check('엑셀 서식: 칸 너비(영역 40·최종 70), 줄바꿈·위 맞춤, 머리 굵게·테두리, 자율 머리 병합', fmt.dW === 40 && fmt.fW[0] === 70 && fmt.fW[1] === 10 && fmt.wrapD && fmt.wrapF && fmt.top === 'top' && fmt.bold && fmt.border && fmt.merged, fmt);
+      check('엑셀 서식: 필터·틀 고정(데이터 3열·2행, 최종 2열·1행)', fmt.filterD && fmt.filterF && fmt.viewF.state === 'frozen' && fmt.viewF.ySplit === 1 && fmt.viewF.xSplit === 2 && fmt.viewD.ySplit === 2 && fmt.viewD.xSplit === 3, fmt);
+      check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|F2:F6:1500' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
+      // 내려받은 파일을 다시 가져오면 다 이미 적힌 칸이라 아무것도 안 바뀜(왕복)
+      const rt = path.join(require('os').tmpdir(), 'se-roundtrip.xlsx');
+      fs.writeFileSync(rt, buf);
+      const beforeRt = await P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-')).sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
+      await P.setInputFiles('#se-import-input', rt); await wait(800);
+      try { fs.unlinkSync(rt); } catch (e) {}
+      const rtMsg = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
+      await P.click('#custom-alert-overlay button'); await wait(200);
+      const afterRt = await P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-')).sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
+      check('내려받은 파일 다시 가져오기: 영역·내용 그대로(왕복)', /받은 내용 0칸, 완성본 0칸/.test(rtMsg) && beforeRt === afterRt, rtMsg);
+    } else console.log('  ⚠️ exceljs가 없어 엑셀 내려받기 검사를 건너뜀 (npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
   } else console.log('  ⚠️ 엑셀 검사 건너뜀(xlsx 라이브러리 없음)');
 
   // ---- 다른 기기(같은 선생님)에서 보임, 다른 선생님은 못 봄 ----
