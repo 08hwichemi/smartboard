@@ -1039,7 +1039,8 @@
     .pe-head { border-collapse: collapse; table-layout: fixed; }
     .pe-head td { padding: 0 1mm 0 1.5mm; overflow: hidden; white-space: nowrap; text-align: center; vertical-align: middle; line-height: 1.1; }
     .pe-p { white-space: pre-wrap; word-break: break-all; }
-    #pe-ms-chars, #pe-ms-cell, #pe-ms-color { gap: 4px; }
+    #pe-ms-chars, #pe-ms-cell, #pe-ms-gap, #pe-ms-color, #pe-ms-pbox { gap: 4px; }
+    .pe-pbox { box-sizing: border-box; }
     #pe-ms-chars-in { width: 64px; flex: none; padding-left: 5px; }
     #pe-ms-prompt { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
     .pe-ms { border-collapse: collapse; table-layout: fixed; margin: 0 auto; }
@@ -3184,7 +3185,9 @@
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">3</b>✍️ 원고지</span> <span class="nt-muted">한 줄 20칸 · 100자마다 글자 수</span></div>
         <div class="nt-row" id="pe-ms-chars"></div>
         <div class="nt-row" id="pe-ms-cell"></div>
+        <div class="nt-row" id="pe-ms-gap"></div>
         <div class="nt-row" id="pe-ms-color"></div>
+        <div class="nt-row" id="pe-ms-pbox"></div>
         <textarea id="pe-ms-prompt" class="lp-input" rows="3" placeholder="발문(없어도 돼요) — 머리 표 아래, 원고지 위에 나와요&#10;예) 제시문을 읽고 '공정'에 대한 자신의 생각을 800자 내외로 논술하시오." oninput="peSet({ msPrompt: this.value })"></textarea>
         <div class="nt-muted" id="pe-ms-info"></div>
       </div>
@@ -14994,13 +14997,16 @@
   const PE_MS_COLORS = [['#777777', '회색'], ['#000000', '검정'], ['#2E8B57', '초록'], ['#C0392B', '빨강'], ['#1F4E9A', '파랑']];
   const PE_MS_COLS = 20, PE_MS_COUNT_W = 9, PE_MS_SAFE = 5; // 한 줄 칸 수, 오른쪽 글자 수 칸 폭, 쪽 아래 여유(한글에서 표가 다음 쪽으로 밀리지 않게)
   const PE_PAGE_KEYS = ['paper', 'land', 'mT', 'mB', 'mL', 'mR'];
+  // 보고서와 원고지가 따로 기억하는 설정(머리 표·쪽 설정·글꼴) — 보고서는 이름 그대로, 원고지는 "ms_" 붙여 저장(사용자: "각각 저장해 놓는 게 좋겠다")
+  const PE_SPLIT_KEYS = PE_PAGE_KEYS.concat(['title', 'who', 'topic', 'topicText', 'tFont', 'tFontC', 'tSize', 'bFont', 'bFontC', 'bSize']);
+  const PE_BOX_PAD = 2; // 발문 상자 안쪽 위아래 여백(mm), 좌우는 3mm
   const PE_MS_PAGE = { paper: 'B4', land: false, mT: 15, mB: 15, mL: 15, mR: 15 };
   // 학생 칸: [키, 이름, [[칸 글자, 폭 mm] …]] — 글자가 빈 칸은 학생이 쓰는 빈칸
   const PE_WHO = [['id', '학번·이름', [['학번', 21], ['', 21], ['이름', 21], ['', 21]]], ['cn', '반·번호·이름', [['반', 11], ['', 13], ['번호', 13], ['', 13], ['이름', 13], ['', 24]]], ['none', '없음', []]];
   const PE_DEFAULT = {
     type: 'report', title: '', who: 'id', topic: true, topicText: '주제 : ', note: '', // 둘째 줄 글은 적은 그대로(":"도 선생님이 직접)
     items: [{ t: '', gap: 4 }, { t: '', gap: 4 }, { t: '', gap: 4 }], autoNo: true, noStart: 1,
-    msChars: 800, msCell: 9, msGap: 3, msColor: '#777777', msPrompt: '',
+    msChars: 800, msCell: 9, msGap: 3, msColor: '#777777', msPrompt: '', msPromptBox: false, // 발문: 글씨만(false) / 상자(true)
     paper: 'A4', land: false, mT: 20, mB: 20, mL: 20, mR: 20,
     tFont: '한컴 윤고딕 240', tSize: 13, bFont: '함초롬바탕', bSize: 10, // 원본 양식과 같은 글꼴·크기
   };
@@ -15013,8 +15019,9 @@
     const src = Object.assign({}, v, fmDemo ? fmDemo.pe : null); // 설명서 동안은 완성 예시(저장 안 함)
     const c = Object.assign({}, PE_DEFAULT, src);
     if (!PE_TYPES.some(function(t) { return t[0] === c.type; })) c.type = 'report';
-    // 원고지는 쪽 설정을 따로("ms_paper" 등) — 보고서 쪽 설정과 섞이지 않게
-    if (c.type === 'ms') PE_PAGE_KEYS.forEach(function(k) { c[k] = src['ms_' + k] != null ? src['ms_' + k] : PE_MS_PAGE[k]; });
+    // 원고지는 머리 표·쪽 설정·글꼴을 따로("ms_title", "ms_paper" 등) — 보고서와 섞이지 않게
+    if (c.type === 'ms') PE_SPLIT_KEYS.forEach(function(k) { c[k] = src['ms_' + k] != null ? src['ms_' + k] : k in PE_MS_PAGE ? PE_MS_PAGE[k] : PE_DEFAULT[k]; });
+    c.msPromptBox = c.msPromptBox === true;
     c.msChars = Math.ceil(ntNum(c.msChars, 100, 5000, 800) / PE_MS_COLS) * PE_MS_COLS;
     if (PE_MS_CELLS.indexOf(Number(c.msCell)) < 0) c.msCell = 9; else c.msCell = Number(c.msCell);
     if (!PE_MS_GAPS.some(function(g) { return g[0] === Number(c.msGap); })) c.msGap = 3; else c.msGap = Number(c.msGap);
@@ -15035,14 +15042,17 @@
   function peSet(patch, refill) {
     let cur = {};
     try { cur = JSON.parse(localStorage.getItem(PE_CFG_KEY) || '{}') || {}; } catch (e) {}
+    if (cur.type === 'ms' && !('type' in patch)) { // 원고지에서 고친 머리 표·쪽 설정·글꼴은 원고지 것으로
+      const o = {}; Object.keys(patch).forEach(function(k) { o[PE_SPLIT_KEYS.indexOf(k) >= 0 ? 'ms_' + k : k] = patch[k]; }); patch = o;
+    }
     try { localStorage.setItem(PE_CFG_KEY, JSON.stringify(Object.assign(cur, patch))); } catch (e) {}
     scheduleBackupWrite();
     if (refill) peFillForm();
     fmRender();
   }
-  // 쪽 설정은 지금 종류(보고서/원고지)에 따로 저장
-  function pePage(patch) { const ms = peCfg().type === 'ms', o = {}; Object.keys(patch).forEach(function(k) { o[(ms ? 'ms_' : '') + k] = patch[k]; }); peSet(o, true); }
-  function peOnPageNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; const ms = peCfg().type === 'ms', p = {}; p[(ms ? 'ms_' : '') + inp.dataset.k] = v; peSet(p); }
+  // 쪽 설정(종류마다 따로 저장되는 건 peSet이 알아서)
+  function pePage(patch) { peSet(patch, true); }
+  function peOnPageNum(inp, lo, hi) { peOnNum(inp, lo, hi); }
   function peOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; peSet(o); }
   function peFont(c, k) { const n = c[k], cu = c[k + 'C']; return { n: n, h: cu ? n : fmHwpFont(n) }; }
   function peOnFontPick(key, v) {
@@ -15074,7 +15084,7 @@
     const r1 = Math.max(6.5, c.tSize * FM_PT * 1.45), r2 = c.topic ? Math.max(7.5, c.tSize * FM_PT * 1.7) : 0;
     const lh = c.bSize * FM_PT * 1.6; // 줄 높이(줄 간격 160%)
     // 글이 몇 줄로 접히는지(대략): 한글 1글자 = 1em, 그 밖 0.55em
-    const linesOf = function(t) { let em = 0; for (const ch of t) em += ch.codePointAt(0) >= 0x1100 ? 1 : 0.55; return Math.max(1, Math.ceil(em * c.bSize * FM_PT / W)); };
+    const linesOf = function(t, ww) { let em = 0; for (const ch of t) em += ch.codePointAt(0) >= 0x1100 ? 1 : 0.55; return Math.max(1, Math.ceil(em * c.bSize * FM_PT / (ww || W))); };
     const paras = [];
     if (c.type === 'ms') return peMsLayout(c, { w: w, h: h, pw: p[0], ph: p[1], W: W, cols: cols, r1: r1, r2: r2, lh: lh }, linesOf);
     peNoteLines(c).forEach(function(t) { paras.push({ k: 'note', t: t, n: linesOf(t) }); });
@@ -15099,8 +15109,9 @@
   // 글자 수는 이어서 센다(둘째 쪽 첫 줄이 41째 줄이면 그 줄 끝이 820자).
   function peMsLayout(c, L, linesOf) {
     const s = Math.min(c.msCell, Math.floor((L.W - PE_MS_COUNT_W) / PE_MS_COLS * 10) / 10), g = c.msGap;
-    const prompt = peNoteLines(c, c.msPrompt).map(function(t) { return { k: 'note', t: t, n: linesOf(t) }; });
-    const promptH = prompt.reduce(function(a, x) { return a + x.n * L.lh; }, 0) + (prompt.length ? PE_TBL_GAP : 0);
+    const box = c.msPromptBox, inW = L.W - (box ? 6 : 0); // 상자면 좌우 3mm씩 안쪽
+    const prompt = peNoteLines(c, c.msPrompt).map(function(t) { return { k: 'note', t: t, n: linesOf(t, inW) }; });
+    const promptH = prompt.reduce(function(a, x) { return a + x.n * L.lh; }, 0) + (prompt.length ? PE_TBL_GAP + (box ? PE_BOX_PAD * 2 : 0) : 0);
     const fit = function(avail) { return Math.max(0, Math.floor((avail + g) / (s + g) + 1e-6)); };
     const total = c.msChars / PE_MS_COLS, chunks = [];
     let from = 0, first = fit(L.h - c.mT - c.mB - (L.r1 + L.r2 + PE_TBL_GAP) - promptH - PE_MS_SAFE);
@@ -15150,7 +15161,8 @@
     box.innerHTML = L.pages.map(function(pg, pi) {
       return '<div class="fm-sheet pe-sheet" data-page="' + (pi + 1) + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">' +
         (pi === 0 ? peHeadHtml(c, L) + '<div style="height:' + PE_TBL_GAP + 'mm;"></div>' : '') +
-        pg.map(function(x) { return '<div class="pe-p pe-' + x.k + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; min-height:' + (x.n * L.lh) + 'mm;">' + (ntEsc(x.t) || '&nbsp;') + '</div>'; }).join('') +
+        (function(h) { return L.ms && c.msPromptBox && pg.length ? '<div class="pe-pbox" style="padding:' + PE_BOX_PAD + 'mm 3mm; border:' + fmBdCss(fmLn('solid', 0.12)) + ';">' + h + '</div>' : h; })(
+          pg.map(function(x) { return '<div class="pe-p pe-' + x.k + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; min-height:' + (x.n * L.lh) + 'mm;">' + (ntEsc(x.t) || '&nbsp;') + '</div>'; }).join('')) +
         (L.ms ? (pi === 0 && L.ms.prompt.length ? '<div style="height:' + PE_TBL_GAP + 'mm;"></div>' : '') + peMsHtml(c, L, L.ms.chunks[pi]) : '') + '</div>';
     }).join('');
     label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽' + (L.ms ? ' · 원고지 ' + c.msChars.toLocaleString('ko-KR') + '자(' + L.ms.lines + '줄)' : '') + ' 미리보기';
@@ -15204,8 +15216,9 @@
     document.getElementById('pe-ms-chars').innerHTML = '글자 수 ' + PE_MS_CHARS.map(function(n) { return chip(c.msChars === n, 'data-chars="' + n + '" onclick="peSet({ msChars: ' + n + ' }, true)"', n.toLocaleString('ko-KR')); }).join('') +
       '<input type="number" id="pe-ms-chars-in" class="lp-input" min="100" max="5000" step="100" title="직접 적기(20자 단위로 올림)" onchange="peSet({ msChars: this.value }, true)">자';
     setVal('pe-ms-chars-in', c.msChars);
-    document.getElementById('pe-ms-cell').innerHTML = '칸 크기 ' + PE_MS_CELLS.map(function(n) { return chip(c.msCell === n, 'data-cell="' + n + '" onclick="peSet({ msCell: ' + n + ' }, true)"', n + 'mm', '정사각형 한 칸 ' + n + '×' + n + 'mm'); }).join('') +
-      '<span class="nt-muted" style="margin-left:6px;">줄 사이</span>' + PE_MS_GAPS.map(function(g) { return chip(c.msGap === g[0], 'data-gap="' + g[0] + '" onclick="peSet({ msGap: ' + g[0] + ' }, true)"', g[1], '줄과 줄 사이 띠'); }).join('');
+    document.getElementById('pe-ms-cell').innerHTML = '칸 크기 ' + PE_MS_CELLS.map(function(n) { return chip(c.msCell === n, 'data-cell="' + n + '" onclick="peSet({ msCell: ' + n + ' }, true)"', n + 'mm', '정사각형 한 칸 ' + n + '×' + n + 'mm'); }).join('');
+    document.getElementById('pe-ms-gap').innerHTML = '줄 사이 ' + PE_MS_GAPS.map(function(g) { return chip(c.msGap === g[0], 'data-gap="' + g[0] + '" onclick="peSet({ msGap: ' + g[0] + ' }, true)"', g[1], '줄과 줄 사이 띠'); }).join('');
+    document.getElementById('pe-ms-pbox').innerHTML = '발문 ' + [[false, '글씨만'], [true, '상자']].map(function(o) { return chip(c.msPromptBox === o[0], 'data-pbox="' + (o[0] ? 1 : 0) + '" onclick="peSet({ msPromptBox: ' + o[0] + ' }, true)"', o[1], o[0] ? '발문을 네모 상자 안에' : '발문을 글씨만'); }).join('');
     document.getElementById('pe-ms-color').innerHTML = '선 색 ' + PE_MS_COLORS.map(function(x) {
       return '<button class="fm-sw' + (c.msColor.toUpperCase() === x[0] ? ' on' : '') + '" data-color="' + x[0] + '" title="' + x[1] + '" style="background:' + x[0] + ';" onclick="peSet({ msColor: \'' + x[0] + '\' }, true)"></button>';
     }).join('');
@@ -15280,6 +15293,7 @@
         msBf[t + '' + b + l + r] = bfs.length; bfs.push({ fill: null, s: { t: t ? mk : mt, b: b ? mk : mt, l: l ? mk : mt, r: r ? mk : mt } });
       }); }); }); });
       msBf.gap = bfs.length; bfs.push({ fill: null, s: { t: mt, b: mt, l: mk, r: mk } });
+      msBf.box = bfs.length; bfs.push({ fill: null, s: { t: K(PE_THIN), b: K(PE_THIN), l: K(PE_THIN), r: K(PE_THIN) } }); // 발문 상자
     }
     const pt2 = function(mm) { return mm / FM_PT; };
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
@@ -15317,7 +15331,19 @@
       '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + tr + '</hp:tbl>';
     let body = P(PP_TB, R(CP_B, secPr + '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl>') + R(CP_B, tbl));
     const text = [c.title];
-    L.pages.forEach(function(pg) { pg.forEach(function(x) { body += P(PP_B, R(CP_B, T(x.t))); if (x.t) text.push(x.t); }); });
+    if (L.ms && c.msPromptBox && L.pages[0].length) {
+      // 발문 상자: 1칸 표 안에 발문 문단들(위아래 2mm·좌우 3mm 안쪽 여백), 표 아래 3mm
+      const pr = L.pages[0], BH = hu(pr.reduce(function(a, x) { return a + x.n * L.lh; }, 0) + PE_BOX_PAD * 2);
+      const cell = '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + H.bf[msBf.box] + '">' +
+        '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + pr.map(function(x) { return P(PP_B, R(CP_B, T(x.t))); }).join('') + '</hp:subList>' +
+        '<hp:cellAddr colAddr="0" rowAddr="0"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + TW + '" height="' + BH + '"/>' +
+        '<hp:cellMargin left="' + hu(3) + '" right="' + hu(3) + '" top="' + hu(PE_BOX_PAD) + '" bottom="' + hu(PE_BOX_PAD) + '"/></hp:tc>';
+      body += P(PP_TB, R(CP_B, '<hp:tbl id="1500" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="1" colCnt="1" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
+        '<hp:sz width="' + TW + '" widthRelTo="ABSOLUTE" height="' + BH + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+        '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+        '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/><hp:tr>' + cell + '</hp:tr></hp:tbl>'));
+      pr.forEach(function(x) { if (x.t) text.push(x.t); });
+    } else L.pages.forEach(function(pg) { pg.forEach(function(x) { body += P(PP_B, R(CP_B, T(x.t))); if (x.t) text.push(x.t); }); });
     if (L.ms) {
       // 원고지: 쪽마다 표 하나(20칸 + 오른쪽 글자 수 칸). 줄 사이 띠는 20칸을 합친 한 칸. 둘째 조각부터 쪽 나누기.
       const M = L.ms, S = hu(M.s), G = hu(M.g), CNT = hu(PE_MS_COUNT_W), GW = S * PE_MS_COLS, MTW = GW + CNT;
@@ -15416,7 +15442,7 @@
     items: [{ t: '두 줄 요약(자신의 보고서 주요 내용을 두~세 줄 이내로 요약)', gap: 2 }, { t: '기사 선정 이유', gap: 3 }, { t: '화학 기사 요약(사진 첨부 가능, 너무 많은 양으로 채우지 말 것!)', gap: 3 },
       { t: '화학적 개념 설명(자세히 많이 쓸 것! - 화2 배운 내용 포함)', gap: 3 }, { t: '추가로 생긴 의문 또는 더 조사하고 싶은 내용', gap: 4 }, { t: '진로와 관련된 내용', gap: 4 }, { t: '참고문헌(사이트)', gap: 3 }],
   };
-  const PE_DEMO_MS = Object.assign({}, PE_DEMO, { type: 'ms', title: '논술 수행평가 — 공정한 사회', topicText: '', topic: false, msChars: 800, msPrompt: '제시문을 읽고 \'공정\'에 대한 자신의 생각을 800자 내외로 논술하시오.' });
+  const PE_DEMO_MS = Object.assign({}, PE_DEMO, { type: 'ms', ms_title: '논술 수행평가 — 공정한 사회', ms_topicText: '', ms_topic: false, msChars: 800, msPromptBox: true, msPrompt: '제시문을 읽고 \'공정\'에 대한 자신의 생각을 800자 내외로 논술하시오.' });
   function fmDemoSet(on) {
     if (!!fmDemo === !!on) return;
     fmDemo = on ? { fm: FM_DEMO, ws: WS_DEMO, pe: PE_DEMO } : null;
@@ -15454,7 +15480,7 @@
     { selector: '#pe-type-box', before: fmTourPe, title: '📝 수행평가 · 1단계. 종류', desc: '📄 보고서(번호 항목 + 쓸 빈 줄)와 ✍️ 원고지(국어·논술, 100자마다 글자 수 표시)를 쓸 수 있어요. 🔤 단어 시험(영어 단어·문제|답 표)은 다음에 더해져요.' },
     { selector: '#pe-head-box', before: fmTourPe, title: '📝 수행평가 · 2단계. 머리 표', desc: '제목을 적고, 학생 칸(학번·이름 / 반·번호·이름 / 없음)을 골라요. 둘째 줄(주제 등)은 체크로 넣거나 빼고, 글은 적은 그대로 나와요(":"도 필요하면 직접 적어요). 학생 칸과 둘째 줄은 학생이 직접 쓰는 빈칸이에요.' },
     { selector: '#pe-items-box', before: fmTourPe, title: '📝 수행평가 · 3단계. 항목', desc: '항목을 칸마다 하나씩 적고, 옆 숫자로 그 아래 학생이 쓸 빈 줄 수를 정해요. 번호는 저절로 붙고(0부터/1부터), Enter는 아래에 새 항목이에요. 한글 문서에서 항목 여러 줄을 복사해 붙여 넣으면 줄마다 항목이 돼요.' },
-    { selector: '#pe-ms-box', before: fmTourPeMs, title: '📝 수행평가 · 원고지', desc: '종류에서 ✍️ 원고지를 고르면 이 칸이 나와요. 글자 수(400~2000자, 직접 적기도 돼요)와 칸 크기·줄 사이 띠·선 색을 고르고, 발문을 적으면 원고지 위에 나와요. 한 줄은 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 적혀요. 원고지는 쪽 설정이 따로라 처음부터 B4예요.' },
+    { selector: '#pe-ms-box', before: fmTourPeMs, title: '📝 수행평가 · 원고지', desc: '종류에서 ✍️ 원고지를 고르면 이 칸이 나와요. 글자 수(400~2000자, 직접 적기도 돼요)와 칸 크기·줄 사이 띠·선 색을 고르고, 발문을 적으면 원고지 위에 나와요(글씨만 / 상자). 한 줄은 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 적혀요. 제목·학생 칸·쪽 설정·글꼴은 보고서와 따로 기억돼서(원고지는 처음부터 B4) 종류를 오가도 섞이지 않아요.' },
     { selector: '#fm-hwpx-btn', before: fmTourPeMs, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지는 쪽마다 표 하나로 들어가요. 설명서를 닫으면 예시는 사라지고 선생님 설정으로 돌아가요. 수고하셨습니다! 🎉' },
   ];
   function fmOpenTour() {

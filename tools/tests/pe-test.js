@@ -309,26 +309,44 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('원고지 기본: 엉뚱한 글자 없이 칸 21개(20 + 글자 수), B4(보고서와 따로), 항목 칸 대신 원고지 칸, 800자 = 40줄을 쪽마다 표로, 100자마다 "100…800"(쪽 넘어가도 이어서), 칸 9mm, 줄 사이 띠, 머리 표는 첫 쪽만, 아래 여백 안',
     !m0.stray && m0.cols === 21 && m0.w === '257mm' && m0.items === 'none' && m0.box !== 'none' && t0.reduce((a, t) => a + t.write, 0) === 40 && t0.flatMap(t => t.counts).join() === '100,200,300,400,500,600,700,800' &&
     t0.every(t => t.cell === 9 && t.gap === t.write - 1 && t.bottomOk) && m0.head && !m0.head2 && m0.n === t0.length && /40줄/.test(m0.info), m0);
+  const sep0 = await P.evaluate(() => ({ title: document.getElementById('pe-title').value, topic: document.getElementById('pe-topic-text').value, who: document.querySelector('#pe-who .on').dataset.who, head: [...document.querySelector('.pe-head').rows[0].cells].map(x => x.textContent).join() }));
+  check('원고지는 머리 표를 따로 기억: 처음엔 빈 제목·학번·이름·"주제 : "(보고서 제목·둘째 줄 글이 따라오지 않음)', sep0.title === '' && sep0.topic === '주제 : ' && sep0.who === 'id' && sep0.head === ',학번,,이름,', sep0);
+  await setText(P, '#pe-title', '논술 수행평가'); await P.click('#pe-who [data-who="cn"]'); await P.waitForTimeout(200);
+  const sep1 = await P.evaluate(() => { const v = JSON.parse(localStorage.getItem('fm-pe')); return { ms: [v.ms_title, v.ms_who], rep: [v.title, v.who] }; });
+  check('원고지에서 고친 제목·학생 칸은 원고지 것(ms_title·ms_who)으로만 저장', sep1.ms.join() === '논술 수행평가,cn' && sep1.rep.join() === '화학 기사 탐구(기사 1개당 2쪽 작성),id', sep1);
+  const gapRow = await P.evaluate(() => ({ cell: [...document.querySelectorAll('#pe-ms-cell .nt-chip')].map(b => b.textContent).join(), gap: [...document.querySelectorAll('#pe-ms-gap .nt-chip')].map(b => b.textContent).join(),
+    below: document.getElementById('pe-ms-gap').getBoundingClientRect().top >= document.getElementById('pe-ms-cell').getBoundingClientRect().bottom - 1 }));
+  check('줄 사이는 칸 크기 아래 따로 한 줄', gapRow.cell === '8mm,9mm,10mm' && gapRow.gap === '없음,2mm,3mm,4mm' && gapRow.below, gapRow);
   check('보고서 쪽 설정(B4·안내 글 등)은 그대로', await P.evaluate(() => JSON.parse(localStorage.getItem('fm-pe')).paper === 'B4' && !('ms_paper' in JSON.parse(localStorage.getItem('fm-pe')))));
   await P.click('#pe-paper [data-paper="A4"]'); await P.waitForTimeout(200);
   const msA4 = await P.evaluate(() => [JSON.parse(localStorage.getItem('fm-pe')).ms_paper, JSON.parse(localStorage.getItem('fm-pe')).paper, document.querySelector('#fm-pages .pe-sheet').style.width, document.getElementById('pe-ms-info').textContent]);
   const m1 = await msPrev();
   check('원고지에서 A4로 바꾸면 원고지만 A4(보고서는 B4 그대로), A4 폭에 맞게 칸을 줄이고 안내', msA4[0] === 'A4' && msA4[1] === 'B4' && msA4[2] === '210mm' && m1.tables[0].cell < 9 && /줄였어요/.test(msA4[3]), [msA4, m1.tables[0]]);
   await P.click('#pe-paper [data-paper="B4"]');
-  await P.click('#pe-ms-chars [data-chars="1500"]'); await P.click('#pe-ms-cell [data-cell="10"]'); await P.click('#pe-ms-cell [data-gap="0"]'); await P.click('#pe-ms-color [data-color="#2E8B57"]');
+  await P.click('#pe-ms-chars [data-chars="1500"]'); await P.click('#pe-ms-cell [data-cell="10"]'); await P.click('#pe-ms-gap [data-gap="0"]'); await P.click('#pe-ms-color [data-color="#2E8B57"]');
   await setText(P, '#pe-ms-prompt', "제시문을 읽고 '공정'에 대해 논술하시오."); await P.waitForTimeout(300);
   const m2 = await msPrev(); const t2 = m2.tables.filter(Boolean);
   const col = await P.evaluate(() => getComputedStyle(document.querySelector('table.pe-ms td')).borderTopColor);
   check('1500자·칸 10mm·띠 없음·초록 선: 75줄, 100자마다 1500까지, 띠 줄 없음, 발문은 첫 쪽 머리 표 아래', t2.reduce((a, t) => a + t.write, 0) === 75 && t2.flatMap(t => t.counts).length === 15 && t2.flatMap(t => t.counts).pop() === '1500' &&
     t2.every(t => t.gap === 0 && t.cell === 10 && t.bottomOk) && col === 'rgb(46, 139, 87)' && await P.evaluate(() => document.querySelector('#fm-pages .pe-sheet .pe-note').textContent.includes('공정')), [m2, col]);
+  const pb0 = await P.evaluate(() => ({ on: document.querySelector('#pe-ms-pbox .on').dataset.pbox, box: !!document.querySelector('#fm-pages .pe-pbox') }));
+  await P.click('#pe-ms-pbox [data-pbox="1"]'); await P.waitForTimeout(200);
+  const pb1 = await P.evaluate(() => { const b = document.querySelector('#fm-pages .pe-pbox'), t = document.querySelector('#fm-pages table.pe-ms');
+    return { box: !!b, text: b && b.textContent.includes('공정'), border: b && getComputedStyle(b).borderTopStyle, above: b && t && b.getBoundingClientRect().bottom <= t.getBoundingClientRect().top, hmm: b && Math.round(b.getBoundingClientRect().height / (document.querySelector('.pe-sheet').getBoundingClientRect().width / 257)), saved: JSON.parse(localStorage.getItem('fm-pe')).msPromptBox }; });
+  check('발문: 기본은 글씨만, "상자"를 고르면 테두리 상자 안(원고지 위, 한 줄이면 상자 높이 = 줄 하나 + 위아래 여백)', pb0.on === '0' && !pb0.box && pb1.box && pb1.text && pb1.border === 'solid' && pb1.above && pb1.saved === true && pb1.hmm <= 11, [pb0, pb1]);
+  if (JSZIP_JS) {
+    const bz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await peBuildHwpx(peCfg()))).file('Contents/section0.xml').async('string');
+      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g); return { n1: tbls.filter(t => /rowCnt="1" colCnt="1"/.test(t)).length, inBox: /rowCnt="1" colCnt="1"[\s\S]*공정[\s\S]*?<\/hp:tbl>/.test(sec), title: sec.includes('<hp:t>논술 수행평가</hp:t>'), rep: !sec.includes('화학 기사 탐구') }; });
+    check('한글 파일: 발문 상자 = 1칸 표 안에 발문, 원고지 제목만(보고서 제목 없음)', bz.n1 === 1 && bz.inBox && bz.title && bz.rep, bz);
+  }
   await P.fill('#pe-ms-chars-in', '730'); await P.dispatchEvent('#pe-ms-chars-in', 'change'); await P.waitForTimeout(200);
   check('글자 수 직접 적기: 730 → 20자 단위로 올려 740(37줄)', await P.evaluate(() => peCfg().msChars === 740 && peLayout(peCfg()).ms.lines === 37));
-  await P.click('#pe-ms-chars [data-chars="800"]'); await P.click('#pe-ms-cell [data-gap="3"]'); await P.waitForTimeout(200);
+  await P.click('#pe-ms-chars [data-chars="800"]'); await P.click('#pe-ms-gap [data-gap="3"]'); await P.waitForTimeout(200);
   await P.screenshot({ path: 'pe-ms.png' });
   if (JSZIP_JS) {
     const mz = await P.evaluate(async () => { const c = peCfg(), L = peLayout(c), zip = await JSZip.loadAsync(await peBuildHwpx(c));
       const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
-      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g), grids = tbls.slice(1);
+      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g), grids = tbls.filter(t => /colCnt="21"/.test(t));
       let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
       const g0 = grids[0], rows0 = g0.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g);
       const sumW = (row) => [...row.matchAll(/<hp:cellSz width="(\d+)"/g)].reduce((a, m) => a + +m[1], 0);
@@ -342,7 +360,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     if (process.env.MS_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await peBuildHwpx(peCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.MS_OUT, Buffer.from(b64, 'base64')); }
   }
   await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
-  check('보고서로 돌아오면 항목 칸·B4 그대로', await P.evaluate(() => getComputedStyle(document.getElementById('pe-items-box')).display !== 'none' && peCfg().paper === 'B4' && peCfg().items.length === 4));
+  check('보고서로 돌아오면 항목 칸·B4·보고서 제목·학번·이름 그대로', await P.evaluate(() => getComputedStyle(document.getElementById('pe-items-box')).display !== 'none' && peCfg().paper === 'B4' && peCfg().items.length === 4 &&
+    document.getElementById('pe-title').value === '화학 기사 탐구(기사 1개당 2쪽 작성)' && document.querySelector('#pe-who .on').dataset.who === 'id'));
+  await P.click('#pe-types [data-type="ms"]'); await P.waitForTimeout(200);
+  check('다시 원고지로 가면 원고지 제목·반·번호·이름 그대로', await P.evaluate(() => document.getElementById('pe-title').value === '논술 수행평가' && document.querySelector('#pe-who .on').dataset.who === 'cn'));
+  await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
 
   // 준비 중 종류
   await P.evaluate(() => { window.__alerts = []; window.customAlert = async (m) => { window.__alerts.push(m); }; });
