@@ -262,9 +262,21 @@ function check(label, cond, detail) {
     const next = new Date(sccAddDays(sccMondayOf(ymd(new Date())), 16) + 'T00:00:00');
     const far = new Date(); far.setDate(far.getDate() + 90);
     const sat = new Date(next); sat.setDate(sat.getDate() + 3);
-    return { r, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next), inputMax: document.getElementById('scc-week-a').max, prevOff: document.getElementById('scc-week-a-prev').disabled };
+    const pr = sccPickRange(), sem = semesterRanges['2학기'];
+    // 지난주 수요일(학기 안) / 학기 시작 전날
+    const lastWed = sccAddDays(sccMondayOf(ymd(new Date())), -5), before = sccAddDays(sem.start, -1);
+    return { r, pr, sem, nextOk: sccDateProblem(ymd(next)) === '', farBad: sccDateProblem(ymd(far)) !== '', satBad: sccDateProblem(ymd(sat)) !== '', next: ymd(next),
+      lastWedOk: sccDateProblem(lastWed) === '', beforeBad: sccDateProblem(before) !== '', inputMin: document.getElementById('scc-week-a').min, inputMax: document.getElementById('scc-week-a').max, prevOn: !document.getElementById('scc-week-a-prev').disabled,
+      text: document.getElementById('scc-week-a-text').textContent };
   });
-  check('기간: 이번 주 월요일 ~ 학기 끝, 2주 뒤 수요일 가능 / 학기 뒤·토요일 불가, 이번 주에서 ◀ 꺼짐', dr.nextOk && dr.farBad && dr.satBad && dr.inputMax === dr.r.max && dr.r.max > dr.next && dr.prevOff, dr);
+  check('기간: 학기 시작 ~ 학기 끝(지난주도 고를 수 있음), 2주 뒤 수요일 가능 / 학기 앞·뒤·토요일 불가, 이번 주에서도 ◀ 켜짐', dr.nextOk && dr.lastWedOk && dr.beforeBad && dr.farBad && dr.satBad && dr.pr.min === dr.sem.start && dr.inputMin === dr.sem.start && dr.inputMax === dr.r.max && dr.r.max > dr.next && dr.prevOn, dr);
+  check('날짜 칸 대신 그 주(월~금)로 표시 + "이번 주" 표시', /^📅 \d+\.\d+\(월\) ~ \d+\.\d+\(금\) 이번 주$/.test(dr.text), dr.text);
+  // ◀로 학기 첫 주까지 가면 ◀ 꺼짐, 지난주로 가면 "이번 주" 표시 없음
+  await P.click('#scc-week-a-prev'); await wait(100);
+  check('◀ → 지난주(이번 주 표시 없음)', await P.evaluate(() => scc.weekA === sccAddDays(sccMondayOf(todayYmdDash()), -7) && !/이번 주/.test(document.getElementById('scc-week-a-text').textContent)));
+  for (let i = 0; i < 12 && !(await P.evaluate(() => document.getElementById('scc-week-a-prev').disabled)); i++) { await P.click('#scc-week-a-prev'); await wait(50); }
+  check('학기 첫 주까지 가면 ◀ 꺼짐', await P.evaluate(() => scc.weekA === sccMondayOf(sccPickRange().min) && document.getElementById('scc-week-a-prev').disabled));
+  await setWeek('a', wk[0]);
   await P.click('#scc-week-a-next'); await wait(100);
   await P.click('#scc-week-a-next'); await wait(100);
   const w2 = await P.evaluate(() => [scc.weekA, scc.weekB, document.getElementById('scc-week-a').value]);

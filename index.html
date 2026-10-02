@@ -278,6 +278,11 @@
     .scc-week { display: flex; align-items: center; gap: 4px; margin-left: auto; }
     .scc-week input[type="date"] { width: 132px; padding: 4px 6px; font-size: 12px; }
     .scc-week .top-btn { padding: 4px 9px; font-size: 12px; }
+    /* 날짜 칸 대신 "9.28(월) ~ 10.2(금)"처럼 주로 보여 주고, 누르면 달력(투명한 날짜 칸을 위에 겹침) */
+    .scc-week-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 168px; padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--card-bg); color: var(--text-main); font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; box-sizing: border-box; }
+    .scc-week-pick:hover { border-color: var(--accent-color); }
+    .scc-week-pick .scc-this { font-size: 10.5px; font-weight: 800; color: var(--on-accent, #fff); background: var(--accent-color); border-radius: 5px; padding: 0 5px; }
+    .scc-week .scc-week-pick input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 0; margin: 0; border: 0; cursor: pointer; }
     .scc-week-range { font-size: 11.5px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
     .scc-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(5, minmax(0, 1fr)); grid-template-rows: 30px repeat(7, minmax(38px, 1fr)); gap: 4px; }
     .scc-grid .scc-dh { font-size: 12.5px; font-weight: 800; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; border-radius: 6px; }
@@ -1764,7 +1769,7 @@
             <span class="scc-fixed-name" id="scc-teacher-a-fixed"></span>
             <div class="scc-week">
               <button class="top-btn" id="scc-week-a-prev" onclick="sccMoveWeek('a', -1)" title="지난주">◀</button>
-              <input type="date" id="scc-week-a" onchange="sccOnWeekDate('a')" title="날짜를 고르면 그 주가 보여요">
+              <label class="scc-week-pick" title="누르면 달력이 열려요 — 날짜를 고르면 그 주(월~금)가 보여요"><span id="scc-week-a-text"></span><input type="date" id="scc-week-a" onchange="sccOnWeekDate('a')" onclick="sccShowPicker(this)"></label>
               <button class="top-btn" id="scc-week-a-next" onclick="sccMoveWeek('a', 1)" title="다음 주">▶</button>
             </div>
           </div>
@@ -1776,7 +1781,7 @@
             <select id="scc-partner" class="mini-select" onchange="sccOnPartnerChange()"><option value="">선생님 선택</option></select>
             <div class="scc-week">
               <button class="top-btn" id="scc-week-b-prev" onclick="sccMoveWeek('b', -1)" title="지난주">◀</button>
-              <input type="date" id="scc-week-b" onchange="sccOnWeekDate('b')" title="날짜를 고르면 그 주가 보여요">
+              <label class="scc-week-pick" title="누르면 달력이 열려요 — 날짜를 고르면 그 주(월~금)가 보여요"><span id="scc-week-b-text"></span><input type="date" id="scc-week-b" onchange="sccOnWeekDate('b')" onclick="sccShowPicker(this)"></label>
               <button class="top-btn" id="scc-week-b-next" onclick="sccMoveWeek('b', 1)" title="다음 주">▶</button>
             </div>
           </div>
@@ -3140,14 +3145,15 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seBackToSgb()">← 생기부</button>
       <div style="font-weight: 800; font-size: 16px;">🗂 자율·진로 편집기</div>
+      <button class="top-btn tour-btn" id="se-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="seOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <select id="se-grade" class="mini-select" style="width:74px;" onchange="seOnClassChange('grade')"></select>
       <select id="se-class" class="mini-select" style="width:64px;" onchange="seOnClassChange('class')"></select>
       <span id="se-limit-note" class="se-muted"></span>
-      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">
+      <label class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">
         📥 엑셀 가져오기<input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
       </label>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자료 입력·최종 내용을 엑셀(데이터·최종 시트)로 내려받습니다">📊 엑셀 내려받기</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로 자료를 모두 지웁니다">🗑 초기화</button>
+      <button class="top-btn" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자료 입력·최종 내용을 엑셀(데이터·최종 시트)로 내려받습니다">📊 엑셀 내려받기</button>
+      <button class="top-btn" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로 자료를 모두 지웁니다">🗑 초기화</button>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
       <span id="se-save-state"></span>
@@ -8274,6 +8280,15 @@
     return { min: weekDates[0], max: end };
   }
 
+  // 수업 변경 창에서 고를 수 있는 기간: 이 학기 시작(관리자 설정 학기 날짜) ~ 학기 끝. 지난 날짜도 기록할 수 있게(사용자 요청 10/2) —
+  // 학기 날짜가 없거나 이번 주가 학기 밖이면 예전처럼 이번 주부터. 홈 시간표·받아 오기 기준(sccDateRange)은 그대로.
+  function sccPickRange() {
+    const range = sccDateRange(), weekMon = getCurrentWeekDates()[0];
+    const r = (window.semesterRanges || {})[window.currentActiveSemester || getActiveSemester()];
+    const min = (r && r.start && r.start < weekMon && (!r.end || r.end >= weekMon)) ? r.start : range.min;
+    return { min: min, max: range.max };
+  }
+
   // 날짜 문자열(YYYY-MM-DD)의 요일 번호: 월=1 … 금=5, 주말은 0 또는 6.
   function sccWeekdayOf(dateStr) {
     const p = dateStr.split('-');
@@ -8282,8 +8297,8 @@
 
   // 등록할 수 있는 날짜인지 확인하고, 안 되면 이유를 돌려준다.
   function sccDateProblem(dateStr) {
-    const range = sccDateRange();
-    if (dateStr < range.min || dateStr > range.max) return '이번 주부터 학기 끝(' + range.max + ')까지의 날짜만 고를 수 있어요.';
+    const range = sccPickRange();
+    if (dateStr < range.min || dateStr > range.max) return '이번 학기(' + sccMD(range.min) + ' ~ ' + sccMD(range.max) + ') 날짜만 고를 수 있어요.';
     const wd = sccWeekdayOf(dateStr);
     if (wd < 1 || wd > 5) return '월~금요일만 고를 수 있어요.';
     return '';
@@ -8297,7 +8312,8 @@
   async function fetchScheduleChanges() {
     try {
       const range = sccDateRange();
-      const from = new Date(range.min); from.setDate(from.getDate() - 200);
+      const pr = sccPickRange();
+      const from = new Date(pr.min < range.min ? pr.min : range.min); from.setDate(from.getDate() - 200);
       const { data, error } = await sb.from('schedule_changes').select('*')
         .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max);
       if (error) throw error;
@@ -8519,9 +8535,9 @@
 
   function sccClearPicks() { scc.pickA = null; scc.pickB = null; sccRenderNew(); }
 
-  // 주 옮기기: 등록할 수 있는 기간(이번 주 ~ 학기 끝) 안에서만
+  // 주 옮기기: 고를 수 있는 기간(학기 시작 ~ 학기 끝) 안에서만
   function sccSetWeek(side, monday) {
-    const range = sccDateRange();
+    const range = sccPickRange();
     const minMon = sccMondayOf(range.min), maxMon = sccMondayOf(range.max) > range.max ? sccAddDays(sccMondayOf(range.max), -7) : sccMondayOf(range.max);
     if (monday < minMon) monday = minMon;
     if (monday > maxMon) monday = maxMon;
@@ -8537,6 +8553,8 @@
     sccSetWeek(side, sccAddDays(side === 'a' ? scc.weekA : scc.weekB, dir * 7));
     sccRenderNew();
   }
+  // 투명한 날짜 칸을 누르면 바로 달력이 뜨게(크롬은 글자 부분을 눌러선 안 열림)
+  function sccShowPicker(el) { try { if (el.showPicker) el.showPicker(); } catch (e) {} }
   function sccOnWeekDate(side) {
     const v = document.getElementById('scc-week-' + side).value;
     if (v) sccSetWeek(side, sccMondayOf(v));
@@ -8556,16 +8574,20 @@
     document.getElementById('scc-side-a-label').innerText = ex ? '① 바꿀 수업' : '① 보강이 필요한 수업';
     document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : '② 보강해 줄 빈 시간';
     document.getElementById('scc-hint').innerText = ex
-      ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 날짜 칸으로 그쪽 주를 옮기세요.'
+      ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 📅 주(누르면 달력)로 그쪽 주를 옮기세요. 지난 날짜도 이번 학기 안이면 고를 수 있어요.'
       : '①에서 보강이 필요한 수업, ②에서 보강해 줄 선생님의 빈 시간을 누르세요.';
-    const range = sccDateRange();
+    const range = sccPickRange(), thisMon = sccMondayOf(todayYmdDash());
     ['a', 'b'].forEach(function(side) {
       const monday = side === 'a' ? scc.weekA : scc.weekB;
       const input = document.getElementById('scc-week-' + side);
       input.min = range.min; input.max = range.max;
       const pick = side === 'a' ? scc.pickA : scc.pickB;
-      // 날짜 칸: 고른 칸이 이 주에 있으면 그 날짜, 아니면 그 주 월요일
+      // 달력에서 처음 보이는 날: 고른 칸이 이 주에 있으면 그 날짜, 아니면 그 주 월요일
       input.value = (pick && sccMondayOf(pick.date) === monday) ? pick.date : monday;
+      // 보이는 글은 날짜 하나가 아니라 그 주(월~금) — 헷갈리지 않게
+      const fri = sccAddDays(monday, 4), dot = function(d) { return sccMD(d).replace('/', '.'); };
+      document.getElementById('scc-week-' + side + '-text').innerHTML = '📅 ' + dot(monday) + '(월) ~ ' + dot(fri) + '(금)' +
+        (monday === thisMon ? ' <span class="scc-this">이번 주</span>' : '');
       document.getElementById('scc-week-' + side + '-prev').disabled = monday <= sccMondayOf(range.min);
       document.getElementById('scc-week-' + side + '-next').disabled = sccAddDays(monday, 7) > range.max;
       sccRenderGrid(side);
@@ -12511,6 +12533,7 @@
     if (!g) return '';
     const y = sgbAdmissionYear(g);
     const L = sgbLimitsFor(g);
+    if (L.a === L.p) return '고' + g + ' = ' + y + ' 입시 기준: 자율·진로 각 ' + L.a + '자(' + (L.a * 3) + '바이트)';   // 같으면 짧게(머리 줄이 한 줄에 들어가게)
     return '고' + g + ' = ' + y + ' 입시 기준: 자율 ' + L.a + '자(' + (L.a * 3) + '바이트) · 진로 ' + L.p + '자(' + (L.p * 3) + '바이트)';
   }
   function seBytes(t) { return sgbCount(t).bytes; }
@@ -12573,6 +12596,56 @@
     seRenderAll();
   }
   function seBackToSgb() { closeSePage(); openSgb(); }
+
+  // ----- 📖 자율·진로 편집기 설명서 -----
+  // 먼저 전체 흐름(자료 입력 → 편집 → 최종)을 말하고, 탭을 차례로 바꿔 가며 버튼·구역을 하나씩 짚는다.
+  // 넣는 방법 두 가지(엑셀 양식으로 한꺼번에 / 화면에 직접)도 알려 준다. 자료는 건드리지 않고, 끝나면 보던 탭·자율/진로로 돌려놓는다.
+  let seTourPrev = null;
+  const seTourTab = function(tab) { return function() { if (seTab() !== tab) seSetTab(tab); }; };
+  const SE_TOUR_STEPS = [
+    { selector: '#se-page-header', before: seTourTab('src'), title: '🗂 자율·진로 편집기에 오신 것을 환영해요!',
+      desc: '여러 부서에서 받은 자율·진로 문장을 학생별로 모아, 골라 합치고, 바이트에 맞게 다듬는 곳이에요.\n\n순서는 딱 세 단계예요.\n① 📥 자료 입력 — 받은 문장을 학생·영역별로 넣기\n② ✍️ 편집 — 학생마다 넣을 문장을 골라 합치고 다듬은 뒤 📊 최종에 넣기\n③ 📊 최종 — 완성본을 확인하고 📋 복사해서 나이스에 붙여 넣기\n\n적은 내용은 선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요). 칸에 적는 동안엔 화면에만 있다가 칸을 벗어나면 저장돼요.' },
+    { selector: '#se-grade', before: seTourTab('src'), title: '학년·반 고르기',
+      desc: '자료는 반마다 따로예요. 담임 선생님은 담임 반으로 시작해요. 옆에 그 학년의 바이트 한도(입시 연도 기준, 한글 1자 = 3바이트)가 나와요.' },
+    { selector: '#se-tabs', before: seTourTab('src'), title: '세 탭 = 세 단계',
+      desc: '📥 자료 입력 → ✍️ 편집 → 📊 최종 순서로 왼쪽부터 차례로 쓰면 돼요. 탭을 바꿔도 위쪽 줄은 그대로 있고 아래 내용만 바뀌어요.' },
+    { selector: '#se-kind', before: seTourTab('src'), title: '자율 / 진로 고르기',
+      desc: '자율과 진로는 영역도 문장도 따로예요. 이 버튼은 세 탭 모두 같은 자리에 있어요. 최종 탭에선 "전체"를 누르면 자율·진로를 나란히 볼 수 있어요.' },
+    { selector: '#se-src-list', before: seTourTab('src'), title: '📥 자료 입력 — 넣는 방법은 두 가지',
+      desc: '방법 1. 엑셀 양식으로 한꺼번에 (추천)\n  ① 표 머리의 "＋ 영역 추가"로 부서 활동(예: 1인 1역할, 진로 특강)을 먼저 만들어요 — 자율·진로 둘 다\n  ② 📊 엑셀 내려받기 → "자율 입력"·"진로 입력" 시트에 부서에서 받은 문장을 복사해 붙여 넣고 저장\n  ③ 📥 엑셀 가져오기로 그 파일을 넣으면 끝!\n\n방법 2. 여기에 직접\n  칸을 눌러 적거나, 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 그 칸부터 아래·오른쪽으로 이어서 채워져요.' },
+    { selector: '#se-add-area', before: seTourTab('src'), title: '＋ 영역 추가 · 이름 바꾸기 · 지우기',
+      desc: '부서에서 받은 활동 하나가 표의 한 열(영역)이에요. "＋ 영역 추가"로 열을 만들고, 열 이름(✎)을 누르면 이름 바꾸기, ✕는 그 열과 적힌 내용 지우기예요. 엑셀에서 붙여 넣은 열이 영역보다 많으면 새 영역을 만들지 물어봐요.' },
+    { selector: '#se-export-btn', before: seTourTab('src'), title: '📊 엑셀 내려받기 = 입력용 양식',
+      desc: '"자율 입력"·"진로 입력"·"최종" 세 시트로 받아요. 영역을 먼저 만든 뒤 받으면 머리 줄에 영역 이름이 들어 있어서, 그 아래에 부서 문장을 붙여 넣기만 하면 돼요. 다 쓴 뒤 보관용으로 받아 두기에도 좋아요(최종 시트의 바이트는 엑셀에서 고쳐도 다시 계산돼요).' },
+    { selector: '#se-import-btn', before: seTourTab('src'), title: '📥 엑셀 가져오기',
+      desc: '채운 엑셀 파일을 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요(덮어쓰지 않아요). 영역 이름이 같으면 그 열로, 없으면 새 영역으로 들어가요. 예전에 쓰던 엑셀(데이터·최종 시트)도 그대로 가져올 수 있어요.' },
+    { selector: '#se-students', before: seTourTab('edit'), title: '✍️ 편집 — 학생 목록',
+      desc: '학생을 누르면 오른쪽에 그 학생 자료가 나와요. 이름 옆 두 숫자는 자율·진로 바이트예요.\n회색 = 아직 없음 · 초록 = 한도 안 · 빨강 = 한도 넘음\n주황 테두리 = 편집했는데 아직 최종에 안 넣음' },
+    { selector: '#se-edit-head', before: seTourTab('edit'), title: '◀ 이전 · 다음 ▶',
+      desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.' },
+    { selector: '#se-box-src', before: seTourTab('edit'), title: '📥 받은 내용 — 넣을 것을 체크',
+      desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 오른쪽 위에 "합치면 몇 바이트"가 바로 보여요. "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
+    { selector: '#se-box-draft', before: seTourTab('edit'), title: '✍️ 편집 칸 — 다듬기',
+      desc: '여기서 문장을 다듬어요. 적는 대로 글자 수·바이트·남은 바이트와, 기재하면 안 되는 표현(공인어학시험 등)을 바로 알려 줘요.' },
+    { selector: '#se-put-btn', before: seTourTab('edit'), title: '지우기 · 📋 복사 · 📊 최종에 넣기',
+      desc: '다 다듬었으면 꼭 📊 최종에 넣기! 그래야 최종 탭에 들어가요(편집 칸만 고쳐서는 최종이 안 바뀌어요 — 아래에 "최종과 같아요/달라요"가 나와요).\n📋 복사는 나이스에 바로 붙여 넣고 싶을 때, 지우기는 편집 칸만 비워요.' },
+    { selector: '#se-box-memo', before: seTourTab('edit'), title: '📝 메모',
+      desc: '"진로독서 줄이고 큐리어톤 위주로"처럼 그 학생에 대한 메모를 남겨요. 선생님에게만 보여요.' },
+    { selector: '#se-final-list', before: seTourTab('final'), title: '📊 최종 — 확인하고 나이스로',
+      desc: '최종에 넣은 문장이 학생별로 모여 있어요. 처음엔 자율·진로를 나란히(전체) 보여 주고, 위 자율/진로 버튼으로 하나만 볼 수도 있어요.\n바이트 칸 = 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.\n📋로 한 명씩 복사해 나이스에 붙여 넣고, ✎를 누르면 그 학생 편집으로 가요. "✏️ 최종에 안 넣은 편집 있음"이 보이면 편집 탭에서 최종에 넣기를 안 누른 거예요.' },
+    { selector: '#se-reset-btn', before: seTourTab('final'), title: '🗑 초기화',
+      desc: '지금 고른 반의 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지워요. 두 번 확인하고, 되돌릴 수 없어요 — 지우기 전에 📊 엑셀 내려받기로 보관해 두면 안심이에요.\n\n수고하셨습니다! 🎉' },
+  ];
+  function seOpenTour() {
+    const c = seCfg();
+    seTourPrev = { tab: seTab(), kind: seKind(), finAll: c.finAll };
+    openPageTour(SE_TOUR_STEPS, function() {
+      const p = seTourPrev; seTourPrev = null;
+      if (!p) return;
+      seSetCfg({ tab: p.tab, kind: p.kind, finAll: p.finAll });
+      seRenderAll();
+    });
+  }
   function seFillClassSelects() {
     const c = seCfg();
     document.getElementById('se-grade').innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(c.g);

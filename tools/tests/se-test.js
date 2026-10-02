@@ -252,7 +252,7 @@ handleDb = async function(pageInfo, req) {
   await P.click('#sgb-tabs [data-tab="edit"]'); await wait(600);
   check('편집기 탭 → 전체 화면 열리고 패널 닫힘, 레일 생기부 버튼 켜짐', await shown() && !(await panelShown()) && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
   const head = await P.evaluate(() => ({ g: document.getElementById('se-grade').value, c: document.getElementById('se-class').value, note: document.getElementById('se-limit-note').textContent, tab: seTab() }));
-  check('담임 반(3-1)으로 시작, 한도 안내 자율 1,500·진로 1,500', head.g === '3' && head.c === '1' && /자율 500자\(1500바이트\) · 진로 500자\(1500바이트\)/.test(head.note) && head.tab === 'src', head);
+  check('담임 반(3-1)으로 시작, 한도 안내 자율 1,500·진로 1,500', head.g === '3' && head.c === '1' && /자율·진로 각 500자\(1500바이트\)/.test(head.note) && head.tab === 'src', head);
   const rows = await P.evaluate(() => [...document.querySelectorAll('#se-src-list tbody tr')].map(r => r.dataset.num));
   check('자료 입력 표에 명렬표 학생 5명', rows.join(',') === '1,2,3,4,5', rows);
   check('기본 영역: 자율 "1인 1역할" 1개 (아직 저장 안 됨)', (await areas('a')).map(a => a.name).join() === '1인 1역할' && (await ls(pc, 'se-areas-3-1')) === null);
@@ -505,6 +505,27 @@ handleDb = async function(pageInfo, req) {
       check('내려받은 파일 다시 가져오기: 지운 진로 칸 하나만 다시 채움, 나머지 영역·내용 그대로(왕복)', /자율 3개, 진로 2개/.test(rtMsg) && /받은 내용 1칸, 완성본 0칸/.test(rtMsg) && beforeRt === afterRt, rtMsg);
     } else console.log('  ⚠️ exceljs가 없어 엑셀 내려받기 검사를 건너뜀 (npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
   } else console.log('  ⚠️ 엑셀 검사 건너뜀(xlsx 라이브러리 없음)');
+
+  // ---- 📖 설명서 ----
+  await P.evaluate(() => { seSetCfg({ kind: 'p', finAll: false }); seSetTab('final'); });
+  const snapSe = () => P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-') && k !== 'se-cfg').sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
+  const beforeTour = await snapSe();
+  await P.click('#se-tour-btn'); await wait(400);
+  const seen = [];
+  for (let k = 0; k < 30; k++) {
+    const st = await P.evaluate(() => ({ title: document.getElementById('tour-card-title').innerText, prog: document.getElementById('tour-card-progress').innerText, tab: seTab(), sp: document.getElementById('tour-spotlight').getBoundingClientRect().width, btn: document.getElementById('tour-next-btn').innerText }));
+    seen.push(st);
+    if (/완료/.test(st.btn)) break;
+    await P.click('#tour-next-btn'); await wait(300);
+  }
+  const nSteps = await P.evaluate(() => SE_TOUR_STEPS.length);
+  check('설명서: 모든 단계를 다 보여줌(건너뛴 것 없음), 칸마다 빛 비춤', seen.length === nSteps && seen.every(x => x.sp > 0) && seen[seen.length - 1].prog === nSteps + ' / ' + nSteps, seen.map(x => x.prog + ' ' + x.title));
+  check('설명서: 전체 흐름(세 단계) → 넣는 방법 두 가지(엑셀 양식/직접) → 편집(최종에 넣기) → 최종 순서, 탭도 따라 바뀜',
+    /환영/.test(seen[0].title) && seen.some(x => /넣는 방법은 두 가지/.test(x.title) && x.tab === 'src') && seen.some(x => /엑셀 내려받기 = 입력용 양식/.test(x.title)) &&
+    seen.some(x => /최종에 넣기/.test(x.title) && x.tab === 'edit') && seen.some(x => /최종 — 확인하고 나이스로/.test(x.title) && x.tab === 'final'), seen.map(x => x.tab + ' ' + x.title));
+  await P.click('#tour-next-btn'); await wait(300);
+  check('설명서 닫으면 보던 탭(최종)·진로로 돌아가고 자료는 그대로', await P.evaluate(() => document.getElementById('tour-overlay').style.display === 'none' && seTab() === 'final' && seKind() === 'p' && !seFinAll()) && (await snapSe()) === beforeTour);
+  await P.evaluate(() => { seSetCfg({ kind: 'a', finAll: true }); seSetTab('edit'); });
 
   // ---- 다른 기기(같은 선생님)에서 보임, 다른 선생님은 못 봄 ----
   await wait(2500);
