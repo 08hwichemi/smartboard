@@ -480,6 +480,12 @@
     /* 구역 나누기: 홈 위젯처럼 회색 바탕 위 흰 상자(테두리·둥근 모서리) — 표·학생 목록·편집 구역마다 하나씩 */
     .se-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; }
     .se-sbox { padding: 10px 14px 12px; margin-bottom: 12px; }
+    .se-sec-title { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .se-sum { font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 9px; border: 2px solid var(--border-color); background: var(--tt-bg); color: var(--text-sub); font-variant-numeric: tabular-nums; }
+    .se-sum b { font-weight: 900; font-size: 15px; }
+    .se-sum.ok { border-color: #34A853; background: #E7F6EB; color: #1E7B3A; }
+    .se-sum.over { border-color: #E5484D; background: #FDE7E7; color: #B42318; }
+    .se-sbox > .se-sec:first-child { align-items: center; }
     .se-sbox > .se-sec:first-child { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); font-size: 13.5px; color: var(--text-main); }
     #se-src-list, #se-final-list { max-width: 100%; }
     #se-kind-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 0 0 auto; margin-bottom: 8px; }
@@ -523,7 +529,7 @@
     .se-stu:hover { background: var(--accent-soft); }
     .se-stu.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
     .se-stu b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .se-dot { font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 7px; background: var(--tt-bg); color: var(--text-sub); min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
+    .se-dot { font-size: 11.5px; font-weight: 800; padding: 1px 6px; border-radius: 8px; background: var(--tt-bg); color: var(--text-sub); min-width: 36px; text-align: center; font-variant-numeric: tabular-nums; }
     .se-dot.ok { background: #DDF5E3; color: #1E7B3A; }
     .se-dot.over { background: #FDE2E1; color: #B42318; }
     .se-dot.empty { opacity: .55; }
@@ -12762,7 +12768,7 @@
     { selector: '#se-edit-head', before: seTourTab('edit'), title: '◀ 이전 · 다음 ▶',
       desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.' },
     { selector: '#se-box-src', before: seTourTab('edit'), title: '📥 받은 내용 — 넣을 것을 체크',
-      desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 오른쪽 위에 "합치면 몇 바이트"가 바로 보여요. "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
+      desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 제목 옆 테두리 상자에 "합치면 몇 바이트"가 바로 보여요(초록 = 한도 안, 빨강 = 넘음 — 자료 입력 탭에서는 바이트를 안 보여 줘요). "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
     { selector: '#se-box-draft', before: seTourTab('edit'), title: '✍️ 편집 칸 — 다듬기',
       desc: '여기서 문장을 다듬어요. 적는 대로 글자 수·바이트·남은 바이트와, 기재하면 안 되는 표현(공인어학시험 등)을 바로 알려 줘요.' },
     { selector: '#se-put-btn', before: seTourTab('edit'), title: '지우기 · 📋 복사 · 📊 최종에 넣기',
@@ -12866,7 +12872,7 @@
       areas.forEach(function(a) {
         const k = seSrcKey(s.num, a.id), v = seGet(k);
         html += '<td><textarea class="se-cell" rows="3" data-key="' + k + '" data-num="' + s.num + '" data-area="' + a.id + '" placeholder="받은 문장" spellcheck="false"' +
-          ' oninput="seOnSrcInput(this)" onchange="seOnSrcChange(this)" onblur="seOnSrcChange(this)" onpaste="seOnPaste(event, this)">' + escapeHtmlAttr(v) + '</textarea>' + seBytesHtml(v, 0) + '</td>';
+          ' oninput="seOnSrcInput(this)" onchange="seOnSrcChange(this)" onblur="seOnSrcChange(this)" onpaste="seOnPaste(event, this)">' + escapeHtmlAttr(v) + '</textarea></td>';
       });
       html += i === 0 ? '<td class="se-addcell" rowspan="' + seRoster.length + '">' + (n ? '' : '<div class="se-noarea">' + SE_KIND_LABEL[kind] + ' 영역이 없어요.<br>위 <b>＋ 영역 추가</b>로<br>부서에서 받은 활동마다<br>한 열씩 만드세요.</div>') + '</td>' : '';
       html += '</tr>';
@@ -12876,7 +12882,6 @@
   function seOnSrcInput(ta) {
     seTypingKey = ta.dataset.key;
     seSaveState('typing');
-    const b = ta.nextElementSibling; if (b) b.textContent = seFmt(seBytes(ta.value)) + '바이트';
   }
   function seOnSrcChange(ta) {
     if (seTypingKey === ta.dataset.key) seTypingKey = null;
@@ -12981,7 +12986,11 @@
     // 받은 내용
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
     const joined = chosen.map(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }).join(' ');
-    html += '<div class="se-box se-sbox" id="se-box-src"><div class="se-sec"><span>📥 받은 내용 — 넣을 것을 체크</span><span class="se-muted">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(seBytes(joined)) + '</b>바이트 / ' + seFmt(lim) + '</span></div>';
+    // 체크한 것을 합친 바이트 — 제목 바로 옆에 테두리 상자로 크게(한도 안 초록, 넘으면 빨강, 체크 없으면 회색).
+    const jb = seBytes(joined), jOver = jb > lim;
+    html += '<div class="se-box se-sbox" id="se-box-src"><div class="se-sec"><span class="se-sec-title">📥 받은 내용 — 넣을 것을 체크' +
+      '<span id="se-sum" class="se-sum ' + (!chosen.length ? 'empty' : (jOver ? 'over' : 'ok')) + '">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(jb) + '</b> / ' + seFmt(lim) + '바이트' +
+      (chosen.length ? (jOver ? ' · <b>' + seFmt(jb - lim) + ' 넘음</b>' : ' · ' + seFmt(lim - jb) + ' 남음') : '') + '</span></span></div>';
     if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "📥 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
     areas.forEach(function(a) {
       const v = seGet(seSrcKey(s.num, a.id));

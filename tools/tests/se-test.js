@@ -291,8 +291,8 @@ handleDb = async function(pageInfo, req) {
   await P.keyboard.type('교실 문단속을 맡아 성실히 수행함.'); await wait(2500);
   const typing = await P.evaluate(() => ({ st: document.getElementById('se-save-state').textContent, saved: localStorage.getItem('se-src-3-1-1-' + seAreas('a')[0].id) }));
   check('입력 중: 화면에 "입력 중" 표시, 아직 저장·업로드 안 됨', /입력 중/.test(typing.st) && typing.saved === null && upserts.length === 0, { typing, upserts });
-  const bytesShown = await P.evaluate((s) => document.querySelector(s).nextElementSibling.textContent, cellSel);
-  check('치는 동안 칸 아래 바이트가 바로 바뀜(한글 3·공백 1)', bytesShown === sgbBytesOf('교실 문단속을 맡아 성실히 수행함.') + '바이트', bytesShown);
+  const srcBytes = await P.evaluate((s) => [!!document.querySelector(s).nextElementSibling, /바이트/.test(document.querySelector('#se-src-list tbody').innerText)], cellSel);
+  check('자료 입력 표에는 바이트 표시 없음(바이트는 편집 탭에서)', !srcBytes[0] && !srcBytes[1], srcBytes);
   await P.keyboard.press('Tab'); await wait(2500);
   const saved = await P.evaluate(() => localStorage.getItem('se-src-3-1-1-' + seAreas('a')[0].id));
   check('칸을 벗어나면 저장(학생·영역 단위 항목) → 서버에 그 항목만 올라감', saved === '교실 문단속을 맡아 성실히 수행함.' && serverVal(T1, 'se-src-3-1-1-' + a1) === saved && upserts.length === 1 && upserts[0].length === 1 && upserts[0][0] === 'se-src-3-1-1-' + a1, { saved, upserts });
@@ -347,9 +347,14 @@ handleDb = async function(pageInfo, req) {
   }));
   check('편집: 학생 5명 목록, 1번 선택, 카드 2개(빈 영역은 체크 못 함), 이전 버튼 비활성', ed.n === 5 && ed.sel === '1' && /1번 가나다/.test(ed.head) && ed.cards.length === 2 && ed.cards[0][1] === false && ed.cards[1][1] === true && ed.cards[1][2] === true && ed.prevDisabled === true, ed);
   check('편집 칸 아래 버튼 3개: 지우기 · 📋 복사 · 📊 최종에 넣기', await P.evaluate(() => [...document.getElementById('se-put-btn').parentElement.children].map(b => b.textContent.trim()).join('|') === '지우기|📋 복사|📊 최종에 넣기'));
+  const sum0 = await P.evaluate(() => { const e = document.getElementById('se-sum'); return [e.className, e.textContent, e.closest('.se-sec-title') && e.closest('.se-sec-title').textContent.startsWith('📥 받은 내용'), parseFloat(getComputedStyle(e).fontSize), getComputedStyle(e).borderTopWidth]; });
+  check('합친 바이트: 제목 바로 옆 테두리 상자(14px), 체크 전엔 회색 0', /empty/.test(sum0[0]) && /체크한 0개 합치면 0 \/ 1,500바이트/.test(sum0[1]) && sum0[2] && sum0[3] >= 14 && sum0[4] === '2px', sum0);
   check('합치기 버튼은 체크 전엔 비활성', await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).disabled));
   await P.click('.se-card[data-area="' + a1 + '"] input'); await wait(200);
   const st1 = await P.evaluate(() => JSON.parse(localStorage.getItem('se-st-3-1-1')));
+  const sum1 = await P.evaluate(() => [document.getElementById('se-sum').className, document.getElementById('se-sum').textContent]);
+  const b1 = sgbBytesOf('교실 문단속을 맡아 성실히 수행함.');
+  check('체크하면 합친 바이트 초록·남은 바이트', /ok/.test(sum1[0]) && sum1[1] === '체크한 1개 합치면 ' + b1 + ' / 1,500바이트 · ' + (1500 - b1).toLocaleString('ko-KR') + ' 남음', sum1);
   check('체크 → 학생 상태 항목(se-st-)에 영역 id 저장, 카드 강조', st1.sel.a.length === 1 && st1.sel.a[0] === a1 && await P.evaluate((a) => document.querySelector('.se-card[data-area="' + a + '"]').classList.contains('on'), a1), st1);
   await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).click()); await wait(300);
   const fin1 = await P.evaluate(() => ({ v: document.getElementById('se-draft').value, drf: localStorage.getItem('se-drf-3-1-1-a'), fin: localStorage.getItem('se-fin-3-1-1-a'), cnt: document.getElementById('se-count').textContent, dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot').className, put: document.getElementById('se-put-state').textContent }));
@@ -555,6 +560,16 @@ handleDb = async function(pageInfo, req) {
 
   // ---- 반 바꾸기·초기화 ----
   await P.click('#rail-sgb-btn'); await wait(200); await P.click('#sgb-tabs [data-tab="edit"]'); await wait(400);
+  // 체크한 것 합치면 한도를 넘을 때: 빨간 테두리 상자에 넘은 바이트(바로 뒤 초기화가 지움)
+  await P.click('#se-tabs [data-tab="edit"]'); await wait(300);
+  await P.click('#se-kind [data-kind="a"]'); await wait(200);
+  await P.evaluate(() => { const a = seAreas('a'); seSet(seSrcKey(1, a[0].id), '가'.repeat(400)); seSet(seSrcKey(1, a[1].id), '나'.repeat(200)); const st = seSt(1); st.sel.a = [a[0].id, a[1].id]; seSetSt(1, { sel: st.sel }); seSelectStudent(1); });
+  await wait(300);
+  const sumOver = await P.evaluate(() => [document.getElementById('se-sum').className, document.getElementById('se-sum').textContent]);
+  check('합치면 한도 넘음: 빨강·넘은 바이트', /over/.test(sumOver[0]) && sumOver[1] === '체크한 2개 합치면 1,801 / 1,500바이트 · 301 넘음', sumOver);
+  await P.screenshot({ path: 'se-edit-sum.png' });
+  await P.click('#se-tabs [data-tab="src"]'); await wait(300);
+  await P.screenshot({ path: 'se-src-nobytes.png' });
   await P.selectOption('#se-class', '2'); await wait(500);
   const cls2 = await P.evaluate(() => ({ n: seRoster.length, areas: seAreas('a').map(a => a.name).join(), fin: localStorage.getItem('se-fin-3-2-1-a') }));
   check('3-2로 바꾸면 그 반 명렬표 28명·기본 영역·빈 자료', cls2.n === 28 && cls2.areas === '1인 1역할' && cls2.fin === null, cls2);
