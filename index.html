@@ -463,6 +463,62 @@
     .sgbf-tags span { display: inline-block; font-size: 11px; font-weight: 700; color: var(--text-sub); background: var(--bg-color); border-radius: 5px; padding: 0 6px; margin: 0 3px 3px 0; }
     .sgbf-snip { color: var(--text-main); word-break: break-all; }
     .sgbf-item mark { background: rgba(245,190,40,0.45); color: inherit; border-radius: 3px; padding: 0 1px; }
+    /* ===== 🗂 생기부 자율·진로 편집기 (#se-page) ===== */
+    #se-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
+    #se-body { display: flex; flex: 1; min-height: 0; }
+    #se-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
+    #se-tabs { margin: 12px 0 8px; flex: 0 0 auto; display: inline-flex; }
+    #se-tabs .top-btn { font-weight: 800; }
+    .se-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .se-pane > div { flex: 0 0 auto; }
+    .se-pane > .se-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+    .se-muted { font-size: 11.5px; color: var(--text-sub); font-weight: 600; line-height: 1.6; }
+    .se-kind .top-btn { font-weight: 800; padding: 5px 14px; }
+    .se-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+    .se-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 14px; padding: 3px 6px 3px 10px; font-size: 12px; font-weight: 700; background: var(--card-bg); color: var(--text-main); }
+    .se-chip button { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 11px; padding: 0 3px; font-family: inherit; }
+    .se-chip button:hover { color: var(--alert); }
+    .se-chip .se-chip-name { cursor: pointer; }
+    .se-chip .se-chip-name:hover { text-decoration: underline; }
+    .se-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); min-width: 100%; }
+    .se-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 6px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 2; }
+    .se-table td { padding: 4px 4px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+    .se-table td.se-c { text-align: center; white-space: nowrap; padding-top: 8px; font-weight: 700; }
+    .se-table th.se-left, .se-table td.se-left { position: sticky; left: 0; background: var(--card-bg); z-index: 1; }
+    .se-table th.se-left { z-index: 3; background: var(--tt-bg); }
+    .se-cell { display: block; width: 100%; min-width: 180px; box-sizing: border-box; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.45; padding: 5px 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-main); resize: vertical; min-height: 62px; outline: none; }
+    .se-cell:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); min-height: 150px; }
+    .se-bytes { font-size: 10.5px; color: var(--text-sub); font-weight: 700; text-align: right; margin-top: 1px; }
+    .se-bytes.over { color: var(--alert); }
+    #se-students { width: 250px; flex: 0 0 auto; border-right: 1px solid var(--border-color); overflow-y: auto; min-height: 0; }
+    .se-stu { display: grid; grid-template-columns: 26px 1fr auto auto; gap: 5px; padding: 6px 8px; cursor: pointer; border-bottom: 1px solid var(--border-color); align-items: center; font-size: 12.5px; }
+    .se-stu:hover { background: var(--accent-soft); }
+    .se-stu.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
+    .se-stu b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .se-dot { font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 7px; background: var(--tt-bg); color: var(--text-sub); min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
+    .se-dot.ok { background: #DDF5E3; color: #1E7B3A; }
+    .se-dot.over { background: #FDE2E1; color: #B42318; }
+    .se-dot.empty { opacity: .55; }
+    #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    #se-edit-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 8px; }
+    #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 10px 16px; }
+    .se-sec { font-size: 12.5px; font-weight: 800; color: var(--accent-color); margin: 10px 0 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .se-card { display: block; border: 1px solid var(--border-color); border-radius: 9px; padding: 7px 10px; margin-bottom: 6px; cursor: pointer; background: var(--card-bg); }
+    .se-card.on { border-color: var(--accent-color); background: var(--accent-soft); }
+    .se-card.none { cursor: default; opacity: .6; }
+    .se-card-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; }
+    .se-card-head .se-bytes { margin-left: auto; margin-top: 0; }
+    .se-card-text { white-space: pre-wrap; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.55; margin-top: 4px; color: var(--text-main); }
+    #se-fin { width: 100%; box-sizing: border-box; min-height: 170px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    #se-fin:focus { border-color: var(--accent-color); }
+    #se-memo { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    #se-memo:focus { border-color: var(--accent-color); }
+    .se-fin-table td.se-txt { white-space: pre-wrap; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.5; min-width: 260px; width: 42%; }
+    .se-fin-table td.se-txt .se-empty { color: var(--text-sub); opacity: .6; }
+    #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+    #se-save-state.dirty { color: #B45309; }
+    @media (max-width: 1100px) { #se-students { width: 190px; } .se-stu { grid-template-columns: 24px 1fr; } .se-stu .se-dot { display: none; } }
+    @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; border-right: 0; border-bottom: 1px solid var(--border-color); } #se-main { padding: 0 10px 10px; } }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
     .fav-tag { position: absolute; top: 1px; right: 3px; font-size: 6.5px; font-weight: 800; color: var(--text-sub); opacity: .65; }
     /* 관리자가 정한 고정 즐겨찾기 — 개인 즐겨찾기와 한눈에 구분되게 테마 강조색으로 칠한다. */
@@ -1512,6 +1568,7 @@
     </div>
     <div class="top-btn-cluster" id="sgb-tabs" style="margin-bottom: 10px;">
       <button class="top-btn theme-active" data-tab="check" onclick="setSgbTab('check')">✍️ 문장 점검</button>
+      <button class="top-btn" data-tab="edit" onclick="setSgbTab('edit')" title="자율·진로 활동 문장을 학생별로 모아 골라 합치고 바이트에 맞게 다듬는 전체 화면">🗂 자율·진로 편집기</button>
       <button class="top-btn" data-tab="find" onclick="setSgbTab('find')">🔍 길라잡이 찾기</button>
     </div>
     <div id="sgb-pane-check" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
@@ -3046,6 +3103,64 @@
   </div>
 </div>
 
+<!-- 🗂 생기부 자율·진로 편집기 — 생기부 패널의 "자율·진로 편집기" 탭에서 여는 전체 화면. 각 부서에서 받은 문장을 학생별로 모아
+     골라 합치고 바이트에 맞게 다듬는다(사용자가 쓰던 엑셀 양식을 옮긴 것). 자료는 내 계정에만 저장(학생·칸 단위 항목, 칸을 벗어날 때 저장). -->
+<div id="se-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="se-page-header">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seBackToSgb()">← 생기부</button>
+      <div style="font-weight: 800; font-size: 16px;">🗂 자율·진로 편집기</div>
+      <select id="se-grade" class="mini-select" style="width:74px;" onchange="seOnClassChange('grade')"></select>
+      <select id="se-class" class="mini-select" style="width:64px;" onchange="seOnClassChange('class')"></select>
+      <span id="se-limit-note" class="se-muted"></span>
+      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">
+        📥 엑셀 가져오기<input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
+      </label>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자료 입력·최종 내용을 엑셀(데이터·최종 시트)로 내려받습니다">📊 엑셀 내려받기</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로 자료를 모두 지웁니다">🗑 초기화</button>
+    </div>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <span id="se-save-state"></span>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+    </div>
+  </div>
+  <div id="se-body">
+    <div id="se-main">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:0 0 auto;">
+        <div class="top-btn-cluster" id="se-tabs">
+          <button class="top-btn theme-active" data-tab="src" onclick="seSetTab('src')">📥 자료 입력</button>
+          <button class="top-btn" data-tab="edit" onclick="seSetTab('edit')">✍️ 편집</button>
+          <button class="top-btn" data-tab="final" onclick="seSetTab('final')">📊 최종</button>
+        </div>
+        <span class="se-muted">🔒 <b>내 계정에만</b> 저장(다른 선생님·관리자 안 보임) · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
+      </div>
+
+      <div id="se-pane-src" class="se-pane">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="top-btn-cluster se-kind" id="se-kind-src"></div>
+          <div class="se-muted">부서에서 받은 문장을 학생·영역별로 넣어요. 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 <b>아래·오른쪽으로 이어서</b> 채워져요.</div>
+        </div>
+        <div class="se-chips" id="se-area-chips"></div>
+        <div id="se-src-msg" class="se-muted" style="min-height:16px; margin-bottom:4px;"></div>
+        <div class="se-scroll" id="se-src-list"></div>
+      </div>
+
+      <div id="se-pane-edit" class="se-pane" style="display:none;">
+        <div id="se-edit-body" style="display:flex; flex:1; min-height:0;">
+          <div id="se-students"></div>
+          <div id="se-editor"></div>
+        </div>
+      </div>
+
+      <div id="se-pane-final" class="se-pane" style="display:none;">
+        <div id="se-final-note" class="se-muted" style="margin-bottom:6px;"></div>
+        <div class="se-scroll" id="se-final-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="persontt-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
   <div id="pt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -3968,6 +4083,7 @@
     closeAbsencePage();
     closeNametagPage();
     closeFormPage();
+    closeSePage();
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
@@ -3994,6 +4110,7 @@
     closeAbsencePage();
     closeNametagPage();
     closeFormPage();
+    closeSePage();
     document.getElementById('settings-page').style.display = 'none';
     const seatchartPage = document.getElementById('seatchart-page');
     if (seatchartPage) seatchartPage.style.display = 'none';
@@ -5812,19 +5929,44 @@
   // 근거: 2026학년도 학교생활기록부 기재 길라잡이(고) — 글자 수 p.73, 기재 불가 p.78, 문자·특수문자·종결 p.79.
   // 자율·자치, 동아리 500자는 길라잡이엔 없고 사용자(학교) 확인값.
   // 학생 문장은 저장하지 않는다(localStorage에 넣으면 서버로 동기화되니 절대 넣지 말 것). 기억하는 건 고른 영역뿐.
+  // 영역별 최대 글자 수(한글 기준)는 입시 연도마다 다르다(사용자가 준 표). 고3이 치르는 입시 = 학년도 + 1.
+  // 2026 입시(2025학년도 고3): 진로 700·봉사 250·행특 500. 2027 입시(2015 교육과정)·2028~ 입시(2022 개정): 진로 500·봉사 50·행특 300.
+  // 바이트 = 글자 수 × 3. 표에 없는 뒤 연도는 마지막 줄, 앞 연도는 첫 줄을 쓴다.
+  const SGB_LIMITS = {
+    2026: { a: 500, p: 700, club: 500, vol: 250, behav: 500, subj: 500 },
+    2027: { a: 500, p: 500, club: 500, vol: 50, behav: 300, subj: 500 },
+    2028: { a: 500, p: 500, club: 500, vol: 50, behav: 300, subj: 500 }
+  };
+  function sgbSchoolYear() { const t = new Date(); return t.getMonth() + 1 >= 3 ? t.getFullYear() : t.getFullYear() - 1; }
+  function sgbAdmissionYear(grade, schoolYear) { return (schoolYear || sgbSchoolYear()) + (4 - (Number(grade) || 1)); }
+  function sgbLimitsFor(grade, schoolYear) {
+    const years = Object.keys(SGB_LIMITS).map(Number).sort(function(a, b) { return a - b; });
+    const y = sgbAdmissionYear(grade, schoolYear);
+    if (y <= years[0]) return SGB_LIMITS[years[0]];
+    if (y >= years[years.length - 1]) return SGB_LIMITS[years[years.length - 1]];
+    return SGB_LIMITS[y];
+  }
+  // 문장 점검기가 기준으로 삼는 학년: 담임 반 → 편집기에서 고른 반 → 고1(가장 새 기준).
+  function sgbBaseGrade() {
+    const t = window.currentTeacher;
+    if (t && t.homeroom_grade) return Number(t.homeroom_grade);
+    try { const c = JSON.parse(localStorage.getItem('se-cfg') || '{}'); if (c && c.g) return Number(c.g); } catch (e) {}
+    return 1;
+  }
+  function sgbAreaChars(area) { return area.lim ? sgbLimitsFor(sgbBaseGrade())[area.lim] : area.chars; }
   const SGB_RULES = {
     year: 2026,
     source: '2026학년도 학교생활기록부 기재 길라잡이(고)',
     // chars = 한글 기준 최대 글자 수. 나이스 바이트 한도 = chars × 3.
     areas: [
-      { id: 's500', label: '과세특·개세특·자율자치', chars: 500, page: 'p.73',
+      { id: 's500', label: '과세특·개세특·자율자치', chars: 500, lim: 'subj', page: 'p.73',
         note: '과목별 세특은 과목마다, 공통과목(공통국어·공통수학·공통영어·통합사회·통합과학·한국사·과학탐구실험)은 1·2 합산 500자. 자율·자치 500자는 학교 확인값.' },
       // prefix: 본문 앞에 함께 들어가 한도를 같이 쓰는 말. 바이트는 합쳐 세고, 복사는 본문만(나이스에서 따로 들어감).
-      { id: 'career', label: '진로', chars: 500, page: 'p.73',
+      { id: 'career', label: '진로', chars: 500, lim: 'p', page: 'p.73',
         prefix: { label: '진로 희망 분야', ph: '예: 생명과학 연구원' } },
-      { id: 'club', label: '동아리', chars: 500, page: '', note: '동아리 500자는 학교 확인값.',
+      { id: 'club', label: '동아리', chars: 500, lim: 'club', page: '', note: '동아리 500자는 학교 확인값.',
         prefix: { label: '동아리명', ph: '예: (과학탐구반)', remember: 'sgb-club-name' } },
-      { id: 'behav', label: '행특', chars: 300, page: 'p.73' }
+      { id: 'behav', label: '행특', chars: 300, lim: 'behav', page: 'p.73' }
     ],
     // level: 'no' = 기재 불가(빨강), 'chk' = 확인 필요(노랑). words는 그대로 찾을 말, re는 정규식.
     checks: [
@@ -5978,7 +6120,7 @@
     document.getElementById('sgb-year').textContent = SGB_RULES.year + '학년도';
     document.getElementById('sgb-src').textContent = SGB_RULES.source;
     document.getElementById('sgb-areas').innerHTML = SGB_RULES.areas.map(function(a) {
-      return '<button class="top-btn' + (a.id === area.id ? ' theme-active' : '') + '" data-area="' + a.id + '" onclick="setSgbArea(\'' + a.id + '\')">' + a.label + ' <span style="font-weight:600; opacity:.75;">(' + a.chars + '자)</span></button>';
+      return '<button class="top-btn' + (a.id === area.id ? ' theme-active' : '') + '" data-area="' + a.id + '" onclick="setSgbArea(\'' + a.id + '\')">' + a.label + ' <span style="font-weight:600; opacity:.75;">(' + sgbAreaChars(a) + '자)</span></button>';
     }).join('');
     const text = document.getElementById('sgb-text').value;
     const prefixRow = document.getElementById('sgb-prefix-row');
@@ -5995,19 +6137,20 @@
     const bc = sgbCount(text);
     // 앞말과 본문은 나이스에서 한 칸으로 이어지니 합쳐 센다(사이 띄어쓰기는 없는 것으로).
     const c = { bytes: pc.bytes + bc.bytes, withSpace: pc.withSpace + bc.withSpace, noSpace: pc.noSpace + bc.noSpace };
-    const limit = area.chars * 3;
+    const chars = sgbAreaChars(area);
+    const limit = chars * 3;
     const over = c.bytes > limit;
     const countEl = document.getElementById('sgb-count');
     countEl.className = 'sgb-count' + (over ? ' over' : '');
     countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
-      '<span><b>' + c.bytes + '</b>바이트 <span class="sgb-limit">/ ' + limit + '바이트(' + area.chars + '자)' +
+      '<span><b>' + c.bytes + '</b>바이트 <span class="sgb-limit">/ ' + limit + '바이트(' + chars + '자)' +
       (over ? ' · <b>' + (c.bytes - limit) + '바이트 넘음</b>' : ' · ' + (limit - c.bytes) + '바이트 남음') + '</span></span>';
     if (area.prefix && pc.bytes) countEl.innerHTML += '<span class="sgb-limit" id="sgb-split">(' + escapeHtmlAttr(area.prefix.label) + ' ' + pc.bytes + ' + 본문 ' + bc.bytes + '바이트)</span>';
     const bar = document.getElementById('sgb-bar');
     bar.className = 'sgb-bar' + (over ? ' over' : '');
     bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
     document.getElementById('sgb-note').textContent =
-      area.label + ' 최대 ' + area.chars + '자(학년 단위)' + (area.page ? ' · 길라잡이 ' + area.page : '') +
+      area.label + ' 최대 ' + chars + '자(학년 단위 · 고' + sgbBaseGrade() + ' = ' + sgbAdmissionYear(sgbBaseGrade()) + ' 입시 기준)' + (area.page ? ' · 길라잡이 ' + area.page : '') +
       (area.note ? ' · ' + area.note : '') +
       (area.prefix ? ' · ' + area.prefix.label + '도 한도에 함께 들어가서 합쳐 셈(복사 버튼은 본문만 복사)' : '') +
       '\n바이트: 한글 3, 영어·숫자·특수문자·띄어쓰기 1, 엔터 2';
@@ -6017,6 +6160,11 @@
       result.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:16px;">문장을 넣으면 글자 수와 기재 불가 표현을 바로 보여 줘요.</div>';
       return;
     }
+    result.innerHTML = sgbFindingsHtml(text);
+  }
+
+  // 점검 결과(색칠한 미리보기 + 찾은 표현 목록) HTML — 문장 점검 탭과 자율·진로 편집기가 같이 쓴다.
+  function sgbFindingsHtml(text) {
     const findings = sgbFindings(text);
     findings.sort(function(a, b) { return (a.check.level === 'no' ? 0 : 1) - (b.check.level === 'no' ? 0 : 1); });
     let html = '';
@@ -6034,7 +6182,7 @@
       html += '<div class="sgb-find" style="border-left-color: var(--accent-color);">✅ 자동으로 찾은 문제 표현은 없어요.</div>';
     }
     html += '<div class="sgb-find-tip" style="margin-top:6px;">※ AI로 만든 문장을 그대로 입력하는 것, 학생에게 써 오게 한 내용을 그대로 옮기는 것도 금지(p.78 2-③, p.79 3-①) — 자동 점검으로는 알 수 없어요.</div>';
-    result.innerHTML = html;
+    return html;
   }
 
   // 쓴 문장을 그대로 복사 — 나이스 입력칸에 바로 붙여 넣게. 클립보드 API가 막힌 환경이면 선택 후 execCommand.
@@ -6077,7 +6225,7 @@
     const overlay = document.getElementById('sgb-overlay');
     if (overlay) overlay.style.display = 'none';
     const btn = document.getElementById('rail-sgb-btn');
-    if (btn) btn.classList.remove('active');
+    if (btn && !(typeof seIsOpen === 'function' && seIsOpen())) btn.classList.remove('active');
   }
 
   // ----- 🔍 길라잡이 찾기 -----
@@ -6103,6 +6251,7 @@
     return v === 'find' ? 'find' : 'check';
   }
   function setSgbTab(tab) {
+    if (tab === 'edit') { openSeEditor(); return; }   // 자율·진로 편집기는 패널이 아니라 전체 화면
     if (sgbTab() !== tab) {
       try { localStorage.setItem(SGB_TAB_KEY, tab); } catch (e) {}
       scheduleBackupWrite();
@@ -12188,6 +12337,629 @@
     }, true);
   });
 
+  // ===== 🗂 생기부 자율·진로 편집기 =====
+  // 자율·진로 활동은 여러 부서가 문장을 보내 주고 담임이 바이트에 맞게 골라 합쳐 정리해야 한다. 사용자가 쓰던 엑셀
+  // (데이터 시트 = 학생×영역 원문, 자율·진로 시트 = 학생 하나 골라 체크해 합치고 다듬기, 최종 시트 = 학생별 완성본·바이트)을
+  // 그대로 옮긴 것. 생기부 패널의 "자율·진로 편집기" 탭에서 전체 화면으로 연다.
+  // 저장: 학생 한 명의 칸 하나가 localStorage 항목 하나(se-src-학년-반-번호-영역id / se-fin-…-a|p / se-st-…)라서 바뀐 칸만 서버에
+  // 올라가고(기존 항목별 동기화), 변경 이력도 그 칸 크기만 남는다. 입력 중엔 화면에만 있다가 **칸을 벗어날 때(blur/change)** 저장 →
+  // 글자마다 올리지 않음. 내 계정에만 저장(RLS), 다른 선생님·관리자는 못 본다.
+  const SE_CFG_KEY = 'se-cfg';   // { g, c, tab, kind }
+  const SE_KINDS = ['a', 'p'];
+  const SE_KIND_LABEL = { a: '자율', p: '진로' };
+  const SE_DEFAULT_AREAS = { a: ['1인 1역할'], p: ['진로 독서'] };   // 처음 열 때 보기용 — 선생님이 이름을 바꾸거나 더하고 지운다
+  let seRoster = [], seRosterKey = '', seSelNum = null, seTypingKey = null;
+
+  function seCfg() {
+    try { const v = JSON.parse(localStorage.getItem(SE_CFG_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
+  }
+  function seSetCfg(patch) {
+    const c = Object.assign(seCfg(), patch);
+    try { localStorage.setItem(SE_CFG_KEY, JSON.stringify(c)); } catch (e) {}
+    scheduleBackupWrite();
+  }
+  function seClassKey() { const c = seCfg(); return c.g && c.c ? c.g + '-' + c.c : ''; }
+  function seKind() { return seCfg().kind === 'p' ? 'p' : 'a'; }
+  function seTab() { const t = seCfg().tab; return t === 'edit' || t === 'final' ? t : 'src'; }
+  function seIsOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none'; }
+
+  function seGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  // 값이 실제로 바뀐 칸만 저장(같은 값이면 서버에도 안 올라감). 빈 값은 항목을 지운다.
+  function seSet(k, v) {
+    v = String(v == null ? '' : v);
+    if (seGet(k) === v) return true;
+    try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
+    catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
+    scheduleBackupWrite();
+    seSaveState('saved');
+    return true;
+  }
+  function seSaveStateIs(s) { const el = document.getElementById('se-save-state'); return !!el && (s === 'typing' ? el.className === 'dirty' : el.textContent.indexOf('저장됨') !== -1); }
+  function seSaveState(s) {
+    const el = document.getElementById('se-save-state');
+    if (!el) return;
+    el.className = s === 'typing' ? 'dirty' : '';
+    el.textContent = s === 'typing' ? '✏️ 입력 중 — 칸을 벗어나면 저장' : s === 'saved' ? '💾 저장됨' : '';
+  }
+
+  // ----- 항목 키 -----
+  function seAreasKey() { return 'se-areas-' + seClassKey(); }
+  function seSrcKey(num, areaId) { return 'se-src-' + seClassKey() + '-' + num + '-' + areaId; }
+  function seFinKey(num, kind) { return 'se-fin-' + seClassKey() + '-' + num + '-' + kind; }
+  function seStKey(num) { return 'se-st-' + seClassKey() + '-' + num; }
+  function seRosterKeyName() { return 'se-roster-' + seClassKey(); }
+
+  // 영역: { a: [{id, name}], p: [{id, name}] } — 반마다 따로. 아직 없으면 기본 보기(저장은 처음 고칠 때).
+  function seAllAreas() {
+    let v = null;
+    try { v = JSON.parse(localStorage.getItem(seAreasKey()) || 'null'); } catch (e) {}
+    if (!v || typeof v !== 'object') {
+      v = {};
+      SE_KINDS.forEach(function(k) { v[k] = SE_DEFAULT_AREAS[k].map(function(n, i) { return { id: k + 'd' + i, name: n }; }); });
+    }
+    SE_KINDS.forEach(function(k) { if (!Array.isArray(v[k])) v[k] = []; });
+    return v;
+  }
+  function seAreas(kind) { return seAllAreas()[kind]; }
+  function seSaveAreas(all) { seSet(seAreasKey(), JSON.stringify(all)); }
+  function seNewId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  async function seAddArea(kind, presetName) {
+    const name = presetName != null ? presetName : await customPrompt(SE_KIND_LABEL[kind] + ' 영역 이름 (예: 큐리어톤, 진로 특강)', '');
+    const n = String(name || '').trim();
+    if (!n) return null;
+    const all = seAllAreas();
+    const dup = all[kind].find(function(a) { return a.name === n; });
+    if (dup) return dup;
+    const a = { id: seNewId(), name: n };
+    all[kind].push(a);
+    seSaveAreas(all);
+    if (presetName == null) seRenderAll();
+    return a;
+  }
+  async function seRenameArea(kind, id) {
+    const all = seAllAreas();
+    const a = all[kind].find(function(x) { return x.id === id; });
+    if (!a) return;
+    const name = await customPrompt('영역 이름 바꾸기', a.name);
+    const n = String(name || '').trim();
+    if (!n || n === a.name) return;
+    a.name = n;
+    seSaveAreas(all);
+    seRenderAll();
+  }
+  async function seRemoveArea(kind, id) {
+    const all = seAllAreas();
+    const a = all[kind].find(function(x) { return x.id === id; });
+    if (!a) return;
+    const filled = seRoster.filter(function(s) { return seGet(seSrcKey(s.num, id)); }).length;
+    const ok = await customConfirm('"' + a.name + '" 영역을 지울까요?' + (filled ? '\n이 영역에 적힌 ' + filled + '명의 내용도 함께 지워져요.' : ''));
+    if (!ok) return;
+    seRoster.forEach(function(s) { seSet(seSrcKey(s.num, id), ''); });
+    all[kind] = all[kind].filter(function(x) { return x.id !== id; });
+    seSaveAreas(all);
+    seRenderAll();
+  }
+
+  // 학생별 상태: { sel: { a: [영역id], p: [영역id] }, memo: '' }
+  function seSt(num) {
+    let v = null;
+    try { v = JSON.parse(seGet(seStKey(num)) || 'null'); } catch (e) {}
+    if (!v || typeof v !== 'object') v = {};
+    if (!v.sel || typeof v.sel !== 'object') v.sel = {};
+    SE_KINDS.forEach(function(k) { if (!Array.isArray(v.sel[k])) v.sel[k] = []; });
+    if (typeof v.memo !== 'string') v.memo = '';
+    return v;
+  }
+  function seSetSt(num, patch) {
+    const v = Object.assign(seSt(num), patch);
+    const empty = !v.memo && SE_KINDS.every(function(k) { return !v.sel[k].length; });
+    seSet(seStKey(num), empty ? '' : JSON.stringify(v));
+  }
+
+  // ----- 한도: 학년 → 입시 연도 → 글자 수(한글 기준) × 3바이트 -----
+  function seGrade() { return seCfg().g || null; }
+  function seLimitBytes(kind) { return sgbLimitsFor(seGrade())[kind] * 3; }
+  function seLimitNote() {
+    const g = seGrade();
+    if (!g) return '';
+    const y = sgbAdmissionYear(g);
+    const L = sgbLimitsFor(g);
+    return '고' + g + ' = ' + y + ' 입시 기준: 자율 ' + L.a + '자(' + (L.a * 3) + '바이트) · 진로 ' + L.p + '자(' + (L.p * 3) + '바이트)';
+  }
+  function seBytes(t) { return sgbCount(t).bytes; }
+  function seFmt(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+  function seBytesHtml(text, limit, cls) {
+    const b = seBytes(text);
+    const over = limit && b > limit;
+    return '<div class="se-bytes' + (over ? ' over' : '') + (cls ? ' ' + cls : '') + '">' + seFmt(b) + '바이트' + (limit ? ' / ' + seFmt(limit) + (over ? ' · ' + seFmt(b - limit) + ' 넘음' : '') : '') + '</div>';
+  }
+
+  // ----- 명렬표 -----
+  async function seLoadRoster() {
+    const c = seCfg();
+    if (!c.g || !c.c) { seRoster = []; seRosterKey = ''; return; }
+    const key = c.g + '-' + c.c;
+    if (seRosterKey === key) return;
+    let rows = [];
+    try {
+      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
+      if (error) throw error;
+      rows = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
+    } catch (e) { rows = []; }
+    // 명렬표에 아직 학생이 없으면 엑셀에서 가져온 번호·이름을 쓴다.
+    if (!rows.length) { try { rows = JSON.parse(seGet(seRosterKeyName()) || '[]'); } catch (e) { rows = []; } }
+    seRoster = rows;
+    seRosterKey = key;
+    if (seSelNum == null || !seRoster.some(function(s) { return s.num === seSelNum; })) seSelNum = seRoster.length ? seRoster[0].num : null;
+  }
+  function seNameOf(num) { const s = seRoster.find(function(x) { return x.num === Number(num); }); return s ? s.name : ''; }
+
+  // ----- 열고 닫기 -----
+  function closeSePage() {
+    const pg = document.getElementById('se-page');
+    if (pg) pg.style.display = 'none';
+    const btn = document.getElementById('rail-sgb-btn');
+    if (btn && document.getElementById('sgb-overlay').style.display !== 'flex') btn.classList.remove('active');
+  }
+  async function openSeEditor() {
+    closeAbsencePage(); closeNametagPage(); closeFormPage();
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    ['settings-page', 'seatchart-page', 'monthly-page', 'leavepass-page', 'persontt-page'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.classList.remove('active');
+    });
+    closeHwpKeys(); closeSgb(); closeStudentRoster();
+    const um = document.getElementById('user-menu-dropdown'); if (um) um.style.display = 'none';
+    document.getElementById('se-page').style.display = 'flex';
+    document.getElementById('rail-sgb-btn').classList.add('active');
+    seSaveState('');
+    await ensureClassStructureLoaded();
+    const c = seCfg();
+    const t = window.currentTeacher;
+    if (!c.g && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) seSetCfg({ g: Number(t.homeroom_grade), c: Number(t.homeroom_class) });
+    seFillClassSelects();
+    await seLoadRoster();
+    seRenderAll();
+  }
+  function seBackToSgb() { closeSePage(); openSgb(); }
+  function seFillClassSelects() {
+    const c = seCfg();
+    document.getElementById('se-grade').innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(c.g);
+    document.getElementById('se-class').innerHTML = '<option value="">반</option>' + (c.g ? classOptionsHtml(c.g, c.c) : '');
+    document.getElementById('se-grade').value = c.g ? String(c.g) : '';
+    document.getElementById('se-class').value = c.g && c.c ? String(c.c) : '';
+  }
+  async function seOnClassChange(which) {
+    const g = parseInt(document.getElementById('se-grade').value) || null;
+    let k = parseInt(document.getElementById('se-class').value) || null;
+    if (which === 'grade') { k = null; document.getElementById('se-class').innerHTML = '<option value="">반</option>' + (g ? classOptionsHtml(g, null) : ''); }
+    seSetCfg({ g: g, c: k });
+    seSelNum = null;
+    await seLoadRoster();
+    seRenderAll();
+  }
+  function seSetTab(tab) { seSetCfg({ tab: tab }); seRenderAll(); }
+  function seSetKind(kind) { seSetCfg({ kind: kind }); seRenderAll(); }
+
+  function seRenderAll() {
+    if (!seIsOpen()) return;
+    const tab = seTab();
+    document.querySelectorAll('#se-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
+    ['src', 'edit', 'final'].forEach(function(t) { document.getElementById('se-pane-' + t).style.display = t === tab ? 'flex' : 'none'; });
+    document.getElementById('se-limit-note').textContent = seLimitNote();
+    if (!seClassKey()) {
+      const msg = '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:40px 20px;">학년과 반을 고르세요.</div>';
+      document.getElementById('se-src-list').innerHTML = msg;
+      document.getElementById('se-area-chips').innerHTML = '';
+      document.getElementById('se-kind-src').innerHTML = '';
+      document.getElementById('se-students').innerHTML = '';
+      document.getElementById('se-editor').innerHTML = msg;
+      document.getElementById('se-final-list').innerHTML = msg;
+      document.getElementById('se-final-note').textContent = '';
+      return;
+    }
+    if (tab === 'src') seRenderSrc();
+    else if (tab === 'edit') seRenderEdit();
+    else seRenderFinal();
+  }
+  function seKindButtons(id, cur, fn) {
+    document.getElementById(id).innerHTML = SE_KINDS.map(function(k) {
+      return '<button class="top-btn' + (k === cur ? ' theme-active' : '') + '" data-kind="' + k + '" onclick="' + fn + '(\'' + k + '\')">' + SE_KIND_LABEL[k] + ' <span style="font-weight:600; opacity:.75;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></button>';
+    }).join('');
+  }
+  function seNoStudentsHtml() {
+    return '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px 20px; line-height:1.7;">이 반의 명렬표에 학생이 없어요.<br>관리자가 명렬표를 올리면 자동으로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣으면 그 번호·이름을 써요.</div>';
+  }
+
+  // ----- ① 자료 입력 -----
+  function seRenderSrc() {
+    const kind = seKind();
+    seKindButtons('se-kind-src', kind, 'seSetKind');
+    const areas = seAreas(kind);
+    document.getElementById('se-area-chips').innerHTML = '<span class="se-muted">' + SE_KIND_LABEL[kind] + ' 영역:</span>' +
+      areas.map(function(a) {
+        return '<span class="se-chip" data-area="' + a.id + '"><span class="se-chip-name" title="누르면 이름 바꾸기" onclick="seRenameArea(\'' + kind + '\',\'' + a.id + '\')">' + escapeHtmlAttr(a.name) + '</span>' +
+          '<button title="영역 지우기" onclick="seRemoveArea(\'' + kind + '\',\'' + a.id + '\')">✕</button></span>';
+      }).join('') +
+      '<button class="top-btn" style="font-size:11px; padding:3px 10px;" onclick="seAddArea(\'' + kind + '\')">➕ 영역 추가</button>';
+    const list = document.getElementById('se-src-list');
+    if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); return; }
+    if (!areas.length) { list.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px;">위 <b>➕ 영역 추가</b>로 ' + SE_KIND_LABEL[kind] + ' 영역(부서에서 받은 활동 이름)을 먼저 만드세요.</div>'; return; }
+    let html = '<table class="se-table"><thead><tr><th class="se-left" style="width:30px;">번호</th><th style="width:56px;">이름</th>' +
+      areas.map(function(a) { return '<th>' + escapeHtmlAttr(a.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    seRoster.forEach(function(s) {
+      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
+      areas.forEach(function(a) {
+        const k = seSrcKey(s.num, a.id), v = seGet(k);
+        html += '<td><textarea class="se-cell" rows="3" data-key="' + k + '" data-num="' + s.num + '" data-area="' + a.id + '" placeholder="받은 문장" spellcheck="false"' +
+          ' oninput="seOnSrcInput(this)" onchange="seOnSrcChange(this)" onblur="seOnSrcChange(this)" onpaste="seOnPaste(event, this)">' + escapeHtmlAttr(v) + '</textarea>' + seBytesHtml(v, 0) + '</td>';
+      });
+      html += '</tr>';
+    });
+    list.innerHTML = html + '</tbody></table>';
+  }
+  function seOnSrcInput(ta) {
+    seTypingKey = ta.dataset.key;
+    seSaveState('typing');
+    const b = ta.nextElementSibling; if (b) b.textContent = seFmt(seBytes(ta.value)) + '바이트';
+  }
+  function seOnSrcChange(ta) {
+    if (seTypingKey === ta.dataset.key) seTypingKey = null;
+    const v = ta.value.replace(/\r\n?/g, '\n');
+    if (seGet(ta.dataset.key) === v) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); return; }
+    seSet(ta.dataset.key, v);
+  }
+  // 엑셀에서 복사한 여러 칸(탭·줄바꿈, 줄바꿈이 든 칸은 "…"로 싸임)을 한 칸에 붙여 넣으면 그 칸부터 아래·오른쪽으로 채운다.
+  function seParseTsv(text) {
+    const rows = [[]]; let cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"' && cur === '') q = true;
+      else if (ch === '\t') { rows[rows.length - 1].push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; rows[rows.length - 1].push(cur); cur = ''; rows.push([]); }
+      else cur += ch;
+    }
+    rows[rows.length - 1].push(cur);
+    while (rows.length && rows[rows.length - 1].every(function(c) { return c.trim() === ''; })) rows.pop();
+    return rows;
+  }
+  function seOnPaste(e, ta) {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!text) return;
+    const rows = seParseTsv(text);
+    if (rows.length <= 1 && (rows[0] || []).length <= 1) return;   // 한 칸짜리는 그냥 붙여 넣기
+    e.preventDefault();
+    const areas = seAreas(seKind());
+    const r0 = seRoster.findIndex(function(s) { return s.num === Number(ta.dataset.num); });
+    const c0 = areas.findIndex(function(a) { return a.id === ta.dataset.area; });
+    if (r0 < 0 || c0 < 0) return;
+    let filled = 0, over = 0;
+    rows.forEach(function(row, i) {
+      const s = seRoster[r0 + i];
+      row.forEach(function(v, j) {
+        const a = areas[c0 + j];
+        if (!s || !a) { if (v.trim()) over++; return; }
+        seSet(seSrcKey(s.num, a.id), v.replace(/\r\n?/g, '\n').trim());
+        filled++;
+      });
+    });
+    seTypingKey = null;
+    seRenderSrc();
+    document.getElementById('se-src-msg').innerHTML = '📋 ' + filled + '칸을 채웠어요' + (over ? ' · 학생·영역이 모자라 못 넣은 칸 ' + over + '개(영역을 더 만들거나 명렬표를 확인하세요)' : '') + '.';
+  }
+
+  // ----- ② 편집 -----
+  function seFinStatus(num, kind) {
+    const t = seGet(seFinKey(num, kind));
+    if (!t.trim()) return { cls: 'empty', text: '-' };
+    const b = seBytes(t), lim = seLimitBytes(kind);
+    return { cls: b > lim ? 'over' : 'ok', text: seFmt(b) };
+  }
+  function seStudentRowHtml(s) {
+    const a = seFinStatus(s.num, 'a'), p = seFinStatus(s.num, 'p');
+    return '<div class="se-stu' + (s.num === seSelNum ? ' sel' : '') + '" data-num="' + s.num + '" onclick="seSelectStudent(' + s.num + ')"><span>' + s.num + '</span><b>' + escapeHtmlAttr(s.name) + '</b>' +
+      '<span class="se-dot ' + a.cls + '" title="자율 바이트">' + a.text + '</span><span class="se-dot ' + p.cls + '" title="진로 바이트">' + p.text + '</span></div>';
+  }
+  function seRefreshStudentRow(num) {
+    const s = seRoster.find(function(x) { return x.num === num; });
+    const el = document.querySelector('#se-students .se-stu[data-num="' + num + '"]');
+    if (s && el) el.outerHTML = seStudentRowHtml(s);
+  }
+  function seSelectStudent(num) { seSelNum = Number(num); seRenderEdit(); }
+  function seMoveStudent(d) {
+    const i = seRoster.findIndex(function(s) { return s.num === seSelNum; });
+    const n = seRoster[i + d];
+    if (n) seSelectStudent(n.num);
+  }
+  function seRenderEdit() {
+    const stu = document.getElementById('se-students');
+    const ed = document.getElementById('se-editor');
+    if (!seRoster.length) { stu.innerHTML = ''; ed.innerHTML = seNoStudentsHtml(); return; }
+    stu.innerHTML = seRoster.map(seStudentRowHtml).join('');
+    const s = seRoster.find(function(x) { return x.num === seSelNum; }) || seRoster[0];
+    seSelNum = s.num;
+    const kind = seKind(), areas = seAreas(kind), st = seSt(s.num), sel = st.sel[kind];
+    const i = seRoster.indexOf(s);
+    const fin = seGet(seFinKey(s.num, kind));
+    const lim = seLimitBytes(kind);
+    let html = '<div id="se-edit-head">' +
+      '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
+      '<div style="font-weight:800; font-size:15px;">' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</div>' +
+      '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(1)"' + (i >= seRoster.length - 1 ? ' disabled' : '') + '>다음 ▶</button>' +
+      '<div class="top-btn-cluster se-kind" id="se-kind-edit" style="margin-left:auto;"></div></div>';
+    html += '<div id="se-edit-scroll">';
+    // 받은 내용
+    const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
+    const joined = chosen.map(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }).join(' ');
+    html += '<div class="se-sec"><span>📥 받은 내용 — 넣을 것을 체크</span><span class="se-muted">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(seBytes(joined)) + '</b>바이트 / ' + seFmt(lim) + '</span></div>';
+    if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "📥 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
+    areas.forEach(function(a) {
+      const v = seGet(seSrcKey(s.num, a.id));
+      const on = sel.indexOf(a.id) !== -1, none = !v.trim();
+      html += '<label class="se-card' + (on && !none ? ' on' : '') + (none ? ' none' : '') + '" data-area="' + a.id + '"><div class="se-card-head">' +
+        '<input type="checkbox" ' + (on && !none ? 'checked' : '') + (none ? ' disabled' : '') + ' onchange="seToggleSel(' + s.num + ',\'' + kind + '\',\'' + a.id + '\', this.checked)">' +
+        '<span>' + escapeHtmlAttr(a.name) + '</span>' + (none ? '<span class="se-bytes">(비어 있음)</span>' : seBytesHtml(v, 0)) + '</div>' +
+        (none ? '' : '<div class="se-card-text">' + escapeHtmlAttr(v) + '</div>') + '</label>';
+    });
+    html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div>';
+    // 편집 칸
+    html += '<div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 완성본 — 다듬어서 나이스에 복사</span></div>';
+    html += '<textarea id="se-fin" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
+      ' oninput="seOnFinInput(this)" onchange="seOnFinChange(this)" onblur="seOnFinChange(this)">' + escapeHtmlAttr(fin) + '</textarea>';
+    html += '<div style="display:flex; gap:8px; margin-top:6px;"><button class="top-btn" style="flex:1 1 0; padding:7px;" onclick="seClearFin()">지우기</button>' +
+      '<button class="top-btn" id="se-copy-btn" style="flex:1 1 0; padding:7px; font-weight:800;" onclick="seCopyFin()">📋 복사</button></div>';
+    html += '<div class="sgb-count" id="se-count"></div><div class="sgb-bar" id="se-bar"><div></div></div><div id="se-result"></div>';
+    // 메모
+    html += '<div class="se-sec" style="margin-top:14px;"><span>📝 메모</span><span class="se-muted">예: 진로독서 줄이고, 아카데미아 메인 — 나한테만 보이는 메모</span></div>' +
+      '<input type="text" id="se-memo" data-num="' + s.num + '" value="' + escapeHtmlAttr(st.memo) + '" placeholder="이 학생 메모" onchange="seSetSt(' + s.num + ', { memo: this.value.trim() })">';
+    html += '</div>';
+    ed.innerHTML = html;
+    seKindButtons('se-kind-edit', kind, 'seSetKind');
+    seRenderFinCount();
+  }
+  function seToggleSel(num, kind, areaId, on) {
+    const st = seSt(num);
+    const arr = st.sel[kind].filter(function(x) { return x !== areaId; });
+    if (on) arr.push(areaId);
+    st.sel[kind] = arr;
+    seSetSt(num, { sel: st.sel });
+    seRenderEdit();
+  }
+  async function seCombine() {
+    const kind = seKind(), num = seSelNum, sel = seSt(num).sel[kind];
+    const parts = seAreas(kind).filter(function(a) { return sel.indexOf(a.id) !== -1; })
+      .map(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }).filter(Boolean);
+    if (!parts.length) return;
+    const joined = parts.join(' ');
+    const ta = document.getElementById('se-fin');
+    if (ta.value.trim() && ta.value.trim() !== joined) {
+      const ok = await customConfirm('편집 칸에 이미 적힌 내용을 지우고 체크한 내용으로 바꿀까요?');
+      if (!ok) return;
+    }
+    ta.value = joined;
+    seSet(seFinKey(num, kind), joined);
+    seRefreshStudentRow(num);
+    seRenderFinCount();
+    ta.focus();
+  }
+  function seOnFinInput(ta) { seTypingKey = 'fin'; seSaveState('typing'); seRenderFinCount(); }
+  function seOnFinChange(ta) {
+    if (seTypingKey === 'fin') seTypingKey = null;
+    const v = ta.value.replace(/\r\n?/g, '\n');
+    const k = seFinKey(ta.dataset.num, ta.dataset.kind);
+    if (seGet(k) === v) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); return; }
+    seSet(k, v);
+    seRefreshStudentRow(Number(ta.dataset.num));
+  }
+  function seRenderFinCount() {
+    const ta = document.getElementById('se-fin');
+    if (!ta) return;
+    const kind = ta.dataset.kind, text = ta.value;
+    const c = sgbCount(text), limit = seLimitBytes(kind), over = c.bytes > limit;
+    const countEl = document.getElementById('se-count');
+    countEl.className = 'sgb-count' + (over ? ' over' : '');
+    countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
+      '<span><b>' + seFmt(c.bytes) + '</b>바이트 <span class="sgb-limit">/ ' + seFmt(limit) + '바이트(' + (limit / 3) + '자)' +
+      (over ? ' · <b>' + seFmt(c.bytes - limit) + '바이트 넘음</b>' : ' · ' + seFmt(limit - c.bytes) + '바이트 남음') + '</span></span>';
+    const bar = document.getElementById('se-bar');
+    bar.className = 'sgb-bar' + (over ? ' over' : '');
+    bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
+    document.getElementById('se-result').innerHTML = text.trim() ? sgbFindingsHtml(text) : '';
+  }
+  function seClearFin() {
+    const ta = document.getElementById('se-fin');
+    if (!ta) return;
+    ta.value = '';
+    seOnFinChange(ta);
+    seRenderFinCount();
+    ta.focus();
+  }
+  async function seCopyFin() {
+    const ta = document.getElementById('se-fin'), btn = document.getElementById('se-copy-btn');
+    if (!ta || !btn) return;
+    const text = ta.value;
+    const done = function(msg) { btn.textContent = msg; clearTimeout(seCopyFin._t); seCopyFin._t = setTimeout(function() { btn.textContent = '📋 복사'; }, 1800); };
+    if (!text) { done('복사할 문장이 없어요'); return; }
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+    if (!ok) {
+      try { ta.focus(); ta.select(); ok = document.execCommand('copy'); } catch (e) {}
+      try { ta.setSelectionRange(text.length, text.length); } catch (e) {}
+    }
+    done(ok ? '✅ 복사했어요 — 나이스에서 Ctrl+V' : '복사가 안 돼요 — Ctrl+A, Ctrl+C로 복사해 주세요');
+  }
+  async function seCopyText(text, btn) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+    if (!ok) {
+      try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e) {}
+    }
+    if (btn) { const old = btn.textContent; btn.textContent = ok ? '✅' : '✗'; setTimeout(function() { btn.textContent = old; }, 1200); }
+  }
+
+  // ----- ③ 최종 -----
+  function seRenderFinal() {
+    const list = document.getElementById('se-final-list');
+    if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); document.getElementById('se-final-note').textContent = ''; return; }
+    const stat = { a: { n: 0, over: 0 }, p: { n: 0, over: 0 } };
+    let html = '<table class="se-table se-fin-table"><thead><tr><th class="se-left" style="width:30px;">번호</th><th style="width:56px;">이름</th>' +
+      SE_KINDS.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th style="width:64px;">바이트</th>'; }).join('') + '<th style="width:36px;"></th></tr></thead><tbody>';
+    seRoster.forEach(function(s) {
+      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
+      SE_KINDS.forEach(function(k) {
+        const t = seGet(seFinKey(s.num, k)), b = seBytes(t), lim = seLimitBytes(k), over = b > lim;
+        if (t.trim()) { stat[k].n++; if (over) stat[k].over++; }
+        html += '<td class="se-txt">' + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') + '</td>' +
+          '<td class="se-c"><span class="se-dot ' + (t.trim() ? (over ? 'over' : 'ok') : 'empty') + '">' + (t.trim() ? seFmt(b) : '-') + '</span>' +
+          (t.trim() ? '<br><button class="ab-icon-btn" style="margin-top:4px;" title="복사" onclick="seCopyText(seGet(seFinKey(' + s.num + ',\'' + k + '\')), this)">📋</button>' : '') + '</td>';
+      });
+      html += '<td class="se-c"><button class="ab-icon-btn" title="편집" onclick="seSelNum=' + s.num + '; seSetTab(\'edit\')">✎</button></td></tr>';
+    });
+    list.innerHTML = html + '</tbody></table>';
+    document.getElementById('se-final-note').innerHTML = '학생 ' + seRoster.length + '명 · 자율 완성 <b>' + stat.a.n + '</b>명' + (stat.a.over ? '(<span style="color:var(--alert);">초과 ' + stat.a.over + '</span>)' : '') +
+      ' · 진로 완성 <b>' + stat.p.n + '</b>명' + (stat.p.over ? '(<span style="color:var(--alert);">초과 ' + stat.p.over + '</span>)' : '') + ' · 📋으로 한 명씩 복사해 나이스에 붙여 넣어요.';
+  }
+
+  // ----- 🗑 초기화 -----
+  function seClassKeys() {
+    const ck = seClassKey(), out = [];
+    if (!ck) return out;
+    const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-st-' + ck + '-'];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === seAreasKey() || k === seRosterKeyName())) out.push(k);
+    }
+    return out;
+  }
+  async function seResetClass() {
+    const c = seCfg();
+    if (!c.g || !c.c) return;
+    const keys = seClassKeys();
+    if (!keys.length) return customAlert('지울 자료가 없어요.');
+    if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로 자료(받은 내용·완성본·영역·메모)를 모두 지울까요?'))) return;
+    if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
+    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
+    scheduleBackupWrite();
+    seRosterKey = '';
+    await seLoadRoster();
+    seRenderAll();
+  }
+
+  // ----- 📥 엑셀 가져오기 / 📊 내려받기 (사용자가 쓰던 양식: 데이터 시트 1행 "자율"/"진로" 머리, 2행 영역 이름, 3행부터 B=번호 C=이름; 최종 시트 A=번호 C=자율 G=진로) -----
+  async function seImportExcel(file) {
+    if (!file) return;
+    if (!seClassKey()) return customAlert('학년·반을 먼저 고른 뒤 가져오세요.');
+    if (typeof XLSX === 'undefined') return customAlert('엑셀을 읽는 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
+    let wb;
+    try { wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); } catch (e) { return customAlert('엑셀 파일을 읽지 못했어요: ' + (e && e.message ? e.message : e)); }
+    const dSh = wb.Sheets['데이터'], fSh = wb.Sheets['최종'];
+    if (!dSh) return customAlert('"데이터" 시트가 없어요. 자율·진로 엑셀 파일이 맞는지 확인해 주세요.');
+    const cell = function(sh, r, c) { const x = sh && sh[XLSX.utils.encode_cell({ r: r, c: c })]; return x && x.v != null ? String(x.v) : ''; };
+    const rng = XLSX.utils.decode_range(dSh['!ref'] || 'A1:A1');
+    // 1행에서 "자율"·"진로"가 시작하는 열을 찾는다(사용자 파일은 D1·L1 병합 칸).
+    let aCol = -1, pCol = -1;
+    for (let c = 0; c <= rng.e.c; c++) { const h = cell(dSh, 0, c).trim(); if (h === '자율' && aCol < 0) aCol = c; if (h === '진로' && pCol < 0) pCol = c; }
+    if (aCol < 0 && pCol < 0) return customAlert('데이터 시트 1행에서 "자율"·"진로" 머리를 못 찾았어요.');
+    const cols = { a: [], p: [] };   // [{c, name}]
+    for (let c = 0; c <= rng.e.c; c++) {
+      const name = cell(dSh, 1, c).trim();
+      if (!name || name === '번호' || name === '이름') continue;
+      if (pCol >= 0 && c >= pCol) cols.p.push({ c: c, name: name });
+      else if (aCol >= 0 && c >= aCol) cols.a.push({ c: c, name: name });
+    }
+    let numCol = -1, nameCol = -1;
+    for (let c = 0; c <= rng.e.c; c++) { const h = cell(dSh, 1, c).trim(); if (h === '번호') numCol = c; if (h === '이름') nameCol = c; }
+    if (numCol < 0) return customAlert('데이터 시트 2행에 "번호" 칸이 없어요.');
+    const all = seAllAreas();
+    const areaOf = {};   // 열 → 영역 id (이름이 같은 영역이 있으면 그것, 없으면 새로)
+    SE_KINDS.forEach(function(k) {
+      cols[k].forEach(function(col) {
+        let a = all[k].find(function(x) { return x.name === col.name; });
+        if (!a) { a = { id: seNewId(), name: col.name }; all[k].push(a); }
+        areaOf[col.c] = a.id;
+      });
+    });
+    seSaveAreas(all);
+    const names = [];
+    let filled = 0, kept = 0;
+    for (let r = 2; r <= rng.e.r; r++) {
+      const num = parseInt(cell(dSh, r, numCol));
+      if (!num) continue;
+      const nm = nameCol >= 0 ? cell(dSh, r, nameCol).trim() : '';
+      if (nm) names.push({ num: num, name: nm });
+      Object.keys(areaOf).forEach(function(c) {
+        const v = cell(dSh, r, Number(c)).replace(/\r\n?/g, '\n').trim();
+        if (!v) return;
+        const k = seSrcKey(num, areaOf[c]);
+        if (seGet(k).trim()) { kept++; return; }
+        seSet(k, v); filled++;
+      });
+    }
+    let fin = 0;
+    if (fSh) {
+      const fr = XLSX.utils.decode_range(fSh['!ref'] || 'A1:A1');
+      let fa = -1, fp = -1, fn = -1;
+      for (let c = 0; c <= fr.e.c; c++) { const h = cell(fSh, 0, c).trim(); if (h === '번호') fn = c; if (h === '자율') fa = c; if (h === '진로') fp = c; }
+      if (fn >= 0) for (let r = 1; r <= fr.e.r; r++) {
+        const num = parseInt(cell(fSh, r, fn));
+        if (!num) continue;
+        [['a', fa], ['p', fp]].forEach(function(x) {
+          if (x[1] < 0) return;
+          const v = cell(fSh, r, x[1]).replace(/\r\n?/g, '\n').trim();
+          if (!v) return;
+          const k = seFinKey(num, x[0]);
+          if (seGet(k).trim()) { kept++; return; }
+          seSet(k, v); fin++;
+        });
+      }
+    }
+    if (names.length && !seRoster.length) { seSet(seRosterKeyName(), JSON.stringify(names)); seRosterKey = ''; await seLoadRoster(); }
+    seRenderAll();
+    customAlert('가져왔어요.\n· 영역: 자율 ' + cols.a.length + '개, 진로 ' + cols.p.length + '개\n· 받은 내용 ' + filled + '칸, 완성본 ' + fin + '칸' +
+      (kept ? '\n· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요' : '') +
+      (names.length && seRoster.length && !seRoster.some(function(s) { return names.some(function(n) { return n.num === s.num; }); }) ? '\n⚠️ 파일의 번호가 이 반 명렬표와 하나도 안 맞아요. 학년·반을 확인하세요.' : ''));
+  }
+  function seExportExcel() {
+    if (!seClassKey() || !seRoster.length) return customAlert('내려받을 자료가 없어요.');
+    if (typeof XLSX === 'undefined') return customAlert('엑셀 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
+    const all = seAllAreas(), c = seCfg();
+    const pStart = Math.max(11, 3 + all.a.length + 1);   // 자율은 D열부터, 진로는 L열부터(자율 영역이 많으면 그 뒤 한 칸 띄고)
+    const row1 = [], row2 = ['', '번호', '이름'];
+    row1[3] = '자율'; row1[pStart] = '진로';
+    all.a.forEach(function(a, i) { row2[3 + i] = a.name; });
+    all.p.forEach(function(a, i) { row2[pStart + i] = a.name; });
+    const data = [row1, row2];
+    const fin = [['번호', '이름', '자율', '바이트', '진로', '바이트']];
+    seRoster.forEach(function(s) {
+      const r = ['', s.num, s.name];
+      all.a.forEach(function(a, i) { r[3 + i] = seGet(seSrcKey(s.num, a.id)); });
+      all.p.forEach(function(a, i) { r[pStart + i] = seGet(seSrcKey(s.num, a.id)); });
+      data.push(r);
+      const fa = seGet(seFinKey(s.num, 'a')), fp = seGet(seFinKey(s.num, 'p'));
+      fin.push([s.num, s.name, fa, seBytes(fa), fp, seBytes(fp)]);
+    });
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(data), ws2 = XLSX.utils.aoa_to_sheet(fin);
+    ws1['!cols'] = [{ wch: 3 }, { wch: 6 }, { wch: 9 }].concat(row2.slice(3).map(function() { return { wch: 32 }; }));
+    ws2['!cols'] = [{ wch: 6 }, { wch: 9 }, { wch: 80 }, { wch: 8 }, { wch: 80 }, { wch: 8 }];
+    XLSX.utils.book_append_sheet(wb, ws1, '데이터');
+    XLSX.utils.book_append_sheet(wb, ws2, '최종');
+    XLSX.writeFile(wb, '자율진로_' + c.g + '-' + c.c + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  }
+  // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다(생기부 버튼은 패널을 위에 띄우므로 그대로).
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-sgb-btn') closeSePage();
+    }, true);
+  });
+
   // ===== 📄 양식 만들기 =====
   // 선생님들이 한글로 매번 새로 만드는 양식을, 칸만 채우면 A4로 바로 인쇄하거나 한글 파일(.hwpx)로 내려받게 한다.
   // 첫 양식은 "명렬표 수합"(반 학생 번호·이름 + 체크 칸). 한글 파일은 진짜 문단·표로만 만든다(그림·글상자·고정 위치 없음)
@@ -12980,6 +13752,14 @@
     const cls = c.src === 'manual' ? ((c.mLabel || '').trim() || '명단') : c.rCs.length === 1 ? c.rG + '학년 ' + c.rCs[0] + '반' : c.rG + '학년 ' + c.rCs.join('·') + '반';
     return ((c.title || '명렬표').trim() + ' ' + cls).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() + '.hwpx';
   }
+  // 실패 안내 뒤에 붙이는 원인 한 줄 — 외부 도구(JSZip·ExcelJS, cdn.jsdelivr.net)를 못 받은 것인지, 바탕 파일을 못 받은 것인지 구분되게.
+  function fmErrNote(e) {
+    const m = String(e && e.message ? e.message : e || '');
+    if (m === 'JSZip') return '\n\n원인: 한글 파일 도구(JSZip)를 못 받았어요 — 이 PC·망에서 cdn.jsdelivr.net이 막혀 있을 수 있어요.';
+    if (/엑셀 도구/.test(m)) return '\n\n원인: ' + m + '(cdn.jsdelivr.net)';
+    if (/skeleton|바탕/.test(m)) return '\n\n원인: 한글 바탕 파일(forms/hwpx/skeleton.hwpx)을 못 받았어요.';
+    return m ? '\n\n원인: ' + m.slice(0, 160) : '';
+  }
   async function fmDownloadHwpx() {
     if (fmCfg().kind === 'ws') return wsDownloadHwpx();
     const c = fmCfg(), msg = fmEmptyMsg(c);
@@ -12993,7 +13773,7 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
     } catch (e) {
-      customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+      customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
   }
   // 엑셀: 반마다 한 시트, 1단(거르기·정렬하기 좋게). 제목·안내·머리 줄·테두리·번갈아 색·칸 너비·줄 높이·글꼴·정렬은 화면과 같게,
@@ -13066,7 +13846,7 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
     } catch (e) {
-      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
   }
   function fmPrint() {
@@ -13651,7 +14431,7 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
     } catch (e) {
-      customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+      customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { btn.disabled = false; }
   }
   // 양식 종류(명렬표 수합 / 학습지) 바꾸기
