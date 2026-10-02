@@ -1,5 +1,5 @@
 // 레일 "양식" → 🔔 시정표: 탭 전환, 평상시(관리자 일과 시간에서 교시 시간 + 조회·중식·청소·자기주도학습 줄, 고친 칸만 따로), 단축 수업(교시마다 직접, 평상시와 따로),
-// 시험 기간(준비 중), 시간 순 정렬·분 계산, 디자인(테마·줄 색·제목 모양·선·번갈아 색·시간 표기·분 칸·표 폭), 글씨 크기·모두 크게, 줄 높이(꽉 채우기/직접), 한글 파일.
+// 시험 기간(준비 중), 시간 순 정렬·분 계산, 디자인(완성 세트 8개 — 작은 그림), 세부 설정(시간 표기·머리 줄·칸 너비·표 폭·글씨 크기·줄 높이), 한글 파일.
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -281,33 +281,26 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('교시 수 6 → 7교시 줄 빠짐', !(await prev()).rows.some(r => r.startsWith('7교시')));
   await P.click('#bs-np [data-np="7"]'); await P.waitForTimeout(150);
 
-  // 디자인
-  await P.setInputFiles; await setText(P, '#bs-title', '부광고등학교 시정표(2학기)'); await setText(P, '#bs-sub', '2026학년도 2학기'); await P.waitForTimeout(150);
-  await P.click('#bs-themes [data-theme="navy"]'); await P.click('#bs-tstyle [data-ts="band"]'); await P.click('#bs-zebra'); await P.waitForTimeout(250);
-  const d4 = await prev();
-  check('남색 테마 + 표에 붙이기 + 번갈아 색 + 부제: 표 하나(첫 줄이 제목), 제목 남색, 부제, 교시 줄 번갈아', d4.tables === 1 && d4.rows[0] === '부광고등학교 시정표(2학기)' && d4.titleBg === 'rgb(31, 56, 100)' && d4.sub === '2026학년도 2학기' &&
-    d4.bg[3] !== d4.bg[4] && d4.bottom >= 15, [d4.tables, d4.rows[0], d4.titleBg, d4.bg.slice(2, 6)]);
-  await P.click('#bs-colors [data-ck="lunch"]'); await P.click('#bs-colors [data-color="#DEEBF7"]'); await P.waitForTimeout(200);
-  check('줄 색: 중식만 하늘색으로', (await prev()).bg[7] === 'rgb(222, 235, 247)' && await P.evaluate(() => bsCfg().colors.lunch === '#DEEBF7'));
-  await P.click('#bs-themes [data-theme="classic"]'); await P.waitForTimeout(150);
-  check('테마를 다시 고르면 줄 색 고친 것은 지움', await P.evaluate(() => JSON.stringify(bsCfg().colors) === '{}'));
-  // 표 짜임: 가로선만 / 구분 강조 / 타일 / 기본 표
+  // ③ 디자인: 완성 세트 8개(작은 그림) — 누르면 짜임·제목 모양·선·색이 한 번에(10/2 사용자: 따로 고르면 색이 안 맞고 복잡하다)
+  await setText(P, '#bs-title', '부광고등학교 시정표(2학기)'); await setText(P, '#bs-sub', '2026학년도 2학기'); await P.waitForTimeout(150);
+  const cards = await P.evaluate(() => [...document.querySelectorAll('#bs-designs .bs-dcard')].map(b => [b.dataset.design, b.classList.contains('on'), !!b.querySelector('.bs-thumb table')]));
+  check('디자인 8개를 작은 그림으로, 처음은 클래식 — 짜임·테마·줄 색·가로형·용지 가로를 따로 고르는 칸은 없음', cards.length === 8 && cards[0][0] === 'classic' && cards[0][1] && cards.every(x => x[2]) &&
+    await P.evaluate(() => !document.querySelector('#bs-styles, #bs-themes, #bs-colors, #bs-orient, #bs-line, #bs-tstyle, #bs-grid [data-land]')), cards);
   const look = () => P.evaluate(() => { const t = document.querySelector('#fm-pages table.bs-main'), rows = [...t.rows], cs = getComputedStyle;
-    const hr = rows.find(r => r.dataset.k === 'head'), pr = rows.find(r => r.dataset.k === 'p');
-    return { coll: cs(t).borderCollapse, spacing: cs(t).borderSpacing, vline: cs(pr.cells[0]).borderRightStyle, hline: cs(pr.cells[0]).borderBottomStyle, timeV: cs(pr.cells[1]).borderLeftStyle,
+    const hr = rows.find(r => r.dataset.k === 'head'), pr = rows.find(r => r.dataset.k === 'p'), tt = document.querySelector('#fm-pages .bs-title');
+    return { tables: document.querySelectorAll('#fm-pages table.bs-tbl').length, coll: cs(t).borderCollapse, spacing: cs(t).borderSpacing, vline: cs(pr.cells[0]).borderRightStyle, hline: cs(pr.cells[0]).borderBottomStyle,
       nameBg: cs(pr.cells[0]).backgroundColor, nameColor: cs(pr.cells[0]).color, timeBg: cs(pr.cells[1]).backgroundColor, headBg: cs(hr.cells[0]).backgroundColor, headColor: cs(hr.cells[0]).color,
-      headBot: cs(hr.cells[0]).borderBottomColor, sheet: document.querySelector('#fm-pages .bs-sheet').dataset.style }; });
-  await P.click('#bs-styles [data-style="minimal"]'); await P.waitForTimeout(200);
-  const st1 = await look();
-  check('☰ 가로선만: 세로선 없음·가로선 있음, 머리 줄은 바탕 없이 강조색 글자·강조색 밑줄', st1.sheet === 'minimal' && st1.vline === 'none' && st1.timeV === 'none' && st1.hline === 'solid' && st1.headBg === 'rgba(0, 0, 0, 0)' &&
-    st1.headColor === 'rgb(47, 85, 151)' && st1.headBot === 'rgb(47, 85, 151)', st1);
-  await P.click('#bs-styles [data-style="badge"]'); await P.waitForTimeout(200);
+      titleBg: cs(tt).backgroundColor, titleColor: cs(tt).color, titleBot: cs(tt).borderBottomStyle, sheet: document.querySelector('#fm-pages .bs-sheet').dataset.style }; });
+  await P.click('#bs-designs [data-design="navy"]'); await P.waitForTimeout(200);
+  const st1 = await look(), d4 = await prev();
+  check('네이비: 가로선만(세로선 없음), 제목은 표 첫 줄(남색·흰 글씨), 머리 줄은 바탕 없이 남색 글자, 부제', st1.sheet === 'minimal' && st1.tables === 1 && st1.vline === 'none' && st1.hline === 'solid' &&
+    st1.titleBg === 'rgb(31, 56, 100)' && st1.titleColor === 'rgb(255, 255, 255)' && st1.headBg === 'rgba(0, 0, 0, 0)' && st1.headColor === 'rgb(31, 56, 100)' && d4.sub === '2026학년도 2학기' && d4.rows[0] === '부광고등학교 시정표(2학기)', st1);
+  await P.click('#bs-designs [data-design="green"]'); await P.waitForTimeout(200);
   const st2 = await look();
-  check('▌ 구분 강조: 교시 구분 칸은 강조색 바탕 + 흰 글씨, 시간 칸은 흰 바탕', st2.nameBg === 'rgb(47, 85, 151)' && st2.nameColor === 'rgb(255, 255, 255)' && st2.timeBg === 'rgba(0, 0, 0, 0)', st2);
-  await P.click('#bs-styles [data-style="tiles"]'); await P.waitForTimeout(200);
+  check('그린 포인트: 교시 구분 칸은 초록 바탕·흰 글씨, 시간 칸은 흰 바탕, 제목 상자 초록', st2.sheet === 'badge' && st2.nameBg === 'rgb(46, 125, 107)' && st2.nameColor === 'rgb(255, 255, 255)' && st2.timeBg === 'rgba(0, 0, 0, 0)' && st2.titleBg === 'rgb(46, 125, 107)', st2);
+  await P.click('#bs-designs [data-design="pastel"]'); await P.waitForTimeout(200);
   const st3 = await look();
-  check('▩ 타일: 칸 사이를 띄우고(border-spacing) 선 없음, 머리 줄 강조색·흰 글씨, 교시 구분 칸 연두·나머지 연회색', st3.coll === 'separate' && st3.spacing !== '0px' && st3.vline === 'none' && st3.hline === 'none' &&
-    st3.headBg === 'rgb(47, 85, 151)' && st3.headColor === 'rgb(255, 255, 255)' && st3.nameBg === 'rgb(226, 239, 218)' && st3.timeBg === 'rgb(245, 245, 245)' && !(await prev()).fit, st3);
+  check('파스텔 타일: 칸 사이를 띄우고(border-spacing) 선 없음', st3.sheet === 'tiles' && st3.coll === 'separate' && st3.spacing !== '0px' && st3.vline === 'none' && st3.hline === 'none', st3);
   if (JSZIP_JS) {
     const tz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await bsBuildHwpx(bsCfg()))).file('Contents/section0.xml').async('string');
       const main = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g).pop(), sp = +main.match(/cellSpacing="(\d+)"/)[1], W = +main.match(/<hp:sz width="(\d+)"/)[1], Hh = +main.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1];
@@ -315,58 +308,56 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       return { sp, w: ws.reduce((a, m) => a + +m[1], 0) + sp * (ws.length + 1) === W, h: trs.reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0) + sp * (trs.length + 1) === Hh }; });
     check('타일 한글 파일: 칸 사이(cellSpacing) + 칸 폭·높이 합 = 표 크기', tz.sp > 0 && tz.w && tz.h, tz);
   }
-  await P.click('#bs-styles [data-style="grid"]'); await P.waitForTimeout(150);
-  // 직접 색: 제목 바탕을 색 고르기로
-  await P.click('#bs-colors [data-ck="title"]'); await P.waitForTimeout(100);
-  await P.evaluate(() => { const el = document.getElementById('bs-color-in'); el.value = '#ff6600'; el.dispatchEvent(new Event('change')); }); await P.waitForTimeout(200);
-  check('🎨 직접 색: 제목 바탕을 아무 색(#FF6600)으로, 고친 색은 • 표시', (await prev()).titleBg === 'rgb(255, 102, 0)' && await P.evaluate(() => bsCfg().colors.title === '#FF6600' && !!document.querySelector('#bs-colors [data-ck="title"] .bs-mod')));
-  await P.click('#bs-colors [data-ck="tTxt"]'); await P.waitForTimeout(100);
-  check('글자·선 색에는 "없음" 칸이 없음', await P.evaluate(() => !document.querySelector('#bs-colors .fm-sw[data-color=""]')));
-  await P.click('#bs-colors [data-color="#FFFFFF"]'); await P.waitForTimeout(150);
-  check('제목 글자 흰색', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .bs-title')).color === 'rgb(255, 255, 255)'));
-  // 머리 줄 글·빼기, 바깥 이중선, 칸 너비
+  await P.click('#bs-designs [data-design="mono"]'); await P.waitForTimeout(200);
+  const st4 = await look();
+  check('흑백: 제목은 바탕 없이 밑줄, 특별 줄은 연회색', st4.titleBg === 'rgba(0, 0, 0, 0)' && st4.titleBot === 'solid' && (await prev()).bg[6] === 'rgb(242, 242, 242)', st4);
+  const fits = [];
+  for (const d of ['classic', 'mono', 'navy', 'green', 'pastel', 'blue', 'coral', 'bold']) { await P.click('#bs-designs [data-design="' + d + '"]'); await P.waitForTimeout(120); const x = await prev(); fits.push(d + ':' + (!x.fit && x.bottom >= 15 && x.bottom < 23)); }
+  check('디자인 8개 모두 한 장에 꽉 차게(아래 여백 안)', fits.every(x => x.endsWith('true')), fits);
+  await P.click('#bs-designs [data-design="classic"]'); await P.waitForTimeout(150);
+  check('고른 디자인은 내 설정에 저장(design)', await P.evaluate(() => JSON.parse(localStorage.getItem('fm-bs')).design === 'classic' && document.querySelector('#bs-designs .on').dataset.design === 'classic'));
+
+  // ④ 글씨·종이: A−/A+·용지·분 칸만 보이고, 나머지는 "세부 설정"을 펼쳐야
+  { const mo = await P.evaluate(() => [document.getElementById('bs-more').open, !document.getElementById('bs-widths').checkVisibility()]); check('세부 설정은 처음엔 접혀 있음', mo[0] === false && mo[1], mo); }
+  await P.click('#bs-more summary'); await P.waitForTimeout(150);
   await setText(P, '#bs-hN', '교시'); await P.waitForTimeout(150);
   check('머리 줄 글 바꾸기: "구분" → "교시"', (await prev()).rows.find(r => /\|시간\|분$/.test(r)).startsWith('교시|'));
   await P.click('#bs-showhead'); await P.waitForTimeout(150);
   const nh = await prev();
   check('머리 줄 빼기: 머리 줄 없이 바로 줄들(남는 높이는 줄에)', !nh.rows.some(r => /\|시간\|분$/.test(r)) && nh.bottom >= 15 && nh.bottom < 23, nh.rows.slice(0, 2));
-  await P.click('#bs-showhead'); await setText(P, '#bs-hN', ''); await P.click('#bs-outer'); await P.waitForTimeout(150);
-  check('바깥 이중선', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages table.bs-main tr[data-k="p"] td')).borderLeftStyle === 'double'));
-  await P.click('#bs-outer');
+  await P.click('#bs-showhead'); await setText(P, '#bs-hN', ''); await P.waitForTimeout(150);
   const wIn = '#bs-widths input[data-wk="n"]';
   await P.fill(wIn, '70'); await P.dispatchEvent(wIn, 'input'); await P.waitForTimeout(200);
-  const cw1 = await P.evaluate(() => { const cols = [...document.querySelectorAll('#fm-pages table.bs-main col')].map(x => parseFloat(x.style.width)); return cols; });
+  const cw1 = await P.evaluate(() => [...document.querySelectorAll('#fm-pages table.bs-main col')].map(x => parseFloat(x.style.width)));
   check('칸 너비: 구분 70mm로 적으면 70mm, 나머지 두 칸이 남은 폭(110mm)을 나눔', cw1[0] === 70 && Math.abs(cw1[1] + cw1[2] - 110) < 0.2, cw1);
   await P.click('#bs-w-auto'); await P.waitForTimeout(150);
   check('칸 너비 자동으로', await P.evaluate(() => JSON.stringify(bsCfg().colW) === '{}' && document.querySelector('#bs-widths input[data-wk="n"]').value === ''));
-  await P.click('#bs-themes [data-theme="classic"]'); await P.waitForTimeout(150);
-  await P.click('#bs-tstyle [data-ts="text"]'); await P.click('#bs-time [data-sep="~"]'); await P.click('#bs-time [data-pad="0"]'); await P.click('#bs-showmin'); await P.click('#bs-cols [data-tw="80"]'); await P.waitForTimeout(250);
+  await P.click('#bs-time [data-sep="~"]'); await P.click('#bs-time [data-pad="0"]'); await P.click('#bs-showmin'); await P.click('#bs-tblw [data-tw="80"]'); await P.waitForTimeout(250);
   const d5 = await prev();
-  check('글씨만 제목, "8:40 ~ 8:50"(앞 0 빼기), 분 칸 빼기(두 칸), 표 폭 80%', d5.rows[1] === '조회|8:40 ~ 8:50' && d5.rows[0] === '구분|시간' && Math.abs(d5.tw - 144) <= 1 && d5.titleBg === 'rgba(0, 0, 0, 0)', [d5.rows.slice(0, 2), d5.tw]);
-  await P.click('#bs-showmin'); await P.click('#bs-cols [data-tw="100"]'); await P.click('#bs-time [data-sep="-"]'); await P.click('#bs-time [data-pad="0"]'); await P.click('#bs-tstyle [data-ts="box"]');
-  // 글씨 크기·모두 크게·굵게
+  check('"8:40 ~ 8:50"(앞 0 빼기), 분 칸 빼기(두 칸), 표 폭 80%', d5.rows[1] === '조회|8:40 ~ 8:50' && d5.rows[0] === '구분|시간' && Math.abs(d5.tw - 144) <= 1, [d5.rows.slice(0, 2), d5.tw]);
+  await P.click('#bs-showmin'); await P.click('#bs-tblw [data-tw="100"]'); await P.click('#bs-time [data-sep="-"]'); await P.click('#bs-time [data-pad="0"]');
+  // 글씨 크기·A+·굵게
   await P.fill('#bs-tmSize', '30'); await P.dispatchEvent('#bs-tmSize', 'input'); await P.waitForTimeout(150);
   const fs1 = (await prev()).fs;
   await P.click('#bs-bigger'); await P.waitForTimeout(150);
   const s2 = await P.evaluate(() => { const c = bsCfg(); return [c.tSize, c.hSize, c.nSize, c.tmSize, c.mSize].join(); });
-  check('시간 글씨 30pt, A+ 모두 크게 → 모두 1pt씩', fs1[1] === '40px' && s2 === '31,23,25,31,23', [fs1, s2]);
+  check('시간 글씨 30pt, A+ 크게 → 모두 1pt씩(지금 크기 안내도)', fs1[1] === '40px' && s2 === '31,23,25,31,23' && /제목 31 · 시간 31pt/.test(await P.textContent('#bs-size-now')), [fs1, s2]);
   await P.click('#bs-smaller'); await P.click('#bs-bold'); await P.waitForTimeout(150);
-  check('표 글씨 굵게 끄기', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages table.bs-tbl:last-child tr:last-child td')).fontWeight === '400'));
+  check('표 글씨 굵게 끄기', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages table.bs-main tr:last-child td')).fontWeight === '400'));
   await P.click('#bs-bold');
   // 줄 높이: 직접 → 그 높이, 너무 낮으면 글씨에 맞춤, 너무 크면 한 장 넘는다는 안내
   await P.click('#bs-rowh [data-fill="0"]'); await P.fill('#bs-rowh-in', '17'); await P.dispatchEvent('#bs-rowh-in', 'input'); await P.waitForTimeout(200);
   const d6 = await prev();
-  await P.fill('#bs-rowh-in', '40'); await P.dispatchEvent('#bs-rowh-in', 'input'); await P.waitForTimeout(200);
-  const d7 = await prev();
   await P.fill('#bs-rowh-in', '8'); await P.dispatchEvent('#bs-rowh-in', 'input'); await P.waitForTimeout(200);
   const d6b = await prev();
-  check('줄 높이 직접 17mm → 17mm, 8mm는 글씨보다 낮아 글씨에 맞춤(안내), 40mm면 한 장 넘는다고 안내', d6.hs[2] === 17 && d6b.hs[2] > 8 && /글씨에 맞췄어요/.test(d6b.info) && !d6.fit && /한 장을 넘어요/.test(d7.fit) && /한 장을 넘어요/.test(d7.info), [d6.hs[2], d6.fit, d6b.hs[2], d6b.info, d7.fit, d7.info]);
+  await P.fill('#bs-rowh-in', '40'); await P.dispatchEvent('#bs-rowh-in', 'input'); await P.waitForTimeout(200);
+  const d7 = await prev();
+  check('줄 높이 직접 17mm → 17mm, 8mm는 글씨보다 낮아 글씨에 맞춤(안내), 40mm면 한 장 넘는다고 안내', d6.hs[2] === 17 && d6b.hs[2] > 8 && /글씨에 맞췄어요/.test(d6b.info) &&
+    !d6.fit && /한 장을 넘어요/.test(d7.fit) && /한 장을 넘어요/.test(d7.info), [d6.hs[2], d6.fit, d6b.hs[2], d6b.info, d7.fit]);
   await P.click('#bs-rowh [data-fill="1"]'); await P.click('#bs-paper [data-paper="B4"]'); await P.waitForTimeout(200);
   const d8 = await prev();
-  check('B4: 257mm 폭, 다시 꽉 채우기', d8.w === '257mm' && d8.bottom >= 15 && d8.bottom < 23 && !d8.fit, [d8.w, d8.bottom]);
-  await P.click('#bs-paper [data-land="1"]'); await P.waitForTimeout(150);
-  check('가로로 두면 큰 글씨는 한 장을 넘는다고 안내', /한 장을 넘어요/.test((await prev()).fit));
-  await P.click('#bs-paper [data-paper="A4"]'); await P.click('#bs-paper [data-land="0"]'); await P.waitForTimeout(150);
+  check('B4: 257mm 폭, 다시 꽉 채우기, 종이는 늘 세로', d8.w === '257mm' && d8.bottom >= 15 && d8.bottom < 23 && !d8.fit && await P.evaluate(() => bsCfg().land === false), [d8.w, d8.bottom]);
+  await P.click('#bs-paper [data-paper="A4"]'); await P.waitForTimeout(150);
 
   // 단축 수업: 처음엔 평상시 줄·시간을 옮겨 놓고, 고치면 단축만
   await P.click('#bs-modes [data-mode="short"]'); await P.waitForTimeout(250);
@@ -391,11 +382,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 서버 저장
   await P.waitForTimeout(2500);
   const sv = JSON.parse(serverVal(T2, 'fm-bs') || '{}');
-  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축 따로', sv.normal && sv.short && sv.short.periods[0].e === '09:30' && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.theme === 'classic', { n: !!sv.normal, s: !!sv.short });
+  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축 따로', sv.normal && sv.short && sv.short.periods[0].e === '09:30' && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic', { n: !!sv.normal, s: !!sv.short });
   // 한글 파일
   if (JSZIP_JS) {
-    for (const ts of ['box', 'band', 'text']) {
-      await P.click('#bs-tstyle [data-ts="' + ts + '"]'); await P.waitForTimeout(150);
+    for (const [dz, ts] of [['classic', 'box'], ['navy', 'band'], ['mono', 'line']]) {
+      await P.click('#bs-designs [data-design="' + dz + '"]'); await P.waitForTimeout(150);
       const hz = await P.evaluate(async () => { const c = bsCfg(), L = bsLayout(c), zip = await JSZip.loadAsync(await bsBuildHwpx(c)), names = Object.keys(zip.files);
         const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
         let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length || new DOMParser().parseFromString(head, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
@@ -405,14 +396,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
         return { first: names[0], xml: ok, tables: tbls.length, rc: main.match(/rowCnt="(\d+)" colCnt="(\d+)"/).slice(1).join(), rows: L.rows.length,
           w: main.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g).every(r => sumW(r) === +main.match(/<hp:sz width="(\d+)"/)[1]), h: rowsH === +main.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1],
           secPr: (sec.match(/<hp:secPr/g) || []).length, texts: ['부광고등학교 시정표(2학기)', '2026학년도 2학기', '구분', '조회', '08:40 - 08:50', '10분', '자기주도학습2', '18:50 - 20:00', '70분'].filter(t => !sec.includes('<hp:t>' + fmX(t) + '</hp:t>')),
-          fills: [bsCfg().tStyle === 'text' ? '' : '#DAE3F3', '#E2EFDA', '#FCE4D6', '#FFF2CC'].filter(f => f && !head.includes('faceColor="' + f + '"')), font: /face="HY헤드라인M"/.test(head) && /face="HY견고딕"/.test(head),
+          fills: Object.values(bsDesign(bsCfg()).c).filter((f, i, a) => f && a.indexOf(f) === i && ['title', 'head', 'lunch', 'clean'].some(k => bsDesign(bsCfg()).c[k] === f)).filter(f => !head.includes('faceColor="' + f + '"')), font: /face="HY헤드라인M"/.test(head) && /face="HY견고딕"/.test(head),
           a4: /width="59528" height="84189"/.test(sec), margin: /left="4252" right="4252" top="4252" bottom="4252"/.test(sec) }; });
-      const tN = ts === 'band' ? 1 : ts === 'text' ? 1 : 2, rN = (ts === 'band' ? 1 : 0) + 1 + hz.rows;
-      check('시정표 한글 파일(제목 ' + ts + '): mimetype 맨 앞·XML 올바름, 표 ' + tN + '개, 큰 표 ' + rN + '줄×3칸, 칸 폭 합 = 표 폭, 표 높이 = 줄 높이 합, 쪽 설정 하나, 글·바탕색·글꼴, A4·여백 15',
+      const tN = ts === 'band' ? 1 : 2, rN = (ts === 'band' ? 1 : 0) + 1 + hz.rows;
+      check('시정표 한글 파일(' + dz + ' — 제목 ' + ts + '): mimetype 맨 앞·XML 올바름, 표 ' + tN + '개, 큰 표 ' + rN + '줄×3칸, 칸 폭 합 = 표 폭, 표 높이 = 줄 높이 합, 쪽 설정 하나, 글·바탕색·글꼴, A4·여백 15',
         hz.first === 'mimetype' && hz.xml && hz.tables === tN && hz.rc === rN + ',3' && hz.w && hz.h && hz.secPr === 1 && !hz.texts.length && !hz.fills.length && hz.font && hz.a4 && hz.margin, hz);
     }
     if (process.env.BS_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await bsBuildHwpx(bsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.BS_OUT, Buffer.from(b64, 'base64')); }
-    await P.click('#bs-tstyle [data-ts="box"]');
+    await P.click('#bs-designs [data-design="classic"]');
   } else console.log('  ⚠️ JSZip 없음 — 한글 파일 검사 건너뜀');
   await P.screenshot({ path: 'bs.png' });
   // 인쇄: 쪽 크기
