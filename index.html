@@ -15140,7 +15140,8 @@
     const score = c.type === 'word' && c.wScore && c.wDir !== 'trace' ? [{ w: 13, t: '점수' }, { w: 17, t: '/ ' + peWordSets(c, peWordParse(c))[0].items.length, right: true }] : [];
     const whoW = who.reduce(function(a, x) { return a + x[1]; }, 0) + score.reduce(function(a, x) { return a + x.w; }, 0);
     const cols = [{ w: Math.max(30, W - whoW), t: c.title, title: true }].concat(who.map(function(x) { return { w: x[1], t: x[0] }; }), score);
-    const r1 = Math.max(6.5, c.tSize * FM_PT * 1.45), r2 = c.topic ? Math.max(7.5, c.tSize * FM_PT * 1.7) : 0;
+    // 첫 줄(제목·학생 칸) 높이: 글자 위아래로 조금 여유(사용자: "제목이 표 위아래 선에 딱 붙는다" → 글자 높이 + 약 1.6mm 더)
+    const r1 = Math.max(8, c.tSize * FM_PT * 1.45 + 1.6), r2 = c.topic ? Math.max(7.5, c.tSize * FM_PT * 1.7) : 0;
     const lh = c.bSize * FM_PT * 1.6; // 줄 높이(줄 간격 160%)
     // 글이 몇 줄로 접히는지(대략): 한글 1글자 = 1em, 그 밖 0.55em
     const linesOf = function(t, ww) { let em = 0; for (const ch of t) em += ch.codePointAt(0) >= 0x1100 ? 1 : 0.55; return Math.max(1, Math.ceil(em * c.bSize * FM_PT / (ww || W))); };
