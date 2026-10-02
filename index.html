@@ -48,6 +48,9 @@
     body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.01em; color: var(--text-main); height: 100vh; box-sizing: border-box; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
     /* 입력칸 예시 글씨(placeholder)는 연하게 — 진하면 진짜 적힌 내용처럼 보여서(10/1 사용자 요청). 테마마다 글자색(--text-sub)을 반쯤 비치게 */
     input::placeholder, textarea::placeholder { color: var(--text-sub); opacity: 0.5; }
+    /* 감독표 수정 모드: 고쳤지만 아직 저장 안 한 이름 칸 */
+    #duty-list-container .duty-cell-input.duty-cell-dirty { border-color: #E8833A !important; background: rgba(232, 131, 58, 0.12) !important; }
+    #duty-save-bar .top-btn:disabled { opacity: 0.45; cursor: default; }
 
     /* ===== 왼쪽 아이콘 레일 ===== */
     #app-shell { display: flex; height: 100vh; overflow: hidden; }
@@ -4192,6 +4195,8 @@
     // 예전 탭 이름(학기 날짜·학급 구성 → 학사 기본, 학생 시간표 → 학생 자료)으로 불러도 새 탭으로 연다.
     if (tabId === 'semester' || tabId === 'classes') tabId = 'school';
     if (tabId === 'stt') tabId = 'students';
+    // 감독표 탭에서 저장 안 한 입력을 둔 채 다른 탭으로 가려 하면 먼저 저장할지 묻는다.
+    if (adminSettingsActiveTab === 'duty' && tabId !== 'duty' && document.getElementById('settings-page').style.display !== 'none' && !(await dutyConfirmLeave())) return;
     adminSettingsActiveTab = tabId;
     document.querySelectorAll('.admin-tab-btn').forEach(function(el) { el.classList.toggle('active', el.dataset.tab === tabId); });
     document.querySelectorAll('.admin-tab-pane').forEach(function(el) {
@@ -5625,11 +5630,16 @@
   let currentDutyRows = [];
   let pendingNewDutyRows = [];
   let dutyRowIdCounter = 0;
+  // 수정 모드에서 고친 이름 칸 — "날짜|칸번호" → 고친 값. 칸마다 바로 저장하지 않고 모아 두었다가
+  // "💾 저장"을 누를 때 서버 값과 달라진 칸만 한 번에 올린다(예전엔 칸을 벗어날 때마다 1칸씩 저장하고
+  // 표 전체를 다시 불러와서, 여러 날을 입력하기가 너무 번거로웠다 — 사용자 요청 10/2).
+  let dutyDirty = {};
 
   // 관리자여도 홈에서 누르면 이 모달이 그대로 떠야 한다 — "✏️ 수정 모드"를 켜면
   // 관리자든 아니든 편집·추가·삭제를 할 수 있다. 관리자 설정 페이지의 "📋 감독표"
   // 탭은 별도 진입점(showSettingsPage)으로 계속 열 수 있다.
   async function openDutyModal(sheetName, icon) {
+    if (sheetName !== currentDutySheetName && !(await dutyConfirmLeave())) return;
     mountBox(document.getElementById('duty-modal-box'), document.getElementById('duty-overlay'), false);
     document.getElementById('duty-overlay').style.display = 'flex';
     document.getElementById('duty-close-row').style.display = 'flex';
@@ -5638,23 +5648,51 @@
 
   async function initDutyModalBody(sheetName, icon) {
     document.getElementById('duty-modal-title').innerText = icon + ' ' + sheetName + '표';
+    // 같은 감독표를 저장 안 한 채 다시 열면(설정 → 홈 → 다시 설정 등) 입력하던 것을 그대로 이어서 보여 준다.
+    const keepEdits = sheetName === currentDutySheetName && dutyHasUnsaved();
     currentDutySheetName = sheetName;
     currentDutyIcon = icon;
-    dutyEditMode = false;
-    pendingNewDutyRows = [];
+    if (!keepEdits) {
+      dutyEditMode = false;
+      pendingNewDutyRows = [];
+      dutyDirty = {};
+      dutySavedMsg = '';
+    }
     updateDutyEditToggleBtn();
     fetchDutyData(sheetName, true);
   }
 
   // 관리자 설정 "감독표" 탭 안의 보드 선택(야자/급식/아침) — 이 모달의 DOM을 설정 슬롯으로 옮긴다.
   async function selectAdminDutyBoard(sheetName, icon) {
+    if (sheetName !== currentDutySheetName && !(await dutyConfirmLeave())) return;
     mountBox(document.getElementById('duty-modal-box'), document.getElementById('admin-duty-slot'), true);
     document.getElementById('duty-close-row').style.display = 'none';
     document.querySelectorAll('.admin-duty-board-btn').forEach(function(el) { el.classList.toggle('active', el.dataset.board === sheetName); });
     await initDutyModalBody(sheetName, icon);
   }
 
-  function closeDutyModal() { document.getElementById('duty-overlay').style.display = 'none'; }
+  async function closeDutyModal() {
+    if (!(await dutyConfirmLeave())) return;
+    document.getElementById('duty-overlay').style.display = 'none';
+  }
+
+  // 저장 안 한 감독표 입력이 있으면 창을 닫거나 새로고침할 때 브라우저가 한 번 묻게 한다.
+  window.addEventListener('beforeunload', function(e) {
+    if (dutyEditMode && dutyHasUnsaved()) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  function dutyUnsavedCount() { return Object.keys(dutyDirty).length + pendingNewDutyRows.length; }
+  function dutyHasUnsaved() { return dutyUnsavedCount() > 0; }
+
+  // 저장 안 한 입력이 있을 때 다른 감독표로 가거나 닫으려 하면 묻는다.
+  // 확인 = 저장하고 넘어감(저장이 실패하면 머묾), 취소 = 그대로 머물러 계속 입력.
+  // 입력한 걸 버리고 싶으면 "↺ 되돌리기"를 누르면 된다.
+  async function dutyConfirmLeave() {
+    if (!dutyHasUnsaved()) return true;
+    const ok = await customConfirm('저장하지 않은 감독표 변경이 ' + dutyUnsavedCount() + '건 있어요.\n지금 저장할까요?\n(취소: 이 화면에 그대로 남아 계속 입력)');
+    if (!ok) return false;
+    return await saveDutyChanges(currentDutySheetName);
+  }
 
   // ----- 명렬표 -----
   let rosterEditMode = false;
@@ -6532,20 +6570,145 @@
     }
   }
 
-  function toggleDutyEditMode() {
+  async function toggleDutyEditMode() {
+    // 보기 모드로 돌아갈 때 저장 안 한 입력이 있으면 먼저 저장할지 묻는다(취소하면 수정 모드 그대로).
+    if (dutyEditMode && !(await dutyConfirmLeave())) return;
     dutyEditMode = !dutyEditMode;
     pendingNewDutyRows = [];
+    dutyDirty = {};
+    dutySavedMsg = '';
     updateDutyEditToggleBtn();
     if (currentDutySheetName) renderDutyModal(currentDutySheetName);
   }
 
-  async function fetchDutyData(sheetName, autoScrollToToday) {
+  // keepScroll: 저장·삭제 뒤 다시 불러올 때 "불러오는 중"으로 비우지 않고 보던 자리 그대로 둔다
+  // (예전엔 칸 하나 저장할 때마다 목록이 맨 위로 튀었다).
+  async function fetchDutyData(sheetName, autoScrollToToday, keepScroll) {
     const container = document.getElementById('duty-list-container');
-    container.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">불러오는 중...</div>';
+    const top = container.scrollTop;
+    if (!keepScroll) container.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">불러오는 중...</div>';
     try {
       currentDutyRows = await gasGetDuty(sheetName);
+      if (sheetName !== currentDutySheetName) return; // 불러오는 사이 다른 감독표로 바뀜
       renderDutyModal(sheetName, !!autoScrollToToday);
+      if (keepScroll) container.scrollTop = top;
     } catch(e) { container.innerHTML = '<div style="text-align:center; color:#F07178; font-size: 12px; padding: 20px;">데이터 로딩 실패</div>'; }
+  }
+
+  // 서버에서 받아 온(저장된) 칸 값
+  function dutySavedValue(dateStr, colIndex) {
+    const r = currentDutyRows.find(function(x) { return x.date === dateStr; });
+    if (!r) return '';
+    const cols = (r.cols && r.cols.length > 0) ? r.cols : [r.names];
+    return cols[colIndex - 1] || '';
+  }
+
+  // 이름 칸을 칠 때마다: 저장된 값과 다르면 "고친 칸"으로 표시만 하고, 같아지면 표시를 지운다(서버에는 안 보냄).
+  function onDutyCellInput(dateStr, colIndex, inputEl) {
+    const k = dateStr + '|' + colIndex;
+    if (inputEl.value.trim() === dutySavedValue(dateStr, colIndex).trim()) delete dutyDirty[k];
+    else dutyDirty[k] = inputEl.value;
+    inputEl.classList.toggle('duty-cell-dirty', k in dutyDirty);
+    updateDutySaveBar();
+  }
+
+  // Enter = 아래 칸으로(엑셀처럼). 마지막 칸이면 칸에서 빠져나옴.
+  function onDutyCellKey(e, inputEl) {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    const all = Array.from(document.querySelectorAll('#duty-list-container .duty-cell-input'));
+    const next = all[all.indexOf(inputEl) + (e.shiftKey ? -1 : 1)];
+    if (next) { next.focus(); next.select(); } else inputEl.blur();
+  }
+
+  function updateDutySaveBar() {
+    const btn = document.getElementById('duty-save-btn');
+    if (!btn) return;
+    const n = dutyUnsavedCount();
+    btn.disabled = n === 0;
+    btn.innerText = n ? ('💾 ' + n + '건 저장') : '💾 저장';
+    const undo = document.getElementById('duty-undo-btn');
+    if (undo) undo.disabled = n === 0;
+    const note = document.getElementById('duty-save-note');
+    if (n) dutySavedMsg = '';
+    if (note) {
+      note.innerText = n ? '저장하지 않은 변경이 있어요 — 다 입력한 뒤 저장을 눌러 주세요.' : (dutySavedMsg || '이름 칸을 고친 뒤 저장을 누르면 바뀐 칸만 저장돼요. Enter = 아래 칸.');
+      note.style.color = n ? '#E8833A' : (dutySavedMsg ? 'var(--accent-color)' : 'var(--text-sub)');
+      note.style.fontWeight = (n || dutySavedMsg) ? '700' : '';
+    }
+  }
+
+  async function undoDutyChanges() {
+    if (!dutyHasUnsaved()) return;
+    if (!(await customConfirm('저장하지 않은 변경 ' + dutyUnsavedCount() + '건을 버리고 저장된 상태로 되돌릴까요?'))) return;
+    dutyDirty = {};
+    pendingNewDutyRows = [];
+    const container = document.getElementById('duty-list-container');
+    const top = container.scrollTop;
+    renderDutyModal(currentDutySheetName);
+    container.scrollTop = top;
+  }
+
+  // 고친 이름 칸 + 새로 추가한 줄을 한 번에 저장. 서버 값과 같은 칸은 보내지 않는다. 성공하면 true.
+  let dutySaving = false;
+  let dutySavedMsg = ''; // 방금 저장한 결과를 저장 막대에 잠깐 보여 줌(알림 창을 또 누르지 않게)
+  async function saveDutyChanges(sheetName) {
+    if (dutySaving) return false;
+    if (pendingNewDutyRows.some(function(p) { return !p.date; })) { customAlert('날짜가 비어 있는 새 줄이 있습니다. 날짜를 입력하거나 그 줄을 지워주세요.'); return false; }
+    const byKey = {};
+    const put = function(date, col, value) { byKey[date + '|' + col] = { board: sheetName, duty_date: date, col_index: col, value: value }; };
+    let blankCount = 0;
+    pendingNewDutyRows.forEach(function(p) {
+      const anyFilled = p.names.some(function(v) { return v.trim() !== ''; });
+      if (anyFilled) {
+        p.names.forEach(function(v, idx) { if (v.trim() !== '') put(p.date, idx + 1, v.trim()); });
+      } else {
+        // 이름 없이 날짜만 미리 등록 — 자리를 만들어 두면 나중에 그 날짜 칸을 눌러 누구나 채울 수 있다.
+        blankCount++;
+        put(p.date, 1, '');
+      }
+    });
+    let cellCount = 0;
+    Object.keys(dutyDirty).forEach(function(k) {
+      const i = k.lastIndexOf('|');
+      const date = k.slice(0, i), col = Number(k.slice(i + 1));
+      const v = dutyDirty[k].trim();
+      if (v === dutySavedValue(date, col).trim()) return;
+      put(date, col, v);
+      cellCount++;
+    });
+    const rows = Object.keys(byKey).map(function(k) { return byKey[k]; });
+    const newRowCount = pendingNewDutyRows.length;
+    if (rows.length === 0) {
+      dutyDirty = {}; pendingNewDutyRows = [];
+      renderDutyModal(sheetName);
+      return true;
+    }
+    dutySaving = true;
+    const btn = document.getElementById('duty-save-btn');
+    if (btn) { btn.disabled = true; btn.innerText = '저장 중...'; }
+    try {
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await sb.from('duty_roster').upsert(rows.slice(i, i + 500), { onConflict: 'board,duty_date,col_index' });
+        if (error) throw error;
+      }
+    } catch(e) {
+      dutySaving = false;
+      updateDutySaveBar();
+      customAlert('저장 실패. 인터넷 연결을 확인해주세요. 입력한 내용은 그대로 남아 있어요.');
+      return false;
+    }
+    dutySaving = false;
+    dutyDirty = {};
+    pendingNewDutyRows = [];
+    await fetchDutyData(sheetName, false, true);
+    checkAllDuties();
+    const parts = [];
+    if (cellCount) parts.push('이름 칸 ' + cellCount + '개');
+    if (newRowCount) parts.push('새 날짜 ' + newRowCount + '개' + (blankCount ? ('(이 중 ' + blankCount + '개는 이름 없는 빈 자리)') : ''));
+    dutySavedMsg = '✅ 저장했어요 — ' + parts.join(', ');
+    updateDutySaveBar();
+    return true;
   }
 
   function dutyMaxCols() {
@@ -6673,35 +6836,8 @@
     checkAllDuties();
   }
 
-  async function saveAllPendingDutyRows(sheetName) {
-    const missingDate = pendingNewDutyRows.some(function(p) { return !p.date; });
-    if (missingDate) { customAlert('날짜가 비어 있는 줄이 있습니다. 날짜를 입력하거나 그 줄을 지워주세요.'); return; }
-    if (pendingNewDutyRows.length === 0) { customAlert('추가할 줄이 없습니다.'); return; }
-
-    const total = pendingNewDutyRows.length;
-    let blankCount = 0;
-
-    try {
-      for (const p of pendingNewDutyRows) {
-        const anyFilled = p.names.some(function(v) { return v.trim() !== ''; });
-        if (anyFilled) {
-          for (let idx = 0; idx < p.names.length; idx++) {
-            const v = p.names[idx].trim();
-            if (v === '') continue;
-            await gasSetDuty(sheetName, p.date, idx + 1, v);
-          }
-        } else {
-          // 이름 없이 날짜만 미리 등록 — 자리를 만들어 두면 나중에 그 날짜 칸을 눌러 누구나 채울 수 있다.
-          blankCount++;
-          await gasSetDuty(sheetName, p.date, 1, '');
-        }
-      }
-      pendingNewDutyRows = [];
-      fetchDutyData(sheetName);
-      checkAllDuties();
-      customAlert(total + '개 날짜를 등록했습니다.' + (blankCount ? (' 이 중 이름 없이 빈 자리로 등록된 ' + blankCount + '개 날짜는 나중에 그 칸을 눌러 채우면 됩니다.') : ''));
-    } catch(e) { customAlert('저장 실패. 인터넷 연결을 확인해주세요.'); }
-  }
+  // 예전 이름(새 줄 저장 버튼) — 이제 고친 칸과 새 줄을 한 번에 저장한다.
+  async function saveAllPendingDutyRows(sheetName) { return saveDutyChanges(sheetName); }
 
   function renderDutyModal(sheetName, autoScrollToToday) {
     const container = document.getElementById('duty-list-container');
@@ -6764,11 +6900,19 @@
     // 하고, 여기서는 그걸로 안 걸러진 특별한 날짜(예: 주말 보충 등) 하나씩 추가할 때만 쓴다.
     if (dutyEditMode && isAdmin) {
       html += '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;">' +
-        '<span style="font-size:10px; color:var(--text-sub);">한 줄씩 직접 넣으려면 이걸 여러 번 눌러 줄을 만든 뒤 마지막에 저장하세요.</span>' +
+        '<span style="font-size:10px; color:var(--text-sub);">특별한 날짜(주말 보충 등)는 이걸 눌러 줄을 만든 뒤 아래 저장을 누르세요.</span>' +
         '<button class="top-btn" style="padding:4px 8px; font-size:11px; flex-shrink:0;" onclick="addBlankDutyRow(\'' + sheetName + '\')">+ 한 줄 추가</button>' +
       '</div>';
     } else if (dutyEditMode && !isAdmin) {
       html += '<div style="font-size:10px; color:var(--text-sub); margin-top:8px;">이미 있는 날짜의 이름 칸을 눌러 입력·수정할 수 있어요. 날짜를 새로 추가하거나 지우는 건 관리자만 할 수 있습니다.</div>';
+    }
+    // 저장 막대 — 위에 붙어 있어서 아래로 내려가며 입력해도 늘 보인다.
+    if (dutyEditMode) {
+      html += '<div id="duty-save-bar" style="display:flex; align-items:center; gap:6px; margin-top:8px;">' +
+        '<span id="duty-save-note" style="flex:1; font-size:10px; color:var(--text-sub);"></span>' +
+        '<button class="top-btn" id="duty-undo-btn" style="padding:5px 8px; font-size:11px; flex-shrink:0;" onclick="undoDutyChanges()" title="저장하지 않은 변경을 모두 버림">↺ 되돌리기</button>' +
+        '<button class="top-btn accent" id="duty-save-btn" style="padding:5px 12px; font-size:12px; flex-shrink:0;" onclick="saveDutyChanges(\'' + sheetName + '\')">💾 저장</button>' +
+      '</div>';
     }
 
     html += '</div>'; // 상단 고정 영역 끝!
@@ -6787,7 +6931,6 @@
         '</div>';
       });
 
-      html += '<button class="top-btn accent" style="width:100%; padding:8px; margin-top:8px; font-size:12px;" onclick="saveAllPendingDutyRows(\'' + sheetName + '\')">✅ ' + pendingNewDutyRows.length + '개 항목 저장</button>';
     }
 
     // 💡 3. 데이터 리스트 생성
@@ -6817,7 +6960,9 @@
         } else {
           const cols = (row.cols && row.cols.length > 0) ? row.cols : [row.names];
           const nameCellHtml = '<div style="display:flex; flex-direction:column; gap:3px;">' + cols.map(function(colVal, idx) {
-            return '<input type="text" value="' + escapeHtmlAttr(colVal) + '" style="width:100%; box-sizing:border-box; font-size:12px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:inherit; font-weight:inherit;" onblur="saveDutyCell(\'' + sheetName + '\', \'' + row.date + '\', ' + (idx + 1) + ', this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">';
+            const k = row.date + '|' + (idx + 1);
+            const isDirty = k in dutyDirty;
+            return '<input type="text" class="duty-cell-input' + (isDirty ? ' duty-cell-dirty' : '') + '" data-date="' + row.date + '" data-col="' + (idx + 1) + '" value="' + escapeHtmlAttr(isDirty ? dutyDirty[k] : colVal) + '" style="width:100%; box-sizing:border-box; font-size:12px; padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; background:var(--card-bg); color:inherit; font-weight:inherit;" oninput="onDutyCellInput(\'' + row.date + '\', ' + (idx + 1) + ', this)" onkeydown="onDutyCellKey(event, this)">';
           }).join('') + '</div>';
 
           const deleteBtnHtml = isAdmin ? ('<button class="top-btn" style="padding:2px 4px; font-size:11px;" onclick="deleteDutyRow(\'' + sheetName + '\', \'' + row.date + '\')" title="이 날짜 전체 삭제">🗑</button>') : '';
@@ -6827,6 +6972,7 @@
       });
     }
     container.innerHTML = html;
+    updateDutySaveBar();
 
     // 💡 4. 모달을 처음 열었을 때만 '오늘 날짜'로 부드럽게 스크롤 (추가/삭제/저장 등 편집 중 재렌더링에서는 화면이 튀지 않도록 건드리지 않음)
     if (autoScrollToToday) {
@@ -6843,20 +6989,12 @@
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  async function saveDutyCell(sheetName, dateStr, colIndex, inputEl) {
-    const value = inputEl.value.trim();
-    try {
-      await gasSetDuty(sheetName, dateStr, colIndex, value);
-      fetchDutyData(sheetName);
-      checkAllDuties();
-    } catch(e) { customAlert('저장 실패. 인터넷 연결을 확인해주세요.'); }
-  }
-
   async function deleteDutyRow(sheetName, dateStr) {
     if (!await customConfirm(dateStr + ' 감독 일정을 이 줄 전체(모든 칸) 삭제할까요? 되돌릴 수 없습니다.')) return;
     try {
       await gasDeleteDuty(sheetName, dateStr);
-      fetchDutyData(sheetName);
+      Object.keys(dutyDirty).forEach(function(k) { if (k.indexOf(dateStr + '|') === 0) delete dutyDirty[k]; });
+      fetchDutyData(sheetName, false, true);
       checkAllDuties();
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
