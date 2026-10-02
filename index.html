@@ -468,18 +468,28 @@
     #se-body { display: flex; flex: 1; min-height: 0; }
     #se-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
     #se-tabs { margin: 12px 0 8px; flex: 0 0 auto; display: inline-flex; }
+    /* 자율/진로 고르기는 세 탭 모두 같은 자리(탭 바로 아래)에 고정 — 아래 내용만 바뀐다. */
+    #se-kind-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 0 0 auto; margin-bottom: 8px; }
     #se-tabs .top-btn { font-weight: 800; }
     .se-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     .se-pane > div { flex: 0 0 auto; }
     .se-pane > .se-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
     .se-muted { font-size: 11.5px; color: var(--text-sub); font-weight: 600; line-height: 1.6; }
     .se-kind .top-btn { font-weight: 800; padding: 5px 14px; }
-    .se-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
-    .se-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 14px; padding: 3px 6px 3px 10px; font-size: 12px; font-weight: 700; background: var(--card-bg); color: var(--text-main); }
-    .se-chip button { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 11px; padding: 0 3px; font-family: inherit; }
-    .se-chip button:hover { color: var(--alert); }
-    .se-chip .se-chip-name { cursor: pointer; }
-    .se-chip .se-chip-name:hover { text-decoration: underline; }
+    /* 자료 입력 표: 영역(열)은 표 머리에서 바로 이름 바꾸기·지우기, 맨 오른쪽 "＋ 영역 추가" 열. 영역이 3개보다 적어도 3개일 때 폭으로. */
+    .se-src-table { table-layout: fixed; }
+    .se-src-table th.se-area { padding: 4px 6px; }
+    .se-ahead { display: flex; align-items: center; justify-content: center; gap: 2px; }
+    .se-ahead .se-aname { border: 0; background: none; font: inherit; color: var(--text-main); font-weight: 800; cursor: pointer; padding: 2px 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 50px); }
+    .se-ahead .se-aname:hover { background: var(--accent-soft); color: var(--accent-color); }
+    .se-ahead .se-aname::after { content: ' ✎'; font-size: 10px; color: var(--text-sub); font-weight: 600; }
+    .se-ahead .se-adel { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 11px; padding: 2px 5px; border-radius: 6px; font-family: inherit; }
+    .se-ahead .se-adel:hover { color: var(--alert); background: rgba(220,38,38,0.08); }
+    .se-src-table th.se-addcol { padding: 4px; }
+    .se-addbtn { width: 100%; border: 1.5px dashed var(--accent-color); background: var(--accent-soft); color: var(--accent-color); border-radius: 8px; padding: 5px 4px; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .se-addbtn:hover { filter: brightness(0.97); }
+    .se-src-table td.se-addcell { border-left: 1.5px dashed var(--border-color); }
+    .se-noarea { color: var(--text-sub); font-size: 12px; line-height: 1.7; padding: 14px 10px; text-align: center; white-space: normal; }
     .se-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); min-width: 100%; }
     .se-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 6px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 2; }
     .se-table td { padding: 4px 4px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
@@ -499,6 +509,7 @@
     .se-dot.ok { background: #DDF5E3; color: #1E7B3A; }
     .se-dot.over { background: #FDE2E1; color: #B42318; }
     .se-dot.empty { opacity: .55; }
+    .se-dot.draft { box-shadow: 0 0 0 1.5px #D97706; }
     #se-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
     #se-edit-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 8px; }
     #se-edit-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 10px 16px; }
@@ -509,11 +520,20 @@
     .se-card-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; }
     .se-card-head .se-bytes { margin-left: auto; margin-top: 0; }
     .se-card-text { white-space: pre-wrap; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.55; margin-top: 4px; color: var(--text-main); }
-    #se-fin { width: 100%; box-sizing: border-box; min-height: 170px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); outline: none; }
-    #se-fin:focus { border-color: var(--accent-color); }
+    #se-draft { width: 100%; box-sizing: border-box; min-height: 170px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    #se-draft:focus { border-color: var(--accent-color); }
+    #se-put-state { font-size: 11.5px; font-weight: 700; margin-top: 5px; color: var(--text-sub); }
+    #se-put-state.same { color: #1E7B3A; }
+    #se-put-state.diff { color: #B45309; }
+    .se-fin-table td.se-bcell { text-align: right; white-space: nowrap; padding-top: 8px; font-size: 11px; font-weight: 700; color: var(--text-sub); line-height: 1.5; font-variant-numeric: tabular-nums; }
+    .se-fin-table td.se-bcell b { font-size: 12.5px; color: var(--text-main); }
+    .se-fin-table td.se-bcell.over, .se-fin-table td.se-bcell.over b { color: var(--alert); }
+    .se-fin-table td.se-bcell .se-left-n { color: #1E7B3A; }
+    .se-drafttag { display: inline-block; font-size: 10.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 6px; padding: 0 6px; margin-top: 4px; cursor: pointer; }
     #se-memo { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); outline: none; }
     #se-memo:focus { border-color: var(--accent-color); }
-    .se-fin-table td.se-txt { white-space: pre-wrap; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.5; min-width: 260px; width: 42%; }
+    .se-fin-table { table-layout: fixed; width: 100%; }
+    .se-fin-table td.se-txt { white-space: pre-wrap; word-break: break-all; font-size: calc(var(--fz-sgb) - 1px); line-height: 1.5; min-width: 260px; }
     .se-fin-table td.se-txt .se-empty { color: var(--text-sub); opacity: .6; }
     #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #se-save-state.dirty { color: #B45309; }
@@ -3135,13 +3155,13 @@
         </div>
         <span class="se-muted">🔒 <b>내 계정에만</b> 저장(다른 선생님·관리자 안 보임) · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
       </div>
+      <!-- 자율/진로 고르기: 세 탭 모두 이 자리에 고정(최종 탭에선 "전체"도). 옆 안내는 탭마다 바뀜. -->
+      <div id="se-kind-row">
+        <div class="top-btn-cluster se-kind" id="se-kind"></div>
+        <div class="se-muted" id="se-kind-hint"></div>
+      </div>
 
       <div id="se-pane-src" class="se-pane">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div class="top-btn-cluster se-kind" id="se-kind-src"></div>
-          <div class="se-muted">부서에서 받은 문장을 학생·영역별로 넣어요. 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 <b>아래·오른쪽으로 이어서</b> 채워져요.</div>
-        </div>
-        <div class="se-chips" id="se-area-chips"></div>
         <div id="se-src-msg" class="se-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div class="se-scroll" id="se-src-list"></div>
       </div>
@@ -12344,7 +12364,8 @@
   // 저장: 학생 한 명의 칸 하나가 localStorage 항목 하나(se-src-학년-반-번호-영역id / se-fin-…-a|p / se-st-…)라서 바뀐 칸만 서버에
   // 올라가고(기존 항목별 동기화), 변경 이력도 그 칸 크기만 남는다. 입력 중엔 화면에만 있다가 **칸을 벗어날 때(blur/change)** 저장 →
   // 글자마다 올리지 않음. 내 계정에만 저장(RLS), 다른 선생님·관리자는 못 본다.
-  const SE_CFG_KEY = 'se-cfg';   // { g, c, tab, kind }
+  // 편집 탭의 편집 칸은 se-drf-…(다듬는 중), 최종 탭은 se-fin-…(📊 최종에 넣기로만 바뀜). 편집 칸이 최종과 같으면 se-drf는 안 남긴다.
+  const SE_CFG_KEY = 'se-cfg';   // { g, c, tab, kind, finAll }
   const SE_KINDS = ['a', 'p'];
   const SE_KIND_LABEL = { a: '자율', p: '진로' };
   const SE_DEFAULT_AREAS = { a: ['1인 1역할'], p: ['진로 독서'] };   // 처음 열 때 보기용 — 선생님이 이름을 바꾸거나 더하고 지운다
@@ -12386,6 +12407,10 @@
   function seAreasKey() { return 'se-areas-' + seClassKey(); }
   function seSrcKey(num, areaId) { return 'se-src-' + seClassKey() + '-' + num + '-' + areaId; }
   function seFinKey(num, kind) { return 'se-fin-' + seClassKey() + '-' + num + '-' + kind; }
+  function seDraftKey(num, kind) { return 'se-drf-' + seClassKey() + '-' + num + '-' + kind; }
+  // 편집 칸에 보일 글: 다듬는 중인 글이 있으면 그것, 없으면 최종에 든 글.
+  function seDraftText(num, kind) { return seGet(seDraftKey(num, kind)) || seGet(seFinKey(num, kind)); }
+  function seHasDraft(num, kind) { const d = seGet(seDraftKey(num, kind)); return !!d && d !== seGet(seFinKey(num, kind)); }
   function seStKey(num) { return 'se-st-' + seClassKey() + '-' + num; }
   function seRosterKeyName() { return 'se-roster-' + seClassKey(); }
 
@@ -12404,7 +12429,7 @@
   function seSaveAreas(all) { seSet(seAreasKey(), JSON.stringify(all)); }
   function seNewId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   async function seAddArea(kind, presetName) {
-    const name = presetName != null ? presetName : await customPrompt(SE_KIND_LABEL[kind] + ' 영역 이름 (예: 큐리어톤, 진로 특강)', '');
+    const name = presetName != null ? presetName : await customPrompt('새 ' + SE_KIND_LABEL[kind] + ' 영역 이름\n부서에서 받은 활동 하나가 표의 한 열(칸)이 돼요.\n예: ' + (kind === 'p' ? '진로 특강, 진로 독서, 진로 검사' : '학급 자치, 큐리어톤, 1인 1역할'), '');
     const n = String(name || '').trim();
     if (!n) return null;
     const all = seAllAreas();
@@ -12543,7 +12568,14 @@
     seRenderAll();
   }
   function seSetTab(tab) { seSetCfg({ tab: tab }); seRenderAll(); }
-  function seSetKind(kind) { seSetCfg({ kind: kind }); seRenderAll(); }
+  // kind = 'a' | 'p' | 'all'(최종 탭에서만 — 자율·진로 함께 보기). 자료 입력·편집 탭은 마지막으로 고른 자율/진로를 그대로 씀.
+  function seSetKind(kind) { seSetCfg(kind === 'all' ? { finAll: true } : { kind: kind, finAll: false }); seRenderAll(); }
+  function seFinAll() { return !!seCfg().finAll; }
+  const SE_HINTS = {
+    src: '부서에서 받은 문장을 학생·영역별로 넣어요. 영역(열)은 표 머리에서 <b>＋ 영역 추가</b>, 이름을 누르면 바꾸기. 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 <b>아래·오른쪽으로 이어서</b> 채워져요.',
+    edit: '받은 내용을 체크해 합친 뒤 다듬고, 다 되면 <b>📊 최종에 넣기</b>를 눌러요(복사·붙여 넣기 필요 없음). <b>📋 복사</b>는 나이스에 바로 붙여 넣을 때.',
+    final: '📊 최종에 넣은 문장이에요. <b>📋</b>으로 한 명씩 복사해 나이스에 붙여 넣어요.'
+  };
 
   function seRenderAll() {
     if (!seIsOpen()) return;
@@ -12551,11 +12583,11 @@
     document.querySelectorAll('#se-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
     ['src', 'edit', 'final'].forEach(function(t) { document.getElementById('se-pane-' + t).style.display = t === tab ? 'flex' : 'none'; });
     document.getElementById('se-limit-note').textContent = seLimitNote();
+    seKindButtons(tab);
+    document.getElementById('se-kind-hint').innerHTML = SE_HINTS[tab];
     if (!seClassKey()) {
       const msg = '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:40px 20px;">학년과 반을 고르세요.</div>';
       document.getElementById('se-src-list').innerHTML = msg;
-      document.getElementById('se-area-chips').innerHTML = '';
-      document.getElementById('se-kind-src').innerHTML = '';
       document.getElementById('se-students').innerHTML = '';
       document.getElementById('se-editor').innerHTML = msg;
       document.getElementById('se-final-list').innerHTML = msg;
@@ -12566,10 +12598,11 @@
     else if (tab === 'edit') seRenderEdit();
     else seRenderFinal();
   }
-  function seKindButtons(id, cur, fn) {
-    document.getElementById(id).innerHTML = SE_KINDS.map(function(k) {
-      return '<button class="top-btn' + (k === cur ? ' theme-active' : '') + '" data-kind="' + k + '" onclick="' + fn + '(\'' + k + '\')">' + SE_KIND_LABEL[k] + ' <span style="font-weight:600; opacity:.75;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></button>';
-    }).join('');
+  function seKindButtons(tab) {
+    const cur = tab === 'final' && seFinAll() ? 'all' : seKind();
+    document.getElementById('se-kind').innerHTML = SE_KINDS.map(function(k) {
+      return '<button class="top-btn' + (k === cur ? ' theme-active' : '') + '" data-kind="' + k + '" onclick="seSetKind(\'' + k + '\')">' + SE_KIND_LABEL[k] + ' <span style="font-weight:600; opacity:.75;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></button>';
+    }).join('') + (tab === 'final' ? '<button class="top-btn' + (cur === 'all' ? ' theme-active' : '') + '" data-kind="all" onclick="seSetKind(\'all\')">전체</button>' : '');
   }
   function seNoStudentsHtml() {
     return '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px 20px; line-height:1.7;">이 반의 명렬표에 학생이 없어요.<br>관리자가 명렬표를 올리면 자동으로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣으면 그 번호·이름을 써요.</div>';
@@ -12578,26 +12611,28 @@
   // ----- ① 자료 입력 -----
   function seRenderSrc() {
     const kind = seKind();
-    seKindButtons('se-kind-src', kind, 'seSetKind');
     const areas = seAreas(kind);
-    document.getElementById('se-area-chips').innerHTML = '<span class="se-muted">' + SE_KIND_LABEL[kind] + ' 영역:</span>' +
-      areas.map(function(a) {
-        return '<span class="se-chip" data-area="' + a.id + '"><span class="se-chip-name" title="누르면 이름 바꾸기" onclick="seRenameArea(\'' + kind + '\',\'' + a.id + '\')">' + escapeHtmlAttr(a.name) + '</span>' +
-          '<button title="영역 지우기" onclick="seRemoveArea(\'' + kind + '\',\'' + a.id + '\')">✕</button></span>';
-      }).join('') +
-      '<button class="top-btn" style="font-size:11px; padding:3px 10px;" onclick="seAddArea(\'' + kind + '\')">➕ 영역 추가</button>';
     const list = document.getElementById('se-src-list');
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); return; }
-    if (!areas.length) { list.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px;">위 <b>➕ 영역 추가</b>로 ' + SE_KIND_LABEL[kind] + ' 영역(부서에서 받은 활동 이름)을 먼저 만드세요.</div>'; return; }
-    let html = '<table class="se-table"><thead><tr><th class="se-left" style="width:30px;">번호</th><th style="width:56px;">이름</th>' +
-      areas.map(function(a) { return '<th>' + escapeHtmlAttr(a.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
-    seRoster.forEach(function(s) {
+    // 영역이 3개보다 적으면 3개일 때 폭으로(한 칸이 화면 끝까지 늘어나지 않게), 많으면 화면을 나눠 쓰다 좁아지면 옆으로 스크롤.
+    const n = areas.length, fixedW = 40 + 64 + 130;
+    const tw = n >= 3 ? '100%' : 'calc(' + fixedW + 'px + (100% - ' + fixedW + 'px) * ' + Math.max(n, 1) + ' / 3)';
+    let html = '<table class="se-table se-src-table" style="width:' + tw + '; min-width:' + (fixedW + Math.max(n, 1) * 190) + 'px;"><colgroup><col style="width:40px;"><col style="width:64px;">' +
+      areas.map(function() { return '<col>'; }).join('') + '<col' + (n ? ' style="width:130px;"' : '') + '></colgroup>' +
+      '<thead><tr><th class="se-left">번호</th><th>이름</th>' +
+      areas.map(function(a) {
+        return '<th class="se-area" data-area="' + a.id + '"><div class="se-ahead"><button class="se-aname" title="누르면 이름 바꾸기" onclick="seRenameArea(\'' + kind + '\',\'' + a.id + '\')">' + escapeHtmlAttr(a.name) + '</button>' +
+          '<button class="se-adel" title="이 영역(열) 지우기 — 적힌 내용도 함께" onclick="seRemoveArea(\'' + kind + '\',\'' + a.id + '\')">✕</button></div></th>';
+      }).join('') +
+      '<th class="se-addcol"><button class="se-addbtn" id="se-add-area" title="부서에서 받은 활동 하나가 한 열이 돼요" onclick="seAddArea(\'' + kind + '\')">＋ 영역 추가</button></th></tr></thead><tbody>';
+    seRoster.forEach(function(s, i) {
       html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
       areas.forEach(function(a) {
         const k = seSrcKey(s.num, a.id), v = seGet(k);
         html += '<td><textarea class="se-cell" rows="3" data-key="' + k + '" data-num="' + s.num + '" data-area="' + a.id + '" placeholder="받은 문장" spellcheck="false"' +
           ' oninput="seOnSrcInput(this)" onchange="seOnSrcChange(this)" onblur="seOnSrcChange(this)" onpaste="seOnPaste(event, this)">' + escapeHtmlAttr(v) + '</textarea>' + seBytesHtml(v, 0) + '</td>';
       });
+      html += i === 0 ? '<td class="se-addcell" rowspan="' + seRoster.length + '">' + (n ? '' : '<div class="se-noarea">' + SE_KIND_LABEL[kind] + ' 영역이 없어요.<br>위 <b>＋ 영역 추가</b>로<br>부서에서 받은 활동마다<br>한 열씩 만드세요.</div>') + '</td>' : '';
       html += '</tr>';
     });
     list.innerHTML = html + '</tbody></table>';
@@ -12628,16 +12663,28 @@
     while (rows.length && rows[rows.length - 1].every(function(c) { return c.trim() === ''; })) rows.pop();
     return rows;
   }
-  function seOnPaste(e, ta) {
+  async function seOnPaste(e, ta) {
     const text = (e.clipboardData || window.clipboardData).getData('text');
     if (!text) return;
     const rows = seParseTsv(text);
     if (rows.length <= 1 && (rows[0] || []).length <= 1) return;   // 한 칸짜리는 그냥 붙여 넣기
     e.preventDefault();
-    const areas = seAreas(seKind());
+    const kind = seKind();
+    let areas = seAreas(kind);
     const r0 = seRoster.findIndex(function(s) { return s.num === Number(ta.dataset.num); });
     const c0 = areas.findIndex(function(a) { return a.id === ta.dataset.area; });
     if (r0 < 0 || c0 < 0) return;
+    // 붙여 넣은 열이 영역보다 많으면 모자란 영역을 새로 만들지 묻는다(이름은 나중에 표 머리에서 바꾸면 됨).
+    const cols = Math.max.apply(null, rows.map(function(r) { return r.length; }));
+    const lack = c0 + cols - areas.length;
+    if (lack > 0 && await customConfirm('붙여 넣은 내용이 ' + cols + '열인데, 이 칸부터 오른쪽에 영역이 ' + (areas.length - c0) + '개뿐이에요.\n새 영역 ' + lack + '개를 만들어 함께 넣을까요?\n(이름은 표 머리에서 눌러 바꿀 수 있어요)')) {
+      for (let i = 0; i < lack; i++) {
+        let nm = '새 영역', k = areas.length + 1;
+        while (areas.some(function(a) { return a.name === nm + ' ' + k; })) k++;
+        await seAddArea(kind, nm + ' ' + k);
+        areas = seAreas(kind);
+      }
+    }
     let filled = 0, over = 0;
     rows.forEach(function(row, i) {
       const s = seRoster[r0 + i];
@@ -12654,16 +12701,18 @@
   }
 
   // ----- ② 편집 -----
+  // 학생 목록 점 = 편집 칸 글의 바이트(회색 없음/초록/빨강 초과), 최종에 아직 안 넣은 편집이 있으면 주황 테두리.
   function seFinStatus(num, kind) {
-    const t = seGet(seFinKey(num, kind));
-    if (!t.trim()) return { cls: 'empty', text: '-' };
+    const t = seDraftText(num, kind), d = seHasDraft(num, kind);
+    if (!t.trim()) return { cls: 'empty' + (d ? ' draft' : ''), text: '-', draft: d };
     const b = seBytes(t), lim = seLimitBytes(kind);
-    return { cls: b > lim ? 'over' : 'ok', text: seFmt(b) };
+    return { cls: (b > lim ? 'over' : 'ok') + (d ? ' draft' : ''), text: seFmt(b), draft: d };
   }
   function seStudentRowHtml(s) {
     const a = seFinStatus(s.num, 'a'), p = seFinStatus(s.num, 'p');
+    const tip = function(k, x) { return SE_KIND_LABEL[k] + ' 바이트' + (x.draft ? ' — 최종에 아직 안 넣은 편집이 있어요' : ''); };
     return '<div class="se-stu' + (s.num === seSelNum ? ' sel' : '') + '" data-num="' + s.num + '" onclick="seSelectStudent(' + s.num + ')"><span>' + s.num + '</span><b>' + escapeHtmlAttr(s.name) + '</b>' +
-      '<span class="se-dot ' + a.cls + '" title="자율 바이트">' + a.text + '</span><span class="se-dot ' + p.cls + '" title="진로 바이트">' + p.text + '</span></div>';
+      '<span class="se-dot ' + a.cls + '" title="' + tip('a', a) + '">' + a.text + '</span><span class="se-dot ' + p.cls + '" title="' + tip('p', p) + '">' + p.text + '</span></div>';
   }
   function seRefreshStudentRow(num) {
     const s = seRoster.find(function(x) { return x.num === num; });
@@ -12685,13 +12734,13 @@
     seSelNum = s.num;
     const kind = seKind(), areas = seAreas(kind), st = seSt(s.num), sel = st.sel[kind];
     const i = seRoster.indexOf(s);
-    const fin = seGet(seFinKey(s.num, kind));
+    const draft = seDraftText(s.num, kind);
     const lim = seLimitBytes(kind);
     let html = '<div id="se-edit-head">' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
       '<div style="font-weight:800; font-size:15px;">' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</div>' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(1)"' + (i >= seRoster.length - 1 ? ' disabled' : '') + '>다음 ▶</button>' +
-      '<div class="top-btn-cluster se-kind" id="se-kind-edit" style="margin-left:auto;"></div></div>';
+      '<span class="se-muted" style="margin-left:auto;">' + SE_KIND_LABEL[kind] + ' 편집 중</span></div>';
     html += '<div id="se-edit-scroll">';
     // 받은 내용
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
@@ -12708,18 +12757,19 @@
     });
     html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div>';
     // 편집 칸
-    html += '<div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 완성본 — 다듬어서 나이스에 복사</span></div>';
-    html += '<textarea id="se-fin" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
-      ' oninput="seOnFinInput(this)" onchange="seOnFinChange(this)" onblur="seOnFinChange(this)">' + escapeHtmlAttr(fin) + '</textarea>';
-    html += '<div style="display:flex; gap:8px; margin-top:6px;"><button class="top-btn" style="flex:1 1 0; padding:7px;" onclick="seClearFin()">지우기</button>' +
-      '<button class="top-btn" id="se-copy-btn" style="flex:1 1 0; padding:7px; font-weight:800;" onclick="seCopyFin()">📋 복사</button></div>';
+    html += '<div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 편집 칸 — 다듬은 뒤 📊 최종에 넣기</span></div>';
+    html += '<textarea id="se-draft" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
+      ' oninput="seOnDraftInput(this)" onchange="seOnDraftChange(this)" onblur="seOnDraftChange(this)">' + escapeHtmlAttr(draft) + '</textarea>';
+    html += '<div style="display:flex; gap:8px; margin-top:6px;"><button class="top-btn" style="flex:1 1 0; padding:7px;" onclick="seClearDraft()">지우기</button>' +
+      '<button class="top-btn" id="se-copy-btn" style="flex:1 1 0; padding:7px; font-weight:800;" onclick="seCopyDraft()">📋 복사</button>' +
+      '<button class="top-btn" id="se-put-btn" style="flex:1.4 1 0; padding:7px; font-weight:800; border:1.5px solid var(--accent-color); background:var(--accent-soft); color:var(--accent-color);" onclick="sePutFinal()">📊 최종에 넣기</button></div>';
+    html += '<div id="se-put-state"></div>';
     html += '<div class="sgb-count" id="se-count"></div><div class="sgb-bar" id="se-bar"><div></div></div><div id="se-result"></div>';
     // 메모
     html += '<div class="se-sec" style="margin-top:14px;"><span>📝 메모</span><span class="se-muted">예: 진로독서 줄이고, 아카데미아 메인 — 나한테만 보이는 메모</span></div>' +
       '<input type="text" id="se-memo" data-num="' + s.num + '" value="' + escapeHtmlAttr(st.memo) + '" placeholder="이 학생 메모" onchange="seSetSt(' + s.num + ', { memo: this.value.trim() })">';
     html += '</div>';
     ed.innerHTML = html;
-    seKindButtons('se-kind-edit', kind, 'seSetKind');
     seRenderFinCount();
   }
   function seToggleSel(num, kind, areaId, on) {
@@ -12736,28 +12786,56 @@
       .map(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }).filter(Boolean);
     if (!parts.length) return;
     const joined = parts.join(' ');
-    const ta = document.getElementById('se-fin');
+    const ta = document.getElementById('se-draft');
     if (ta.value.trim() && ta.value.trim() !== joined) {
       const ok = await customConfirm('편집 칸에 이미 적힌 내용을 지우고 체크한 내용으로 바꿀까요?');
       if (!ok) return;
     }
     ta.value = joined;
-    seSet(seFinKey(num, kind), joined);
-    seRefreshStudentRow(num);
+    seOnDraftChange(ta);
     seRenderFinCount();
     ta.focus();
   }
-  function seOnFinInput(ta) { seTypingKey = 'fin'; seSaveState('typing'); seRenderFinCount(); }
-  function seOnFinChange(ta) {
-    if (seTypingKey === 'fin') seTypingKey = null;
+  function seOnDraftInput(ta) { seTypingKey = 'draft'; seSaveState('typing'); seRenderFinCount(); }
+  // 편집 칸 저장: 최종과 같으면 se-drf를 지우고(같은 글을 두 번 저장 안 함), 다르면 se-drf에. 최종은 안 건드림.
+  function seOnDraftChange(ta) {
+    if (seTypingKey === 'draft') seTypingKey = null;
     const v = ta.value.replace(/\r\n?/g, '\n');
-    const k = seFinKey(ta.dataset.num, ta.dataset.kind);
-    if (seGet(k) === v) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); return; }
-    seSet(k, v);
-    seRefreshStudentRow(Number(ta.dataset.num));
+    const num = Number(ta.dataset.num), kind = ta.dataset.kind;
+    const k = seDraftKey(num, kind), want = v === seGet(seFinKey(num, kind)) ? '' : v;
+    if (seGet(k) === want) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); seRenderPutState(); return; }
+    seSet(k, want);
+    seRefreshStudentRow(num);
+    seRenderPutState();
+  }
+  // 📊 최종에 넣기: 편집 칸 글을 최종(se-fin)으로 — 복사·붙여 넣기 없이. 넣고 나면 편집 칸 = 최종이라 se-drf는 지운다.
+  async function sePutFinal() {
+    const ta = document.getElementById('se-draft'), btn = document.getElementById('se-put-btn');
+    if (!ta) return;
+    const num = Number(ta.dataset.num), kind = ta.dataset.kind;
+    const v = ta.value.replace(/\r\n?/g, '\n').trim();
+    const cur = seGet(seFinKey(num, kind));
+    if (!v && !cur) return;
+    if (!v && !(await customConfirm('편집 칸이 비어 있어요. 최종에 든 ' + SE_KIND_LABEL[kind] + ' 문장을 지울까요?'))) return;
+    const b = seBytes(v), lim = seLimitBytes(kind);
+    if (v && b > lim && !(await customConfirm(seFmt(b - lim) + '바이트 넘어요(' + seFmt(b) + ' / ' + seFmt(lim) + '). 그래도 최종에 넣을까요?'))) return;
+    if (ta.value !== v) ta.value = v;
+    if (seTypingKey === 'draft') seTypingKey = null;
+    seSet(seFinKey(num, kind), v);
+    seSet(seDraftKey(num, kind), '');
+    seRefreshStudentRow(num);
+    seRenderFinCount();
+    if (btn) { btn.textContent = v ? '✅ 최종에 넣었어요' : '✅ 최종에서 지웠어요'; clearTimeout(sePutFinal._t); sePutFinal._t = setTimeout(function() { const b2 = document.getElementById('se-put-btn'); if (b2) b2.textContent = '📊 최종에 넣기'; }, 1800); }
+  }
+  function seRenderPutState() {
+    const ta = document.getElementById('se-draft'), el = document.getElementById('se-put-state');
+    if (!ta || !el) return;
+    const fin = seGet(seFinKey(ta.dataset.num, ta.dataset.kind)), v = ta.value.replace(/\r\n?/g, '\n');
+    if (v.trim() === fin.trim()) { el.className = fin.trim() ? 'same' : ''; el.textContent = fin.trim() ? '✅ 최종에 들어 있는 글과 같아요' : '최종에 아직 아무것도 없어요'; }
+    else { el.className = 'diff'; el.textContent = fin.trim() ? '✏️ 최종과 달라요 — 📊 최종에 넣기를 눌러야 최종이 바뀌어요' : '✏️ 최종에 아직 안 넣었어요 — 다 다듬으면 📊 최종에 넣기'; }
   }
   function seRenderFinCount() {
-    const ta = document.getElementById('se-fin');
+    const ta = document.getElementById('se-draft');
     if (!ta) return;
     const kind = ta.dataset.kind, text = ta.value;
     const c = sgbCount(text), limit = seLimitBytes(kind), over = c.bytes > limit;
@@ -12770,20 +12848,14 @@
     bar.className = 'sgb-bar' + (over ? ' over' : '');
     bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
     document.getElementById('se-result').innerHTML = text.trim() ? sgbFindingsHtml(text) : '';
+    seRenderPutState();
   }
-  function seClearFin() {
-    const ta = document.getElementById('se-fin');
-    if (!ta) return;
-    ta.value = '';
-    seOnFinChange(ta);
-    seRenderFinCount();
-    ta.focus();
-  }
-  async function seCopyFin() {
-    const ta = document.getElementById('se-fin'), btn = document.getElementById('se-copy-btn');
+  // 📋 복사: 편집 칸 글 그대로(나이스에 바로 붙여 넣을 때).
+  async function seCopyDraft() {
+    const ta = document.getElementById('se-draft'), btn = document.getElementById('se-copy-btn');
     if (!ta || !btn) return;
     const text = ta.value;
-    const done = function(msg) { btn.textContent = msg; clearTimeout(seCopyFin._t); seCopyFin._t = setTimeout(function() { btn.textContent = '📋 복사'; }, 1800); };
+    const done = function(msg) { btn.textContent = msg; clearTimeout(seCopyDraft._t); seCopyDraft._t = setTimeout(function() { const b2 = document.getElementById('se-copy-btn'); if (b2) b2.textContent = '📋 복사'; }, 1800); };
     if (!text) { done('복사할 문장이 없어요'); return; }
     let ok = false;
     try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
@@ -12791,7 +12863,15 @@
       try { ta.focus(); ta.select(); ok = document.execCommand('copy'); } catch (e) {}
       try { ta.setSelectionRange(text.length, text.length); } catch (e) {}
     }
-    done(ok ? '✅ 복사했어요 — 나이스에서 Ctrl+V' : '복사가 안 돼요 — Ctrl+A, Ctrl+C로 복사해 주세요');
+    done(ok ? '✅ 복사했어요' : 'Ctrl+A, Ctrl+C로 복사해 주세요');
+  }
+  function seClearDraft() {
+    const ta = document.getElementById('se-draft');
+    if (!ta) return;
+    ta.value = '';
+    seOnDraftChange(ta);
+    seRenderFinCount();
+    ta.focus();
   }
   async function seCopyText(text, btn) {
     let ok = false;
@@ -12803,33 +12883,47 @@
   }
 
   // ----- ③ 최종 -----
+  // 바이트 칸: 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.
+  function seBytesCellHtml(t, k) {
+    if (!t.trim()) return '<td class="se-bcell"><span class="se-dot empty">-</span></td>';
+    const b = seBytes(t), lim = seLimitBytes(k), over = b > lim;
+    return '<td class="se-bcell' + (over ? ' over' : '') + '"><b>' + seFmt(b) + '</b> / ' + seFmt(lim) + '<br>' +
+      (over ? seFmt(b - lim) + ' 넘음' : '<span class="se-left-n">' + seFmt(lim - b) + ' 남음</span>') + '</td>';
+  }
   function seRenderFinal() {
     const list = document.getElementById('se-final-list');
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); document.getElementById('se-final-note').textContent = ''; return; }
-    const stat = { a: { n: 0, over: 0 }, p: { n: 0, over: 0 } };
-    let html = '<table class="se-table se-fin-table"><thead><tr><th class="se-left" style="width:30px;">번호</th><th style="width:56px;">이름</th>' +
-      SE_KINDS.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th style="width:64px;">바이트</th>'; }).join('') + '<th style="width:36px;"></th></tr></thead><tbody>';
+    const kinds = seFinAll() ? SE_KINDS : [seKind()];
+    const stat = { a: { n: 0, over: 0, draft: 0 }, p: { n: 0, over: 0, draft: 0 } };
+    let html = '<table class="se-table se-fin-table"><colgroup><col style="width:40px;"><col style="width:64px;">' +
+      kinds.map(function() { return '<col><col style="width:96px;"><col style="width:40px;">'; }).join('') + '<col style="width:40px;"></colgroup>' +
+      '<thead><tr><th class="se-left">번호</th><th>이름</th>' +
+      kinds.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' 최종 <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th>바이트</th><th>복사</th>'; }).join('') + '<th>편집</th></tr></thead><tbody>';
     seRoster.forEach(function(s) {
       html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c">' + escapeHtmlAttr(s.name) + '</td>';
-      SE_KINDS.forEach(function(k) {
-        const t = seGet(seFinKey(s.num, k)), b = seBytes(t), lim = seLimitBytes(k), over = b > lim;
-        if (t.trim()) { stat[k].n++; if (over) stat[k].over++; }
-        html += '<td class="se-txt">' + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') + '</td>' +
-          '<td class="se-c"><span class="se-dot ' + (t.trim() ? (over ? 'over' : 'ok') : 'empty') + '">' + (t.trim() ? seFmt(b) : '-') + '</span>' +
-          (t.trim() ? '<br><button class="ab-icon-btn" style="margin-top:4px;" title="복사" onclick="seCopyText(seGet(seFinKey(' + s.num + ',\'' + k + '\')), this)">📋</button>' : '') + '</td>';
+      kinds.forEach(function(k) {
+        const t = seGet(seFinKey(s.num, k)), d = seHasDraft(s.num, k);
+        if (t.trim()) { stat[k].n++; if (seBytes(t) > seLimitBytes(k)) stat[k].over++; }
+        if (d) stat[k].draft++;
+        html += '<td class="se-txt" data-kind="' + k + '">' + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') +
+          (d ? '<div><span class="se-drafttag" title="편집 탭에서 다듬은 글이 최종과 달라요" onclick="seSetCfg({ kind: \'' + k + '\' }); seSelNum=' + s.num + '; seSetTab(\'edit\')">✏️ 최종에 안 넣은 편집 있음</span></div>' : '') + '</td>' +
+          seBytesCellHtml(t, k) +
+          '<td class="se-c">' + (t.trim() ? '<button class="ab-icon-btn" title="복사" onclick="seCopyText(seGet(seFinKey(' + s.num + ',\'' + k + '\')), this)">📋</button>' : '') + '</td>';
       });
       html += '<td class="se-c"><button class="ab-icon-btn" title="편집" onclick="seSelNum=' + s.num + '; seSetTab(\'edit\')">✎</button></td></tr>';
     });
     list.innerHTML = html + '</tbody></table>';
-    document.getElementById('se-final-note').innerHTML = '학생 ' + seRoster.length + '명 · 자율 완성 <b>' + stat.a.n + '</b>명' + (stat.a.over ? '(<span style="color:var(--alert);">초과 ' + stat.a.over + '</span>)' : '') +
-      ' · 진로 완성 <b>' + stat.p.n + '</b>명' + (stat.p.over ? '(<span style="color:var(--alert);">초과 ' + stat.p.over + '</span>)' : '') + ' · 📋으로 한 명씩 복사해 나이스에 붙여 넣어요.';
+    document.getElementById('se-final-note').innerHTML = '학생 ' + seRoster.length + '명 · ' + kinds.map(function(k) {
+      return SE_KIND_LABEL[k] + ' 최종 <b>' + stat[k].n + '</b>명' + (stat[k].over ? '(<span style="color:var(--alert);">초과 ' + stat[k].over + '</span>)' : '') +
+        (stat[k].draft ? '(<span style="color:#B45309;">최종에 안 넣은 편집 ' + stat[k].draft + '</span>)' : '');
+    }).join(' · ');
   }
 
   // ----- 🗑 초기화 -----
   function seClassKeys() {
     const ck = seClassKey(), out = [];
     if (!ck) return out;
-    const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-st-' + ck + '-'];
+    const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-drf-' + ck + '-', 'se-st-' + ck + '-'];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === seAreasKey() || k === seRosterKeyName())) out.push(k);
@@ -12841,7 +12935,7 @@
     if (!c.g || !c.c) return;
     const keys = seClassKeys();
     if (!keys.length) return customAlert('지울 자료가 없어요.');
-    if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로 자료(받은 내용·완성본·영역·메모)를 모두 지울까요?'))) return;
+    if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지울까요?'))) return;
     if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
     keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
     scheduleBackupWrite();

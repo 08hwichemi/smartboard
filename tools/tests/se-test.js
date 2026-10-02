@@ -1,5 +1,5 @@
 // 레일 "생기부" → 🗂 자율·진로 편집기: 생기부 패널 둘째 탭에서 전체 화면, 학년별 바이트 한도(입시 연도), 자료 입력(영역 추가·이름·여러 칸 붙여 넣기),
-// 편집(체크해 합치기·바이트·기재 불가 점검·복사·메모), 최종 표, 엑셀 가져오기·내려받기, 칸을 벗어날 때만 저장·업로드, 내 계정에만, 초기화, 열고 닫기.
+// 편집(체크해 합치기·바이트·기재 불가 점검·📊 최종에 넣기·메모), 최종 표(자율/진로/전체·남은 바이트), 고정 머리(자율/진로 버튼 같은 자리), 엑셀 가져오기·내려받기, 칸을 벗어날 때만 저장·업로드, 내 계정에만, 초기화, 열고 닫기.
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -254,15 +254,30 @@ handleDb = async function(pageInfo, req) {
   check('자료 입력 표에 명렬표 학생 5명', rows.join(',') === '1,2,3,4,5', rows);
   check('기본 영역: 자율 "1인 1역할" 1개 (아직 저장 안 됨)', (await areas('a')).map(a => a.name).join() === '1인 1역할' && (await ls(pc, 'se-areas-3-1')) === null);
 
-  // ---- 영역 추가·이름 바꾸기 ----
-  await P.click('#se-area-chips button:has-text("영역 추가")'); await wait(200);
+  // ---- 고정된 머리: 자율/진로 버튼은 세 탭 모두 같은 자리 ----
+  const kindPos = async () => P.evaluate(() => { const r = document.querySelector('#se-kind [data-kind="a"]').getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top); });
+  const pos = {};
+  for (const t of ['src', 'edit', 'final']) { await P.click('#se-tabs [data-tab="' + t + '"]'); await wait(200); pos[t] = await kindPos(); }
+  const kb = await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.dataset.kind).join());
+  await P.click('#se-tabs [data-tab="src"]'); await wait(200);
+  const kbSrc = await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.dataset.kind).join());
+  check('자율/진로 버튼은 자료 입력·편집·최종 모두 같은 자리, "전체"는 최종 탭에만', pos.src === pos.edit && pos.edit === pos.final && kb === 'a,p,all' && kbSrc === 'a,p', { pos, kb, kbSrc });
+  // 영역 1개여도 표 폭은 영역 3개일 때처럼(한 칸이 화면 끝까지 늘어나지 않게)
+  const w1 = await P.evaluate(() => ({ cell: document.querySelector('#se-src-list textarea.se-cell').getBoundingClientRect().width, list: document.getElementById('se-src-list').clientWidth }));
+  check('영역 1개: 칸 폭 ≈ (화면 − 번호·이름·추가 열) / 3', Math.abs(w1.cell - (w1.list - 234) / 3) < 16, w1);
+
+  // ---- 영역 추가·이름 바꾸기(표 머리에서) ----
+  await P.click('#se-add-area'); await wait(200);
+  check('영역 추가 창에 설명·예시', /한 열\(칸\)이 돼요/.test(await P.evaluate(() => document.getElementById('custom-prompt-msg').textContent)));
   await P.fill('#custom-prompt-input', '학급 자치');
   await P.click('#custom-prompt-overlay button:has-text("확인")'); await wait(300);
-  check('영역 추가 → 표 머리에 2개, 계정에 저장', (await areas('a')).map(a => a.name).join() === '1인 1역할,학급 자치' && await P.evaluate(() => document.querySelectorAll('#se-src-list thead th').length === 4) && !!(await ls(pc, 'se-areas-3-1')));
-  await P.click('#se-area-chips .se-chip[data-area="' + (await areas('a'))[1].id + '"] .se-chip-name'); await wait(200);
+  check('영역 추가 → 표 머리에 2개(+ 추가 열), 계정에 저장', (await areas('a')).map(a => a.name).join() === '1인 1역할,학급 자치' && await P.evaluate(() => document.querySelectorAll('#se-src-list thead th.se-area').length === 2 && !!document.querySelector('#se-src-list thead th.se-addcol')) && !!(await ls(pc, 'se-areas-3-1')));
+  const w2 = await P.evaluate(() => [...document.querySelectorAll('#se-src-list tr[data-num="1"] textarea.se-cell')].map(t => Math.round(t.getBoundingClientRect().width)));
+  check('영역 2개: 두 칸 폭이 같고 1개일 때와 같음', Math.abs(w2[0] - w2[1]) < 3 && Math.abs(w2[0] - w1.cell) < 3, { w2, w1 });
+  await P.click('#se-src-list thead th[data-area="' + (await areas('a'))[1].id + '"] .se-aname'); await wait(200);
   await P.fill('#custom-prompt-input', '자치 활동');
   await P.click('#custom-prompt-overlay button:has-text("확인")'); await wait(300);
-  check('영역 이름 바꾸기', (await areas('a')).map(a => a.name).join() === '1인 1역할,자치 활동');
+  check('영역 이름 바꾸기(머리 이름 누르기)', (await areas('a')).map(a => a.name).join() === '1인 1역할,자치 활동');
 
   // ---- 칸 입력: 치는 동안은 안 올라가고, 벗어나면 저장·업로드 ----
   const a1 = (await areas('a'))[0].id;
@@ -280,89 +295,134 @@ handleDb = async function(pageInfo, req) {
   check('저장 표시', /저장됨/.test(await P.evaluate(() => document.getElementById('se-save-state').textContent)));
 
   // ---- 여러 칸 붙여 넣기(엑셀 복사: 탭·줄바꿈, 줄바꿈 든 칸은 따옴표) ----
-  const tsv = '2번 문장\t"2번 자치\n둘째 줄"\n3번 문장\t3번 자치\n';
-  await P.evaluate(([sel, text]) => {
+  const paste = (sel, text) => P.evaluate(([sel, text]) => {
     const ta = document.querySelector(sel);
     const dt = new DataTransfer(); dt.setData('text', text);
     ta.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
-  }, ['#se-src-list textarea[data-num="2"][data-area="' + a1 + '"]', tsv]);
+  }, [sel, text]);
+  await paste('#se-src-list textarea[data-num="2"][data-area="' + a1 + '"]', '2번 문장\t"2번 자치\n둘째 줄"\n3번 문장\t3번 자치\n');
   await wait(300);
   const a2 = (await areas('a'))[1].id;
   const pasted = await P.evaluate(([a1, a2]) => [1, 2, 3].map(n => [localStorage.getItem('se-src-3-1-' + n + '-' + a1), localStorage.getItem('se-src-3-1-' + n + '-' + a2)]), [a1, a2]);
   check('붙여 넣기: 2번부터 아래·오른쪽으로 채움, 따옴표 속 줄바꿈 유지, 1번은 그대로', pasted[0][0] === '교실 문단속을 맡아 성실히 수행함.' && pasted[1][0] === '2번 문장' && pasted[1][1] === '2번 자치\n둘째 줄' && pasted[2][0] === '3번 문장' && pasted[2][1] === '3번 자치', pasted);
   check('붙여 넣기 안내', /4칸을 채웠어요/.test(await P.evaluate(() => document.getElementById('se-src-msg').textContent)));
+  // 영역보다 열이 많으면 → 새 영역을 만들지 묻고, 취소하면 넘친 칸은 안 넣음
+  await paste('#se-src-list textarea[data-num="4"][data-area="' + a2 + '"]', '4번 자치\t4번 새것\n');
+  await wait(300);
+  check('열이 모자라면 새 영역 만들지 물어봄', /새 영역 1개를 만들어/.test(await P.evaluate(() => document.getElementById('custom-confirm-msg').textContent)) && await P.evaluate(() => document.getElementById('custom-confirm-overlay').style.display === 'flex'));
+  await P.click('#custom-confirm-cancel-btn'); await wait(300);
+  check('취소 → 영역 그대로, 들어갈 칸만 채움·못 넣은 칸 안내', (await areas('a')).length === 2 && (await ls(pc, 'se-src-3-1-4-' + a2)) === '4번 자치' && /못 넣은 칸 1개/.test(await P.evaluate(() => document.getElementById('se-src-msg').textContent)));
+  await paste('#se-src-list textarea[data-num="5"][data-area="' + a2 + '"]', '5번 자치\t5번 새것\n');
+  await wait(300);
+  await P.click('#custom-confirm-ok-btn'); await wait(400);
+  const auto = await areas('a');
+  check('확인 → "새 영역 3" 만들고 채움(이름은 머리에서 바꾸면 됨)', auto.length === 3 && auto[2].name === '새 영역 3' && (await ls(pc, 'se-src-3-1-5-' + auto[2].id)) === '5번 새것' && await P.evaluate(() => document.querySelectorAll('#se-src-list thead th.se-area').length === 3), auto);
+  // 영역 지우기(머리 ✕) — 적힌 내용도 함께
+  await P.click('#se-src-list thead th[data-area="' + auto[2].id + '"] .se-adel'); await wait(200);
+  await P.click('#custom-confirm-ok-btn'); await wait(300);
+  check('머리 ✕ → 영역과 그 내용 지움', (await areas('a')).length === 2 && (await ls(pc, 'se-src-3-1-5-' + auto[2].id)) === null);
+  await setLs(pc, 'se-src-3-1-4-' + a2, ''); await setLs(pc, 'se-src-3-1-5-' + a2, '');
+  await P.evaluate(() => { localStorage.removeItem('se-src-3-1-4-' + seAreas('a')[1].id); localStorage.removeItem('se-src-3-1-5-' + seAreas('a')[1].id); seRenderAll(); });
   const parsed = await P.evaluate(() => seParseTsv('a\tb\r\nc\t"d""e"\r\n\r\n'));
   check('TSV 해석: CRLF, 따옴표 두 번 → 하나, 끝 빈 줄 제거', JSON.stringify(parsed) === JSON.stringify([['a', 'b'], ['c', 'd"e']]), parsed);
 
   // ---- 진로 영역 ----
-  await P.click('#se-kind-src [data-kind="p"]'); await wait(200);
+  await P.click('#se-kind [data-kind="p"]'); await wait(200);
   check('진로로 바꾸면 기본 영역 "진로 독서"', (await areas('p')).map(a => a.name).join() === '진로 독서' && await P.evaluate(() => seKind() === 'p'));
   const p1 = (await areas('p'))[0].id;
   await setLs(pc, 'se-src-3-1-1-' + p1, '진로독서 프로젝트로 책을 읽고 토론함.');
 
   // ---- 편집 탭 ----
   await P.click('#se-tabs [data-tab="edit"]'); await wait(300);
-  await P.click('#se-kind-edit [data-kind="a"]'); await wait(200);
+  check('편집 탭에서도 진로가 그대로 골라져 있음', await P.evaluate(() => document.querySelector('#se-kind [data-kind="p"]').classList.contains('theme-active') && document.getElementById('se-draft').dataset.kind === 'p'));
+  await P.click('#se-kind [data-kind="a"]'); await wait(200);
   const ed = await P.evaluate(() => ({
     n: document.querySelectorAll('#se-students .se-stu').length, sel: document.querySelector('#se-students .se-stu.sel').dataset.num,
     head: document.querySelector('#se-edit-head div').textContent, cards: [...document.querySelectorAll('.se-card')].map(c => [c.dataset.area, c.classList.contains('none'), c.querySelector('input').disabled]),
-    prevDisabled: document.querySelector('#se-edit-head button').disabled
+    prevDisabled: document.querySelector('#se-edit-head button').disabled, copy: !!document.getElementById('se-copy-btn')
   }));
   check('편집: 학생 5명 목록, 1번 선택, 카드 2개(빈 영역은 체크 못 함), 이전 버튼 비활성', ed.n === 5 && ed.sel === '1' && /1번 가나다/.test(ed.head) && ed.cards.length === 2 && ed.cards[0][1] === false && ed.cards[1][1] === true && ed.cards[1][2] === true && ed.prevDisabled === true, ed);
+  check('편집 칸 아래 버튼 3개: 지우기 · 📋 복사 · 📊 최종에 넣기', await P.evaluate(() => [...document.getElementById('se-put-btn').parentElement.children].map(b => b.textContent.trim()).join('|') === '지우기|📋 복사|📊 최종에 넣기'));
   check('합치기 버튼은 체크 전엔 비활성', await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).disabled));
   await P.click('.se-card[data-area="' + a1 + '"] input'); await wait(200);
   const st1 = await P.evaluate(() => JSON.parse(localStorage.getItem('se-st-3-1-1')));
   check('체크 → 학생 상태 항목(se-st-)에 영역 id 저장, 카드 강조', st1.sel.a.length === 1 && st1.sel.a[0] === a1 && await P.evaluate((a) => document.querySelector('.se-card[data-area="' + a + '"]').classList.contains('on'), a1), st1);
   await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).click()); await wait(300);
-  const fin1 = await P.evaluate(() => ({ v: document.getElementById('se-fin').value, ls: localStorage.getItem('se-fin-3-1-1-a'), cnt: document.getElementById('se-count').textContent, dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot').className }));
-  check('합치기 → 편집 칸·저장(se-fin-…-a), 바이트 표시, 학생 목록 점 초록', fin1.v === '교실 문단속을 맡아 성실히 수행함.' && fin1.ls === fin1.v && /\/ 1,500바이트\(500자\)/.test(fin1.cnt) && /ok/.test(fin1.dot), fin1);
+  const fin1 = await P.evaluate(() => ({ v: document.getElementById('se-draft').value, drf: localStorage.getItem('se-drf-3-1-1-a'), fin: localStorage.getItem('se-fin-3-1-1-a'), cnt: document.getElementById('se-count').textContent, dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot').className, put: document.getElementById('se-put-state').textContent }));
+  check('합치기 → 편집 칸(se-drf-…-a)에만, 최종은 아직 비어 있음, "최종에 아직 안 넣었어요", 점 초록+주황 테두리', fin1.v === '교실 문단속을 맡아 성실히 수행함.' && fin1.drf === fin1.v && fin1.fin === null && /\/ 1,500바이트\(500자\)/.test(fin1.cnt) && /ok/.test(fin1.dot) && /draft/.test(fin1.dot) && /최종에 아직 안 넣었어요/.test(fin1.put), fin1);
+  // 📊 최종에 넣기
+  await P.click('#se-put-btn'); await wait(300);
+  const put1 = await P.evaluate(() => ({ drf: localStorage.getItem('se-drf-3-1-1-a'), fin: localStorage.getItem('se-fin-3-1-1-a'), put: document.getElementById('se-put-state').textContent, btn: document.getElementById('se-put-btn').textContent, dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot').className }));
+  check('📊 최종에 넣기 → se-fin에 들어가고 se-drf는 지움(같은 글 두 번 저장 안 함), "최종과 같아요"', put1.fin === '교실 문단속을 맡아 성실히 수행함.' && put1.drf === null && /최종에 들어 있는 글과 같아요/.test(put1.put) && /최종에 넣었어요/.test(put1.btn) && !/draft/.test(put1.dot), put1);
 
-  // 편집 칸: 치는 동안 점검(기재 불가), 벗어나면 저장
+  // 편집 칸: 치는 동안 점검(기재 불가), 벗어나면 편집만 저장(최종은 그대로)
   await wait(2500); upserts.length = 0;
-  await P.click('#se-fin');
+  await P.click('#se-draft');
   await P.keyboard.press('End');
   await P.keyboard.type(' 토익 시험을 봄.'); await wait(2000);
-  const live = await P.evaluate(() => ({ res: document.getElementById('se-result').textContent, ls: localStorage.getItem('se-fin-3-1-1-a'), st: document.getElementById('se-save-state').textContent }));
-  check('편집 칸 치는 동안: 기재 불가(공인어학시험) 바로 표시, 아직 저장·업로드 안 됨', /기재 불가 · 공인어학시험/.test(live.res) && live.ls === '교실 문단속을 맡아 성실히 수행함.' && upserts.length === 0, { live, upserts });
+  const live = await P.evaluate(() => ({ res: document.getElementById('se-result').textContent, drf: localStorage.getItem('se-drf-3-1-1-a'), put: document.getElementById('se-put-state').textContent }));
+  check('편집 칸 치는 동안: 기재 불가(공인어학시험) 바로 표시, "최종과 달라요", 아직 저장·업로드 안 됨', /기재 불가 · 공인어학시험/.test(live.res) && /최종과 달라요/.test(live.put) && live.drf === null && upserts.length === 0, { live, upserts });
   await P.click('#se-memo'); await wait(2500);
-  const after = await P.evaluate(() => localStorage.getItem('se-fin-3-1-1-a'));
-  check('벗어나면 완성본 저장·업로드(그 항목만)', after === '교실 문단속을 맡아 성실히 수행함. 토익 시험을 봄.' && upserts.length === 1 && upserts[0].join() === 'se-fin-3-1-1-a', { after, upserts });
-  // 한도 초과 → 빨강
-  await P.click('#se-fin');
-  await P.evaluate(() => { const ta = document.getElementById('se-fin'); ta.value = '가'.repeat(501); ta.dispatchEvent(new Event('input')); });
+  const after = await P.evaluate(() => ({ drf: localStorage.getItem('se-drf-3-1-1-a'), fin: localStorage.getItem('se-fin-3-1-1-a') }));
+  check('벗어나면 편집 칸만 저장·업로드(그 항목만), 최종은 그대로', after.drf === '교실 문단속을 맡아 성실히 수행함. 토익 시험을 봄.' && after.fin === '교실 문단속을 맡아 성실히 수행함.' && upserts.length === 1 && upserts[0].join() === 'se-drf-3-1-1-a', { after, upserts });
+  // 최종 탭에 "최종에 안 넣은 편집 있음" 표시
+  await P.click('#se-tabs [data-tab="final"]'); await wait(300);
+  check('최종 탭: 최종엔 예전 글, "최종에 안 넣은 편집 있음" 표시', await P.evaluate(() => /최종에 안 넣은 편집 있음/.test(document.querySelector('#se-final-list tr[data-num="1"]').textContent) && document.querySelector('#se-final-list tr[data-num="1"] td.se-txt').firstChild.textContent === '교실 문단속을 맡아 성실히 수행함.'));
+  await P.click('#se-final-list tr[data-num="1"] .se-drafttag'); await wait(300);
+  check('그 표시 누르면 편집 탭 그 학생·그 영역', await P.evaluate(() => seTab() === 'edit' && seSelNum === 1 && seKind() === 'a' && document.getElementById('se-draft').value === '교실 문단속을 맡아 성실히 수행함. 토익 시험을 봄.'));
+  // 한도 초과 → 빨강, 최종에 넣을 때 확인
+  await P.click('#se-draft');
+  await P.evaluate(() => { const ta = document.getElementById('se-draft'); ta.value = '가'.repeat(501); ta.dispatchEvent(new Event('input')); });
   const over = await P.evaluate(() => ({ cls: document.getElementById('se-count').className, bar: document.getElementById('se-bar').className, txt: document.getElementById('se-count').textContent }));
   check('1,503바이트 → 넘음 표시(빨강, 3바이트 넘음)', /over/.test(over.cls) && /over/.test(over.bar) && /3바이트 넘음/.test(over.txt), over);
   await P.click('#se-memo'); await wait(300);
   check('초과 상태는 학생 목록 점이 빨강', /over/.test(await P.evaluate(() => document.querySelector('#se-students .se-stu[data-num="1"] .se-dot').className)));
+  await P.click('#se-put-btn'); await wait(200);
+  check('넘은 채로 최종에 넣으면 확인', /3바이트 넘어요/.test(await P.evaluate(() => document.getElementById('custom-confirm-msg').textContent)));
+  await P.click('#custom-confirm-ok-btn'); await wait(300);
+  check('확인 → 최종에 들어감', (await ls(pc, 'se-fin-3-1-1-a')) === '가'.repeat(501) && (await ls(pc, 'se-drf-3-1-1-a')) === null);
+  await P.click('#se-copy-btn'); await wait(200);
+  check('📋 복사 → 편집 칸 글 그대로', await P.evaluate(() => window.__clip === document.getElementById('se-draft').value && /복사했어요/.test(document.getElementById('se-copy-btn').textContent)));
   await P.fill('#se-memo', '진로독서 줄이고, 큐리어톤'); await P.keyboard.press('Tab'); await wait(200);
   check('메모 저장', (await P.evaluate(() => JSON.parse(localStorage.getItem('se-st-3-1-1')).memo)) === '진로독서 줄이고, 큐리어톤');
-  // 복사
-  await P.click('#se-copy-btn'); await wait(200);
-  check('📋 복사 → 완성본 그대로', await P.evaluate(() => window.__clip === document.getElementById('se-fin').value && /복사했어요/.test(document.getElementById('se-copy-btn').textContent)));
   // 다음 학생·진로 전환
   await P.click('#se-edit-head button:has-text("다음")'); await wait(200);
-  check('다음 ▶ → 2번', await P.evaluate(() => seSelNum === 2 && document.querySelector('#se-students .se-stu.sel').dataset.num === '2' && document.getElementById('se-fin').value === ''));
+  check('다음 ▶ → 2번', await P.evaluate(() => seSelNum === 2 && document.querySelector('#se-students .se-stu.sel').dataset.num === '2' && document.getElementById('se-draft').value === ''));
   await P.click('#se-students .se-stu[data-num="1"]'); await wait(200);
-  await P.click('#se-kind-edit [data-kind="p"]'); await wait(200);
-  const pk = await P.evaluate(() => ({ cards: document.querySelectorAll('.se-card').length, fin: document.getElementById('se-fin').value, kind: document.getElementById('se-fin').dataset.kind }));
-  check('진로로 바꾸면 진로 카드·빈 완성본', pk.cards === 1 && pk.fin === '' && pk.kind === 'p', pk);
+  await P.click('#se-kind [data-kind="p"]'); await wait(200);
+  const pk = await P.evaluate(() => ({ cards: document.querySelectorAll('.se-card').length, fin: document.getElementById('se-draft').value, kind: document.getElementById('se-draft').dataset.kind }));
+  check('진로로 바꾸면 진로 카드·빈 편집 칸', pk.cards === 1 && pk.fin === '' && pk.kind === 'p', pk);
   await P.click('.se-card[data-area="' + p1 + '"] input'); await wait(150);
   await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).click()); await wait(300);
-  check('진로 합치기 → se-fin-…-p', (await ls(pc, 'se-fin-3-1-1-p')) === '진로독서 프로젝트로 책을 읽고 토론함.');
-  // 지우기
+  await P.click('#se-put-btn'); await wait(300);
+  check('진로 합치기 → 최종에 넣기 → se-fin-…-p', (await ls(pc, 'se-fin-3-1-1-p')) === '진로독서 프로젝트로 책을 읽고 토론함.');
+  // 지우기 → 편집 칸만 비움(최종은 그대로), 비운 채 최종에 넣기 → 확인 후 최종에서 지움
   await P.click('#se-editor button:has-text("지우기")'); await wait(200);
-  check('지우기 → 항목 삭제', (await ls(pc, 'se-fin-3-1-1-p')) === null && await P.evaluate(() => document.getElementById('se-fin').value === ''));
+  check('지우기 → 편집 칸만 비움, 최종은 그대로', (await ls(pc, 'se-fin-3-1-1-p')) === '진로독서 프로젝트로 책을 읽고 토론함.' && await P.evaluate(() => document.getElementById('se-draft').value === '' && /최종과 달라요/.test(document.getElementById('se-put-state').textContent)));
+  await P.click('#se-put-btn'); await wait(200);
+  await P.click('#custom-confirm-ok-btn'); await wait(300);
+  check('빈 편집 칸으로 최종에 넣기 → 확인 후 최종에서 지움', (await ls(pc, 'se-fin-3-1-1-p')) === null);
   await P.evaluate(() => [...document.querySelectorAll('#se-editor button')].find(b => /합쳐서/.test(b.textContent)).click()); await wait(300);
+  await P.click('#se-put-btn'); await wait(300);
 
   // ---- 최종 탭 ----
   await P.click('#se-tabs [data-tab="final"]'); await wait(300);
+  check('최종 탭: 지금 고른 진로만 보임', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)));
+  const pOnly = await P.evaluate(() => [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td')].map(t => t.textContent.trim()));
+  const pb = sgbBytesOf('진로독서 프로젝트로 책을 읽고 토론함.');
+  check('바이트 칸에 쓴 바이트 / 한도 + 남은 바이트', pOnly[2] === '진로독서 프로젝트로 책을 읽고 토론함.' && pOnly[3] === pb + ' / 1,500' + (1500 - pb).toLocaleString('ko-KR') + ' 남음', pOnly);
+  await P.click('#se-kind [data-kind="all"]'); await wait(300);
   const fin = await P.evaluate(() => ({
     rows: document.querySelectorAll('#se-final-list tbody tr').length, r1: [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td')].map(t => t.textContent.trim()),
-    note: document.getElementById('se-final-note').textContent, dots: [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] .se-dot')].map(d => d.className)
+    note: document.getElementById('se-final-note').textContent, b: [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td.se-bcell')].map(d => d.className)
   }));
-  check('최종: 5명, 1번 자율(초과)·진로 완성본과 바이트, 요약', fin.rows === 5 && fin.r1[2] === '가'.repeat(501) && fin.r1[4] === '진로독서 프로젝트로 책을 읽고 토론함.' && /over/.test(fin.dots[0]) && /ok/.test(fin.dots[1]) && /자율 완성 1명\(초과 1\) · 진로 완성 1명/.test(fin.note), fin);
-  await P.click('#se-final-list tbody tr[data-num="1"] td:nth-child(6) button'); await wait(200);
-  check('최종 표 📋 → 진로 완성본 복사', await P.evaluate(() => window.__clip === '진로독서 프로젝트로 책을 읽고 토론함.'));
+  check('전체: 5명, 1번 자율(초과, 3 넘음)·진로 최종과 바이트(남음), 요약', fin.rows === 5 && fin.r1[2] === '가'.repeat(501) && fin.r1[3] === '1,503 / 1,5003 넘음' && fin.r1[5] === '진로독서 프로젝트로 책을 읽고 토론함.' && /over/.test(fin.b[0]) && !/over/.test(fin.b[1]) && /자율 최종 1명\(초과 1\) · 진로 최종 1명/.test(fin.note), fin);
+  await P.click('#se-tabs [data-tab="src"]'); await wait(200);
+  check('전체를 골라도 자료 입력 탭은 마지막에 고른 진로', await P.evaluate(() => document.querySelector('#se-kind [data-kind="p"]').classList.contains('theme-active') && !document.querySelector('#se-kind [data-kind="all"]')));
+  await P.click('#se-tabs [data-tab="final"]'); await wait(200);
+  check('최종 탭으로 돌아오면 전체 그대로', await P.evaluate(() => document.querySelector('#se-kind [data-kind="all"]').classList.contains('theme-active')));
+  await P.click('#se-final-list tbody tr[data-num="1"] td:nth-child(8) button'); await wait(200);
+  check('최종 표 📋 → 진로 최종 복사', await P.evaluate(() => window.__clip === '진로독서 프로젝트로 책을 읽고 토론함.'));
   await P.click('#se-final-list tbody tr[data-num="3"] button:has-text("✎")'); await wait(300);
   check('✎ → 편집 탭 그 학생', await P.evaluate(() => seTab() === 'edit' && seSelNum === 3));
 
