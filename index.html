@@ -1048,6 +1048,17 @@
     /* 시정표 */
     #bs-grid { display: flex; flex-direction: column; gap: 12px; }
     #bs-grid > * { flex-shrink: 0; min-width: 0; }
+    #bs-grid .bs-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .bs-ckeys { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 5px; }
+    .bs-ckeys .nt-chip { padding: 2px 7px !important; font-size: 11px; }
+    .bs-mod { color: var(--accent-color); margin-left: 2px; }
+    #bs-colors .bs-sws { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+    #bs-colors .fm-sw { font-size: 10px; color: #999; line-height: 1; }
+    .bs-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 22px; border: 1px dashed var(--border-color); border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .bs-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .bs-hl { width: 64px !important; flex: 1 1 0; min-width: 0; }
+    .bs-w { display: inline-flex; align-items: center; gap: 3px; }
+    .bs-w input { width: 52px; padding-left: 5px; padding-right: 1px; }
     #bs-grid .nt-chip { padding: 3px 8px; }
     #bs-rows { display: flex; flex-direction: column; gap: 3px; }
     .bs-row { display: flex; align-items: center; gap: 4px; font-size: 12px; }
@@ -1140,7 +1151,7 @@
     @container (min-width: 600px) {
       #ws-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
       #pe-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
-      #bs-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: start; }
+      #bs-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; } /* 왼쪽 ①시정표 ②시간 / 오른쪽 ③디자인 ④표 모양 ⑤글씨 ⑥쪽 */
       #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
     #fm-left textarea.lp-input { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
@@ -3278,8 +3289,9 @@
         <div class="nt-muted" id="pe-font-msg"></div>
       </div>
       </div>
-      <div class="fm-guide" id="bs-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b> 시정표를 고르고 시간 줄을 확인하면 바로 만들어져요. <b class="fm-step opt">3</b><b class="fm-step opt">4</b><b class="fm-step opt">5</b>는 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="bs-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b> 시정표를 고르고 시간 줄을 확인하면 바로 만들어져요. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
       <div id="bs-grid" style="display:none;">
+      <div class="bs-col">
       <div class="nt-box" id="bs-mode-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🔔 시정표</span> <span class="nt-muted">평상시·단축 수업은 따로 기억해요</span></div>
         <div class="nt-row" id="bs-modes"></div>
@@ -3294,17 +3306,25 @@
         <div class="nt-row" id="bs-add"></div>
         <div class="nt-muted" id="bs-info"></div>
       </div>
+      </div>
+      <div class="bs-col">
       <div class="nt-box" id="bs-design-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>🎨 디자인</span> <span class="nt-muted">색 테마 · 줄 색 · 제목 · 선</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>🎨 디자인</span> <span class="nt-muted">짜임 · 색 테마 · 직접 색</span></div>
+        <div class="nt-row" id="bs-styles"></div>
         <div class="nt-row" id="bs-themes"></div>
-        <div class="nt-row" id="bs-colors"></div>
+        <div id="bs-colors"></div>
+      </div>
+      <div class="nt-box" id="bs-shape-box">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📐 표 모양</span> <span class="nt-muted">제목 · 선 · 칸</span></div>
         <div class="nt-row" id="bs-tstyle"></div>
         <div class="nt-row" id="bs-line"></div>
         <div class="nt-row" id="bs-time"></div>
+        <div class="nt-row" id="bs-head"></div>
         <div class="nt-row" id="bs-cols"></div>
+        <div class="nt-row" id="bs-widths"></div>
       </div>
       <div class="nt-box" id="bs-font-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>🔤 글씨</span> <span class="nt-muted">크기는 pt</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>🔤 글씨</span> <span class="nt-muted">크기는 pt</span></div>
         <div class="nt-row fm-fontrow" title="제목"><span class="fm-fl">제목</span><select id="bs-tfont" class="mini-select" onchange="bsOnFontPick('tFont', this.value)"></select></div>
         <input type="text" id="bs-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="bsOnFontCustom('tFont', this.value)">
         <div class="nt-row fm-fontrow" title="표 글씨"><span class="fm-fl">표</span><select id="bs-bfont" class="mini-select" onchange="bsOnFontPick('bFont', this.value)"></select></div>
@@ -3314,7 +3334,7 @@
         <div class="nt-muted" id="bs-font-msg"></div>
       </div>
       <div class="nt-box" id="bs-page-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
         <div class="nt-row" id="bs-paper"></div>
         <div id="bs-margins" class="fm-mgrid" title="여백(mm)">
           <label>위<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mT" oninput="bsOnPageNum(this)"></label>
@@ -3323,6 +3343,7 @@
           <label>오른쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mR" oninput="bsOnPageNum(this)"></label>
         </div>
         <div class="nt-row" id="bs-rowh"></div>
+      </div>
       </div>
       </div>
     </div>
@@ -15892,22 +15913,34 @@
   const BS_READY = { normal: true, short: true };
   const BS_KINDS = [['p', '교시'], ['meet', '조회·종례'], ['lunch', '중식'], ['clean', '청소'], ['self', '자습'], ['etc', '기타']];
   const BS_PRESETS = [['조회', 'meet'], ['중식', 'lunch'], ['청소', 'clean'], ['종례', 'meet'], ['자기주도학습1', 'self'], ['자기주도학습2', 'self'], ['방과후', 'etc']];
-  // 색 테마: 제목 바탕·제목 글자·머리 줄 바탕·선 색·줄 종류별 바탕(교시 줄은 흰색, '' = 흰색)·번갈아 색
+  // 색 테마: 제목 바탕·제목 글자·머리 줄 바탕·머리 줄 글자·강조색(구분 강조·타일·가로선만)·선 색·줄 종류별 바탕(교시 줄은 흰색, '' = 흰색)·번갈아 색
   const BS_THEMES = [
-    { k: 'classic', n: '엑셀처럼', title: '#DAE3F3', tTxt: '#000000', head: '#E2EFDA', line: '#000000', meet: '', lunch: '#FCE4D6', clean: '#FFF2CC', self: '', etc: '#EDEDED', zebra: '#F5F5F5' },
-    { k: 'mono', n: '흑백', title: '#FFFFFF', tTxt: '#000000', head: '#D9D9D9', line: '#000000', meet: '', lunch: '#EDEDED', clean: '#EDEDED', self: '', etc: '#EDEDED', zebra: '#F5F5F5' },
-    { k: 'navy', n: '남색', title: '#1F3864', tTxt: '#FFFFFF', head: '#D6DCE5', line: '#1F3864', meet: '#EEF2F8', lunch: '#FBE5D6', clean: '#FFF2CC', self: '#EEF2F8', etc: '#EDEDED', zebra: '#F3F6FA' },
-    { k: 'mint', n: '민트', title: '#C9EBE0', tTxt: '#0F5040', head: '#E6F4EF', line: '#2E7D6B', meet: '', lunch: '#FFE8D6', clean: '#FFF6CC', self: '#E8F1FB', etc: '#EFEFEF', zebra: '#F3FAF7' },
-    { k: 'pastel', n: '파스텔', title: '#FDE2E4', tTxt: '#6B2737', head: '#E8E0F4', line: '#6B6B6B', meet: '#EEF6FF', lunch: '#FFF1D6', clean: '#E3F4E1', self: '#F2EBFA', etc: '#F0F0F0', zebra: '#FAF7FC' },
-    { k: 'coral', n: '코랄', title: '#F4B183', tTxt: '#5A2A0A', head: '#FBE5D6', line: '#7F4F24', meet: '', lunch: '#FFF2CC', clean: '#E2EFDA', self: '#DEEBF7', etc: '#EDEDED', zebra: '#FDF6F0' },
+    { k: 'classic', n: '엑셀처럼', title: '#DAE3F3', tTxt: '#000000', head: '#E2EFDA', hTxt: '#000000', accent: '#2F5597', line: '#000000', meet: '', lunch: '#FCE4D6', clean: '#FFF2CC', self: '', etc: '#EDEDED', zebra: '#F5F5F5' },
+    { k: 'mono', n: '흑백', title: '#FFFFFF', tTxt: '#000000', head: '#D9D9D9', hTxt: '#000000', accent: '#262626', line: '#000000', meet: '', lunch: '#EDEDED', clean: '#EDEDED', self: '', etc: '#EDEDED', zebra: '#F5F5F5' },
+    { k: 'navy', n: '남색', title: '#1F3864', tTxt: '#FFFFFF', head: '#D6DCE5', hTxt: '#1F3864', accent: '#1F3864', line: '#1F3864', meet: '#EEF2F8', lunch: '#FBE5D6', clean: '#FFF2CC', self: '#EEF2F8', etc: '#EDEDED', zebra: '#F3F6FA' },
+    { k: 'mint', n: '민트', title: '#C9EBE0', tTxt: '#0F5040', head: '#E6F4EF', hTxt: '#0F5040', accent: '#2E7D6B', line: '#2E7D6B', meet: '', lunch: '#FFE8D6', clean: '#FFF6CC', self: '#E8F1FB', etc: '#EFEFEF', zebra: '#F3FAF7' },
+    { k: 'pastel', n: '파스텔', title: '#FDE2E4', tTxt: '#6B2737', head: '#E8E0F4', hTxt: '#4B3B72', accent: '#8E7DBE', line: '#6B6B6B', meet: '#EEF6FF', lunch: '#FFF1D6', clean: '#E3F4E1', self: '#F2EBFA', etc: '#F0F0F0', zebra: '#FAF7FC' },
+    { k: 'coral', n: '코랄', title: '#F4B183', tTxt: '#5A2A0A', head: '#FBE5D6', hTxt: '#5A2A0A', accent: '#C55A11', line: '#7F4F24', meet: '', lunch: '#FFF2CC', clean: '#E2EFDA', self: '#DEEBF7', etc: '#EDEDED', zebra: '#FDF6F0' },
+    { k: 'forest', n: '숲', title: '#385723', tTxt: '#FFFFFF', head: '#E2EFDA', hTxt: '#385723', accent: '#548235', line: '#385723', meet: '#F1F7EC', lunch: '#FFF2CC', clean: '#FCE4D6', self: '#F1F7EC', etc: '#EDEDED', zebra: '#F6FAF2' },
+    { k: 'berry', n: '자주', title: '#7030A0', tTxt: '#FFFFFF', head: '#EDE7F6', hTxt: '#4B1F6E', accent: '#7030A0', line: '#4B1F6E', meet: '#F6F1FB', lunch: '#FDE2E4', clean: '#FFF2CC', self: '#F6F1FB', etc: '#EDEDED', zebra: '#FAF7FD' },
   ];
-  const BS_SWATCH = ['', '#FCE4D6', '#FFF2CC', '#E2EFDA', '#DEEBF7', '#EDE7F6', '#FDE2E4', '#EDEDED', '#D9D9D9'];
+  // 직접 고르는 색: [키, 이름] — 테마 위에 덧씌움(테마를 다시 고르면 지움)
+  const BS_CKEYS = [['title', '제목 바탕'], ['tTxt', '제목 글자'], ['head', '머리 줄'], ['hTxt', '머리 줄 글자'], ['accent', '강조색'], ['line', '선'],
+    ['meet', '조회·종례'], ['lunch', '중식'], ['clean', '청소'], ['self', '자습'], ['etc', '기타'], ['zebra', '번갈아']];
+  const BS_CK_SOLID = { tTxt: 1, hTxt: 1, accent: 1, line: 1 }; // 글자·선 색은 "없음(흰색)"이 없음
+  const BS_SWATCH = ['', '#FCE4D6', '#FFF2CC', '#E2EFDA', '#DEEBF7', '#EDE7F6', '#FDE2E4', '#EDEDED', '#D9D9D9',
+    '#F4B183', '#FFD966', '#A9D18E', '#9DC3E6', '#B4A7D6', '#C00000', '#C55A11', '#2E7D6B', '#2F5597', '#1F3864', '#7030A0', '#595959', '#000000', '#FFFFFF'];
   const BS_LINES = [[0, '얇게', 0.12, 0.4], [1, '보통', 0.2, 0.7], [2, '굵게', 0.3, 1.0]]; // [키, 이름, 안쪽 선, 바깥 선(mm)]
   const BS_TSTYLES = [['box', '상자', '제목을 색 상자 안에(표 위)'], ['band', '표에 붙이기', '표 맨 윗줄이 제목'], ['text', '글씨만', '상자·선 없이 글씨만'], ['line', '밑줄', '제목 아래 굵은 선']];
-  const BS_SIZES = [['tSize', '제목', 14, 60], ['hSize', '머리 줄', 10, 40], ['nSize', '구분', 10, 44], ['tmSize', '시간', 10, 48], ['mSize', '분', 10, 44]];
+  // 표 짜임(사용자: "엑셀에서는 저런 식으로밖에 안 됐는데 자유도를 높여 달라") — 선·바탕을 칸 자리(머리 줄/구분/시간/분)에 따라 다르게
+  const BS_STYLES = [['grid', '▦ 기본 표', '모든 칸에 선(엑셀 모양)'], ['minimal', '☰ 가로선만', '세로선 없이 줄 사이 가는 선만 — 깔끔하게'],
+    ['badge', '▌ 구분 강조', '구분 칸을 강조색으로 채우고 흰 글씨'], ['tiles', '▩ 타일', '칸 사이를 띄운 색 블록(선 없음)']];
+  const BS_SIZES = [['tSize', '제목', 14, 60], ['hSize', '머리 줄', 8, 40], ['nSize', '구분', 8, 44], ['tmSize', '시간', 8, 48], ['mSize', '분', 8, 44]];
   const BS_SAFE = 3; // 쪽 아래 여유(mm) — 한글에서 표가 다음 쪽으로 밀리지 않게
+  const BS_TILE_GAP = 1.5; // 타일: 칸 사이(mm)
   const BS_DEFAULT = {
-    mode: 'normal', theme: 'classic', colors: {}, tStyle: 'box', line: 1, zebra: false, showMin: true, sep: ' - ', pad: true, tblW: 100,
+    mode: 'normal', theme: 'classic', colors: {}, style: 'grid', tStyle: 'box', line: 1, outer: 'solid', zebra: false, showMin: true, sep: ' - ', pad: true, tblW: 100,
+    showHead: true, hN: '구분', hT: '시간', hM: '분', colW: {}, // 칸 너비(mm, 비우면 자동): n 구분 · t 시간 · m 분
     tFont: 'HY헤드라인M', bFont: 'HY견고딕', tFontC: false, bFontC: false, bold: true,
     tSize: 30, hSize: 22, nSize: 24, tmSize: 26, mSize: 22,
     fill: true, rowH: 15, paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15,
@@ -15927,11 +15960,11 @@
       extras: [{ n: '조회', s: '', e: '', k: 'meet' }, { n: '중식', s: '', e: '', k: 'lunch' }, { n: '청소', s: '', e: '', k: 'clean' },
         { n: '자기주도학습1', s: '17:30', e: '18:40', k: 'self' }, { n: '자기주도학습2', s: '18:50', e: '20:00', k: 'self' }] };
   }
-  // 비워 둔 특별 줄 시간은 교시에 맞춰 저절로: 조회 = 1교시 10분 전~1교시 시작, 중식 = 4교시 끝~5교시 시작, 청소 = 6교시 끝~7교시 시작, 종례 = 마지막 교시 끝~10분
+  // 비워 둔 특별 줄 시간은 교시에 맞춰 저절로: 조회 = 1교시 10분 전~1교시 시작, 중식 = 4교시 끝~5교시 시작, 청소 = 6교시 끝~7교시 시작, 종례 = 마지막 교시 끝~5분(사용자: 교사 퇴근 16:40 — 7교시 16:35 끝)
   // (단축 수업에서 교시 시간을 바꾸면 따라 움직임)
   function bsAutoTime(n, ps) {
     const g = function(i, f) { return (ps[i] || {})[f] || ''; }, last = ps[ps.length - 1] || {};
-    return { 조회: [bsAddMin(g(0, 's'), -10), g(0, 's')], 중식: [g(3, 'e'), g(4, 's')], 청소: [g(5, 'e'), g(6, 's')], 종례: [last.e || '', bsAddMin(last.e, 10)] }[String(n).trim()] || ['', ''];
+    return { 조회: [bsAddMin(g(0, 's'), -10), g(0, 's')], 중식: [g(3, 'e'), g(4, 's')], 청소: [g(5, 'e'), g(6, 's')], 종례: [last.e || '', bsAddMin(last.e, 5)] }[String(n).trim()] || ['', ''];
   }
   function bsModeClean(m, def) {
     m = Object.assign({}, def, m && typeof m === 'object' ? m : {});
@@ -15956,6 +15989,11 @@
     if (!BS_THEMES.some(function(t) { return t.k === c.theme; })) c.theme = 'classic';
     c.colors = c.colors && typeof c.colors === 'object' ? c.colors : {};
     if (!BS_TSTYLES.some(function(t) { return t[0] === c.tStyle; })) c.tStyle = 'box';
+    if (!BS_STYLES.some(function(t) { return t[0] === c.style; })) c.style = 'grid';
+    c.outer = c.outer === 'double' ? 'double' : 'solid'; c.showHead = c.showHead !== false;
+    ['hN', 'hT', 'hM'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]).trim() || BS_DEFAULT[k]; }); // 비우면 기본 글(구분·시간·분)
+    const cw = c.colW && typeof c.colW === 'object' ? c.colW : {};
+    c.colW = {}; ['n', 't', 'm'].forEach(function(k) { const v = parseFloat(cw[k]); if (isFinite(v) && v >= 8 && v <= 400) c.colW[k] = v; });
     c.line = [0, 1, 2].indexOf(Number(c.line)) >= 0 ? Number(c.line) : 1;
     c.zebra = c.zebra === true; c.showMin = c.showMin !== false; c.pad = c.pad !== false; c.bold = c.bold !== false; c.fill = c.fill !== false;
     if ([' - ', ' ~ ', ' – '].indexOf(c.sep) < 0) c.sep = ' - ';
@@ -15978,7 +16016,7 @@
   }
   // 지금 시정표(평상시/단축)의 줄 자료 고치기 — 처음 고칠 때 보이던 값(기본값 포함)을 통째로 저장
   function bsModeSet(fn, refill) { const c = bsCfg(), m = JSON.parse(JSON.stringify(c[c.mode])); fn(m, c); const o = {}; o[c.mode] = m; bsSet(o, refill); }
-  function bsColor(c, k) { const t = BS_THEMES.find(function(x) { return x.k === c.theme; }); return k in c.colors ? c.colors[k] : t[k]; }
+  function bsColor(c, k) { const t = BS_THEMES.find(function(x) { return x.k === c.theme; }); const v = k in c.colors && /^(#[0-9A-Fa-f]{6})?$/.test(c.colors[k]) ? c.colors[k] : t[k]; return BS_CK_SOLID[k] && !v ? t[k] : v; }
   function bsTheme(c) { return BS_THEMES.find(function(x) { return x.k === c.theme; }); }
   // 표에 들어갈 줄(시간 순): { k, i(교시 번호 0~) | j(특별 줄 번호), n, s, e, auto(일과 시간 그대로) }
   function bsRows(c, mode) {
@@ -15995,48 +16033,103 @@
   }
   function bsDur(r) { const s = minutesOf(r.s), e = minutesOf(r.e); return s != null && e != null && e > s ? (e - s) + '분' : ''; }
   function bsTimeText(c, r) {
-    const f = function(t) { return c.pad ? t : t.replace(/^0(\d)/, '$1'); };
-    return r.s || r.e ? f(r.s) + c.sep + f(r.e) : '';
+    return r.s || r.e ? bsFmtT(c, r.s) + c.sep + bsFmtT(c, r.e) : '';
   }
-  // ----- 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다 -----
+  // ----- 쪽 배치(mm) + 표 칸 자료 — 미리보기·한글 파일이 같이 쓴다 -----
+  // 표는 "줄(교시·특별 줄) × 칸(구분·시간·분)" — 세로형만(사용자: 가로형은 안 뽑아도 됨).
+  // 선은 "줄 사이 / 칸 사이 / 바깥 / 머리 경계"마다 표 짜임(style)에 따라 정하고, 바탕·글자색은 칸 자리(머리·구분·나머지)와 줄 종류(교시·중식 …)로 정한다.
+  function bsFmtT(c, t) { return c.pad ? t : String(t || '').replace(/^0(\d)/, '$1'); }
   function bsLayout(c) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1], W = w - c.mL - c.mR, H = h - c.mT - c.mB;
     const m = c[c.mode], rows = bsRows(c), tw = Math.round(W * c.tblW / 100 * 10) / 10;
+    const col = function(k) { return bsColor(c, k); }, LN = BS_LINES[c.line], li = LN[2], lo = LN[3];
     const emW = function(t, pt) { let em = 0; for (const ch of t || '') em += ch.codePointAt(0) >= 0x1100 ? 1 : ch === ' ' ? 0.3 : 0.62; return em * pt * FM_PT; };
-    const nameNeed = Math.max(emW('구분', c.hSize), rows.reduce(function(a, r) { return Math.max(a, emW(r.n, c.nSize)); }, 0)) + 6;
-    const timeNeed = Math.max(emW('시간', c.hSize), rows.reduce(function(a, r) { return Math.max(a, emW(bsTimeText(c, r), c.tmSize)); }, emW(bsTimeText(c, { s: '08:40', e: '08:50' }), c.tmSize))) + 6;
-    const minNeed = c.showMin ? Math.max(emW('분', c.hSize), rows.reduce(function(a, r) { return Math.max(a, emW(bsDur(r), c.mSize)); }, emW('50분', c.mSize))) + 5 : 0;
-    // 넉넉하면 모자란 만큼 비례해서 나누고, 모자라면 구분 칸이 줄어 글이 두 줄로(엑셀의 "자기주도 / 학습1"처럼)
-    let cw;
-    const sum = nameNeed + timeNeed + minNeed;
-    if (sum <= tw) cw = [nameNeed, timeNeed, minNeed].map(function(x) { return x * tw / sum; });
-    else { const nm = Math.max(tw * 0.22, tw - timeNeed - minNeed); const k = (tw - nm) / (timeNeed + minNeed); cw = [nm, timeNeed * k, minNeed * k]; }
-    if (!c.showMin) cw.pop();
-    cw = cw.map(function(x) { return Math.round(x * 10) / 10; }); cw[1] = Math.round((tw - cw.reduce(function(a, b) { return a + b; }, 0) + cw[1]) * 10) / 10;
-    const lines = function(t, pt, ww) { return Math.max(1, Math.ceil(emW(t, pt) / Math.max(1, ww - 3))); };
-    // 제목(상자·밑줄은 1칸 표, 표에 붙이기는 표 첫 줄)·부제
-    const titleH = Math.round(Math.max(c.tSize * FM_PT * (c.tStyle === 'text' ? 1.4 : 1.9), 10) * 10) / 10;
-    const subSize = Math.max(10, Math.round(c.hSize * 0.6)), subH = m.sub ? Math.round(subSize * FM_PT * 1.8 * 10) / 10 : 0;
-    const gap = c.tStyle === 'band' ? 0 : 4;
-    const headH = Math.round(Math.max(c.hSize * FM_PT * 1.7, 8) * 10) / 10;
     const lhOf = function(pt) { return pt * FM_PT * 1.25; };
-    const need = rows.map(function(r) {
-      return Math.max(lines(r.n, c.nSize, cw[0]) * lhOf(c.nSize), lines(bsTimeText(c, r), c.tmSize, cw[1]) * lhOf(c.tmSize), c.showMin ? lhOf(c.mSize) : 0) + 3;
-    });
-    const avail = H - BS_SAFE - (c.tStyle === 'band' ? 0 : titleH + gap) - subH - headH - (c.tStyle === 'band' ? titleH : 0);
-    const minNeedAll = need.reduce(function(a, b) { return Math.max(a, b); }, 0);
-    let rh = c.fill ? (rows.length ? Math.floor(avail / rows.length * 10) / 10 : 0) : c.rowH;
-    rh = Math.max(rh, minNeedAll);
-    const rowHs = rows.map(function(r, i) { return Math.max(rh, need[i]); });
-    const total = (c.tStyle === 'band' ? 0 : titleH + gap) + subH + headH + (c.tStyle === 'band' ? titleH : 0) + rowHs.reduce(function(a, b) { return a + b; }, 0);
-    return { w: w, h: h, pw: p[0], ph: p[1], W: W, H: H, tw: tw, cw: cw, rows: rows, rowHs: rowHs, titleH: titleH, subH: subH, subSize: subSize, gap: gap, headH: headH,
-      over: total > H - BS_SAFE + 0.05, tooLow: !c.fill && c.rowH < minNeedAll - 0.05, total: total };
+    const lines = function(t, pt, ww) { return Math.max(1, Math.ceil(emW(t, pt) / Math.max(1, ww - 3))); };
+    const r1 = function(x) { return Math.round(x * 10) / 10; };
+    const tiles = c.style === 'tiles', sp = tiles ? BS_TILE_GAP : 0, band = c.tStyle === 'band';
+    // 칸(필드)
+    const F = [{ k: 'n', label: c.hN, size: c.nSize }, { k: 't', label: c.hT, size: c.tmSize }];
+    if (c.showMin) F.push({ k: 'm', label: c.hM, size: c.mSize });
+    const txt = function(r, f) { return f === 'n' ? r.n : f === 't' ? bsTimeText(c, r) : bsDur(r); };
+    // 제목·부제
+    const titleH = r1(Math.max(c.tSize * FM_PT * (c.tStyle === 'text' ? 1.4 : 1.9), 10));
+    const subSize = Math.max(10, Math.round(c.hSize * 0.6)), subH = m.sub ? r1(subSize * FM_PT * 1.8) : 0, gap = band ? 0 : 4;
+    const avail0 = H - BS_SAFE - (band ? 0 : titleH + gap) - subH - (band ? titleH : 0);
+    const nI = rows.length + (c.showHead ? 1 : 0); // 줄 수(머리 포함)
+    let cw, rh, fs = { h: c.hSize }, over = false, tooLow = false;
+    F.forEach(function(f) { fs[f.k] = f.size; });
+    // 칸 폭: 글 길이에 비례(넉넉하면 나눠 갖고, 모자라면 구분 칸이 줄어 두 줄) → 직접 적은 칸 너비는 그대로, 나머지가 남은 폭을 나눔
+    const inner = tw - sp * (F.length + 1);
+    const need = F.map(function(f) { return Math.max(c.showHead ? emW(f.label, c.hSize) : 0, rows.reduce(function(a, r) { return Math.max(a, emW(txt(r, f.k), f.size)); }, f.k === 't' ? emW(bsTimeText(c, { s: '08:40', e: '08:50' }), f.size) : 0)) + (f.k === 'm' ? 5 : 6); });
+    const sum = need.reduce(function(a, b) { return a + b; }, 0);
+    let auto;
+    if (sum <= inner) auto = need.map(function(x) { return x * inner / sum; });
+    else { const nm = Math.max(inner * 0.22, inner - sum + need[0]); const k = (inner - nm) / (sum - need[0]); auto = need.map(function(x, i) { return i ? x * k : nm; }); }
+    const fix = F.map(function(f) { return c.colW[f.k] != null ? c.colW[f.k] : null; });
+    const fixSum = fix.reduce(function(a, x) { return a + (x || 0); }, 0), autoSum = auto.reduce(function(a, x, i) { return a + (fix[i] == null ? x : 0); }, 0);
+    if (fix.every(function(x) { return x != null; })) cw = fix.map(function(x) { return x * inner / fixSum; }); // 모두 직접이면 표 폭에 맞춰 비율로
+    else { const left = Math.max(8 * fix.filter(function(x) { return x == null; }).length, inner - fixSum); cw = auto.map(function(x, i) { return fix[i] != null ? fix[i] : x * left / autoSum; }); }
+    cw = cw.map(r1); cw[1] = r1(cw[1] + inner - cw.reduce(function(a, b) { return a + b; }, 0));
+    const headH = r1(Math.max(c.hSize * FM_PT * 1.7, 8));
+    const need2 = rows.map(function(r) { return Math.max.apply(null, F.map(function(f, i) { return lines(txt(r, f.k), f.size, cw[i]) * lhOf(f.size); })) + 3; });
+    const minAll = need2.reduce(function(a, b) { return Math.max(a, b); }, 0);
+    const avail = avail0 - (c.showHead ? headH : 0) - sp * (nI + (band ? 2 : 1));
+    let base = c.fill ? (rows.length ? Math.floor(avail / rows.length * 10) / 10 : 0) : c.rowH;
+    tooLow = !c.fill && c.rowH < minAll - 0.05;
+    base = Math.max(base, minAll);
+    rh = (c.showHead ? [headH] : []).concat(rows.map(function(r, i) { return Math.max(base, need2[i]); }));
+    // 선: 줄 경계 b(0 = 맨 앞 바깥 … nI = 맨 끝 바깥, hb = 머리와 첫 줄 사이), 칸 경계 b(0 … F.length)
+    const dbl = c.outer === 'double', LC = col('line'), GRAY = '#BFBFBF';
+    const O = { w: dbl ? Math.max(lo, 0.5) : lo, c: LC, t: dbl ? 'double' : 'solid' }, I = { w: li, c: LC, t: 'solid' }, G = { w: li, c: GRAY, t: 'solid' };
+    const hb = c.showHead ? 1 : -1, nF = F.length;
+    const itemB = function(b) {
+      const end = b === 0 || b === nI;
+      if (c.style === 'tiles') return null;
+      if (c.style === 'minimal') return end ? O : b === hb ? { w: lo, c: col('accent'), t: 'solid' } : I;
+      if (c.style === 'badge') return end ? O : G;
+      return end || b === hb ? O : I;
+    };
+    const fieldB = function(b) {
+      const end = b === 0 || b === nF;
+      if (c.style === 'tiles' || c.style === 'minimal') return null;
+      if (c.style === 'badge') return end ? O : G;
+      return end ? O : I;
+    };
+    // 바탕·글자색: 머리 / 특별 줄 / 교시(구분 칸·나머지), 번갈아 색은 교시 줄만
+    const paint = function(r, f, pi) {
+      if (!r) return c.style === 'tiles' ? { fill: col('accent'), color: '#FFFFFF' } : c.style === 'minimal' ? { fill: '', color: col('accent') } : { fill: col('head'), color: col('hTxt') };
+      if (r.k !== 'p') return { fill: col(r.k) || (c.style === 'tiles' ? col('zebra') || '#F2F2F2' : ''), color: '#000000' };
+      if (c.style === 'badge' && f === 'n') return { fill: col('accent'), color: '#FFFFFF' };
+      if (c.style === 'tiles') return { fill: f === 'n' ? col('head') : (c.zebra && pi % 2 === 1 ? col('head') : col('zebra')) || '#F2F2F2', color: '#000000' };
+      return { fill: c.zebra && pi % 2 === 1 ? col('zebra') : '', color: '#000000' };
+    };
+    let pi = 0;
+    const items = (c.showHead ? [null] : []).concat(rows), pIdx = items.map(function(r) { return r && r.k === 'p' ? pi++ : -1; });
+    const cell = function(r, ii, f, fi) {
+      const pt = paint(r, f.k, pIdx[ii]);
+      return { t: r ? txt(r, f.k) : f.label, f: r ? f.k : 'h', size: r ? fs[f.k] : c.hSize, fill: pt.fill, color: pt.color, bold: c.bold, kind: r ? r.k : 'head' };
+    };
+    const tRows = [];
+    const titleCell = { t: m.title, f: 'title', size: c.tSize, fill: c.tStyle === 'box' || c.tStyle === 'band' ? col('title') : '', color: c.tStyle === 'box' || c.tStyle === 'band' ? col('tTxt') : '#000000', bold: true };
+    const nCols = nF;
+    if (band) tRows.push({ h: titleH, cells: [Object.assign({ cs: nCols, bd: tiles ? {} : { t: O, b: c.style === 'minimal' ? null : O, l: c.style === 'minimal' ? null : O, r: c.style === 'minimal' ? null : O } }, titleCell)] });
+    items.forEach(function(r, ii) { tRows.push({ h: rh[ii], k: r ? r.k : 'head', cells: F.map(function(f, fi) { return Object.assign(cell(r, ii, f, fi), { bd: { t: itemB(ii), b: itemB(ii + 1), l: fieldB(fi), r: fieldB(fi + 1) } }); }) }); });
+    if (band && !tiles && tRows[1]) tRows[1].cells.forEach(function(x) { x.bd.t = O; });
+    const tblH = tRows.reduce(function(a, r) { return a + r.h; }, 0) + sp * (tRows.length + 1);
+    const total = (band ? 0 : titleH + gap) + subH + tblH;
+    over = total > H - BS_SAFE + 0.05;
+    const tBox = c.tStyle === 'box' ? Object.assign({ bd: tiles ? {} : { t: O, b: O, l: O, r: O } }, titleCell) : c.tStyle === 'line' ? Object.assign({ bd: { b: O } }, titleCell) : null;
+    return { w: w, h: h, pw: p[0], ph: p[1], W: W, H: H, tw: tw, cw: cw, sp: sp, rows: rows, F: F, tRows: tRows, titleH: titleH, tBox: tBox, subH: subH, subSize: subSize, gap: gap,
+      fs: fs, over: over, tooLow: tooLow, total: total, rowHs: rh.slice(c.showHead ? 1 : 0) };
   }
-  // 줄 바탕색: 특별 줄 종류 색 → 번갈아 색(교시 줄만) → 흰색
-  function bsRowFill(c, r, idx) { if (r.k !== 'p') return bsColor(c, r.k) || ''; return c.zebra && idx % 2 === 1 ? bsTheme(c).zebra : ''; }
-  // 칸 선(mm): 바깥은 굵게, 안쪽은 가늘게, 머리 줄 아래는 바깥 굵기
-  function bsLineW(c) { const x = BS_LINES[c.line]; return { i: x[2], o: x[3] }; }
   // ----- 미리보기 -----
+  function bsTdCss(c, x) {
+    const bd = function(s) { return s ? fmBdCss(fmLn(s.t, s.w, s.c)) : 'none'; };
+    const font = x.f === 'title' ? fmFontCss(peFont(c, 'tFont').n) : fmFontCss(peFont(c, 'bFont').n);
+    return (x.fill ? 'background:' + x.fill + '; ' : '') + 'color:' + x.color + '; ' + font + ' font-size:' + x.size + 'pt; font-weight:' + (x.f === 'title' ? 800 : x.bold ? 700 : 400) + ';' +
+      ' border-top:' + bd(x.bd.t) + '; border-bottom:' + bd(x.bd.b) + '; border-left:' + bd(x.bd.l) + '; border-right:' + bd(x.bd.r) + ';';
+  }
   function bsRender() {
     const c = bsCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     if (!BS_READY[c.mode]) {
@@ -16044,29 +16137,17 @@
       label.textContent = ''; document.getElementById('fm-fit-info').textContent = '';
       return;
     }
-    const L = bsLayout(c), m = c[c.mode], th = bsTheme(c), lw = bsLineW(c), ln = th.line;
-    const bd = function(w) { return fmBdCss(fmLn('solid', w, ln)); };
-    const tF = fmFontCss(peFont(c, 'tFont').n), bF = fmFontCss(peFont(c, 'bFont').n), bw = c.bold ? ' font-weight:700;' : ' font-weight:400;';
-    const nC = L.cw.length;
-    let h = '<div class="fm-sheet bs-sheet" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">';
-    const titleCell = function(extra) { return '<td colspan="' + nC + '" class="bs-title" style="height:' + L.titleH + 'mm; ' + tF + ' font-size:' + c.tSize + 'pt; font-weight:800; color:' + (c.tStyle === 'box' || c.tStyle === 'band' ? th.tTxt : '#000') + ';' + extra + '">' + ntEsc(m.title) + '</td>'; };
-    if (c.tStyle !== 'band') {
-      const st = c.tStyle === 'box' ? ' background:' + th.title + '; border:' + bd(lw.o) + ';' : c.tStyle === 'line' ? ' border-bottom:' + bd(lw.o) + ';' : '';
-      h += '<table class="bs-tbl" style="width:' + L.tw + 'mm;"><tr>' + titleCell(st) + '</tr></table>';
-    }
+    const L = bsLayout(c), m = c[c.mode], bF = fmFontCss(peFont(c, 'bFont').n);
+    const tblCss = L.sp ? 'border-collapse:separate; border-spacing:' + L.sp + 'mm;' : 'border-collapse:collapse;';
+    let h = '<div class="fm-sheet bs-sheet" data-style="' + c.style + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">';
+    if (c.tStyle === 'text') h += '<div class="bs-title bs-ttext" style="width:' + L.tw + 'mm; height:' + L.titleH + 'mm; line-height:' + L.titleH + 'mm; ' + fmFontCss(peFont(c, 'tFont').n) + ' font-size:' + c.tSize + 'pt;">' + ntEsc(m.title) + '</div>';
+    if (L.tBox) h += '<table class="bs-tbl" style="width:' + L.tw + 'mm; ' + tblCss + '"><tr><td class="bs-title" style="height:' + L.titleH + 'mm; ' + bsTdCss(c, L.tBox) + '">' + ntEsc(m.title) + '</td></tr></table>';
     if (m.sub) h += '<div class="bs-sub" style="width:' + L.tw + 'mm; height:' + L.subH + 'mm; line-height:' + L.subH + 'mm; ' + bF + ' font-size:' + L.subSize + 'pt;">' + ntEsc(m.sub) + '</div>';
     if (L.gap) h += '<div style="height:' + L.gap + 'mm;"></div>';
-    h += '<table class="bs-tbl" style="width:' + L.tw + 'mm;"><colgroup>' + L.cw.map(function(x) { return '<col style="width:' + x + 'mm">'; }).join('') + '</colgroup>';
-    if (c.tStyle === 'band') h += '<tr>' + titleCell(' background:' + th.title + '; border:' + bd(lw.o) + ';') + '</tr>';
-    const side = function(ci, top, bot) { return 'border-top:' + top + '; border-bottom:' + bot + '; border-left:' + bd(ci === 0 ? lw.o : lw.i) + '; border-right:' + bd(ci === nC - 1 ? lw.o : lw.i) + ';'; };
-    h += '<tr class="bs-head" style="height:' + L.headH + 'mm;">' + ['구분', '시간', '분'].slice(0, nC).map(function(t, ci) {
-      return '<td style="background:' + th.head + '; ' + side(ci, bd(lw.o), bd(lw.o)) + ' ' + bF + ' font-size:' + c.hSize + 'pt;' + bw + '">' + t + '</td>';
-    }).join('') + '</tr>';
-    L.rows.forEach(function(r, i) {
-      const fill = bsRowFill(c, r, i), last = i === L.rows.length - 1, top = bd(lw.i), bot = bd(last ? lw.o : lw.i);
-      const cells = [[r.n, c.nSize], [bsTimeText(c, r), c.tmSize], [bsDur(r), c.mSize]].slice(0, nC);
-      h += '<tr data-k="' + r.k + '" style="height:' + L.rowHs[i] + 'mm;">' + cells.map(function(x, ci) {
-        return '<td style="' + (fill ? 'background:' + fill + '; ' : '') + side(ci, top, bot) + ' ' + bF + ' font-size:' + x[1] + 'pt;' + bw + '">' + ntEsc(x[0]) + '</td>';
+    h += '<table class="bs-tbl bs-main" style="width:' + L.tw + 'mm; ' + tblCss + '"><colgroup>' + L.cw.map(function(x) { return '<col style="width:' + x + 'mm">'; }).join('') + '</colgroup>';
+    L.tRows.forEach(function(r) {
+      h += '<tr' + (r.k ? ' data-k="' + r.k + '"' : '') + ' style="height:' + r.h + 'mm;">' + r.cells.map(function(x) {
+        return '<td' + (x.cs ? ' colspan="' + x.cs + '"' : '') + (x.f === 'title' ? ' class="bs-title"' : '') + ' style="' + bsTdCss(c, x) + '">' + ntEsc(x.t) + '</td>';
       }).join('') + '</tr>';
     });
     h += '</table></div>';
@@ -16091,40 +16172,46 @@
     }).join('');
     document.getElementById('bs-mode-help').textContent = BS_MODES.find(function(x) { return x[0] === c.mode; })[2];
     const ready = !!BS_READY[c.mode];
-    ['bs-title-row', 'bs-sub-row', 'bs-rows-box', 'bs-design-box', 'bs-font-box', 'bs-page-box'].forEach(function(id) { document.getElementById(id).style.display = ready ? '' : 'none'; });
+    ['bs-title-row', 'bs-sub-row', 'bs-rows-box', 'bs-design-box', 'bs-shape-box', 'bs-font-box', 'bs-page-box'].forEach(function(id) { document.getElementById(id).style.display = ready ? '' : 'none'; });
     if (!ready) return;
     setVal('bs-title', m.title); setVal('bs-sub', m.sub);
     // 시간 줄
     document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('') +
       sep + (c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="고친 교시 시간을 지우고 관리자 일과 시간대로">↺ 일과 시간대로</button>'
         : '<button class="nt-chip" id="bs-copy-normal" onclick="bsCopyNormal()" title="평상시 시정표의 줄·시간을 그대로 가져와 고쳐 써요">평상시에서 가져오기</button>');
-    if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#bs-rows')) bsRowsFill(c);
+    if (!bsRowsTyping()) bsRowsFill(c);
     const have = m.extras.map(function(x) { return x.n; });
     document.getElementById('bs-add').innerHTML = '줄 더하기 ' + BS_PRESETS.filter(function(x) { return have.indexOf(x[0]) < 0; }).map(function(x) {
       return chip(false, 'data-add="' + x[0] + '" onclick="bsAddExtra(\'' + x[0] + '\', \'' + x[1] + '\')"', '＋ ' + x[0]);
     }).join('') + chip(false, 'data-add="" onclick="bsAddExtra(\'\', \'etc\')"', '＋ 직접');
-    // 디자인
+    // 🎨 디자인: 표 짜임·방향·테마·직접 색
+    document.getElementById('bs-styles').innerHTML = '짜임 ' + BS_STYLES.map(function(t) { return chip(c.style === t[0], 'data-style="' + t[0] + '" onclick="bsSet({ style: \'' + t[0] + '\' }, true)"', t[1], t[2]); }).join('');
     document.getElementById('bs-themes').innerHTML = BS_THEMES.map(function(t) {
-      return '<button class="nt-chip bs-theme' + (c.theme === t.k ? ' on' : '') + '" data-theme="' + t.k + '" onclick="bsSet({ theme: \'' + t.k + '\', colors: {} }, true)" title="' + t.n + '">' +
-        '<span class="bs-tsw"><i style="background:' + t.title + '"></i><i style="background:' + t.head + '"></i><i style="background:' + (t.lunch || '#fff') + '"></i><i style="background:' + (t.clean || '#fff') + '"></i></span>' + t.n + '</button>';
+      return '<button class="nt-chip bs-theme' + (c.theme === t.k ? ' on' : '') + '" data-theme="' + t.k + '" onclick="bsSet({ theme: \'' + t.k + '\', colors: {} }, true)" title="' + t.n + ' — 직접 고른 색은 지워져요">' +
+        '<span class="bs-tsw"><i style="background:' + t.title + '"></i><i style="background:' + t.head + '"></i><i style="background:' + t.accent + '"></i><i style="background:' + (t.lunch || '#fff') + '"></i><i style="background:' + (t.clean || '#fff') + '"></i></span>' + t.n + '</button>';
     }).join('');
-    const ks = BS_KINDS.filter(function(k) { return k[0] !== 'p'; });
-    if (!bsFillForm.ck || !ks.some(function(k) { return k[0] === bsFillForm.ck; })) bsFillForm.ck = 'lunch';
+    if (!bsFillForm.ck || !BS_CKEYS.some(function(k) { return k[0] === bsFillForm.ck; })) bsFillForm.ck = 'title';
     const ck = bsFillForm.ck, cur = (bsColor(c, ck) || '').toUpperCase();
-    document.getElementById('bs-colors').innerHTML = '줄 색 ' + ks.map(function(k) {
-      const col = bsColor(c, k[0]);
-      return chip(ck === k[0], 'data-ck="' + k[0] + '" onclick="bsFillForm.ck = \'' + k[0] + '\'; bsFillForm()"', '<i class="bs-dot" style="background:' + (col || '#fff') + '"></i>' + k[1]);
-    }).join('') + '<span class="bs-sws">' + BS_SWATCH.map(function(s) {
-      return '<button class="fm-sw' + (cur === s.toUpperCase() ? ' on' : '') + '" data-color="' + s + '" title="' + (s || '흰색') + '" style="background:' + (s || '#fff') + ';" onclick="bsSetColor(\'' + ck + '\', \'' + s + '\')"></button>';
-    }).join('') + '</span>';
+    document.getElementById('bs-colors').innerHTML = '<div class="bs-ckeys">' + BS_CKEYS.map(function(k) {
+      const v = bsColor(c, k[0]);
+      return chip(ck === k[0], 'data-ck="' + k[0] + '" onclick="bsFillForm.ck = \'' + k[0] + '\'; bsFillForm()"', '<i class="bs-dot" style="background:' + (v || '#fff') + '"></i>' + k[1] + (k[0] in c.colors ? '<b class="bs-mod">•</b>' : ''));
+    }).join('') + '</div><div class="bs-sws">' + BS_SWATCH.filter(function(s) { return s || !BS_CK_SOLID[ck]; }).map(function(s) {
+      return '<button class="fm-sw' + (cur === s.toUpperCase() ? ' on' : '') + '" data-color="' + s + '" title="' + (s || '없음(흰색)') + '" style="background:' + (s || '#fff') + ';" onclick="bsSetColor(\'' + ck + '\', \'' + s + '\')">' + (s ? '' : '∅') + '</button>';
+    }).join('') + '<label class="bs-pick" title="다른 색 직접 고르기"><input type="color" id="bs-color-in" value="' + (/^#[0-9A-F]{6}$/.test(cur) ? cur.toLowerCase() : '#ffffff') + '" onchange="bsSetColor(\'' + ck + '\', this.value.toUpperCase())">🎨</label></div>';
+    // 📐 표 모양
     document.getElementById('bs-tstyle').innerHTML = '제목 ' + BS_TSTYLES.map(function(t) { return chip(c.tStyle === t[0], 'data-ts="' + t[0] + '" onclick="bsSet({ tStyle: \'' + t[0] + '\' }, true)"', t[1], t[2]); }).join('');
     document.getElementById('bs-line').innerHTML = '선 ' + BS_LINES.map(function(x) { return chip(c.line === x[0], 'data-line="' + x[0] + '" onclick="bsSet({ line: ' + x[0] + ' }, true)"', x[1], '안쪽 ' + x[2] + 'mm · 바깥 ' + x[3] + 'mm'); }).join('') +
-      sep + '<label class="pe-chk"><input type="checkbox" id="bs-zebra"' + (c.zebra ? ' checked' : '') + ' onchange="bsSet({ zebra: this.checked }, true)">교시 줄 번갈아 색</label>';
+      sep + '<label class="pe-chk" title="바깥 테두리를 두 줄로"><input type="checkbox" id="bs-outer"' + (c.outer === 'double' ? ' checked' : '') + ' onchange="bsSet({ outer: this.checked ? \'double\' : \'solid\' }, true)">바깥 이중선</label>' +
+      '<label class="pe-chk"><input type="checkbox" id="bs-zebra"' + (c.zebra ? ' checked' : '') + ' onchange="bsSet({ zebra: this.checked }, true)">번갈아 색</label>';
     document.getElementById('bs-time').innerHTML = '시간 ' + [[' - '], [' ~ '], [' – ']].map(function(x) {
       return chip(c.sep === x[0], 'data-sep="' + x[0].trim() + '" onclick="bsSet({ sep: \'' + x[0] + '\' }, true)"', (c.pad ? '08:40' : '8:40') + x[0] + (c.pad ? '08:50' : '8:50'));
     }).join('') + sep + chip(!c.pad, 'data-pad="0" onclick="bsSet({ pad: ' + !c.pad + ' }, true)"', '앞 0 빼기', '08:40 → 8:40');
+    document.getElementById('bs-head').innerHTML = '<label class="pe-chk"><input type="checkbox" id="bs-showhead"' + (c.showHead ? ' checked' : '') + ' onchange="bsSet({ showHead: this.checked }, true)">머리 줄</label>' +
+      ['hN', 'hT', 'hM'].map(function(k, i) { return '<input type="text" class="lp-input bs-hl" id="bs-' + k + '" placeholder="' + BS_DEFAULT[k] + '"' + (!c.showHead || (k === 'hM' && !c.showMin) ? ' disabled' : '') + ' oninput="bsOnText(\'' + k + '\', this.value)" title="' + ['구분', '시간', '분'][i] + ' 칸 머리 글"' + '>'; }).join('');
+    ['hN', 'hT', 'hM'].forEach(function(k) { setVal('bs-' + k, c[k]); });
     document.getElementById('bs-cols').innerHTML = '<label class="pe-chk"><input type="checkbox" id="bs-showmin"' + (c.showMin ? ' checked' : '') + ' onchange="bsSet({ showMin: this.checked }, true)">"분" 칸</label>' + sep +
       '표 폭 ' + [100, 90, 80].map(function(n) { return chip(c.tblW === n, 'data-tw="' + n + '" onclick="bsSet({ tblW: ' + n + ' }, true)"', n + '%'); }).join('');
+    bsWidthsFill(c);
     // 글씨
     BS_SIZES.forEach(function(s) { setVal('bs-' + s[0], c[s[0]]); });
     document.getElementById('bs-bold').checked = c.bold;
@@ -16191,7 +16278,10 @@
     });
     bsInfoFill();
   }
-  function bsRowTimeDone(el, id, f) { el.value = bsTimeNorm(el.value); bsRowTime(id, f, el.value); setTimeout(function() { if (!document.activeElement || !document.activeElement.closest('#bs-rows')) bsRowsFill(bsCfg()); }, 0); }
+  function bsRowTimeDone(el, id, f) { el.value = bsTimeNorm(el.value); bsRowTime(id, f, el.value); setTimeout(function() { if (!bsRowsTyping()) bsRowsFill(bsCfg()); }, 0); }
+  // 시간 칸 목록에서 글을 치는 중인지(입력칸·고르기 칸) — 그때만 목록을 다시 그리지 않음. ✕ 단추를 누른 뒤엔 꼭 다시 그려야
+  // 지운 줄이 남아 보이지 않고, 다음 ✕가 엉뚱한 줄(번호가 밀린)을 지우지 않는다(사용자: 자기주도학습 둘 다 지웠는데 남아 있었음).
+  function bsRowsTyping() { const a = document.activeElement; return !!(a && a.closest && a.closest('#bs-rows') && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
   function bsRowName(j, v) { bsModeSet(function(m) { if (m.extras[j]) m.extras[j].n = v; }); }
   function bsRowKind(j, v) { bsModeSet(function(m) { if (m.extras[j]) m.extras[j].k = v; }, true); }
   function bsRowDel(j) { bsModeSet(function(m) { m.extras.splice(j, 1); }, true); }
@@ -16199,6 +16289,24 @@
   function bsAddExtra(n, k) {
     bsModeSet(function(m) { m.extras.push({ n: n, s: '', e: '', k: k }); }, true); // 조회·중식·청소·종례는 비워 두면 교시를 따라감
     if (!n) { const el = document.querySelector('#bs-rows .bs-row[data-id="x' + (bsCfg()[bsCfg().mode].extras.length - 1) + '"] .bs-n'); if (el) el.focus(); }
+  }
+  function bsOnText(k, v) { const o = {}; o[k] = v; bsSet(o); }
+  // 칸 너비(mm): 비우면 자동(회색 = 지금 너비), 적은 칸은 그대로·나머지가 남은 폭을 나눔
+  function bsWidthsFill(c) {
+    const box = document.getElementById('bs-widths');
+    const L = bsLayout(c), keys = L.F.map(function(f) { return f.k; }), names = { n: '구분', t: '시간', m: '분' };
+    box.innerHTML = '칸 너비 ' + keys.map(function(k, i) {
+      return '<label class="bs-w">' + names[k] + '<input type="number" class="lp-input" data-wk="' + k + '" min="8" max="400" step="1" placeholder="' + L.cw[i].toFixed(0) + '" oninput="bsOnWidth(this)"></label>';
+    }).join('') + 'mm' + '<button class="nt-chip" id="bs-w-auto" onclick="bsSet({ colW: {} }, true)" title="칸 너비를 모두 자동으로">자동</button>';
+    box.querySelectorAll('input').forEach(function(inp) { const v = c.colW[inp.dataset.wk]; if (document.activeElement !== inp) inp.value = v != null ? v : ''; });
+  }
+  function bsOnWidth(inp) {
+    const c = bsCfg(), w = Object.assign({}, c.colW), v = parseFloat(inp.value);
+    if (inp.value === '') delete w[inp.dataset.wk]; else if (isFinite(v) && v >= 8 && v <= 400) w[inp.dataset.wk] = v; else return;
+    bsSet({ colW: w });
+    const L = bsLayout(bsCfg());
+    document.querySelectorAll('#bs-widths input').forEach(function(x, i) { x.placeholder = L.cw[i] != null ? L.cw[i].toFixed(0) : ''; });
+    bsInfoFill();
   }
   function bsSetText(k, v) { bsModeSet(function(m) { m[k] = v; }); }
   function bsResetTimes() { bsModeSet(function(m) { m.periods = []; }, true); }
@@ -16208,45 +16316,40 @@
     bsModeSet(function(m) { m.nP = c.normal.nP; m.periods = ns.filter(function(r) { return r.k === 'p'; }).sort(function(a, b) { return a.i - b.i; }).map(function(r) { return { s: r.s, e: r.e }; }); m.extras = JSON.parse(JSON.stringify(c.normal.extras)); }, true);
   }
   // ----- 한글 파일 -----
-  // 제목(상자·밑줄 = 1칸 표, 글씨만 = 문단, 표에 붙이기 = 표 첫 줄) → 부제 문단 → 표(가운데). 칸 선·바탕은 칸마다 테두리(borderFill)로.
+  // 제목(상자·밑줄 = 1칸 표, 글씨만 = 문단, 표에 붙이기 = 표 첫 줄) → 부제 문단 → 표(가운데). bsLayout의 칸 자료(글·바탕·글자색·네 변 선)를 그대로 옮긴다.
+  // 같은 모양의 칸 테두리·글자 모양은 하나로 모아 header.xml에 넣는다. 타일은 표의 칸 사이(cellSpacing).
   async function bsBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
-    const L = bsLayout(c), m = c[c.mode], th = bsTheme(c), lw = bsLineW(c), hu = fmHu, nC = L.cw.length;
+    const L = bsLayout(c), m = c[c.mode], hu = fmHu;
     fmStage = '한글 바탕 파일 받는 중';
     const skel = await fmSkeleton();
     fmStage = '파일 만드는 중';
     const zip = await JSZip.loadAsync(skel);
     const hT = peFont(c, 'tFont').h, hB = peFont(c, 'bFont').h;
-    const NONE = fmLn('none', 0.12), Ln = function(w) { return w ? fmLn('solid', w, th.line) : NONE; };
-    // 칸 테두리·바탕: 같은 모양은 하나로(번호는 머리말 정리 뒤에 H.bf로 바꿈)
-    const bfs = [{ fill: null, s: { l: NONE, r: NONE, t: NONE, b: NONE } }], bfKey = {};
-    const bf = function(t, b, l, r, fill) {
-      const k = [t, b, l, r, fill || ''].join('|');
-      if (!(k in bfKey)) { bfKey[k] = bfs.length; bfs.push({ fill: fill || null, s: { t: Ln(t), b: Ln(b), l: Ln(l), r: Ln(r) } }); }
+    const NONE = fmLn('none', 0.12), Ln = function(s) { return s ? fmLn(s.t, s.w, s.c) : NONE; };
+    const bfs = [{ fill: null, s: { l: NONE, r: NONE, t: NONE, b: NONE } }], bfKey = {}, cps = [], cpKey = {};
+    const bfOf = function(x) {
+      const d = x.bd || {}, k = JSON.stringify([d.t, d.b, d.l, d.r, x.fill || '']);
+      if (!(k in bfKey)) { bfKey[k] = bfs.length; bfs.push({ fill: x.fill || null, s: { t: Ln(d.t), b: Ln(d.b), l: Ln(d.l), r: Ln(d.r) } }); }
       return bfKey[k];
     };
-    const o = lw.o, i = lw.i, titleFill = c.tStyle === 'box' || c.tStyle === 'band' ? th.title : null;
-    // 칸 자료: [{ t, cp, bf, w, h, cs }] 줄마다
-    const rows = [];
-    if (c.tStyle === 'band') rows.push({ h: L.titleH, cells: [{ t: m.title, cp: 0, bf: bf(o, o, o, o, titleFill), cs: nC }] });
-    rows.push({ h: L.headH, cells: ['구분', '시간', '분'].slice(0, nC).map(function(t, ci) { return { t: t, cp: 2, bf: bf(o, o, ci === 0 ? o : i, ci === nC - 1 ? o : i, th.head) }; }) });
-    L.rows.forEach(function(r, ri) {
-      const fill = bsRowFill(c, r, ri), last = ri === L.rows.length - 1;
-      rows.push({ h: L.rowHs[ri], cells: [[r.n, 3], [bsTimeText(c, r), 4], [bsDur(r), 5]].slice(0, nC).map(function(x, ci) {
-        return { t: x[0], cp: x[1], bf: bf(ri === 0 ? o : i, last ? o : i, ci === 0 ? o : i, ci === nC - 1 ? o : i, fill) };
-      }) });
-    });
-    const titleBf = c.tStyle === 'box' ? bf(o, o, o, o, titleFill) : c.tStyle === 'line' ? bf(0, o, 0, 0, null) : null;
+    const cpOf = function(x) {
+      const o = { size: x.size, font: x.f === 'title' ? hT : hB, color: x.color || '#000000', bold: x.f === 'title' || !!x.bold }, k = JSON.stringify(o);
+      if (!(k in cpKey)) { cpKey[k] = cps.length; cps.push(o); }
+      return cpKey[k];
+    };
+    L.tRows.forEach(function(r) { r.cells.forEach(function(x) { x._bf = bfOf(x); x._cp = cpOf(x); }); });
+    if (L.tBox) { L.tBox._bf = bfOf(L.tBox); L.tBox._cp = cpOf(L.tBox); }
+    const cpTitleText = cpOf({ f: 'title', size: c.tSize, color: '#000000' }), cpSub = cpOf({ f: 'sub', size: L.subSize, color: '#000000' }), cpTiny = cpOf({ f: 'tiny', size: 1, color: '#000000' });
     const pt2 = function(mm) { return mm / FM_PT; };
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: [hT, hB].filter(function(f, k, a) { return a.indexOf(f) === k; }),
-      charPrs: [{ size: c.tSize, font: hT, color: titleFill ? th.tTxt : '#000000', bold: true }, { size: L.subSize, font: hB }, { size: c.hSize, font: hB, bold: c.bold },
-        { size: c.nSize, font: hB, bold: c.bold }, { size: c.tmSize, font: hB, bold: c.bold }, { size: c.mSize, font: hB, bold: c.bold }, { size: 1, font: hB }],
+      charPrs: cps,
       paraPrs: [{ align: 'CENTER', line: 100 }, { align: 'CENTER', line: 100, after: pt2(m.sub ? 0 : L.gap) }, { align: 'CENTER', line: 100, before: pt2(Math.max(0, (L.subH - L.subSize * FM_PT) / 2)), after: pt2(L.gap) }],
       borderFills: bfs,
     });
     zip.file('Contents/header.xml', H.xml);
-    const PP_C = H.pp[0], PP_T = H.pp[1], PP_S = H.pp[2], CP_TINY = H.cp[6];
+    const PP_C = H.pp[0], PP_T = H.pp[1], PP_S = H.pp[2], CP_TINY = H.cp[cpTiny];
     const sec0 = await zip.file('Contents/section0.xml').async('string');
     const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
     const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
@@ -16256,35 +16359,36 @@
     const P = function(pp, runs) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
     const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
     const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
-    const TW = hu(L.tw), CW = L.cw.map(hu);
-    CW[1] += TW - CW.reduce(function(a, b) { return a + b; }, 0);
-    const table = function(trs) {
-      let xml = '', tH = 0;
+    const SP = hu(L.sp);
+    // trs: [{ h, cells }], cw: 칸 폭(mm) — 칸 폭 합 + 칸 사이 = 표 폭(정수 오차는 마지막 칸이 받음)
+    const table = function(trs, cwMm) {
+      const TW = hu(L.tw), CW = cwMm.map(hu), nCol = CW.length;
+      CW[nCol - 1] += TW - SP * (nCol + 1) - CW.reduce(function(a, b) { return a + b; }, 0);
+      let xml = '', tH = SP;
       trs.forEach(function(row, r) {
-        const h = hu(row.h); tH += h;
+        const h = hu(row.h); tH += h + SP;
         let col = 0;
         xml += '<hp:tr>' + row.cells.map(function(x) {
-          const cs = x.cs || 1, w = x.w != null ? x.w : CW.slice(col, col + cs).reduce(function(a, b) { return a + b; }, 0);
-          const s = '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + H.bf[x.bf] + '">' +
-            '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + P(PP_C, R(H.cp[x.cp], T(x.t))) + '</hp:subList>' +
+          const cs = x.cs || 1, w = CW.slice(col, col + cs).reduce(function(a, b) { return a + b; }, 0) + SP * (cs - 1);
+          const s = '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + H.bf[x._bf] + '">' +
+            '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + P(PP_C, R(H.cp[x._cp], T(x.t))) + '</hp:subList>' +
             '<hp:cellAddr colAddr="' + col + '" rowAddr="' + r + '"/><hp:cellSpan colSpan="' + cs + '" rowSpan="1"/><hp:cellSz width="' + w + '" height="' + h + '"/>' +
             '<hp:cellMargin left="' + hu(1) + '" right="' + hu(1) + '" top="0" bottom="0"/></hp:tc>';
           col += cs;
           return s;
         }).join('') + '</hp:tr>';
       });
-      const nCol = trs.reduce(function(a, row) { return Math.max(a, row.cells.reduce(function(s, x) { return s + (x.cs || 1); }, 0)); }, 0);
-      return '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + trs.length + '" colCnt="' + nCol + '" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
+      return '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + trs.length + '" colCnt="' + nCol + '" cellSpacing="' + SP + '" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
         '<hp:sz width="' + TW + '" widthRelTo="ABSOLUTE" height="' + tH + '" heightRelTo="ABSOLUTE" protect="0"/>' +
         '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
         '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + xml + '</hp:tbl>';
     };
     const head = R(CP_TINY, secPr + '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl>');
     let body = '';
-    if (c.tStyle === 'text') body += P(PP_T, head + R(H.cp[0], T(m.title)));
-    else if (c.tStyle !== 'band') body += P(PP_T, head + R(CP_TINY, table([{ h: L.titleH, cells: [{ t: m.title, cp: 0, bf: titleBf, w: TW }] }])));
-    if (m.sub) body += P(PP_S, (c.tStyle === 'band' ? head : '') + R(H.cp[1], T(m.sub)));
-    body += P(PP_C, (c.tStyle === 'band' && !m.sub ? head : '') + R(CP_TINY, table(rows)));
+    if (c.tStyle === 'text') body += P(PP_T, head + R(H.cp[cpTitleText], T(m.title)));
+    else if (L.tBox) body += P(PP_T, head + R(CP_TINY, table([{ h: L.titleH, cells: [L.tBox] }], [L.tw - L.sp * 2])));
+    if (m.sub) body += P(PP_S, (c.tStyle === 'band' ? head : '') + R(H.cp[cpSub], T(m.sub)));
+    body += P(PP_C, (c.tStyle === 'band' && !m.sub ? head : '') + R(CP_TINY, table(L.tRows, L.cw)));
     zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
     const hpf = (await zip.file('Contents/content.hpf').async('string'))
       .replace(/<opf:title\/>|<opf:title>[\s\S]*?<\/opf:title>/, '<opf:title>' + fmX(m.title || '시정표') + '</opf:title>')
@@ -16408,8 +16512,9 @@
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽).' },
     { selector: '#bs-mode-box', before: fmTourBs, title: '🔔 시정표 · 1단계. 평상시·단축 수업', desc: '위쪽 "시정표" 탭에서 교실·복도에 붙이는 시정표(구분 | 시간 | 분)를 만들어요. 🏫 평상시는 교시 시간을 관리자 설정의 일과 시간에서 그대로 가져오고, ⏱️ 단축 수업은 교시마다 시간을 직접 적어요. 둘은 따로 기억돼요. 제목과 부제(예: 2026학년도 2학기)도 여기서 적어요.' },
     { selector: '#bs-rows-box', before: fmTourBs, title: '🔔 시정표 · 2단계. 시간', desc: '표에 나오는 줄이 시간 순서대로 있어요. 회색 시간은 저절로 정해진 시간이에요 — 교시는 일과 시간, 조회·중식·청소·종례는 교시에 맞춰(중식 = 4교시 끝~5교시 시작). 시간을 적으면 이 시정표만 바뀌어요. "줄 더하기"로 조회·중식·청소·종례·자기주도학습·방과후나 직접 이름을 더하고, ✕로 지워요. 교시 수도 고를 수 있어요.' },
-    { selector: '#bs-design-box', before: fmTourBs, title: '🔔 시정표 · 3단계. 디자인', desc: '색 테마(엑셀처럼·흑백·남색·민트·파스텔·코랄)를 고르고, 중식·청소 같은 줄 색만 따로 바꿀 수도 있어요. 제목 모양(상자·표에 붙이기·글씨만·밑줄), 선 굵기, 교시 줄 번갈아 색, 시간 표기(08:40 - 08:50 / ~ / 앞 0 빼기), "분" 칸, 표 폭을 골라요.' },
-    { selector: '#bs-font-box', before: fmTourBs, title: '🔔 시정표 · 4~5단계. 글씨·쪽', desc: '제목·머리 줄·구분·시간·분 글씨 크기를 따로 정하거나 A−/A+로 한꺼번에 바꿔요. 줄 높이는 기본으로 "한 장에 꽉 채우기"라 종이에 맞춰 늘어나고, 한 장을 넘으면 알려 줘요.' },
+    { selector: '#bs-design-box', before: fmTourBs, title: '🔔 시정표 · 3단계. 디자인', desc: '표 짜임(▦ 기본 표 · ☰ 가로선만 · ▌ 구분 강조 · ▩ 타일)과 색 테마 8가지를 골라요. 제목 바탕·글자, 머리 줄, 강조색, 선, 중식·청소 같은 줄 색은 하나씩 골라 팔레트나 🎨(아무 색)로 바꿀 수 있어요(• 표시 = 직접 고친 색, 테마를 다시 고르면 지워져요).' },
+    { selector: '#bs-shape-box', before: fmTourBs, title: '🔔 시정표 · 4단계. 표 모양', desc: '제목 모양(상자·표에 붙이기·글씨만·밑줄), 선 굵기·바깥 이중선·번갈아 색, 시간 표기(08:40 - 08:50 / ~ / 앞 0 빼기), 머리 줄 글(구분 → 교시 등)·빼기, "분" 칸, 표 폭을 골라요. 칸 너비는 mm로 적으면 그 칸만 그대로이고 나머지 칸이 남은 폭을 나눠요(비우면 자동).' },
+    { selector: '#bs-font-box', before: fmTourBs, title: '🔔 시정표 · 5~6단계. 글씨·쪽', desc: '제목·머리 줄·구분·시간·분 글씨 크기를 따로 정하거나 A−/A+로 한꺼번에 바꿔요. 줄 높이는 기본으로 "한 장에 꽉 채우기"라 종이에 맞춰 늘어나고, 한 장을 넘으면 알려 줘요.' },
     { selector: '#fm-hwpx-btn', before: fmTourBs, title: '🔔 시정표 · 한글 파일 내려받기', desc: '⬇️ 한글 파일로 받으면 색·선이 그대로인 진짜 표라 한글에서 바로 고쳐 쓸 수 있어요. 🖨️ 인쇄로 바로 뽑아도 돼요. 설명서를 닫으면 예시는 사라지고 선생님 설정과 원래 보던 양식으로 돌아가요. 수고하셨습니다! 🎉' },
   ];
   function fmOpenTour() {

@@ -254,7 +254,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 특별 줄: 종례 더하기(마지막 교시 끝 + 10분), 이름·종류·지우기, 시간 바꾸면 자리 이동
   await P.click('#bs-add [data-add="종례"]'); await P.waitForTimeout(200);
   const d2 = await prev();
-  check('＋ 종례: 비워 둔 시간이 7교시 끝 16:30~16:40(저절로)이라 7교시 바로 뒤, 더한 단추는 목록에서 빠짐', d2.rows[11] === '종례|16:30 - 16:40|10분' && !(await P.$('#bs-add [data-add="종례"]')), d2.rows.slice(10, 13));
+  check('＋ 종례: 비워 둔 시간이 7교시 끝 + 5분(16:30~16:35, 저절로)이라 7교시 바로 뒤, 더한 단추는 목록에서 빠짐', d2.rows[11] === '종례|16:30 - 16:35|5분' && !(await P.$('#bs-add [data-add="종례"]')), d2.rows.slice(10, 13));
   const sj = '#bs-rows .bs-row[data-id="x5"]';
   await P.fill(sj + ' .bs-t[data-f="s"]', '07:30'); await P.dispatchEvent(sj + ' .bs-t[data-f="s"]', 'input'); await P.fill(sj + ' .bs-t[data-f="e"]', '08:00'); await P.dispatchEvent(sj + ' .bs-t[data-f="e"]', 'input');
   await P.fill(sj + ' .bs-n', '아침 독서'); await P.dispatchEvent(sj + ' .bs-n', 'input'); await P.selectOption(sj + ' select', 'etc'); await P.waitForTimeout(250);
@@ -262,6 +262,17 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('종례 줄 이름·시간·종류 바꾸기: 07:30이면 맨 위로, 기타 색(회색)', d3.rows[1] === '아침 독서|07:30 - 08:00|30분' && d3.bg[1] === 'rgb(237, 237, 237)', [d3.rows[1], d3.bg[1]]);
   await P.click('#bs-rows .bs-row[data-id="x5"] .ws-ol-x'); await P.waitForTimeout(200);
   check('✕ 지우기 → 종례 단추가 다시 생김', (await prev()).rows.length === 13 && !!(await P.$('#bs-add [data-add="종례"]')), (await prev()).rows);
+  // ✕를 잇달아 두 번(자기주도학습1·2) — 예전엔 ✕ 단추에 초점이 남아 목록이 안 바뀌어 둘째가 안 지워지고 남았음(사용자 제보)
+  await P.click('#bs-rows .bs-row[data-id="x3"] .ws-ol-x'); await P.waitForTimeout(200);
+  const afterOne = await P.evaluate(() => [...document.querySelectorAll('#bs-rows .bs-row')].map(r => r.dataset.id + ':' + ((r.querySelector('.bs-n') || {}).value || '')).filter(x => x[0] === 'x').join());
+  await P.click('#bs-rows .bs-row[data-id="x3"] .ws-ol-x'); await P.waitForTimeout(200);
+  const d2b = await prev();
+  check('자기주도학습 두 줄을 ✕로 잇달아 지우면 둘 다 바로 사라지고(목록도 바로 새로), 줄 더하기에 다시 생김', afterOne === 'x0:조회,x1:중식,x2:청소,x3:자기주도학습2' && !d2b.rows.some(r => /자기주도/.test(r)) &&
+    await P.evaluate(() => !!document.querySelector('#bs-add [data-add="자기주도학습1"]') && !!document.querySelector('#bs-add [data-add="자기주도학습2"]') && ![...document.querySelectorAll('#bs-rows .bs-n')].some(x => /자기주도/.test(x.value))), [afterOne, d2b.rows]);
+  await P.click('#bs-add [data-add="자기주도학습1"]'); await P.click('#bs-add [data-add="자기주도학습2"]'); await P.waitForTimeout(200);
+  for (const [j, s, e] of [[3, '17:30', '18:40'], [4, '18:50', '20:00']]) for (const [f, v] of [['s', s], ['e', e]]) { const q = '#bs-rows .bs-row[data-id="x' + j + '"] .bs-t[data-f="' + f + '"]'; await P.fill(q, v); await P.dispatchEvent(q, 'input'); await P.dispatchEvent(q, 'change'); }
+  await P.waitForTimeout(200);
+  check('다시 더한 자기주도학습 1·2(시간 적기)', (await prev()).rows.slice(-2).join() === '자기주도학습1|17:30 - 18:40|70분,자기주도학습2|18:50 - 20:00|70분', (await prev()).rows.slice(-2));
   await P.click('#bs-add [data-add=""]'); await P.waitForTimeout(200);
   const dd = await P.evaluate(() => ({ focus: document.activeElement.classList.contains('bs-n'), info: document.getElementById('bs-info').textContent }));
   check('＋ 직접: 이름 칸에 바로 커서, 시간이 빈 줄은 안내("시간을 확인해 주세요")', dd.focus && /시간을 확인해 주세요/.test(dd.info), dd);
@@ -280,6 +291,55 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('줄 색: 중식만 하늘색으로', (await prev()).bg[7] === 'rgb(222, 235, 247)' && await P.evaluate(() => bsCfg().colors.lunch === '#DEEBF7'));
   await P.click('#bs-themes [data-theme="classic"]'); await P.waitForTimeout(150);
   check('테마를 다시 고르면 줄 색 고친 것은 지움', await P.evaluate(() => JSON.stringify(bsCfg().colors) === '{}'));
+  // 표 짜임: 가로선만 / 구분 강조 / 타일 / 기본 표
+  const look = () => P.evaluate(() => { const t = document.querySelector('#fm-pages table.bs-main'), rows = [...t.rows], cs = getComputedStyle;
+    const hr = rows.find(r => r.dataset.k === 'head'), pr = rows.find(r => r.dataset.k === 'p');
+    return { coll: cs(t).borderCollapse, spacing: cs(t).borderSpacing, vline: cs(pr.cells[0]).borderRightStyle, hline: cs(pr.cells[0]).borderBottomStyle, timeV: cs(pr.cells[1]).borderLeftStyle,
+      nameBg: cs(pr.cells[0]).backgroundColor, nameColor: cs(pr.cells[0]).color, timeBg: cs(pr.cells[1]).backgroundColor, headBg: cs(hr.cells[0]).backgroundColor, headColor: cs(hr.cells[0]).color,
+      headBot: cs(hr.cells[0]).borderBottomColor, sheet: document.querySelector('#fm-pages .bs-sheet').dataset.style }; });
+  await P.click('#bs-styles [data-style="minimal"]'); await P.waitForTimeout(200);
+  const st1 = await look();
+  check('☰ 가로선만: 세로선 없음·가로선 있음, 머리 줄은 바탕 없이 강조색 글자·강조색 밑줄', st1.sheet === 'minimal' && st1.vline === 'none' && st1.timeV === 'none' && st1.hline === 'solid' && st1.headBg === 'rgba(0, 0, 0, 0)' &&
+    st1.headColor === 'rgb(47, 85, 151)' && st1.headBot === 'rgb(47, 85, 151)', st1);
+  await P.click('#bs-styles [data-style="badge"]'); await P.waitForTimeout(200);
+  const st2 = await look();
+  check('▌ 구분 강조: 교시 구분 칸은 강조색 바탕 + 흰 글씨, 시간 칸은 흰 바탕', st2.nameBg === 'rgb(47, 85, 151)' && st2.nameColor === 'rgb(255, 255, 255)' && st2.timeBg === 'rgba(0, 0, 0, 0)', st2);
+  await P.click('#bs-styles [data-style="tiles"]'); await P.waitForTimeout(200);
+  const st3 = await look();
+  check('▩ 타일: 칸 사이를 띄우고(border-spacing) 선 없음, 머리 줄 강조색·흰 글씨, 교시 구분 칸 연두·나머지 연회색', st3.coll === 'separate' && st3.spacing !== '0px' && st3.vline === 'none' && st3.hline === 'none' &&
+    st3.headBg === 'rgb(47, 85, 151)' && st3.headColor === 'rgb(255, 255, 255)' && st3.nameBg === 'rgb(226, 239, 218)' && st3.timeBg === 'rgb(245, 245, 245)' && !(await prev()).fit, st3);
+  if (JSZIP_JS) {
+    const tz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await bsBuildHwpx(bsCfg()))).file('Contents/section0.xml').async('string');
+      const main = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g).pop(), sp = +main.match(/cellSpacing="(\d+)"/)[1], W = +main.match(/<hp:sz width="(\d+)"/)[1], Hh = +main.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1];
+      const trs = main.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g), row = trs[trs.length - 1], ws = [...row.matchAll(/<hp:cellSz width="(\d+)" height="(\d+)"/g)];
+      return { sp, w: ws.reduce((a, m) => a + +m[1], 0) + sp * (ws.length + 1) === W, h: trs.reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0) + sp * (trs.length + 1) === Hh }; });
+    check('타일 한글 파일: 칸 사이(cellSpacing) + 칸 폭·높이 합 = 표 크기', tz.sp > 0 && tz.w && tz.h, tz);
+  }
+  await P.click('#bs-styles [data-style="grid"]'); await P.waitForTimeout(150);
+  // 직접 색: 제목 바탕을 색 고르기로
+  await P.click('#bs-colors [data-ck="title"]'); await P.waitForTimeout(100);
+  await P.evaluate(() => { const el = document.getElementById('bs-color-in'); el.value = '#ff6600'; el.dispatchEvent(new Event('change')); }); await P.waitForTimeout(200);
+  check('🎨 직접 색: 제목 바탕을 아무 색(#FF6600)으로, 고친 색은 • 표시', (await prev()).titleBg === 'rgb(255, 102, 0)' && await P.evaluate(() => bsCfg().colors.title === '#FF6600' && !!document.querySelector('#bs-colors [data-ck="title"] .bs-mod')));
+  await P.click('#bs-colors [data-ck="tTxt"]'); await P.waitForTimeout(100);
+  check('글자·선 색에는 "없음" 칸이 없음', await P.evaluate(() => !document.querySelector('#bs-colors .fm-sw[data-color=""]')));
+  await P.click('#bs-colors [data-color="#FFFFFF"]'); await P.waitForTimeout(150);
+  check('제목 글자 흰색', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages .bs-title')).color === 'rgb(255, 255, 255)'));
+  // 머리 줄 글·빼기, 바깥 이중선, 칸 너비
+  await setText(P, '#bs-hN', '교시'); await P.waitForTimeout(150);
+  check('머리 줄 글 바꾸기: "구분" → "교시"', (await prev()).rows.find(r => /\|시간\|분$/.test(r)).startsWith('교시|'));
+  await P.click('#bs-showhead'); await P.waitForTimeout(150);
+  const nh = await prev();
+  check('머리 줄 빼기: 머리 줄 없이 바로 줄들(남는 높이는 줄에)', !nh.rows.some(r => /\|시간\|분$/.test(r)) && nh.bottom >= 15 && nh.bottom < 23, nh.rows.slice(0, 2));
+  await P.click('#bs-showhead'); await setText(P, '#bs-hN', ''); await P.click('#bs-outer'); await P.waitForTimeout(150);
+  check('바깥 이중선', await P.evaluate(() => getComputedStyle(document.querySelector('#fm-pages table.bs-main tr[data-k="p"] td')).borderLeftStyle === 'double'));
+  await P.click('#bs-outer');
+  const wIn = '#bs-widths input[data-wk="n"]';
+  await P.fill(wIn, '70'); await P.dispatchEvent(wIn, 'input'); await P.waitForTimeout(200);
+  const cw1 = await P.evaluate(() => { const cols = [...document.querySelectorAll('#fm-pages table.bs-main col')].map(x => parseFloat(x.style.width)); return cols; });
+  check('칸 너비: 구분 70mm로 적으면 70mm, 나머지 두 칸이 남은 폭(110mm)을 나눔', cw1[0] === 70 && Math.abs(cw1[1] + cw1[2] - 110) < 0.2, cw1);
+  await P.click('#bs-w-auto'); await P.waitForTimeout(150);
+  check('칸 너비 자동으로', await P.evaluate(() => JSON.stringify(bsCfg().colW) === '{}' && document.querySelector('#bs-widths input[data-wk="n"]').value === ''));
+  await P.click('#bs-themes [data-theme="classic"]'); await P.waitForTimeout(150);
   await P.click('#bs-tstyle [data-ts="text"]'); await P.click('#bs-time [data-sep="~"]'); await P.click('#bs-time [data-pad="0"]'); await P.click('#bs-showmin'); await P.click('#bs-cols [data-tw="80"]'); await P.waitForTimeout(250);
   const d5 = await prev();
   check('글씨만 제목, "8:40 ~ 8:50"(앞 0 빼기), 분 칸 빼기(두 칸), 표 폭 80%', d5.rows[1] === '조회|8:40 ~ 8:50' && d5.rows[0] === '구분|시간' && Math.abs(d5.tw - 144) <= 1 && d5.titleBg === 'rgba(0, 0, 0, 0)', [d5.rows.slice(0, 2), d5.tw]);
