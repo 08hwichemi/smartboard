@@ -224,7 +224,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#fm-kind-switch [data-kind="bs"]'); await P.waitForTimeout(800);
   const vis = await P.evaluate(() => ({ bs: getComputedStyle(document.getElementById('bs-grid')).display !== 'none', pe: document.getElementById('pe-grid').style.display, ws: document.getElementById('ws-grid').style.display,
     fm: document.getElementById('fm-grid').style.display, xlsx: document.getElementById('fm-xlsx-btn').style.display, kind: JSON.parse(localStorage.getItem('fm-cfg')).kind, tabs: [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent).join() }));
-  check('시정표 탭: 시정표 칸만 보이고 엑셀 버튼 숨김, 탭 네 개', vis.bs && vis.pe === 'none' && vis.ws === 'none' && vis.fm === 'none' && vis.xlsx === 'none' && vis.kind === 'bs' && vis.tabs === '명렬표 수합,학습지,수행평가,시정표', vis);
+  check('시정표 탭: 시정표 칸만 보이고 엑셀 버튼 숨김, 탭 네 개(시정표가 맨 앞)', vis.bs && vis.pe === 'none' && vis.ws === 'none' && vis.fm === 'none' && vis.xlsx === 'none' && vis.kind === 'bs' && vis.tabs === '시정표,명렬표 수합,학습지,수행평가', vis);
   const prev = () => P.evaluate(() => { const sh = document.querySelector('#fm-pages .bs-sheet'); if (!sh) return { none: document.getElementById('fm-pages').textContent };
     const tbls = [...sh.querySelectorAll('table.bs-tbl')], main = tbls[tbls.length - 1], r = sh.getBoundingClientRect(), k = r.width / sh.offsetWidth;
     return { w: sh.style.width, tables: tbls.length, title: sh.querySelector('.bs-title').textContent, sub: (sh.querySelector('.bs-sub') || {}).textContent || '',
@@ -411,6 +411,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('평상시로 돌아오면 평상시 제목·시간', (await prev()).title === '부광고등학교 시정표(2학기)' && (await prev()).rows[2] === '1교시|08:50 - 09:40|50분');
   // 📝 시험 기간: 정기고사 시정표(본령만 적으면 예비령 10분 전·준비령 5분 전) + 일차별 시간표(같은 교시 두 과목은 칸 나누기) — 사용자 한글 양식 그대로
   await P.click('#bs-modes [data-mode="exam"]'); await P.waitForTimeout(250);
+  const exPg = await P.evaluate(() => ({ c: [bsCfg().exam.paper, bsCfg().exam.margin], w: document.querySelector('#fm-pages .bs-ex-sheet').style.width, on: document.querySelector('#bs-ex-paper .on').dataset.paper, mg: document.getElementById('bs-ex-margin').value }));
+  check('시험 기간 처음 = A3·여백 10mm(사용자)', exPg.c.join() === 'A3,10' && exPg.w === '297mm' && exPg.on === 'A3' && exPg.mg === '10', exPg);
+  await P.click('#bs-ex-paper [data-paper="A4"]'); await P.fill('#bs-ex-margin', '5'); await P.dispatchEvent('#bs-ex-margin', 'input'); await P.waitForTimeout(200); // 아래 검사는 원본 양식(A4·5mm)과 견줌
   const exv = () => P.evaluate(() => [...document.querySelectorAll('#fm-pages .bs-ex-sheet')].map(sh => {
     const t = sh.querySelector('table'), r = sh.getBoundingClientRect(), k = r.width / sh.offsetWidth, tr = t.getBoundingClientRect();
     return { kind: sh.dataset.kind, rows: [...t.rows].map(row => [...row.cells].map(c => c.innerText.trim().replace(/\n+/g, '/')).join('|')), cols: t.querySelectorAll('col').length,

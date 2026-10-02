@@ -397,6 +397,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.fill('#fm-widths input[data-wk="memo"]', '20'); await P.uncheck('#fm-fill'); await P.waitForTimeout(200);
   cw = await colW(); let tb = await tblBox();
   check('비고 20mm + "꽉 차게" 끄기 → 표가 필요한 만큼만(180mm보다 좁게), 가운데', cw[5] === 20 && tb.w < 179 && Math.abs(tb.left - tb.right) < 1, [cw, tb]);
+  await P.fill('#fm-widths input[data-wk="memo"]', ''); await P.waitForTimeout(200);
+  check('비고 칸 기본 너비 20mm(꽉 차게 끈 상태, 사용자 10/2)', (await colW())[5] === 20 && await P.evaluate(() => document.querySelector('#fm-widths input[data-wk="memo"]').placeholder) === '20.0', await colW());
+  await P.fill('#fm-widths input[data-wk="memo"]', '20'); await P.waitForTimeout(200);
   check('자동 칸은 회색 예시로 지금 너비가 보임', await P.evaluate(() => document.querySelector('#fm-widths input[data-wk="name"]').placeholder) === '24.0');
   await P.fill('#fm-widths input[data-wk="name"]', '170'); await P.waitForTimeout(200);
   tb = await tblBox();
