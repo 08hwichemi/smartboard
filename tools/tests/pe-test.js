@@ -219,7 +219,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       fit: sh.every(s => { const r = s.getBoundingClientRect(), k = r.width / s.offsetWidth, ps = s.querySelectorAll('.pe-p'); return !ps.length || ps[ps.length - 1].getBoundingClientRect().bottom <= r.bottom - parseFloat(s.style.paddingBottom) * 3.78 * k + 1; }) }; });
   const d0 = await prev();
   const types = await P.evaluate(() => [...document.querySelectorAll('#pe-types .nt-chip')].map(b => [b.dataset.type, b.classList.contains('on'), /준비 중/.test(b.textContent)]));
-  check('기본: 보고서, 원고지·단어 시험은 "준비 중"', JSON.stringify(types) === JSON.stringify([['report', true, false], ['ms', false, true], ['word', false, true]]), types);
+  check('기본: 보고서, 단어 시험만 "준비 중"', JSON.stringify(types) === JSON.stringify([['report', true, false], ['ms', false, false], ['word', false, true]]), types);
   check('기본 미리보기: A4 한 장, 머리 표 [제목|학번|빈칸|이름|빈칸] + "주제 : ", 항목 1.~3. 아래 빈 줄 4개씩', d0.n === 1 && d0.w === '210mm' && JSON.stringify(d0.head[0]) === JSON.stringify([['', '학번', '', '이름', ''], ['주제 : ']]) &&
     d0.paras[0].join('|') === ['1. ', '', '', '', '', '2. ', '', '', '', '', '3. ', '', '', '', ''].join('|'), d0);
 
@@ -251,9 +251,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const hn = (await prev()).head[0];
   await P.click('#pe-who [data-who="id"]'); await P.click('#pe-topic'); await P.waitForTimeout(150);
   const ht = (await prev()).head[0];
-  await P.click('#pe-topic'); await setText(P, '#pe-topic-label', '기사 제목'); await P.waitForTimeout(150);
+  await P.click('#pe-topic'); await setText(P, '#pe-topic-text', '기사 제목'); await P.waitForTimeout(150);
   const hl = (await prev()).head[0];
-  check('학생 칸: 반·번호·이름 7칸 / 없음 1칸, 둘째 줄 끄면 한 줄·이름 바꾸면 "기사 제목 : "', hc[0].join() === '화학 기사 탐구(기사 1개당 2쪽 작성),반,,번호,,이름,' && hn[0].length === 1 && ht.length === 1 && hl[1][0] === '기사 제목 : ', { hc, hn, ht, hl });
+  check('학생 칸: 반·번호·이름 7칸 / 없음 1칸, 둘째 줄 끄면 한 줄, 둘째 줄 글은 적은 그대로(":" 저절로 안 붙음)', hc[0].join() === '화학 기사 탐구(기사 1개당 2쪽 작성),반,,번호,,이름,' && hn[0].length === 1 && ht.length === 1 && hl[1][0] === '기사 제목', { hc, hn, ht, hl });
+  await setText(P, '#pe-topic-text', '기사 제목 :'); await P.waitForTimeout(150);
+  check('":"를 직접 적으면 그대로', (await prev()).head[0][1][0] === '기사 제목 :');
   const lines = await P.evaluate(() => { const t = document.querySelector('.pe-head'), c = t.rows[0].cells; const bw = (el, s) => parseFloat(getComputedStyle(el)['border' + s + 'Width']);
     return { top: bw(c[0], 'Top') > bw(c[0], 'Bottom'), left0: getComputedStyle(c[0]).borderLeftStyle, left1: getComputedStyle(c[1]).borderLeftStyle, bot2: bw(t.rows[1].cells[0], 'Bottom') > bw(c[0], 'Bottom'), w: Math.round(t.getBoundingClientRect().width / (document.querySelector('.pe-sheet').getBoundingClientRect().width / 210)) }; });
   check('머리 표 선: 위·맨 아래 굵게, 칸 사이 세로선, 바깥 왼쪽 선 없음, 폭 = 210 − 20 − 20', lines.top && lines.left0 === 'none' && lines.left1 === 'solid' && lines.bot2 && lines.w === 170, lines);
@@ -283,7 +285,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const top = sec.replace(/<hp:tbl [\s\S]*?<\/hp:tbl>/, '').match(/<hp:p [^>]*>[\s\S]*?<\/hp:p>/g);
       let ok = true; try { new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length && (ok = false); new DOMParser().parseFromString(head, 'application/xml').getElementsByTagName('parsererror').length && (ok = false); } catch (e) { ok = false; }
       return { first: names[0], xml: ok, rc: tbl.match(/rowCnt="(\d+)" colCnt="(\d+)"/).slice(1).join(), ws, tw, span: /colSpan="5"/.test(tbl), page: sec.match(/<hp:pagePr [^>]*>/)[0], margin: sec.match(/<hp:margin [^>]*>/)[0],
-        texts: ['화학 기사 탐구(기사 1개당 2쪽 작성)', '학번', '이름', '기사 제목 : ', '10월 20일까지 제출', '0. 두 줄 요약', '3. 참고문헌(사이트)'].every(t => sec.includes('<hp:t>' + fmX(t) + '</hp:t>')),
+        texts: ['화학 기사 탐구(기사 1개당 2쪽 작성)', '학번', '이름', '기사 제목 :', '10월 20일까지 제출', '0. 두 줄 요약', '3. 참고문헌(사이트)'].every(t => sec.includes('<hp:t>' + fmX(t) + '</hp:t>')),
         paras: top.length, blanks: top.filter(p => /<hp:t\/>/.test(p) && !/<hp:t>/.test(p)).length, font: /face="한컴 윤고딕 240"/.test(head) && /face="함초롬바탕"/.test(head) }; });
     check('한글 파일: mimetype 맨 앞, XML 올바름, 머리 표 2줄×5칸(둘째 줄 한 칸으로 합침)·칸 폭 합 = 표 폭, B4·여백 20, 글·글꼴', hz.first === 'mimetype' && hz.xml && hz.rc === '2,5' && hz.span && hz.ws === hz.tw &&
       /width="72850" height="103181"/.test(hz.page) && /left="5669" right="5669" top="5669" bottom="5669"/.test(hz.margin) && hz.texts && hz.font, hz);
@@ -292,12 +294,62 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     if (process.env.PE_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await peBuildHwpx(peCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.PE_OUT, Buffer.from(b64, 'base64')); }
   } else console.log('  ⚠️ JSZip 없음 — 한글 파일 검사 건너뜀');
 
+  // ===== ✍️ 원고지 =====
+  await P.click('#pe-types [data-type="ms"]'); await P.waitForTimeout(300);
+  const msPrev = () => P.evaluate(() => { const sh = [...document.querySelectorAll('#fm-pages .pe-sheet')], k = sh[0].getBoundingClientRect().width / sh[0].offsetWidth;
+    return { n: sh.length, w: sh[0].style.width, tables: sh.map(s => { const t = s.querySelector('table.pe-ms'); if (!t) return null;
+      const rows = [...t.rows], wr = rows.filter(r => r.cells.length === 21);
+      return { write: wr.length, gap: rows.length - wr.length, counts: wr.map(r => r.cells[20].textContent).filter(Boolean), cell: Math.round(wr[0].cells[0].getBoundingClientRect().width / k / 3.78 * 10) / 10,
+        bottomOk: t.getBoundingClientRect().bottom <= s.getBoundingClientRect().bottom - parseFloat(s.style.paddingBottom) * 3.78 * k + 1 }; }),
+      stray: sh.some(s => /mm">/.test(s.textContent)), cols: (sh[0].querySelector('table.pe-ms colgroup') || { children: [] }).children.length,
+      head: !!sh[0].querySelector('.pe-head'), head2: sh.length > 1 && !!sh[1].querySelector('.pe-head'), paper: (document.getElementById('pe-paper').querySelector('.on') || {}).dataset,
+      items: getComputedStyle(document.getElementById('pe-items-box')).display, box: getComputedStyle(document.getElementById('pe-ms-box')).display, info: document.getElementById('pe-ms-info').textContent }; });
+  const m0 = await msPrev();
+  const t0 = m0.tables.filter(Boolean);
+  check('원고지 기본: 엉뚱한 글자 없이 칸 21개(20 + 글자 수), B4(보고서와 따로), 항목 칸 대신 원고지 칸, 800자 = 40줄을 쪽마다 표로, 100자마다 "100…800"(쪽 넘어가도 이어서), 칸 9mm, 줄 사이 띠, 머리 표는 첫 쪽만, 아래 여백 안',
+    !m0.stray && m0.cols === 21 && m0.w === '257mm' && m0.items === 'none' && m0.box !== 'none' && t0.reduce((a, t) => a + t.write, 0) === 40 && t0.flatMap(t => t.counts).join() === '100,200,300,400,500,600,700,800' &&
+    t0.every(t => t.cell === 9 && t.gap === t.write - 1 && t.bottomOk) && m0.head && !m0.head2 && m0.n === t0.length && /40줄/.test(m0.info), m0);
+  check('보고서 쪽 설정(B4·안내 글 등)은 그대로', await P.evaluate(() => JSON.parse(localStorage.getItem('fm-pe')).paper === 'B4' && !('ms_paper' in JSON.parse(localStorage.getItem('fm-pe')))));
+  await P.click('#pe-paper [data-paper="A4"]'); await P.waitForTimeout(200);
+  const msA4 = await P.evaluate(() => [JSON.parse(localStorage.getItem('fm-pe')).ms_paper, JSON.parse(localStorage.getItem('fm-pe')).paper, document.querySelector('#fm-pages .pe-sheet').style.width, document.getElementById('pe-ms-info').textContent]);
+  const m1 = await msPrev();
+  check('원고지에서 A4로 바꾸면 원고지만 A4(보고서는 B4 그대로), A4 폭에 맞게 칸을 줄이고 안내', msA4[0] === 'A4' && msA4[1] === 'B4' && msA4[2] === '210mm' && m1.tables[0].cell < 9 && /줄였어요/.test(msA4[3]), [msA4, m1.tables[0]]);
+  await P.click('#pe-paper [data-paper="B4"]');
+  await P.click('#pe-ms-chars [data-chars="1500"]'); await P.click('#pe-ms-cell [data-cell="10"]'); await P.click('#pe-ms-cell [data-gap="0"]'); await P.click('#pe-ms-color [data-color="#2E8B57"]');
+  await setText(P, '#pe-ms-prompt', "제시문을 읽고 '공정'에 대해 논술하시오."); await P.waitForTimeout(300);
+  const m2 = await msPrev(); const t2 = m2.tables.filter(Boolean);
+  const col = await P.evaluate(() => getComputedStyle(document.querySelector('table.pe-ms td')).borderTopColor);
+  check('1500자·칸 10mm·띠 없음·초록 선: 75줄, 100자마다 1500까지, 띠 줄 없음, 발문은 첫 쪽 머리 표 아래', t2.reduce((a, t) => a + t.write, 0) === 75 && t2.flatMap(t => t.counts).length === 15 && t2.flatMap(t => t.counts).pop() === '1500' &&
+    t2.every(t => t.gap === 0 && t.cell === 10 && t.bottomOk) && col === 'rgb(46, 139, 87)' && await P.evaluate(() => document.querySelector('#fm-pages .pe-sheet .pe-note').textContent.includes('공정')), [m2, col]);
+  await P.fill('#pe-ms-chars-in', '730'); await P.dispatchEvent('#pe-ms-chars-in', 'change'); await P.waitForTimeout(200);
+  check('글자 수 직접 적기: 730 → 20자 단위로 올려 740(37줄)', await P.evaluate(() => peCfg().msChars === 740 && peLayout(peCfg()).ms.lines === 37));
+  await P.click('#pe-ms-chars [data-chars="800"]'); await P.click('#pe-ms-cell [data-gap="3"]'); await P.waitForTimeout(200);
+  await P.screenshot({ path: 'pe-ms.png' });
+  if (JSZIP_JS) {
+    const mz = await P.evaluate(async () => { const c = peCfg(), L = peLayout(c), zip = await JSZip.loadAsync(await peBuildHwpx(c));
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
+      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g), grids = tbls.slice(1);
+      let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
+      const g0 = grids[0], rows0 = g0.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g);
+      const sumW = (row) => [...row.matchAll(/<hp:cellSz width="(\d+)"/g)].reduce((a, m) => a + +m[1], 0);
+      const hgt = (t) => +t.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1], rowsH = (t) => t.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g).reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0);
+      return { xml: ok, n: grids.length, chunks: L.ms.chunks.filter(x => x.n).length, cols: grids.every(t => /colCnt="21"/.test(t)), rows: grids.map(t => +t.match(/rowCnt="(\d+)"/)[1]),
+        lines: L.ms.chunks.filter(x => x.n).map(x => x.n), w: grids.every(t => t.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g).every(r => sumW(r) === +t.match(/<hp:sz width="(\d+)"/)[1])), h: grids.every(t => hgt(t) === rowsH(t)),
+        counts: [...sec.matchAll(/<hp:t>(\d+00)<\/hp:t>/g)].map(m => m[1]).join(), brk: (sec.match(/pageBreak="1"/g) || []).length, span: /colSpan="20"/.test(g0), paper: /width="72850" height="103181"/.test(sec),
+        color: /width="0.12 mm" color="#2E8B57"/.test(head) && /width="0.4 mm" color="#2E8B57"/.test(head) }; });
+    check('원고지 한글 파일: 쪽마다 표(21칸 = 20 + 글자 수), 줄·띠 줄 수, 칸 폭 합 = 표 폭(모든 줄), 표 높이 = 줄 높이 합, 100자마다 글자 수, 둘째 표부터 쪽 나누기, 띠 = 20칸 합침, B4, 선 색(초록)',
+      mz.xml && mz.n === mz.chunks && mz.cols && mz.rows.every((r, i) => r === mz.lines[i] * 2 - 1) && mz.w && mz.h && mz.counts === '100,200,300,400,500,600,700,800' && mz.brk === mz.n - 1 && mz.span && mz.paper && mz.color, mz);
+    if (process.env.MS_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await peBuildHwpx(peCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.MS_OUT, Buffer.from(b64, 'base64')); }
+  }
+  await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
+  check('보고서로 돌아오면 항목 칸·B4 그대로', await P.evaluate(() => getComputedStyle(document.getElementById('pe-items-box')).display !== 'none' && peCfg().paper === 'B4' && peCfg().items.length === 4));
+
   // 준비 중 종류
   await P.evaluate(() => { window.__alerts = []; window.customAlert = async (m) => { window.__alerts.push(m); }; });
-  await P.click('#pe-types [data-type="ms"]'); await P.waitForTimeout(200);
+  await P.click('#pe-types [data-type="word"]'); await P.waitForTimeout(200);
   const soon = await P.evaluate(() => ({ msg: document.getElementById('fm-pages').textContent, sheets: document.querySelectorAll('#fm-pages .pe-sheet').length }));
   await P.click('#fm-hwpx-btn'); await P.waitForTimeout(200);
-  check('원고지(준비 중): 미리보기에 안내, 한글 파일 누르면 안내 창', /다음 단계/.test(soon.msg) && soon.sheets === 0 && await P.evaluate(() => window.__alerts.some(m => /다음 단계/.test(m))), soon);
+  check('단어 시험(준비 중): 미리보기에 안내, 한글 파일 누르면 안내 창', /다음 단계/.test(soon.msg) && soon.sheets === 0 && await P.evaluate(() => window.__alerts.some(m => /다음 단계/.test(m))), soon);
   await P.click('#pe-types [data-type="report"]'); await P.waitForTimeout(200);
 
   // 초기화: 수행평가만

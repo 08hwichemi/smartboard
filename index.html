@@ -1039,6 +1039,12 @@
     .pe-head { border-collapse: collapse; table-layout: fixed; }
     .pe-head td { padding: 0 1mm 0 1.5mm; overflow: hidden; white-space: nowrap; text-align: center; vertical-align: middle; line-height: 1.1; }
     .pe-p { white-space: pre-wrap; word-break: break-all; }
+    #pe-ms-chars, #pe-ms-cell, #pe-ms-color { gap: 4px; }
+    #pe-ms-chars-in { width: 64px; flex: none; padding-left: 5px; }
+    #pe-ms-prompt { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
+    .pe-ms { border-collapse: collapse; table-layout: fixed; margin: 0 auto; }
+    .pe-ms td { padding: 0; }
+    .pe-ms td.pe-ms-n { font-size: 7pt; color: #666; vertical-align: bottom; text-align: left; padding-left: 1mm; line-height: 1; white-space: nowrap; }
     #ws-grid > * { flex-shrink: 0; min-width: 0; }
     .ws-fw { display: inline-block; width: 0.5em; } /* 학습지 반·번호·이름 칸의 고정폭 빈칸 */
     .ws-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
@@ -3164,7 +3170,7 @@
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>🏷️ 머리 표</span> <span class="nt-muted">맨 위 표 — 학생 칸은 빈칸</span></div>
         <div class="ws-row"><span class="ws-lb">제목</span><input type="text" id="pe-title" class="lp-input" placeholder="화학 기사 탐구(기사 1개당 2쪽 작성)" oninput="peSet({ title: this.value })"></div>
         <div class="nt-row" id="pe-who"></div>
-        <div class="ws-row"><label class="pe-chk"><input type="checkbox" id="pe-topic" onchange="peSet({ topic: this.checked }, true)">둘째 줄</label><input type="text" id="pe-topic-label" class="lp-input" placeholder="주제" oninput="peSet({ topicLabel: this.value })"><span class="nt-muted">:</span></div>
+        <div class="ws-row"><label class="pe-chk"><input type="checkbox" id="pe-topic" onchange="peSet({ topic: this.checked }, true)">둘째 줄</label><input type="text" id="pe-topic-text" class="lp-input" placeholder="주제 :" oninput="peSet({ topicText: this.value })"></div>
         <div class="nt-muted">학번·이름 칸과 둘째 줄(주제 등)은 학생이 직접 쓰는 빈칸이에요.</div>
       </div>
       <div class="nt-box" id="pe-items-box">
@@ -3174,14 +3180,22 @@
         <div class="nt-row"><button class="nt-chip" id="pe-add" onclick="peAddRow()">＋ 항목 더하기</button><span class="nt-muted">Enter = 아래에 항목 · 여러 줄 붙여 넣으면 줄마다 항목</span></div>
         <textarea id="pe-note" class="lp-input" rows="2" placeholder="안내 글(없어도 돼요) — 머리 표 아래에 나와요&#10;예) 10월 20일까지 제출 · 사진 첨부 가능" oninput="peSet({ note: this.value })"></textarea>
       </div>
+      <div class="nt-box" id="pe-ms-box" style="display:none;">
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">3</b>✍️ 원고지</span> <span class="nt-muted">한 줄 20칸 · 100자마다 글자 수</span></div>
+        <div class="nt-row" id="pe-ms-chars"></div>
+        <div class="nt-row" id="pe-ms-cell"></div>
+        <div class="nt-row" id="pe-ms-color"></div>
+        <textarea id="pe-ms-prompt" class="lp-input" rows="3" placeholder="발문(없어도 돼요) — 머리 표 아래, 원고지 위에 나와요&#10;예) 제시문을 읽고 '공정'에 대한 자신의 생각을 800자 내외로 논술하시오." oninput="peSet({ msPrompt: this.value })"></textarea>
+        <div class="nt-muted" id="pe-ms-info"></div>
+      </div>
       <div class="nt-box" id="pe-page-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted" id="pe-page-note">한글의 편집 용지(F7)</span></div>
         <div class="nt-row" id="pe-paper"></div>
         <div id="pe-margins" class="fm-mgrid" title="여백(mm)">
-          <label>위<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mT" oninput="peOnNum(this, 0, 40)"></label>
-          <label>아래<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mB" oninput="peOnNum(this, 0, 40)"></label>
-          <label>왼쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mL" oninput="peOnNum(this, 0, 40)"></label>
-          <label>오른쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mR" oninput="peOnNum(this, 0, 40)"></label>
+          <label>위<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mT" oninput="peOnPageNum(this, 0, 40)"></label>
+          <label>아래<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mB" oninput="peOnPageNum(this, 0, 40)"></label>
+          <label>왼쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mL" oninput="peOnPageNum(this, 0, 40)"></label>
+          <label>오른쪽<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mR" oninput="peOnPageNum(this, 0, 40)"></label>
         </div>
       </div>
       <div class="nt-box" id="pe-font-box">
@@ -14968,17 +14982,25 @@
   }
   // ===== 📄 양식: 수행평가 =====
   // 수행평가 답안지. 맨 위 머리 표(제목 | 학번·이름 빈칸, 둘째 줄 "주제 :")는 모든 종류가 같이 쓰고, 아래 본문만 종류마다 다르다.
-  // 종류: 📄 보고서(번호 항목 + 아래 쓸 빈 줄 — 사용자가 준 "화학 기사 탐구" 양식 모양). ✍️ 원고지·🔤 단어 시험은 다음 단계.
+  // 종류: 📄 보고서(번호 항목 + 아래 쓸 빈 줄 — 사용자가 준 "화학 기사 탐구" 양식 모양), ✍️ 원고지(한 줄 20칸, 오른쪽에 100자마다 글자 수).
+  // 🔤 단어 시험은 다음 단계. 쪽 설정(용지·여백)은 보고서와 원고지가 따로(원고지는 처음부터 B4 — 사용자: "국어·논술은 B4로").
   // 머리 표는 원본처럼 본문 첫 문단의 표(첫 쪽에만), 본문은 그냥 글이라 한글에서 이어 쓰면 다음 쪽으로 넘어간다.
   const PE_CFG_KEY = 'fm-pe';
   const PE_TYPES = [['report', '📄 보고서', '번호 항목마다 아래에 학생이 쓰는 빈 줄을 두는 보고서·탐구 활동지예요.'],
-    ['ms', '✍️ 원고지', '국어·논술용 원고지 — 다음 단계에서 만들어요(100자마다 글자 수 표시).'], ['word', '🔤 단어 시험', '영어 단어·일반 문제|답 표 — 다음 단계에서 만들어요.']];
-  const PE_READY = { report: true };
+    ['ms', '✍️ 원고지', '국어·논술용 원고지예요. 한 줄 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 나와요.'], ['word', '🔤 단어 시험', '영어 단어·일반 문제|답 표 — 다음 단계에서 만들어요.']];
+  const PE_READY = { report: true, ms: true };
+  // 원고지: 글자 수·칸 크기(mm)·줄 사이 띠(mm)·선 색. 한 줄은 늘 20칸(우리나라 원고지 관례 — 200자 원고지 = 20×10, 400자 = 20×20).
+  const PE_MS_CHARS = [400, 600, 800, 1000, 1200, 1500, 2000], PE_MS_CELLS = [8, 9, 10], PE_MS_GAPS = [[0, '없음'], [2, '2mm'], [3, '3mm'], [4, '4mm']];
+  const PE_MS_COLORS = [['#777777', '회색'], ['#000000', '검정'], ['#2E8B57', '초록'], ['#C0392B', '빨강'], ['#1F4E9A', '파랑']];
+  const PE_MS_COLS = 20, PE_MS_COUNT_W = 9, PE_MS_SAFE = 5; // 한 줄 칸 수, 오른쪽 글자 수 칸 폭, 쪽 아래 여유(한글에서 표가 다음 쪽으로 밀리지 않게)
+  const PE_PAGE_KEYS = ['paper', 'land', 'mT', 'mB', 'mL', 'mR'];
+  const PE_MS_PAGE = { paper: 'B4', land: false, mT: 15, mB: 15, mL: 15, mR: 15 };
   // 학생 칸: [키, 이름, [[칸 글자, 폭 mm] …]] — 글자가 빈 칸은 학생이 쓰는 빈칸
   const PE_WHO = [['id', '학번·이름', [['학번', 21], ['', 21], ['이름', 21], ['', 21]]], ['cn', '반·번호·이름', [['반', 11], ['', 13], ['번호', 13], ['', 13], ['이름', 13], ['', 24]]], ['none', '없음', []]];
   const PE_DEFAULT = {
-    type: 'report', title: '', who: 'id', topic: true, topicLabel: '주제', note: '',
+    type: 'report', title: '', who: 'id', topic: true, topicText: '주제 : ', note: '', // 둘째 줄 글은 적은 그대로(":"도 선생님이 직접)
     items: [{ t: '', gap: 4 }, { t: '', gap: 4 }, { t: '', gap: 4 }], autoNo: true, noStart: 1,
+    msChars: 800, msCell: 9, msGap: 3, msColor: '#777777', msPrompt: '',
     paper: 'A4', land: false, mT: 20, mB: 20, mL: 20, mR: 20,
     tFont: '한컴 윤고딕 240', tSize: 13, bFont: '함초롬바탕', bSize: 10, // 원본 양식과 같은 글꼴·크기
   };
@@ -14987,16 +15009,25 @@
     let v = {};
     try { v = JSON.parse(localStorage.getItem(PE_CFG_KEY) || '{}') || {}; } catch (e) {}
     if (!v || typeof v !== 'object') v = {};
-    const c = Object.assign({}, PE_DEFAULT, v, fmDemo ? fmDemo.pe : null); // 설명서 동안은 완성 예시(저장 안 함)
+    if (v.topicText == null && v.topicLabel != null) v.topicText = v.topicLabel + ' : '; // 예전(이름만 적고 " : "는 저절로)
+    const src = Object.assign({}, v, fmDemo ? fmDemo.pe : null); // 설명서 동안은 완성 예시(저장 안 함)
+    const c = Object.assign({}, PE_DEFAULT, src);
     if (!PE_TYPES.some(function(t) { return t[0] === c.type; })) c.type = 'report';
+    // 원고지는 쪽 설정을 따로("ms_paper" 등) — 보고서 쪽 설정과 섞이지 않게
+    if (c.type === 'ms') PE_PAGE_KEYS.forEach(function(k) { c[k] = src['ms_' + k] != null ? src['ms_' + k] : PE_MS_PAGE[k]; });
+    c.msChars = Math.ceil(ntNum(c.msChars, 100, 5000, 800) / PE_MS_COLS) * PE_MS_COLS;
+    if (PE_MS_CELLS.indexOf(Number(c.msCell)) < 0) c.msCell = 9; else c.msCell = Number(c.msCell);
+    if (!PE_MS_GAPS.some(function(g) { return g[0] === Number(c.msGap); })) c.msGap = 3; else c.msGap = Number(c.msGap);
+    if (!/^#[0-9a-fA-F]{6}$/.test(c.msColor || '')) c.msColor = '#777777';
+    c.msPrompt = String(c.msPrompt == null ? '' : c.msPrompt);
     if (!PE_WHO.some(function(w) { return w[0] === c.who; })) c.who = 'id';
-    ['title', 'topicLabel', 'note'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
+    ['title', 'topicText', 'note'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
     c.topic = c.topic !== false; c.autoNo = c.autoNo !== false; c.noStart = Number(c.noStart) === 0 ? 0 : 1;
     c.items = (Array.isArray(c.items) ? c.items : []).filter(function(r) { return r && typeof r === 'object'; })
       .map(function(r) { return { t: String(r.t == null ? '' : r.t), gap: Math.round(ntNum(r.gap, 0, 40, 4)) }; });
     if (!FM_PAPERS[c.paper]) c.paper = 'A4';
     c.land = !!c.land;
-    ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, PE_DEFAULT[k]); });
+    ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, (c.type === 'ms' ? PE_MS_PAGE : PE_DEFAULT)[k]); });
     c.tSize = ntNum(c.tSize, 9, 20, 13); c.bSize = ntNum(c.bSize, 8, 16, 10);
     c.tFont = fmFontClean(c.tFont) || PE_DEFAULT.tFont; c.bFont = fmFontClean(c.bFont) || PE_DEFAULT.bFont; c.tFontC = !!c.tFontC; c.bFontC = !!c.bFontC;
     return c;
@@ -15009,6 +15040,9 @@
     if (refill) peFillForm();
     fmRender();
   }
+  // 쪽 설정은 지금 종류(보고서/원고지)에 따로 저장
+  function pePage(patch) { const ms = peCfg().type === 'ms', o = {}; Object.keys(patch).forEach(function(k) { o[(ms ? 'ms_' : '') + k] = patch[k]; }); peSet(o, true); }
+  function peOnPageNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; const ms = peCfg().type === 'ms', p = {}; p[(ms ? 'ms_' : '') + inp.dataset.k] = v; peSet(p); }
   function peOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; peSet(o); }
   function peFont(c, k) { const n = c[k], cu = c[k + 'C']; return { n: n, h: cu ? n : fmHwpFont(n) }; }
   function peOnFontPick(key, v) {
@@ -15028,7 +15062,7 @@
   }
   // 항목 글(번호 자동이면 "1. …", 시작 번호 0 또는 1)
   function peItemText(c, i) { const t = c.items[i].t; return c.autoNo ? (c.noStart + i) + '. ' + t : t; }
-  function peNoteLines(c) { return c.note.split('\n').map(function(s) { return s.replace(/\s+$/, ''); }).filter(function(s, i, a) { return s || (i > 0 && i < a.length - 1); }); }
+  function peNoteLines(c, t) { return (t == null ? c.note : t).split('\n').map(function(s) { return s.replace(/\s+$/, ''); }).filter(function(s, i, a) { return s || (i > 0 && i < a.length - 1); }); }
 
   // ----- 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다 -----
   function peLayout(c) {
@@ -15042,6 +15076,7 @@
     // 글이 몇 줄로 접히는지(대략): 한글 1글자 = 1em, 그 밖 0.55em
     const linesOf = function(t) { let em = 0; for (const ch of t) em += ch.codePointAt(0) >= 0x1100 ? 1 : 0.55; return Math.max(1, Math.ceil(em * c.bSize * FM_PT / W)); };
     const paras = [];
+    if (c.type === 'ms') return peMsLayout(c, { w: w, h: h, pw: p[0], ph: p[1], W: W, cols: cols, r1: r1, r2: r2, lh: lh }, linesOf);
     peNoteLines(c).forEach(function(t) { paras.push({ k: 'note', t: t, n: linesOf(t) }); });
     if (paras.length) paras.push({ k: 'blank', t: '', n: 1 });
     c.items.forEach(function(r, i) {
@@ -15060,6 +15095,37 @@
     return { w: w, h: h, pw: p[0], ph: p[1], W: W, cols: cols, r1: r1, r2: r2, lh: lh, pages: pages };
   }
 
+  // 원고지: 첫 쪽 = 머리 표 + 발문 + 원고지, 다음 쪽부터 원고지만. 쪽마다 들어가는 줄 수만큼 나눠 쪽마다 따로 표.
+  // 글자 수는 이어서 센다(둘째 쪽 첫 줄이 41째 줄이면 그 줄 끝이 820자).
+  function peMsLayout(c, L, linesOf) {
+    const s = Math.min(c.msCell, Math.floor((L.W - PE_MS_COUNT_W) / PE_MS_COLS * 10) / 10), g = c.msGap;
+    const prompt = peNoteLines(c, c.msPrompt).map(function(t) { return { k: 'note', t: t, n: linesOf(t) }; });
+    const promptH = prompt.reduce(function(a, x) { return a + x.n * L.lh; }, 0) + (prompt.length ? PE_TBL_GAP : 0);
+    const fit = function(avail) { return Math.max(0, Math.floor((avail + g) / (s + g) + 1e-6)); };
+    const total = c.msChars / PE_MS_COLS, chunks = [];
+    let from = 0, first = fit(L.h - c.mT - c.mB - (L.r1 + L.r2 + PE_TBL_GAP) - promptH - PE_MS_SAFE);
+    const per = Math.max(1, fit(L.h - c.mT - c.mB - PE_MS_SAFE));
+    let n = Math.min(total, first);
+    chunks.push({ from: 0, n: n }); from = n; // 첫 쪽에 한 줄도 안 들어가면 빈 조각(머리 표·발문만)
+    while (from < total) { n = Math.min(total - from, per); chunks.push({ from: from, n: n }); from += n; }
+    return Object.assign(L, { ms: { s: s, g: g, shrunk: s < c.msCell, gridW: s * PE_MS_COLS, tableW: s * PE_MS_COLS + PE_MS_COUNT_W, lines: total, prompt: prompt, chunks: chunks, first: first, per: per },
+      pages: chunks.map(function(ch, i) { return i === 0 ? prompt : []; }) });
+  }
+  function peMsCount(line) { const n = line * PE_MS_COLS; return n % 100 === 0 ? String(n) : ''; } // 100자마다(그 줄 끝까지 쓰면 몇 자)
+  function peMsHtml(c, L, ch) {
+    if (!ch.n) return '';
+    const M = L.ms, thin = fmBdCss(fmLn('solid', 0.12, c.msColor)), thick = fmBdCss(fmLn('solid', 0.4, c.msColor));
+    let h = '<table class="pe-ms" style="width:' + M.tableW + 'mm;"><colgroup>' + ('<col style="width:' + M.s + 'mm">').repeat(PE_MS_COLS) + '<col style="width:' + PE_MS_COUNT_W + 'mm"></colgroup>';
+    for (let j = 0; j < ch.n; j++) {
+      const t = j === 0 ? thick : thin, b = j === ch.n - 1 ? thick : thin;
+      h += '<tr style="height:' + M.s + 'mm;">';
+      for (let k = 0; k < PE_MS_COLS; k++) h += '<td style="border-top:' + t + '; border-bottom:' + b + '; border-left:' + (k === 0 ? thick : thin) + '; border-right:' + (k === PE_MS_COLS - 1 ? thick : thin) + ';"></td>';
+      h += '<td class="pe-ms-n">' + peMsCount(ch.from + j + 1) + '</td></tr>';
+      if (M.g && j < ch.n - 1) h += '<tr style="height:' + M.g + 'mm;"><td colspan="' + PE_MS_COLS + '" style="border-left:' + thick + '; border-right:' + thick + ';"></td><td></td></tr>';
+    }
+    return h + '</table>';
+  }
+
   // ----- 미리보기 -----
   function peHeadHtml(c, L) {
     const bd = function(w) { return fmBdCss(fmLn('solid', w)); };
@@ -15069,7 +15135,7 @@
       '<tr style="height:' + L.r1 + 'mm;">' + L.cols.map(function(x, i) {
         return '<td style="border-top:' + bd(PE_THICK) + '; border-bottom:' + bd(c.topic ? PE_THIN : PE_THICK) + ';' + (i ? ' border-left:' + bd(PE_THIN) + ';' : '') + (x.title ? ' text-align:left;' : '') + '">' + ntEsc(x.t) + '</td>';
       }).join('') + '</tr>';
-    if (c.topic) h += '<tr style="height:' + L.r2 + 'mm;"><td colspan="' + n + '" style="text-align:left; border-bottom:' + bd(PE_THICK) + ';">' + ntEsc((c.topicLabel || '') + ' : ') + '</td></tr>';
+    if (c.topic) h += '<tr style="height:' + L.r2 + 'mm;"><td colspan="' + n + '" style="text-align:left; border-bottom:' + bd(PE_THICK) + ';">' + ntEsc(c.topicText) + '</td></tr>';
     return h + '</table>';
   }
   function peRender() {
@@ -15084,9 +15150,10 @@
     box.innerHTML = L.pages.map(function(pg, pi) {
       return '<div class="fm-sheet pe-sheet" data-page="' + (pi + 1) + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">' +
         (pi === 0 ? peHeadHtml(c, L) + '<div style="height:' + PE_TBL_GAP + 'mm;"></div>' : '') +
-        pg.map(function(x) { return '<div class="pe-p pe-' + x.k + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; min-height:' + (x.n * L.lh) + 'mm;">' + (ntEsc(x.t) || '&nbsp;') + '</div>'; }).join('') + '</div>';
+        pg.map(function(x) { return '<div class="pe-p pe-' + x.k + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; min-height:' + (x.n * L.lh) + 'mm;">' + (ntEsc(x.t) || '&nbsp;') + '</div>'; }).join('') +
+        (L.ms ? (pi === 0 && L.ms.prompt.length ? '<div style="height:' + PE_TBL_GAP + 'mm;"></div>' : '') + peMsHtml(c, L, L.ms.chunks[pi]) : '') + '</div>';
     }).join('');
-    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽 미리보기';
+    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽' + (L.ms ? ' · 원고지 ' + c.msChars.toLocaleString('ko-KR') + '자(' + L.ms.lines + '줄)' : '') + ' 미리보기';
     document.getElementById('fm-fit-info').textContent = '';
     fmFitPreview();
   }
@@ -15100,19 +15167,24 @@
       return chip(c.type === t[0], 'data-type="' + t[0] + '" onclick="peSet({ type: \'' + t[0] + '\' }, true)"', t[1] + (PE_READY[t[0]] ? '' : ' <span class="pe-soon">준비 중</span>'), t[2]);
     }).join('');
     document.getElementById('pe-type-help').textContent = PE_TYPES.find(function(t) { return t[0] === c.type; })[2];
-    setVal('pe-title', c.title); setVal('pe-topic-label', c.topicLabel); setVal('pe-note', c.note);
+    setVal('pe-title', c.title); setVal('pe-topic-text', c.topicText); setVal('pe-note', c.note);
     document.getElementById('pe-topic').checked = c.topic;
-    document.getElementById('pe-topic-label').disabled = !c.topic;
+    document.getElementById('pe-topic-text').disabled = !c.topic;
     document.getElementById('pe-who').innerHTML = '학생 칸 ' + PE_WHO.map(function(w) {
       return chip(c.who === w[0], 'data-who="' + w[0] + '" onclick="peSet({ who: \'' + w[0] + '\' }, true)"', w[1]);
     }).join('');
     document.getElementById('pe-no').innerHTML = '<label class="pe-chk"><input type="checkbox" id="pe-autono"' + (c.autoNo ? ' checked' : '') + ' onchange="peSet({ autoNo: this.checked }, true)">번호 자동</label>' +
       (c.autoNo ? [[0, '0부터'], [1, '1부터']].map(function(o) { return chip(c.noStart === o[0], 'data-start="' + o[0] + '" onclick="peSet({ noStart: ' + o[0] + ' }, true)"', o[1]); }).join('') : '');
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#pe-rows')) peRowsFill(c);
+    const ms = c.type === 'ms';
+    document.getElementById('pe-items-box').style.display = ms ? 'none' : '';
+    document.getElementById('pe-ms-box').style.display = ms ? '' : 'none';
+    if (ms) peMsFill(c, chip, setVal);
+    document.getElementById('pe-page-note').textContent = ms ? '원고지 쪽 설정(보고서와 따로)' : '한글의 편집 용지(F7)';
     document.getElementById('pe-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
-      return chip(c.paper === k, 'data-paper="' + k + '" onclick="peSet({ paper: \'' + k + '\' }, true)"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
+      return chip(c.paper === k, 'data-paper="' + k + '" onclick="pePage({ paper: \'' + k + '\' })"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
     }).join('') + '<span class="fm-sep" style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></span>' +
-      [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="peSet({ land: ' + o[0] + ' }, true)"', o[1]); }).join('');
+      [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="pePage({ land: ' + o[0] + ' })"', o[1]); }).join('');
     document.querySelectorAll('#pe-margins input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c[inp.dataset.k]; });
     setVal('pe-tsize', c.tSize); setVal('pe-bsize', c.bSize);
     const fillSel = function(selId, inpId, name, custom) {
@@ -15125,6 +15197,22 @@
     fillSel('pe-tfont', 'pe-tfont-custom', c.tFont, c.tFontC);
     fillSel('pe-bfont', 'pe-bfont-custom', c.bFont, c.bFontC);
     fmFontMsgTo('pe-font-msg', [c.tFont, c.bFont]);
+  }
+  // 원고지 칸: 글자 수·칸 크기·줄 사이·선 색·발문
+  function peMsFill(c, chip, setVal) {
+    const L = peLayout(c);
+    document.getElementById('pe-ms-chars').innerHTML = '글자 수 ' + PE_MS_CHARS.map(function(n) { return chip(c.msChars === n, 'data-chars="' + n + '" onclick="peSet({ msChars: ' + n + ' }, true)"', n.toLocaleString('ko-KR')); }).join('') +
+      '<input type="number" id="pe-ms-chars-in" class="lp-input" min="100" max="5000" step="100" title="직접 적기(20자 단위로 올림)" onchange="peSet({ msChars: this.value }, true)">자';
+    setVal('pe-ms-chars-in', c.msChars);
+    document.getElementById('pe-ms-cell').innerHTML = '칸 크기 ' + PE_MS_CELLS.map(function(n) { return chip(c.msCell === n, 'data-cell="' + n + '" onclick="peSet({ msCell: ' + n + ' }, true)"', n + 'mm', '정사각형 한 칸 ' + n + '×' + n + 'mm'); }).join('') +
+      '<span class="nt-muted" style="margin-left:6px;">줄 사이</span>' + PE_MS_GAPS.map(function(g) { return chip(c.msGap === g[0], 'data-gap="' + g[0] + '" onclick="peSet({ msGap: ' + g[0] + ' }, true)"', g[1], '줄과 줄 사이 띠'); }).join('');
+    document.getElementById('pe-ms-color').innerHTML = '선 색 ' + PE_MS_COLORS.map(function(x) {
+      return '<button class="fm-sw' + (c.msColor.toUpperCase() === x[0] ? ' on' : '') + '" data-color="' + x[0] + '" title="' + x[1] + '" style="background:' + x[0] + ';" onclick="peSet({ msColor: \'' + x[0] + '\' }, true)"></button>';
+    }).join('');
+    setVal('pe-ms-prompt', c.msPrompt);
+    const M = L.ms;
+    document.getElementById('pe-ms-info').textContent = '한 줄 20칸 × ' + M.lines + '줄 = ' + c.msChars.toLocaleString('ko-KR') + '자 · ' + L.pages.length + '쪽(첫 쪽 ' + Math.min(M.lines, M.first) + '줄, 다음 쪽부터 ' + M.per + '줄씩)' +
+      (M.shrunk ? ' · 종이 폭에 맞춰 칸을 ' + M.s + 'mm로 줄였어요' : '');
   }
   // 항목 칸: [번호][글][빈 줄 수][✕]
   function peRowsFill(c) {
@@ -15184,22 +15272,31 @@
     const sideOf = function(i) { return { t: K(PE_THICK), b: K(c.topic ? PE_THIN : PE_THICK), l: i ? K(PE_THIN) : NONE, r: i < n - 1 ? K(PE_THIN) : NONE }; };
     const bfs = [{ fill: null, s: { l: NONE, r: NONE, t: NONE, b: NONE } }, { fill: null, s: { t: K(PE_THIN), b: K(PE_THICK), l: NONE, r: NONE } }];
     for (let i = 0; i < n; i++) bfs.push({ fill: null, s: sideOf(i) });
+    // 원고지 칸 테두리: [위 굵게?][아래 굵게?][왼쪽 끝?][오른쪽 끝?] 조합 + 줄 사이 띠(양쪽 끝만)
+    const msBf = {};
+    if (L.ms) {
+      const mt = fmLn('solid', 0.12, c.msColor), mk = fmLn('solid', 0.4, c.msColor);
+      [0, 1].forEach(function(t) { [0, 1].forEach(function(b) { [0, 1].forEach(function(l) { [0, 1].forEach(function(r) {
+        msBf[t + '' + b + l + r] = bfs.length; bfs.push({ fill: null, s: { t: t ? mk : mt, b: b ? mk : mt, l: l ? mk : mt, r: r ? mk : mt } });
+      }); }); }); });
+      msBf.gap = bfs.length; bfs.push({ fill: null, s: { t: mt, b: mt, l: mk, r: mk } });
+    }
     const pt2 = function(mm) { return mm / FM_PT; };
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: [hT, hB].filter(function(f, i, a) { return a.indexOf(f) === i; }),
-      charPrs: [{ size: c.tSize, font: hT }, { size: c.bSize, font: hB }],
-      paraPrs: [{ align: 'LEFT', line: 100 }, { align: 'CENTER', line: 100 }, { align: 'JUSTIFY', line: 160 }, { align: 'LEFT', line: 100, after: pt2(PE_TBL_GAP) }],
+      charPrs: [{ size: c.tSize, font: hT }, { size: c.bSize, font: hB }, { size: 1, font: hB }, { size: 7, font: hB, color: '#666666' }, { size: Math.round(L.ms ? L.ms.s / FM_PT * 0.6 : 10), font: hB }],
+      paraPrs: [{ align: 'LEFT', line: 100 }, { align: 'CENTER', line: 100 }, { align: 'JUSTIFY', line: 160 }, { align: 'LEFT', line: 100, after: pt2(PE_TBL_GAP) }, { align: 'CENTER', line: 100 }],
       borderFills: bfs,
     });
     zip.file('Contents/header.xml', H.xml);
-    const CP_T = H.cp[0], CP_B = H.cp[1], PP_L = H.pp[0], PP_C = H.pp[1], PP_B = H.pp[2], PP_TB = H.pp[3];
+    const CP_T = H.cp[0], CP_B = H.cp[1], CP_TINY = H.cp[2], CP_CNT = H.cp[3], CP_CELL = H.cp[4], PP_L = H.pp[0], PP_C = H.pp[1], PP_B = H.pp[2], PP_TB = H.pp[3], PP_MS = H.pp[4];
     const sec0 = await zip.file('Contents/section0.xml').async('string');
     const secOpen = sec0.match(/^[\s\S]*?<hs:sec [^>]*>/)[0];
     const secPr = sec0.match(/<hp:secPr[\s\S]*?<\/hp:secPr>/)[0]
       .replace(/<hp:pagePr [^>]*>/, function(m) { return m.replace(/landscape="\w+"/, 'landscape="' + (c.land ? 'NARROWLY' : 'WIDELY') + '"').replace(/ width="\d+"/, ' width="' + hu(L.pw) + '"').replace(/ height="\d+"/, ' height="' + hu(L.ph) + '"'); })
       .replace(/<hp:margin [^>]*\/>/, '<hp:margin header="0" footer="0" gutter="0" left="' + hu(c.mL) + '" right="' + hu(c.mR) + '" top="' + hu(c.mT) + '" bottom="' + hu(c.mB) + '"/>');
     let pid = 0;
-    const P = function(pp, runs) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
+    const P = function(pp, runs, page) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="0" pageBreak="' + (page ? 1 : 0) + '" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
     const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
     const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
     // 칸 폭(정수)의 합이 표 폭과 꼭 같게
@@ -15208,12 +15305,12 @@
     const R1 = hu(L.r1), R2 = hu(L.r2);
     const tc = function(o) {
       return '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + o.bf + '">' +
-        '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + o.p + '</hp:subList>' +
+        '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="' + (o.v || 'CENTER') + '" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + o.p + '</hp:subList>' +
         '<hp:cellAddr colAddr="' + o.c + '" rowAddr="' + o.r + '"/><hp:cellSpan colSpan="' + (o.cs || 1) + '" rowSpan="1"/><hp:cellSz width="' + o.w + '" height="' + o.h + '"/>' +
-        '<hp:cellMargin left="' + hu(1.5) + '" right="' + hu(1) + '" top="0" bottom="0"/></hp:tc>';
+        '<hp:cellMargin left="' + (o.m0 ? 0 : hu(1.5)) + '" right="' + (o.m0 ? 0 : hu(1)) + '" top="0" bottom="0"/></hp:tc>';
     };
     let tr = '<hp:tr>' + L.cols.map(function(x, i) { return tc({ c: i, r: 0, w: CW[i], h: R1, bf: H.bf[2 + i], p: P(x.title ? PP_L : PP_C, R(CP_T, T(x.t))) }); }).join('') + '</hp:tr>';
-    if (c.topic) tr += '<hp:tr>' + tc({ c: 0, r: 1, cs: n, w: TW, h: R2, bf: H.bf[1], p: P(PP_L, R(CP_T, T((c.topicLabel || '') + ' : '))) }) + '</hp:tr>';
+    if (c.topic) tr += '<hp:tr>' + tc({ c: 0, r: 1, cs: n, w: TW, h: R2, bf: H.bf[1], p: P(PP_L, R(CP_T, T(c.topicText))) }) + '</hp:tr>';
     const tbl = '<hp:tbl id="1000" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + (c.topic ? 2 : 1) + '" colCnt="' + n + '" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
       '<hp:sz width="' + TW + '" widthRelTo="ABSOLUTE" height="' + (R1 + R2) + '" heightRelTo="ABSOLUTE" protect="0"/>' +
       '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
@@ -15221,6 +15318,31 @@
     let body = P(PP_TB, R(CP_B, secPr + '<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl>') + R(CP_B, tbl));
     const text = [c.title];
     L.pages.forEach(function(pg) { pg.forEach(function(x) { body += P(PP_B, R(CP_B, T(x.t))); if (x.t) text.push(x.t); }); });
+    if (L.ms) {
+      // 원고지: 쪽마다 표 하나(20칸 + 오른쪽 글자 수 칸). 줄 사이 띠는 20칸을 합친 한 칸. 둘째 조각부터 쪽 나누기.
+      const M = L.ms, S = hu(M.s), G = hu(M.g), CNT = hu(PE_MS_COUNT_W), GW = S * PE_MS_COLS, MTW = GW + CNT;
+      let tid = 2000;
+      M.chunks.forEach(function(ch, ci) {
+        if (!ch.n) return;
+        let rows = '', r = 0;
+        for (let j = 0; j < ch.n; j++) {
+          const tb = (j === 0 ? 1 : 0) + '' + (j === ch.n - 1 ? 1 : 0);
+          let cells = '';
+          for (let k = 0; k < PE_MS_COLS; k++) cells += tc({ c: k, r: r, w: S, h: S, m0: true, bf: H.bf[msBf[tb + (k === 0 ? 1 : 0) + (k === PE_MS_COLS - 1 ? 1 : 0)]], p: P(PP_C, R(CP_CELL, T(''))) });
+          const cnt = peMsCount(ch.from + j + 1);
+          cells += tc({ c: PE_MS_COLS, r: r, w: CNT, h: S, bf: H.bf[0], p: P(PP_L, R(cnt ? CP_CNT : CP_TINY, T(cnt))), v: 'BOTTOM' });
+          rows += '<hp:tr>' + cells + '</hp:tr>'; r++;
+          if (G && j < ch.n - 1) { rows += '<hp:tr>' + tc({ c: 0, r: r, cs: PE_MS_COLS, w: GW, h: G, m0: true, bf: H.bf[msBf.gap], p: P(PP_L, R(CP_TINY, T(''))) }) + tc({ c: PE_MS_COLS, r: r, w: CNT, h: G, m0: true, bf: H.bf[0], p: P(PP_L, R(CP_TINY, T(''))) }) + '</hp:tr>'; r++; }
+        }
+        const tblH = ch.n * S + (ch.n - 1) * (G ? G : 0);
+        const grid = '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="NONE" repeatHeader="0" rowCnt="' + r + '" colCnt="' + (PE_MS_COLS + 1) + '" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
+          '<hp:sz width="' + MTW + '" widthRelTo="ABSOLUTE" height="' + tblH + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+          '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+          '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + rows + '</hp:tbl>';
+        body += P(PP_MS, R(CP_TINY, grid), ci > 0);
+      });
+      text.push('원고지 ' + c.msChars + '자');
+    }
     zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
     const hpf = (await zip.file('Contents/content.hpf').async('string'))
       .replace(/<opf:title\/>|<opf:title>[\s\S]*?<\/opf:title>/, '<opf:title>' + fmX(c.title || '수행평가') + '</opf:title>')
@@ -15242,7 +15364,7 @@
       btn.disabled = true; timer = fmSlowTimer(); fmStage = '파일 만드는 중';
       const blob = await peBuildHwpx(c);
       clearTimeout(timer); timer = null;
-      fmSaveNow(blob, ((c.title || '수행평가').trim() + '.hwpx').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' '));
+      fmSaveNow(blob, ((c.title || (c.type === 'ms' ? '원고지' : '수행평가')).trim() + '.hwpx').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' '));
     } catch (e) {
       customAlert('한글 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + fmErrNote(e));
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
@@ -15290,10 +15412,11 @@
     rows: [{ lv: 'h1', t: '원소' }, { lv: 'h2', t: '원소의 뜻' }, { lv: 'h3', t: '물질을 이루는 기본 성분' }, { lv: 'it', t: '더 이상 다른 물질로 나눌 수 없다.' }, { lv: 'it', t: '현재 118가지가 알려져 있다.' }, { lv: 'h2', t: '원자의 구조' }],
   };
   const PE_DEMO = { // 사용자가 준 수행평가 양식(화학 기사 탐구)
-    type: 'report', title: '화학 기사 탐구(기사 1개당 2쪽 작성)', who: 'id', topic: true, topicLabel: '주제', note: '', autoNo: true, noStart: 0,
+    type: 'report', title: '화학 기사 탐구(기사 1개당 2쪽 작성)', who: 'id', topic: true, topicText: '주제 : ', note: '', autoNo: true, noStart: 0,
     items: [{ t: '두 줄 요약(자신의 보고서 주요 내용을 두~세 줄 이내로 요약)', gap: 2 }, { t: '기사 선정 이유', gap: 3 }, { t: '화학 기사 요약(사진 첨부 가능, 너무 많은 양으로 채우지 말 것!)', gap: 3 },
       { t: '화학적 개념 설명(자세히 많이 쓸 것! - 화2 배운 내용 포함)', gap: 3 }, { t: '추가로 생긴 의문 또는 더 조사하고 싶은 내용', gap: 4 }, { t: '진로와 관련된 내용', gap: 4 }, { t: '참고문헌(사이트)', gap: 3 }],
   };
+  const PE_DEMO_MS = Object.assign({}, PE_DEMO, { type: 'ms', title: '논술 수행평가 — 공정한 사회', topicText: '', topic: false, msChars: 800, msPrompt: '제시문을 읽고 \'공정\'에 대한 자신의 생각을 800자 내외로 논술하시오.' });
   function fmDemoSet(on) {
     if (!!fmDemo === !!on) return;
     fmDemo = on ? { fm: FM_DEMO, ws: WS_DEMO, pe: PE_DEMO } : null;
@@ -15302,7 +15425,9 @@
   let fmTourKind = null;
   const fmTourRoster = function() { fmDemoSet(true); if (fmCfg().kind !== 'roster') fmSetKind('roster'); };
   const fmTourWs = function() { fmDemoSet(true); if (fmCfg().kind !== 'ws') fmSetKind('ws'); };
-  const fmTourPe = function() { fmDemoSet(true); if (fmCfg().kind !== 'pe') fmSetKind('pe'); };
+  // 수행평가 예시: 보고서 단계는 PE_DEMO, 원고지 단계는 PE_DEMO_MS
+  const fmTourPeAs = function(demo) { return function() { fmDemoSet(true); fmDemo.pe = demo; if (fmCfg().kind !== 'pe') fmSetKind('pe'); else { fmFillForm(); fmRender(); } }; };
+  const fmTourPe = fmTourPeAs(PE_DEMO), fmTourPeMs = fmTourPeAs(PE_DEMO_MS);
   const fmTourSteps = [
     { selector: '#fm-page-header', before: fmTourRoster, title: '📄 양식 만들기에 오신 것을 환영해요!', desc: '선생님들이 한글로 매번 새로 만드는 양식을 몇 칸만 채워서 바로 만드는 화면이에요. 지금은 세 가지 — 📋 명렬표 수합(반 명단 체크표), 📚 학습지(학습지 틀), 📝 수행평가(답안지)를 만들 수 있어요. 설명서 동안은 예시 내용으로 채워서 보여 드려요(저장되지 않아요).' },
     { selector: '#fm-kind-switch', before: fmTourRoster, title: '양식 고르기', desc: '위쪽에서 만들 양식을 골라요. 양식마다 적은 내용과 설정이 따로 기억돼서, 다음에 열면 그대로 이어서 쓸 수 있어요.' },
@@ -15326,10 +15451,11 @@
     { selector: '#ws-font-box', before: fmTourWs, title: '📚 학습지 · 6단계. 글꼴 (필요할 때만)', desc: '머리·꼬리 글꼴과 본문 글꼴·크기를 골라요. "부분별 글꼴 따로 고르기"를 펴면 대단원·과목명·쪽 번호 같은 부분마다 다른 글꼴을 쓸 수 있어요.' },
     { selector: '#fm-hwpx-btn', before: fmTourWs, title: '📚 학습지 · 한글 파일 내려받기', desc: '⬇️ 한글 파일(.hwpx)을 내려받아 한글에서 내용을 채우면 돼요. 글이 길어지면 머리 띠·NOTE 칸·쪽 번호와 함께 다음 쪽으로 자연스럽게 넘어가요. 이제 수행평가를 볼게요.' },
     { selector: '#fm-right', before: fmTourPe, title: '📝 수행평가 — 이런 걸 만들어요', desc: '위쪽 "수행평가" 탭에서 만드는 수행평가 답안지예요. 맨 위 머리 표(제목 · 학번 · 이름, 둘째 줄 주제)와 그 아래 번호 항목, 항목마다 학생이 쓰는 빈 줄로 되어 있어요. 오른쪽이 완성 예시예요.' },
-    { selector: '#pe-type-box', before: fmTourPe, title: '📝 수행평가 · 1단계. 종류', desc: '📄 보고서는 지금 쓸 수 있어요. ✍️ 원고지(국어·논술, 100자마다 글자 수 표시)와 🔤 단어 시험(영어 단어·문제|답 표)은 다음에 더해져요.' },
-    { selector: '#pe-head-box', before: fmTourPe, title: '📝 수행평가 · 2단계. 머리 표', desc: '제목을 적고, 학생 칸(학번·이름 / 반·번호·이름 / 없음)을 골라요. 둘째 줄(주제 등)은 체크로 넣거나 빼고 이름을 바꿀 수 있어요. 학생 칸과 둘째 줄은 학생이 직접 쓰는 빈칸이에요.' },
+    { selector: '#pe-type-box', before: fmTourPe, title: '📝 수행평가 · 1단계. 종류', desc: '📄 보고서(번호 항목 + 쓸 빈 줄)와 ✍️ 원고지(국어·논술, 100자마다 글자 수 표시)를 쓸 수 있어요. 🔤 단어 시험(영어 단어·문제|답 표)은 다음에 더해져요.' },
+    { selector: '#pe-head-box', before: fmTourPe, title: '📝 수행평가 · 2단계. 머리 표', desc: '제목을 적고, 학생 칸(학번·이름 / 반·번호·이름 / 없음)을 골라요. 둘째 줄(주제 등)은 체크로 넣거나 빼고, 글은 적은 그대로 나와요(":"도 필요하면 직접 적어요). 학생 칸과 둘째 줄은 학생이 직접 쓰는 빈칸이에요.' },
     { selector: '#pe-items-box', before: fmTourPe, title: '📝 수행평가 · 3단계. 항목', desc: '항목을 칸마다 하나씩 적고, 옆 숫자로 그 아래 학생이 쓸 빈 줄 수를 정해요. 번호는 저절로 붙고(0부터/1부터), Enter는 아래에 새 항목이에요. 한글 문서에서 항목 여러 줄을 복사해 붙여 넣으면 줄마다 항목이 돼요.' },
-    { selector: '#fm-hwpx-btn', before: fmTourPe, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 설명서를 닫으면 예시는 사라지고 선생님 설정으로 돌아가요. 수고하셨습니다! 🎉' },
+    { selector: '#pe-ms-box', before: fmTourPeMs, title: '📝 수행평가 · 원고지', desc: '종류에서 ✍️ 원고지를 고르면 이 칸이 나와요. 글자 수(400~2000자, 직접 적기도 돼요)와 칸 크기·줄 사이 띠·선 색을 고르고, 발문을 적으면 원고지 위에 나와요. 한 줄은 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 적혀요. 원고지는 쪽 설정이 따로라 처음부터 B4예요.' },
+    { selector: '#fm-hwpx-btn', before: fmTourPeMs, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지는 쪽마다 표 하나로 들어가요. 설명서를 닫으면 예시는 사라지고 선생님 설정으로 돌아가요. 수고하셨습니다! 🎉' },
   ];
   function fmOpenTour() {
     fmTourKind = fmCfg().kind;
