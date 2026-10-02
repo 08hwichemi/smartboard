@@ -1050,7 +1050,7 @@
     #bs-grid > * { flex-shrink: 0; min-width: 0; }
     #bs-grid .bs-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .bs-designs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .bs-dcard { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 5px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); cursor: pointer; font-size: 11px; font-weight: 700; min-width: 0; }
+    .bs-dcard { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 5px; white-space: nowrap; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); cursor: pointer; font-size: 11px; font-weight: 700; min-width: 0; }
     .bs-dcard:hover { border-color: var(--accent-color); }
     .bs-dcard.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-color); }
     .bs-thumb { display: block; width: 100%; max-width: 92px; background: #fff; padding: 4px; border-radius: 4px; box-sizing: border-box; }
@@ -1073,6 +1073,16 @@
     .bs-row .bs-dur { flex: 0 0 30px; color: var(--text-sub); font-size: 10px; text-align: right; }
     .bs-row .bs-kk { flex: 0 0 68px; width: 68px; padding-left: 3px; }
     .bs-row .bs-x0 { flex: 0 0 18px; }
+    .bs-row .bs-gap, .bs-row .bs-min { flex: 0 0 42px; width: 42px; padding-left: 4px; padding-right: 0; text-align: center; }
+    .bs-crow .bs-cn { flex: 1 1 0; min-width: 52px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bs-crow .bs-kk { flex-basis: 62px; width: 62px; }
+    .bs-row .bs-ct { flex: 0 0 84px; font-size: 11px; font-variant-numeric: tabular-nums; text-align: center; color: var(--text-main); white-space: nowrap; }
+    .bs-chead { font-size: 11px; color: var(--text-sub); font-weight: 700; }
+    .bs-chead span { text-align: center; }
+    .bs-chead .bs-cn { flex: 1 1 0; text-align: left; padding-left: 4px; }
+    #fm-left #bs-calc input.bs-t { width: 58px; flex: none; text-align: center; padding-left: 3px; padding-right: 3px; }
+    .bs-brk { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .bs-brk .bs-num { width: 46px; padding-left: 4px; padding-right: 0; }
     .bs-row .ws-ol-x { flex: 0 0 18px; }
     .bs-row[data-k="lunch"], .bs-row[data-k="clean"], .bs-row[data-k="meet"], .bs-row[data-k="self"], .bs-row[data-k="etc"] { background: var(--hover-bg, rgba(127,127,127,.08)); border-radius: 6px; }
     .bs-theme { display: inline-flex; align-items: center; gap: 4px; }
@@ -1155,7 +1165,7 @@
     @container (min-width: 600px) {
       #ws-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
       #pe-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
-      #bs-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; } /* 왼쪽 ①시정표 ②시간 / 오른쪽 ③디자인 ④표 모양 ⑤글씨 ⑥쪽 */
+      #bs-grid { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; } /* 왼쪽 ①시정표 ②시간 / 오른쪽 ③디자인 ④표 모양 ⑤글씨 ⑥쪽 */
       #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
     #fm-left textarea.lp-input { resize: vertical; min-height: 52px; font-family: inherit; line-height: 1.5; }
@@ -3306,6 +3316,7 @@
       <div class="nt-box" id="bs-rows-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>⏰ 시간</span> <span class="nt-muted">시간 순서대로 표에 나와요</span></div>
         <div class="nt-row" id="bs-np"></div>
+        <div class="nt-row" id="bs-calc"></div>
         <div id="bs-rows"></div>
         <div class="nt-row" id="bs-add"></div>
         <div class="nt-muted" id="bs-info"></div>
@@ -15909,8 +15920,8 @@
   // 시험 기간(시정 + 요일별 과목)은 사용자 양식을 받은 뒤 만든다. 쉬는 시간 줄은 넣지 않음(사용자).
   // 한 장짜리: 제목(상자/표에 붙이기/글씨만/밑줄) + 표 하나, 줄 높이는 기본으로 종이에 꽉 차게(게시용).
   const BS_CFG_KEY = 'fm-bs';
-  const BS_MODES = [['normal', '🏫 평상시', '교시 시간은 관리자 설정의 일과 시간을 가져와요. 회색 시간은 저절로 정해진 시간(조회·중식·청소·종례는 교시에 맞춰)이고, 적으면 이 시정표만 바뀌어요.'],
-    ['short', '⏱️ 단축 수업', '교시마다 시간을 직접 적어요. 조회·중식·청소·종례는 비워 두면 교시에 맞춰 저절로 바뀌어요. 평상시와 따로 기억해요.'], ['exam', '📝 시험 기간', '시험 시정·요일별 과목 — 선생님 양식을 받아 다음에 만들어요.']];
+  const BS_MODES = [['normal', '🏫 평상시', '처음엔 관리자 설정의 일과 시간을 가져와요. 시작 시각과 줄마다 분만 고치면 뒤 시간이 저절로 계산돼요(이 시정표만 바뀌어요).'],
+    ['short', '⏱️ 단축 수업', '처음엔 평상시 시간을 옮겨 놓아요. 교시 분을 40으로 바꾸면 뒤 시간이 모두 따라 바뀌어요. 평상시와 따로 기억해요.'], ['exam', '📝 시험 기간', '시험 시정·요일별 과목 — 선생님 양식을 받아 다음에 만들어요.']];
   const BS_READY = { normal: true, short: true };
   const BS_KINDS = [['p', '교시'], ['meet', '조회·종례'], ['lunch', '중식'], ['clean', '청소'], ['self', '자습'], ['etc', '기타']];
   const BS_PRESETS = [['조회', 'meet'], ['중식', 'lunch'], ['청소', 'clean'], ['종례', 'meet'], ['자기주도학습1', 'self'], ['자기주도학습2', 'self'], ['방과후', 'etc']];
@@ -15925,15 +15936,15 @@
       c: { title: '', tTxt: '#000000', head: '#E7E6E6', hTxt: '#000000', accent: '#000000', line: '#000000', inner: '#7F7F7F', meet: '', lunch: '#F2F2F2', clean: '#F2F2F2', self: '', etc: '#F2F2F2' } },
     { k: 'navy', n: '네이비', d: '세로선 없이 깔끔하게', style: 'minimal', tStyle: 'band', line: 1,
       c: { title: '#1F3864', tTxt: '#FFFFFF', head: '', hTxt: '#1F3864', accent: '#1F3864', line: '#1F3864', inner: '#C9D3E3', meet: '', lunch: '#FDEBD8', clean: '#EEF2F8', self: '#F5F7FB', etc: '#F2F2F2' } },
-    { k: 'green', n: '그린 포인트', d: '교시 칸을 초록으로 강조', style: 'badge', tStyle: 'box', line: 1,
+    { k: 'green', n: '그린', d: '교시 칸을 초록으로 강조', style: 'badge', tStyle: 'box', line: 1,
       c: { title: '#2E7D6B', tTxt: '#FFFFFF', head: '#E3F1EC', hTxt: '#1E5A4C', accent: '#2E7D6B', line: '#2E7D6B', inner: '#CFE3DC', meet: '', lunch: '#FFF1E0', clean: '#F3F8F6', self: '#F3F8F6', etc: '#F2F2F2' } },
-    { k: 'pastel', n: '파스텔 타일', d: '칸을 띄운 부드러운 블록', style: 'tiles', tStyle: 'band', line: 1,
+    { k: 'pastel', n: '파스텔', d: '칸을 띄운 부드러운 블록', style: 'tiles', tStyle: 'band', line: 1,
       c: { title: '#F6D6E0', tTxt: '#7A2E4A', head: '#EADFF2', hTxt: '#FFFFFF', accent: '#9B7BB5', line: '#9B7BB5', inner: '#9B7BB5', meet: '#E8F0FB', lunch: '#FDE7D7', clean: '#E4F2E7', self: '#E8F0FB', etc: '#F0F0F0', zebra: '#F7F3FA' } },
     { k: 'blue', n: '블루 라인', d: '파란 선으로 가볍게', style: 'minimal', tStyle: 'line', line: 1,
       c: { title: '', tTxt: '#1F4E79', head: '', hTxt: '#2E75B6', accent: '#2E75B6', line: '#2E75B6', inner: '#D6E4F0', meet: '', lunch: '#FFF4D6', clean: '#EEF5FB', self: '#EEF5FB', etc: '#F2F2F2' } },
     { k: 'coral', n: '코랄', d: '따뜻한 주황 계열', style: 'grid', tStyle: 'box', line: 1,
       c: { title: '#F8CBAD', tTxt: '#843C0C', head: '#FBE5D6', hTxt: '#843C0C', accent: '#C55A11', line: '#C55A11', inner: '#F4B183', meet: '', lunch: '#FFF2CC', clean: '#E2F0D9', self: '#FDF3EC', etc: '#EDEDED' } },
-    { k: 'bold', n: '블랙 & 옐로', d: '멀리서도 잘 보이게', style: 'badge', tStyle: 'band', line: 2,
+    { k: 'bold', n: '블랙옐로', d: '멀리서도 잘 보이게', style: 'badge', tStyle: 'band', line: 2,
       c: { title: '#262626', tTxt: '#FFD966', head: '#FFD966', hTxt: '#262626', accent: '#262626', line: '#262626', inner: '#BFBFBF', meet: '', lunch: '#FFF2CC', clean: '#F2F2F2', self: '#F2F2F2', etc: '#F2F2F2' } },
   ];
   const BS_LINES = [[0, '얇게', 0.12, 0.4], [1, '보통', 0.2, 0.7], [2, '굵게', 0.3, 1.0]]; // [키, 이름, 안쪽 선, 바깥 선(mm)]
@@ -15973,6 +15984,7 @@
     m = Object.assign({}, def, m && typeof m === 'object' ? m : {});
     m.title = String(m.title == null ? '' : m.title); m.sub = String(m.sub == null ? '' : m.sub);
     m.nP = Math.round(ntNum(m.nP, 1, 9, def.nP));
+    m.calc = m.calc !== false; m.brk = Math.round(ntNum(m.brk, 0, 60, 10)); // 시간 적는 방법: 분으로 계산(기본) / 시각 직접, 교시 사이 쉬는 시간
     m.periods = (Array.isArray(m.periods) ? m.periods : []).slice(0, 9).map(function(p) { p = p || {}; return { s: String(p.s || ''), e: String(p.e || '') }; });
     m.extras = (Array.isArray(m.extras) ? m.extras : []).filter(function(x) { return x && typeof x === 'object'; })
       .map(function(x) { return { n: String(x.n == null ? '' : x.n), s: String(x.s || ''), e: String(x.e || ''), k: BS_KINDS.some(function(k) { return k[0] === x.k; }) && x.k !== 'p' ? x.k : 'etc' }; });
@@ -16178,6 +16190,11 @@
     document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('') +
       sep + (c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="고친 교시 시간을 지우고 관리자 일과 시간대로">↺ 일과 시간대로</button>'
         : '<button class="nt-chip" id="bs-copy-normal" onclick="bsCopyNormal()" title="평상시 시정표의 줄·시간을 그대로 가져와 고쳐 써요">평상시에서 가져오기</button>');
+    document.getElementById('bs-calc').innerHTML = '시간 ' + chip(m.calc, 'data-calc="1" onclick="bsModeSet(function(m) { m.calc = true; }, true)"', '⏱️ 분으로 계산', '시작 시각과 줄마다 분만 적으면 시간이 저절로') +
+      chip(!m.calc, 'data-calc="0" onclick="bsModeSet(function(m) { m.calc = false; }, true)"', '🕘 시각 직접', '줄마다 시작·끝 시각을 직접 적기') +
+      (m.calc ? sep + '시작 <input type="text" class="lp-input bs-t" id="bs-start" inputmode="numeric" maxlength="5" oninput="bsCalcEdit(\'start\', this.value)" onchange="this.value = bsTimeNorm(this.value); bsCalcEdit(\'start\', this.value)">' +
+        '<span class="bs-brk">교시 사이 쉬는 시간 <input type="number" class="lp-input bs-num" id="bs-brk" min="0" max="60" step="1" oninput="bsCalcEdit(\'brk\', this.value)">분</span>' : '');
+    if (m.calc) { const pl = bsCalcPlan(c); setVal('bs-start', pl.start); setVal('bs-brk', m.brk); }
     if (!bsRowsTyping()) bsRowsFill(c);
     const have = m.extras.map(function(x) { return x.n; });
     document.getElementById('bs-add').innerHTML = '줄 더하기 ' + BS_PRESETS.filter(function(x) { return have.indexOf(x[0]) < 0; }).map(function(x) {
@@ -16258,6 +16275,7 @@
   function bsOnFontCustom(key, v) { const name = fmFontClean(v); if (!name) return; const o = {}; o[key] = name; o[key + 'C'] = true; bsSet(o); fmFontMsgTo('bs-font-msg', [bsCfg().tFont, bsCfg().bFont]); }
   // 시간 줄 편집: [구분][시작][끝][분][종류][✕] — 시간 순서대로(칸을 벗어나면 다시 정렬)
   function bsRowsFill(c) {
+    if (c[c.mode].calc) return bsCalcFill(c);
     const rows = bsRows(c), opts = BS_KINDS.filter(function(k) { return k[0] !== 'p'; });
     document.getElementById('bs-rows').innerHTML = rows.map(function(r) {
       const id = r.k === 'p' ? 'p' + r.i : 'x' + r.j, ct = c.mode === 'normal' && r.k === 'p' ? bsClassTimes()[r.i] || {} : r.ph ? { s: r.ph[0], e: r.ph[1] } : {};
@@ -16273,6 +16291,76 @@
           '<button class="ws-ol-x" title="이 줄 지우기" onclick="bsRowDel(' + r.j + ')">✕</button>') + '</div>';
     }).join('');
   }
+  // ⏱️ 분으로 계산(사용자: "시작 시간과 각 교시·중식의 분만 넣으면 알아서 계산되게"): 지금 줄 순서대로
+  // 시작 시각 → (앞 쉬는 시간) → 그 줄 분 → … 으로 시각을 매겨 줄마다 적어 둔다(저장은 시각 그대로라 미리보기·한글 파일은 같은 길).
+  // 분·쉬는 시간의 처음 값은 지금 시각에서 읽고, 시각이 없으면 교시 50분·나머지 10분, 쉬는 시간은 교시→교시·자습→자습이면 "교시 사이 쉬는 시간", 아니면 0.
+  function bsHM(x) { x = Math.max(0, Math.min(1439, x)); return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); }
+  function bsRid(r) { return r.k === 'p' ? 'p' + r.i : 'x' + r.j; }
+  function bsCalcPlan(c) {
+    const m = c[c.mode], rows = bsRows(c), list = [];
+    let lastP = 50;
+    rows.forEach(function(r, k) {
+      const s = minutesOf(r.s), e = minutesOf(r.e), prev = rows[k - 1], pe = prev ? minutesOf(prev.e) : null;
+      const dur = s != null && e != null && e > s ? e - s : r.k === 'p' ? lastP : 10;
+      if (r.k === 'p') lastP = dur;
+      const gap = !k ? 0 : s != null && pe != null && s >= pe ? s - pe : prev.k === r.k && (r.k === 'p' || r.k === 'self') ? m.brk : 0;
+      list.push({ r: r, id: bsRid(r), dur: dur, gap: gap });
+    });
+    return { start: rows.length && minutesOf(rows[0].s) != null ? rows[0].s : '08:40', list: list };
+  }
+  // 계획대로 시각을 매겨 저장(교시는 periods, 특별 줄은 extras)
+  function bsCalcWrite(plan, extra) {
+    let t = minutesOf(plan.start);
+    if (t == null) return;
+    const at = {};
+    plan.list.forEach(function(x, k) { if (k) t += x.gap; at[x.id] = [bsHM(t), bsHM(t + x.dur)]; t += x.dur; });
+    bsModeSet(function(m) {
+      Object.keys(at).forEach(function(id) {
+        if (id[0] === 'p') { const i = +id.slice(1); while (m.periods.length <= i) m.periods.push({ s: '', e: '' }); m.periods[i] = { s: at[id][0], e: at[id][1] }; }
+        else { const x = m.extras[+id.slice(1)]; if (x) { x.s = at[id][0]; x.e = at[id][1]; } }
+      });
+      if (extra) extra(m);
+    });
+  }
+  // 칸 하나 고치기: start 시작 시각 / brk 교시 사이 쉬는 시간(교시→교시·자습→자습 쉬는 시간을 모두 그 값으로) / d:ID 그 줄 분 / g:ID 그 줄 앞 쉬는 시간
+  function bsCalcEdit(what, v) {
+    const c = bsCfg(), plan = bsCalcPlan(c);
+    if (what === 'start') { const t = bsTimeNorm(v); if (minutesOf(t) == null) return; plan.start = t; bsCalcWrite(plan); }
+    else if (what === 'brk') {
+      const n = parseInt(v, 10); if (!(n >= 0 && n <= 60)) return;
+      plan.list.forEach(function(x, k) { const pv = plan.list[k - 1]; if (pv && pv.r.k === x.r.k && (x.r.k === 'p' || x.r.k === 'self')) x.gap = n; });
+      bsCalcWrite(plan, function(m) { m.brk = n; });
+    } else {
+      const n = parseInt(v, 10), id = what.slice(2), x = plan.list.find(function(y) { return y.id === id; });
+      if (!x || !(n >= 0 && n <= 600) || (what[0] === 'd' && n < 1)) return;
+      if (what[0] === 'd') x.dur = n; else x.gap = n;
+      bsCalcWrite(plan);
+    }
+    bsCalcTexts(); bsInfoFill();
+  }
+  // 칸에 치는 동안엔 목록을 다시 그리지 않고 계산된 시간·분만 고침
+  function bsCalcTexts() {
+    const c = bsCfg(), plan = bsCalcPlan(c);
+    plan.list.forEach(function(x) {
+      const row = document.querySelector('#bs-rows .bs-row[data-id="' + x.id + '"]'); if (!row) return;
+      row.querySelector('.bs-ct').textContent = (x.r.s || '') + ' ~ ' + (x.r.e || '');
+      row.querySelectorAll('input[data-c]').forEach(function(inp) { if (document.activeElement !== inp && !inp.disabled) inp.value = inp.dataset.c === 'd' ? x.dur : x.gap; });
+    });
+  }
+  function bsCalcFill(c) {
+    const plan = bsCalcPlan(c), opts = BS_KINDS.filter(function(k) { return k[0] !== 'p'; });
+    document.getElementById('bs-rows').innerHTML = '<div class="bs-row bs-chead"><span class="bs-cn">구분</span><span class="bs-gap" title="앞 줄이 끝나고 이 줄이 시작하기 전까지(분)">쉬는</span><span class="bs-min">분</span><span class="bs-ct">시간</span><span class="bs-kk"></span><span class="bs-x0"></span></div>' +
+      plan.list.map(function(x, k) {
+        const r = x.r, id = x.id;
+        const num = function(kind, val, title, dis) { return '<input type="number" class="lp-input ' + (kind === 'd' ? 'bs-min' : 'bs-gap') + '" data-c="' + kind + '" min="' + (kind === 'd' ? 1 : 0) + '" max="600" step="5" value="' + val + '" title="' + title + '"' + (dis ? ' disabled' : '') + ' oninput="bsCalcEdit(\'' + kind + ':' + id + '\', this.value)" onchange="bsCalcDone()">'; };
+        return '<div class="bs-row bs-crow" data-id="' + id + '" data-k="' + r.k + '">' +
+          (r.k === 'p' ? '<span class="bs-pn bs-cn">' + ntEsc(r.n) + '</span>' : '<input type="text" class="lp-input bs-n bs-cn" value="' + ntEsc(r.n) + '" placeholder="이름" oninput="bsRowName(' + r.j + ', this.value)">') +
+          num('g', k ? x.gap : '', '앞 줄이 끝나고 쉬는 시간(분)', !k) + num('d', x.dur, '이 줄 시간(분)') + '<span class="bs-ct">' + ntEsc(r.s) + ' ~ ' + ntEsc(r.e) + '</span>' +
+          (r.k === 'p' ? '<span class="bs-kk"></span><span class="bs-x0"></span>' : '<select class="mini-select bs-kk" onchange="bsRowKind(' + r.j + ', this.value)">' + opts.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === r.k ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
+            '<button class="ws-ol-x" title="이 줄 지우기" onclick="bsRowDel(' + r.j + ')">✕</button>') + '</div>';
+      }).join('');
+  }
+  function bsCalcDone() { setTimeout(function() { if (!bsRowsTyping()) bsRowsFill(bsCfg()); }, 0); }
   function bsRowTime(id, f, v) {
     bsModeSet(function(m) {
       if (id[0] === 'p') { const i = +id.slice(1); while (m.periods.length <= i) m.periods.push({ s: '', e: '' }); m.periods[i][f] = v.trim(); }
@@ -16513,7 +16601,7 @@
     { selector: '#pe-word-box', before: fmTourPeWord, title: '📝 수행평가 · 🔤 단어 시험', desc: '엑셀에서 단어·뜻 두 칸을 복사해 단어 칸에 붙여 넣거나 📂 엑셀·CSV 파일을 올리면 바로 시험지가 돼요(번호·품사 칸, 맨 위 머리 줄은 알아서 골라요). 문제 방향(영어 → 뜻 / 뜻 → 영어 / 반반 섞기), 1단·2단, 칸 높이, 몇 개만 무작위로 뽑기, 🔀 순서 섞기를 고르고, 점수 칸·정답지(시험지 뒤에 빨간 답)·A형·B형(순서만 다른 두 판)을 체크로 넣어요. 영어 단어는 첫 글자 힌트(a _ _ _ _)·품사·✏️ 따라 쓰기 연습지도 돼요. 한자·용어는 📋 일반(문제 | 답)을 골라 칸 이름을 바꿔 써요.' },
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽).' },
     { selector: '#bs-mode-box', before: fmTourBs, title: '🔔 시정표 · 1단계. 평상시·단축 수업', desc: '위쪽 "시정표" 탭에서 교실·복도에 붙이는 시정표(구분 | 시간 | 분)를 만들어요. 🏫 평상시는 교시 시간을 관리자 설정의 일과 시간에서 그대로 가져오고, ⏱️ 단축 수업은 교시마다 시간을 직접 적어요. 둘은 따로 기억돼요. 제목과 부제(예: 2026학년도 2학기)도 여기서 적어요.' },
-    { selector: '#bs-rows-box', before: fmTourBs, title: '🔔 시정표 · 2단계. 시간', desc: '표에 나오는 줄이 시간 순서대로 있어요. 회색 시간은 저절로 정해진 시간이에요 — 교시는 일과 시간, 조회·중식·청소·종례는 교시에 맞춰(중식 = 4교시 끝~5교시 시작). 시간을 적으면 이 시정표만 바뀌어요. "줄 더하기"로 조회·중식·청소·종례·자기주도학습·방과후나 직접 이름을 더하고, ✕로 지워요. 교시 수도 고를 수 있어요.' },
+    { selector: '#bs-rows-box', before: fmTourBs, title: '🔔 시정표 · 2단계. 시간', desc: '⏱️ 분으로 계산(기본): 시작 시각과 줄마다 "분"만 적으면 시간이 위에서부터 저절로 계산돼요. 교시와 교시 사이는 "교시 사이 쉬는 시간"(10분)이 들어가고, 중식·청소처럼 바로 붙는 줄은 0분이에요. 저녁 시간처럼 따로 쉬는 곳은 그 줄의 "쉬는" 칸에 적어요. 단축 수업은 교시 분만 40으로 바꾸면 돼요. 🕘 시각 직접으로 바꾸면 줄마다 시작·끝 시각을 적을 수 있어요. "줄 더하기"로 조회·종례·방과후 등을 더하고 ✕로 지워요.' },
     { selector: '#bs-design-box', before: fmTourBs, title: '🔔 시정표 · 3단계. 디자인', desc: '작은 그림을 보고 마음에 드는 디자인을 하나 누르면 끝이에요. 제목 모양·선·중식·청소 색까지 서로 어울리게 맞춰 둔 세트라 따로 고를 것이 없어요(클래식은 지금 쓰던 엑셀 모양, 흑백은 흑백 인쇄용).' },
     { selector: '#bs-font-box', before: fmTourBs, title: '🔔 시정표 · 4단계. 글씨·종이', desc: '글씨가 크거나 작으면 A−/A+로 한꺼번에, 종이(A4·B4·A3·B5)와 "분" 칸만 바로 고를 수 있어요. 글꼴·글씨 크기 하나씩·시간 표기(08:40 - 08:50 / ~)·머리 줄 글·칸 너비·줄 높이·여백은 "세부 설정"을 눌러 펼치면 있어요. 줄 높이는 기본으로 종이에 꽉 차게 늘어나고, 한 장을 넘으면 알려 줘요.' },
     { selector: '#fm-hwpx-btn', before: fmTourBs, title: '🔔 시정표 · 한글 파일 내려받기', desc: '⬇️ 한글 파일로 받으면 색·선이 그대로인 진짜 표라 한글에서 바로 고쳐 쓸 수 있어요. 🖨️ 인쇄로 바로 뽑아도 돼요. 설명서를 닫으면 예시는 사라지고 선생님 설정과 원래 보던 양식으로 돌아가요. 수고하셨습니다! 🎉' },

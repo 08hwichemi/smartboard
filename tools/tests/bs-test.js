@@ -240,6 +240,32 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     d0.title === '부광고등학교 시정표' && d0.tables === 2 && JSON.stringify(d0.rows) === JSON.stringify(R0), d0.rows);
   check('엑셀처럼 색: 제목 하늘·머리 줄 연두·중식 살구·청소 노랑, 교시 줄 흰색', d0.titleBg === 'rgb(218, 227, 243)' && d0.bg[0] === 'rgb(226, 239, 218)' && d0.bg[6] === 'rgb(252, 228, 214)' && d0.bg[9] === 'rgb(255, 242, 204)' && d0.bg[2] === 'rgba(0, 0, 0, 0)', d0.bg);
   check('한 장에 꽉 채우기: A4 폭 180mm 표, 줄 높이 모두 같고 쪽 아래 여백 안(남는 곳 5mm 안쪽)', d0.w === '210mm' && Math.abs(d0.tw - 180) <= 1 && new Set(d0.hs.slice(1)).size === 1 && d0.hs[1] > 15 && d0.bottom >= 15 && d0.bottom < 15 + 3 + 5 && !d0.fit, [d0.hs, d0.bottom, d0.tw, d0.fit]);
+  // ⏱️ 분으로 계산(기본): 시작 시각 + 줄마다 분·앞 쉬는 시간 → 시각이 저절로
+  const cl = () => P.evaluate(() => ({ on: !!document.querySelector('#bs-calc [data-calc="1"].on'), start: document.getElementById('bs-start').value, brk: document.getElementById('bs-brk').value,
+    rows: [...document.querySelectorAll('#bs-rows .bs-crow')].map(r => [r.dataset.id, (r.querySelector('input[data-c="g"]') || {}).value, (r.querySelector('input[data-c="g"]') || {}).disabled, r.querySelector('input[data-c="d"]').value, r.querySelector('.bs-ct').textContent].join('/')),
+    times: bsRows(bsCfg()).map(r => r.n + ' ' + r.s + '-' + r.e) }));
+  const c0 = await cl();
+  check('⏱️ 분으로 계산이 기본: 시작 08:40, 교시 사이 쉬는 시간 10분, 줄마다 쉬는·분·시간(첫 줄 쉬는 칸은 막힘), 교시→교시 10분·4교시→중식 0분', c0.on && c0.start === '08:40' && c0.brk === '10' &&
+    c0.rows[0] === 'x0//true/10/08:40 ~ 08:50' && c0.rows[1] === 'p0/0/false/50/08:50 ~ 09:40' && c0.rows[2] === 'p1/10/false/50/09:50 ~ 10:40' && c0.rows[5] === 'x1/0/false/50/12:40 ~ 13:30' && c0.rows[11] === 'x4/10/false/70/18:50 ~ 20:00', c0.rows);
+  const cset = async (sel, v) => { await P.fill(sel, v); await P.dispatchEvent(sel, 'input'); await P.dispatchEvent(sel, 'change'); await P.waitForTimeout(150); };
+  await cset('#bs-rows .bs-row[data-id="p0"] input[data-c="d"]', '45');
+  const c1 = await cl();
+  check('1교시를 45분으로 → 뒤 시간이 모두 5분 당겨짐(2교시 09:45, 중식 12:35, 자기주도학습1 17:25)', c1.times[1] === '1교시 08:50-09:35' && c1.times[2] === '2교시 09:45-10:35' && c1.times[5] === '중식 12:35-13:25' && c1.times[10] === '자기주도학습1 17:25-18:35' &&
+    (await prev()).rows[2] === '1교시|08:50 - 09:35|45분', c1.times);
+  await cset('#bs-brk', '5');
+  const c2 = await cl();
+  check('교시 사이 쉬는 시간 5분 → 교시→교시만 5분(중식·청소 앞은 그대로 0), 자기주도학습 사이도 5분', c2.times[2] === '2교시 09:40-10:30' && c2.times[5] === '중식 12:20-13:10' && c2.times[6] === '5교시 13:10-14:00' && c2.times[7] === '6교시 14:05-14:55' &&
+    c2.times[11] === '자기주도학습2 18:20-19:30' && c2.rows[11].startsWith('x4/5/'), c2.times);
+  await cset('#bs-rows .bs-row[data-id="x3"] input[data-c="g"]', '50');
+  check('그 줄 앞 쉬는 시간만 바꾸기: 자기주도학습1 앞 50분 → 7교시 끝 16:05 + 50 = 16:55', (await cl()).times[10] === '자기주도학습1 16:55-18:05');
+  await cset('#bs-start', '0830');
+  const c3 = await cl();
+  check('시작 "0830" → 08:30으로, 모두 10분 당겨짐', c3.start === '08:30' && c3.times[0] === '조회 08:30-08:40' && c3.times[1] === '1교시 08:40-09:25', c3.times.slice(0, 2));
+  // 처음 상태로 돌리고(설정 지움), 아래는 🕘 시각 직접으로
+  await P.evaluate(() => document.activeElement.blur()); await P.waitForTimeout(300); // 시작 칸을 빠져나온 뒤(사라지면서 "바뀜"이 늦게 와 다시 계산되지 않게)
+  await P.evaluate(() => { localStorage.setItem('fm-bs', '{}'); scheduleBackupWrite(); bsFillForm(); fmRender(); }); await P.waitForTimeout(200);
+  await P.click('#bs-calc [data-calc="0"]'); await P.waitForTimeout(200);
+  check('🕘 시각 직접: 줄마다 시작·끝 칸', await P.evaluate(() => document.querySelectorAll('#bs-rows .bs-t').length === 24 && !document.getElementById('bs-start') && bsCfg().normal.calc === false));
   const ed = await P.evaluate(() => [...document.querySelectorAll('#bs-rows .bs-row')].map(r => [r.dataset.k, (r.querySelector('.bs-pn') || r.querySelector('.bs-n')).textContent || r.querySelector('.bs-n').value, [...r.querySelectorAll('.bs-t')].map(x => x.value + '/' + x.placeholder).join(' ')]));
   check('시간 칸: 표와 같은 순서, 교시는 빈칸 + 회색 일과 시간(placeholder), 조회·중식·청소도 빈칸 + 교시에 맞춘 회색 시간, 자기주도학습은 적은 시간', ed.length === 12 && ed[1][0] === 'p' && ed[1][2] === '/08:50 /09:40' && ed[0][1] === '조회' && ed[0][2] === '/08:40 /08:50' && ed[5][1] === '중식' && ed[5][2] === '/12:40 /13:30' && ed[10][2] === '17:30/시작 18:40/끝', ed.slice(0, 11));
 
@@ -362,15 +388,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 단축 수업: 처음엔 평상시 줄·시간을 옮겨 놓고, 고치면 단축만
   await P.click('#bs-modes [data-mode="short"]'); await P.waitForTimeout(250);
   const s0 = await prev();
-  check('⏱️ 단축 수업: 처음엔 평상시 줄·시간 그대로(제목 "… 단축 수업 시정표"), 교시 시간도 입력칸에 바로', s0.title === '부광고등학교 단축 수업 시정표(2학기)' && s0.rows[2] === '1교시|08:50 - 09:40|50분' &&
-    await P.evaluate(() => document.querySelector('#bs-rows .bs-row[data-id="p0"] .bs-t[data-f="s"]').value === '08:50' && !!document.getElementById('bs-copy-normal')), [s0.title, s0.rows.slice(0, 3)]);
-  const sh = (i, f, v) => P.evaluate(([i, f, v]) => { const el = document.querySelector('#bs-rows .bs-row[data-id="p' + i + '"] .bs-t[data-f="' + f + '"]'); el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); }, [i, f, v]);
-  const short = [['08:50', '09:30'], ['09:40', '10:20'], ['10:30', '11:10'], ['11:20', '12:00'], ['12:50', '13:30'], ['13:40', '14:20'], ['14:30', '15:10']];
-  for (let i = 0; i < 7; i++) { await sh(i, 's', short[i][0]); await sh(i, 'e', short[i][1]); }
+  check('⏱️ 단축 수업: 처음엔 평상시 줄·시간 그대로(제목 "… 단축 수업 시정표"), 분으로 계산(교시 50분)', s0.title === '부광고등학교 단축 수업 시정표(2학기)' && s0.rows[2] === '1교시|08:50 - 09:40|50분' &&
+    await P.evaluate(() => !!document.querySelector('#bs-calc [data-calc="1"].on') && document.querySelector('#bs-rows .bs-row[data-id="p0"] input[data-c="d"]').value === '50' && !!document.getElementById('bs-copy-normal')), [s0.title, s0.rows.slice(0, 3)]);
+  for (let i = 0; i < 7; i++) await cset('#bs-rows .bs-row[data-id="p' + i + '"] input[data-c="d"]', '40');
   await setText(P, '#bs-title', '부광고등학교 단축 수업 시정표'); await P.waitForTimeout(250);
   const s1 = await prev();
-  check('단축 수업 교시마다 40분으로 적으면 표에 그대로, 비워 둔 중식·청소는 단축 교시에 맞춰 옮겨 감, 평상시는 일과 시간 그대로(따로 기억)', s1.rows.includes('1교시|08:50 - 09:30|40분') && s1.rows.includes('7교시|14:30 - 15:10|40분') &&
-    s1.rows.includes('중식|12:00 - 12:50|50분') && s1.rows.includes('청소|14:20 - 14:30|10분') && s1.rows.indexOf('중식|12:00 - 12:50|50분') === s1.rows.indexOf('4교시|11:20 - 12:00|40분') + 1 &&
+  check('단축 수업: 교시 분만 40으로 바꾸면 중식·청소·자기주도학습까지 뒤 시간이 모두 따라옴, 평상시는 일과 시간 그대로(따로 기억)', s1.rows.includes('1교시|08:50 - 09:30|40분') && s1.rows.includes('2교시|09:40 - 10:20|40분') &&
+    s1.rows.includes('중식|12:00 - 12:50|50분') && s1.rows.includes('5교시|12:50 - 13:30|40분') && s1.rows.includes('청소|14:20 - 14:40|20분') && s1.rows.includes('7교시|14:40 - 15:20|40분') &&
     await P.evaluate(() => bsRows(bsCfg(), 'normal').find(r => r.n === '1교시').e === '09:40' && bsCfg().normal.title === '부광고등학교 시정표(2학기)'), s1.rows);
   await P.click('#bs-modes [data-mode="normal"]'); await P.waitForTimeout(200);
   check('평상시로 돌아오면 평상시 제목·시간', (await prev()).title === '부광고등학교 시정표(2학기)' && (await prev()).rows[2] === '1교시|08:50 - 09:40|50분');
@@ -382,7 +406,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 서버 저장
   await P.waitForTimeout(2500);
   const sv = JSON.parse(serverVal(T2, 'fm-bs') || '{}');
-  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축 따로', sv.normal && sv.short && sv.short.periods[0].e === '09:30' && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic', { n: !!sv.normal, s: !!sv.short });
+  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축 따로', sv.normal && sv.short && sv.short.periods[0].e === '09:30' && sv.short.calc !== false && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic', { n: !!sv.normal, s: !!sv.short });
   // 한글 파일
   if (JSZIP_JS) {
     for (const [dz, ts] of [['classic', 'box'], ['navy', 'band'], ['mono', 'line']]) {
