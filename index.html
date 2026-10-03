@@ -472,6 +472,8 @@
     .sgbf-snip { color: var(--text-main); word-break: break-all; }
     .sgbf-item mark { background: rgba(245,190,40,0.45); color: inherit; border-radius: 3px; padding: 0 1px; }
     /* ===== 🗂 생기부 자율·진로 편집기 (#se-page) ===== */
+    /* 편집기 글씨는 13px로 고정 — 생기부 문장 점검기 글씨 크기(A-/A+, --fz-sgb)와 따로. 크기는 🔍 화면 배율(본문 #se-main에 zoom)로. */
+    #se-page { --fz-sgb: 13px; }
     #se-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
     #se-body { display: flex; flex: 1; min-height: 0; }
     #se-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
@@ -733,9 +735,9 @@
     .pa-score-table td.pa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pa-modal { position: fixed; inset: 0; z-index: 1050; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
     .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; zoom: var(--pa-zoom, 1); }
-    #pa-zoom-group { display: flex; align-items: center; gap: 6px; background: var(--tt-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
-    #pa-zoom-group .top-btn { padding: 2px 8px; font-size: 12px; }
-    #pa-zoom-text { font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; cursor: pointer; }
+    #se-zoom-group, #pa-zoom-group { display: flex; align-items: center; gap: 6px; background: var(--tt-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
+    #se-zoom-group .top-btn, #pa-zoom-group .top-btn { padding: 2px 8px; font-size: 12px; }
+    #se-zoom-text, #pa-zoom-text { font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; cursor: pointer; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
     /* 머리 오른쪽 "💾 백업" 묶음: 엑셀 가져오기·내려받기 */
     #pa-term { font-weight: 800; }
@@ -3693,8 +3695,9 @@
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
       <span id="se-save-state"></span>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+      <div id="se-zoom-group" title="화면 크기 — 아래 편집기 화면을 같은 비율로 키우거나 줄여요(표가 틀어지지 않아요, 내 계정에 기억)">
+        <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="seZoomBy(-1)" title="작게">−</button><span id="se-zoom-text" onclick="seZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="seZoomBy(1)" title="크게">+</button>
+      </div>
     </div>
   </div>
   <div id="se-body">
@@ -13452,6 +13455,7 @@
     document.getElementById('se-page').style.display = 'flex';
     document.getElementById('rail-sgb-btn').classList.add('active');
     seSaveState('');
+    seApplyZoom();
     await ensureClassStructureLoaded();
     const c = seCfg();
     const t = window.currentTeacher;
@@ -13462,6 +13466,21 @@
     seRenderAll();
   }
   function seBackToSgb() { closeSePage(); openSgb(); }
+  // 화면 크기(🔍 − 100% +): 수행평가와 같은 방식 — 본문(#se-main)만 같은 비율로(CSS zoom), 머리 줄은 그대로(노트북에서 머리가 넘어가지 않게).
+  // 글씨만 키우면 칸 폭이 정해진 표가 틀어지고, 생기부 문장 점검기와 같은 값이라 거기까지 바뀌었음. 계정 자료 'zoom-se'(100%는 지움).
+  const SE_ZOOMS = [90, 100, 110, 125, 150];
+  function seZoomGet() { let z = 100; try { z = parseInt(localStorage.getItem('zoom-se'), 10) || 100; } catch (e) {} return SE_ZOOMS.indexOf(z) >= 0 ? z : 100; }
+  function seApplyZoom() {
+    const z = seZoomGet(), el = document.getElementById('se-main');
+    if (el) el.style.zoom = z === 100 ? '' : String(z / 100);
+    const t = document.getElementById('se-zoom-text'); if (t) t.textContent = z + '%';
+  }
+  function seZoomBy(d) {
+    const i = SE_ZOOMS.indexOf(seZoomGet()), z = d === 0 ? 100 : SE_ZOOMS[Math.max(0, Math.min(SE_ZOOMS.length - 1, i + d))];
+    try { if (z === 100) localStorage.removeItem('zoom-se'); else localStorage.setItem('zoom-se', String(z)); } catch (e) {}
+    scheduleBackupWrite();
+    seApplyZoom();
+  }
 
   // ----- 📖 자율·진로 편집기 설명서 -----
   // 먼저 전체 흐름(자료 입력 → 편집 → 최종)을 말하고, 탭을 차례로 바꿔 가며 버튼·구역을 하나씩 짚는다.

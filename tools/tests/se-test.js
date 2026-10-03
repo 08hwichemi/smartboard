@@ -261,6 +261,23 @@ handleDb = async function(pageInfo, req) {
   const nx0 = await P.evaluate(() => ({ msg: document.querySelector('#se-next .pa-next-msg').textContent, glow: !!document.querySelector('#se-export-btn.pa-glow'), next: [...document.querySelectorAll('#se-tabs .pa-step-next')].map(b => b.dataset.tab).join() }));
   check('다음 할 일(처음): 받은 자율 문장을 넣으라고 + 엑셀 내려받기 반짝임, 다음 단계 = ①', /자율<\/?b?>? ?문장을 넣으세요|자율 문장을 넣으세요/.test(nx0.msg) && nx0.glow && nx0.next === 'src', nx0);
 
+  // ---- 🔍 화면 크기(수행평가와 같은 방식) — 생기부 문장 점검기 글씨 크기와 따로 ----
+  const zf = () => P.evaluate(() => ({ cell: getComputedStyle(document.querySelector('#se-src-list textarea.se-cell')).fontSize, main: getComputedStyle(document.getElementById('se-main')).zoom,
+    head: getComputedStyle(document.getElementById('se-page-header')).zoom, text: document.getElementById('se-zoom-text').textContent, key: localStorage.getItem('zoom-se') }));
+  check('머리에 A-/A+ 대신 🔍 − 100% +', await P.evaluate(() => !!document.getElementById('se-zoom-group') && ![...document.querySelectorAll('#se-page-header button')].some(b => /^A[-+]$/.test(b.textContent.trim()))));
+  await P.evaluate(() => changeFontSize('sgb', 3));
+  const z0 = await zf();
+  check('생기부 문장 점검기 글씨를 키워도(16px) 편집기 글씨는 13px 그대로', z0.cell === '13px' && z0.text === '100%' && (await P.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim())) === '16px', z0);
+  await P.evaluate(() => changeFontSize('sgb', -3));
+  await P.click('#se-zoom-group button[title="크게"]'); await P.click('#se-zoom-group button[title="크게"]'); await wait(200);
+  const z1 = await zf();
+  check('크게 두 번 → 125%: 본문만 1.25배(머리 줄은 그대로), 계정에 기억(zoom-se)', z1.text === '125%' && z1.main === '1.25' && z1.head === '1' && z1.key === '125', z1);
+  for (let i = 0; i < 4; i++) await P.click('#se-zoom-group button[title="크게"]');
+  check('최대 150%', (await zf()).text === '150%');
+  await P.click('#se-zoom-text'); await wait(150);
+  const z2 = await zf();
+  check('% 글자를 누르면 100%(기억도 지움)', z2.text === '100%' && z2.main === '1' && z2.key === null, z2);
+
   // ---- 고정된 머리: 자율/진로 버튼은 세 탭 모두 같은 자리 ----
   const kindPos = async () => P.evaluate(() => { const r = document.querySelector('#se-kind [data-kind="a"]').getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top); });
   const pos = {};
