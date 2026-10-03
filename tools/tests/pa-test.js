@@ -208,7 +208,10 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('나이스 과목 칸 = 과목(시수) "화학Ⅱ(3)"', /화학Ⅱ\(3\)/.test(await P.innerText('#pa-pane')) && (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(3)');
   await setVal(P, '#pa-f-hours', '4');
   check('시수 고치면 나이스 과목 칸도 + 칸을 벗어나도 다음 칸에 커서', (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(4)' && await P.evaluate(() => document.activeElement && document.activeElement.id === 'pa-f-limit'));
+  await P.fill('#pa-paste', '1\t20\t그대로');
   await setVal(P, '#pa-f-hours', '3');
+  check('과목 칸을 고쳐도 붙여 넣기 칸 글은 그대로', (await P.inputValue('#pa-paste')) === '1\t20\t그대로' && /화학Ⅱ\(3\)/.test(await P.innerText('#pa-neis-hint')));
+  await P.fill('#pa-paste', '');
   check('명렬표 고르기: 이 반(3학년 1반)이 처음부터 골라져 있음', (await P.inputValue('#pa-pick-g')) === '3' && (await P.inputValue('#pa-pick-c')) === '1');
   await P.fill('#pa-paste', '반\t번호\t이름\n1\t1\t가나다\n1\t2\t라마바\n3\t10\t사아자\n30605\t차카타\n1-7 파하가\n이름만');
   check('붙여 넣기 단추는 하나', await P.evaluate(() => [...document.querySelectorAll('#pa-pane button')].filter(b => /붙여 넣은 학생/.test(b.textContent)).length) === 1);
@@ -231,6 +234,9 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.waitForSelector('#pa-pick-g option', { state: 'attached' }); await P.selectOption('#pa-pick-g', '3'); await P.waitForTimeout(150); await P.selectOption('#pa-pick-c', '2'); await P.waitForTimeout(300);
   await P.click('#pa-pane button:has-text("모두 체크")'); await P.click('#pa-pane button:has-text("체크한 학생 더하기")'); await P.waitForTimeout(300);
   check('한 반(3학년 2반)을 통째로 넣으면 수업반 이름이 "2반"으로', (await P.evaluate(() => paSub().classes.map(x => x.name + (x.auto ? '*' : '') + x.c).join())) === '2반2' && (await P.innerText('#pa-classes')).includes('2반'));
+  await P.fill('#pa-paste', '2\t2\t1\t다른학년'); await P.click('#pa-pane button:has-text("붙여 넣은 학생 넣기")');
+  const clashMsg = await readAlert(P);
+  check('반·번호가 같은 다른 학년 학생은 넣지 않고 알림', /다른 학년/.test(clashMsg) && /2학년/.test(clashMsg) && (await P.evaluate(() => paRoster(paSub().id, paCls(paSub()).id).length)) === 6, clashMsg);
   for (const n of ['7반', '4반', '6반']) { await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, n); }
   check('반을 7·4·6 순서로 더해도 숫자 순(2·4·6·7반)', (await P.evaluate(() => paSub().classes.map(x => x.name).join())) === '2반,4반,6반,7반' && (await P.evaluate(() => [...document.querySelectorAll('#pa-classes [data-cid]')].map(b => b.childNodes[0].textContent).join())) === '2반,4반,6반,7반');
   check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '📚 화학Ⅱ|📚 물리학Ⅰ|＋ 과목');
@@ -249,7 +255,13 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await setVal(P, '[data-fid="sp-' + A.subs[0].id + '"]', '1~15');
   await P.click('#pa-pane .pa-area >> nth=0 >> button:has-text("세부영역")'); await P.waitForTimeout(150);
   A = (await cfg(P)).subjects[0].areas[0];
-  await setVal(P, '[data-fid="sn-' + A.subs[1].id + '"]', '전기화학');
+  await P.fill('[data-fid="sn-' + A.subs[1].id + '"]', '전기화학');
+  // 고친 칸에서 바로 단추 누르기(누르는 동안 80ms) — 다시 그리기가 끼어들어 클릭이 사라지면 안 됨
+  await P.hover('#pa-pane .pa-area >> nth=0 >> button:has-text("세부영역")'); await P.mouse.down(); await P.waitForTimeout(80); await P.mouse.up(); await P.waitForTimeout(250);
+  A = (await cfg(P)).subjects[0].areas[0];
+  check('칸을 고친 직후 누른 단추도 먹힘(세부영역 3개, 이름도 저장)', A.subs.length === 3 && A.subs[1].name === '전기화학', A.subs);
+  await P.click('#pa-pane .pa-area >> nth=0 >> .pa-sub-row:not(.pa-sub-hd) >> nth=2 >> .pa-x'); await P.waitForTimeout(250);
+  A = (await cfg(P)).subjects[0].areas[0];
   await setVal(P, '[data-fid="sp-' + A.subs[1].id + '"]', '15, 10, 5');
   A = (await cfg(P)).subjects[0].areas[0];
   check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 2, 영역 만점 30', A.min === 2 && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), A);
@@ -264,6 +276,9 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   A2 = (await cfg(P)).subjects[0].areas[1];
   check('영역 두 개(+ 더하기 칸)가 한 줄에 나란히 — 1600px 화면이면 한 줄에 셋', await P.evaluate(() => { const a = document.querySelectorAll('#pa-pane .pa-area'); const n = document.querySelector('#pa-pane .pa-area-new'); return a.length === 2 && [a[1], n].every(e => Math.abs(a[0].getBoundingClientRect().top - e.getBoundingClientRect().top) < 2); }));
   check('둘째 영역: 배점 30·25·20, 평가내용 칸 끔, 최하점 없음', A2.name === '화학자료분석' && A2.note === false && A2.min == null && await P.evaluate((a) => paAreaMax(a), A2) === 30, A2);
+  check('파싱: "1 - 15"·"1 ~ 15점"·"5점, 10점"(띄어쓰기·점)', JSON.stringify(await P.evaluate(() => [paParsePts('1 - 15').length, paParsePts('1 ~ 15점').length, paParsePts('5점, 10점')])) === JSON.stringify([15, 15, [10, 5]]));
+  const rp = await P.evaluate(() => paParseRosterText('1\t3\t홍길동\t95\n2\t4\t김철수\t010-1234-5678\n1\t2\t박영희\t남\n이민수\t30103\n1 5 John Smith\n3\t1\t6\t최유리').list.map(x => [x.g, x.c, x.n, x.name].join('/')));
+  check('학생 붙여 넣기: 이름 뒤 칸(점수·전화번호·성별)은 무시, 이름이 앞이면 뒤 학번, 띄어 쓴 이름', rp.join('|') === '/1/3/홍길동|/2/4/김철수|/1/2/박영희|3/1/3/이민수|/1/5/John Smith|3/1/6/최유리', rp);
   check('파싱: "0-10" "5,5,3" "abc"', JSON.stringify(await P.evaluate(() => [paParsePts('0-10').length, paParsePts('5,5,3'), paParsePts('abc')])) === JSON.stringify([11, [5, 3], []]));
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '2-areas.png') });
@@ -292,6 +307,10 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   const x0 = await colX();
   await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
   check('최하점을 체크해도 칸 위치 그대로', (await colX()) === x0, [x0, await colX()]);
+  await P.click(sc(1, 1)); await P.keyboard.type('5'); await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  check('Enter: 최하점(잠긴) 학생 칸은 건너뛰고 그 아래 학생으로 + 점수는 제 학생에게', await P.evaluate(() => document.activeElement.dataset.r) === '3' &&
+    await P.evaluate(() => { const s = paSub(), x = paCls(s), a = s.areas[0]; return (paScores(s.id, x.id, a.id)['1-2'] || {}).v[a.subs[1].id]; }) === 5);
+  await P.keyboard.press('Escape');
   check('최하점 체크 → 합계 2(최하) + 점수 칸 잠김', /^2/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].every(i => i.disabled)));
   // 평가내용
   await P.fill('#pa-pane .pa-note[data-k="1-1"]', '반응 속도에 영향을 주는 요인을 실험으로 탐구함.'); await P.press('#pa-pane .pa-note[data-k="1-1"]', 'Tab'); await P.waitForTimeout(150);

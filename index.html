@@ -13974,7 +13974,8 @@
   // 줄 수 있는 점수: "15, 12, 9" / "1~15" / "0-10" / "10 8 6" — 큰 것부터, 같은 값은 하나.
   function paParsePts(str) {
     const out = [];
-    String(str || '').split(/[,，\s/·]+/).forEach(function(tok) {
+    // "1 - 15", "1 ~ 15", "5점, 10점"도 읽게: 범위 기호 둘레 띄어쓰기를 붙이고 "점"을 뗀다
+    String(str || '').replace(/점/g, ' ').replace(/\s*[~\-–]\s*/g, '-').split(/[,，\s/·]+/).forEach(function(tok) {
       if (!tok) return;
       const m = tok.match(/^(\d+(?:\.\d+)?)[~\-–](\d+(?:\.\d+)?)$/);
       if (m) {
@@ -14019,14 +14020,27 @@
       if (!raw) return;
       let cells = line.indexOf('\t') !== -1 ? line.split('\t') : raw.split(/[\s,]+/);
       cells = cells.map(function(x) { return x.trim(); }).filter(Boolean);
-      const nums = [], names = [];
-      cells.forEach(function(x) {
+      // 반·번호는 이름 앞의 숫자 칸에서만 읽는다(이름 뒤 점수·전화번호·성별 같은 칸은 무시). 이름이 맨 앞이면 이름 바로 뒤 학번·번호.
+      const before = [], after = [];
+      let name = '';
+      const numOf = function(x) {
         const y = x.replace(/[반번학년]$/, '');
-        if (/^\d+$/.test(y)) nums.push(Number(y));
-        else if (/^\d+(-\d+){1,2}$/.test(y)) y.split('-').forEach(function(z) { nums.push(Number(z)); });
-        else names.push(x);
+        if (/^\d{1,5}$/.test(y)) return [Number(y)];
+        if (/^\d{1,2}(-\d{1,2}){1,2}$/.test(y)) return y.split('-').map(Number);
+        return null;
+      };
+      const spaced = line.indexOf('\t') === -1;
+      let nameOpen = false;   // 띄어쓰기로 나눈 줄은 이름 낱말을 이어 붙임(John Smith)
+      cells.forEach(function(x) {
+        const ns = numOf(x);
+        if (!name) {
+          if (ns) before.push.apply(before, ns);
+          else if (/[가-힣A-Za-z]/.test(x) && !/^(반|번호|이름|성명|학번|학년|과목)$/.test(x)) { name = x; nameOpen = spaced; }
+        } else if (ns) { nameOpen = false; if (after.length < 3) after.push.apply(after, ns); }
+        else if (nameOpen && /^[가-힣A-Za-z]+$/.test(x)) name += ' ' + x;
+        else nameOpen = false;
       });
-      const name = names.filter(function(x) { return /[가-힣A-Za-z]/.test(x) && !/^(반|번호|이름|성명|학번|학년)$/.test(x); }).join(' ');
+      const nums = before.length ? before : after.slice(0, 1);
       if (!name) { if (nums.length) bad.push(raw); return; }
       let g = null, c = null, n = null;
       if (nums.length >= 3) { g = nums[nums.length - 3]; c = nums[nums.length - 2]; n = nums[nums.length - 1]; }
@@ -14109,14 +14123,7 @@
     if (paDemo) { const ss = document.getElementById('pa-save-state'); if (ss) { ss.className = 'dirty'; ss.textContent = '📖 설명서 예시 화면 — 저장 안 돼요'; } }
     const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
     const c = paCfg(), sub = paSub(c), cls = paCls(sub);
-    // 머리: 과목 고르기 + 반 칩
-    document.getElementById('pa-subjs').innerHTML = c.subjects.map(function(s) {
-      return '<button class="top-btn' + (sub && s.id === sub.id ? ' theme-active' : '') + '" data-sid="' + s.id + '" onclick="paPickSubject(\'' + s.id + '\')">📚 ' + paEsc(s.name) + '</button>';
-    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddSubject()" title="과목 더하기">＋ 과목</button>';
-    document.getElementById('pa-classes').innerHTML = sub ? sub.classes.map(function(x) {
-      const n = paRoster(sub.id, x.id).length;
-      return '<button class="top-btn' + (cls && x.id === cls.id ? ' theme-active' : '') + '" data-cid="' + x.id + '" onclick="paPickClass(\'' + x.id + '\')" title="' + paEsc(x.name) + ' · 학생 ' + n + '명">' + paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></button>';
-    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddClass()" title="이 과목에 수업반 더하기">＋ 반</button>' : '';
+    paRenderHead(c, sub, cls);
     document.querySelectorAll('#pa-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === paTab()); });
     const pane = document.getElementById('pa-pane');
     if (!sub) { pane.innerHTML = paEmptyHtml(); return; }
@@ -14129,9 +14136,16 @@
     else if (t === 'sk') { pane.innerHTML = paSkHtml(sub, cls); paSkAfter(); }
   }
   // 칸을 고친 뒤(change) 바로 다시 그리면 Tab으로 옮겨 간 다음 칸의 커서가 사라진다 → 커서가 옮겨 간 뒤에 그리고, 그 칸(data-fid)에 커서를 되돌린다.
+  // 칸을 고친 직후 단추를 누르면 change가 mousedown 때 일어나 다시 그리기가 클릭 도중에 끼어들어 그 단추가 바뀌고 클릭이 사라졌다
+  // → 마우스(손가락)가 눌려 있는 동안은 기다렸다가, 클릭이 끝난 뒤에 그린다.
+  let paPtrDown = false;
+  document.addEventListener('pointerdown', function() { paPtrDown = true; }, true);
+  document.addEventListener('pointerup', function() { setTimeout(function() { paPtrDown = false; }, 0); }, true);
+  document.addEventListener('pointercancel', function() { paPtrDown = false; }, true);
   function paRenderSoon() {
     clearTimeout(paRenderSoon._t);
-    paRenderSoon._t = setTimeout(function() {
+    paRenderSoon._t = setTimeout(function run() {
+      if (paPtrDown) { paRenderSoon._t = setTimeout(run, 30); return; }
       const ae = document.activeElement, fid = ae && ae.closest && ae.closest('#pa-page') ? (ae.dataset && ae.dataset.fid) || ae.id : '';
       let s0 = null, s1 = null; try { s0 = ae.selectionStart; s1 = ae.selectionEnd; } catch (e) {}
       paRenderAll();
@@ -14139,6 +14153,16 @@
       const el = document.querySelector('#pa-page [data-fid="' + fid + '"]') || document.getElementById(fid);
       if (el && el !== document.activeElement) { el.focus(); try { if (s0 != null) el.setSelectionRange(s0, s1); } catch (e) {} }
     }, 0);
+  }
+  // 머리: 과목 단추 + 반 단추
+  function paRenderHead(c, sub, cls) {
+    document.getElementById('pa-subjs').innerHTML = c.subjects.map(function(s) {
+      return '<button class="top-btn' + (sub && s.id === sub.id ? ' theme-active' : '') + '" data-sid="' + s.id + '" onclick="paPickSubject(\'' + s.id + '\')">📚 ' + paEsc(s.name) + '</button>';
+    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddSubject()" title="과목 더하기">＋ 과목</button>';
+    document.getElementById('pa-classes').innerHTML = sub ? sub.classes.map(function(x) {
+      const n = paRoster(sub.id, x.id).length;
+      return '<button class="top-btn' + (cls && x.id === cls.id ? ' theme-active' : '') + '" data-cid="' + x.id + '" onclick="paPickClass(\'' + x.id + '\')" title="' + paEsc(x.name) + ' · 학생 ' + n + '명">' + paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></button>';
+    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddClass()" title="이 과목에 수업반 더하기">＋ 반</button>' : '';
   }
   function paSetTab(t) { paSetUi({ tab: t }); paRenderAll(); }
   function paPickSubject(id) { paSetUi({ s: id, c: '' }); paRenderAll(); }
@@ -14219,7 +14243,9 @@
     if (field === 'hours') { value = String(value).trim() === '' ? null : Math.round(Number(value)); if (value != null && !(value > 0 && value <= 20)) { paRenderAll(); return; } }
     s[field] = value;
     paSaveCfg(c);
-    paRenderSoon();
+    // 화면 전체를 다시 그리면 붙여 넣기 칸·명렬표 체크가 지워져서, 바뀐 곳(머리의 과목 단추·나이스 과목 칸 안내)만 고친다
+    paRenderHead(c, s, paCls(s));
+    const hint = document.getElementById('pa-neis-hint'); if (hint) hint.textContent = paNeisName(s);
   }
   function paRemoveKeys(prefix) {
     const keys = [];
@@ -14279,7 +14305,7 @@
       '<label>과목 이름<input class="lp-input" id="pa-f-name" value="' + paEsc(sub.name) + '" onchange="paEditSubject(\'name\', this.value)"></label>' +
       '<label>시수 (주당 시간)<input class="lp-input" type="number" min="1" max="20" id="pa-f-hours" value="' + (sub.hours || '') + '" placeholder="예: 3" onchange="paEditSubject(\'hours\', this.value)"></label>' +
       '<label>세특 바이트 한도<input class="lp-input" type="number" id="pa-f-limit" min="100" max="6000" step="1" value="' + sub.limit + '" onchange="paEditSubject(\'limit\', this.value)"></label>' +
-      '</div><div class="se-muted">나이스 일괄등록 파일의 과목 칸: <b>' + paEsc(paNeisName(sub)) + '</b> (과목 이름(시수)) · 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
+      '</div><div class="se-muted">나이스 일괄등록 파일의 과목 칸: <b id="pa-neis-hint">' + paEsc(paNeisName(sub)) + '</b> (과목 이름(시수)) · 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
     if (!cls) return h + '<div class="se-box se-sbox pa-empty">수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div></div>';
     const ro = paRoster(sub.id, cls.id);
     h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">👥 ' + paEsc(cls.name) + ' 학생 <span class="pa-badge">' + ro.length + '명</span></span><span class="pa-tools">' +
@@ -14311,13 +14337,15 @@
       const cfg = paCfg(), sub = cfg.subjects.find(function(x) { return x.id === sid; }), cls = sub && sub.classes.find(function(x) { return x.id === cid; });
       if (cls && cls.auto && !sub.classes.some(function(x) { return x.id !== cid && x.name === c0.c + '반'; })) { cls.name = c0.c + '반'; cls.g = c0.g || null; cls.c = c0.c; cls.auto = false; paSaveCfg(cfg); }
     }
-    let added = 0, dup = 0;
+    let added = 0, dup = 0; const clash = [];
     add.forEach(function(s) {
-      const k = paSk(s);
-      if (cur.some(function(x) { return paSk(x) === k; })) { dup++; return; }
+      const k = paSk(s), same = cur.find(function(x) { return paSk(x) === k; });
+      // 학생 열쇠는 반-번호라, 학년만 다른 같은 반·번호 학생은 한 수업반에 함께 넣을 수 없다 → 알려 줌
+      if (same) { if (same.g && s.g && same.g !== s.g) clash.push(s.g + '학년 ' + paStuLabel(s)); else dup++; return; }
       cur.push(s); added++;
     });
     paSaveRoster(sid, cid, cur);
+    if (clash.length) customAlert('반·번호가 같은 다른 학년 학생은 한 수업반에 함께 넣을 수 없어요(빼고 넣었어요):\n' + clash.join('\n') + '\n→ 학년마다 수업반을 따로 만들어 주세요.');
     return { added: added, dup: dup };
   }
   async function paPasteRoster() {
@@ -14590,10 +14618,15 @@
     document.querySelectorAll('#pa-pane .pa-sc[data-k="' + k + '"]').forEach(function(i) { i.disabled = on; });
     paRefreshRow(k);
   }
+  // 최하점으로 잠긴(disabled) 칸은 건너뛰고 다음 칸으로 — 잠긴 칸에 focus()하면 커서가 제자리에 남아 다음 숫자가 앞 학생 칸에 이어 붙었음
   function paScMove(inp, dr, dc) {
-    const r = Number(inp.dataset.r) + dr, c = Number(inp.dataset.col) + dc;
-    const n = document.querySelector('#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + c + '"]');
-    if (n) { n.focus(); return true; }
+    let r = Number(inp.dataset.r), c = Number(inp.dataset.col);
+    for (let i = 0; i < 500; i++) {
+      r += dr; c += dc;
+      const n = document.querySelector('#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + c + '"]');
+      if (!n) return false;
+      if (!n.disabled) { n.focus(); return true; }
+    }
     return false;
   }
   function paScKeydown(e, inp) {
