@@ -13394,9 +13394,10 @@
   // ----- 한도: 학년 → 입시 연도 → 글자 수(한글 기준) × 3바이트 -----
   function seGrade() { return seCfg().g || null; }
   function seLimitBytes(kind) { return sgbLimitsFor(seGrade())[SE_LIMIT_FIELD[kind] || kind] * 3; }
-  // 학생 한 명의 한도: 진로는 진로 희망 분야 바이트만큼 뺀 것
+  // 진로는 진로 희망 분야와 특기사항 글을 합쳐서 한도(1,500)와 견줌(문장 점검기와 같게) — 화면 숫자도 합친 바이트로.
   function seCareerBytes(num) { return seBytes(seSt(num).career || ''); }
-  function seLimitFor(num, kind) { return kind === 'p' ? Math.max(0, seLimitBytes('p') - seCareerBytes(num)) : seLimitBytes(kind); }
+  function seExtraBytes(num, kind) { return kind === 'p' ? seCareerBytes(num) : 0; }
+  function seUsedBytes(num, kind, text) { return seBytes(text) + seExtraBytes(num, kind); }
   function seLimitNote() {
     const g = seGrade();
     if (!g) return '';
@@ -13560,7 +13561,7 @@
     { selector: '#se-students', before: seTourTab('edit', 1), title: '✍️ 편집 — 학생 목록',
       desc: '학생을 누르면 오른쪽에 그 학생 자료가 나와요. 이름 옆 두 숫자는 자율·진로 바이트예요.\n회색 = 아직 없음 · 초록 = 한도 안 · 빨강 = 한도 넘음\n주황 테두리 = 편집했는데 아직 최종에 안 넣음(예시: 2번 이바다의 자율)' },
     { selector: '#se-edit-head', before: seTourTab('edit', 1), title: '◀ 이전 · 다음 ▶',
-      desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.\n진로를 고르면 이름 옆에 "진로 희망 분야" 칸이 나와요. 나이스에선 따로 적지만 진로 한도를 같이 쓰니, 적어 두면 그 바이트만큼 뺀 한도로 계산해요(예시: 1번 김하늘 — 진로를 눌러 보세요).' },
+      desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.\n진로를 고르면 이름 옆에 "진로 희망 분야" 칸이 나와요. 나이스에선 따로 적지만 진로 한도를 같이 쓰니, 적어 두면 진로 바이트를 희망 분야와 합쳐서 보여 줘요(학생 목록·편집 칸·최종 모두 — 예시: 1번 김하늘, 진로를 눌러 보세요).' },
     { selector: '#se-box-src', before: seTourTab('edit', 1), title: '📥 받은 내용 — 넣을 것을 체크',
       desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 제목 옆 테두리 상자에 "합치면 몇 바이트"가 바로 보여요(초록 = 한도 안, 빨강 = 넘음 — 자료 입력 탭에서는 바이트를 안 보여 줘요). "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
     { selector: '#se-box-draft', before: seTourTab('edit', 1), title: '✍️ 편집 칸 — 다듬기',
@@ -13663,7 +13664,7 @@
   function seStuTodo(num, kind, areas) {
     if (seHasDraft(num, kind)) return 'draft';
     const fin = seGet(seFinKey(num, kind));
-    if (fin.trim()) return seBytes(fin) > seLimitFor(num, kind) ? 'over' : '';
+    if (fin.trim()) return seUsedBytes(num, kind, fin) > seLimitBytes(kind) ? 'over' : '';
     if (kind === 'b') return 'todo';
     return (areas || seAreas(kind)).some(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }) ? 'todo' : '';
   }
@@ -13718,7 +13719,7 @@
       const s = I.todo.find(function(x) { return x.num === seSelNum; }) || I.todo[0], why = seStuTodo(s.num, kind, I.areas);
       const draft = seDraftText(s.num, kind).trim(), sel = seSt(s.num).sel[kind].filter(function(id) { return seGet(seSrcKey(s.num, id)).trim(); });
       const how = why === 'draft' ? '다듬은 글이 아직 최종에 안 들어갔어요 — <b>📊 최종에 넣기</b>를 누르세요.'
-        : why === 'over' ? '최종이 한도(' + seFmt(seLimitFor(s.num, kind)) + '바이트' + (kind === 'p' && seCareerBytes(s.num) ? ' — 진로 희망 분야 뺀 것' : '') + ')를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
+        : why === 'over' ? '최종이 한도(' + seFmt(seLimitBytes(kind)) + '바이트' + (seExtraBytes(s.num, kind) ? ', 진로 희망 분야와 합쳐 셈' : '') + ')를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
         : draft ? '편집 칸을 다듬은 뒤 <b>📊 최종에 넣기</b>를 누르세요.'
         : sel.length ? '<b>⬇ 합쳐서 편집 칸에 넣기</b>를 누른 뒤 다듬고 <b>📊 최종에 넣기</b>.' : '받은 내용에서 넣을 것을 체크하세요 → 합치기 → 다듬기 → <b>📊 최종에 넣기</b>.';
       const glow = why === 'draft' || why === 'over' || draft ? '#se-put-btn' : sel.length ? '#se-combine-btn' : '#se-box-src .se-card:not(.none)';
@@ -14031,7 +14032,7 @@
   function seFinStatus(num, kind) {
     const t = seDraftText(num, kind), d = seHasDraft(num, kind);
     if (!t.trim()) return { cls: 'empty' + (d ? ' draft' : ''), text: '-', draft: d };
-    const b = seBytes(t), lim = seLimitFor(num, kind);
+    const b = seUsedBytes(num, kind, t), lim = seLimitBytes(kind);   // 진로는 희망 분야와 합친 바이트
     return { cls: (b > lim ? 'over' : 'ok') + (d ? ' draft' : ''), text: seFmt(b), draft: d };
   }
   // 점 세 개 = 자율·진로·행발 바이트(지금 고른 종류는 테두리로 진하게)
@@ -14068,7 +14069,7 @@
     const kind = seKind(), areas = kind === 'b' ? [] : seAreas(kind), st = seSt(s.num), sel = st.sel[kind] || [];
     const i = seRoster.indexOf(s);
     const draft = seDraftText(s.num, kind);
-    const lim = seLimitFor(s.num, kind);
+    const lim = seLimitBytes(kind), extra = seExtraBytes(s.num, kind);
     let html = '<div id="se-edit-head" class="se-box">' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
       '<div style="font-weight:800; font-size:15px;">' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</div>' +
@@ -14085,9 +14086,9 @@
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
     const joined = chosen.map(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }).join(' ');
     // 체크한 것을 합친 바이트 — 제목 바로 옆에 테두리 상자로 크게(한도 안 초록, 넘으면 빨강, 체크 없으면 회색).
-    const jb = seBytes(joined), jOver = jb > lim;
+    const jb = seBytes(joined) + extra, jOver = jb > lim;   // 진로는 희망 분야까지 합쳐서
     html += '<div class="se-box se-sbox" id="se-box-src"><div class="se-sec"><span class="se-sec-title">📥 받은 내용 — 넣을 것을 체크' +
-      '<span id="se-sum" class="se-sum ' + (!chosen.length ? 'empty' : (jOver ? 'over' : 'ok')) + '">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(jb) + '</b> / ' + seFmt(lim) + '바이트' +
+      '<span id="se-sum" class="se-sum ' + (!chosen.length ? 'empty' : (jOver ? 'over' : 'ok')) + '">체크한 ' + chosen.length + '개 합치면' + (extra ? '(희망 분야 ' + seFmt(extra) + ' 포함)' : '') + ' <b>' + seFmt(jb) + '</b> / ' + seFmt(lim) + '바이트' +
       (chosen.length ? (jOver ? ' · <b>' + seFmt(jb - lim) + ' 넘음</b>' : ' · ' + seFmt(lim - jb) + ' 남음') : '') + '</span></span></div>';
     if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "① 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
     areas.forEach(function(a) {
@@ -14126,11 +14127,11 @@
   // 진로 희망 분야 칸(이름 줄, 진로일 때): 적는 대로 바이트·남는 한도, 칸을 벗어나면 저장하고 한도에 맞춰 다시 그림
   function seCareerHtml(num) {
     const v = seSt(num).career || '';
-    return '<label class="se-career" title="나이스 진로활동의 진로 희망 분야 — 특기사항과 따로 적지만 진로 한도를 같이 써요(문장 점검기처럼 합쳐 셈). 여기 적으면 진로 한도에서 이만큼 빼고 계산해요.">진로 희망 분야' +
-      '<input type="text" id="se-career" data-num="' + num + '" value="' + escapeHtmlAttr(v) + '" placeholder="예: 생명과학 연구원" spellcheck="false" oninput="seCareerInput(this)" onchange="seCareerSave(this)" onkeydown="if (event.key === \'Enter\' && !event.isComposing) this.blur()">' +
+    return '<label class="se-career" title="나이스 진로활동의 진로 희망 분야 — 특기사항과 따로 적지만 진로 한도를 같이 써요. 여기 적으면 진로 바이트를 희망 분야와 합쳐서 세요(문장 점검기와 같게).">진로 희망 분야' +
+      '<input type="text" id="se-career" data-num="' + num + '" value="' + escapeHtmlAttr(v) + '" placeholder="예: 생명과학 연구원" spellcheck="false" autocomplete="off" oninput="seCareerInput(this)" onchange="seCareerSave(this)" onkeydown="if (event.key === \'Enter\' && !event.isComposing) this.blur()">' +
       '<span id="se-career-bytes">' + seCareerNote(seBytes(v)) + '</span></label>';
   }
-  function seCareerNote(cb) { return cb ? seFmt(cb) + '바이트 → 진로 한도 <b>' + seFmt(Math.max(0, seLimitBytes('p') - cb)) + '</b>' : '진로 한도 <b>' + seFmt(seLimitBytes('p')) + '</b>'; }
+  function seCareerNote(cb) { return cb ? '<b>' + seFmt(cb) + '바이트</b> · 특기사항과 합쳐 ' + seFmt(seLimitBytes('p')) + '바이트까지' : '특기사항과 합쳐 ' + seFmt(seLimitBytes('p')) + '바이트까지'; }
   function seCareerInput(inp) { seSaveState('typing'); document.getElementById('se-career-bytes').innerHTML = seCareerNote(seBytes(inp.value.trim())); }
   function seCareerSave(inp) {
     const num = Number(inp.dataset.num), v = inp.value.replace(/\s+/g, ' ').trim();
@@ -14185,8 +14186,8 @@
     const cur = seGet(seFinKey(num, kind));
     if (!v && !cur) return;
     if (!v && !(await customConfirm('편집 칸이 비어 있어요. 최종에 든 ' + SE_KIND_LABEL[kind] + ' 문장을 지울까요?'))) return;
-    const b = seBytes(v), lim = seLimitFor(num, kind);
-    if (v && b > lim && !(await customConfirm(seFmt(b - lim) + '바이트 넘어요(' + seFmt(b) + ' / ' + seFmt(lim) + '). 그래도 최종에 넣을까요?'))) return;
+    const b = seUsedBytes(num, kind, v), lim = seLimitBytes(kind), ex = seExtraBytes(num, kind);
+    if (v && b > lim && !(await customConfirm(seFmt(b - lim) + '바이트 넘어요(' + seFmt(b) + ' / ' + seFmt(lim) + (ex ? ' — 진로 희망 분야 ' + seFmt(ex) + '바이트 포함' : '') + '). 그래도 최종에 넣을까요?'))) return;
     if (ta.value !== v) ta.value = v;
     if (seTypingKey === 'draft') seTypingKey = null;
     seSet(seFinKey(num, kind), v);
@@ -14207,15 +14208,18 @@
     const ta = document.getElementById('se-draft');
     if (!ta) return;
     const kind = ta.dataset.kind, text = ta.value;
-    const c = sgbCount(text), limit = seLimitFor(Number(ta.dataset.num), kind), over = c.bytes > limit, cb = kind === 'p' ? seCareerBytes(Number(ta.dataset.num)) : 0;
+    const cb = seExtraBytes(Number(ta.dataset.num), kind);
+    const c = sgbCount(text), limit = seLimitBytes(kind), used = c.bytes + cb, over = used > limit;
     const countEl = document.getElementById('se-count');
     countEl.className = 'sgb-count' + (over ? ' over' : '');
+    // 진로에 희망 분야가 있으면 합친 바이트를 크게 + (희망 분야 n + 특기사항 m) — 문장 점검기와 같은 모양
     countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
-      '<span><b>' + seFmt(c.bytes) + '</b>바이트 <span class="sgb-limit">/ ' + seFmt(limit) + '바이트' + (cb ? '(진로 희망 분야 ' + seFmt(cb) + '바이트 뺌)' : '(' + (limit / 3) + '자)') +
-      (over ? ' · <b>' + seFmt(c.bytes - limit) + '바이트 넘음</b>' : ' · ' + seFmt(limit - c.bytes) + '바이트 남음') + '</span></span>';
+      '<span><b>' + seFmt(used) + '</b>바이트 <span class="sgb-limit">/ ' + seFmt(limit) + '바이트(' + (limit / 3) + '자)' +
+      (over ? ' · <b>' + seFmt(used - limit) + '바이트 넘음</b>' : ' · ' + seFmt(limit - used) + '바이트 남음') + '</span></span>' +
+      (cb ? '<span class="sgb-limit" id="se-split">(진로 희망 분야 ' + seFmt(cb) + ' + 특기사항 ' + seFmt(c.bytes) + '바이트)</span>' : '');
     const bar = document.getElementById('se-bar');
     bar.className = 'sgb-bar' + (over ? ' over' : '');
-    bar.firstChild.style.width = Math.min(100, limit ? c.bytes / limit * 100 : 0) + '%';
+    bar.firstChild.style.width = Math.min(100, limit ? used / limit * 100 : 0) + '%';
     document.getElementById('se-result').innerHTML = text.trim() ? sgbFindingsHtml(text) : '';
     seRenderPutState();
   }
@@ -14255,7 +14259,7 @@
   // 바이트 칸: 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.
   function seBytesCellHtml(t, k, num) {
     if (!t.trim()) return '<td class="se-bcell"><span class="se-dot empty">-</span></td>';
-    const b = seBytes(t), lim = seLimitFor(num, k), over = b > lim;
+    const b = seUsedBytes(num, k, t), lim = seLimitBytes(k), over = b > lim;   // 진로는 희망 분야와 합친 바이트
     return '<td class="se-bcell' + (over ? ' over' : '') + '"><b>' + seFmt(b) + '</b> / ' + seFmt(lim) + '<br>' +
       (over ? seFmt(b - lim) + ' 넘음' : '<span class="se-left-n">' + seFmt(lim - b) + ' 남음</span>') + '</td>';
   }
@@ -14277,7 +14281,7 @@
       html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c se-name">' + escapeHtmlAttr(s.name) + '</td>';
       kinds.forEach(function(k) {
         const t = seGet(seFinKey(s.num, k)), d = seHasDraft(s.num, k);
-        if (t.trim()) { stat[k].n++; if (seBytes(t) > seLimitFor(s.num, k)) stat[k].over++; }
+        if (t.trim()) { stat[k].n++; if (seUsedBytes(s.num, k, t) > seLimitBytes(k)) stat[k].over++; }
         const car = k === 'p' ? seSt(s.num).career : '';
         if (d) stat[k].draft++;
         html += '<td class="se-txt" data-kind="' + k + '">' + (car ? '<div class="se-career-tag" title="진로 희망 분야 — 나이스에 따로 적고, 진로 한도를 같이 써요">희망 분야: ' + escapeHtmlAttr(car) + ' <b>' + seFmt(seBytes(car)) + '바이트</b></div>' : '') + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') +

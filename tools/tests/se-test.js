@@ -433,25 +433,26 @@ handleDb = async function(pageInfo, req) {
   check('받은 내용 체크·풀기: 오른쪽 스크롤 자리 그대로', scr.before > 0 && scr.after === scr.before && scr.again === scr.before && scr.on !== scr.back, scr);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
 
-  // ---- 진로 희망 분야: 나이스에선 따로 적지만 진로 한도를 같이 씀 → 진로 한도 = 1,500 − 희망 분야 바이트 ----
+  // ---- 진로 희망 분야: 나이스에선 따로 적지만 진로 한도를 같이 씀 → 진로 바이트 = 희망 분야 + 특기사항(합쳐서 1,500과 견줌, 화면 숫자도 합친 것) ----
   check('자율에선 진로 희망 분야 칸 없음', await P.evaluate(() => !document.getElementById('se-career')));
   await P.click('#se-kind [data-kind="p"]'); await wait(200);
-  const cb = sgbBytesOf('데이터 과학자'), plim = (1500 - cb).toLocaleString('ko-KR');
-  const car0 = await P.evaluate(() => ({ has: !!document.getElementById('se-career'), inHead: !!document.querySelector('#se-edit-head #se-career'), note: document.getElementById('se-career-bytes').textContent }));
-  check('진로: 이름 줄에 "진로 희망 분야" 칸 + 진로 한도 1,500', car0.has && car0.inHead && /진로 한도 1,500/.test(car0.note), car0);
+  const cb = sgbBytesOf('데이터 과학자');
+  const car0 = await P.evaluate(() => { const i = document.getElementById('se-career'); return { has: !!i, inHead: !!document.querySelector('#se-edit-head #se-career'), ac: i && i.getAttribute('autocomplete'), note: document.getElementById('se-career-bytes').textContent }; });
+  check('진로: 이름 줄에 "진로 희망 분야" 칸(브라우저 자동 완성 목록 안 뜸) + "특기사항과 합쳐 1,500바이트까지"', car0.has && car0.inHead && car0.ac === 'off' && /특기사항과 합쳐 1,500바이트까지/.test(car0.note), car0);
   await P.fill('#se-career', '데이터 과학자');
-  check('적는 대로 바이트·남는 진로 한도', new RegExp(cb + '바이트 → 진로 한도 ' + plim).test(await P.innerText('#se-career-bytes')), await P.innerText('#se-career-bytes'));
+  check('적는 대로 희망 분야 바이트', new RegExp('^' + cb + '바이트 · 특기사항과 합쳐 1,500바이트까지').test(await P.innerText('#se-career-bytes')), await P.innerText('#se-career-bytes'));
   await P.press('#se-career', 'Enter'); await wait(300);
   if (process.env.SE_SHOTS) await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-career.png') });
   const car1 = await P.evaluate(() => ({ st: JSON.parse(localStorage.getItem('se-st-3-1-1')), cnt: document.getElementById('se-count').textContent, sum: document.getElementById('se-sum').textContent, val: document.getElementById('se-career').value }));
-  check('Enter(칸 벗어남) → 학생 상태에 저장(메모 그대로), 편집 칸·합친 바이트 한도 = 1,500 − 희망 분야', car1.st.career === '데이터 과학자' && car1.st.memo === '진로독서 줄이고, 큐리어톤' && car1.val === '데이터 과학자' &&
-    car1.cnt.includes('/ ' + plim + '바이트(진로 희망 분야 ' + cb + '바이트 뺌)') && car1.sum.includes('/ ' + plim + '바이트'), car1);
-  await P.evaluate((n) => { seSet(seFinKey(1, 'p'), '가'.repeat(n)); seRenderAll(); }, Math.floor((1500 - cb) / 3) + 1);
-  const car2 = await P.evaluate(() => ({ dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot[data-kind="p"]').className }));
-  check('희망 분야 때문에 넘는 진로 최종 → 학생 목록 진로 점 빨강', /over/.test(car2.dot), car2);
+  check('Enter(칸 벗어남) → 학생 상태에 저장(메모 그대로), 편집 칸 아래 = 합친 바이트 / 1,500 + (희망 분야 n + 특기사항 0), 합친 바이트 상자도 희망 분야 포함', car1.st.career === '데이터 과학자' && car1.st.memo === '진로독서 줄이고, 큐리어톤' && car1.val === '데이터 과학자' &&
+    car1.cnt.includes(cb + '바이트 / 1,500바이트(500자)') && car1.cnt.includes('(진로 희망 분야 ' + cb + ' + 특기사항 0바이트)') && car1.sum.includes('합치면(희망 분야 ' + cb + ' 포함) ' + cb + ' / 1,500바이트'), car1);
+  const nOver = Math.floor((1500 - cb) / 3) + 1, tb = nOver * 3;   // 특기사항만으론 안 넘지만 희망 분야와 합치면 넘음
+  await P.evaluate((n) => { seSet(seFinKey(1, 'p'), '가'.repeat(n)); seRenderAll(); }, nOver);
+  const car2 = await P.evaluate(() => { const d = document.querySelector('#se-students .se-stu[data-num="1"] .se-dot[data-kind="p"]'); return { cls: d.className, text: d.textContent, cnt: document.getElementById('se-count').textContent }; });
+  check('학생 목록 진로 점 = 희망 분야 + 특기사항 합친 바이트, 넘으면 빨강', /over/.test(car2.cls) && car2.text === (tb + cb).toLocaleString('ko-KR') && car2.cnt.includes((tb + cb).toLocaleString('ko-KR') + '바이트 / 1,500') && car2.cnt.includes('넘음') && car2.cnt.includes('특기사항 ' + tb.toLocaleString('ko-KR') + '바이트'), { car2, tb, cb });
   await P.click('#se-tabs [data-tab="final"]'); await P.click('#se-kind [data-kind="p"]'); await wait(300);
   const car3 = await P.evaluate(() => { const td = document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt'); return { tag: td.querySelector('.se-career-tag') && td.querySelector('.se-career-tag').textContent, b: td.nextElementSibling.textContent, over: td.nextElementSibling.classList.contains('over') }; });
-  check('③ 최종 진로: 글 위에 "희망 분야: 데이터 과학자 n바이트", 바이트 칸 한도 = 1,500 − 희망 분야, 넘음 빨강', car3.tag === '희망 분야: 데이터 과학자 ' + cb + '바이트' && car3.b.includes(' / ' + plim) && car3.over, car3);
+  check('③ 최종 진로: 글 위에 "희망 분야: 데이터 과학자 n바이트", 바이트 칸 = 합친 바이트 / 1,500, 넘음 빨강', car3.tag === '희망 분야: 데이터 과학자 ' + cb + '바이트' && car3.b.startsWith((tb + cb).toLocaleString('ko-KR') + ' / 1,500') && car3.over, car3);
   await P.evaluate(() => { seSet(seFinKey(1, 'p'), ''); seSetSt(1, { career: '' }); seSetCfg({ kind: 'a', finAll: true }); seSetTab('edit'); });
   check('희망 분야를 비우면 학생 상태에서 빠짐', await P.evaluate(() => !('career' in JSON.parse(localStorage.getItem('se-st-3-1-1')))));
   // 다음 학생·진로 전환
