@@ -686,6 +686,7 @@
     .pa-note { min-width: 0; resize: vertical; min-height: 34px; }
     .pa-score-table { table-layout: fixed; width: 100%; }
     .pa-score-table th.pa-th-wrap { white-space: normal; line-height: 1.3; }
+    .pa-score-table th.pa-th-wrap .pa-th-name { color: var(--text-main); }
     .pa-th-pts { font-size: 10.5px; font-weight: 700; color: #1E7B3A; margin-top: 2px; letter-spacing: -0.01em; word-break: keep-all; }
     .pa-score-table td.pa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pa-modal { position: fixed; inset: 0; z-index: 1050; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
@@ -14756,6 +14757,12 @@
   }
 
   // ----- ③ 점수 입력 -----
+  // 글 폭(px) 재기 — 점수 입력 머리 칸 폭을 이름에 맞추려고(화면 글꼴 그대로)
+  function paTextW(t, font) {
+    const c = paTextW._c || (paTextW._c = document.createElement('canvas').getContext('2d'));
+    c.font = font + ' ' + getComputedStyle(document.body).fontFamily;
+    return c.measureText(String(t)).width;
+  }
   function paCurArea(sub) { const u = paUi(); return sub.areas.find(function(a) { return a.id === u.area; }) || sub.areas[0] || null; }
   function paScoreHtml(sub, cls) {
     if (!sub.areas.length) return '<div class="se-box se-sbox pa-empty">영역이 아직 없어요. <button class="top-btn" onclick="paSetTab(\'areas\')">② 영역·배점</button>에서 먼저 만드세요.</div>';
@@ -14772,12 +14779,14 @@
       (a.note ? '<button class="top-btn" id="pa-clear-nt" onclick="paClearNotes()" title="이 반 · 이 영역의 평가내용을 모두 지워요">평가내용 지우기</button>' : '') + '</span></div>';
     if (noPts.length) h += '<div class="pa-warn">⚠️ 줄 수 있는 점수가 없는 세부영역이 있어요 — ② 영역·배점에서 적어 주세요.</div>';
     // 칸 폭을 미리 정해 둠(table-layout: fixed) — 최하점을 체크해 합계 칸 글이 바뀌어도 칸이 움직이지 않게
-    const subW = 108, fixedW = 46 + 50 + 92 + (a.min != null ? 58 : 0) + a.subs.length * subW + 86;
+    // 세부영역 칸 폭 = 이름이 한 줄에 다 들어가게(평가내용 칸이 넓으니 거기서 덜어 씀) — 최소 108, 아주 긴 이름만 260에서 띄어쓰기로 줄바꿈
+    const subWs = a.subs.map(function(x) { const p = paParsePts(x.pts); return Math.min(260, Math.max(108, Math.ceil(Math.max(paTextW(x.name || '세부', '800 11.5px'), paTextW(paPtsText(p) || '점수 없음', '700 10.5px'))) + 22)); });
+    const fixedW = 46 + 50 + 92 + (a.min != null ? 58 : 0) + subWs.reduce(function(t, w) { return t + w; }, 0) + 86;
     h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-score-table" style="min-width:' + (fixedW + (a.note ? 260 : 0)) + 'px;' + (a.note ? '' : ' width:' + fixedW + 'px;') + '"><colgroup><col style="width:46px"><col style="width:50px"><col style="width:92px">' +
-      (a.min != null ? '<col style="width:58px">' : '') + a.subs.map(function() { return '<col style="width:' + subW + 'px">'; }).join('') + '<col style="width:86px">' + (a.note ? '<col>' : '') + '</colgroup>' +
+      (a.min != null ? '<col style="width:58px">' : '') + subWs.map(function(w) { return '<col style="width:' + w + 'px">'; }).join('') + '<col style="width:86px">' + (a.note ? '<col>' : '') + '</colgroup>' +
       '<thead><tr><th>반</th><th>번호</th><th>이름</th>' +
       (a.min != null ? '<th title="미제출·미응시 — 세부영역마다 가장 낮은 점수(합 ' + aminT + '점)">최하점<div class="pa-th-sub">' + aminT + '점</div></th>' : '') +
-      a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.slice().reverse().join(', ')) + '">' + paEsc(x.name || '세부') + '(' + (p.length ? p[0] : 0) + '점)<div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
+      a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.slice().reverse().join(', ')) + '"><div class="pa-th-name">' + paEsc(x.name || '세부') + '</div><div class="pa-th-sub">' + (p.length ? p[0] : 0) + '점</div><div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
       '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th>평가내용</th>' : '') + '</tr></thead><tbody>';
     ro.forEach(function(st, ri) {
       const k = paSk(st), rec = sc[k] || {}, v = rec.v || {}, r = paAreaResult(a, rec);

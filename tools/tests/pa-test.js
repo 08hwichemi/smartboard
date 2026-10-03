@@ -299,7 +299,15 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
-  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 "반응속도(15점)" 아래 넣을 수 있는 점수', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\(15점\)\s*1~15/.test(await P.innerText('#pa-pane thead')) && /전기화학\(15점\)\s*5, 10, 15/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
+  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 머리 세 줄(반응속도 / 15점 / 넣을 수 있는 점수)', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\s*15점\s*1~15/.test(await P.innerText('#pa-pane thead')) && /전기화학\s*15점\s*5, 10, 15/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
+  // 긴 세부영역 이름도 한 줄(칸 폭이 이름에 맞게 넓어짐) — 끝나면 이름 되돌림
+  const setSubName = (n) => P.evaluate((n) => { const c = paCfg(), a = paSub(c).areas[0]; a.subs[1].name = n; paSaveCfg(c); paRenderAll(); }, n);
+  await setSubName('자료 분석 및 결과 도출'); await P.waitForTimeout(150);
+  const thInfo = await P.evaluate(() => { const th = document.querySelectorAll('#pa-pane .pa-score-table th.pa-th-wrap')[1], nm = th.querySelector('.pa-th-name'); return { lines: Math.round(nm.getBoundingClientRect().height / parseFloat(getComputedStyle(nm).lineHeight)), parts: [...th.children].map(e => e.className) }; });
+  check('긴 세부영역 이름("자료 분석 및 결과 도출")도 머리에서 한 줄 + 세 줄(이름 / 점수 / 넣을 수 있는 점수)', thInfo.lines === 1 && thInfo.parts.join() === 'pa-th-name,pa-th-sub,pa-th-pts', thInfo);
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-longname.png') });
+  await setSubName('전기화학'); await P.waitForTimeout(150);
+  await P.click(sc(1, 0));
   check('Enter = 아래 칸으로', await P.evaluate(() => document.activeElement.dataset.r === '1' && document.activeElement.dataset.col === '0'));
   await P.keyboard.type('16');
   check('배점에 없는 점수는 치는 동안 빨갛게', await P.evaluate(() => document.activeElement.classList.contains('bad')));
