@@ -249,7 +249,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
   await P.fill('#pa-pane .pa-aname', '개념 구조화'); await P.press('#pa-pane .pa-aname', 'Tab'); await P.waitForTimeout(150);
   check('영역 이름 저장 + Tab으로 옮긴 칸(최하점)에 커서 그대로', (await cfg(P)).subjects[0].areas[0].name === '개념 구조화' && await P.evaluate(() => document.activeElement && document.activeElement.classList.contains('pa-min')));
-  await P.keyboard.type('2'); await P.keyboard.press('Tab'); await P.waitForTimeout(150);
+  await P.keyboard.press('Space'); await P.keyboard.press('Tab'); await P.waitForTimeout(150);
   let A = (await cfg(P)).subjects[0].areas[0];
   await setVal(P, '[data-fid="sn-' + A.subs[0].id + '"]', '반응속도');
   await setVal(P, '[data-fid="sp-' + A.subs[0].id + '"]', '1~15');
@@ -264,7 +264,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   A = (await cfg(P)).subjects[0].areas[0];
   await setVal(P, '[data-fid="sp-' + A.subs[1].id + '"]', '15, 10, 5');
   A = (await cfg(P)).subjects[0].areas[0];
-  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 2, 영역 만점 30', A.min === 2 && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), A);
+  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 = 가장 낮은 점수 합 1 + 5 = 6, 영역 만점 30', A.min != null && await P.evaluate((a) => paAreaMin(a), A) === 6 && /최하점 칸 쓰기\s*6점/.test(await P.innerText('#pa-pane .pa-area')) && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), [A, await P.evaluate((a) => paAreaMin(a), A), (await P.innerText('#pa-pane .pa-area')).slice(0, 160)]);
   check('배점 미리보기: 작은 점수부터 "1~15 (15가지)", "5, 10, 15" — 세부영역 한 줄', /1~15 \(15가지\)/.test(await P.innerText('#pa-pane .pa-area')) && /5, 10, 15 \(3가지\)/.test(await P.innerText('#pa-pane .pa-area')) &&
     await P.evaluate(() => { const r = document.querySelector('#pa-pane .pa-sub-row:not(.pa-sub-hd)'); const ys = [...r.children].map(e => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)); return Math.max(...ys) - Math.min(...ys) <= 3; }));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
@@ -272,7 +272,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.fill('#pa-pane .pa-area >> nth=1 >> .pa-aname', '화학자료분석'); await P.press('#pa-pane .pa-area >> nth=1 >> .pa-aname', 'Tab'); await P.waitForTimeout(150);
   await setVal(P, '[data-fid="sn-' + A2.subs[0].id + '"]', '자료분석');
   await setVal(P, '[data-fid="sp-' + A2.subs[0].id + '"]', '30 25 20');
-  await P.click('#pa-pane .pa-area >> nth=1 >> input[type=checkbox]'); await P.waitForTimeout(150);
+  await P.click('#pa-pane .pa-area >> nth=1 >> input[type=checkbox]:not(.pa-min)'); await P.waitForTimeout(150);
   A2 = (await cfg(P)).subjects[0].areas[1];
   check('영역 두 개(+ 더하기 칸)가 한 줄에 나란히 — 1600px 화면이면 한 줄에 셋', await P.evaluate(() => { const a = document.querySelectorAll('#pa-pane .pa-area'); const n = document.querySelector('#pa-pane .pa-area-new'); return a.length === 2 && [a[1], n].every(e => Math.abs(a[0].getBoundingClientRect().top - e.getBoundingClientRect().top) < 2); }));
   check('둘째 영역: 배점 30·25·20, 평가내용 칸 끔, 최하점 없음', A2.name === '화학자료분석' && A2.note === false && A2.min == null && await P.evaluate((a) => paAreaMax(a), A2) === 30, A2);
@@ -311,11 +311,32 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('Enter: 최하점(잠긴) 학생 칸은 건너뛰고 그 아래 학생으로 + 점수는 제 학생에게', await P.evaluate(() => document.activeElement.dataset.r) === '3' &&
     await P.evaluate(() => { const s = paSub(), x = paCls(s), a = s.areas[0]; return (paScores(s.id, x.id, a.id)['1-2'] || {}).v[a.subs[1].id]; }) === 5);
   await P.keyboard.press('Escape');
-  check('최하점 체크 → 합계 2(최하) + 점수 칸 잠김', /^2/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].every(i => i.disabled)));
+  const minCells = () => P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].map(i => (i.disabled ? 'x' : '') + i.value).join());
+  check('최하점 체크 → 세부영역마다 가장 낮은 점수(1, 5)가 칸에 들어가고 잠김 + 합계 6(최하)', /^6/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && (await minCells()) === 'x1,x5', await minCells());
+  await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
+  check('최하점 체크를 풀면 전에 넣은 점수(13, 빈칸)로 돌아옴', (await minCells()) === '13,' && (await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim() === '13', await minCells());
+  await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
+  await P.evaluate(() => paRenderAll()); await P.waitForTimeout(100);
+  check('다시 그려도 최하점 칸은 1, 5(잠김)', (await minCells()) === 'x1,x5', await minCells());
   // 평가내용
   await P.fill('#pa-pane .pa-note[data-k="1-1"]', '반응 속도에 영향을 주는 요인을 실험으로 탐구함.'); await P.press('#pa-pane .pa-note[data-k="1-1"]', 'Tab'); await P.waitForTimeout(150);
   check('평가내용은 학생마다 따로 저장', Object.values(await lsKeys(P, '^pa-nt-')).join() === '반응 속도에 영향을 주는 요인을 실험으로 탐구함.');
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-score.png') });
+  // 🧹 점수 지우기 / 평가내용 지우기 — 이 반·이 영역만. 취소하면 그대로, 지운 뒤엔 되돌려 놓고 계속
+  const scKey = await P.evaluate(() => { const s = paSub(), x = paCls(s); return paScKey(s.id, x.id, s.areas[0].id); });
+  const scSaved = await P.evaluate((k) => paGet(k), scKey), ntSaved = await lsKeys(P, '^pa-nt-');
+  check('지우기 단추 두 개(점수·평가내용)', await P.isVisible('#pa-clear-sc') && await P.isVisible('#pa-clear-nt'));
+  await P.click('#pa-clear-sc'); await answerConfirm(P, false);
+  check('점수 지우기 취소 → 그대로', (await P.evaluate((k) => paGet(k), scKey)) === scSaved);
+  await P.click('#pa-clear-sc');
+  const clrMsg = await P.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await answerConfirm(P, true); await P.waitForTimeout(150);
+  check('점수 지우기 → 이 영역 점수·최하점 체크 모두 사라짐', (await P.evaluate((k) => paGet(k), scKey)) === '' && /최하점 체크도 풀려요/.test(clrMsg) &&
+    await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc')].every(i => i.value === '' && !i.disabled) && ![...document.querySelectorAll('#pa-pane .pa-mchk')].some(c => c.checked)), clrMsg);
+  check('점수 지우기는 평가내용을 안 건드림', JSON.stringify(await lsKeys(P, '^pa-nt-')) === JSON.stringify(ntSaved));
+  await P.click('#pa-clear-nt'); await answerConfirm(P, true); await P.waitForTimeout(150);
+  check('평가내용 지우기 → 이 영역 평가내용 모두 사라짐', !Object.values(await lsKeys(P, '^pa-nt-')).some(v => v) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-note')].every(t => t.value === '')));
+  await P.evaluate(({ k, v, nt }) => { paSet(k, v); Object.keys(nt).forEach(x => paSet(x, nt[x])); paRenderAll(); }, { k: scKey, v: scSaved, nt: ntSaved }); await P.waitForTimeout(100);
   // 나머지 학생 채우기(빠르게 — 함수로): 영역1 두 세부 모두, 영역2
   await P.evaluate(() => {
     const s = paSub(), x = paCls(s), ro = paRoster(s.id, x.id);
@@ -330,7 +351,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   const sumTxt = await P.innerText('#pa-pane');
   check('합계: 입력 끝 9/10명, 마지막 학생 "화학자료분석 비어 있음"', /입력 끝 9 \/ 10명/.test(sumTxt) && /화학자료분석 비어 있음/.test(sumTxt), sumTxt.slice(0, 300));
   const totals = await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(t => [t.k, t.sum]));
-  check('최하점 학생 합계 = 2 + 영역2', totals.find(t => t[0] === '1-7')[1] === 2 + [30, 25, 20][2 % 3] || totals.find(t => t[0] === '1-7')[1] != null, totals);
+  check('최하점 학생 합계 = 6 + 영역2', totals.find(t => t[0] === '1-7')[1] === 6 + [30, 25, 20][2 % 3], totals);
   if (ExcelJSNode && EXCELJS_PATH) {
     // 만들기
     await P.evaluate(() => { const o = fmSaveNow; window.fmSaveNow = function(b, n) { window.__saveName = n; return o(b, n); }; });

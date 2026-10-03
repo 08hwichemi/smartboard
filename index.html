@@ -615,7 +615,7 @@
     .pa-area .pa-aname { width: auto; flex: 1 1 auto; min-width: 0; font-weight: 800; padding: 5px 8px; }
     .pa-form .lp-input { width: 100%; }
     .pa-inl { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
-    .pa-inl .pa-min { width: 70px !important; flex: none; }
+    .pa-inl .pa-min { flex: none; margin: 0; }
     .pa-subs { width: 100%; table-layout: fixed; margin: 4px 0 8px; }
     .pa-subs td { vertical-align: middle; }
     .pa-subs .lp-input { width: 100%; box-sizing: border-box; }
@@ -631,7 +631,10 @@
     .pa-sc { width: 58px; text-align: center; font-family: inherit; font-size: 14px; font-weight: 800; padding: 5px 4px; border: 1.5px solid var(--border-color); border-radius: 7px; background: var(--card-bg); color: var(--text-main); outline: none; font-variant-numeric: tabular-nums; }
     .pa-sc:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
     .pa-sc.bad { border-color: var(--alert); background: #FDE7E7; color: #B42318; }
-    .pa-sc:disabled { opacity: .35; }
+    .pa-sc:disabled { opacity: .6; background: rgba(127,127,127,.1); }
+    .pa-hint { justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; }
+    .pa-clear-btns { display: inline-flex; gap: 6px; margin-left: auto; }
+    .pa-min-v { color: var(--accent-color); margin-left: 4px; }
     .pa-sc.shake { animation: paShake .3s; }
     @keyframes paShake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
     #pa-tip { position: fixed; z-index: 99990; display: none; max-width: 330px; font-size: 12px; font-weight: 700; color: #fff; background: #B42318; border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.2); pointer-events: none; }
@@ -14064,11 +14067,20 @@
     paSet(paScKey(sid, cid, aid), Object.keys(obj).length ? JSON.stringify(obj) : '');
   }
   function paNtKey(sid, cid, aid, sk) { return 'pa-nt-' + sid + '-' + cid + '-' + aid + '-' + sk; }
+  // 최하점 = 세부영역마다 줄 수 있는 가장 낮은 점수(합 = 영역 최하점). a.min != null 이면 최하점 칸을 씀(값은 늘 배점에서 셈 — 저장된 숫자는 옛 화면용).
+  function paSubLow(x) { const p = paParsePts(x.pts); return p.length ? p[p.length - 1] : null; }
+  function paLowSum(a) {
+    if (!a.subs.length) return null;
+    let t = 0;
+    for (let i = 0; i < a.subs.length; i++) { const lo = paSubLow(a.subs[i]); if (lo == null) return null; t += lo; }
+    return paNum(t);
+  }
+  function paAreaMin(a) { return a.min == null ? null : paLowSum(a); }
   // 한 학생의 한 영역 결과: { total, done(모든 세부 점수 있음 또는 최하점), bad(배점에 없는 점수), low(최하점보다 낮음), min(최하점 처리) }
   function paAreaResult(a, rec) {
     rec = rec || {};
     const v = rec.v || {};
-    if (rec.m && a.min != null) return { total: a.min, done: true, bad: false, low: false, min: true, any: true };
+    if (rec.m && a.min != null) { const lo = paLowSum(a); return { total: lo, done: lo != null, bad: false, low: false, min: true, any: true }; }
     let total = 0, filled = 0, bad = false;
     a.subs.forEach(function(x) {
       const s = v[x.id];
@@ -14079,7 +14091,7 @@
     });
     total = paNum(total);
     const done = a.subs.length > 0 && filled === a.subs.length;
-    return { total: filled ? total : null, done: done, bad: bad, low: done && a.min != null && total < a.min, min: false, any: filled > 0 };
+    return { total: filled ? total : null, done: done, bad: bad, low: done && paAreaMin(a) != null && total < paAreaMin(a), min: false, any: filled > 0 };
   }
 
   // ----- 열고 닫기 -----
@@ -14423,7 +14435,7 @@
   // ----- ② 영역·배점 -----
   function paAreasHtml(sub) {
     let h = '<div class="pa-scroll"><div class="se-muted" style="margin-bottom:8px;">세부영역마다 <b>줄 수 있는 점수</b>를 적어요 — "5, 10, 15"처럼 쉼표로, 1씩 이어지면 "1-15". 점수 입력 때 여기 없는 점수는 못 넣어요. ' +
-      '<b>최하점</b> = 미제출·미응시 학생에게 주는 점수(점수 입력에서 체크하면 합계가 이 점수).</div><div class="pa-areas">';
+      '<b>최하점</b> = 미제출·미응시 학생에게 주는 점수 — 세부영역마다 가장 낮은 점수(점수 입력에서 체크하면 그 점수가 들어가요).</div><div class="pa-areas">';
     sub.areas.forEach(function(a, ai) {
       const max = paAreaMax(a);
       h += '<div class="se-box pa-area" data-aid="' + a.id + '"><div class="pa-area-head">' +
@@ -14432,9 +14444,9 @@
         '<span class="pa-badge">' + max + '점</span>' +
         (ai > 0 ? '<button class="pa-x" tabindex="-1" title="앞으로" onclick="paMoveArea(\'' + a.id + '\', -1)">◀</button>' : '') +
         '<button class="pa-x" tabindex="-1" title="이 영역 지우기" onclick="paDeleteArea(\'' + a.id + '\')">🗑</button></div>' +
-        '<div class="pa-area-opts"><label class="pa-inl">최하점 <input class="lp-input pa-min" data-fid="am-' + a.id + '" type="number" step="0.5" min="0" value="' + (a.min == null ? '' : a.min) + '" placeholder="없음" onchange="paEditArea(\'' + a.id + '\', \'min\', this.value)">점</label>' +
+        '<div class="pa-area-opts"><label class="pa-inl" title="미제출·미응시 학생을 체크하면 세부영역마다 가장 낮은 점수가 들어가요"><input type="checkbox" class="pa-min" data-fid="am-' + a.id + '"' + (a.min != null ? ' checked' : '') + ' onchange="paEditArea(\'' + a.id + '\', \'min\', this.checked)"> 최하점 칸 쓰기' +
+          (a.min != null ? ' <b class="pa-min-v">' + (paLowSum(a) == null ? '?' : paLowSum(a) + '점') + '</b><span class="se-muted">(세부영역 가장 낮은 점수 합)</span>' : '') + '</label>' +
         '<label class="pa-inl"><input type="checkbox"' + (a.note ? ' checked' : '') + ' onchange="paEditArea(\'' + a.id + '\', \'note\', this.checked)"> 평가내용 칸 쓰기</label></div>';
-      if (a.min != null && max && a.min > max) h += '<div class="pa-warn">⚠️ 최하점(' + a.min + ')이 만점(' + max + ')보다 커요.</div>';
       h += '<div class="pa-sub-list"><div class="pa-sub-row pa-sub-hd"><span>세부영역</span><span>줄 수 있는 점수</span><span></span><span>만점</span><span></span></div>';
       a.subs.forEach(function(x) {
         const p = paParsePts(x.pts);
@@ -14469,7 +14481,7 @@
   function paEditArea(aid, field, v) {
     paWithArea(aid, function(a) {
       if (field === 'name') { v = String(v || '').trim(); if (!v) return false; a.name = v; }
-      else if (field === 'min') a.min = v === '' || !isFinite(Number(v)) ? null : paNum(v);
+      else if (field === 'min') a.min = v ? (paLowSum(a) || 0) : null;
       else if (field === 'note') a.note = !!v;
     });
   }
@@ -14512,30 +14524,34 @@
     if (!sub.areas.length) return '<div class="se-box se-sbox pa-empty">영역이 아직 없어요. <button class="top-btn" onclick="paSetTab(\'areas\')">② 영역·배점</button>에서 먼저 만드세요.</div>';
     const ro = paRoster(sub.id, cls.id);
     if (!ro.length) return '<div class="se-box se-sbox pa-empty">' + paEsc(cls.name) + '에 학생이 없어요. <button class="top-btn" onclick="paSetTab(\'setup\')">① 과목·학생</button>에서 넣으세요.</div>';
-    const a = paCurArea(sub), sc = paScores(sub.id, cls.id, a.id);
+    const a = paCurArea(sub), sc = paScores(sub.id, cls.id, a.id), amin = paAreaMin(a), aminT = amin == null ? '?' : amin;
     let h = '<div class="pa-area-tabs top-btn-cluster">' + sub.areas.map(function(x) {
       const s2 = paScores(sub.id, cls.id, x.id), done = ro.filter(function(st) { return paAreaResult(x, s2[paSk(st)]).done; }).length;
       return '<button class="top-btn' + (x.id === a.id ? ' theme-active' : '') + '" onclick="paPickArea(\'' + x.id + '\')">' + paEsc(x.name) + '(' + paAreaMax(x) + '점) <span class="pa-cnt' + (done === ro.length ? ' ok' : '') + '" title="다 넣은 학생">' + done + '/' + ro.length + '</span></button>';
     }).join('') + '</div>';
     const noPts = a.subs.filter(function(x) { return !paParsePts(x.pts).length; });
-    h += '<div class="se-muted pa-hint">' + (a.min != null ? '최하점 <b>' + a.min + '점</b>(미제출·미응시는 체크) · ' : '') + '칸 아래 회색 숫자 = 넣을 수 있는 점수 · Enter = 아래 칸 · 엑셀에서 한 열 복사해 붙여 넣기도 돼요</div>';
+    h += '<div class="pa-row pa-hint"><span class="se-muted">' + (a.min != null ? '최하점 <b>' + aminT + '점</b>(미제출·미응시는 체크 — 세부영역마다 가장 낮은 점수가 들어가요) · ' : '') + '칸 아래 회색 숫자 = 넣을 수 있는 점수 · Enter = 아래 칸 · 엑셀에서 한 열 복사해 붙여 넣기도 돼요</span>' +
+      '<span class="pa-clear-btns"><button class="top-btn" id="pa-clear-sc" onclick="paClearScores()" title="이 반 · 이 영역의 점수와 최하점 체크를 모두 지워요">🧹 점수 지우기</button>' +
+      (a.note ? '<button class="top-btn" id="pa-clear-nt" onclick="paClearNotes()" title="이 반 · 이 영역의 평가내용을 모두 지워요">🧹 평가내용 지우기</button>' : '') + '</span></div>';
     if (noPts.length) h += '<div class="pa-warn">⚠️ 줄 수 있는 점수가 없는 세부영역이 있어요 — ② 영역·배점에서 적어 주세요.</div>';
     // 칸 폭을 미리 정해 둠(table-layout: fixed) — 최하점을 체크해 합계 칸 글이 바뀌어도 칸이 움직이지 않게
     const subW = 108, fixedW = 46 + 50 + 92 + (a.min != null ? 58 : 0) + a.subs.length * subW + 86;
     h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-score-table" style="min-width:' + (fixedW + (a.note ? 260 : 0)) + 'px;' + (a.note ? '' : ' width:' + fixedW + 'px;') + '"><colgroup><col style="width:46px"><col style="width:50px"><col style="width:92px">' +
       (a.min != null ? '<col style="width:58px">' : '') + a.subs.map(function() { return '<col style="width:' + subW + 'px">'; }).join('') + '<col style="width:86px">' + (a.note ? '<col>' : '') + '</colgroup>' +
       '<thead><tr><th>반</th><th>번호</th><th>이름</th>' +
-      (a.min != null ? '<th title="미제출·미응시 — 합계를 최하점(' + a.min + ')으로">최하점<div class="pa-th-sub">' + a.min + '점</div></th>' : '') +
+      (a.min != null ? '<th title="미제출·미응시 — 세부영역마다 가장 낮은 점수(합 ' + aminT + '점)">최하점<div class="pa-th-sub">' + aminT + '점</div></th>' : '') +
       a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.slice().reverse().join(', ')) + '">' + paEsc(x.name || '세부') + '(' + (p.length ? p[0] : 0) + '점)<div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
       '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th>평가내용</th>' : '') + '</tr></thead><tbody>';
     ro.forEach(function(st, ri) {
       const k = paSk(st), rec = sc[k] || {}, v = rec.v || {}, r = paAreaResult(a, rec);
       h += '<tr data-k="' + k + '"><td class="se-c">' + (st.c || '') + '</td><td class="se-c">' + (st.n || '') + '</td><td class="se-c pa-name">' + paEsc(st.name) + '</td>';
       if (a.min != null) h += '<td class="se-c"><input type="checkbox" class="pa-mchk"' + (rec.m ? ' checked' : '') + ' onchange="paOnMin(\'' + k + '\', this.checked)"></td>';
+      const isMin = rec.m && a.min != null;
       a.subs.forEach(function(x, xi) {
-        const val = v[x.id] == null ? '' : v[x.id];
-        const bad = val !== '' && paParsePts(x.pts).indexOf(paNum(val)) === -1;
-        h += '<td class="se-c"><input class="pa-sc' + (bad ? ' bad' : '') + '" inputmode="decimal" autocomplete="off" data-k="' + k + '" data-x="' + x.id + '" data-r="' + ri + '" data-col="' + xi + '" value="' + val + '"' + (rec.m && a.min != null ? ' disabled' : '') +
+        const lo = paSubLow(x);
+        const val = isMin ? (lo == null ? '' : lo) : v[x.id] == null ? '' : v[x.id];
+        const bad = !isMin && val !== '' && paParsePts(x.pts).indexOf(paNum(val)) === -1;
+        h += '<td class="se-c"><input class="pa-sc' + (bad ? ' bad' : '') + '" inputmode="decimal" autocomplete="off" data-k="' + k + '" data-x="' + x.id + '" data-r="' + ri + '" data-col="' + xi + '" value="' + val + '"' + (isMin ? ' disabled title="최하점 — 가장 낮은 점수"' : '') +
           ' oninput="paScInput(this)" onchange="paScCommit(this)" onkeydown="paScKeydown(event, this)" onpaste="paScPaste(event, this)" onfocus="this.select()"></td>';
       });
       h += '<td class="se-c pa-total" data-k="' + k + '">' + paTotalHtml(r) + '</td>';
@@ -14615,8 +14631,39 @@
     if (on) rec.m = 1; else delete rec.m;
     sc[k] = rec;
     paSaveScores(ctx.sub.id, ctx.cls.id, ctx.a.id, sc);
-    document.querySelectorAll('#pa-pane .pa-sc[data-k="' + k + '"]').forEach(function(i) { i.disabled = on; });
+    // 체크하면 칸에 세부영역 가장 낮은 점수(잠금), 풀면 전에 넣어 둔 점수가 그대로 돌아옴(rec.v는 안 건드림)
+    document.querySelectorAll('#pa-pane .pa-sc[data-k="' + k + '"]').forEach(function(i) {
+      const x = ctx.a.subs.find(function(y) { return y.id === i.dataset.x; }), lo = x ? paSubLow(x) : null;
+      const own = rec.v && rec.v[i.dataset.x] != null ? rec.v[i.dataset.x] : '';
+      i.disabled = on;
+      i.value = on ? (lo == null ? '' : lo) : own;
+      i.title = on ? '최하점 — 가장 낮은 점수' : '';
+      i.classList.toggle('bad', !on && own !== '' && !!x && paParsePts(x.pts).indexOf(paNum(own)) === -1);
+    });
     paRefreshRow(k);
+  }
+  // 이 반 · 이 영역 점수 모두 지우기(최하점 체크도 풂)
+  async function paClearScores() {
+    const ctx = paScCtx();
+    if (!ctx.a) return;
+    const sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id), n = Object.keys(sc).length;
+    if (!n) { customAlert('지울 점수가 없어요.'); return; }
+    if (!(await customConfirm(ctx.cls.name + ' · ' + ctx.a.name + '의 점수를 모두 지울까요?\n학생 ' + n + '명 — 최하점 체크도 풀려요. 되돌릴 수 없어요.'))) return;
+    paSet(paScKey(ctx.sub.id, ctx.cls.id, ctx.a.id), '');
+    paRenderAll();
+  }
+  // 이 반 · 이 영역 평가내용 모두 지우기
+  async function paClearNotes() {
+    const ctx = paScCtx();
+    if (!ctx.a) return;
+    const pre = 'pa-nt-' + ctx.sub.id + '-' + ctx.cls.id + '-' + ctx.a.id + '-';
+    let n = 0;
+    if (paDemo) Object.keys(paDemo).forEach(function(k) { if (k.indexOf(pre) === 0 && paDemo[k]) n++; });
+    else for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(pre) === 0 && localStorage.getItem(k)) n++; }
+    if (!n) { customAlert('지울 평가내용이 없어요.'); return; }
+    if (!(await customConfirm(ctx.cls.name + ' · ' + ctx.a.name + '의 평가내용을 모두 지울까요?\n학생 ' + n + '명 — 되돌릴 수 없어요.\n(⑤ 세특에 이미 합쳐 둔 글은 그대로예요.)'))) return;
+    paRemoveKeys(pre);
+    paRenderAll();
   }
   // 최하점으로 잠긴(disabled) 칸은 건너뛰고 다음 칸으로 — 잠긴 칸에 focus()하면 커서가 제자리에 남아 다음 숫자가 앞 학생 칸에 이어 붙었음
   function paScMove(inp, dr, dc) {
@@ -15018,7 +15065,7 @@
     { selector: '#pa-pane .pa-score-table thead', before: paTourTab('score', { area: 'da1' }), title: '③ 점수 칸',
       desc: '칸 제목 아래 초록 글씨가 넣을 수 있는 점수예요. 숫자를 치고 Enter를 누르면 아래 학생으로 내려가요. 줄 수 없는 점수는 빨갛게 표시되고 저장되지 않아요. 엑셀에서 한 열을 복사해 붙여 넣어도 돼요.' },
     { selector: '#pa-pane .pa-mchk', before: paTourTab('score', { area: 'da1' }), title: '③ 최하점',
-      desc: '미제출·미응시 학생은 체크하면 점수 칸이 잠기고 합계가 최하점이 돼요(합계 옆 "최하" 표시).' },
+      desc: '미제출·미응시 학생은 체크하면 세부영역마다 가장 낮은 점수가 들어가고 칸이 잠겨요(합계 옆 "최하" 표시). 체크를 풀면 전에 넣은 점수로 돌아와요.\n위 "🧹 점수 지우기"·"🧹 평가내용 지우기"는 이 반·이 영역을 한꺼번에 지워요.' },
     { selector: '#pa-pane .pa-note', before: paTourTab('score', { area: 'da1' }), title: '③ 평가내용',
       desc: '학생마다 이 영역의 평가내용을 적어요. 바이트가 바로 보이고, ⑤ 세특에서 이 내용을 골라 합쳐요. 칸을 벗어나면 저장돼요.' },
     { selector: '#pa-pane .pa-sum-table', before: paTourTab('sum'), title: '④ 합계 — 맞게 넣었는지 확인',
