@@ -58,6 +58,13 @@ async function handleDb(pageInfo, req) {
     if (g === 3 && c === 2) for (let i = 1; i <= 6; i++) out.push({ number: i, name: '이반학생' + i });
     return { data: out, error: null };
   }
+  if (table === 'timetable' && op === 'select') {
+    // 시범교사 시간표: 화학Ⅱ 301·302·303 각 3칸, 생활과 과학 304·306 각 2칸(칸 = "과목\n교실")
+    const cells = Array(35).fill('\n');
+    [[0, '화학Ⅱ\n301'], [5, '화학Ⅱ\n301'], [9, '화학Ⅱ\n301'], [1, '화학Ⅱ\n302'], [12, '화학Ⅱ\n302'], [20, '화학Ⅱ\n302'], [2, '화학Ⅱ\n303'], [13, '화학Ⅱ\n303'], [22, '화학Ⅱ\n303'],
+      [3, '생활과 과학\n304'], [17, '생활과 과학\n304'], [4, '생활과 과학\n306'], [30, '생활과 과학\n306']].forEach(([i, v]) => { cells[i] = v; });
+    return { data: [{ teacher_name: '시범교사', cells }], error: null };
+  }
   if (table === 'app_settings' && filters.some(f => f.val === 'class_structure')) return { data: { value: { gradeCount: 3, classCounts: [8, 9, 10] } }, error: null };
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
   return { data: null, error: null };
@@ -191,27 +198,43 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('누르면 수행평가 화면 + 처음 안내(과목 만들기)', await P.isVisible('#pa-page') && /첫 과목 만들기/.test(await P.innerText('#pa-pane')) && !(await P.isVisible('#main-dashboard')));
 
   // ===== ① 과목·학생 =====
-  await P.click('#pa-pane button:has-text("첫 과목 만들기")'); await answerPrompt(P, '화학Ⅱ');
+  await P.click('#pa-pane button:has-text("첫 과목 만들기")'); await P.waitForSelector('#pa-modal', { state: 'visible' });
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '0-modal.png') });
+  const ttTxt = await P.innerText('#pa-modal');
+  check('과목 더하기 창: 내 시간표의 과목(시수·반)', /화학Ⅱ\s*주 3시간 · 1반·2반·3반/.test(ttTxt) && /생활과 과학\s*주 2시간 · 4반·6반/.test(ttTxt), ttTxt);
+  await P.click('#pa-modal .pa-tt:has-text("화학Ⅱ")'); await P.waitForTimeout(200);
   let c = await cfg(P);
-  check('과목 만들기: 이름·1반·한도 1500', c.subjects.length === 1 && c.subjects[0].name === '화학Ⅱ' && c.subjects[0].classes[0].name === '1반' && c.subjects[0].limit === 1500, c);
-  await setVal(P, '#pa-f-neis', '화학Ⅱ(3)');
-  check('나이스 과목 칸 저장 + 칸을 벗어나도 다음 칸에 커서', (await cfg(P)).subjects[0].neis === '화학Ⅱ(3)' && await P.evaluate(() => document.activeElement && document.activeElement.id === 'pa-f-limit'));
+  check('시간표에서 고르면: 과목 이름·시수 3·반 1·2·3반(3학년)·한도 1500', c.subjects.length === 1 && c.subjects[0].name === '화학Ⅱ' && c.subjects[0].hours === 3 && c.subjects[0].classes.map(x => x.name + x.g + x.c).join() === '1반31,2반32,3반33' && c.subjects[0].limit === 1500 && !(await P.isVisible('#pa-modal')), c);
+  check('나이스 과목 칸 = 과목(시수) "화학Ⅱ(3)"', /화학Ⅱ\(3\)/.test(await P.innerText('#pa-pane')) && (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(3)');
+  await setVal(P, '#pa-f-hours', '4');
+  check('시수 고치면 나이스 과목 칸도 + 칸을 벗어나도 다음 칸에 커서', (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(4)' && await P.evaluate(() => document.activeElement && document.activeElement.id === 'pa-f-limit'));
+  await setVal(P, '#pa-f-hours', '3');
+  check('명렬표 고르기: 이 반(3학년 1반)이 처음부터 골라져 있음', (await P.inputValue('#pa-pick-g')) === '3' && (await P.inputValue('#pa-pick-c')) === '1');
   await P.fill('#pa-paste', '반\t번호\t이름\n1\t1\t가나다\n1\t2\t라마바\n3\t10\t사아자\n30605\t차카타\n1-7 파하가\n이름만');
-  await P.click('#pa-pane button:has-text("붙여 넣은 학생 더하기")'); await P.waitForTimeout(200);
+  check('붙여 넣기 단추는 하나', await P.evaluate(() => [...document.querySelectorAll('#pa-pane button')].filter(b => /붙여 넣은 학생/.test(b.textContent)).length) === 1);
+  await P.click('#pa-pane button:has-text("붙여 넣은 학생 넣기")'); await P.waitForTimeout(200);
   let ro = await P.evaluate(() => { const s = paSub(), x = paCls(s); return paRoster(s.id, x.id); });
   check('붙여 넣기: 반·번호·이름 / 학번 / "1-7 이름" 읽고 머리 줄은 뺌, 반·번호 순', ro.map(s => s.c + '-' + s.n + ' ' + s.name).join(',') === '1-1 가나다,1-2 라마바,1-7 파하가,3-10 사아자,6-5 차카타' && ro.find(s => s.name === '차카타').g === 3, ro);
   check('붙여 넣기 결과 안내', /5명 넣음/.test(await P.innerText('#pa-paste-msg')), await P.innerText('#pa-paste-msg'));
-  // 명렬표에서 고르기: 3학년 2반
+  // 명렬표에서 고르기: 3학년 2반 — 처음엔 체크 안 됨
   await P.waitForSelector('#pa-pick-g option', { state: 'attached' }); await P.selectOption('#pa-pick-g', '3'); await P.waitForTimeout(150); await P.selectOption('#pa-pick-c', '2'); await P.waitForTimeout(300);
-  check('명렬표 고르기: 3학년 2반 6명 체크된 채로', await P.evaluate(() => document.querySelectorAll('#pa-pick-list input:checked').length) === 6);
+  check('명렬표 고르기: 3학년 2반 6명, 처음엔 체크 안 됨', await P.evaluate(() => document.querySelectorAll('#pa-pick-list input').length) === 6 && await P.evaluate(() => document.querySelectorAll('#pa-pick-list input:checked').length) === 0);
+  await P.click('#pa-pane button:has-text("모두 체크")');
   await P.evaluate(() => { document.querySelectorAll('#pa-pick-list input')[5].checked = false; });
   await P.click('#pa-pane button:has-text("체크한 학생 더하기")'); await P.waitForTimeout(300);
   ro = await P.evaluate(() => { const s = paSub(), x = paCls(s); return paRoster(s.id, x.id); });
-  check('명렬표에서 체크한 5명만 더함(반 순서대로)', ro.length === 10 && ro.filter(s => s.c === 2).length === 5 && ro[3].name === '이반학생1', ro.map(s => s.name));
-  // 둘째 반
-  await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, '2반');
-  check('수업반 더하기 → 그 반으로', (await P.evaluate(() => paCls(paSub()).name)) === '2반' && (await P.innerText('#pa-classes')).includes('2반'));
-  await P.click('#pa-classes [data-cid] >> nth=0'); await P.waitForTimeout(150);
+  check('명렬표에서 체크한 5명만 더함(반 순서대로), 시간표 반 이름(1반)은 그대로', ro.length === 10 && ro.filter(s => s.c === 2).length === 5 && ro[3].name === '이반학생1' && (await P.evaluate(() => paCls(paSub()).name)) === '1반', ro.map(s => s.name));
+  // 직접 입력한 과목: 반 이름이 안 정해진 "수업반" → 한 반을 통째로 넣으면 그 반 이름
+  await P.click('#pa-pane button:has-text("과목 더하기")'); await P.waitForSelector('#pa-modal', { state: 'visible' });
+  await P.fill('#pa-new-name', '물리학Ⅰ'); await P.fill('#pa-new-hours', '2'); await P.click('#pa-modal button:has-text("만들기")'); await P.waitForTimeout(250);
+  check('직접 입력: 물리학Ⅰ(2), 반 하나 "수업반"', (await P.evaluate(() => paNeisName(paSub()))) === '물리학Ⅰ(2)' && (await P.evaluate(() => paSub().classes.map(x => x.name + (x.auto ? '*' : '')).join())) === '수업반*');
+  await P.waitForSelector('#pa-pick-g option', { state: 'attached' }); await P.selectOption('#pa-pick-g', '3'); await P.waitForTimeout(150); await P.selectOption('#pa-pick-c', '2'); await P.waitForTimeout(300);
+  await P.click('#pa-pane button:has-text("모두 체크")'); await P.click('#pa-pane button:has-text("체크한 학생 더하기")'); await P.waitForTimeout(300);
+  check('한 반(3학년 2반)을 통째로 넣으면 수업반 이름이 "2반"으로', (await P.evaluate(() => paSub().classes.map(x => x.name + (x.auto ? '*' : '') + x.c).join())) === '2반2' && (await P.innerText('#pa-classes')).includes('2반'));
+  for (const n of ['7반', '4반', '6반']) { await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, n); }
+  check('반을 7·4·6 순서로 더해도 숫자 순(2·4·6·7반)', (await P.evaluate(() => paSub().classes.map(x => x.name).join())) === '2반,4반,6반,7반' && (await P.evaluate(() => [...document.querySelectorAll('#pa-classes [data-cid]')].map(b => b.childNodes[0].textContent).join())) === '2반,4반,6반,7반');
+  await P.selectOption('#pa-subj', (await cfg(P)).subjects[0].id); await P.waitForTimeout(200);
+  check('과목 고르기로 화학Ⅱ로 돌아옴(1반)', (await P.evaluate(() => paSub().name + paCls(paSub()).name)) === '화학Ⅱ1반');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
   // ===== ② 영역·배점 =====
@@ -245,6 +268,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
+  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 "반응속도(15점)" 아래 넣을 수 있는 점수', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\(15점\)\s*15~1/.test(await P.innerText('#pa-pane thead')) && /전기화학\(15점\)\s*15, 10, 5/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
   check('Enter = 아래 칸으로', await P.evaluate(() => document.activeElement.dataset.r === '1' && document.activeElement.dataset.col === '0'));
   await P.keyboard.type('16');
   check('배점에 없는 점수는 치는 동안 빨갛게', await P.evaluate(() => document.activeElement.classList.contains('bad')));
@@ -260,8 +284,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   const pmsg = await readAlert(P);
   const s2 = await P.evaluate(() => { const s = paSub(), x = paCls(s), a = s.areas[0]; const v = paScores(s.id, x.id, a.id); return paRoster(s.id, x.id).map(st => (v[paSk(st)] && v[paSk(st)].v || {})[a.subs[0].id]); });
   check('붙여 넣기: 3칸 넣고 99는 빼고 알림', s2.slice(1, 5).join() === '14,13,,12' && /3칸을 넣었어요/.test(pmsg) && /"99"/.test(pmsg), { s2, pmsg });
-  // 최하점
+  // 최하점 — 체크해도 칸이 움직이지 않음
+  const colX = () => P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-score-table thead th')].map(th => Math.round(th.getBoundingClientRect().left)).join());
+  const x0 = await colX();
   await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
+  check('최하점을 체크해도 칸 위치 그대로', (await colX()) === x0, [x0, await colX()]);
   check('최하점 체크 → 합계 2(최하) + 점수 칸 잠김', /^2/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].every(i => i.disabled)));
   // 평가내용
   await P.fill('#pa-pane .pa-note[data-k="1-1"]', '반응 속도에 영향을 주는 요인을 실험으로 탐구함.'); await P.press('#pa-pane .pa-note[data-k="1-1"]', 'Tab'); await P.waitForTimeout(150);
@@ -330,7 +357,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);
   const keys = Object.keys(await lsKeys(P, '^pa-'));
-  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 1 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
+  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 2 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
   check('서버(내 계정)로 올라감', serverVal(TB, 'pa-cfg') && keys.filter(k => k.startsWith('pa-sc-')).every(k => serverVal(TB, k)), keys.map(k => [k, !!serverVal(TB, k)]));
 
   // 다시 열면 그대로(새로고침)
@@ -346,7 +373,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#rail-pa-btn'); await P.waitForTimeout(200); await P.click('#pa-tabs [data-tab="setup"]'); await P.waitForTimeout(200);
   await P.click('#pa-pane button:has-text("이 과목 지우기")'); await answerConfirm(P, true); await answerConfirm(P, true); await P.waitForTimeout(200);
   const left = Object.keys(await lsKeys(P, '^pa-(ro|sc|nt|st|drf|fin)-'));
-  check('과목 지우기(두 번 확인): 그 과목 자료 모두 지움', left.length === 0 && (await cfg(P)).subjects.length === 0 && /첫 과목 만들기/.test(await P.innerText('#pa-pane')), left);
+  check('과목 지우기(두 번 확인): 그 과목 자료만 지우고 다른 과목(물리학Ⅰ)으로', left.length === 1 && /^pa-ro-/.test(left[0]) && (await cfg(P)).subjects.map(x => x.name).join() === '물리학Ⅰ' && (await P.inputValue('#pa-f-name')) === '물리학Ⅰ', left);
 
   check('페이지 오류 없음', d.errors.length === 0, d.errors);
   await P.screenshot({ path: 'pa-test.png' });

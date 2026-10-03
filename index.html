@@ -624,7 +624,22 @@
     .pa-bad { color: var(--alert); }
     .pa-lowt { color: #B45309; }
     .pa-mtag { font-size: 9.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 5px; padding: 0 4px; margin-left: 3px; vertical-align: 2px; }
-    .pa-note { min-width: 300px; resize: vertical; min-height: 34px; }
+    .pa-note { min-width: 0; resize: vertical; min-height: 34px; }
+    .pa-score-table { table-layout: fixed; width: 100%; }
+    .pa-score-table th.pa-th-wrap { white-space: normal; line-height: 1.3; }
+    .pa-th-pts { font-size: 10.5px; font-weight: 700; color: #1E7B3A; margin-top: 2px; letter-spacing: -0.01em; word-break: keep-all; }
+    .pa-score-table td.pa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pa-modal { position: fixed; inset: 0; z-index: 9000; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
+    .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; }
+    .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
+    .pa-modal-box #pa-new-hours { width: 90px; flex: none; }
+    .pa-modal-box #pa-new-name { width: auto; flex: 1; }
+    .pa-tt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .pa-tt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; border: 1.5px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 10px; padding: 9px 12px; cursor: pointer; font-family: inherit; }
+    .pa-tt b { font-size: 14px; }
+    .pa-tt span { font-size: 11.5px; color: var(--text-sub); font-weight: 700; }
+    .pa-tt:hover:not(:disabled) { border-color: var(--accent-color); background: var(--accent-soft); }
+    .pa-tt.dup { opacity: .5; cursor: default; }
     .pa-note:focus { min-height: 0; }
     .pa-sum-table tr.pa-miss td { background: #FFFBEB; }
     .pa-chk { font-size: 11.5px; font-weight: 700; white-space: nowrap; color: #B45309; }
@@ -13884,8 +13899,13 @@
     const c = { subjects: Array.isArray(v.subjects) ? v.subjects : [] };
     c.subjects = c.subjects.filter(function(s) { return s && s.id; }).map(function(s) {
       return {
-        id: String(s.id), name: String(s.name || '과목'), neis: String(s.neis || ''), limit: Number(s.limit) > 0 ? Number(s.limit) : PA_LIMIT,
-        classes: (Array.isArray(s.classes) ? s.classes : []).filter(function(x) { return x && x.id; }).map(function(x) { return { id: String(x.id), name: String(x.name || '반') }; }),
+        id: String(s.id), name: String(s.name || '과목'), limit: Number(s.limit) > 0 ? Number(s.limit) : PA_LIMIT,
+        // 시수(주당 시간) — 나이스 과목 칸 = "과목(시수)". 예전 설정의 neis "화학Ⅱ(3)"에서 시수를 꺼내 옮김.
+        hours: Number(s.hours) > 0 ? Number(s.hours) : (String(s.neis || '').match(/\((\d+)\)\s*$/) || [])[1] ? Number(String(s.neis).match(/\((\d+)\)\s*$/)[1]) : null,
+        classes: paSortClasses((Array.isArray(s.classes) ? s.classes : []).filter(function(x) { return x && x.id; }).map(function(x) {
+          // auto = 이름을 아직 안 정한 반(처음 반) — 명렬표에서 한 반을 통째로 넣으면 그 반 이름으로 바뀜. g·c = 원래 학년·반(시간표 교실 301 → 3학년 1반)
+          return { id: String(x.id), name: String(x.name || '반'), auto: !!x.auto, g: Number(x.g) || null, c: Number(x.c) || null };
+        })),
         areas: (Array.isArray(s.areas) ? s.areas : []).filter(function(a) { return a && a.id; }).map(function(a) {
           return {
             id: String(a.id), name: String(a.name || '영역'), min: a.min === '' || a.min == null || !isFinite(Number(a.min)) ? null : Number(a.min), note: a.note !== false,
@@ -13896,7 +13916,34 @@
     });
     return c;
   }
-  function paSaveCfg(c) { paSet('pa-cfg', JSON.stringify({ subjects: c.subjects })); }
+  function paSaveCfg(c) { c.subjects.forEach(function(s) { s.classes = paSortClasses(s.classes); }); paSet('pa-cfg', JSON.stringify({ subjects: c.subjects })); }
+  // 반은 이름의 숫자 순(4반·7반·6반으로 넣어도 4·6·7)
+  function paSortClasses(list) { return list.slice().sort(function(a, b) { return String(a.name).localeCompare(String(b.name), 'ko', { numeric: true }); }); }
+  function paNeisName(sub) { return sub.name + (sub.hours ? '(' + sub.hours + ')' : ''); }
+  // 내 시간표에서 과목 → 교실(반)·시수: 칸 = "과목\n교실". 교실 "302" = 3학년 2반. 시수 = 한 반이 일주일에 든 칸 수(가장 흔한 값).
+  function paTtSubjects() {
+    const all = window.allSchedules || {}, t = window.currentTeacher || {};
+    let me = null; try { me = localStorage.getItem('my-n'); } catch (e) {}
+    const name = [me, t.name].find(function(n) { return n && Array.isArray(all[n]); });
+    if (!name) return [];
+    const map = {};
+    all[name].forEach(function(cell) {
+      const parts = String(cell || '').split('\n'), subj = (parts[0] || '').trim(), room = (parts[1] || '').trim();
+      if (!subj) return;
+      const m = map[subj] = map[subj] || { name: subj, rooms: {} };
+      m.rooms[room] = (m.rooms[room] || 0) + 1;
+    });
+    return Object.keys(map).map(function(k) {
+      const m = map[k], rooms = Object.keys(m.rooms).filter(Boolean).sort(function(a, b) { return a.localeCompare(b, 'ko', { numeric: true }); });
+      const cnt = {}; (rooms.length ? rooms : ['']).forEach(function(r) { const n = m.rooms[r] || 0; cnt[n] = (cnt[n] || 0) + 1; });
+      const hours = Number(Object.keys(cnt).sort(function(a, b) { return cnt[b] - cnt[a] || b - a; })[0]) || null;
+      return { name: m.name, hours: hours, rooms: rooms };
+    }).sort(function(a, b) { return a.name.localeCompare(b.name, 'ko'); });
+  }
+  function paRoomClass(room) {
+    const m = String(room).match(/^(\d)(\d{2})$/);
+    return m ? { name: Number(m[2]) + '반', g: Number(m[1]), c: Number(m[2]) } : { name: String(room), g: null, c: null };
+  }
   function paUi() { const v = paJson('pa-ui', {}); return v && typeof v === 'object' ? v : {}; }
   function paSetUi(patch) { paSet('pa-ui', JSON.stringify(Object.assign(paUi(), patch))); }
   function paSub(c) { c = c || paCfg(); const u = paUi(); return c.subjects.find(function(s) { return s.id === u.s; }) || c.subjects[0] || null; }
@@ -14079,22 +14126,73 @@
   }
 
   // ----- ① 과목·학생 -----
-  async function paAddSubject() {
-    const name = String(await customPrompt('과목 이름 (예: 화학Ⅱ, 물리학Ⅰ)', '') || '').trim();
-    if (!name) return;
+  // 과목 더하기 창: 내 시간표의 과목을 누르면 과목 이름·시수·반(교실)이 한 번에, 없으면 직접 입력
+  function paAddSubject() {
+    let ov = document.getElementById('pa-modal');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
+    const have = paCfg().subjects.map(function(x) { return paNorm(x.name); });
+    const tt = paTtSubjects();
+    window.__paTt = tt;
+    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📚 과목 더하기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+      '<div class="pa-sub-title">🗓️ 내 시간표에서 고르기 <span class="se-muted">과목 이름·시수·반이 한 번에 들어가요</span></div>' +
+      (tt.length ? '<div class="pa-tt-list">' + tt.map(function(x, i) {
+        const dup = have.indexOf(paNorm(x.name)) !== -1;
+        return '<button class="pa-tt' + (dup ? ' dup' : '') + '" data-i="' + i + '" onclick="paAddFromTt(' + i + ')"' + (dup ? ' disabled title="이미 있는 과목"' : '') + '><b>' + paEsc(x.name) + '</b>' +
+          '<span>' + (x.hours ? '주 ' + x.hours + '시간' : '') + (x.rooms.length ? ' · ' + x.rooms.map(function(r) { return paRoomClass(r).name; }).join('·') : '') + (dup ? ' · 있음' : '') + '</span></button>';
+      }).join('') + '</div>' : '<div class="se-muted pa-empty" style="padding:12px;">내 시간표를 찾지 못했어요(홈 "내 시간표"에 내 이름이 골라져 있어야 해요). 아래에서 직접 입력하세요.</div>') +
+      '<div class="pa-sub-title" style="margin-top:14px;">✏️ 직접 입력</div>' +
+      '<div class="pa-row"><input id="pa-new-name" class="lp-input" style="flex:1;" placeholder="과목 이름 (예: 화학Ⅱ)"><input id="pa-new-hours" class="lp-input" type="number" min="1" max="10" style="width:90px;" placeholder="시수">' +
+      '<button class="top-btn pa-primary" onclick="paAddSubjectManual()">만들기</button></div>' +
+      '<div class="se-muted" style="margin-top:6px;">시수 = 일주일 수업 시간(학점). 나이스 일괄등록 파일의 과목 칸이 "화학Ⅱ(3)"처럼 만들어져요.</div></div>';
+    ov.style.display = 'flex';
+  }
+  function paCloseModal() { const ov = document.getElementById('pa-modal'); if (ov) ov.style.display = 'none'; }
+  function paCreateSubject(name, hours, classes) {
     const c = paCfg();
-    const s = { id: paNewId(), name: name, neis: '', limit: PA_LIMIT, classes: [{ id: paNewId(), name: '1반' }], areas: [] };
+    const s = { id: paNewId(), name: name, hours: hours || null, limit: PA_LIMIT, classes: classes.length ? classes : [{ id: paNewId(), name: '수업반', auto: true }], areas: [] };
+    s.classes.forEach(function(x) { x.id = x.id || paNewId(); });
     c.subjects.push(s);
     paSaveCfg(c);
-    paSetUi({ s: s.id, c: s.classes[0].id, tab: 'setup' });
+    const first = paSortClasses(s.classes)[0];
+    paSetUi({ s: s.id, c: first.id, tab: 'setup' });
+    paCloseModal();
     paRenderAll();
+  }
+  function paAddFromTt(i) {
+    const x = (window.__paTt || [])[i];
+    if (!x) return;
+    paCreateSubject(x.name, x.hours, x.rooms.map(function(r) { const k = paRoomClass(r); return { name: k.name, g: k.g, c: k.c }; }));
+  }
+  function paAddSubjectManual() {
+    const name = String(document.getElementById('pa-new-name').value || '').trim(), h = Math.round(Number(document.getElementById('pa-new-hours').value));
+    if (!name) { document.getElementById('pa-new-name').focus(); return; }
+    paCreateSubject(name, h > 0 && h <= 20 ? h : null, []);
+  }
+  // 이미 만든 과목에 시간표의 반(교실)을 더 가져오기 — 없는 반만
+  function paClassesFromTt() {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    const x = paTtSubjects().find(function(t) { return paNorm(t.name) === paNorm(s.name); });
+    if (!x) { customAlert('내 시간표에 "' + s.name + '" 과목이 없어요.'); return; }
+    let added = 0;
+    x.rooms.forEach(function(r) {
+      const k = paRoomClass(r);
+      if (s.classes.some(function(y) { return (y.g === k.g && y.c === k.c && k.c) || y.name === k.name; })) return;
+      s.classes.push({ id: paNewId(), name: k.name, g: k.g, c: k.c }); added++;
+    });
+    s.classes = s.classes.filter(function(y) { return !(y.auto && !paRoster(s.id, y.id).length && added); }); // 비어 있는 이름 없는 반은 치움
+    if (!s.hours && x.hours) s.hours = x.hours;
+    paSaveCfg(c);
+    if (!s.classes.some(function(y) { return y.id === paUi().c; }) && s.classes[0]) paSetUi({ c: paSortClasses(s.classes)[0].id });
+    paRenderAll();
+    customAlert(added ? '시간표에서 반 ' + added + '개를 가져왔어요.' : '시간표의 반이 이미 다 있어요.');
   }
   function paEditSubject(field, value) {
     const c = paCfg(), s = paSub(c);
     if (!s) return;
     if (field === 'name') { value = String(value || '').trim(); if (!value) { paRenderAll(); return; } }
     if (field === 'limit') { value = Math.round(Number(value)); if (!(value >= 100 && value <= 6000)) { paRenderAll(); return; } }
-    if (field === 'neis') value = String(value || '').trim();
+    if (field === 'hours') { value = String(value).trim() === '' ? null : Math.round(Number(value)); if (value != null && !(value > 0 && value <= 20)) { paRenderAll(); return; } }
     s[field] = value;
     paSaveCfg(c);
     paRenderSoon();
@@ -14133,7 +14231,7 @@
     if (!x) return;
     const name = String(await customPrompt('수업반 이름 바꾸기', x.name) || '').trim();
     if (!name || name === x.name) return;
-    x.name = name;
+    x.name = name; x.auto = false;
     paSaveCfg(c);
     paRenderAll();
   }
@@ -14151,12 +14249,12 @@
   function paSetupHtml(sub, cls) {
     let h = '<div class="pa-scroll">';
     h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">📚 과목</span><span class="pa-tools">' +
-      '<button class="top-btn" onclick="paAddSubject()">＋ 과목 더하기</button><button class="top-btn pa-danger" onclick="paDeleteSubject()">🗑 이 과목 지우기</button></span></div>' +
+      '<button class="top-btn" onclick="paAddSubject()">＋ 과목 더하기</button><button class="top-btn" onclick="paClassesFromTt()" title="내 시간표에서 이 과목의 반(교실)을 가져와 없는 반만 더해요">🗓️ 시간표에서 반 가져오기</button><button class="top-btn pa-danger" onclick="paDeleteSubject()">🗑 이 과목 지우기</button></span></div>' +
       '<div class="pa-form">' +
       '<label>과목 이름<input class="lp-input" id="pa-f-name" value="' + paEsc(sub.name) + '" onchange="paEditSubject(\'name\', this.value)"></label>' +
-      '<label>나이스 과목 칸<input class="lp-input" id="pa-f-neis" value="' + paEsc(sub.neis) + '" placeholder="' + paEsc(sub.name) + ' (예: 화학Ⅱ(3))" onchange="paEditSubject(\'neis\', this.value)"></label>' +
+      '<label>시수 (주당 시간)<input class="lp-input" type="number" min="1" max="20" id="pa-f-hours" value="' + (sub.hours || '') + '" placeholder="예: 3" onchange="paEditSubject(\'hours\', this.value)"></label>' +
       '<label>세특 바이트 한도<input class="lp-input" type="number" id="pa-f-limit" min="100" max="6000" step="1" value="' + sub.limit + '" onchange="paEditSubject(\'limit\', this.value)"></label>' +
-      '</div><div class="se-muted">나이스 과목 칸 = 나이스 일괄등록 파일의 "과목" 칸에 들어갈 글(받은 파일과 똑같이, 비우면 과목 이름). 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
+      '</div><div class="se-muted">나이스 일괄등록 파일의 과목 칸: <b>' + paEsc(paNeisName(sub)) + '</b> (과목 이름(시수)) · 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
     if (!cls) return h + '<div class="se-box se-sbox pa-empty">수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div></div>';
     const ro = paRoster(sub.id, cls.id);
     h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">👥 ' + paEsc(cls.name) + ' 학생 <span class="pa-badge">' + ro.length + '명</span></span><span class="pa-tools">' +
@@ -14171,8 +14269,8 @@
     h += '</div><div class="pa-col">';
     h += '<div class="pa-sub-title">📋 엑셀에서 붙여 넣기</div>' +
       '<textarea id="pa-paste" class="lp-input" rows="6" placeholder="엑셀에서 반·번호·이름(또는 학번·이름) 칸을 복사해 붙여 넣으세요.&#10;예) 1⇥3⇥홍길동   /   30103⇥홍길동   /   1-3 홍길동"></textarea>' +
-      '<div class="pa-row"><button class="top-btn pa-primary" onclick="paPasteRoster(false)">붙여 넣은 학생 더하기</button><button class="top-btn" onclick="paPasteRoster(true)">이것으로 바꾸기</button><span id="pa-paste-msg" class="se-muted"></span></div>';
-    h += '<div class="pa-sub-title" style="margin-top:14px;">🧑‍🎓 명렬표에서 고르기 <span class="se-muted">원반 수업이면 반 전체를 한 번에</span></div>' +
+      '<div class="pa-row"><button class="top-btn pa-primary" onclick="paPasteRoster()">붙여 넣은 학생 넣기</button><span id="pa-paste-msg" class="se-muted">이미 있는 학생(같은 반·번호)은 그대로 둬요 · 다시 넣으려면 "학생 모두 빼기" 뒤에</span></div>';
+    h += '<div class="pa-sub-title" style="margin-top:14px;">🧑‍🎓 명렬표에서 고르기 <span class="se-muted">원반 수업이면 "모두 체크" → 더하기</span></div>' +
       '<div class="pa-row"><select id="pa-pick-g" class="mini-select" onchange="paPickLoad()"></select><select id="pa-pick-c" class="mini-select" onchange="paPickLoad()"></select>' +
       '<button class="top-btn" onclick="paPickAll(true)">모두 체크</button><button class="top-btn" onclick="paPickAll(false)">모두 해제</button></div>' +
       '<div id="pa-pick-list" class="pa-pick-list"></div><div class="pa-row"><button class="top-btn pa-primary" onclick="paPickAdd()">체크한 학생 더하기</button><span id="pa-pick-msg" class="se-muted"></span></div>';
@@ -14182,6 +14280,12 @@
   }
   function paMergeRoster(sid, cid, add, replace) {
     const cur = replace ? [] : paRoster(sid, cid);
+    // 이름을 아직 안 정한 반(auto)에 처음 넣는 학생이 모두 한 반이면 → 수업반 이름을 그 반으로(원반 수업)
+    const c0 = add.length && add.every(function(s) { return s.c && s.c === add[0].c && (s.g || null) === (add[0].g || null); }) ? add[0] : null;
+    if (!cur.length && c0) {
+      const cfg = paCfg(), sub = cfg.subjects.find(function(x) { return x.id === sid; }), cls = sub && sub.classes.find(function(x) { return x.id === cid; });
+      if (cls && cls.auto && !sub.classes.some(function(x) { return x.id !== cid && x.name === c0.c + '반'; })) { cls.name = c0.c + '반'; cls.g = c0.g || null; cls.c = c0.c; cls.auto = false; paSaveCfg(cfg); }
+    }
     let added = 0, dup = 0;
     add.forEach(function(s) {
       const k = paSk(s);
@@ -14191,13 +14295,12 @@
     paSaveRoster(sid, cid, cur);
     return { added: added, dup: dup };
   }
-  async function paPasteRoster(replace) {
+  async function paPasteRoster() {
     const sub = paSub(), cls = paCls(sub), ta = document.getElementById('pa-paste');
     if (!cls || !ta) return;
     const p = paParseRosterText(ta.value);
     if (!p.list.length) { customAlert('학생을 찾지 못했어요. 한 줄에 한 명씩 반·번호·이름(또는 학번·이름)이 있게 붙여 넣어 주세요.'); return; }
-    if (replace && paRoster(sub.id, cls.id).length && !(await customConfirm('지금 학생 명단을 붙여 넣은 ' + p.list.length + '명으로 바꿀까요?\n(빠지는 학생의 점수는 남아 있다가 다시 넣으면 돌아와요)'))) return;
-    const r = paMergeRoster(sub.id, cls.id, p.list, replace);
+    const r = paMergeRoster(sub.id, cls.id, p.list, false);
     paRenderAll();
     const m = document.getElementById('pa-paste-msg');
     if (m) m.textContent = r.added + '명 넣음' + (r.dup ? ' · 이미 있는 ' + r.dup + '명은 그대로' : '') + (p.bad.length ? ' · 못 읽은 줄 ' + p.bad.length + '개' : '');
@@ -14219,10 +14322,10 @@
     const gs = document.getElementById('pa-pick-g'), cs = document.getElementById('pa-pick-c');
     if (!gs || !cs) return;
     const st = await ensureClassStructureLoaded();
-    const u = paUi(), t = window.currentTeacher || {};
-    const g0 = Number(u.pg) || Number(t.homeroom_grade) || 1;
+    const u = paUi(), t = window.currentTeacher || {}, cls = paCls(paSub());
+    const g0 = (cls && cls.g) || Number(u.pg) || Number(t.homeroom_grade) || 1;
     gs.innerHTML = Array.from({ length: st.gradeCount || 3 }, function(_, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === g0 ? ' selected' : '') + '>' + (i + 1) + '학년</option>'; }).join('');
-    paPickFillClasses(Number(u.pc) || 1);
+    paPickFillClasses((cls && cls.c) || Number(u.pc) || 1);
     paPickLoad();
   }
   function paPickFillClasses(want) {
@@ -14249,7 +14352,7 @@
     const sub = paSub(), cls = paCls(sub), have = cls ? paRoster(sub.id, cls.id).map(paSk) : [];
     box.innerHTML = rows.length ? rows.map(function(s, i) {
       const in_ = have.indexOf(paSk(s)) !== -1;
-      return '<label class="pa-pick' + (in_ ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (in_ ? ' disabled' : ' checked') + '>' + s.n + ' ' + paEsc(s.name) + (in_ ? ' <span class="se-muted">(있음)</span>' : '') + '</label>';
+      return '<label class="pa-pick' + (in_ ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (in_ ? ' disabled' : '') + '>' + s.n + ' ' + paEsc(s.name) + (in_ ? ' <span class="se-muted">(있음)</span>' : '') + '</label>';
     }).join('') : '<div class="se-muted">' + g + '학년 ' + c + '반 명렬표가 비어 있어요.</div>';
   }
   function paPickAll(on) { document.querySelectorAll('#pa-pick-list input:not(:disabled)').forEach(function(x) { x.checked = on; }); }
@@ -14361,16 +14464,19 @@
     const a = paCurArea(sub), sc = paScores(sub.id, cls.id, a.id);
     let h = '<div class="pa-area-tabs top-btn-cluster">' + sub.areas.map(function(x) {
       const s2 = paScores(sub.id, cls.id, x.id), done = ro.filter(function(st) { return paAreaResult(x, s2[paSk(st)]).done; }).length;
-      return '<button class="top-btn' + (x.id === a.id ? ' theme-active' : '') + '" onclick="paPickArea(\'' + x.id + '\')">' + paEsc(x.name) + ' <span class="pa-cnt' + (done === ro.length ? ' ok' : '') + '">' + done + '/' + ro.length + '</span></button>';
+      return '<button class="top-btn' + (x.id === a.id ? ' theme-active' : '') + '" onclick="paPickArea(\'' + x.id + '\')">' + paEsc(x.name) + '(' + paAreaMax(x) + '점) <span class="pa-cnt' + (done === ro.length ? ' ok' : '') + '" title="다 넣은 학생">' + done + '/' + ro.length + '</span></button>';
     }).join('') + '</div>';
     const noPts = a.subs.filter(function(x) { return !paParsePts(x.pts).length; });
-    h += '<div class="se-muted pa-hint">' + a.subs.map(function(x) { return '<b>' + paEsc(x.name || '세부') + '</b> ' + paEsc(paPtsText(paParsePts(x.pts)) || '점수 없음'); }).join(' · ') +
-      (a.min != null ? ' · 최하점 <b>' + a.min + '</b>' : '') + ' — Enter = 아래 칸, 엑셀에서 한 열 복사해 붙여 넣기도 돼요</div>';
+    h += '<div class="se-muted pa-hint">' + (a.min != null ? '최하점 <b>' + a.min + '점</b>(미제출·미응시는 체크) · ' : '') + '칸 아래 회색 숫자 = 넣을 수 있는 점수 · Enter = 아래 칸 · 엑셀에서 한 열 복사해 붙여 넣기도 돼요</div>';
     if (noPts.length) h += '<div class="pa-warn">⚠️ 줄 수 있는 점수가 없는 세부영역이 있어요 — ② 영역·배점에서 적어 주세요.</div>';
-    h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-score-table"><thead><tr><th>반</th><th>번호</th><th>이름</th>' +
-      (a.min != null ? '<th title="미제출·미응시 — 합계를 최하점(' + a.min + ')으로">최하점</th>' : '') +
-      a.subs.map(function(x) { return '<th>' + paEsc(x.name || '세부') + '<div class="pa-th-sub">' + (paSubMax(x) || '-') + '점</div></th>'; }).join('') +
-      '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th style="min-width:320px;">평가내용</th>' : '') + '</tr></thead><tbody>';
+    // 칸 폭을 미리 정해 둠(table-layout: fixed) — 최하점을 체크해 합계 칸 글이 바뀌어도 칸이 움직이지 않게
+    const subW = 108, fixedW = 46 + 50 + 92 + (a.min != null ? 58 : 0) + a.subs.length * subW + 86;
+    h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-score-table" style="min-width:' + (fixedW + (a.note ? 260 : 0)) + 'px;' + (a.note ? '' : ' width:' + fixedW + 'px;') + '"><colgroup><col style="width:46px"><col style="width:50px"><col style="width:92px">' +
+      (a.min != null ? '<col style="width:58px">' : '') + a.subs.map(function() { return '<col style="width:' + subW + 'px">'; }).join('') + '<col style="width:86px">' + (a.note ? '<col>' : '') + '</colgroup>' +
+      '<thead><tr><th>반</th><th>번호</th><th>이름</th>' +
+      (a.min != null ? '<th title="미제출·미응시 — 합계를 최하점(' + a.min + ')으로">최하점<div class="pa-th-sub">' + a.min + '점</div></th>' : '') +
+      a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.join(', ')) + '">' + paEsc(x.name || '세부') + '(' + (p.length ? p[0] : 0) + '점)<div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
+      '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th>평가내용</th>' : '') + '</tr></thead><tbody>';
     ro.forEach(function(st, ri) {
       const k = paSk(st), rec = sc[k] || {}, v = rec.v || {}, r = paAreaResult(a, rec);
       h += '<tr data-k="' + k + '"><td class="se-c">' + (st.c || '') + '</td><td class="se-c">' + (st.n || '') + '</td><td class="se-c pa-name">' + paEsc(st.name) + '</td>';
@@ -14559,7 +14665,7 @@
       sub.areas.forEach(function(a, i) { head(ws.getCell(1, 5 + i), a.name); head(ws.getCell(2, 5 + i), '만점(' + paAreaMax(a) + ')'); head(ws.getCell(3, 5 + i), '점수'); });
       const rows = paStudentTotals(sub, cls);
       rows.forEach(function(r, ri) {
-        const vals = [sub.neis || sub.name, String(r.st.c || ''), String(r.st.n || ''), r.st.name].concat(r.rs.map(paScoreText));
+        const vals = [paNeisName(sub), String(r.st.c || ''), String(r.st.n || ''), r.st.name].concat(r.rs.map(paScoreText));
         vals.forEach(function(v, ci) {
           const cell = ws.getCell(4 + ri, ci + 1);
           cell.value = v; cell.numFmt = '@'; cell.border = border;
@@ -14567,7 +14673,7 @@
         });
       });
       const buf = await wb.xlsx.writeBuffer();
-      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가일괄등록_' + (sub.neis || sub.name) + '_' + cls.name + '.xlsx');
+      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가일괄등록_' + paNeisName(sub) + '_' + cls.name + '.xlsx');
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
     }
