@@ -390,10 +390,17 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   } else console.log('  ⚠️ exceljs가 없어 나이스 파일 검사는 건너뜀(npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-sum.png') });
-  // 다 넣고 나이스 파일까지 만들면 🎉 + 다음 반으로
-  await P.evaluate(() => { const s = paSub(), x = paCls(s), a2 = s.areas[1], ro = paRoster(s.id, x.id), v2 = paScores(s.id, x.id, a2.id); v2[paSk(ro[ro.length - 1])] = { v: { [a2.subs[0].id]: 30 } }; paSaveScores(s.id, x.id, a2.id, v2); paMarkNeis(); paRenderAll(); });
-  check('모두 넣고 나이스 파일까지 → ③·④ ✅ + 🎉 "다음 반" 단추', /✅/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✅/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
-    /나이스 파일까지 끝났어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")'), await P.innerText('#pa-next'));
+  // 📋 점수 복사(나이스에 직접 붙여 넣는 선생님용) — 반·번호 순, 덜 넣은 학생은 빈 줄
+  await P.evaluate(() => { window.__clip = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (t) => { window.__clip = t; return Promise.resolve(); } } }); });
+  await P.click('#pa-pane [data-copy="1"]'); await P.waitForTimeout(150);
+  const clip1 = await P.evaluate(() => window.__clip), want1c = await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(r => paScoreText(r.rs[1])).join('\n'));
+  check('📋 화학자료분석 복사: 10줄, 마지막(안 넣은 학생)은 빈 줄 + 안내', clip1 === want1c && clip1.split('\n').length === 10 && clip1.split('\n')[9] === '' && /10명 복사됨[\s\S]*1명은 빈칸/.test(await P.innerText('#pa-copy-msg')), [clip1, await P.innerText('#pa-copy-msg')]);
+  await P.click('#pa-pane [data-copy="-1"]'); await P.waitForTimeout(150);
+  check('📋 합계 복사', (await P.evaluate(() => window.__clip)) === (await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(r => r.sum == null ? '' : String(r.sum)).join('\n'))));
+  // 점수만 다 넣으면(나이스 파일을 안 만들어도) ③·④ ✅ + 🎉 + 다음 반으로
+  await P.evaluate(() => { const s = paSub(), x = paCls(s), a2 = s.areas[1], ro = paRoster(s.id, x.id), v2 = paScores(s.id, x.id, a2.id); v2[paSk(ro[ro.length - 1])] = { v: { [a2.subs[0].id]: 30 } }; paSaveScores(s.id, x.id, a2.id, v2); paRenderAll(); });
+  check('점수를 다 넣으면 ③·④ ✅ + 🎉 "다음 반" 단추', /✅/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✅/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
+    /1반 점수를 다 넣었어요[\s\S]*점수 복사/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")'), await P.innerText('#pa-next'));
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-done.png') });
   // ===== ⑤ 세특 =====
   await P.click('#pa-tabs [data-tab="sk"]'); await P.waitForTimeout(200);
@@ -444,6 +451,28 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('설명서: ' + want.length + '단계 모두 그 자리 요소를 찾아 보여 줌(건너뛴 단계 없음)', miss.length === 0 && seen.length === want.length, { miss, seen: seen.length, want: want.length });
   const after = JSON.stringify(await lsKeys(P, '^pa-')), upAfter = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
   check('설명서가 끝나면 원래 화면으로 + 선생님 자료(localStorage·서버) 그대로', before === after && upBefore === upAfter && (await P.evaluate(() => document.getElementById('tour-overlay').style.display !== 'block' && !paDemo)) && (await P.innerText('#pa-subjs')).includes('화학Ⅱ') && (await P.innerText('#pa-save-state')).indexOf('예시') === -1);
+
+  // ===== 💾 백업(JSON) =====
+  if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
+  await P.evaluate(() => { window.__bk = null; window.fmSaveNow = function(b, n) { window.__bkName = n; b.text().then(t => { window.__bk = t; }); }; });
+  await P.click('#pa-backup-btn'); await P.waitForSelector('#pa-modal', { state: 'visible' });
+  check('백업 창: 지금 자료 요약(과목 2개 · 학생 수)', /과목 2개\(화학Ⅱ 3반, 물리학Ⅰ 4반\) · 학생 \d+명/.test(await P.innerText('#pa-bk-now')), await P.innerText('#pa-bk-now'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '6-backup.png') });
+  await P.click('#pa-bk-save'); await P.waitForTimeout(200);
+  const bkTxt = await P.evaluate(() => window.__bk), bk = JSON.parse(bkTxt || '{}'), nowPa = await lsKeys(P, '^pa-');
+  check('백업 파일: 수행평가_백업_날짜.json, pa- 키 모두 그대로', /^수행평가_백업_\d{4}-\d\d-\d\d_\d{4}\.json$/.test(await P.evaluate(() => window.__bkName)) && bk.app === 'smartboard-pa' && JSON.stringify(bk.data) === JSON.stringify(nowPa), [await P.evaluate(() => window.__bkName), Object.keys(bk.data || {}).length, Object.keys(nowPa).length]);
+  // 자료를 망가뜨린 뒤 되돌리기
+  await P.evaluate((k) => { paSet(k, ''); paSet('pa-zz-test', 'x'); }, scKey);
+  const loadBk = async (txt, name) => { await P.setInputFiles('#pa-bk-load input', { name: name, mimeType: 'application/json', buffer: Buffer.from(txt) }); };
+  await loadBk('{"a":1}', 'x.json');
+  check('다른 파일은 안 받음(알림)', /수행평가 백업 파일이 아니에요/.test(await readAlert(P)));
+  await loadBk(bkTxt, 'bk.json');
+  await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' });
+  const bkMsg = await P.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await answerConfirm(P, true);
+  const bkDone = await readAlert(P);
+  check('되돌리기: 파일·지금 요약을 보여 주고 묻고 → 파일 내용 그대로(망가진 점수 돌아옴, 파일에 없던 키는 지움)', /파일\([^)]*\): 과목 2개/.test(bkMsg) && /지금: 과목 2개/.test(bkMsg) && /되돌렸어요/.test(bkDone) &&
+    JSON.stringify(await lsKeys(P, '^pa-')) === JSON.stringify(nowPa) && !(await P.isVisible('#pa-modal')), bkMsg);
 
   // ===== 지우기 =====
   if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
