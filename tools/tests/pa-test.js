@@ -382,6 +382,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     await P.click('#pa-xl-export'); await P.waitForTimeout(200);
     const opts = await P.evaluate(() => [...document.querySelectorAll('#pa-modal [data-xl]')].map(b => b.dataset.xl + (b.checked ? '1' : '0')).join());
     check('내려받기 창: 담을 것 4개(영역별 점수·평가내용·합계·세특), 처음엔 모두 체크', opts === 'sc1,nt1,sum1,sk1', opts);
+    const picks0 = await P.evaluate(() => ({ subs: document.querySelectorAll('#pa-modal [data-xs]').length, on: [...document.querySelectorAll('#pa-modal [data-xc]:checked')].map(b => b.dataset.cid), cur: paCls(paSub()).id, go: document.getElementById('pa-xl-go').textContent }));
+    check('과목·수업반 고르기: 과목 2개가 다 보이고, 처음엔 지금 반만 체크', picks0.subs === 2 && picks0.on.join() === picks0.cur && picks0.go === '📊 내려받기', picks0);
     await P.click('#pa-modal [data-xl="sum"]');
     check('고른 것을 기억(pa-ui xl)', (await P.evaluate(() => paUi().xl && paUi().xl.sum)) === false);
     const [xdl] = await Promise.all([P.waitForEvent('download'), P.click('#pa-xl-go')]);
@@ -400,6 +402,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     // 가져오기: 빈 수업반에 넣으면 학생·점수·최하점·평가내용·세특이 그대로 — 배점에 없는 점수(99)는 뺌
     const S2 = xb.getWorksheet('화학자료분석'); let sc2 = 0; for (let c = 4; c <= 8; c++) if (/점\)$/.test(String(S2.getCell(1, c).value || '').replace(/\n/g, '')) && !/^합계/.test(String(S2.getCell(1, c).value))) { sc2 = c; break; }
     S2.getCell(11, sc2).value = 99;
+    // 과목·반을 지운 뒤 되살리는 경우: 파일의 과목·반이 스마트보드에 없으면(하나만 골랐을 때) 지금 고른 반에 넣는다
+    const infS = xb.getWorksheet('_정보'); [3, 4, 5, 6].forEach(c => { infS.getCell(1, c).value = '없음' + c; });
     const xf2 = path.join(require('os').tmpdir(), 'pa-backup-in.xlsx'); await xb.xlsx.writeFile(xf2);
     const orig = await P.evaluate(() => { const sub = paSub(), cls = paCls(sub); const c = paCfg(); c.subjects.find(s => s.id === sub.id).classes.push({ id: 'zzbk', name: '9반' }); paSaveCfg(c); paSetUi({ c: 'zzbk' }); paRenderAll(); return { sid: sub.id, cid: cls.id }; });
     await P.setInputFiles('#pa-xl-input', xf2);
@@ -412,10 +416,38 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     check('📥 빈 수업반에 가져오기: 학생 10명·점수·최하점·평가내용·세특이 원래 반과 같게', cmp.ro && cmp.sc && cmp.nt && cmp.sk && /학생 10명/.test(imsg) && /세특 1명/.test(imsg) && /최하점 1명/.test(imsg), { cmp, imsg });
     check('배점에 없는 점수(99)는 넣지 않고 알림', /배점에 없는 점수 1칸/.test(imsg), imsg);
     await P.setInputFiles('#pa-xl-input', xf2);
+    const cmsg2 = await P.evaluate(async () => { for (let i = 0; i < 40; i++) { const o = document.getElementById('custom-confirm-overlay'); if (o && getComputedStyle(o).display !== 'none') return document.getElementById('custom-confirm-msg').innerText; await new Promise(r => setTimeout(r, 100)); } return ''; });
+    check('없는 과목·반의 파일을 학생 있는 반에 넣으려 하면 먼저 물어봄', /없음3 없음4/.test(cmsg2) && /화학Ⅱ 9반/.test(cmsg2), cmsg2);
+    await answerConfirm(P, true);
     const imsg2 = await readAlert(P);
     check('한 번 더 가져오면 이미 적힌 칸은 그대로(0칸 채움)', /점수 0칸 · 최하점 0명 · 평가내용 0칸 · 세특 0명/.test(imsg2) && /이미 적힌 칸 \d+개는 그대로/.test(imsg2), imsg2);
     try { fs.unlinkSync(xf2); } catch (e) {}
+    const xf3 = path.join(require('os').tmpdir(), 'pa-backup-own.xlsx'); fs.copyFileSync(xf, xf3);
     await P.evaluate((o) => { ['ro', 'sc', 'nt', 'st', 'drf', 'fin'].forEach(t => paRemoveKeys('pa-' + t + '-' + o.sid + '-zzbk')); const c = paCfg(); const s = c.subjects.find(x => x.id === o.sid); s.classes = s.classes.filter(x => x.id !== 'zzbk'); paSaveCfg(c); paSetUi({ c: o.cid, xl: null }); paRenderAll(); }, orig);
+    // 모든 과목·반 → 반마다 엑셀 파일 하나씩(zip 아님), 그 파일들을 한꺼번에 골라 가져오면 파일마다 제 과목·반을 찾음
+    await P.click('#pa-xl-export'); await P.waitForTimeout(200);
+    await P.click('#pa-modal button:has-text("모든 과목·반")'); await P.waitForTimeout(100);
+    const allN = await P.evaluate(() => paCfg().subjects.reduce((t, s) => t + s.classes.filter(x => paRoster(s.id, x.id).length).length, 0));
+    const goTxt = await P.innerText('#pa-xl-go');
+    await P.evaluate(() => { window.__saveNames = []; const o = fmSaveNow; window.fmSaveNow = function(b, n) { window.__saveNames.push(n); return o(b, n); }; });
+    const dls = []; const onDl = d => dls.push(d); P.on('download', onDl);
+    await P.click('#pa-xl-go');
+    for (let i = 0; i < 40 && dls.length < allN; i++) await P.waitForTimeout(150);
+    await P.waitForTimeout(600); P.off('download', onDl);
+    const dnames = await P.evaluate(() => window.__saveNames);
+    check('모든 과목·반: 반마다 .xlsx 하나씩(zip 아님) ' + allN + '개', allN >= 2 && goTxt === '📊 엑셀 ' + allN + '개 내려받기' && dls.length === allN && dnames.every(n => /^수행평가_.+_\d{4}-\d{2}-\d{2}\.xlsx$/.test(n)) && new Set(dnames).size === allN, { allN, goTxt, dnames });
+    const paths = []; for (const d of dls) { const pth = path.join(require('os').tmpdir(), 'pa-multi-' + paths.length + '.xlsx'); fs.copyFileSync(await d.path(), pth); paths.push(pth); }
+    await P.setInputFiles('#pa-xl-input', paths);
+    const mmsg = await readAlert(P);
+    const want = await P.evaluate(() => paCfg().subjects.flatMap(s => s.classes.filter(x => paRoster(s.id, x.id).length).map(x => '📚 ' + s.name + ' ' + x.name + ':')));
+    check('여러 파일을 한꺼번에 가져오기: 파일마다 과목·반을 알아서 찾음(이미 있는 칸은 그대로)', new RegExp(allN + '개 반을 가져왔어요').test(mmsg) && want.every(w => mmsg.includes(w)) && !/점수 [1-9]/.test(mmsg) && !/건너뛴 파일/.test(mmsg), { mmsg, want });
+    // 지금 반이 아닌 반의 파일 하나만 골라도 그 반으로
+    await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.id !== paCls(s).id).id }); paRenderAll(); });
+    await P.setInputFiles('#pa-xl-input', xf3);
+    const omsg = await readAlert(P);
+    check('다른 반에 있으면서 그 반 파일 하나만 가져와도 제 반(화학Ⅱ 1반)으로', /📚 화학Ⅱ 1반:/.test(omsg), omsg);
+    await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.name === '1반').id }); paRenderAll(); });
+    paths.concat([xf3]).forEach(pth => { try { fs.unlinkSync(pth); } catch (e) {} });
   } else console.log('  ⚠️ exceljs가 없어 엑셀 백업 검사는 건너뜀');
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);

@@ -662,6 +662,15 @@
     .pa-xl-opt > span { flex: 1; text-align: left; }
     .pa-xl-opt .se-muted { display: block; font-size: 11.5px; }
     .pa-xl-opt.off { opacity: .5; cursor: default; }
+    .pa-xl-subjs { max-height: 230px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 2px 10px; }
+    .pa-xl-sub { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border-color); }
+    .pa-xl-sub:last-child { border-bottom: 0; }
+    .pa-xl-sname { display: flex; align-items: center; gap: 6px; min-width: 130px; cursor: pointer; font-size: 12.5px; }
+    .pa-xl-cls { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pa-xl-c { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 999px; padding: 2px 9px; font-size: 12px; cursor: pointer; }
+    .pa-xl-c.off { opacity: .45; cursor: default; }
+    .pa-xl-sub input, .pa-xl-c input { width: auto !important; margin: 0; flex: none; }
+    .pa-modal-box .pa-sub-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pa-modal-box #pa-new-hours { width: 90px; flex: none; }
     .pa-modal-box #pa-new-name { width: auto; flex: 1; }
     .pa-tt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
@@ -3651,8 +3660,8 @@
       <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <label class="top-btn" id="pa-xl-import" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 지금 수업반에 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" style="display:none;" onchange="paXlImport(this.files[0]); this.value='';"></label>
-      <button class="top-btn" id="pa-xl-export" style="font-size:11px; padding:4px 10px;" onclick="paXlOpen()" title="지금 수업반의 점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용, 담을 것은 골라요)">📊 엑셀 내려받기</button>
+      <label class="top-btn" id="pa-xl-import" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';"></label>
+      <button class="top-btn" id="pa-xl-export" style="font-size:11px; padding:4px 10px;" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📊 엑셀 내려받기</button>
       <span id="pa-save-state"></span>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
@@ -14944,42 +14953,100 @@
     return out;
   }
   function paXlOpen() {
-    const sub = paSub(), cls = paCls(sub);
-    if (!cls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
-    const ro = paRoster(sub.id, cls.id);
-    if (!ro.length) return customAlert('이 수업반에 학생이 없어요. ① 과목·학생에서 학생을 넣어 주세요.');
+    const cfg = paCfg(), cur = paSub(cfg), curCls = paCls(cur);
+    if (!curCls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
     let ov = document.getElementById('pa-modal');
     if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
     const o = paXlOptsGet();
-    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📊 엑셀 내려받기 — ' + paEsc(sub.name) + ' · ' + paEsc(cls.name) + ' (' + ro.length + '명)</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
-      '<div class="se-muted" style="margin-bottom:10px;">담을 것을 골라요. 받은 파일은 위 <b>📥 엑셀 가져오기</b>로 다시 넣을 수 있어요(빈 칸만 채워요).</div>' +
+    // 과목·수업반: 처음엔 지금 보던 반만 체크. 학생이 없는 반은 고를 수 없음.
+    const subsHtml = cfg.subjects.map(function(sub) {
+      return '<div class="pa-xl-sub"><label class="pa-xl-sname"><input type="checkbox" data-xs="' + sub.id + '" onchange="paXlSubToggle(this)"><b>📚 ' + paEsc(sub.name) + '</b></label><div class="pa-xl-cls">' +
+        paSortClasses(sub.classes).map(function(x) {
+          const n = paRoster(sub.id, x.id).length, on = n && x.id === curCls.id;
+          return '<label class="pa-xl-c' + (n ? '' : ' off') + '"' + (n ? '' : ' title="학생이 없어요"') + '><input type="checkbox" data-xc="1" data-sid="' + sub.id + '" data-cid="' + x.id + '"' + (on ? ' checked' : '') + (n ? '' : ' disabled') + ' onchange="paXlOptChange()">' +
+            paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></label>';
+        }).join('') + '</div></div>';
+    }).join('');
+    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📊 엑셀 내려받기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+      '<div class="pa-sub-title">📚 과목·수업반 <span class="se-muted">반 하나 = 엑셀 파일 하나 · 여러 반이면 파일이 반마다 하나씩 내려받아져요</span>' +
+        '<span style="margin-left:auto; display:flex; gap:6px;"><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="paXlPick(\'cur\')">지금 반만</button><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="paXlPick(\'all\')">모든 과목·반</button></span></div>' +
+      '<div class="pa-xl-subjs">' + subsHtml + '</div>' +
+      '<div class="pa-sub-title" style="margin-top:12px;">🗂 담을 것 <span class="se-muted">받은 파일은 위 <b>📥 엑셀 가져오기</b>로 다시 넣을 수 있어요 — 여러 파일을 한꺼번에 골라도 반을 알아서 찾아요(빈 칸만 채워요)</span></div>' +
       PA_XL_OPTS.map(function(x) {
-        const off = (x[0] === 'sc' || x[0] === 'nt' || x[0] === 'sum') && !sub.areas.length;
-        return '<label class="pa-xl-opt' + (off ? ' off' : '') + '"><input type="checkbox" data-xl="' + x[0] + '"' + (o[x[0]] && !off ? ' checked' : '') + (off ? ' disabled' : '') + ' onchange="paXlOptChange()">' +
-          '<span><b>' + x[1] + '</b><span class="se-muted">' + x[2] + (off ? ' (영역이 아직 없어요)' : '') + '</span></span></label>';
+        return '<label class="pa-xl-opt"><input type="checkbox" data-xl="' + x[0] + '"' + (o[x[0]] ? ' checked' : '') + ' onchange="paXlOptChange()">' +
+          '<span><b>' + x[1] + '</b><span class="se-muted">' + x[2] + '</span></span></label>';
       }).join('') +
-      '<div class="pa-row" style="justify-content:flex-end; margin-top:10px;"><button class="top-btn" onclick="paCloseModal()">취소</button>' +
+      '<div class="pa-row" style="justify-content:flex-end; margin-top:10px;"><span class="se-muted" id="pa-xl-count" style="margin-right:auto;"></span><button class="top-btn" onclick="paCloseModal()">취소</button>' +
       '<button class="top-btn pa-primary" id="pa-xl-go" onclick="paXlExport()">📊 내려받기</button></div></div>';
     ov.style.display = 'flex';
     paXlOptChange(true);
   }
+  function paXlPick(which) {
+    const cur = paCls(paSub());
+    document.querySelectorAll('#pa-modal [data-xc]').forEach(function(b) { if (!b.disabled) b.checked = which === 'all' || (cur && b.dataset.cid === cur.id); });
+    paXlOptChange(true);
+  }
+  function paXlSubToggle(box) {
+    document.querySelectorAll('#pa-modal [data-xc][data-sid="' + box.dataset.xs + '"]').forEach(function(b) { if (!b.disabled) b.checked = box.checked; });
+    paXlOptChange(true);
+  }
+  function paXlPicks() {
+    const cfg = paCfg(), out = [];
+    document.querySelectorAll('#pa-modal [data-xc]:checked').forEach(function(b) {
+      const sub = cfg.subjects.find(function(x) { return x.id === b.dataset.sid; }), cls = sub && sub.classes.find(function(x) { return x.id === b.dataset.cid; });
+      if (cls) out.push({ sub: sub, cls: cls });
+    });
+    return out;
+  }
   function paXlOptChange(noSave) {
-    const boxes = [...document.querySelectorAll('#pa-modal [data-xl]')];
-    const any = boxes.some(function(b) { return b.checked; }), go = document.getElementById('pa-xl-go');
-    if (go) go.disabled = !any;
+    // 과목 체크 = 그 과목의 (고를 수 있는) 반이 모두 체크됐는지, 일부면 반쯤
+    document.querySelectorAll('#pa-modal [data-xs]').forEach(function(sb) {
+      const cs = [...document.querySelectorAll('#pa-modal [data-xc][data-sid="' + sb.dataset.xs + '"]:not(:disabled)')];
+      const n = cs.filter(function(b) { return b.checked; }).length;
+      sb.disabled = !cs.length; sb.checked = !!cs.length && n === cs.length; sb.indeterminate = n > 0 && n < cs.length;
+    });
+    const picks = paXlPicks(), boxes = [...document.querySelectorAll('#pa-modal [data-xl]')];
+    const any = boxes.some(function(b) { return b.checked; }), go = document.getElementById('pa-xl-go'), cnt = document.getElementById('pa-xl-count');
+    if (go) { go.disabled = !any || !picks.length; go.textContent = picks.length > 1 ? '📊 엑셀 ' + picks.length + '개 내려받기' : '📊 내려받기'; }
+    if (cnt) cnt.innerHTML = picks.length ? picks.length + '개 반 · 학생 ' + picks.reduce(function(t, p) { return t + paRoster(p.sub.id, p.cls.id).length; }, 0) + '명' +
+      (picks.length > 1 ? '<br>처음엔 브라우저가 "여러 파일 다운로드"를 물을 수 있어요 → <b>허용</b>' : '') : '반을 골라 주세요';
     if (noSave === true) return;
     const xl = Object.assign({}, paUi().xl || {});
-    boxes.forEach(function(b) { if (!b.disabled) xl[b.dataset.xl] = b.checked; });
+    boxes.forEach(function(b) { xl[b.dataset.xl] = b.checked; });
     paSetUi({ xl: xl });
   }
+  function paXlFileName(t) { return String(t).replace(/[\\\/:\*\?"<>\|]/g, ' ').replace(/\s+/g, ' ').trim(); }
   async function paXlExport() {
-    const sub = paSub(), cls = paCls(sub);
-    if (!cls) return;
-    const o = {}; document.querySelectorAll('#pa-modal [data-xl]').forEach(function(b) { o[b.dataset.xl] = b.checked && !b.disabled; });
-    if (!o.sc && !o.nt && !o.sum && !o.sk) return;
-    const ro = paRoster(sub.id, cls.id);
+    const o = {}; document.querySelectorAll('#pa-modal [data-xl]').forEach(function(b) { o[b.dataset.xl] = b.checked; });
+    const picks = paXlPicks();
+    if (!picks.length || (!o.sc && !o.nt && !o.sum && !o.sk)) return;
     try {
       await sccLoadExcelJS();
+      const date = new Date().toISOString().slice(0, 10), files = [], empty = [], usedNames = [];
+      for (const p of picks) {
+        const buf = await paXlBuild(p.sub, p.cls, o);
+        if (!buf) { empty.push(p.sub.name + ' ' + p.cls.name); continue; }
+        let nm = paXlFileName(p.sub.name + '_' + p.cls.name), k = 2;
+        while (usedNames.indexOf(nm) !== -1) nm = paXlFileName(p.sub.name + '_' + p.cls.name) + ' (' + (k++) + ')';
+        usedNames.push(nm);
+        files.push({ name: nm, buf: buf });
+      }
+      if (!files.length) return customAlert('고른 반에 담을 내용이 없어요(영역이 없는 과목은 영역별 점수·평가내용·합계가 비어요).');
+      paCloseModal();
+      // 반마다 엑셀 파일 하나씩(zip으로 묶지 않음 — 선생님들이 풀기 번거로움). 한꺼번에 누르면 브라우저가 빠뜨릴 수 있어 조금씩 띄워 내려받는다.
+      for (let i = 0; i < files.length; i++) {
+        if (i) await new Promise(function(res) { setTimeout(res, 400); });
+        fmSaveNow(new Blob([files[i].buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가_' + files[i].name + '_' + date + '.xlsx');
+      }
+      if (empty.length) customAlert('담을 내용이 없어 뺀 반: ' + empty.join(', '));
+    } catch (e) {
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
+    }
+  }
+  // 수업반 하나의 엑셀(버퍼). 담을 시트가 하나도 없으면 null(영역 없는 과목에서 점수·합계만 고른 경우).
+  async function paXlBuild(sub, cls, o) {
+    const ro = paRoster(sub.id, cls.id);
+    {
       const wb = new ExcelJS.Workbook();
       const FONT = '맑은 고딕';
       const fill = function(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; };
@@ -15099,36 +15166,34 @@
         sh.addConditionalFormatting({ ref: 'E2:E' + last, rules: [{ type: 'cellIs', operator: 'greaterThan', formulae: [lim], style: { font: { color: { argb: 'FFC00000' }, bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFDE2E1' } } } }] });
         sh.autoFilter = { from: { row: 1, column: 1 }, to: { row: last, column: 5 } };
       }
-      // 숨긴 정보 시트: 가져오기가 영역·세부영역·학생을 정확히 맞추도록
+      if (!wb.worksheets.length) return null;
+      // 숨긴 정보 시트: 가져오기가 과목·반·영역·세부영역·학생을 정확히 맞추도록
       const inf = wb.addWorksheet('_정보', { state: 'veryHidden' });
-      inf.addRow(['smartboard-pa', 1, sub.name, cls.name]);
+      inf.addRow(['smartboard-pa', 1, sub.name, cls.name, sub.id, cls.id]);
       info.forEach(function(x) { inf.addRow(x); });
       inf.addRow(['학생', JSON.stringify(ro.map(function(st) { return { g: st.g || null, c: st.c || 0, n: st.n || 0, name: st.name }; }))]);
-      const buf = await wb.xlsx.writeBuffer();
-      paCloseModal();
-      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가_' + sub.name + '_' + cls.name + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
-    } catch (e) {
-      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
+      return await wb.xlsx.writeBuffer();
     }
   }
-  async function paXlImport(file) {
-    if (!file) return;
-    if (paDemo) return customAlert('설명서 예시 화면에서는 가져올 수 없어요. 설명서를 닫은 뒤 가져와 주세요.');
-    const sub = paSub(), cls = paCls(sub);
-    if (!cls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
-    let wb;
-    try { await sccLoadExcelJS(); wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer()); }
-    catch (e) { return customAlert('엑셀 파일을 읽지 못했어요(.xlsx만 돼요).' + (e && e.message ? '\n(' + e.message + ')' : '')); }
-    const txt = function(ws, r, c) { return paCellText(ws.getCell(r, c)).trim(); };
-    // 숨긴 정보 시트
-    const infoWs = wb.getWorksheet('_정보'), infoAreas = {}; let infoRoster = null;
-    if (infoWs) for (let r = 1; r <= infoWs.rowCount; r++) {
-      const t0 = txt(infoWs, r, 1);
+  // 숨긴 _정보 시트 읽기: { sname, cname, sid, cid, areas: {시트: {id, map}}, roster }
+  function paXlInfo(wb) {
+    const ws = wb.getWorksheet('_정보'), out = { sname: '', cname: '', sid: '', cid: '', areas: {}, roster: null };
+    if (!ws) return out;
+    const txt = function(r, c) { return paCellText(ws.getCell(r, c)).trim(); };
+    for (let r = 1; r <= ws.rowCount; r++) {
+      const t0 = txt(r, 1);
       try {
-        if (t0 === '영역') infoAreas[txt(infoWs, r, 2)] = { id: txt(infoWs, r, 3), map: JSON.parse(txt(infoWs, r, 4) || '{}') };
-        if (t0 === '학생') infoRoster = JSON.parse(txt(infoWs, r, 2) || '[]');
+        if (t0 === 'smartboard-pa') { out.sname = txt(r, 3); out.cname = txt(r, 4); out.sid = txt(r, 5); out.cid = txt(r, 6); }
+        if (t0 === '영역') out.areas[txt(r, 2)] = { id: txt(r, 3), map: JSON.parse(txt(r, 4) || '{}') };
+        if (t0 === '학생') out.roster = JSON.parse(txt(r, 2) || '[]');
       } catch (e) {}
     }
+    return out;
+  }
+  // 엑셀 하나를 수업반 하나에 넣는다(빈 칸만). 넣은 개수를 돌려준다.
+  function paXlImportWb(wb, sub, cls, info) {
+    const txt = function(ws, r, c) { return paCellText(ws.getCell(r, c)).trim(); };
+    const infoAreas = info.areas, infoRoster = info.roster;
     const headIdx = function(ws) {
       const h = {}; for (let c = 1; c <= ws.columnCount; c++) h[c] = paNorm(txt(ws, 1, c).replace(/\(.*$/s, '').replace(/\n.*$/s, ''));
       const find = function(re) { const k = Object.keys(h).find(function(c) { return re.test(h[c]); }); return k ? Number(k) : 0; };
@@ -15197,16 +15262,55 @@
       }
       paSaveScores(sub.id, cls.id, a.id, sc);
     });
-    paRenderAll();
-    const nfN = Object.keys(nf).length;
-    const msg = [(nSc + nMin + nNt + nSk + addedStu ? '✅ ' : '') + (addedStu ? '학생 ' + addedStu + '명, ' : '') + '점수 ' + nSc + '칸 · 최하점 ' + nMin + '명 · 평가내용 ' + nNt + '칸 · 세특 ' + nSk + '명을 채웠어요.'];
-    if (kept) msg.push('· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요(덮어쓰지 않아요).');
-    if (bad) msg.push('⚠️ 배점에 없는 점수 ' + bad + '칸은 넣지 않았어요(② 영역·배점 확인).');
-    if (nfN) msg.push('⚠️ 이 수업반에 없는 학생 ' + nfN + '명은 건너뛰었어요(반·번호로 찾아요).');
-    if (skipped.length) msg.push('⚠️ 맞는 영역이 없어 건너뛴 시트: ' + skipped.join(', ') + ' (② 영역·배점에서 영역 이름을 시트 이름과 같게)');
-    customAlert(msg.join('\n'));
+    return { addedStu: addedStu, nSc: nSc, nMin: nMin, nNt: nNt, nSk: nSk, kept: kept, bad: bad, nf: Object.keys(nf).length, skipped: skipped };
   }
-
+  function paXlImportMsg(r, head) {
+    const msg = [head + (r.addedStu ? '학생 ' + r.addedStu + '명, ' : '') + '점수 ' + r.nSc + '칸 · 최하점 ' + r.nMin + '명 · 평가내용 ' + r.nNt + '칸 · 세특 ' + r.nSk + '명을 채웠어요.'];
+    if (r.kept) msg.push('· 이미 적힌 칸 ' + r.kept + '개는 그대로 뒀어요(덮어쓰지 않아요).');
+    if (r.bad) msg.push('⚠️ 배점에 없는 점수 ' + r.bad + '칸은 넣지 않았어요(② 영역·배점 확인).');
+    if (r.nf) msg.push('⚠️ 이 수업반에 없는 학생 ' + r.nf + '명은 건너뛰었어요(반·번호로 찾아요).');
+    if (r.skipped.length) msg.push('⚠️ 맞는 영역이 없어 건너뛴 시트: ' + r.skipped.join(', ') + ' (② 영역·배점에서 영역 이름을 시트 이름과 같게)');
+    return msg.join('\n');
+  }
+  // 📥 가져오기: 엑셀 여러 개를 한꺼번에 골라도 파일마다 숨긴 _정보의 과목·반(id → 이름)으로 제자리를 찾아 넣는다.
+  // 찾을 수 없는 파일(과목·반을 지웠거나 직접 만든 파일)은 하나만 골랐을 때만 지금 고른 수업반에 넣는다(빈 반에 백업 되살리기).
+  async function paXlImport(fileList) {
+    const files = [...(fileList && fileList.length != null ? fileList : fileList ? [fileList] : [])];
+    if (!files.length) return;
+    if (paDemo) return customAlert('설명서 예시 화면에서는 가져올 수 없어요. 설명서를 닫은 뒤 가져와 주세요.');
+    const books = [], bad = [];
+    try { await sccLoadExcelJS(); } catch (e) { return customAlert('엑셀을 읽는 도구를 못 받았어요. 인터넷 연결을 확인해 주세요.'); }
+    for (const f of files) {
+      try { const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer()); books.push({ name: f.name, wb: wb, info: paXlInfo(wb) }); }
+      catch (e) { bad.push(f.name); }
+    }
+    const cfg = paCfg(), lines = [], miss = [];
+    const find = function(info) {
+      const sub = cfg.subjects.find(function(x) { return info.sid && x.id === info.sid; }) || cfg.subjects.find(function(x) { return info.sname && paNorm(x.name) === paNorm(info.sname); });
+      const cls = sub && (sub.classes.find(function(x) { return info.cid && x.id === info.cid; }) || sub.classes.find(function(x) { return info.cname && paNorm(x.name) === paNorm(info.cname); }));
+      return cls ? { sub: sub, cls: cls } : null;
+    };
+    for (const bk of books) {
+      let t = find(bk.info);
+      if (!t && books.length === 1) {
+        const sub = paSub(cfg), cls = paCls(sub);
+        if (!cls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
+        if (bk.info.sname && paRoster(sub.id, cls.id).length &&
+          !(await customConfirm('이 파일은 "' + bk.info.sname + ' ' + bk.info.cname + '" 것인데 스마트보드에 그 과목·반이 없어요.\n지금 고른 "' + sub.name + ' ' + cls.name + '"에 넣을까요?'))) return;
+        t = { sub: sub, cls: cls };
+      }
+      if (!t) { miss.push(bk.name + (bk.info.sname ? ' (' + bk.info.sname + ' ' + bk.info.cname + ')' : '')); continue; }
+      const r = paXlImportWb(bk.wb, t.sub, t.cls, bk.info);
+      lines.push(paXlImportMsg(r, '📚 ' + t.sub.name + ' ' + t.cls.name + ': ' + (r.nSc + r.nMin + r.nNt + r.nSk + r.addedStu ? '✅ ' : '')));
+    }
+    paRenderAll();
+    const out = [];
+    if (lines.length > 1) out.push('✅ ' + lines.length + '개 반을 가져왔어요.');
+    if (lines.length) out.push(lines.join('\n\n'));
+    if (miss.length) out.push('⚠️ 맞는 과목·수업반을 못 찾아 건너뛴 파일 ' + miss.length + '개: ' + miss.join(', ') + '\n(과목·반 이름을 파일과 같게 만든 뒤 다시 가져오거나, 그 반을 고르고 파일 하나만 가져오세요)');
+    if (bad.length) out.push('⚠️ 읽지 못한 파일(.xlsx만 돼요): ' + bad.join(', '));
+    customAlert(out.join('\n\n'));
+  }
   // ----- ⑤ 세특 -----
   function paStKey(sid, cid, k) { return 'pa-st-' + sid + '-' + cid + '-' + k; }
   function paFinKey(sid, cid, k) { return 'pa-fin-' + sid + '-' + cid + '-' + k; }
@@ -15409,7 +15513,7 @@
     { selector: '#pa-put-btn', before: paTourTab('sk'), title: '⑤ 다듬고 완성본에 넣기',
       desc: '편집 칸에서 문장을 다듬으면 바이트와 기재하면 안 되는 표현을 바로 알려 줘요. 다 되면 📊 완성본에 넣기! 📋 복사로 나이스에 바로 붙여 넣을 수도 있어요.' },
     { selector: '#pa-xl-export', before: paTourTab('sk'), title: '📊 엑셀 내려받기 · 📥 가져오기 (백업)',
-      desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 수업반 하나가 파일 하나이고, 영역별 점수·평가내용·합계·세특 가운데 담을 것을 골라요(필터·틀 고정·바이트 식 포함).\n📥 엑셀 가져오기로 그 파일을 다시 넣으면 빈 칸만 채워요 — 엑셀에서 점수를 미리 적어 와서 넣어도 돼요(배점에 없는 점수는 빼요).' },
+      desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 과목·수업반을 고르고(모든 과목·반도 한 번에), 영역별 점수·평가내용·합계·세특 가운데 담을 것을 골라요 — 반마다 엑셀 파일이 하나씩 받아져요(필터·틀 고정·바이트 식 포함).\n📥 엑셀 가져오기로 그 파일들을 한꺼번에 골라 넣으면 파일마다 과목·반을 알아서 찾아 빈 칸만 채워요 — 엑셀에서 점수를 미리 적어 와서 넣어도 돼요(배점에 없는 점수는 빼요).' },
     { selector: '#pa-sk-mode', before: paTourTab('sk'), title: '📊 완성본 모아 보기',
       desc: '반 전체 완성본을 바이트와 함께 한눈에 보고, 학생마다 📋로 복사해 나이스에 붙여 넣어요.\n\n수고하셨습니다! 🎉 이제 "＋ 과목"부터 시작해 보세요.' },
   ];
