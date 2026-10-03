@@ -508,15 +508,13 @@
     .se-addbtn { width: 100%; border: 1.5px dashed var(--accent-color); background: var(--accent-soft); color: var(--accent-color); border-radius: 8px; padding: 5px 4px; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
     .se-addbtn:hover { filter: brightness(0.97); }
     .se-src-table td.se-addcell { border-left: 1.5px dashed var(--border-color); }
-    /* 처음(이 반에 받은 문장이 하나도 없을 때) 자료 입력 탭 위에 뜨는 단계 안내 — 수행평가 첫 화면처럼 ①→②→③ */
-    #se-start .se-start { padding: 10px 14px; margin-bottom: 8px; flex: 0 0 auto; }
-    .se-start-title { font-weight: 800; font-size: 13.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .se-start-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .se-start-step { border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.6; color: var(--text-sub); }
-    .se-start-step.now { border-color: var(--accent-color); background: var(--accent-soft); color: var(--text-main); }
-    .se-start-step b.n { color: var(--accent-color); font-size: 13px; }
-    .se-start-step .top-btn { font-size: 11px; padding: 3px 8px; margin: 4px 4px 0 0; }
-    @media (max-width: 760px) { .se-start-steps { grid-template-columns: 1fr; } }
+    /* 탭 = 할 일 순서(수행평가와 같은 모양): 끝난 걸음 ✓, 다음 걸음 "다음" 딱지 */
+    #se-tabs .pa-arrow { align-self: center; color: var(--text-sub); opacity: .55; font-weight: 800; padding: 0 1px; pointer-events: none; }
+    #se-tabs .pa-st-ok { color: #1E7B3A; margin-left: 4px; }
+    #se-tabs .pa-st-next { font-size: 10px; font-weight: 800; color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 6px; margin-left: 5px; }
+    #se-tabs .pa-step-next:not(.theme-active) { box-shadow: inset 0 0 0 1.5px var(--accent-color); }
+    #se-next { flex: 0 0 auto; margin: 2px 0 8px; }
+    #se-next:empty { display: none; }
     .se-noarea { color: var(--text-sub); font-size: 12px; line-height: 1.7; padding: 14px 10px; text-align: center; white-space: normal; }
     .se-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); min-width: 100%; }
     .se-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 6px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 2; }
@@ -571,7 +569,10 @@
     #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #se-save-state.dirty { color: #B45309; }
     /* ===== 📊 수행평가 (#pa-page) — 자율·진로 편집기(se-) 모양을 그대로 빌려 씀 ===== */
-    #pa-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
+    #pa-page-header { display:flex; flex-direction: column; padding: 10px 22px 8px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; gap: 8px; }
+    #pa-page-header .pa-hrow { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+    #pa-page-header .pa-htools { display: flex; gap: 6px; align-items: center; margin-left: auto; flex: none; }
+    #pa-page-header .pa-selbar { flex-wrap: wrap; row-gap: 6px; }
     #pa-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
     #pa-tabs { margin: 12px 0 10px; display: inline-flex; }
     #pa-tabs .top-btn { font-weight: 800; }
@@ -3683,9 +3684,10 @@
         <div class="top-btn-cluster se-kind" id="se-kind"></div>
         <div class="se-muted" id="se-kind-hint"></div>
       </div>
+      <!-- 다음 할 일(수행평가와 같은 방식): 지금 할 일 한 가지 + 누를 단추, 그 화면에 눌러야 할 곳은 반짝임 -->
+      <div id="se-next"></div>
 
       <div id="se-pane-src" class="se-pane">
-        <div id="se-start"></div>
         <div id="se-src-msg" class="se-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div class="se-scroll se-box" id="se-src-list"></div>
       </div>
@@ -3706,26 +3708,30 @@
 </div>
 
 <div id="pa-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <!-- 머리: 첫 줄 = 제목·설명서 + 오른쪽 도구(백업·저장 표시·화면 크기) — 줄바꿈 없음 / 둘째 줄 = 학기·과목·반 고르기(많으면 이 줄만 넘어감).
+       🔍 화면 크기는 아래 본문(#pa-main)만 키움 — 머리까지 키우면 노트북 화면에서 머리 줄이 넘어갔음. -->
   <div id="pa-page-header">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div class="pa-hrow">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
       <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
-      <select id="pa-term" class="mini-select" title="학기 — 과목은 학기마다 따로예요" onchange="paPickTerm(this.value)"></select>
-      <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
-      <span class="pa-hsep"></span>
-      <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
-    </div>
-    <div style="display:flex; gap:6px; align-items:center;">
+      <div class="pa-htools">
       <div class="pa-backup" id="pa-backup" title="자료는 칸을 벗어날 때마다 선생님 계정에 저장돼요. 보관용으로 엑셀에 받아 두거나 다시 넣을 때 써요."><button class="top-btn pa-backup-main" id="pa-backup-btn" onclick="paOpenBackup()" title="수행평가 자료(모든 학기·과목·학생·점수·평가내용·세특)를 통째로 백업 파일 하나로 받아 두거나, 그 파일로 되돌려요">💾 백업</button>
         <label class="top-btn" id="pa-xl-import" style="cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';"></label>
       <button class="top-btn" id="pa-xl-export" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📤 엑셀 내려받기</button>
       </div>
       <span id="pa-save-state"></span>
-      <div id="pa-zoom-group" title="화면 크기 — 수행평가 화면 전체를 같은 비율로 키우거나 줄여요(표가 틀어지지 않아요, 내 계정에 기억)">
+      <div id="pa-zoom-group" title="화면 크기 — 아래 수행평가 화면을 같은 비율로 키우거나 줄여요(표가 틀어지지 않아요, 내 계정에 기억)">
         <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="paZoomBy(-1)" title="작게">−</button><span id="pa-zoom-text" onclick="paZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="paZoomBy(1)" title="크게">+</button>
       </div>
+      </div>
+    </div>
+    <div class="pa-hrow pa-selbar">
+      <select id="pa-term" class="mini-select" title="학기 — 과목은 학기마다 따로예요" onchange="paPickTerm(this.value)"></select>
+      <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
+      <span class="pa-hsep"></span>
+      <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
     </div>
   </div>
   <div id="pa-main">
@@ -13362,6 +13368,8 @@
       desc: '자료는 반마다 따로예요. 담임 선생님은 담임 반으로 시작해요. 옆에 그 학년의 바이트 한도(입시 연도 기준, 한글 1자 = 3바이트)가 나와요.' },
     { selector: '#se-tabs', before: seTourTab('src'), title: '세 탭 = 세 단계',
       desc: '① 자료 입력 → ② 편집 → ③ 최종 순서로 왼쪽부터 차례로 쓰면 돼요. 탭을 바꿔도 위쪽 줄은 그대로 있고 아래 내용만 바뀌어요.' },
+    { selector: '#se-next', before: seTourTab('edit', 2), title: '다음 할 일',
+      desc: '탭 아래 상자가 지금 할 일 한 가지를 알려 줘요(지금 고른 자율/진로 기준). 단추를 누르면 그 화면·그 학생으로 가고, 눌러야 할 곳은 반짝여요.\n탭 옆 ✓ = 끝난 단계, "다음" = 다음에 할 단계예요. 다 끝나면 초록 "완료"로 바뀌어요.' },
     { selector: '#se-kind', before: seTourTab('src'), title: '자율 / 진로 고르기',
       desc: '자율과 진로는 영역도 문장도 따로예요. 이 버튼은 세 탭 모두 같은 자리에 있어요. 최종 탭에선 "전체"를 누르면 자율·진로를 나란히 볼 수 있어요.' },
     { selector: '#se-src-list', before: seTourTab('src'), title: '📥 자료 입력 — 넣는 방법은 두 가지',
@@ -13438,7 +13446,7 @@
   function seRenderAll() {
     if (!seIsOpen()) return;
     const tab = seTab();
-    document.querySelectorAll('#se-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
+    seRenderSteps();
     ['src', 'edit', 'final'].forEach(function(t) { document.getElementById('se-pane-' + t).style.display = t === tab ? 'flex' : 'none'; });
     document.getElementById('se-limit-note').textContent = seLimitNote();
     seKindButtons(tab);
@@ -13456,6 +13464,98 @@
     if (tab === 'src') seRenderSrc();
     else if (tab === 'edit') seRenderEdit();
     else seRenderFinal();
+    seGlowNext();
+  }
+
+  // ----- 진행 순서 · 다음 할 일 (수행평가와 같은 방식) -----
+  // 탭(①~③)이 곧 할 일 순서: 지금 고른 자율/진로에서 끝난 걸음 ✓, 다음 걸음엔 "다음". 탭 아래 "다음 할 일" 상자가 지금 할 일 한 가지와
+  // 누를 단추를 알려 주고, 그 화면에 눌러야 할 곳이 있으면 반짝이게. 설명서를 안 읽는 선생님도 화면만 보고 따라가게.
+  const SE_STEP_TABS = { src: '① 자료 입력', edit: '② 편집', final: '③ 최종' };
+  // 학생 한 명이 이 자율/진로에서 할 일이 남았나: 받은 문장이 있는데 최종이 없음(todo) · 최종과 다른 편집(draft) · 최종이 한도를 넘음(over)
+  function seStuTodo(num, kind, areas) {
+    if (seHasDraft(num, kind)) return 'draft';
+    const fin = seGet(seFinKey(num, kind));
+    if (fin.trim()) return seBytes(fin) > seLimitBytes(kind) ? 'over' : '';
+    return (areas || seAreas(kind)).some(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }) ? 'todo' : '';
+  }
+  function seKindInfo(kind) {
+    const areas = seAreas(kind);
+    const withSrc = seRoster.filter(function(s) { return areas.some(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }); });
+    const todo = seRoster.filter(function(s) { return seStuTodo(s.num, kind, areas); });
+    return { areas: areas, withSrc: withSrc, todo: todo, done: withSrc.length > 0 && !todo.length };
+  }
+  function seNextInfo() {
+    const go = function(tab, extra) { return Object.assign({ tab: tab }, extra || {}); };
+    if (!seClassKey()) return { st: {}, next: null };
+    if (!seRoster.length) return { st: {}, next: go('src', { msg: '이 반 명렬표에 학생이 없어요. 관리자가 명렬표를 올리면 저절로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣어도 돼요.', glow: '#se-import-btn' }) };
+    const kind = seKind(), other = kind === 'a' ? 'p' : 'a', K = SE_KIND_LABEL[kind], OK = SE_KIND_LABEL[other];
+    const I = seKindInfo(kind), N = seRoster.length, st = {};
+    st.src = I.withSrc.length > 0;
+    st.srcCnt = st.src && I.withSrc.length < N ? I.withSrc.length + '/' + N + '명' : '';
+    st.edit = I.done;
+    st.editCnt = st.src && !st.edit ? (I.withSrc.length - I.todo.filter(function(s) { return I.withSrc.indexOf(s) !== -1; }).length) + '/' + I.withSrc.length + '명' : '';
+    st.final = I.done;
+    let next;
+    if (!I.areas.length) next = go('src', { msg: '<b>' + K + '</b> 영역이 없어요. 표 머리의 <b>＋ 영역 추가</b>로 부서에서 받은 활동(예: 1인 1역할)마다 열을 만드세요.', glow: '#se-add-area' });
+    else if (!st.src) next = go('src', { msg: '부서에서 받은 <b>' + K + '</b> 문장을 넣으세요. <b>📊 엑셀 내려받기</b>로 양식을 받아 채운 뒤 <b>📥 엑셀 가져오기</b> — 또는 표 칸에 직접 적거나 엑셀에서 여러 칸을 복사해 붙여 넣어도 돼요.', glow: '#se-export-btn' });
+    else if (I.todo.length) {
+      const s = I.todo.find(function(x) { return x.num === seSelNum; }) || I.todo[0], why = seStuTodo(s.num, kind, I.areas);
+      const draft = seDraftText(s.num, kind).trim(), sel = seSt(s.num).sel[kind].filter(function(id) { return seGet(seSrcKey(s.num, id)).trim(); });
+      const how = why === 'draft' ? '다듬은 글이 아직 최종에 안 들어갔어요 — <b>📊 최종에 넣기</b>를 누르세요.'
+        : why === 'over' ? '최종이 한도(' + seFmt(seLimitBytes(kind)) + '바이트)를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
+        : draft ? '편집 칸을 다듬은 뒤 <b>📊 최종에 넣기</b>를 누르세요.'
+        : sel.length ? '<b>⬇ 합쳐서 편집 칸에 넣기</b>를 누른 뒤 다듬고 <b>📊 최종에 넣기</b>.' : '받은 내용에서 넣을 것을 체크하세요 → 합치기 → 다듬기 → <b>📊 최종에 넣기</b>.';
+      const glow = why === 'draft' || why === 'over' || draft ? '#se-put-btn' : sel.length ? '#se-combine-btn' : '#se-box-src .se-card:not(.none)';
+      next = go('edit', { num: s.num, msg: '<b>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</b> ' + K + ': ' + how + ' <span class="se-muted">(' + K + ' 남은 학생 ' + I.todo.length + '명)</span>', glow: glow });
+    } else {
+      const O = seKindInfo(other);
+      if (!O.done) next = { done: true, msg: '<b>' + K + '</b> 최종을 모두 넣었어요(' + I.withSrc.length + '명)! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요. 이제 <b>' + OK + '</b>도 해 볼까요?', act: "seSetKind('" + other + "')", btn: OK + '로 →' };
+      else next = go('final', { done: true, msg: '<b>자율·진로</b> 최종을 모두 넣었어요! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.' });
+    }
+    return { st: st, next: next };
+  }
+  function seRenderSteps() {
+    const info = seNextInfo(), st = info.st, nx = info.next, cur = seTab();
+    seRenderSteps.next = nx;
+    const tabs = document.getElementById('se-tabs');
+    if (tabs) tabs.innerHTML = Object.keys(SE_STEP_TABS).map(function(t, i) {
+      const mark = st[t] ? '<span class="pa-st-ok">✓</span>' : t === 'src' && st.srcCnt ? '<span class="pa-cnt">' + st.srcCnt + '</span>' : t === 'edit' && st.editCnt ? '<span class="pa-cnt">' + st.editCnt + '</span>' : '';
+      const isNext = nx && nx.tab === t && !nx.done;
+      return (i ? '<span class="pa-arrow">›</span>' : '') + '<button class="top-btn' + (t === cur ? ' theme-active' : '') + (isNext ? ' pa-step-next' : '') + '" data-tab="' + t + '" onclick="seSetTab(\'' + t + '\')">' +
+        SE_STEP_TABS[t] + mark + (isNext && t !== cur ? '<span class="pa-st-next">다음</span>' : '') + '</button>';
+    }).join('');
+    const box = document.getElementById('se-next');
+    if (!box) return;
+    if (!nx) { box.innerHTML = ''; return; }
+    let btn = '';
+    if (nx.tab && nx.tab !== cur) btn = '<button class="top-btn" onclick="seGoNext()">' + SE_STEP_TABS[nx.tab] + '(으)로 가기 →</button>';
+    else if (nx.tab === 'edit' && nx.num && nx.num !== seSelNum) btn = '<button class="top-btn" onclick="seGoNext()">' + nx.num + '번으로 →</button>';
+    else if (nx.act) btn = '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>';
+    box.innerHTML = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-lbl">' + (nx.done ? '완료' : '다음 할 일') + '</span><span class="pa-next-msg">' + nx.msg + '</span>' + btn + '</div>';
+  }
+  function seGoNext() {
+    const nx = seRenderSteps.next;
+    if (!nx) return;
+    if (nx.num) seSelNum = nx.num;
+    if (nx.tab) seSetCfg({ tab: nx.tab });
+    seRenderAll();
+  }
+  // 눌러야 할 곳 반짝임(지금 화면에 있을 때만)
+  function seGlowNext() {
+    document.querySelectorAll('#se-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    const nx = seRenderSteps.next;
+    if (!nx || !nx.glow || (nx.tab && nx.tab !== seTab()) || (nx.num && nx.num !== seSelNum)) return;
+    const el = document.querySelector(nx.glow);
+    if (el) el.classList.add('pa-glow');
+  }
+  // 칸을 고친 뒤처럼 화면 전체를 다시 안 그릴 때 — 마우스가 눌린 동안은 기다렸다가(누르던 단추의 클릭이 사라지지 않게)
+  function seStepsSoon() {
+    clearTimeout(seStepsSoon._t);
+    seStepsSoon._t = setTimeout(function run() {
+      if (paPtrDown) { seStepsSoon._t = setTimeout(run, 30); return; }
+      if (!seIsOpen() || !seClassKey()) return;
+      seRenderSteps(); seGlowNext();
+    }, 0);
   }
   function seKindButtons(tab) {
     const cur = tab === 'final' && seFinAll() ? 'all' : seKind();
@@ -13468,24 +13568,11 @@
   }
 
   // ----- ① 자료 입력 -----
-  // 이 반에 받은 문장이 하나도 없으면(처음) 표 위에 ①→②→③ 단계 안내. 문장이 하나라도 들어오면 사라진다.
-  function seStartHtml() {
-    if (!seRoster.length || seClassKeys().some(function(k) { return k.indexOf('se-src-') === 0; })) return '';
-    return '<div class="se-box se-start"><div class="se-start-title">🗂 이렇게 세 단계면 돼요' +
-      '<button class="top-btn tour-btn" style="font-size:11px; padding:3px 9px;" onclick="seOpenTour()">📖 예시 화면으로 설명서 보기</button></div><div class="se-start-steps">' +
-      '<div class="se-start-step now"><b class="n">① 자료 입력</b> ← 지금 여기<br>표 머리 <b>＋ 영역 추가</b>로 부서 활동마다 열을 만들고, 받은 문장을 넣어요.<br>' +
-        '<button class="top-btn" onclick="seExportExcel()">📊 엑셀 양식 내려받기</button><button class="top-btn" onclick="document.getElementById(\'se-import-input\').click()">📥 채운 엑셀 가져오기</button>' +
-        '<br>또는 칸에 직접 적거나 엑셀에서 여러 칸을 복사해 붙여 넣기</div>' +
-      '<div class="se-start-step"><b class="n">② 편집</b><br>학생마다 넣을 문장을 체크해 합치고, 바이트에 맞게 다듬은 뒤 <b>📊 최종에 넣기</b></div>' +
-      '<div class="se-start-step"><b class="n">③ 최종</b><br>완성본을 확인하고 <b>📋 복사</b>해서 나이스에 붙여 넣기</div>' +
-      '</div></div>';
-  }
   function seRenderSrc() {
     const kind = seKind();
     const areas = seAreas(kind);
     const list = document.getElementById('se-src-list');
     list.style.width = '';
-    document.getElementById('se-start').innerHTML = seStartHtml();
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); return; }
     // 영역이 3개보다 적으면 3개일 때 폭으로(한 칸이 화면 끝까지 늘어나지 않게), 많으면 화면을 나눠 쓰다 좁아지면 옆으로 스크롤.
     // 흰 상자도 표 폭에 맞춰 줄인다(상자만 화면 끝까지 남으면 그리다 만 것처럼 보임).
@@ -13520,17 +13607,7 @@
     const v = ta.value.replace(/\r\n?/g, '\n');
     if (seGet(ta.dataset.key) === v) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); return; }
     seSet(ta.dataset.key, v);
-    if (document.querySelector('#se-start .se-start')) seStartRefreshSoon();
-  }
-  // 첫 문장이 들어오면 단계 안내를 치운다. 칸을 벗어난 게 표 머리 단추를 누르려던 것이면 안내가 사라지며 표가 위로 올라가
-  // 클릭이 빗나가므로(수행평가에서 고친 것과 같은 종류) 마우스가 눌린 동안은 기다렸다 치운다.
-  function seStartRefreshSoon() {
-    clearTimeout(seStartRefreshSoon._t);
-    seStartRefreshSoon._t = setTimeout(function run() {
-      if (paPtrDown) { seStartRefreshSoon._t = setTimeout(run, 30); return; }
-      const el = document.getElementById('se-start');
-      if (el && seTab() === 'src') el.innerHTML = seStartHtml();
-    }, 0);
+    seStepsSoon();
   }
   // 엑셀에서 복사한 여러 칸(탭·줄바꿈, 줄바꿈이 든 칸은 "…"로 싸임)을 한 칸에 붙여 넣으면 그 칸부터 아래·오른쪽으로 채운다.
   function seParseTsv(text) {
@@ -13643,7 +13720,7 @@
         '<span>' + escapeHtmlAttr(a.name) + '</span>' + (none ? '<span class="se-bytes">(비어 있음)</span>' : seBytesHtml(v, 0)) + '</div>' +
         (none ? '' : '<div class="se-card-text">' + escapeHtmlAttr(v) + '</div>') + '</label>';
     });
-    html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div></div>';
+    html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" id="se-combine-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div></div>';
     // 편집 칸
     html += '<div class="se-box se-sbox" id="se-box-draft"><div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 편집 칸 — 다듬은 뒤 📊 최종에 넣기</span></div>';
     html += '<textarea id="se-draft" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
@@ -13659,6 +13736,7 @@
     html += '</div>';
     ed.innerHTML = html;
     seRenderFinCount();
+    seStepsSoon();
   }
   function seToggleSel(num, kind, areaId, on) {
     const st = seSt(num);
@@ -13695,6 +13773,7 @@
     seSet(k, want);
     seRefreshStudentRow(num);
     seRenderPutState();
+    seStepsSoon();
   }
   // 📊 최종에 넣기: 편집 칸 글을 최종(se-fin)으로 — 복사·붙여 넣기 없이. 넣고 나면 편집 칸 = 최종이라 se-drf는 지운다.
   async function sePutFinal() {
@@ -13713,6 +13792,7 @@
     seSet(seDraftKey(num, kind), '');
     seRefreshStudentRow(num);
     seRenderFinCount();
+    seStepsSoon();
     if (btn) { btn.textContent = v ? '✅ 최종에 넣었어요' : '✅ 최종에서 지웠어요'; clearTimeout(sePutFinal._t); sePutFinal._t = setTimeout(function() { const b2 = document.getElementById('se-put-btn'); if (b2) b2.textContent = '📊 최종에 넣기'; }, 1800); }
   }
   function seRenderPutState() {
@@ -14347,12 +14427,12 @@
     paRenderAll();
   }
   // 화면 크기(🔍 − 100% +): 수행평가 화면 전체를 같은 비율로(CSS zoom) — 글씨만 키우면 칸 폭을 고정한 점수 표가 틀어져서.
-  // 머리 줄·본문(#pa-page-header, #pa-main)과 작은 창(--pa-zoom)에. 계정 자료 'zoom-pa'(100%는 지움 — 'pa-'로 시작하지 않게 해서 수행평가 백업·되돌리기와 따로).
+  // 본문(#pa-main)과 작은 창(--pa-zoom)에 — 머리 줄은 키우지 않음(노트북에서 머리가 넘어가지 않게). 계정 자료 'zoom-pa'(100%는 지움 — 'pa-'로 시작하지 않게 해서 수행평가 백업·되돌리기와 따로).
   const PA_ZOOMS = [90, 100, 110, 125, 150];
   function paZoomGet() { let z = 100; try { z = parseInt(localStorage.getItem('zoom-pa'), 10) || 100; } catch (e) {} return PA_ZOOMS.indexOf(z) >= 0 ? z : 100; }
   function paApplyZoom() {
     const z = paZoomGet();
-    ['pa-page-header', 'pa-main'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
+    ['pa-main'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
     document.documentElement.style.setProperty('--pa-zoom', String(z / 100));
     const t = document.getElementById('pa-zoom-text'); if (t) t.textContent = z + '%';
   }

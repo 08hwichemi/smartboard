@@ -257,8 +257,8 @@ handleDb = async function(pageInfo, req) {
   check('자료 입력 표에 명렬표 학생 5명', rows.join(',') === '1,2,3,4,5', rows);
   check('기본 영역: 자율 "1인 1역할" 1개 (아직 저장 안 됨)', (await areas('a')).map(a => a.name).join() === '1인 1역할' && (await ls(pc, 'se-areas-3-1')) === null);
   check('탭 = 단계 번호(수행평가처럼): ① 자료 입력 · ② 편집 · ③ 최종', (await P.evaluate(() => [...document.querySelectorAll('#se-tabs .top-btn')].map(b => b.textContent.trim()).join())) === '① 자료 입력,② 편집,③ 최종');
-  const start0 = await P.evaluate(() => { const b = document.querySelector('#se-start .se-start'); return b && { steps: [...b.querySelectorAll('.se-start-step')].map(x => (x.classList.contains('now') ? '*' : '') + x.querySelector('b.n').textContent).join(), btns: [...b.querySelectorAll('button')].map(x => x.textContent).join('|') }; });
-  check('처음(받은 문장 없음): 표 위에 ①→②→③ 단계 안내, 지금 단계 = ①, 엑셀 양식·가져오기·설명서 단추', start0 && start0.steps === '*① 자료 입력,② 편집,③ 최종' && /엑셀 양식 내려받기/.test(start0.btns) && /가져오기/.test(start0.btns) && /설명서/.test(start0.btns), start0);
+  const nx0 = await P.evaluate(() => ({ msg: document.querySelector('#se-next .pa-next-msg').textContent, glow: !!document.querySelector('#se-export-btn.pa-glow'), next: [...document.querySelectorAll('#se-tabs .pa-step-next')].map(b => b.dataset.tab).join() }));
+  check('다음 할 일(처음): 받은 자율 문장을 넣으라고 + 엑셀 내려받기 반짝임, 다음 단계 = ①', /자율<\/?b?>? ?문장을 넣으세요|자율 문장을 넣으세요/.test(nx0.msg) && nx0.glow && nx0.next === 'src', nx0);
 
   // ---- 고정된 머리: 자율/진로 버튼은 세 탭 모두 같은 자리 ----
   const kindPos = async () => P.evaluate(() => { const r = document.querySelector('#se-kind [data-kind="a"]').getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top); });
@@ -300,7 +300,9 @@ handleDb = async function(pageInfo, req) {
   const saved = await P.evaluate(() => localStorage.getItem('se-src-3-1-1-' + seAreas('a')[0].id));
   check('칸을 벗어나면 저장(학생·영역 단위 항목) → 서버에 그 항목만 올라감', saved === '교실 문단속을 맡아 성실히 수행함.' && serverVal(T1, 'se-src-3-1-1-' + a1) === saved && upserts.length === 1 && upserts[0].length === 1 && upserts[0][0] === 'se-src-3-1-1-' + a1, { saved, upserts });
   check('저장 표시', /저장됨/.test(await P.evaluate(() => document.getElementById('se-save-state').textContent)));
-  check('첫 문장이 들어오면 단계 안내는 사라지고, Tab으로 옮긴 칸에 커서 그대로', await P.evaluate(() => !document.querySelector('#se-start .se-start') && document.activeElement && document.activeElement.classList.contains('se-cell')));
+  await wait(100);
+  const nx1 = await P.evaluate(() => ({ msg: document.querySelector('#se-next .pa-next-msg').textContent, btn: (document.querySelector('#se-next .top-btn') || {}).textContent || '', okSrc: !!document.querySelector('#se-tabs [data-tab="src"] .pa-st-ok'), nextTab: [...document.querySelectorAll('#se-tabs .pa-step-next')].map(b => b.dataset.tab).join(), focus: document.activeElement && document.activeElement.classList.contains('se-cell') }));
+  check('첫 문장이 들어오면: ① ✓ · 다음 = ② 편집 "1번 … 체크하세요" + "② 편집(으)로 가기", Tab으로 옮긴 칸에 커서 그대로', nx1.okSrc && nx1.nextTab === 'edit' && /1번/.test(nx1.msg) && /체크/.test(nx1.msg) && /② 편집/.test(nx1.btn) && nx1.focus, nx1);
 
   // ---- 여러 칸 붙여 넣기(엑셀 복사: 탭·줄바꿈, 줄바꿈 든 칸은 따옴표) ----
   const paste = (sel, text) => P.evaluate(([sel, text]) => {
@@ -598,12 +600,26 @@ handleDb = async function(pageInfo, req) {
   const cls2 = await P.evaluate(() => ({ n: seRoster.length, areas: seAreas('a').map(a => a.name).join(), fin: localStorage.getItem('se-fin-3-2-1-a') }));
   check('3-2로 바꾸면 그 반 명렬표 28명·기본 영역·빈 자료', cls2.n === 28 && cls2.areas === '1인 1역할' && cls2.fin === null, cls2);
   // 빈 반엔 단계 안내 — 첫 칸을 적고 바로 표 머리 단추를 눌러도(안내가 사라지며 표가 올라가도) 단추가 먹힘
-  check('빈 반(3-2)엔 단계 안내', await P.isVisible('#se-start .se-start'));
+  check('빈 반(3-2): 다음 할 일 = 문장 넣기', /문장을 넣으세요/.test(await P.innerText('#se-next')));
   await P.click('#se-src-list tr[data-num="1"] textarea.se-cell'); await P.keyboard.type('첫 문장');
   await P.click('#se-add-area'); await wait(300);
   const promptUp = await P.isVisible('#custom-prompt-overlay');
   if (promptUp) { await P.click('#custom-prompt-overlay button:has-text("취소")'); await wait(200); }
-  check('첫 칸 적고 바로 "＋ 영역 추가" → 창이 뜸(클릭 안 빗나감) + 안내 사라짐 + 글 저장', promptUp && !(await P.isVisible('#se-start .se-start')) && await P.evaluate(() => localStorage.getItem('se-src-3-2-1-' + seAreas('a')[0].id) === '첫 문장'));
+  check('첫 칸 적고 바로 "＋ 영역 추가" → 창이 뜸(다음 할 일이 바뀌어도 클릭 안 빗나감) + 안내 바뀜 + 글 저장', promptUp && !/문장을 넣으세요/.test(await P.innerText('#se-next')) && await P.evaluate(() => localStorage.getItem('se-src-3-2-1-' + seAreas('a')[0].id) === '첫 문장'));
+  // 다음 할 일 따라가기: ② 편집으로 → 카드 체크(반짝임) → 합치기(반짝임) → 최종에 넣기(반짝임) → 자율 완료 → 진로로
+  await P.click('#se-next .top-btn'); await wait(250);
+  const g = () => P.evaluate(() => { const e = document.querySelector('#se-page .pa-glow'); return e ? (e.id || e.className) : ''; });
+  const f1 = { tab: await P.evaluate(() => seTab() + ':' + seSelNum), glow: await g() };
+  await P.click('#se-box-src .se-card:not(.none) input[type=checkbox]'); await wait(200);
+  const f2 = await g();
+  await P.click('#se-combine-btn'); await wait(200);
+  const f3 = await g();
+  await P.click('#se-put-btn'); await wait(300);
+  const f4 = await P.evaluate(() => ({ done: !!document.querySelector('#se-next .pa-next.done'), btn: (document.querySelector('#se-next .top-btn') || {}).textContent, ok: [...document.querySelectorAll('#se-tabs .pa-st-ok')].length }));
+  check('다음 할 일 따라가기: ② 편집 1번 → 카드 반짝임 → 합치기 반짝임 → 최종에 넣기 반짝임 → "완료" + ①②③ ✓ + "진로로 →"', f1.tab === 'edit:1' && /se-card/.test(f1.glow) && f2 === 'se-combine-btn' && f3 === 'se-put-btn' && f4.done && f4.btn === '진로로 →' && f4.ok === 3, { f1, f2, f3, f4 });
+  await P.click('#se-next .top-btn'); await wait(250);
+  check('"진로로 →" → 진로로 바뀌고 다음 할 일 = 진로 문장 넣기', (await P.evaluate(() => seKind())) === 'p' && /진로<\/b> 문장을 넣으세요|진로 문장을 넣으세요/.test(await P.innerText('#se-next')));
+  await P.evaluate(() => { seSetCfg({ kind: 'a' }); seRenderAll(); });
   await P.selectOption('#se-class', '1'); await wait(500);
   const before = await P.evaluate(() => Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg').length);
   await P.click('#se-page-header button:has-text("초기화")'); await wait(200);

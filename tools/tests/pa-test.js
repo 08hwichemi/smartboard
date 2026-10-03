@@ -451,7 +451,18 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   // ===== 📊 엑셀 내려받기(백업) / 📥 가져오기 =====
   check('위쪽 메뉴에 "💾 백업" 묶음 — 💾 백업(전체 백업 파일 창) · 엑셀 가져오기 · 엑셀 내려받기, 한 줄 머리', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') && /^💾 백업/.test((await P.innerText('#pa-backup')).trim()) &&
     await P.evaluate(() => ['#pa-xl-import', '#pa-xl-export', '#pa-backup-btn'].every(q => !!document.querySelector('#pa-backup ' + q)) &&
-      Math.abs(document.getElementById('pa-backup').getBoundingClientRect().top - document.getElementById('pa-term').getBoundingClientRect().top) < 12));
+      true));
+  // 머리: 첫 줄 = 제목·설명서 + 백업·화면 크기, 둘째 줄 = 학기·과목·반 — 노트북 폭(1366)에서 화면 크기를 키워도 머리 높이 그대로(본문만 커짐)
+  {
+    const vp = P.viewportSize(); await P.setViewportSize({ width: 1366, height: 768 });
+    const mid = (q) => P.evaluate((q) => { const r = document.querySelector(q).getBoundingClientRect(); return Math.round(r.top + r.height / 2); }, q);
+    const hh = () => P.evaluate(() => Math.round(document.getElementById('pa-page-header').getBoundingClientRect().height));
+    const h0 = await hh(), row1 = [await mid('#pa-tour-btn'), await mid('#pa-backup'), await mid('#pa-zoom-group')], row2 = [await mid('#pa-term'), await mid('#pa-subjs'), await mid('#pa-classes')];
+    for (let i = 0; i < 3; i++) await P.click('#pa-zoom-group button:has-text("+")');
+    const h1 = await hh(), zm = await P.evaluate(() => [getComputedStyle(document.getElementById('pa-main')).zoom, getComputedStyle(document.getElementById('pa-page-header')).zoom]);
+    await P.click('#pa-zoom-text'); await P.setViewportSize(vp);
+    check('머리 두 줄(제목·도구 / 학기·과목·반), 1366px에서 150%로 키워도 머리 높이 그대로·본문만 커짐', Math.max(...row1) - Math.min(...row1) <= 3 && Math.max(...row2) - Math.min(...row2) <= 3 && row2[0] > row1[0] + 15 && h0 === h1 && zm[0] === '1.5' && zm[1] === '1', { row1, row2, h0, h1, zm });
+  }
   if (ExcelJSNode && EXCELJS_PATH) {
     await P.click('#pa-xl-export'); await P.waitForTimeout(200);
     const opts = await P.evaluate(() => [...document.querySelectorAll('#pa-modal [data-xl]')].map(b => b.dataset.xl + (b.checked ? '1' : '0')).join());
