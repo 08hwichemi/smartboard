@@ -1,7 +1,12 @@
 # Supabase 무료 요금제는 7일 동안 아무 요청이 없으면 프로젝트를 일시정지한다(자료는
 # 남지만, 관리 화면에서 직접 다시 켜기 전까지 앱이 동작하지 않음). 방학처럼 아무도
-# 접속하지 않는 기간에도 정지되지 않도록 매일 한 번 서버에 가벼운 요청을 보낸다.
-# 주소와 키는 index.html에 이미 공개돼 있는 값(publishable key)을 그대로 읽어 쓴다.
+# 접속하지 않는 기간에도 정지되지 않도록 매일 한 번 네 앱의 서버에 가벼운 요청을 보낸다.
+#  - 스마트보드: 주소·키를 index.html에서 그대로 읽음(키를 바꿔도 따라감).
+#  - 면접ON·수시지원계획서·부광고ON: 각 앱 화면 코드에 이미 들어 있는 공개 키(publishable)를 적어 둠 —
+#    공개돼도 되는 키(권한은 RLS가 막음). 앱의 키를 새로 만들면 여기도 바꿀 것.
+#  - 고른 표는 공개 키로 읽어도 줄이 안 나오거나(RLS) 공개 설정뿐인 표. 응답 내용은 기록에 안 남기고 상태 코드만 본다.
+#  - 하나라도 실패하면 작업이 실패로 끝나고 GitHub가 저장소 주인에게 메일을 보낸다(→ Supabase 관리 화면 확인).
+#  - Actions 탭 → 이 작업 → Run workflow로 바로 돌려 볼 수 있다.
 #
 # 참고: GitHub는 저장소에 60일 동안 커밋이 없으면 이런 예약 작업을 자동으로 끈다.
 # 그럴 땐 저장소 Actions 탭에서 이 작업을 다시 켜면 된다.
@@ -15,13 +20,21 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: 서버에 요청 보내기
+      - name: 네 앱 서버에 요청 보내기
         run: |
+          fail=0
+          ping() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 --retry 2 "$2/rest/v1/$3?select=*&limit=1" -H "apikey: $4")
+            echo "$1 → 응답 코드 $code"
+            case "$code" in 200|206) ;; *) fail=1 ;; esac
+          }
           URL=$(grep -oE "SUPABASE_URL = '[^']+'" index.html | head -1 | cut -d"'" -f2)
           KEY=$(grep -oE "SUPABASE_ANON_KEY = '[^']+'" index.html | head -1 | cut -d"'" -f2)
-          test -n "$URL" && test -n "$KEY"
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$URL/rest/v1/app_settings?select=key&limit=1" -H "apikey: $KEY")
-          echo "응답 코드: $code"
-          test "$code" = "200"
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then ping '스마트보드' "$URL" app_settings "$KEY"; else echo '스마트보드 → index.html에서 주소·키를 못 찾음'; fail=1; fi
+          ping '면접ON' https://ymtahsghrkqdxalcvcau.supabase.co schools sb_publishable_bLRKkEl16RtGsYsGGBGg-Q_F7mCwKVW
+          ping '수시지원계획서' https://hkezugxscczasrfstord.supabase.co application_deletions sb_publishable_lDvMs3sU0X2dO670UNsngA__uGZ8hTV
+          ping '부광고ON' https://sskfshlefbhniiqmdydd.supabase.co settings sb_publishable_QU_SvXD4sDJTvZbk3MsScw_dJMK-w4V
+          exit $fail
