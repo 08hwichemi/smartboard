@@ -772,6 +772,21 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     await W.click('#ws-fs-reset'); await W.waitForTimeout(200);
     const fs2 = await W.evaluate(() => ({ fs: JSON.parse(localStorage.getItem('fm-ws')).fs, inp: document.querySelector('#ws-fsize input[data-fs="sno"]').value }));
     check('↺ 처음 크기: 저장 지우고 칸도 처음 값', fs2.fs && !Object.keys(fs2.fs).length && fs2.inp === '17', fs2);
+    // 본문 제목 크기: 안 고치면 본문 크기를 따라가고(대제목 +3·중제목 +1), 고친 것만 그 크기 — 한글 파일 스타일 글자 크기도
+    await W.evaluate(() => wsSet({ outline: '1 반응엔탈피\n1. 반응엔탈피\n(1) 엔탈피\n① 모든 물질', olText: true, rows: null }, true)); await W.waitForTimeout(150);
+    await W.fill('#ws-hsize input[data-hs="h1"]', '18'); await W.fill('#ws-hsize input[data-hs="h3"]', '13'); await W.fill('#ws-bsize', '11'); await W.waitForTimeout(300);
+    const hs1 = await W.evaluate(async () => { const c = wsCfg(), zip = await JSZip.loadAsync(await wsBuildHwpx(c)), head = await zip.file('Contents/header.xml').async('string'), sec = await zip.file('Contents/section0.xml').async('string');
+      const pt = (id) => +head.match(new RegExp('<hh:charPr id="' + id + '" height="(\\d+)"'))[1] / 100;
+      const runPt = (t) => pt(sec.match(new RegExp('<hp:run charPrIDRef="(\\d+)"><hp:t>' + t))[1]);
+      const prev = [...document.querySelectorAll('#fm-pages .ws-body div')].map(d => d.style.fontSize);
+      return { hs: c.hs, inp: [...document.querySelectorAll('#ws-hsize input')].map(i => i.value + (i.classList.contains('ws-hs-auto') ? '*' : '')), h1: runPt(' 반응엔탈피'), h2: runPt('1\\. 반응엔탈피'), h3: runPt('\\(1\\) 엔탈피'), it: runPt('① 모든 물질'), prev }; });
+    check('본문 제목 크기: 대제목 18·소제목 13은 고친 대로, 중제목·항목은 본문 11을 따라감(12·11, 회색), 미리보기·한글 파일 같게',
+      hs1.h1 === 18 && hs1.h3 === 13 && hs1.h2 === 12 && hs1.it === 11 && hs1.inp.join() === '18,12*,13,11*' && hs1.prev.slice(0, 4).join() === '18pt,12pt,13pt,11pt', hs1);
+    await W.click('#ws-fs-reset'); await W.waitForTimeout(200);
+    const hs2 = await W.evaluate(() => ({ hs: JSON.parse(localStorage.getItem('fm-ws')).hs, inp: [...document.querySelectorAll('#ws-hsize input')].map(i => i.value).join() }));
+    check('↺ 처음 크기는 본문 제목 크기도 지움', hs2.hs && !Object.keys(hs2.hs).length && hs2.inp === '14,12,11,11', hs2);
+    const olAdd = await W.evaluate(() => { const r = document.getElementById('ws-ol-add'); return { lines: new Set([...r.querySelectorAll('button')].map(b => Math.round(b.getBoundingClientRect().top))).size, over: r.scrollWidth > r.clientWidth + 1 }; });
+    check('③ "더하기" 단추 다섯 개가 한 줄(본문만 아래로 내려가지 않음)', olAdd.lines === 1 && !olAdd.over, olAdd);
     await W.evaluate(() => wsSet({ stu: false }, true)); await W.waitForTimeout(150);
     // 위 안내 한 줄: 수행평가·시정표(평상시·단축·시험 기간)에서 두 줄로 내려가던 것
     const guides = [];

@@ -458,6 +458,17 @@ function pdfInfo(buf) {
   await small.page.click('#nt-font-btn'); await wait(200);
   check('1366×768: 아래쪽에서 펼쳐도 목록이 화면 안', await small.page.evaluate(() => { const r = document.getElementById('nt-font-menu').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.height > 200; }));
   await small.page.screenshot({ path: 'nt-1366.png' });
+  // 🔍 미리보기 확대/축소(양식 만들기와 같음): 100% = 한 장에 맞춤, 200%면 두 배·옆으로 스크롤, 숫자 누르면 100%
+  const SP = small.page;
+  if (!(await SP.evaluate(() => !!document.querySelector('#nt-pages .nt-sheet')))) { await SP.fill('#nt-text', '월간 일정표\n오늘의 메뉴'); await wait(300); }
+  const nz = () => SP.evaluate(() => { const sc = document.getElementById('nt-prev-scroll'), r = document.querySelector('#nt-pages .nt-sheet').getBoundingClientRect(), sr = sc.getBoundingClientRect();
+    return { t: document.getElementById('nt-zoom-text').textContent, w: r.width, left: r.left - sr.left, sw: sc.scrollWidth, cw: sc.clientWidth }; });
+  const nz0 = await nz();
+  for (let i = 0; i < 3; i++) await SP.click('#nt-zoom-group button:last-of-type');
+  const nz1 = await nz();
+  await SP.click('#nt-zoom-text'); const nz2 = await nz();
+  check('🔍 이름표 미리보기 확대/축소: 100% = 맞춤, 200%면 두 배·옆으로 스크롤(왼쪽 안 잘림), 숫자 누르면 100%',
+    nz0.t === '100%' && nz1.t === '200%' && Math.abs(nz1.w - nz0.w * 2) < 3 && nz1.sw > nz1.cw && nz1.left >= -1 && nz2.t === '100%' && Math.abs(nz2.w - nz0.w) < 1, { nz0, nz1, nz2 });
 
   const errs = [...pc.errors, ...pc2.errors, ...small.errors, ...hr.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
