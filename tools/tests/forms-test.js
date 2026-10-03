@@ -750,6 +750,36 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     await W.selectOption('#ws-fp-subj', ''); await W.selectOption('#ws-fp-num', ''); await W.selectOption('#ws-tfont', '경기천년제목 Bold'); await W.waitForTimeout(200);
     const back = await W.evaluate(() => { const c = JSON.parse(localStorage.getItem('fm-ws')); return { fp: c.fp, tFont: c.tFont, tFontC: c.tFontC, shown: getComputedStyle(document.getElementById('ws-tfont-custom')).display }; });
     check('"머리·꼬리와 같게"로 되돌리면 부분 글꼴 지움, 목록에서 고르면 직접 입력 칸 숨김', !Object.keys(back.fp).length && back.tFont === '경기천년제목 Bold' && !back.tFontC && back.shown === 'none', back);
+    // 부분별 글씨 크기(pt): 칸에 적으면 미리보기·한글 파일 글자 크기가 바뀌고, 키우면 머리 띠·반·번호·이름 칸이 그만큼 커짐
+    const fs0 = await W.evaluate(() => { const c = wsCfg(), L = wsLayout(c); return { fs: c.fs, r1: L.r1, r2: L.r2, headH: L.headH, n: document.querySelectorAll('#ws-fsize input').length,
+      lbl: [...document.querySelectorAll('#ws-fparts .fm-fl, #ws-fsize .ws-fsl')].filter(e => /반·번호·이름/.test(e.textContent)).map(e => e.getBoundingClientRect().height) }; });
+    check('글씨 크기 칸 8개(처음 크기 대단원 13·소단원 17·반·번호·이름 10·과목명 19·쪽 번호 16), 머리 띠 처음 6.5 + 9.5mm, "반·번호·이름" 이름표가 한 줄',
+      fs0.n === 8 && fs0.fs.uno === 13 && fs0.fs.sno === 17 && fs0.fs.stu === 10 && fs0.fs.subj === 19 && fs0.fs.num === 16 && fs0.r1 === 6.5 && fs0.r2 === 9.5 && fs0.headH === 24 && fs0.lbl.length && fs0.lbl.every(h => h > 0 && h < 22), fs0);
+    await W.evaluate(() => wsSet({ stu: true }, true)); await W.waitForTimeout(150);
+    for (const [k, v] of [['uno', 18], ['sno', 24], ['stu', 12], ['subj', 25], ['num', 20], ['foot', 13]]) await W.fill('#ws-fsize input[data-fs="' + k + '"]', String(v));
+    await W.fill('#ws-fsize input[data-fs="note"]', '99'); // 범위 밖 = 저장 안 함
+    await W.waitForTimeout(300);
+    const fs1 = await W.evaluate(async () => { const c = wsCfg(), L = wsLayout(c), zip = await JSZip.loadAsync(await wsBuildHwpx(c)), head = await zip.file('Contents/header.xml').async('string'), sec = await zip.file('Contents/section0.xml').async('string');
+      const pt = (id) => +head.match(new RegExp('<hh:charPr id="' + id + '" height="(\\d+)"'))[1] / 100;
+      const runPt = (t) => pt(sec.match(new RegExp('<hp:run charPrIDRef="(\\d+)"><hp:t>' + t))[1]);
+      const band = document.querySelector('#fm-pages .ws-band'), tds = [...band.querySelectorAll('td')];
+      return { fs: c.fs, r1: L.r1, r2: L.r2, headH: L.headH, stuW: L.band.stuW, foot: L.foot.h, uName: runPt('반응엔탈피와 화학 평형'), sName: runPt('반응엔탈피와 열화학 반응식'), subj: runPt('화학Ⅱ'),
+        num: pt(sec.match(/<hp:run charPrIDRef="(\d+)"><hp:ctrl><hp:autoNum/)[1]), stuHwp: pt(sec.match(/<hp:run charPrIDRef="(\d+)"><hp:t>\(<hp:fwSpace/)[1]),
+        prevSub: tds.find(t => t.textContent === '반응엔탈피와 열화학 반응식').style.fontSize, prevStu: band.querySelector('.ws-stu').style.fontSize, margin: sec.match(/<hp:margin [^>]*header="(\d+)"/)[1] }; });
+    check('글씨 크기: 대단원 18·소단원 24·과목명 25·쪽 번호 20·반·번호·이름 12pt가 한글 파일·미리보기에, NOTE 99는 저장 안 함(10)',
+      fs1.uName === 18 && fs1.sName === 24 && fs1.subj === 25 && fs1.num === 20 && fs1.stuHwp === 12 && fs1.prevSub === '24pt' && fs1.prevStu === '12pt' && fs1.fs.note === 10, fs1);
+    check('글씨를 키우면 머리 띠·머리말·반·번호·이름 칸·꼬리 칸이 함께 커짐', fs1.r1 > 6.5 && fs1.r2 > 9.5 && Math.abs(fs1.headH - (fs1.r1 + fs1.r2 + 8)) < 0.01 && fs1.stuW > 42 && fs1.foot > 7 && +fs1.margin === Math.round(fs1.headH * 7200 / 25.4), fs1);
+    await W.click('#ws-fs-reset'); await W.waitForTimeout(200);
+    const fs2 = await W.evaluate(() => ({ fs: JSON.parse(localStorage.getItem('fm-ws')).fs, inp: document.querySelector('#ws-fsize input[data-fs="sno"]').value }));
+    check('↺ 처음 크기: 저장 지우고 칸도 처음 값', fs2.fs && !Object.keys(fs2.fs).length && fs2.inp === '17', fs2);
+    await W.evaluate(() => wsSet({ stu: false }, true)); await W.waitForTimeout(150);
+    // 위 안내 한 줄: 수행평가·시정표(평상시·단축·시험 기간)에서 두 줄로 내려가던 것
+    const guides = [];
+    for (const k of ['bs', 'roster', 'pe', 'ws']) {
+      await W.click('#fm-kind-switch [data-kind="' + k + '"]'); await W.waitForTimeout(250);
+      guides.push(await W.evaluate((k) => { const e = document.getElementById(k === 'roster' ? 'fm-guide' : k + '-guide'); return { k, h: e.offsetHeight, fit: e.scrollWidth <= e.clientWidth + 1, title: !!e.title }; }, k));
+    }
+    check('양식 위 안내는 늘 한 줄(1600px 화면에선 잘리지도 않음), 마우스를 올리면 전체 글', guides.every(g => g.h > 0 && g.h < 24 && g.fit && g.title), guides);
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);

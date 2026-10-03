@@ -1014,7 +1014,7 @@
     .fm-tt { display: inline-flex; align-items: center; gap: 6px; }
     .fm-step { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); color: #fff; font-size: 11px; font-weight: 800; flex: 0 0 auto; border: 1.5px solid var(--accent-color); box-sizing: border-box; }
     .fm-step.opt { background: transparent; color: var(--accent-color); }
-    .fm-guide { font-size: 12px; color: var(--text-sub); line-height: 1.6; margin: 0 2px 12px; }
+    .fm-guide { font-size: 12px; color: var(--text-sub); line-height: 1.6; margin: 0 2px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fm-guide .fm-step { width: 16px; height: 16px; font-size: 10px; margin-right: 2px; vertical-align: -3px; }
     .fm-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
     #fm-paper .fm-sep { width: 1px; height: 16px; background: var(--border-color); margin: 0 4px; }
@@ -1215,7 +1215,14 @@
     .fm-fontrow { flex-wrap: nowrap; }
     #ws-fparts summary { cursor: pointer; font-size: 13px; color: var(--text-sub); margin: 2px 0 4px; }
     #ws-fparts .fm-fontrow { margin-top: 4px; }
-    #ws-fparts .fm-fl { width: 56px; }
+    #ws-fparts .fm-fl { width: 80px; white-space: nowrap; }
+    .ws-fs-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-main); margin: 8px 0 4px; }
+    .ws-fs-head a { font-size: 11.5px; color: var(--text-sub); text-decoration: none; }
+    .ws-fs-head a:hover { color: var(--accent-color); }
+    .ws-fsgrid { display: grid; grid-template-columns: auto minmax(44px, 1fr) auto minmax(44px, 1fr); gap: 4px 6px; align-items: center; font-size: 12px; }
+    .ws-fsgrid label { display: contents; }
+    .ws-fsgrid .ws-fsl { color: var(--text-sub); white-space: nowrap; }
+    .ws-fsgrid .lp-input { width: 100%; min-width: 0; padding-left: 6px; padding-right: 2px; }
     .fm-fontrow .fm-fl { flex: 0 0 auto; color: var(--text-sub); }
     .fm-fontrow select { flex: 1; min-width: 0; }
     .fm-fontrow input[type="number"].lp-input { width: 60px; flex: 0 0 auto; padding-left: 6px; padding-right: 2px; }
@@ -3128,7 +3135,7 @@
   </div>
   <div id="fm-body">
     <div id="fm-left">
-      <div class="fm-guide" id="fm-guide"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 차례로 채우면 바로 만들어져요. <b class="fm-step opt">4</b>~<b class="fm-step opt">8</b>은 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="fm-guide" title="①②③ 차례로 채우면 끝. ④~⑧은 필요할 때만 — 다 되면 ⬇️ 한글 파일"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 차례로 채우면 끝. <b class="fm-step opt">4</b>~<b class="fm-step opt">8</b>은 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b></div>
       <div id="fm-grid">
       <div class="nt-box" id="fm-class-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>🏫 명단</span> <span class="nt-muted" id="fm-count"></span></div>
@@ -3209,7 +3216,7 @@
         </div>
       </div>
       </div>
-      <div class="fm-guide" id="ws-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b> 단원·과목만 적으면 학습지 틀이 만들어져요. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 필요할 때만 — 내려받은 한글 파일에서 내용을 자유롭게 써 주세요.</div>
+      <div class="fm-guide" id="ws-guide" style="display:none;" title="①② 단원·과목만 적으면 틀 완성. ③~⑥은 필요할 때만 — 내용은 한글 파일에서"><b class="fm-step">1</b><b class="fm-step">2</b> 단원·과목만 적으면 틀 완성. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 필요할 때만 — 내용은 한글 파일에서</div>
       <div id="ws-grid" style="display:none;">
       <div class="nt-box" id="ws-unit-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📚 단원</span> <span class="nt-muted">위 머리 띠에 나와요</span></div>
@@ -3255,16 +3262,18 @@
         <div class="nt-muted">NOTE 칸은 쪽마다 같은 자리에 깔리는 바탕 상자예요. 본문은 표가 아니라 글이라서 다음 쪽으로 자연스럽게 넘어가요.</div>
       </div>
       <div class="nt-box" id="ws-font-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴·글씨 크기</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
         <div class="nt-row fm-fontrow" title="위 머리 띠·아래 쪽 번호 줄(아래 '부분별로'에서 따로 고른 곳 빼고)"><span class="fm-fl">머리·꼬리</span><select id="ws-tfont" class="mini-select" onchange="wsOnFontPick('tFont', this.value)"></select></div>
         <input type="text" id="ws-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="머리·꼬리 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom('tFont', this.value)">
         <div class="nt-row fm-fontrow" title="본문 제목 뼈대·본문"><span class="fm-fl">본문</span><select id="ws-bfont" class="mini-select" onchange="wsOnFontPick('bFont', this.value)"></select><input type="number" id="ws-bsize" class="lp-input" min="8" max="14" step="0.5" title="본문 글자 크기(pt) — 제목은 이보다 크게" data-k="bSize" oninput="wsOnNum(this, 8, 14)">pt</div>
         <input type="text" id="ws-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="본문 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="wsOnFontCustom('bFont', this.value)">
-        <details id="ws-fparts"><summary title="대단원·소단원·수업명·과목명·꼬리 글·쪽 번호·NOTE">부분별 글꼴 따로 고르기</summary><div id="ws-fparts-rows"></div></details>
+        <div class="ws-fs-head"><span>부분별 글씨 크기 <span class="nt-muted">(pt)</span></span><a href="#" id="ws-fs-reset" onclick="wsFsReset(); return false;" title="부분별 글씨 크기를 처음 크기로">↺ 처음 크기</a></div>
+        <div id="ws-fsize" class="ws-fsgrid"></div>
+        <details id="ws-fparts"><summary title="대단원·소단원·반·번호·이름·수업명·과목명·꼬리 글·쪽 번호·NOTE">부분별 글꼴 따로 고르기</summary><div id="ws-fparts-rows"></div></details>
         <div class="nt-muted" id="ws-font-msg"></div>
       </div>
       </div>
-      <div class="fm-guide" id="pe-guide" style="display:none;"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 종류를 고르고 머리 표·항목(원고지·단어)을 채우면 바로 만들어져요. <b class="fm-step opt">4</b><b class="fm-step opt">5</b>는 모양을 바꾸고 싶을 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="pe-guide" style="display:none;" title="①②③ 종류를 고르고 채우면 끝. ④⑤는 필요할 때만 — 다 되면 ⬇️ 한글 파일"><b class="fm-step">1</b><b class="fm-step">2</b><b class="fm-step">3</b> 종류를 고르고 채우면 끝. <b class="fm-step opt">4</b><b class="fm-step opt">5</b>는 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b></div>
       <div id="pe-grid" style="display:none;">
       <div class="nt-box" id="pe-type-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📝 종류</span> <span class="nt-muted">과목에 맞게 골라요</span></div>
@@ -10793,12 +10802,28 @@
     msRenderCalendar();
   }
 
+  // 칸 글자를 줄바꿈까지 읽는다. innerText는 접힌 달(display:none) 줄에선 줄바꿈을 버리고 붙여
+  // 돌려줘서, 달력에 "수능대비분반수업 신청"처럼 줄이 깨졌다가 그 달을 펼치면 다시 맞게 나왔다.
+  // 그래서 보이든 안 보이든 HTML의 <br>·줄(div/p)을 직접 \n으로 바꿔 읽는다.
+  function msCellText(el) {
+    if (!el) return '';
+    const c = el.cloneNode(true);
+    c.querySelectorAll('br').forEach(function(b) {
+      // 줄(div) 끝의 <br>은 빈 줄을 지탱할 뿐 줄바꿈이 아님(<div><br></div> = 빈 줄 하나) — 브라우저와 같게
+      if (!b.nextSibling && b.parentNode !== c && /^(DIV|P)$/.test(b.parentNode.nodeName)) b.remove(); else b.replaceWith('\n');
+    });
+    c.querySelectorAll('div, p').forEach(function(d) {
+      if (d.previousSibling) d.before('\n');
+    });
+    return c.textContent.replace(/\u00a0/g, ' ');
+  }
+
   function msGetUserData() {
     let data = {};
     const rows = msDataRows();
     rows.forEach(function(tr) {
       const dateStr = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
-      const content = tr.children[1].querySelector('.ms-cell-input').innerText.trim();
+      const content = msCellText(tr.children[1].querySelector('.ms-cell-input')).trim();
       const catId = tr.children[2].querySelector('select').value;
       if (dateStr && content) {
         const parts = dateStr.split(/[-/]/);
@@ -14684,6 +14709,9 @@
   };
   // 부분별 글꼴(비우면 머리·꼬리 글꼴)
   const WS_FPARTS = [['uno', '대단원'], ['sno', '소단원'], ['stu', '반·번호·이름'], ['cls', '수업명'], ['subj', '과목명'], ['foot', '꼬리 글'], ['num', '쪽 번호'], ['note', 'NOTE']];
+  // 부분별 글씨 크기(pt): [처음 크기, 가장 작게, 가장 크게]. 대단원 번호는 대단원 − 1, 꼬리 글은 학교명 − 2·대단원(짝수 쪽) 그대로·과목명(홀수 쪽) + 1
+  const WS_FSIZE = { uno: [13, 8, 22], sno: [17, 9, 26], stu: [10, 7, 16], cls: [13, 8, 22], subj: [19, 9, 30], foot: [11, 7, 18], num: [16, 8, 26], note: [10, 7, 18] };
+  const WS_PT = 0.3528; // 1pt = 0.3528mm
   // 반·번호·이름 칸(학생이 손으로 채우는 빈칸). "_" = 고정폭 빈칸(한글의 Alt+Space, 글꼴과 상관없이 늘 반 글자 폭) —
   // 보통 띄어쓰기는 글꼴마다 폭이 달라 한글에서 줄이 넘어가거나 빈칸이 좁아질 수 있어서.
   const WS_STU_LINES = ['(_____)반___(_____)번', '이름_:_(______________)'];
@@ -14725,6 +14753,9 @@
     const fp = c.fp && typeof c.fp === 'object' ? c.fp : {}, fpC = c.fpC && typeof c.fpC === 'object' ? c.fpC : {};
     c.fp = {}; c.fpC = {};
     WS_FPARTS.forEach(function(x) { const v = fmFontClean(fp[x[0]]); if (v) { c.fp[x[0]] = v; c.fpC[x[0]] = !!fpC[x[0]]; } });
+    const fs = c.fs && typeof c.fs === 'object' ? c.fs : {};
+    c.fs = {};
+    Object.keys(WS_FSIZE).forEach(function(k) { const d = WS_FSIZE[k]; c.fs[k] = ntNum(fs[k], d[1], d[2], d[0]); });
     return c;
   }
   function wsSet(patch, refill) {
@@ -14736,6 +14767,14 @@
     fmRender();
   }
   function wsOnNum(inp, lo, hi) { const v = parseFloat(inp.value); if (!isFinite(v) || v < lo || v > hi) return; const o = {}; o[inp.dataset.k] = v; wsSet(o); }
+  // 부분별 글씨 크기 칸(범위를 벗어난 값은 치는 중이라 보고 저장하지 않음)
+  function wsOnFs(inp) {
+    const k = inp.dataset.fs, d = WS_FSIZE[k], v = parseFloat(inp.value);
+    if (!d || !isFinite(v) || v < d[1] || v > d[2]) return;
+    const fs = Object.assign({}, wsCfg().fs); fs[k] = v;
+    wsSet({ fs: fs });
+  }
+  function wsFsReset() { wsSet({ fs: {} }, true); }
   // 글꼴 고르기: key = tFont·bFont 또는 부분(uno…). '' = 머리·꼬리와 같게(부분만), '__custom' = 직접 입력
   function wsOnFontPick(key, v) {
     const c = wsCfg(), o = {}, part = key !== 'tFont' && key !== 'bFont';
@@ -14871,18 +14910,26 @@
   // 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다
   function wsLayout(c) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1];
-    const headH = 24, footH = 12, bandH = 16, gapN = 4; // 머리말 = 머리 띠 16 + 아래 간격 8mm
+    // 머리 띠 두 줄(처음 6.5 + 9.5 = 16mm)은 글씨를 키우면 그만큼 높아진다(글자 높이 × 1.2). 머리말 = 머리 띠 + 아래 간격 8mm
+    const fs = c.fs, lh = function(pt) { return pt * WS_PT * 1.2 + 0.4; };
+    let r1 = Math.max(6.5, lh(fs.uno), c.stu ? lh(fs.stu) : 0), r2 = Math.max(9.5, lh(fs.sno), c.stu ? lh(fs.stu) : 0);
+    const rightH = (c.cls ? lh(fs.cls) : 0) + lh(fs.subj); // 오른쪽 칸(수업명 + 과목명)은 두 줄을 합쳐 씀
+    if (rightH > r1 + r2) r2 = rightH - r1;
+    r1 = Math.round(r1 * 10) / 10; r2 = Math.round(r2 * 10) / 10;
+    const bandH = r1 + r2, headH = bandH + 8, gapN = 4;
+    const footBoxH = Math.round(Math.max(7, lh(fs.num), lh(fs.foot + 1)) * 10) / 10, footH = footBoxH + 5;
+    const noteTh = Math.round(Math.max(7, lh(fs.note) + 1) * 10) / 10;
     const W = w - c.mL - c.mR;
     const noteW = c.note ? Math.min(c.noteW, W * 0.4) : 0;
     const bodyTop = c.mT + headH, bodyBot = h - c.mB - footH;
     const iconW = c.iconK ? 22 : 0, numW = 12, slashW = 9, rightW = Math.min(62, Math.max(40, W * 0.26));
-    const stuW = c.stu ? 42 : 0; // 반·번호·이름 칸: 제목과 사선 사이, 제목 폭에서 떼어 씀
+    const stuW = c.stu ? Math.round(42 * fs.stu / 10) : 0; // 반·번호·이름 칸: 제목과 사선 사이, 제목 폭에서 떼어 씀(10pt일 때 42mm, 글씨 크기만큼 넓게)
     return {
-      w: w, h: h, pw: p[0], ph: p[1], W: W, headH: headH, footH: footH, bandH: bandH,
+      w: w, h: h, pw: p[0], ph: p[1], W: W, headH: headH, footH: footH, bandH: bandH, r1: r1, r2: r2,
       bodyX: c.mL, bodyTop: bodyTop, bodyW: W - (noteW ? noteW + gapN : 0), bodyH: bodyBot - bodyTop,
-      note: noteW ? { x: c.mL + W - noteW, y: bodyTop, w: noteW, h: bodyBot - bodyTop, th: 7 } : null,
+      note: noteW ? { x: c.mL + W - noteW, y: bodyTop, w: noteW, h: bodyBot - bodyTop, th: noteTh } : null,
       band: { x: c.mL, y: c.mT, iconW: iconW, numW: numW, slashW: slashW, rightW: rightW, stuW: stuW, titleW: W - iconW - numW - stuW - slashW - rightW },
-      foot: { x: c.mL, y: h - c.mB - 7, w: W, h: 7 },
+      foot: { x: c.mL, y: h - c.mB - footBoxH, w: W, h: footBoxH },
     };
   }
   function wsTheme(c) { return WS_THEMES.find(function(t) { return t[0] === c.theme; }) || WS_THEMES[0]; }
@@ -14895,26 +14942,26 @@
     const F = function(part) { return fmFontCss(wsFont(c, part).n); };
     const W8 = function(part) { return ' font-weight:' + (wsBold(wsFont(c, part), true) ? 800 : 700) + ';'; }; // 진하게 칸: Bold 글꼴이면 글꼴 자체 굵기
     const abs = function(x, y, w, h) { return 'left:' + x + 'mm; top:' + y + 'mm; width:' + w + 'mm;' + (h != null ? ' height:' + h + 'mm;' : ''); };
-    const b = L.band, line = '0.6mm solid #000';
+    const b = L.band, line = '0.6mm solid #000', fs = c.fs;
     const bw = 700;
     const band = '<table class="ws-abs ws-band" style="' + abs(b.x, b.y, L.W, L.bandH) + F('uno') + '"><colgroup>' +
       (b.iconW ? '<col style="width:' + b.iconW + 'mm">' : '') + '<col style="width:' + b.numW + 'mm"><col style="width:' + b.titleW + 'mm">' + (b.stuW ? '<col style="width:' + b.stuW + 'mm">' : '') + '<col style="width:' + b.slashW + 'mm"><col style="width:' + b.rightW + 'mm"></colgroup>' +
-      '<tr style="height:6.5mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', '14mm') + '</td>' : '') +
-      '<td style="font-size:12pt; text-align:center; ' + F('uno') + '">' + ntEsc(c.uNo) + '</td><td style="font-size:13pt; ' + F('uno') + '">' + ntEsc(c.uName) + '</td>' +
-      (b.stuW ? '<td class="ws-stu" style="font-size:10pt; white-space:nowrap; vertical-align:bottom; padding-left:1mm; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[0]) + '</td>' : '') +
+      '<tr style="height:' + L.r1 + 'mm;">' + (b.iconW ? '<td rowspan="2" style="text-align:center; border-bottom:' + line + ';">' + wsIconSvg(c.iconK, (b.iconW - 3) + 'mm', (L.bandH - 2) + 'mm') + '</td>' : '') +
+      '<td style="font-size:' + (fs.uno - 1) + 'pt; text-align:center; ' + F('uno') + '">' + ntEsc(c.uNo) + '</td><td style="font-size:' + fs.uno + 'pt; ' + F('uno') + '">' + ntEsc(c.uName) + '</td>' +
+      (b.stuW ? '<td class="ws-stu" style="font-size:' + fs.stu + 'pt; white-space:nowrap; vertical-align:bottom; padding-left:1mm; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[0]) + '</td>' : '') +
       '<td rowspan="2" class="ws-slash"></td>' +
       '<td rowspan="2" style="border-top:' + line + '; vertical-align:middle; padding-left:2mm;">' +
-      (c.cls ? '<div style="font-size:13pt; color:' + WS_CLS_COLOR + '; ' + F('cls') + '">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:19pt; text-align:right; ' + F('subj') + W8('subj') + '">' + ntEsc(c.subj) + '</div></td></tr>' +
-      '<tr style="height:9.5mm;"><td style="font-size:17pt; text-align:center; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sNo) + '</td><td style="font-size:17pt; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sName) + '</td>' +
-      (b.stuW ? '<td class="ws-stu" style="font-size:10pt; white-space:nowrap; padding-left:1mm; border-bottom:' + line + '; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[1]) + '</td>' : '') + '</tr></table>';
-    const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + '; ' + F('note') + '">NOTE</div>' +
+      (c.cls ? '<div style="font-size:' + fs.cls + 'pt; color:' + WS_CLS_COLOR + '; ' + F('cls') + '">' + ntEsc(c.cls) + '</div>' : '') + '<div style="font-size:' + fs.subj + 'pt; text-align:right; ' + F('subj') + W8('subj') + '">' + ntEsc(c.subj) + '</div></td></tr>' +
+      '<tr style="height:' + L.r2 + 'mm;"><td style="font-size:' + fs.sno + 'pt; text-align:center; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sNo) + '</td><td style="font-size:' + fs.sno + 'pt; border-bottom:' + line + '; ' + F('sno') + W8('sno') + '">' + ntEsc(c.sName) + '</td>' +
+      (b.stuW ? '<td class="ws-stu" style="font-size:' + fs.stu + 'pt; white-space:nowrap; padding-left:1mm; border-bottom:' + line + '; ' + F('stu') + W8('stu') + '">' + wsStuHtml(WS_STU_LINES[1]) + '</td>' : '') + '</tr></table>';
+    const note = L.note ? '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y, L.note.w, L.note.th) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + '; font-size:' + fs.note + 'pt; ' + F('note') + '">NOTE</div>' +
       '<div class="ws-abs ws-note" style="' + abs(L.note.x, L.note.y + L.note.th + 2, L.note.w, L.note.h - L.note.th - 2) + ' background:' + th[2] + '; border:0.3mm solid ' + th[3] + ';"></div>' : '';
     const foot = function(n) {
       const t = wsFootText(c, n);
-      const num = '<span style="font-size:16pt; ' + F('num') + '">' + n + '</span>';
+      const num = '<span style="font-size:' + fs.num + 'pt; ' + F('num') + '">' + n + '</span>';
       return '<div class="ws-abs ws-foot" style="' + abs(L.foot.x, L.foot.y, L.foot.w, L.foot.h) + F('foot') + (n % 2 ? ' justify-content:flex-end;' : '') + '">' +
-        (n % 2 ? '<span style="font-size:9pt;">' + ntEsc(t[0]) + ' <span style="font-size:12pt;' + W8('foot') + '">' + ntEsc(t[1]) + '</span></span>' + num
-          : num + '<span style="font-size:11pt;">' + ntEsc(t[0]) + '</span>') + '</div>';
+        (n % 2 ? '<span style="font-size:' + (fs.foot - 2) + 'pt;">' + ntEsc(t[0]) + ' <span style="font-size:' + (fs.foot + 1) + 'pt;' + W8('foot') + '">' + ntEsc(t[1]) + '</span></span>' + num
+          : num + '<span style="font-size:' + fs.foot + 'pt;">' + ntEsc(t[0]) + '</span>') + '</div>';
     };
     const lines = wsLines(c);
     const body = function(first) {
@@ -14988,6 +15035,12 @@
     };
     fillSel('ws-tfont', 'ws-tfont-custom', c.tFont, c.tFontC);
     fillSel('ws-bfont', 'ws-bfont-custom', c.bFont, c.bFontC);
+    const fsBox = document.getElementById('ws-fsize');
+    if (!fsBox.children.length) fsBox.innerHTML = WS_FPARTS.map(function(x) {
+      const d = WS_FSIZE[x[0]];
+      return '<label title="' + x[1] + ' 글씨 크기(pt, ' + d[1] + '~' + d[2] + ' · 처음 ' + d[0] + ')"><span class="ws-fsl">' + x[1] + '</span><input type="number" class="lp-input" data-fs="' + x[0] + '" min="' + d[1] + '" max="' + d[2] + '" step="0.5" oninput="wsOnFs(this)"></label>';
+    }).join('');
+    fsBox.querySelectorAll('input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c.fs[inp.dataset.fs]; });
     const rows = document.getElementById('ws-fparts-rows');
     if (!rows.children.length) rows.innerHTML = WS_FPARTS.map(function(x) {
       return '<div class="nt-row fm-fontrow"><span class="fm-fl">' + x[1] + '</span><select id="ws-fp-' + x[0] + '" class="mini-select" onchange="wsOnFontPick(\'' + x[0] + '\', this.value)"></select></div>' +
@@ -15014,7 +15067,7 @@
   }
   async function wsBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
-    const L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c), hu = fmHu;
+    const L = wsLayout(c), th = wsTheme(c), sz = wsSizes(c), hu = fmHu, fs = c.fs;
     fmStage = '한글 바탕 파일 받는 중';
     const skel = await fmSkeleton();
     fmStage = '파일 만드는 중';
@@ -15029,22 +15082,22 @@
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
       fonts: Object.keys(FT).map(function(k) { return FT[k].h; }).filter(function(f, i, a) { return a.indexOf(f) === i; }),
       charPrs: [
-        { size: 13, font: FT.uno.h },                                    // 0 대단원
-        { size: 17, font: FT.sno.h, bold: wsBold(FT.sno, true) },        // 1 소단원
-        { size: 13, font: FT.cls.h, color: WS_CLS_COLOR },               // 2 수업명
-        { size: 19, font: FT.subj.h, bold: wsBold(FT.subj, true) },      // 3 과목명
-        { size: 9, font: FT.foot.h },                                    // 4 꼬리: 학교명
-        { size: 11, font: FT.foot.h },                                   // 5 꼬리: 대단원(짝수 쪽)
-        { size: 12, font: FT.foot.h, bold: wsBold(FT.foot, true) },      // 6 꼬리: 과목명(홀수 쪽)
-        { size: 16, font: FT.num.h },                                    // 7 쪽 번호
-        { size: 10, font: FT.note.h, color: '#333333' },                 // 8 NOTE
+        { size: fs.uno, font: FT.uno.h },                                // 0 대단원
+        { size: fs.sno, font: FT.sno.h, bold: wsBold(FT.sno, true) },    // 1 소단원
+        { size: fs.cls, font: FT.cls.h, color: WS_CLS_COLOR },           // 2 수업명
+        { size: fs.subj, font: FT.subj.h, bold: wsBold(FT.subj, true) }, // 3 과목명
+        { size: fs.foot - 2, font: FT.foot.h },                          // 4 꼬리: 학교명
+        { size: fs.foot, font: FT.foot.h },                              // 5 꼬리: 대단원(짝수 쪽)
+        { size: fs.foot + 1, font: FT.foot.h, bold: wsBold(FT.foot, true) }, // 6 꼬리: 과목명(홀수 쪽)
+        { size: fs.num, font: FT.num.h },                                // 7 쪽 번호
+        { size: fs.note, font: FT.note.h, color: '#333333' },            // 8 NOTE
         { size: sz.h1, font: FT.body.h, bold: wsBold(FT.body, true) },   // 9 대제목
         { size: sz.h2, font: FT.body.h, bold: wsBold(FT.body, true), color: c.h2Color ? th[4] : null }, // 10 중제목(기본 검정, 고르면 색 테마)
         { size: sz.h3, font: FT.body.h, bold: wsBold(FT.body, true) },   // 11 소제목
         { size: sz.p, font: FT.body.h },                                 // 12 항목·본문
         { size: sz.h1 - 1.5, font: FT.body.h, bold: wsBold(FT.body, true), bfIdx: 5 }, // 13 대제목 번호(글자 테두리 네모)
-        { size: 12, font: FT.uno.h },                                    // 14 대단원 번호
-        { size: 10, font: FT.stu.h, bold: wsBold(FT.stu, true) },        // 15 반·번호·이름 칸
+        { size: fs.uno - 1, font: FT.uno.h },                            // 14 대단원 번호
+        { size: fs.stu, font: FT.stu.h, bold: wsBold(FT.stu, true) },    // 15 반·번호·이름 칸
       ],
       paraPrs: [
         { align: 'LEFT', line: 100 }, { align: 'RIGHT', line: 100 }, { align: 'CENTER', line: 100 }, // 0~2 표 칸
@@ -15089,7 +15142,7 @@
     cw.push(hu(b.numW), hu(b.titleW));
     if (b.stuW) cw.push(hu(b.stuW));
     cw.push(hu(b.slashW), hu(b.rightW));
-    const BW = cw.reduce(function(a, x) { return a + x; }, 0), r1 = hu(6.5), r2 = hu(L.bandH) - r1;
+    const BW = cw.reduce(function(a, x) { return a + x; }, 0), r1 = hu(L.r1), r2 = hu(L.bandH) - r1;
     let ci = 0, row1 = '', row2 = '';
     let iconXml = '';
     if (b.iconW) {
@@ -16014,8 +16067,8 @@
     tSize: 30, hSize: 22, nSize: 24, tmSize: 26, mSize: 22,
     fill: true, rowH: 15, paper: 'A4', land: false, mT: 15, mB: 15, mL: 15, mR: 15,
   };
-  const BS_GUIDE = '<b class="fm-step">1</b><b class="fm-step">2</b> 시정표를 고르고 시간 줄을 확인하면 바로 만들어져요. <b class="fm-step opt">3</b>에서 디자인만 골라 주세요 — <b class="fm-step opt">4</b>는 필요할 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b>';
-  const BS_GUIDE_EXAM = '<b class="fm-step">1</b> 📝 시험 기간을 고르고 <b class="fm-step">2</b> 본령 시간, <b class="fm-step">3</b> 일차별 과목을 적으면 바로 만들어져요 — <b class="fm-step opt">4</b>는 필요할 때만 — 다 되면 오른쪽 위 <b>⬇️ 한글 파일</b>';
+  const BS_GUIDE = '<b class="fm-step">1</b><b class="fm-step">2</b> 시정표·시간 확인 <b class="fm-step opt">3</b> 디자인 고르기 <b class="fm-step opt">4</b> 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b>';
+  const BS_GUIDE_EXAM = '<b class="fm-step">1</b> 시험 기간 <b class="fm-step">2</b> 본령 시간 <b class="fm-step">3</b> 일차별 과목 <b class="fm-step opt">4</b> 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b>';
   function bsClassTimes() { return window.classTimes || DEFAULT_TIMES; }
   function bsTimeNorm(v) {
     v = String(v || '').trim().replace(/[^0-9:]/g, '');
@@ -16246,7 +16299,8 @@
     const ready = !!BS_READY[c.mode], exam = c.mode === 'exam';
     ['bs-title-row', 'bs-sub-row', 'bs-rows-box', 'bs-design-box', 'bs-font-box'].forEach(function(id) { document.getElementById(id).style.display = ready && (!exam || id === 'bs-title-row') ? '' : 'none'; });
     ['bs-ex-bell-box', 'bs-ex-days-box', 'bs-ex-opt-box'].forEach(function(id) { document.getElementById(id).style.display = exam ? '' : 'none'; });
-    document.getElementById('bs-guide').innerHTML = exam ? BS_GUIDE_EXAM : BS_GUIDE;
+    const bsGuide = document.getElementById('bs-guide');
+    bsGuide.innerHTML = exam ? BS_GUIDE_EXAM : BS_GUIDE; bsGuide.title = bsGuide.textContent.replace(/[1-9]/g, function(n) { return String.fromCharCode(0x245F + +n); }); // 좁은 화면에서 …로 잘리면 마우스를 올려 전체 글
     document.getElementById('bs-title').placeholder = exam ? '정기고사 시정표' : '부광고등학교 시정표';
     if (!ready) return;
     setVal('bs-title', m.title);
@@ -17049,7 +17103,7 @@
     { selector: '#ws-outline-box', before: fmTourWs, title: '📚 학습지 · 3단계. 본문 제목 뼈대 (필요할 때만)', desc: '대제목(1)·중제목(1.)·소제목((1))·항목(①)을 칸에 적으면 번호는 저절로 붙어요. Enter는 아래 줄, Tab/Shift+Tab은 수준 바꾸기예요. 한글 파일에선 "학습지 대제목" 같은 스타일(F6)로 들어가서 이어 쓰기 쉬워요.' },
     { selector: '#ws-page-box', before: fmTourWs, title: '📚 학습지 · 4단계. 쪽 설정 (필요할 때만)', desc: '용지·방향·여백과 시작 쪽 번호를 정해요. 앞 단원에 이어지는 학습지라면 시작 쪽 번호를 바꿔 주세요.' },
     { selector: '#ws-layout-box', before: fmTourWs, title: '📚 학습지 · 5단계. 배치 (필요할 때만)', desc: '1단/2단(가운데 선 있음/없음), NOTE 칸 넣기/빼기, 색 테마를 골라요.' },
-    { selector: '#ws-font-box', before: fmTourWs, title: '📚 학습지 · 6단계. 글꼴 (필요할 때만)', desc: '머리·꼬리 글꼴과 본문 글꼴·크기를 골라요. "부분별 글꼴 따로 고르기"를 펴면 대단원·과목명·쪽 번호 같은 부분마다 다른 글꼴을 쓸 수 있어요.' },
+    { selector: '#ws-font-box', before: fmTourWs, title: '📚 학습지 · 6단계. 글꼴·글씨 크기 (필요할 때만)', desc: '머리·꼬리 글꼴과 본문 글꼴·크기를 골라요. "부분별 글씨 크기"에서 대단원·소단원·반·번호·이름·과목명·쪽 번호 같은 부분마다 글씨 크기(pt)를 바꿀 수 있고(키우면 머리 띠가 그만큼 높아져요), "부분별 글꼴 따로 고르기"를 펴면 부분마다 다른 글꼴을 쓸 수 있어요.' },
     { selector: '#fm-hwpx-btn', before: fmTourWs, title: '📚 학습지 · 한글 파일 내려받기', desc: '⬇️ 한글 파일(.hwpx)을 내려받아 한글에서 내용을 채우면 돼요. 글이 길어지면 머리 띠·NOTE 칸·쪽 번호와 함께 다음 쪽으로 자연스럽게 넘어가요. 이제 수행평가를 볼게요.' },
     { selector: '#fm-right', before: fmTourPe, title: '📝 수행평가 — 이런 걸 만들어요', desc: '위쪽 "수행평가" 탭에서 만드는 수행평가 답안지예요. 맨 위 머리 표(제목 · 학번 · 이름, 둘째 줄 주제)와 그 아래 번호 항목, 항목마다 학생이 쓰는 빈 줄로 되어 있어요. 오른쪽이 완성 예시예요.' },
     { selector: '#pe-type-box', before: fmTourPe, title: '📝 수행평가 · 1단계. 종류', desc: '📄 보고서(번호 항목 + 쓸 빈 줄), ✍️ 원고지(국어·논술, 100자마다 글자 수 표시), 🔤 단어 시험(영어 단어·문제|답 표 + 정답지) 중에서 골라요.' },

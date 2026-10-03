@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const html = fs.readFileSync(process.env.HTML_PATH || path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
 const T1 = '11111111-1111-1111-1111-111111111111';
@@ -204,6 +204,25 @@ function check(label, cond, detail) {
   check('항상 펼치기 꺼짐 → 달 일정은 접혀 있음', s.rows.filter(r => r.c).every(r => r.hidden), s.rows);
   check('빈 줄은 계속 보임', s.rows.filter(r => !r.c).every(r => !r.hidden) && s.rows.filter(r => !r.c).length === 10, s.rows);
   check('달력 데이터는 그대로(3월 2일 입학식)', await P.evaluate(() => { msCurMonth = 3; const d = msGetUserData(); return !!(d[msCurYear + '-3-2'] && d[msCurYear + '-3-2'][0].text === '입학식'); }));
+  // 🐞 접힌 달(display:none) 줄은 innerText가 줄바꿈을 버려서 달력에 "수능대비분반수업 신청"처럼 붙어 나오다가, 그 달을 펼치면 다시 맞게 나왔다
+  const brk = await P.evaluate(() => {
+    const tr = msDataRows().find(r => r.dataset.month === '5' && /어린이날/.test(r.textContent));
+    const cell = tr.children[1].querySelector('.ms-cell-input');
+    cell.innerHTML = '수능대비<br>분반수업 신청';
+    const tr2 = msDataRows().find(r => r.dataset.month === '5' && /체육대회/.test(r.textContent));
+    tr2.children[1].querySelector('.ms-cell-input').innerHTML = '체육<div>대회</div><div><br></div><div>우천 시 연기</div>';
+    msCurMonth = 5; const d = msGetUserData();
+    return { hidden: tr.offsetParent === null, a: d[msCurYear + '-5-5'][0].text, b: d[msCurYear + '-5-20'][0].text };
+  });
+  check('접힌 달의 일정도 줄바꿈 그대로 달력에(<br>·한 줄씩 div)', brk.hidden && brk.a === '수능대비\n분반수업 신청' && brk.b === '체육\n대회\n\n우천 시 연기', brk);
+  await P.evaluate(() => { msRenderCalendar(); });
+  await wait(300);
+  const calTxt = await P.evaluate(() => [...document.querySelectorAll('#ms-cal-grid .ms-event-item')].map(e => e.innerText).filter(t => /수능대비/.test(t))[0] || '');
+  check('달력 칸에 두 줄로 그려짐', calTxt.split('\n').length === 2, calTxt);
+  await P.evaluate(() => {
+    msDataRows().find(r => /수능대비/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '어린이날';
+    msDataRows().find(r => /우천/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '체육대회';
+  });
 
   // 머리줄 눌러 한 달만 펼치기
   await P.click('#ms-table-body tr.ms-month-head[data-month="5"]'); await wait(200);
