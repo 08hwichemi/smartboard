@@ -1203,7 +1203,7 @@
     #fm-left input[type="text"].lp-input { width: 100%; box-sizing: border-box; }
     #fm-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
     #fm-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
-    #fm-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 6px 0 20px; --fms: 1; }
+    #fm-pages { display: flex; flex-direction: column; align-items: safe center; gap: 18px; padding: 6px 0 20px; --fms: 1; } /* safe: 크게 봐서 종이가 넓어지면 왼쪽이 잘리지 않고 옆으로 스크롤 */
     #fm-classes { gap: 3px; flex: 1; min-width: 0; flex-wrap: nowrap; }
     #fm-classes.many { flex-wrap: wrap; }
     #fm-classes .nt-chip { flex: 1 1 0; max-width: 34px; min-width: 0; padding: 3px 0; text-align: center; }
@@ -3424,7 +3424,15 @@
     </div>
     <div id="fm-right">
       <div id="fm-right-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
-        <div style="font-weight:800; font-size:13px;">🖨️ 미리보기</div>
+        <div style="display:flex; align-items:center; gap:10px; flex:none;">
+          <div style="font-weight:800; font-size:13px;">🖨️ 미리보기</div>
+          <div id="fm-zoom-group" style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:3px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소 — 화면에서 보기만 바뀌고 한글 파일·인쇄 크기는 그대로예요">
+            <span style="font-size:12px;">🔍</span>
+            <button class="top-btn" style="padding:2px 8px;" onclick="fmZoomBy(-1)" title="작게">-</button>
+            <span id="fm-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center; cursor:pointer;" onclick="fmZoomBy(0)" title="눌러서 폭에 맞춤(100%)">100%</span>
+            <button class="top-btn" style="padding:2px 8px;" onclick="fmZoomBy(1)" title="크게">+</button>
+          </div>
+        </div>
         <div id="fm-prev-label" class="nt-muted" style="text-align:right;"></div>
       </div>
       <div id="fm-prev-scroll"><div id="fm-pages"></div></div>
@@ -14051,12 +14059,24 @@
     if (!c.rCs.some(function(k) { return (fmRoster.byClass[k] || []).length; })) return '고른 반의 명렬표가 비어 있어요.';
     return '';
   }
+  // 미리보기 확대/축소: 100% = 폭에 맞춤(예전 그대로), 거기에 배율을 곱한다. 화면에서 보기만 바뀜(인쇄는 zoom 1).
+  const FM_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+  let fmZoomLevel = 1;
+  function fmZoomBy(dir) {
+    const i = FM_ZOOMS.indexOf(fmZoomLevel);
+    fmZoomLevel = dir === 0 ? 1 : FM_ZOOMS[Math.max(0, Math.min(FM_ZOOMS.length - 1, (i < 0 ? 2 : i) + dir))];
+    const sc = document.getElementById('fm-prev-scroll'), before = sc.scrollHeight ? sc.scrollTop / sc.scrollHeight : 0;
+    fmFitPreview();
+    sc.scrollTop = before * sc.scrollHeight; // 보던 자리 근처 그대로
+  }
   function fmFitPreview() {
     const box = document.getElementById('fm-pages'), sc = document.getElementById('fm-prev-scroll');
+    const t = document.getElementById('fm-zoom-text');
+    if (t) t.textContent = Math.round(fmZoomLevel * 100) + '%';
     const sheet = box.querySelector('.fm-sheet');
     if (!sheet) return;
     box.style.zoom = '';
-    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth);
+    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth) * fmZoomLevel;
     box.style.zoom = z > 0 ? String(z) : '';
     box.style.setProperty('--fmz', z > 0 ? String(z) : '1');
   }
