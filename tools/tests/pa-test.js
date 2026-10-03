@@ -377,10 +377,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '5-sk-fin.png') });
   // ===== 📊 엑셀 내려받기(백업) / 📥 가져오기 =====
-  check('위쪽 메뉴에 📥 엑셀 가져오기 · 📊 엑셀 내려받기', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export'));
+  check('위쪽 메뉴에 "💾 백업" 묶음 — 📥 엑셀 가져오기 · 📊 엑셀 내려받기', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') && /^💾 백업/.test((await P.innerText('#pa-backup')).trim()) && await P.evaluate(() => !!document.querySelector('#pa-backup #pa-xl-import') && !!document.querySelector('#pa-backup #pa-xl-export')));
   if (ExcelJSNode && EXCELJS_PATH) {
     await P.click('#pa-xl-export'); await P.waitForTimeout(200);
     const opts = await P.evaluate(() => [...document.querySelectorAll('#pa-modal [data-xl]')].map(b => b.dataset.xl + (b.checked ? '1' : '0')).join());
+    await P.screenshot({ path: process.env.PA_SHOTS ? path.join(process.env.PA_SHOTS, 'xl-modal.png') : 'pa-xl.png' });
     check('내려받기 창: 담을 것 4개(영역별 점수·평가내용·합계·세특), 처음엔 모두 체크', opts === 'sc1,nt1,sum1,sk1', opts);
     const picks0 = await P.evaluate(() => ({ subs: document.querySelectorAll('#pa-modal [data-xs]').length, on: [...document.querySelectorAll('#pa-modal [data-xc]:checked')].map(b => b.dataset.cid), cur: paCls(paSub()).id, go: document.getElementById('pa-xl-go').textContent }));
     check('과목·수업반 고르기: 과목 2개가 다 보이고, 처음엔 지금 반만 체크', picks0.subs === 2 && picks0.on.join() === picks0.cur && picks0.go === '📊 내려받기', picks0);
@@ -393,6 +394,17 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     check('파일: 영역마다 시트 + 세특 + 숨긴 _정보, 합계는 빼서 없음, 이름 = 수행평가_과목_반_날짜', names.join() === '개념 구조화,화학자료분석,세특,_정보(veryHidden)' && /^수행평가_화학Ⅱ_1반_\d{4}-\d{2}-\d{2}\.xlsx$/.test(await P.evaluate(() => window.__saveName)), [names, await P.evaluate(() => window.__saveName)]);
     const a1 = xb.getWorksheet('개념 구조화'), hd = [1, 2, 3, 4, 5, 6, 7, 8].map(c => String(a1.getCell(1, c).value || '').replace(/\n/g, ' '));
     check('영역 시트 머리: 반·번호·이름·최하점(2점)·세부(만점)·합계(30점)·평가내용', hd.join('|') === '반|번호|이름|최하점 (2점)|반응속도 (15점)|전기화학 (15점)|합계 (30점)|평가내용', hd);
+    const colW = [5, 6].map(c => a1.getColumn(c).width);
+    // 긴 세부영역 이름: 칸이 제목만큼 넓어지고(최대 28) 더 길면 머리 줄이 높아짐
+    const longW = await P.evaluate(async () => {
+      const sub = JSON.parse(JSON.stringify(paSub())), cls = paCls(paSub());
+      sub.areas[0].subs[0].name = '실험 설계의 타당성과 변인 통제';   // 15자
+      sub.areas[0].subs[1].name = '탐구 결과를 근거로 결론을 도출하고 한계와 개선 방안을 제시하기';
+      const buf = await paXlBuild(sub, cls, { sc: true, nt: false, sum: false, sk: false });
+      const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws = wb.worksheets[0];
+      return { w5: ws.getColumn(5).width, w6: ws.getColumn(6).width, h: ws.getRow(1).height, wrap: ws.getCell(1, 6).alignment.wrapText };
+    });
+    check('머리 칸 너비: 짧은 세부영역은 12, 긴 이름은 제목만큼(최대 28) + 넘치면 줄바꿈·머리 줄 높이 늘림', colW.join() === '12,12' && longW.w5 >= 20 && longW.w5 <= 28 && longW.w6 === 28 && longW.wrap && longW.h > 40, { colW, longW });
     const v1 = a1.views[0], dv = a1.getCell(2, 5).dataValidation, sumF = a1.getCell(2, 7).value;
     check('서식: 틀 고정(3열·1행)·필터·머리 색, 점수 칸은 배점 목록으로 막음, 합계는 식(최하점이면 최하점)', v1.state === 'frozen' && v1.xSplit === 3 && v1.ySplit === 1 && !!a1.autoFilter &&
       a1.getCell(1, 1).fill && a1.getCell(1, 1).fill.fgColor && dv && dv.type === 'list' && /1,2,3/.test(dv.formulae[0]) && /배점/.test(dv.error) &&

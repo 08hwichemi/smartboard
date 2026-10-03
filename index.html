@@ -657,6 +657,10 @@
     .pa-modal { position: fixed; inset: 0; z-index: 9000; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
     .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
+    /* 머리 오른쪽 "💾 백업" 묶음: 엑셀 가져오기·내려받기 */
+    .pa-backup { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 10px; padding: 2px 3px 2px 8px; background: var(--card-bg); }
+    .pa-backup-label { font-size: 11px; font-weight: 800; color: var(--text-sub); margin-right: 2px; white-space: nowrap; }
+    .pa-backup .top-btn { font-size: 11px; padding: 3px 9px; }
     .pa-xl-opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px; line-height: 1.55; }
     .pa-xl-opt input { margin: 3px 0 0; width: auto !important; flex: none; }
     .pa-xl-opt > span { flex: 1; text-align: left; }
@@ -3660,8 +3664,10 @@
       <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <label class="top-btn" id="pa-xl-import" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';"></label>
-      <button class="top-btn" id="pa-xl-export" style="font-size:11px; padding:4px 10px;" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📊 엑셀 내려받기</button>
+      <div class="pa-backup" id="pa-backup" title="자료는 칸을 벗어날 때마다 선생님 계정에 저장돼요. 보관용으로 엑셀에 받아 두거나 다시 넣을 때 써요."><span class="pa-backup-label">💾 백업</span>
+        <label class="top-btn" id="pa-xl-import" style="cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';"></label>
+      <button class="top-btn" id="pa-xl-export" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📊 엑셀 내려받기</button>
+      </div>
       <span id="pa-save-state"></span>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
@@ -14967,7 +14973,7 @@
             paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></label>';
         }).join('') + '</div></div>';
     }).join('');
-    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📊 엑셀 내려받기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>💾 백업 — 📊 엑셀 내려받기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
       '<div class="pa-sub-title">📚 과목·수업반 <span class="se-muted">반 하나 = 엑셀 파일 하나 · 여러 반이면 파일이 반마다 하나씩 내려받아져요</span>' +
         '<span style="margin-left:auto; display:flex; gap:6px;"><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="paXlPick(\'cur\')">지금 반만</button><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="paXlPick(\'all\')">모든 과목·반</button></span></div>' +
       '<div class="pa-xl-subjs">' + subsHtml + '</div>' +
@@ -15068,6 +15074,10 @@
         }, 0);
       };
       const fit = function(row, cells) { row.height = Math.min(409, Math.max(18, 14.5 * Math.max.apply(null, cells.map(function(x) { return lines(x[0], x[1]); })) + 4)); };
+      // 머리 칸: 제목 길이에 맞춰 칸을 넓히고(최대 28), 더 긴 제목은 줄바꿈 → 머리 줄 높이를 가장 긴 칸에 맞춘다(긴 세부영역 이름이 잘려 보이지 않게)
+      const textW = function(t) { return String(t || '').split('\n').reduce(function(m, ln) { let w = 0; for (const ch of ln) w += ch.charCodeAt(0) > 0x2E7F ? 2 : 1.1; return Math.max(m, w); }, 0); };
+      const headW = function(t, min) { return Math.max(min, Math.min(28, Math.ceil(textW(t) * 1.1) + 3)); };
+      const headH = function(sh) { let n = 1; sh.getRow(1).eachCell(function(cell, c) { n = Math.max(n, lines(cell.value, (sh.getColumn(c).width || 10) * 0.9)); }); sh.getRow(1).height = Math.min(409, Math.max(22, 15 * n + 6)); };
       const colL = function(n) { let t = ''; while (n > 0) { const m = (n - 1) % 26; t = String.fromCharCode(65 + m) + t; n = Math.floor((n - 1) / 26); } return t; };
       const stuCols = function(sh, bg) {
         head(sh.getCell(1, 1), '반', bg); head(sh.getCell(1, 2), '번호', bg); head(sh.getCell(1, 3), '이름', bg);
@@ -15091,8 +15101,9 @@
         const s0 = c;
         if (o.sc) a.subs.forEach(function(x) {
           const pts = paParsePts(x.pts);
-          map.subs[c] = x.id; cols.push({ width: 12 });
-          head(sh.getCell(1, c), (x.name || '세부영역') + '\n(' + paSubMax(x) + '점)', bg);
+          const ht = (x.name || '세부영역') + '\n(' + paSubMax(x) + '점)';
+          map.subs[c] = x.id; cols.push({ width: headW(ht, 12) });
+          head(sh.getCell(1, c), ht, bg);
           sh.getCell(1, c).note = '줄 수 있는 점수: ' + (paPtsText(pts) || '없음');
           c++;
         });
@@ -15100,7 +15111,7 @@
         if (o.sc) { map.sum = c; cols.push({ width: 9 }); head(sh.getCell(1, c), '합계\n(' + paAreaMax(a) + '점)', bg); c++; }
         if (withNote) { map.note = c; cols.push({ width: NW }); head(sh.getCell(1, c), '평가내용', bg); c++; }
         sh.columns = cols;
-        sh.getRow(1).height = 32;
+        headH(sh);
         ro.forEach(function(st, i) {
           const rn = 2 + i, r = sh.getRow(rn), k = paSk(st), rec = sc[k] || {}, v = rec.v || {};
           stuCells(r, st);
@@ -15132,8 +15143,8 @@
         sub.areas.forEach(function(a, i) { head(sh.getCell(1, 4 + i), a.name + '\n(' + paAreaMax(a) + '점)', AREA_BG[i % AREA_BG.length]); });
         const tc = 4 + sub.areas.length;
         head(sh.getCell(1, tc), '총점\n(' + paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0)) + '점)'); head(sh.getCell(1, tc + 1), '확인');
-        sh.columns = [{ width: 6 }, { width: 6 }, { width: 10 }].concat(sub.areas.map(function() { return { width: 14 }; })).concat([{ width: 10 }, { width: 36 }]);
-        sh.getRow(1).height = 32;
+        sh.columns = [{ width: 6 }, { width: 6 }, { width: 10 }].concat(sub.areas.map(function(a) { return { width: headW(a.name, 14) }; })).concat([{ width: 10 }, { width: 36 }]);
+        headH(sh);
         paStudentTotals(sub, cls).forEach(function(t, i) {
           const r = sh.getRow(2 + i);
           stuCells(r, t.st);
@@ -15512,7 +15523,7 @@
       desc: '넣을 영역을 체크하면 "합치면 몇 바이트"가 바로 보여요. "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 아래 편집 칸으로 들어가요.' },
     { selector: '#pa-put-btn', before: paTourTab('sk'), title: '⑤ 다듬고 완성본에 넣기',
       desc: '편집 칸에서 문장을 다듬으면 바이트와 기재하면 안 되는 표현을 바로 알려 줘요. 다 되면 📊 완성본에 넣기! 📋 복사로 나이스에 바로 붙여 넣을 수도 있어요.' },
-    { selector: '#pa-xl-export', before: paTourTab('sk'), title: '📊 엑셀 내려받기 · 📥 가져오기 (백업)',
+    { selector: '#pa-backup', before: paTourTab('sk'), title: '💾 백업 — 📥 엑셀 가져오기 · 📊 엑셀 내려받기',
       desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 과목·수업반을 고르고(모든 과목·반도 한 번에), 영역별 점수·평가내용·합계·세특 가운데 담을 것을 골라요 — 반마다 엑셀 파일이 하나씩 받아져요(필터·틀 고정·바이트 식 포함).\n📥 엑셀 가져오기로 그 파일들을 한꺼번에 골라 넣으면 파일마다 과목·반을 알아서 찾아 빈 칸만 채워요 — 엑셀에서 점수를 미리 적어 와서 넣어도 돼요(배점에 없는 점수는 빼요).' },
     { selector: '#pa-sk-mode', before: paTourTab('sk'), title: '📊 완성본 모아 보기',
       desc: '반 전체 완성본을 바이트와 함께 한눈에 보고, 학생마다 📋로 복사해 나이스에 붙여 넣어요.\n\n수고하셨습니다! 🎉 이제 "＋ 과목"부터 시작해 보세요.' },
