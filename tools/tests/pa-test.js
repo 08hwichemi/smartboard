@@ -391,7 +391,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     const xf = await xdl.path();
     const xb = new ExcelJSNode.Workbook(); await xb.xlsx.readFile(xf);
     const names = xb.worksheets.map(w => w.name + (w.state && w.state !== 'visible' ? '(' + w.state + ')' : ''));
-    check('파일: 영역마다 시트 + 세특 + 숨긴 _정보, 합계는 빼서 없음, 이름 = 수행평가_과목_반_날짜', names.join() === '개념 구조화,화학자료분석,세특,_정보(veryHidden)' && /^수행평가_화학Ⅱ_1반_\d{4}-\d{2}-\d{2}\.xlsx$/.test(await P.evaluate(() => window.__saveName)), [names, await P.evaluate(() => window.__saveName)]);
+    check('파일: 영역마다 시트 + 세특 + 숨긴 _정보, 합계는 빼서 없음, 이름 = 수행평가_과목_반_날짜', names.join() === '개념 구조화,화학자료분석,세특,_정보(veryHidden)' && /^수행평가_\d{4}-[12]학기_화학Ⅱ_1반_\d{4}-\d{2}-\d{2}\.xlsx$/.test(await P.evaluate(() => window.__saveName)), [names, await P.evaluate(() => window.__saveName)]);
     const a1 = xb.getWorksheet('개념 구조화'), hd = [1, 2, 3, 4, 5, 6, 7, 8].map(c => String(a1.getCell(1, c).value || '').replace(/\n/g, ' '));
     check('영역 시트 머리: 반·번호·이름·최하점(2점)·세부(만점)·합계(30점)·평가내용', hd.join('|') === '반|번호|이름|최하점 (2점)|반응속도 (15점)|전기화학 (15점)|합계 (30점)|평가내용', hd);
     const colW = [5, 6].map(c => a1.getColumn(c).width);
@@ -461,6 +461,39 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.name === '1반').id }); paRenderAll(); });
     paths.concat([xf3]).forEach(pth => { try { fs.unlinkSync(pth); } catch (e) {} });
   } else console.log('  ⚠️ exceljs가 없어 엑셀 백업 검사는 건너뜀');
+  // ===== 🗓️ 학기 =====
+  const TERM0 = await P.evaluate(() => paTermNow());
+  check('학기: 머리에 학기 고르기(지금 학기), 과목마다 학기', (await P.inputValue('#pa-term')) === TERM0 && await P.evaluate((t) => paCfg().subjects.every(s => s.term === t), TERM0) &&
+    (await P.evaluate(() => [...document.querySelectorAll('#pa-term option')].map(o => o.value))).length >= 2, TERM0);
+  await P.evaluate(() => { const v = JSON.parse(localStorage.getItem('pa-cfg')); delete v.subjects[0].term; localStorage.setItem('pa-cfg', JSON.stringify(v)); });
+  check('학기 구분 전에 만든 과목(학기 없음)은 지금 학기로 정하고 저장', await P.evaluate((t) => paCfg().subjects[0].term === t && JSON.parse(localStorage.getItem('pa-cfg')).subjects[0].term === t, TERM0));
+  const TERM1 = TERM0.endsWith('-2') ? TERM0.slice(0, 4) + '-1' : TERM0.slice(0, 4) + '-2';
+  await P.selectOption('#pa-term', TERM1); await P.waitForTimeout(200);
+  check('다른 학기: 과목 없음 + "' + TERM0 + ' 과목 그대로 가져오기"', !(await P.evaluate(() => paSub())) && /과목 그대로 가져오기/.test(await P.innerText('#pa-pane')) && (await P.innerText('#pa-subjs')).trim() === '＋ 과목');
+  await P.click('#pa-copy-term-btn'); await P.waitForTimeout(200);
+  const cp = await P.evaluate((a) => { const c = paCfg(), src = c.subjects.filter(s => s.term === a.TERM0), dst = c.subjects.filter(s => s.term === a.TERM1);
+    return { n: dst.length === src.length && dst.map(s => s.name).join() === src.map(s => s.name).join(), newIds: dst.every(s => !src.some(x => x.id === s.id)),
+      areas: JSON.stringify(dst.map(s => s.areas)) === JSON.stringify(src.map(s => s.areas)),
+      ro: dst.every((s, i) => s.classes.every((x, j) => x.name === src[i].classes[j].name && paRoster(s.id, x.id).length === paRoster(src[i].id, src[i].classes[j].id).length)),
+      noScores: dst.every(s => s.areas.every(ar => s.classes.every(x => !Object.keys(paScores(s.id, x.id, ar.id)).length))), shown: !!paSub() && paSub().term === a.TERM1 }; }, { TERM0, TERM1 });
+  check('지난 학기 과목 가져오기: 과목·수업반·학생·영역·배점은 그대로(새 id), 점수는 비어 있음', Object.values(cp).every(Boolean), cp);
+  await P.selectOption('#pa-term', TERM0); await P.waitForTimeout(200);
+  check('원래 학기로 돌아오면 그대로(화학Ⅱ·점수)', (await P.evaluate(() => paSub().name)) === '화학Ⅱ' && await P.evaluate(() => { const s = paSub(), x = s.classes.find(c => c.name === '1반'); return Object.keys(paScores(s.id, x.id, s.areas[0].id)).length > 0; }));
+  await P.evaluate((t) => { const c = paCfg(); c.subjects.filter(s => s.term === t).forEach(s => PA_DATA_KINDS.forEach(k => paRemoveKeys('pa-' + k + '-' + s.id + '-'))); c.subjects = c.subjects.filter(s => s.term !== t); paSaveCfg(c); paRenderAll(); }, TERM1);
+  // 지난 학년도 자료: 안내 띠 → 💾 모두 백업 받기(그 학기 반 모두 체크) / 🗑 지우기(두 번 확인)
+  const OLD = (Number(TERM0.slice(0, 4)) - 1) + '-2';
+  await P.evaluate((t) => { const c = paCfg(), s0 = c.subjects[0], ns = JSON.parse(JSON.stringify(s0)); ns.id = 'oldsub'; ns.term = t; ns.classes = [{ id: 'oldc', name: '5반' }];
+    c.subjects.push(ns); paSaveCfg(c); paSaveRoster('oldsub', 'oldc', [{ c: 5, n: 1, name: '작년학생' }]); paSaveScores('oldsub', 'oldc', ns.areas[0].id, { '5-1': { v: { [ns.areas[0].subs[0].id]: 15 } } }); paRenderAll(); }, OLD);
+  check('지난 학년도 과목이 있으면 안내 띠(백업 받고 지우기), 지금 학기 과목 목록엔 안 보임', /학년도<\/b> 수행평가 자료가 남아 있어요/.test(await P.innerHTML('#pa-oldyear')) && !(await P.innerText('#pa-subjs')).includes('5반') && !(await P.evaluate(() => paTermSubs(paCfg()).some(s => s.id === 'oldsub'))));
+  await P.click('#pa-oldyear button:has-text("모두 백업 받기")'); await P.waitForTimeout(200);
+  const oldPick = await P.evaluate(() => ({ subs: [...document.querySelectorAll('#pa-modal [data-xs]')].map(b => b.dataset.xs), on: [...document.querySelectorAll('#pa-modal [data-xc]:checked')].map(b => b.dataset.cid) }));
+  check('모두 백업 받기: 지난 학년도 과목·반만, 처음부터 모두 체크', oldPick.subs.join() === 'oldsub' && oldPick.on.join() === 'oldc', oldPick);
+  await P.evaluate(() => paCloseModal());
+  await P.click('#pa-oldyear button:has-text("지우기")'); await answerConfirm(P, true); await answerConfirm(P, true); await P.waitForTimeout(200);
+  check('🗑 지우기: 지난 학년도 과목·자료 모두 지움, 안내 띠 사라짐, 이번 학기는 그대로', !(await P.innerHTML('#pa-oldyear')).trim() && Object.keys(await lsKeys(P, '^pa-[a-z]+-oldsub-')).length === 0 &&
+    await P.evaluate(() => !paCfg().subjects.some(s => s.id === 'oldsub') && paSub().name === '화학Ⅱ'));
+  await P.evaluate(() => { paSetUi({ tab: 'sk' }); paRenderAll(); });
+
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);
   const keys = Object.keys(await lsKeys(P, '^pa-'));

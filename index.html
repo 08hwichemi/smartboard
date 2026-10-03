@@ -658,6 +658,10 @@
     .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
     /* 머리 오른쪽 "💾 백업" 묶음: 엑셀 가져오기·내려받기 */
+    #pa-term { font-weight: 800; }
+    .pa-oldyear { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 14px; margin-bottom: 8px; border: 1.5px solid #F59E0B; background: #FFFBEB; border-radius: 10px; font-size: 12.5px; color: #78350F; flex: 0 0 auto; }
+    .pa-oldyear .top-btn { font-size: 11.5px; padding: 4px 10px; }
+    .pa-copy-term { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--accent-color); border-radius: 10px; background: var(--accent-soft); }
     .pa-backup { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 10px; padding: 2px 3px 2px 8px; background: var(--card-bg); }
     .pa-backup-label { font-size: 11px; font-weight: 800; color: var(--text-sub); margin-right: 2px; white-space: nowrap; }
     .pa-backup .top-btn { font-size: 11px; padding: 3px 9px; }
@@ -3659,6 +3663,7 @@
       <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
       <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
+      <select id="pa-term" class="mini-select" title="학기 — 과목은 학기마다 따로예요" onchange="paPickTerm(this.value)"></select>
       <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
       <span class="pa-hsep"></span>
       <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
@@ -3674,6 +3679,7 @@
     </div>
   </div>
   <div id="pa-main">
+    <div id="pa-oldyear"></div>
     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:0 0 auto;">
       <div class="top-btn-cluster" id="pa-tabs">
         <button class="top-btn" data-tab="setup" onclick="paSetTab('setup')">① 과목·학생</button>
@@ -14026,7 +14032,7 @@
     const c = { subjects: Array.isArray(v.subjects) ? v.subjects : [] };
     c.subjects = c.subjects.filter(function(s) { return s && s.id; }).map(function(s) {
       return {
-        id: String(s.id), name: String(s.name || '과목'), limit: Number(s.limit) > 0 ? Number(s.limit) : PA_LIMIT,
+        id: String(s.id), name: String(s.name || '과목'), limit: Number(s.limit) > 0 ? Number(s.limit) : PA_LIMIT, term: paTermOk(s.term) ? s.term : null,
         // 시수(주당 시간) — 나이스 과목 칸 = "과목(시수)". 예전 설정의 neis "화학Ⅱ(3)"에서 시수를 꺼내 옮김.
         hours: Number(s.hours) > 0 ? Number(s.hours) : (String(s.neis || '').match(/\((\d+)\)\s*$/) || [])[1] ? Number(String(s.neis).match(/\((\d+)\)\s*$/)[1]) : null,
         classes: paSortClasses((Array.isArray(s.classes) ? s.classes : []).filter(function(x) { return x && x.id; }).map(function(x) {
@@ -14041,7 +14047,70 @@
         }),
       };
     });
+    // 학기가 없는 과목(학기 구분 전에 만든 것)은 지금 학기로 정하고 저장 — 다음 학년도에 저절로 옮겨 가지 않게
+    if (c.subjects.some(function(s) { return !s.term; })) { const t = paTermNow(); c.subjects.forEach(function(s) { if (!s.term) s.term = t; }); paSaveCfg(c); }
     return c;
+  }
+  // ----- 학기 -----
+  // 과목마다 학기(term = "학년도-학기", 예 "2026-2"). 학년도는 3월에 바뀜: 3~7월 = 1학기, 8월~다음 해 2월 = 2학기.
+  // 머리의 학기 고르기로 바꾸고, 그 학기 과목만 보인다. 한 학년도의 1·2학기는 같이 두고, 새 학년도가 되면 지난 학년도 자료를 백업 안내 후 지운다.
+  function paTermNow(d) { d = d || new Date(); const m = d.getMonth() + 1, y = d.getFullYear(); return (m >= 3 ? y : y - 1) + '-' + (m >= 3 && m <= 7 ? 1 : 2); }
+  function paTermOk(t) { return /^\d{4}-[12]$/.test(String(t || '')); }
+  function paTermYear(t) { return Number(String(t).slice(0, 4)); }
+  function paTermLabel(t) { return paTermYear(t) + '학년도 ' + String(t).slice(5) + '학기'; }
+  function paTerm() { const t = paUi().term; return paTermOk(t) ? t : paTermNow(); }
+  function paTermSubs(c, t) { t = t || paTerm(); return c.subjects.filter(function(s) { return s.term === t; }); }
+  function paTermList(c) {
+    const y = paTermYear(paTermNow()), set = {};
+    set[y + '-1'] = 1; set[y + '-2'] = 1; set[paTerm()] = 1;
+    c.subjects.forEach(function(s) { set[s.term] = 1; });
+    return Object.keys(set).sort().reverse();
+  }
+  function paOldSubs(c) { const y = paTermYear(paTermNow()); return c.subjects.filter(function(s) { return paTermYear(s.term) < y; }); }
+  function paPickTerm(t) { if (!paTermOk(t)) return; paSetUi({ term: t, s: '', c: '' }); paRenderAll(); }
+  // 새 학기에 지난 학기 과목·수업반·학생·영역·배점을 그대로 가져오기(점수·평가내용·세특은 빼고)
+  function paCopyTerm(from) {
+    const c = paCfg(), to = paTerm(), src = paTermSubs(c, from);
+    if (!src.length) return;
+    let first = null;
+    src.forEach(function(s) {
+      if (paTermSubs(c, to).some(function(x) { return paNorm(x.name) === paNorm(s.name); })) return;
+      const ns = JSON.parse(JSON.stringify(s));
+      ns.id = paNewId(); ns.term = to;
+      ns.classes = s.classes.map(function(x) { const nx = Object.assign({}, x, { id: paNewId() }); const ro = paRoster(s.id, x.id); if (ro.length) paSaveRoster(ns.id, nx.id, ro); return nx; });
+      c.subjects.push(ns);
+      if (!first) first = ns;
+    });
+    paSaveCfg(c);
+    if (first) paSetUi({ s: first.id, c: '', tab: 'setup' });
+    paRenderAll();
+  }
+  // 지난 학년도 자료: 💾 모두 백업 받기 / 🗑 지우기(두 번 확인)
+  function paOldYearHtml(c) {
+    if (paDemo) return '';
+    const old = paOldSubs(c);
+    if (!old.length) return '';
+    const years = old.map(function(s) { return paTermYear(s.term); }).filter(function(y, i, a) { return a.indexOf(y) === i; }).sort();
+    return '<div class="pa-oldyear">📦 <span><b>' + years.join('·') + '학년도</b> 수행평가 자료가 남아 있어요(과목 ' + old.length + '개). 새 학년도가 시작됐으니 <b>백업 받은 뒤 지워</b> 주세요 — 쌓이면 저장 공간이 모자라요.</span>' +
+      '<button class="top-btn" onclick="paOldYearBackup()">💾 모두 백업 받기</button><button class="top-btn" onclick="paOldYearDelete()">🗑 지우기</button></div>';
+  }
+  function paOldYearBackup() {
+    const c = paCfg(), terms = paOldSubs(c).map(function(s) { return s.term; }).filter(function(t, i, a) { return a.indexOf(t) === i; });
+    paXlOpen(terms, true);
+  }
+  async function paOldYearDelete() {
+    const c = paCfg(), old = paOldSubs(c);
+    if (!old.length) return;
+    const years = old.map(function(s) { return paTermYear(s.term); }).filter(function(y, i, a) { return a.indexOf(y) === i; }).sort();
+    if (!(await customConfirm(years.join('·') + '학년도 수행평가 자료를 모두 지울까요?\n과목 ' + old.length + '개: ' + old.map(function(s) { return s.name + '(' + String(s.term).slice(5) + '학기)'; }).join(', ') +
+      '\n수업반·학생·영역·점수·평가내용·세특이 모두 지워져요. 💾 백업을 먼저 받아 두세요.'))) return;
+    if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
+    old.forEach(function(s) { PA_DATA_KINDS.forEach(function(k) { paRemoveKeys('pa-' + k + '-' + s.id + '-'); }); });
+    const ids = old.map(function(s) { return s.id; });
+    c.subjects = c.subjects.filter(function(s) { return ids.indexOf(s.id) === -1; });
+    paSaveCfg(c);
+    if (paTermYear(paTerm()) < paTermYear(paTermNow())) paSetUi({ term: paTermNow(), s: '', c: '' });
+    paRenderAll();
   }
   function paSaveCfg(c) { c.subjects.forEach(function(s) { s.classes = paSortClasses(s.classes); }); paSet('pa-cfg', JSON.stringify({ subjects: c.subjects })); }
   // 반은 이름의 숫자 순(4반·7반·6반으로 넣어도 4·6·7)
@@ -14073,7 +14142,7 @@
   }
   function paUi() { const v = paJson('pa-ui', {}); return v && typeof v === 'object' ? v : {}; }
   function paSetUi(patch) { paSet('pa-ui', JSON.stringify(Object.assign(paUi(), patch))); }
-  function paSub(c) { c = c || paCfg(); const u = paUi(); return c.subjects.find(function(s) { return s.id === u.s; }) || c.subjects[0] || null; }
+  function paSub(c) { c = c || paCfg(); const u = paUi(), list = paTermSubs(c); return list.find(function(s) { return s.id === u.s; }) || list[0] || null; }
   function paCls(sub) { if (!sub) return null; const u = paUi(); return sub.classes.find(function(x) { return x.id === u.c; }) || sub.classes[0] || null; }
   function paTab() { return paUi().tab || 'setup'; }
 
@@ -14233,7 +14302,8 @@
     paRenderHead(c, sub, cls);
     document.querySelectorAll('#pa-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === paTab()); });
     const pane = document.getElementById('pa-pane');
-    if (!sub) { pane.innerHTML = paEmptyHtml(); return; }
+    document.getElementById('pa-oldyear').innerHTML = paOldYearHtml(c);
+    if (!sub) { pane.innerHTML = paEmptyHtml(c); return; }
     const t = paTab();
     if (t === 'setup') pane.innerHTML = paSetupHtml(sub, cls);
     else if (!cls) pane.innerHTML = '<div class="se-box se-sbox pa-empty">이 과목에 수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div>';
@@ -14263,7 +14333,10 @@
   }
   // 머리: 과목 단추 + 반 단추
   function paRenderHead(c, sub, cls) {
-    document.getElementById('pa-subjs').innerHTML = c.subjects.map(function(s) {
+    const tsel = document.getElementById('pa-term'), cur = paTerm();
+    tsel.innerHTML = paTermList(c).map(function(t) { return '<option value="' + t + '"' + (t === cur ? ' selected' : '') + '>' + paTermLabel(t) + (t === paTermNow() ? ' (지금)' : '') + '</option>'; }).join('');
+    tsel.value = cur;
+    document.getElementById('pa-subjs').innerHTML = paTermSubs(c).map(function(s) {
       return '<button class="top-btn' + (sub && s.id === sub.id ? ' theme-active' : '') + '" data-sid="' + s.id + '" onclick="paPickSubject(\'' + s.id + '\')">📚 ' + paEsc(s.name) + '</button>';
     }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddSubject()" title="과목 더하기">＋ 과목</button>';
     document.getElementById('pa-classes').innerHTML = sub ? sub.classes.map(function(x) {
@@ -14274,10 +14347,18 @@
   function paSetTab(t) { paSetUi({ tab: t }); paRenderAll(); }
   function paPickSubject(id) { paSetUi({ s: id, c: '' }); paRenderAll(); }
   function paPickClass(id) { paSetUi({ c: id }); paRenderAll(); }
-  function paEmptyHtml() {
-    return '<div class="se-box se-sbox pa-empty"><div style="font-size:15px; font-weight:800; margin-bottom:6px;">📊 수행평가를 시작해 볼까요?</div>' +
+  function paEmptyHtml(c) {
+    c = c || paCfg();
+    // 다른 학기(먼저 지난 학기)에 과목이 있으면 그대로 가져오기
+    const cur = paTerm(), others = paTermList(c).filter(function(t) { return t !== cur && paTermSubs(c, t).length; });
+    const from = others.filter(function(t) { return t < cur; })[0] || others[0];
+    const fromSubs = from ? paTermSubs(c, from) : [];
+    return '<div class="se-box se-sbox pa-empty"><div style="font-size:15px; font-weight:800; margin-bottom:6px;">📊 ' + paTermLabel(cur) + ' 수행평가를 시작해 볼까요?</div>' +
       '<div class="se-muted" style="margin-bottom:12px;">① 과목(예: 화학Ⅱ)을 만들고 → 그 과목의 수업반과 학생을 넣고 → ② 영역·배점을 정한 뒤 → ③ 점수를 입력하면<br>④ 나이스 수행평가 일괄등록 파일과 ⑤ 세특까지 이어서 만들 수 있어요.</div>' +
-      '<button class="top-btn pa-primary" onclick="paAddSubject()">＋ 첫 과목 만들기</button></div>';
+      '<button class="top-btn pa-primary" onclick="paAddSubject()">＋ 첫 과목 만들기</button>' +
+      (from ? '<div class="pa-copy-term"><b>📋 ' + paTermLabel(from) + ' 과목 그대로 가져오기</b><div class="se-muted" style="margin:4px 0 8px;">' + fromSubs.map(function(s) { return paEsc(s.name) + '(' + s.classes.length + '개 반)'; }).join(' · ') +
+        '<br>과목·수업반·학생·영역·배점을 그대로 가져와요. 점수·평가내용·세특은 빼고 새로 시작해요.</div><button class="top-btn" id="pa-copy-term-btn" onclick="paCopyTerm(\'' + from + '\')">📋 가져오기</button></div>' : '') +
+      '</div>';
   }
 
   // ----- ① 과목·학생 -----
@@ -14285,7 +14366,7 @@
   function paAddSubject() {
     let ov = document.getElementById('pa-modal');
     if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
-    const have = paCfg().subjects.map(function(x) { return paNorm(x.name); });
+    const have = paTermSubs(paCfg()).map(function(x) { return paNorm(x.name); });
     const tt = paTtSubjects();
     window.__paTt = tt;
     ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📚 과목 더하기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
@@ -14304,7 +14385,7 @@
   function paCloseModal() { const ov = document.getElementById('pa-modal'); if (ov) ov.style.display = 'none'; }
   function paCreateSubject(name, hours, classes) {
     const c = paCfg();
-    const s = { id: paNewId(), name: name, hours: hours || null, limit: PA_LIMIT, classes: classes.length ? classes : [{ id: paNewId(), name: '수업반', auto: true }], areas: [] };
+    const s = { id: paNewId(), name: name, hours: hours || null, limit: PA_LIMIT, term: paTerm(), classes: classes.length ? classes : [{ id: paNewId(), name: '수업반', auto: true }], areas: [] };
     s.classes.forEach(function(x) { x.id = x.id || paNewId(); });
     c.subjects.push(s);
     paSaveCfg(c);
@@ -14370,7 +14451,8 @@
     PA_DATA_KINDS.forEach(function(k) { paRemoveKeys('pa-' + k + '-' + s.id + '-'); });
     c.subjects = c.subjects.filter(function(x) { return x.id !== s.id; });
     paSaveCfg(c);
-    paSetUi({ s: c.subjects[0] ? c.subjects[0].id : '', c: '' });
+    const next = paTermSubs(c)[0];
+    paSetUi({ s: next ? next.id : '', c: '' });
     paRenderAll();
   }
   async function paAddClass() {
@@ -14958,17 +15040,20 @@
     used.push(out);
     return out;
   }
-  function paXlOpen() {
+  // terms: 보여 줄 학기들(없으면 지금 고른 학기), allOn: 처음부터 모든 반 체크(지난 학년도 모두 백업)
+  function paXlOpen(terms, allOn) {
     const cfg = paCfg(), cur = paSub(cfg), curCls = paCls(cur);
-    if (!curCls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
+    terms = Array.isArray(terms) && terms.length ? terms : [paTerm()];
+    const list = cfg.subjects.filter(function(s) { return terms.indexOf(s.term) !== -1; }).sort(function(a, b) { return a.term < b.term ? -1 : a.term > b.term ? 1 : 0; });
+    if (!list.length || (!allOn && !curCls)) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
     let ov = document.getElementById('pa-modal');
     if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
     const o = paXlOptsGet();
     // 과목·수업반: 처음엔 지금 보던 반만 체크. 학생이 없는 반은 고를 수 없음.
-    const subsHtml = cfg.subjects.map(function(sub) {
-      return '<div class="pa-xl-sub"><label class="pa-xl-sname"><input type="checkbox" data-xs="' + sub.id + '" onchange="paXlSubToggle(this)"><b>📚 ' + paEsc(sub.name) + '</b></label><div class="pa-xl-cls">' +
+    const subsHtml = list.map(function(sub) {
+      return '<div class="pa-xl-sub"><label class="pa-xl-sname"><input type="checkbox" data-xs="' + sub.id + '" onchange="paXlSubToggle(this)"><b>📚 ' + (terms.length > 1 || terms[0] !== paTerm() ? '<span class="se-muted">' + paTermLabel(sub.term) + '</span> ' : '') + paEsc(sub.name) + '</b></label><div class="pa-xl-cls">' +
         paSortClasses(sub.classes).map(function(x) {
-          const n = paRoster(sub.id, x.id).length, on = n && x.id === curCls.id;
+          const n = paRoster(sub.id, x.id).length, on = n && (allOn || (curCls && x.id === curCls.id));
           return '<label class="pa-xl-c' + (n ? '' : ' off') + '"' + (n ? '' : ' title="학생이 없어요"') + '><input type="checkbox" data-xc="1" data-sid="' + sub.id + '" data-cid="' + x.id + '"' + (on ? ' checked' : '') + (n ? '' : ' disabled') + ' onchange="paXlOptChange()">' +
             paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></label>';
         }).join('') + '</div></div>';
@@ -15032,8 +15117,9 @@
       for (const p of picks) {
         const buf = await paXlBuild(p.sub, p.cls, o);
         if (!buf) { empty.push(p.sub.name + ' ' + p.cls.name); continue; }
-        let nm = paXlFileName(p.sub.name + '_' + p.cls.name), k = 2;
-        while (usedNames.indexOf(nm) !== -1) nm = paXlFileName(p.sub.name + '_' + p.cls.name) + ' (' + (k++) + ')';
+        const base = paXlFileName((p.sub.term ? p.sub.term + '학기_' : '') + p.sub.name + '_' + p.cls.name);
+        let nm = base, k = 2;
+        while (usedNames.indexOf(nm) !== -1) nm = base + ' (' + (k++) + ')';
         usedNames.push(nm);
         files.push({ name: nm, buf: buf });
       }
@@ -15180,7 +15266,7 @@
       if (!wb.worksheets.length) return null;
       // 숨긴 정보 시트: 가져오기가 과목·반·영역·세부영역·학생을 정확히 맞추도록
       const inf = wb.addWorksheet('_정보', { state: 'veryHidden' });
-      inf.addRow(['smartboard-pa', 1, sub.name, cls.name, sub.id, cls.id]);
+      inf.addRow(['smartboard-pa', 1, sub.name, cls.name, sub.id, cls.id, sub.term || '']);
       info.forEach(function(x) { inf.addRow(x); });
       inf.addRow(['학생', JSON.stringify(ro.map(function(st) { return { g: st.g || null, c: st.c || 0, n: st.n || 0, name: st.name }; }))]);
       return await wb.xlsx.writeBuffer();
@@ -15194,7 +15280,7 @@
     for (let r = 1; r <= ws.rowCount; r++) {
       const t0 = txt(r, 1);
       try {
-        if (t0 === 'smartboard-pa') { out.sname = txt(r, 3); out.cname = txt(r, 4); out.sid = txt(r, 5); out.cid = txt(r, 6); }
+        if (t0 === 'smartboard-pa') { out.sname = txt(r, 3); out.cname = txt(r, 4); out.sid = txt(r, 5); out.cid = txt(r, 6); out.term = txt(r, 7); }
         if (t0 === '영역') out.areas[txt(r, 2)] = { id: txt(r, 3), map: JSON.parse(txt(r, 4) || '{}') };
         if (t0 === '학생') out.roster = JSON.parse(txt(r, 2) || '[]');
       } catch (e) {}
@@ -15297,7 +15383,9 @@
     }
     const cfg = paCfg(), lines = [], miss = [];
     const find = function(info) {
-      const sub = cfg.subjects.find(function(x) { return info.sid && x.id === info.sid; }) || cfg.subjects.find(function(x) { return info.sname && paNorm(x.name) === paNorm(info.sname); });
+      // 과목: id → 없으면 같은 이름(파일의 학기, 없으면 지금 고른 학기 안에서)
+      const t = paTermOk(info.term) ? info.term : paTerm();
+      const sub = cfg.subjects.find(function(x) { return info.sid && x.id === info.sid; }) || cfg.subjects.find(function(x) { return info.sname && x.term === t && paNorm(x.name) === paNorm(info.sname); });
       const cls = sub && (sub.classes.find(function(x) { return info.cid && x.id === info.cid; }) || sub.classes.find(function(x) { return info.cname && paNorm(x.name) === paNorm(info.cname); }));
       return cls ? { sub: sub, cls: cls } : null;
     };
@@ -15491,6 +15579,8 @@
   const PA_TOUR_STEPS = [
     { selector: '#pa-page-header', before: paTourTab('setup'), title: '📊 수행평가에 오신 것을 환영해요!',
       desc: '수행평가 점수 입력부터 나이스 일괄등록 파일, 세특까지 한곳에서 해요. 지금 보이는 건 예시 화면이라 마음껏 둘러봐도 선생님 자료는 바뀌지 않아요.\n\n순서는 다섯 단계예요.\n① 과목·학생 → ② 영역·배점 → ③ 점수 입력 → ④ 합계·나이스 → ⑤ 세특' },
+    { selector: '#pa-term', before: paTourTab('setup'), title: '🗓️ 학기',
+      desc: '과목은 학기마다 따로예요. 처음엔 오늘 날짜의 학기(3~7월 1학기, 8~2월 2학기)가 골라져 있고, 여기서 바꿀 수 있어요.\n새 학기를 처음 열면 지난 학기 과목·수업반·학생·영역을 그대로 가져올 수 있어요(점수는 빼고). 새 학년도가 되면 지난 학년도 자료는 💾 백업 받은 뒤 지우라고 알려 드려요.' },
     { selector: '#pa-subjs', before: paTourTab('setup'), title: '📚 과목',
       desc: '맡은 과목마다 단추가 하나씩 생겨요. "＋ 과목"을 누르면 내 시간표의 과목이 나와서, 누르기만 하면 과목 이름·시수·반이 한 번에 들어가요(시간표에 없으면 직접 입력).' },
     { selector: '#pa-classes', before: paTourTab('setup'), title: '👥 수업반',
