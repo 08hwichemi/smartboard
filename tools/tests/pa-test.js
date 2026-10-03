@@ -243,13 +243,13 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('반·번호가 같은 다른 학년 학생은 넣지 않고 알림', /다른 학년/.test(clashMsg) && /2학년/.test(clashMsg) && (await P.evaluate(() => paRoster(paSub().id, paCls(paSub()).id).length)) === 6, clashMsg);
   for (const n of ['7반', '4반', '6반']) { await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, n); }
   check('반을 7·4·6 순서로 더해도 숫자 순(2·4·6·7반)', (await P.evaluate(() => paSub().classes.map(x => x.name).join())) === '2반,4반,6반,7반' && (await P.evaluate(() => [...document.querySelectorAll('#pa-classes [data-cid]')].map(b => b.childNodes[0].textContent).join())) === '2반,4반,6반,7반');
-  check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '📚 화학Ⅱ|📚 물리학Ⅰ|＋ 과목');
+  check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '화학Ⅱ|물리학Ⅰ|＋ 과목');
   await P.click('#pa-subjs [data-sid="' + (await cfg(P)).subjects[0].id + '"]'); await P.waitForTimeout(200);
   check('과목 고르기로 화학Ⅱ로 돌아옴(1반)', (await P.evaluate(() => paSub().name + paCls(paSub()).name)) === '화학Ⅱ1반');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
   // ===== ② 영역·배점 =====
-  check('학생을 넣으면 ① ✅, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✅/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  check('학생을 넣으면 ① ✅, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
   await P.click('#pa-next button:has-text("영역·배점")'); await P.waitForTimeout(150);
   check('다음 할 일 단추로 ② 탭 + "＋ 영역 더하기" 반짝임', (await P.evaluate(() => paTab())) === 'areas' && await P.evaluate(() => document.querySelector('#pa-pane .pa-area-new').classList.contains('pa-glow')));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
@@ -289,7 +289,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '2-areas.png') });
   // ===== ③ 점수 입력 =====
-  check('배점을 다 적으면 ② ✅ + 다음 할 일 = 개념 구조화 점수 10명', /✅/.test(await P.innerText('#pa-tabs [data-tab="areas"]')) && /개념 구조화 점수를 넣으세요 — 10명 남았어요/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  check('배점을 다 적으면 ② ✅ + 다음 할 일 = 개념 구조화 점수 10명', /✓/.test(await P.innerText('#pa-tabs [data-tab="areas"]')) && /개념 구조화 점수를 넣으세요 — 10명 남았어요/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
@@ -399,7 +399,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('📋 합계 복사', (await P.evaluate(() => window.__clip)) === (await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(r => r.sum == null ? '' : String(r.sum)).join('\n'))));
   // 점수만 다 넣으면(나이스 파일을 안 만들어도) ③·④ ✅ + 🎉 + 다음 반으로
   await P.evaluate(() => { const s = paSub(), x = paCls(s), a2 = s.areas[1], ro = paRoster(s.id, x.id), v2 = paScores(s.id, x.id, a2.id); v2[paSk(ro[ro.length - 1])] = { v: { [a2.subs[0].id]: 30 } }; paSaveScores(s.id, x.id, a2.id, v2); paRenderAll(); });
-  check('점수를 다 넣으면 ③·④ ✅ + 🎉 "다음 반" 단추', /✅/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✅/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
+  check('점수를 다 넣으면 ③·④ ✅ + 🎉 "다음 반" 단추', /✓/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✓/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
     /1반 점수를 다 넣었어요[\s\S]*점수 복사/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")'), await P.innerText('#pa-next'));
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-done.png') });
   // ===== ⑤ 세특 =====
