@@ -513,23 +513,43 @@ handleDb = async function(pageInfo, req) {
 
   // ---- 📖 설명서 ----
   await P.evaluate(() => { seSetCfg({ kind: 'p', finAll: false }); seSetTab('final'); });
-  const snapSe = () => P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-') && k !== 'se-cfg').sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
-  const beforeTour = await snapSe();
+  const snapSe = () => P.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('se-')).sort().map(k => k + '=' + localStorage.getItem(k)).join('\n'));
+  await wait(2500);
+  const beforeTour = await snapSe(), srvBefore = [...items.keys()].filter(k => k.includes('|se-')).map(k => k + '=' + items.get(k).value).join('\n');
+  const rosterBefore = await P.evaluate(() => seRoster.map(s => s.num + s.name).join());
+  upserts.length = 0;
   await P.click('#se-tour-btn'); await wait(400);
-  const seen = [];
+  check('설명서 첫 화면: 예시 반(가짜 학생 5명·영역 3개) + "저장 안 돼요" 표시', await P.evaluate(() => !!seDemo && seRoster.map(s => s.name).join() === '김하늘,이바다,박구름,최별,정나래' &&
+    document.querySelectorAll('#se-src-list th.se-area').length === 3 && /학급 환경 도우미/.test(document.getElementById('se-src-list').querySelector('textarea').value) &&
+    /예시 화면/.test(document.getElementById('se-save-state').textContent)));
+  const seen = [], demoChk = {};
   for (let k = 0; k < 30; k++) {
     const st = await P.evaluate(() => ({ title: document.getElementById('tour-card-title').innerText, prog: document.getElementById('tour-card-progress').innerText, tab: seTab(), sp: document.getElementById('tour-spotlight').getBoundingClientRect().width, btn: document.getElementById('tour-next-btn').innerText }));
     seen.push(st);
+    if (/받은 내용/.test(st.title)) demoChk.edit = await P.evaluate(() => ({ cards: document.querySelectorAll('#se-box-src .se-card.on').length, sum: document.getElementById('se-sum').className, draft: document.getElementById('se-draft').value.length, orange: !!document.querySelector('#se-students .se-stu[data-num="2"] .se-dot.draft') }));
+    if (/최종 — 확인하고/.test(st.title)) demoChk.fin = await P.evaluate(() => ({ txt: document.querySelectorAll('#se-final-list td.se-txt:not(:has(.se-empty))').length, draftTag: document.querySelectorAll('#se-final-list .se-drafttag').length }));
+    if (/편집 칸 — 다듬기/.test(st.title)) {   // 예시 화면에서 고쳐도 선생님 자료·서버엔 안 들어감
+      await P.fill('#se-draft', '예시에서 고친 글'); await P.evaluate(() => document.getElementById('se-draft').blur()); await wait(100);
+    }
     if (/완료/.test(st.btn)) break;
     await P.click('#tour-next-btn'); await wait(300);
   }
+  check('설명서 예시: 편집 탭에 체크한 카드·합친 바이트·편집 글, 2번 학생 주황 테두리 / 최종 탭에 완성본·"최종에 안 넣은 편집"', demoChk.edit && demoChk.edit.cards === 2 && /ok/.test(demoChk.edit.sum) && demoChk.edit.draft > 50 && demoChk.edit.orange &&
+    demoChk.fin && demoChk.fin.txt >= 4 && demoChk.fin.draftTag === 2, demoChk);   // 2번 학생 + 위에서 예시 편집 칸을 고친 1번 학생
   const nSteps = await P.evaluate(() => SE_TOUR_STEPS.length);
   check('설명서: 모든 단계를 다 보여줌(건너뛴 것 없음), 칸마다 빛 비춤', seen.length === nSteps && seen.every(x => x.sp > 0) && seen[seen.length - 1].prog === nSteps + ' / ' + nSteps, seen.map(x => x.prog + ' ' + x.title));
   check('설명서: 전체 흐름(세 단계) → 넣는 방법 두 가지(엑셀 양식/직접) → 편집(최종에 넣기) → 최종 순서, 탭도 따라 바뀜',
     /환영/.test(seen[0].title) && seen.some(x => /넣는 방법은 두 가지/.test(x.title) && x.tab === 'src') && seen.some(x => /엑셀 내려받기 = 입력용 양식/.test(x.title)) &&
     seen.some(x => /최종에 넣기/.test(x.title) && x.tab === 'edit') && seen.some(x => /최종 — 확인하고 나이스로/.test(x.title) && x.tab === 'final'), seen.map(x => x.tab + ' ' + x.title));
   await P.click('#tour-next-btn'); await wait(300);
-  check('설명서 닫으면 보던 탭(최종)·진로로 돌아가고 자료는 그대로', await P.evaluate(() => document.getElementById('tour-overlay').style.display === 'none' && seTab() === 'final' && seKind() === 'p' && !seFinAll()) && (await snapSe()) === beforeTour);
+  await wait(2500);
+  check('설명서 닫으면 보던 탭(최종)·진로·반·학생으로 돌아가고 자료(localStorage·서버)는 그대로, 올린 것 없음', await P.evaluate((r) => document.getElementById('tour-overlay').style.display === 'none' && !seDemo && seTab() === 'final' && seKind() === 'p' && !seFinAll() &&
+    seRoster.map(s => s.num + s.name).join() === r && document.getElementById('se-grade').value === '3' && document.getElementById('se-class').value === '1' && !/예시/.test(document.getElementById('se-save-state').textContent), rosterBefore) &&
+    (await snapSe()) === beforeTour && [...items.keys()].filter(k => k.includes('|se-')).map(k => k + '=' + items.get(k).value).join('\n') === srvBefore && upserts.length === 0, upserts);
+  // 설명서 도중에 바깥(어두운 곳)을 눌러 닫아도 예시 자료는 치워지고 원래 화면
+  await P.click('#se-tour-btn'); await wait(300);
+  await P.mouse.click(5, 300); await wait(300);
+  check('설명서 도중 바깥을 눌러 닫아도 예시 끝·원래 화면', await P.evaluate(() => document.getElementById('tour-overlay').style.display === 'none' && !seDemo && seRoster[0].name !== '김하늘') && (await snapSe()) === beforeTour);
   await P.evaluate(() => { seSetCfg({ kind: 'a', finAll: true }); seSetTab('edit'); });
 
   // ---- 다른 기기(같은 선생님)에서 보임, 다른 선생님은 못 봄 ----

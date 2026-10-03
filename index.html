@@ -13039,12 +13039,15 @@
   const SE_KIND_LABEL = { a: '자율', p: '진로' };
   const SE_DEFAULT_AREAS = { a: ['1인 1역할'], p: ['진로 독서'] };   // 처음 열 때 보기용 — 선생님이 이름을 바꾸거나 더하고 지운다
   let seRoster = [], seRosterKey = '', seSelNum = null, seTypingKey = null;
+  // 설명서 동안(seDemo)은 진짜 저장소 대신 예시 자료(가짜 반·학생·문장) 안에서만 읽고 쓴다 — 선생님 자료·서버는 건드리지 않음(수행평가 paDemo와 같은 방식).
+  let seDemo = null;
 
   function seCfg() {
-    try { const v = JSON.parse(localStorage.getItem(SE_CFG_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
+    try { const v = JSON.parse((seDemo ? seDemo[SE_CFG_KEY] : localStorage.getItem(SE_CFG_KEY)) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
   }
   function seSetCfg(patch) {
     const c = Object.assign(seCfg(), patch);
+    if (seDemo) { seDemo[SE_CFG_KEY] = JSON.stringify(c); return; }
     try { localStorage.setItem(SE_CFG_KEY, JSON.stringify(c)); } catch (e) {}
     scheduleBackupWrite();
   }
@@ -13053,11 +13056,12 @@
   function seTab() { const t = seCfg().tab; return t === 'edit' || t === 'final' ? t : 'src'; }
   function seIsOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none'; }
 
-  function seGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function seGet(k) { if (seDemo) return seDemo[k] || ''; try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   // 값이 실제로 바뀐 칸만 저장(같은 값이면 서버에도 안 올라감). 빈 값은 항목을 지운다.
   function seSet(k, v) {
     v = String(v == null ? '' : v);
     if (seGet(k) === v) return true;
+    if (seDemo) { if (v) seDemo[k] = v; else delete seDemo[k]; return true; }
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
     catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
     scheduleBackupWrite();
@@ -13068,6 +13072,7 @@
   function seSaveState(s) {
     const el = document.getElementById('se-save-state');
     if (!el) return;
+    if (seDemo) { el.className = 'dirty'; el.textContent = '📖 설명서 예시 화면 — 저장 안 돼요'; return; }
     el.className = s === 'typing' ? 'dirty' : '';
     el.textContent = s === 'typing' ? '✏️ 입력 중 — 칸을 벗어나면 저장' : s === 'saved' ? '💾 저장됨' : '';
   }
@@ -13086,7 +13091,7 @@
   // 영역: { a: [{id, name}], p: [{id, name}] } — 반마다 따로. 아직 없으면 기본 보기(저장은 처음 고칠 때).
   function seAllAreas() {
     let v = null;
-    try { v = JSON.parse(localStorage.getItem(seAreasKey()) || 'null'); } catch (e) {}
+    try { v = JSON.parse(seGet(seAreasKey()) || 'null'); } catch (e) {}
     if (!v || typeof v !== 'object') {
       v = {};
       SE_KINDS.forEach(function(k) { v[k] = SE_DEFAULT_AREAS[k].map(function(n, i) { return { id: k + 'd' + i, name: n }; }); });
@@ -13175,6 +13180,7 @@
     if (!c.g || !c.c) { seRoster = []; seRosterKey = ''; return; }
     const key = c.g + '-' + c.c;
     if (seRosterKey === key) return;
+    if (seDemo) { seRoster = SE_DEMO_ROSTER.slice(); seRosterKey = key; return; }
     let rows = [];
     try {
       const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
@@ -13191,13 +13197,14 @@
 
   // ----- 열고 닫기 -----
   function closeSePage() {
+    if (seDemo && pageTour) closePageTour();   // 설명서 도중에 나가면 설명서도 끝내 예시 자료를 치운다
     const pg = document.getElementById('se-page');
     if (pg) pg.style.display = 'none';
     const btn = document.getElementById('rail-sgb-btn');
     if (btn && document.getElementById('sgb-overlay').style.display !== 'flex') btn.classList.remove('active');
   }
   async function openSeEditor() {
-    closeAbsencePage(); closeNametagPage(); closeFormPage();
+    closeAbsencePage(); closeNametagPage(); closeFormPage(); closePaPage();
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
     document.getElementById('main-dashboard').style.display = 'none';
@@ -13224,12 +13231,44 @@
 
   // ----- 📖 자율·진로 편집기 설명서 -----
   // 먼저 전체 흐름(자료 입력 → 편집 → 최종)을 말하고, 탭을 차례로 바꿔 가며 버튼·구역을 하나씩 짚는다.
-  // 넣는 방법 두 가지(엑셀 양식으로 한꺼번에 / 화면에 직접)도 알려 준다. 자료는 건드리지 않고, 끝나면 보던 탭·자율/진로로 돌려놓는다.
+  // 넣는 방법 두 가지(엑셀 양식으로 한꺼번에 / 화면에 직접)도 알려 준다. 설명서 동안은 예시 반(seDemo — 가짜 학생 5명·영역·문장·편집·최종)을
+  // 보여 줘서 처음 여는 선생님도 빈 표가 아닌 채워진 화면으로 보고, 선생님 자료·서버는 그대로. 끝나면(완료·닫기) 원래 화면으로 돌아온다.
+  const SE_DEMO_ROSTER = [{ num: 1, name: '김하늘' }, { num: 2, name: '이바다' }, { num: 3, name: '박구름' }, { num: 4, name: '최별' }, { num: 5, name: '정나래' }];
+  function seDemoStore(g, c) {
+    const d = {}, ck = g + '-' + c;
+    const src = function(n, id, t) { d['se-src-' + ck + '-' + n + '-' + id] = t; };
+    d[SE_CFG_KEY] = JSON.stringify({ g: g, c: c, tab: 'src', kind: 'a', finAll: true });
+    d['se-areas-' + ck] = JSON.stringify({
+      a: [{ id: 'da1', name: '1인 1역할' }, { id: 'da2', name: '학급 자치회' }, { id: 'da3', name: '학교 축제' }],
+      p: [{ id: 'dp1', name: '진로 특강' }, { id: 'dp2', name: '진로 독서' }] });
+    const T = {
+      a1: '학급 환경 도우미를 맡아 매일 교실 분리배출 상태를 점검하고, 친구들이 헷갈려하는 품목을 정리한 안내문을 만들어 게시함.',
+      a2: '학급 회의에서 서기를 맡아 회의 내용을 꼼꼼히 기록하고, 결정 사항을 학급 게시판에 정리해 친구들과 공유함.',
+      a3: '학교 축제 학급 부스에서 홍보물 제작을 맡아 친구들의 의견을 모아 포스터를 완성함.',
+      p1: '진로 특강(데이터 과학자)을 듣고 관심 분야와 연결해 필요한 역량을 정리하고 앞으로의 학습 계획을 세움.',
+      p2: '통계가 일상 문제 해결에 쓰이는 사례를 다룬 책을 읽고 관련 사례를 더 조사해 친구들 앞에서 발표함.',
+      b1: '학급 도서 도우미를 맡아 학급 문고를 분야별로 정리하고 대출 기록부를 만들어 관리함.',
+      b2: '학급 자치회 부회장으로 체육대회 반 티 정하기 회의를 이끌며 다양한 의견을 조율함.',
+      q1: '진로 특강(환경 공학자)을 듣고 생활 속 탄소 줄이기 방법을 찾아 실천 기록을 남김.' };
+    src(1, 'da1', T.a1); src(1, 'da2', T.a2); src(1, 'da3', T.a3); src(1, 'dp1', T.p1); src(1, 'dp2', T.p2);
+    src(2, 'da1', T.b1); src(2, 'da2', T.b2); src(2, 'dp1', T.q1);
+    src(3, 'da1', '학급 식물 도우미를 맡아 화분에 물을 주고 성장 일지를 꾸준히 기록함.'); src(3, 'da3', '학교 축제 공연 무대 진행을 도우며 순서표를 관리함.');
+    src(3, 'dp2', '관심 직업을 다룬 책을 읽고 그 직업에 필요한 역량을 정리함.');
+    src(4, 'da1', '칠판 정리 도우미를 맡아 수업 전후 칠판과 교탁을 정돈함.');
+    d['se-st-' + ck + '-1'] = JSON.stringify({ sel: { a: ['da1', 'da2'], p: ['dp1', 'dp2'] }, memo: '축제는 빼고 자치회 위주로' });
+    d['se-st-' + ck + '-2'] = JSON.stringify({ sel: { a: ['da1', 'da2'], p: ['dp1'] }, memo: '' });
+    d['se-fin-' + ck + '-1-a'] = T.a1 + ' ' + T.a2;
+    d['se-fin-' + ck + '-1-p'] = T.p1 + ' ' + T.p2;
+    d['se-fin-' + ck + '-2-a'] = T.b1 + ' ' + T.b2;
+    d['se-drf-' + ck + '-2-a'] = T.b1 + ' 자치회 부회장으로 반 티 정하기 회의를 이끌며 여러 의견을 조율함.';   // 최종과 다른 편집(주황 테두리)
+    d['se-fin-' + ck + '-2-p'] = T.q1;
+    return d;
+  }
   let seTourPrev = null;
-  const seTourTab = function(tab) { return function() { if (seTab() !== tab) seSetTab(tab); }; };
+  const seTourTab = function(tab, num) { return function() { if (num) seSelNum = num; seSetCfg({ tab: tab }); seRenderAll(); }; };
   const SE_TOUR_STEPS = [
     { selector: '#se-page-header', before: seTourTab('src'), title: '🗂 자율·진로 편집기에 오신 것을 환영해요!',
-      desc: '여러 부서에서 받은 자율·진로 문장을 학생별로 모아, 골라 합치고, 바이트에 맞게 다듬는 곳이에요.\n\n순서는 딱 세 단계예요.\n① 📥 자료 입력 — 받은 문장을 학생·영역별로 넣기\n② ✍️ 편집 — 학생마다 넣을 문장을 골라 합치고 다듬은 뒤 📊 최종에 넣기\n③ 📊 최종 — 완성본을 확인하고 📋 복사해서 나이스에 붙여 넣기\n\n적은 내용은 선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요). 칸에 적는 동안엔 화면에만 있다가 칸을 벗어나면 저장돼요.' },
+      desc: '여러 부서에서 받은 자율·진로 문장을 학생별로 모아, 골라 합치고, 바이트에 맞게 다듬는 곳이에요.\n\n순서는 딱 세 단계예요.\n① 📥 자료 입력 — 받은 문장을 학생·영역별로 넣기\n② ✍️ 편집 — 학생마다 넣을 문장을 골라 합치고 다듬은 뒤 📊 최종에 넣기\n③ 📊 최종 — 완성본을 확인하고 📋 복사해서 나이스에 붙여 넣기\n\n지금 보이는 건 예시 반(가짜 학생 5명)이라 마음껏 눌러 봐도 선생님 자료는 바뀌지 않아요. 설명서를 닫으면 원래 화면으로 돌아가요.\n\n실제로 적은 내용은 선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요). 칸에 적는 동안엔 화면에만 있다가 칸을 벗어나면 저장돼요.' },
     { selector: '#se-grade', before: seTourTab('src'), title: '학년·반 고르기',
       desc: '자료는 반마다 따로예요. 담임 선생님은 담임 반으로 시작해요. 옆에 그 학년의 바이트 한도(입시 연도 기준, 한글 1자 = 3바이트)가 나와요.' },
     { selector: '#se-tabs', before: seTourTab('src'), title: '세 탭 = 세 단계',
@@ -13244,17 +13283,17 @@
       desc: '"자율 입력"·"진로 입력"·"최종" 세 시트로 받아요. 영역을 먼저 만든 뒤 받으면 머리 줄에 영역 이름이 들어 있어서, 그 아래에 부서 문장을 붙여 넣기만 하면 돼요. 다 쓴 뒤 보관용으로 받아 두기에도 좋아요(최종 시트의 바이트는 엑셀에서 고쳐도 다시 계산돼요).' },
     { selector: '#se-import-btn', before: seTourTab('src'), title: '📥 엑셀 가져오기',
       desc: '채운 엑셀 파일을 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요(덮어쓰지 않아요). 영역 이름이 같으면 그 열로, 없으면 새 영역으로 들어가요. 예전에 쓰던 엑셀(데이터·최종 시트)도 그대로 가져올 수 있어요.' },
-    { selector: '#se-students', before: seTourTab('edit'), title: '✍️ 편집 — 학생 목록',
-      desc: '학생을 누르면 오른쪽에 그 학생 자료가 나와요. 이름 옆 두 숫자는 자율·진로 바이트예요.\n회색 = 아직 없음 · 초록 = 한도 안 · 빨강 = 한도 넘음\n주황 테두리 = 편집했는데 아직 최종에 안 넣음' },
-    { selector: '#se-edit-head', before: seTourTab('edit'), title: '◀ 이전 · 다음 ▶',
+    { selector: '#se-students', before: seTourTab('edit', 1), title: '✍️ 편집 — 학생 목록',
+      desc: '학생을 누르면 오른쪽에 그 학생 자료가 나와요. 이름 옆 두 숫자는 자율·진로 바이트예요.\n회색 = 아직 없음 · 초록 = 한도 안 · 빨강 = 한도 넘음\n주황 테두리 = 편집했는데 아직 최종에 안 넣음(예시: 2번 이바다의 자율)' },
+    { selector: '#se-edit-head', before: seTourTab('edit', 1), title: '◀ 이전 · 다음 ▶',
       desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.' },
-    { selector: '#se-box-src', before: seTourTab('edit'), title: '📥 받은 내용 — 넣을 것을 체크',
+    { selector: '#se-box-src', before: seTourTab('edit', 1), title: '📥 받은 내용 — 넣을 것을 체크',
       desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 제목 옆 테두리 상자에 "합치면 몇 바이트"가 바로 보여요(초록 = 한도 안, 빨강 = 넘음 — 자료 입력 탭에서는 바이트를 안 보여 줘요). "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
-    { selector: '#se-box-draft', before: seTourTab('edit'), title: '✍️ 편집 칸 — 다듬기',
+    { selector: '#se-box-draft', before: seTourTab('edit', 1), title: '✍️ 편집 칸 — 다듬기',
       desc: '여기서 문장을 다듬어요. 적는 대로 글자 수·바이트·남은 바이트와, 기재하면 안 되는 표현(공인어학시험 등)을 바로 알려 줘요.' },
-    { selector: '#se-put-btn', before: seTourTab('edit'), title: '지우기 · 📋 복사 · 📊 최종에 넣기',
+    { selector: '#se-put-btn', before: seTourTab('edit', 1), title: '지우기 · 📋 복사 · 📊 최종에 넣기',
       desc: '다 다듬었으면 꼭 📊 최종에 넣기! 그래야 최종 탭에 들어가요(편집 칸만 고쳐서는 최종이 안 바뀌어요 — 아래에 "최종과 같아요/달라요"가 나와요).\n📋 복사는 나이스에 바로 붙여 넣고 싶을 때, 지우기는 편집 칸만 비워요.' },
-    { selector: '#se-box-memo', before: seTourTab('edit'), title: '📝 메모',
+    { selector: '#se-box-memo', before: seTourTab('edit', 1), title: '📝 메모',
       desc: '"진로독서 줄이고 큐리어톤 위주로"처럼 그 학생에 대한 메모를 남겨요. 선생님에게만 보여요.' },
     { selector: '#se-final-list', before: seTourTab('final'), title: '📊 최종 — 확인하고 나이스로',
       desc: '최종에 넣은 문장이 학생별로 모여 있어요. 처음엔 자율·진로를 나란히(전체) 보여 주고, 위 자율/진로 버튼으로 하나만 볼 수도 있어요.\n바이트 칸 = 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.\n📋로 한 명씩 복사해 나이스에 붙여 넣고, ✎를 누르면 그 학생 편집으로 가요. "✏️ 최종에 안 넣은 편집 있음"이 보이면 편집 탭에서 최종에 넣기를 안 누른 거예요.' },
@@ -13263,11 +13302,20 @@
   ];
   function seOpenTour() {
     const c = seCfg();
-    seTourPrev = { tab: seTab(), kind: seKind(), finAll: c.finAll };
+    const g = Number(c.g) || 2, k = Number(c.g) && Number(c.c) ? Number(c.c) : 1;
+    seTourPrev = { roster: seRoster, key: seRosterKey, sel: seSelNum };
+    seDemo = seDemoStore(g, k);
+    seRosterKey = ''; seSelNum = 1; seTypingKey = null;
+    seLoadRoster();   // 예시에선 서버에 안 묻고 바로 예시 학생
+    seFillClassSelects();
+    seSaveState('');
+    seRenderAll();
     openPageTour(SE_TOUR_STEPS, function() {
       const p = seTourPrev; seTourPrev = null;
-      if (!p) return;
-      seSetCfg({ tab: p.tab, kind: p.kind, finAll: p.finAll });
+      seDemo = null; seTypingKey = null;
+      if (p) { seRoster = p.roster; seRosterKey = p.key; seSelNum = p.sel; }
+      seFillClassSelects();
+      seSaveState('');
       seRenderAll();
     });
   }
@@ -13279,6 +13327,7 @@
     document.getElementById('se-class').value = c.g && c.c ? String(c.c) : '';
   }
   async function seOnClassChange(which) {
+    if (seDemo) { seFillClassSelects(); return customAlert('설명서 예시 화면에서는 반을 바꿀 수 없어요. 설명서를 닫은 뒤 바꿔 주세요.'); }
     const g = parseInt(document.getElementById('se-grade').value) || null;
     let k = parseInt(document.getElementById('se-class').value) || null;
     if (which === 'grade') { k = null; document.getElementById('se-class').innerHTML = '<option value="">반</option>' + (g ? classOptionsHtml(g, null) : ''); }
@@ -13654,10 +13703,10 @@
     const ck = seClassKey(), out = [];
     if (!ck) return out;
     const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-drf-' + ck + '-', 'se-st-' + ck + '-'];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
+    const all = seDemo ? Object.keys(seDemo) : Array.from({ length: localStorage.length }, function(_, i) { return localStorage.key(i); });
+    all.forEach(function(k) {
       if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === seAreasKey() || k === seRosterKeyName())) out.push(k);
-    }
+    });
     return out;
   }
   async function seResetClass() {
@@ -13667,8 +13716,8 @@
     if (!keys.length) return customAlert('지울 자료가 없어요.');
     if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지울까요?'))) return;
     if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
-    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
-    scheduleBackupWrite();
+    if (seDemo) keys.forEach(function(k) { delete seDemo[k]; });
+    else { keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} }); scheduleBackupWrite(); }
     seRosterKey = '';
     await seLoadRoster();
     seRenderAll();
@@ -13677,6 +13726,7 @@
   // ----- 📥 엑셀 가져오기 / 📊 내려받기 (사용자가 쓰던 양식: 데이터 시트 1행 "자율"/"진로" 머리, 2행 영역 이름, 3행부터 B=번호 C=이름; 최종 시트 A=번호 C=자율 G=진로) -----
   async function seImportExcel(file) {
     if (!file) return;
+    if (seDemo) return customAlert('설명서 예시 화면에서는 가져올 수 없어요. 설명서를 닫은 뒤 가져와 주세요.');
     if (!seClassKey()) return customAlert('학년·반을 먼저 고른 뒤 가져오세요.');
     if (typeof XLSX === 'undefined') return customAlert('엑셀을 읽는 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
     let wb;
@@ -14084,6 +14134,7 @@
 
   // ----- 열고 닫기 -----
   function closePaPage() {
+    if (paDemo && pageTour) closePageTour();   // 설명서 도중에 나가면 설명서도 끝내 예시 자료를 치운다
     const pg = document.getElementById('pa-page');
     if (pg) pg.style.display = 'none';
     const btn = document.getElementById('rail-pa-btn');

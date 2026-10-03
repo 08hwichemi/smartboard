@@ -391,6 +391,15 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#rail-pa-btn'); await P.waitForTimeout(200); await P.click('#rail-pa-btn'); await P.waitForTimeout(200);
   check('수행평가 버튼을 한 번 더 누르면 홈', !(await P.isVisible('#pa-page')) && await P.isVisible('#main-dashboard'));
 
+  // 수행평가가 열린 채 생기부 → 자율·진로 편집기를 열면 수행평가는 닫힘(예전엔 두 화면이 위아래로 같이 떴음), 반대도
+  await P.click('#rail-pa-btn'); await P.waitForTimeout(200);
+  await P.click('#rail-sgb-btn'); await P.waitForTimeout(200);
+  await P.click('#sgb-tabs [data-tab="edit"]'); await P.waitForTimeout(400);
+  check('수행평가 위에서 자율·진로 편집기 열면 수행평가 닫힘(한 화면만)', await P.isVisible('#se-page') && !(await P.isVisible('#pa-page')) && !(await P.evaluate(() => document.getElementById('rail-pa-btn').classList.contains('active'))));
+  await P.click('#rail-pa-btn'); await P.waitForTimeout(300);
+  check('편집기 위에서 수행평가 열면 편집기 닫힘', await P.isVisible('#pa-page') && !(await P.isVisible('#se-page')));
+  await P.click('#rail-home-btn'); await P.waitForTimeout(200);
+
   // ===== 📖 설명서: 예시 화면으로 다섯 탭을 차례로, 선생님 자료·서버는 그대로 =====
   await P.click('#rail-pa-btn'); await P.waitForTimeout(200);
   const before = JSON.stringify(await lsKeys(P, '^pa-')), upBefore = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
