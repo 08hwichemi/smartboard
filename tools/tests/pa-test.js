@@ -359,6 +359,16 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     paSaveScores(s.id, x.id, a1.id, v1); paSaveScores(s.id, x.id, a2.id, v2);
   });
 
+  // 화면 크기(🔍 − 100% +): 화면 전체를 같은 비율로 — 점수 표 칸 폭도 같이 커져서 안 틀어짐, 계정에 기억
+  const thW = () => P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-score-table thead th')].slice(0, 4).map(th => Math.round(th.getBoundingClientRect().width)));
+  const w100 = await thW();
+  await P.click('#pa-zoom-group button[title="크게"]'); await P.click('#pa-zoom-group button[title="크게"]'); await P.waitForTimeout(200);
+  const w125 = await thW();
+  check('크게 두 번 → 125%: 글씨·칸 폭이 함께 1.25배(표 그대로), 화면 밖으로 안 넘침, 계정에 기억', (await P.innerText('#pa-zoom-text')) === '125%' && (await P.evaluate(() => localStorage.getItem('zoom-pa'))) === '125' &&
+    w125.every((w, i) => Math.abs(w - w100[i] * 1.25) <= 2) && await P.evaluate(() => document.getElementById('pa-main').getBoundingClientRect().bottom <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth), [w100, w125]);
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-zoom125.png') });
+  await P.click('#pa-zoom-text'); await P.waitForTimeout(150);
+  check('% 글자를 누르면 100%(기억도 지움)', (await P.innerText('#pa-zoom-text')) === '100%' && (await P.evaluate(() => localStorage.getItem('zoom-pa'))) === null && JSON.stringify(await thW()) === JSON.stringify(w100));
   // ===== ④ 합계·나이스 =====
   await P.evaluate(() => paRenderAll());
   check('남은 학생 한 명(화학자료분석)이면 다음 할 일이 그 영역 + "이 영역으로" 단추', /화학자료분석 점수를 넣으세요 — 1명 남았어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("이 영역으로")'), await P.innerText('#pa-next'));

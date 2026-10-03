@@ -684,7 +684,10 @@
     .pa-th-pts { font-size: 10.5px; font-weight: 700; color: #1E7B3A; margin-top: 2px; letter-spacing: -0.01em; word-break: keep-all; }
     .pa-score-table td.pa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pa-modal { position: fixed; inset: 0; z-index: 1050; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
-    .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; }
+    .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; zoom: var(--pa-zoom, 1); }
+    #pa-zoom-group { display: flex; align-items: center; gap: 6px; background: var(--tt-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
+    #pa-zoom-group .top-btn { padding: 2px 8px; font-size: 12px; }
+    #pa-zoom-text { font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; cursor: pointer; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
     .pa-modal-box #pa-new-hours { width: 90px; flex: none; }
     .pa-modal-box #pa-new-name { width: auto; flex: 1; }
@@ -3676,8 +3679,9 @@
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
       <span id="pa-save-state"></span>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+      <div id="pa-zoom-group" title="화면 크기 — 수행평가 화면 전체를 같은 비율로 키우거나 줄여요(표가 틀어지지 않아요, 내 계정에 기억)">
+        <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="paZoomBy(-1)" title="작게">−</button><span id="pa-zoom-text" onclick="paZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="paZoomBy(1)" title="크게">+</button>
+      </div>
     </div>
   </div>
   <div id="pa-main">
@@ -13947,7 +13951,7 @@
     const el = document.getElementById('pa-save-state');
     if (!el) return;
     el.className = s === 'typing' ? 'dirty' : '';
-    el.textContent = s === 'typing' ? '입력 중 — 칸을 벗어나면 저장' : s === 'saved' ? '저장됨' : '';
+    el.textContent = s === 'typing' ? '✏️ 입력 중 — 칸을 벗어나면 저장' : s === 'saved' ? '💾 저장됨' : '';
   }
   function paNewId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function paEsc(s) { return escapeHtmlAttr(s == null ? '' : String(s)); }
@@ -14155,7 +14159,25 @@
     document.getElementById('pa-page').style.display = 'flex';
     document.getElementById('rail-pa-btn').classList.add('active');
     paSaveState('');
+    paApplyZoom();
     paRenderAll();
+  }
+  // 화면 크기(🔍 − 100% +): 수행평가 화면 전체를 같은 비율로(CSS zoom) — 글씨만 키우면 칸 폭을 고정한 점수 표가 틀어져서.
+  // 머리 줄·본문(#pa-page-header, #pa-main)과 작은 창(--pa-zoom)에. 계정 자료 'zoom-pa'(100%는 지움 — 'pa-'로 시작하지 않게 해서 수행평가 백업·되돌리기와 따로).
+  const PA_ZOOMS = [90, 100, 110, 125, 150];
+  function paZoomGet() { let z = 100; try { z = parseInt(localStorage.getItem('zoom-pa'), 10) || 100; } catch (e) {} return PA_ZOOMS.indexOf(z) >= 0 ? z : 100; }
+  function paApplyZoom() {
+    const z = paZoomGet();
+    ['pa-page-header', 'pa-main'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
+    document.documentElement.style.setProperty('--pa-zoom', String(z / 100));
+    const t = document.getElementById('pa-zoom-text'); if (t) t.textContent = z + '%';
+  }
+  function paZoomBy(d) {
+    const i = PA_ZOOMS.indexOf(paZoomGet()), z = d === 0 ? 100 : PA_ZOOMS[Math.max(0, Math.min(PA_ZOOMS.length - 1, i + d))];
+    try { if (z === 100) localStorage.removeItem('zoom-pa'); else localStorage.setItem('zoom-pa', String(z)); } catch (e) {}
+    scheduleBackupWrite();
+    const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
+    paApplyZoom();
   }
   document.addEventListener('DOMContentLoaded', function() {
     const rail = document.getElementById('app-rail');
