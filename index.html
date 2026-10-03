@@ -585,7 +585,12 @@
     #pa-tabs .pa-st-next { font-size: 10px; font-weight: 800; color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 6px; margin-left: 5px; }
     #pa-tabs .pa-step-next:not(.theme-active) { box-shadow: inset 0 0 0 1.5px var(--accent-color); }
     #pa-next { flex: 0 0 auto; margin: 0 0 10px; }
-    .pa-next { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--accent-color); background: var(--accent-soft); color: var(--text-main); font-size: 14px; line-height: 1.5; }
+    /* 단추가 있든 없든 상자 높이가 같게(탭을 옮길 때 아래 화면이 위아래로 움직이지 않게) — 단추는 줄지 않고, 글만 줄바꿈 */
+    .pa-next > .top-btn { flex: none; white-space: nowrap; }
+    /* 한글을 낱자 사이에서 끊지 않고 띄어쓰기에서만 줄바꿈("결과 도 / 출" → "결과 / 도출") — 너무 긴 낱말만 어쩔 수 없이 끊음 */
+    #pa-page, .pa-modal-box { word-break: keep-all; overflow-wrap: anywhere; }
+    #pa-page textarea, #pa-page input { word-break: normal; overflow-wrap: break-word; }
+    .pa-next { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; box-sizing: border-box; min-height: 56px; padding: 8px 14px; border-radius: 12px; border: 1.5px solid var(--accent-color); background: var(--accent-soft); color: var(--text-main); font-size: 14px; line-height: 1.5; }
     .pa-next .pa-next-ico { font-size: 20px; }
     .pa-next .pa-next-lbl { font-weight: 800; color: var(--accent-color); white-space: nowrap; }
     .pa-next .pa-next-msg { flex: 1 1 320px; min-width: 0; }

@@ -372,6 +372,12 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   // ===== ④ 합계·나이스 =====
   await P.evaluate(() => paRenderAll());
   check('남은 학생 한 명(화학자료분석)이면 다음 할 일이 그 영역 + "이 영역으로" 단추', /화학자료분석 점수를 넣으세요 — 1명 남았어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("이 영역으로")'), await P.innerText('#pa-next'));
+  const paneTop = () => P.evaluate(() => [Math.round(document.getElementById('pa-next').getBoundingClientRect().height), Math.round(document.getElementById('pa-pane').getBoundingClientRect().top)]);
+  const withBtn = await paneTop();
+  await P.click('#pa-next button:has-text("이 영역으로")'); await P.waitForTimeout(200);
+  const noBtn = await paneTop();
+  check('"이 영역으로" 단추가 있든 없든 다음 할 일 상자 높이·아래 화면 위치 그대로(탭 옮길 때 안 움직임)', !(await P.isVisible('#pa-next button')) && JSON.stringify(withBtn) === JSON.stringify(noBtn), [withBtn, noBtn]);
+  check('한글은 띄어쓰기에서만 줄바꿈(word-break: keep-all) — 머리 칸·안내 글', await P.evaluate(() => getComputedStyle(document.querySelector('#pa-pane thead th')).wordBreak === 'keep-all' && getComputedStyle(document.querySelector('#pa-next .pa-next-msg')).wordBreak === 'keep-all'));
   await P.click('#pa-tabs [data-tab="sum"]'); await P.waitForTimeout(200);
   const sumTxt = await P.innerText('#pa-pane');
   check('합계: 입력 끝 9/10명, 마지막 학생 "화학자료분석 비어 있음"', /입력 끝 9 \/ 10명/.test(sumTxt) && /화학자료분석 비어 있음/.test(sumTxt), sumTxt.slice(0, 300));
