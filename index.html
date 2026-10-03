@@ -18445,7 +18445,7 @@
   const BS_TSTYLES = [['box', '상자', '제목을 색 상자 안에(표 위)'], ['band', '표에 붙이기', '표 맨 윗줄이 제목'], ['text', '글씨만', '상자·선 없이 글씨만'], ['line', '밑줄', '제목 아래 굵은 선']];
   const BS_SIZES = [['tSize', '제목', 14, 60], ['hSize', '머리 줄', 8, 40], ['nSize', '구분', 8, 44], ['tmSize', '시간', 8, 48], ['mSize', '분', 8, 44]];
   const BS_SAFE = 3; // 쪽 아래 여유(mm) — 한글에서 표가 다음 쪽으로 밀리지 않게
-  const BS_TILE_GAP = 1.5; // 타일: 칸 사이(mm)
+  const BS_TILE_GAPS = [1.5, 1, 0.7, 0.5]; // 타일: 칸 사이(mm) — 한 장을 넘으면 차례로 좁힌다(한글 테두리 굵기로도 쓰므로 한글에 있는 굵기만)
   const BS_DEFAULT = {
     mode: 'normal', design: 'classic', showMin: true, sep: ' - ', pad: true, tblW: 100,
     showHead: true, hN: '구분', hT: '시간', hM: '분', colW: {}, // 칸 너비(mm, 비우면 자동): n 구분 · t 시간 · m 분
@@ -18551,7 +18551,14 @@
   // 표는 "줄(교시·특별 줄) × 칸(구분·시간·분)" — 세로형만(사용자: 가로형은 안 뽑아도 됨).
   // 선은 "줄 사이 / 칸 사이 / 바깥 / 머리 경계"마다 표 짜임(style)에 따라 정하고, 바탕·글자색은 칸 자리(머리·구분·나머지)와 줄 종류(교시·중식 …)로 정한다.
   function bsFmtT(c, t) { return c.pad ? t : String(t || '').replace(/^0(\d)/, '$1'); }
+  // 타일(파스텔)은 칸 사이가 줄마다 들어가 줄이 많거나 부제가 있으면 다른 디자인은 들어가는데 혼자 한 장을 넘었다(사용자) → 들어갈 때까지 칸 사이를 좁힌다.
   function bsLayout(c) {
+    if (c.style !== 'tiles') return bsLayoutAt(c, 0);
+    let L;
+    for (let i = 0; i < BS_TILE_GAPS.length; i++) { L = bsLayoutAt(c, BS_TILE_GAPS[i]); if (!L.over) break; }
+    return L;
+  }
+  function bsLayoutAt(c, sp) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1], W = w - c.mL - c.mR, H = h - c.mT - c.mB;
     const m = c[c.mode], rows = bsRows(c), tw = Math.round(W * c.tblW / 100 * 10) / 10;
     const col = function(k) { return bsColor(c, k); }, LN = BS_LINES[c.line], li = LN[2], lo = LN[3];
@@ -18559,7 +18566,7 @@
     const lhOf = function(pt) { return pt * FM_PT * 1.25; };
     const lines = function(t, pt, ww) { return Math.max(1, Math.ceil(emW(t, pt) / Math.max(1, ww - 3))); };
     const r1 = function(x) { return Math.round(x * 10) / 10; };
-    const tiles = c.style === 'tiles', sp = tiles ? BS_TILE_GAP : 0, band = c.tStyle === 'band';
+    const tiles = c.style === 'tiles', band = c.tStyle === 'band';
     // 칸(필드)
     const F = [{ k: 'n', label: c.hN, size: c.nSize }, { k: 't', label: c.hT, size: c.tmSize }];
     if (c.showMin) F.push({ k: 'm', label: c.hM, size: c.mSize });
@@ -18584,7 +18591,7 @@
     else { const left = Math.max(8 * fix.filter(function(x) { return x == null; }).length, inner - fixSum); cw = auto.map(function(x, i) { return fix[i] != null ? fix[i] : x * left / autoSum; }); }
     cw = cw.map(r1); cw[1] = r1(cw[1] + inner - cw.reduce(function(a, b) { return a + b; }, 0));
     const headH = r1(Math.max(c.hSize * FM_PT * 1.7, 8));
-    const need2 = rows.map(function(r) { return Math.max.apply(null, F.map(function(f, i) { return lines(txt(r, f.k), f.size, cw[i]) * lhOf(f.size); })) + 3; });
+    const need2 = rows.map(function(r) { return Math.max.apply(null, F.map(function(f, i) { return lines(txt(r, f.k), f.size, cw[i]) * lhOf(f.size); })) + (tiles ? 1.5 : 3); }); // 타일은 칸 사이가 여유를 대신함
     const minAll = need2.reduce(function(a, b) { return Math.max(a, b); }, 0);
     const avail = avail0 - (c.showHead ? headH : 0) - sp * (nI + (band ? 2 : 1));
     let base = c.fill ? (rows.length ? Math.floor(avail / rows.length * 10) / 10 : 0) : c.rowH;
@@ -18918,7 +18925,7 @@
   }
   // ----- 한글 파일 -----
   // 제목(상자·밑줄 = 1칸 표, 글씨만 = 문단, 표에 붙이기 = 표 첫 줄) → 부제 문단 → 표(가운데). bsLayout의 칸 자료(글·바탕·글자색·네 변 선)를 그대로 옮긴다.
-  // 같은 모양의 칸 테두리·글자 모양은 하나로 모아 header.xml에 넣는다. 타일은 표의 칸 사이(cellSpacing).
+  // 같은 모양의 칸 테두리·글자 모양은 하나로 모아 header.xml에 넣는다. 타일의 칸 사이는 흰 테두리로(아래).
   async function bsBuildHwpx(c) {
     if (typeof JSZip === 'undefined') throw new Error('JSZip');
     const L = bsLayout(c), m = c[c.mode], hu = fmHu;
@@ -18939,6 +18946,13 @@
       if (!(k in cpKey)) { cpKey[k] = cps.length; cps.push(o); }
       return cpKey[k];
     };
+    // 타일(파스텔): 한글의 칸 사이(cellSpacing)는 미리보기와 다르게 계산돼 표가 길어지며 다음 쪽으로 넘어갔다(사용자: "파스텔만 밑으로 쭉 내려가 한 페이지에 안 들어가").
+    // → 칸 사이를 쓰지 않고, 칸마다 칸 사이 굵기의 흰 테두리를 둘러 띄운 것처럼 보이게 한다(칸 크기에 칸 사이를 더해 표 크기는 미리보기와 같게 — 아래 table).
+    // 칸 사이(BS_TILE_GAPS)는 한글 테두리 굵기(0.5·0.7·1.0·1.5mm …)여야 한다.
+    if (L.sp) {
+      const GAP = { w: L.sp, c: '#FFFFFF', t: 'solid' };
+      L.tRows.concat(L.tBox ? [{ cells: [L.tBox] }] : []).forEach(function(r) { r.cells.forEach(function(x) { x.bd = { t: GAP, b: GAP, l: GAP, r: GAP }; }); });
+    }
     L.tRows.forEach(function(r) { r.cells.forEach(function(x) { x._bf = bfOf(x); x._cp = cpOf(x); }); });
     if (L.tBox) { L.tBox._bf = bfOf(L.tBox); L.tBox._cp = cpOf(L.tBox); }
     const cpTitleText = cpOf({ f: 'title', size: c.tSize, color: bsColor(c, 'tTxt') || '#000000' }), cpSub = cpOf({ f: 'sub', size: L.subSize, color: '#000000' }), cpTiny = cpOf({ f: 'tiny', size: 1, color: '#000000' });
@@ -18960,17 +18974,18 @@
     const P = function(pp, runs) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">' + runs + '</hp:p>'; };
     const R = function(cp, inner) { return '<hp:run charPrIDRef="' + cp + '">' + inner + '</hp:run>'; };
     const T = function(s) { return s ? '<hp:t>' + fmX(s) + '</hp:t>' : '<hp:t/>'; };
-    const SP = hu(L.sp);
-    // trs: [{ h, cells }], cw: 칸 폭(mm) — 칸 폭 합 + 칸 사이 = 표 폭(정수 오차는 마지막 칸이 받음)
+    // 타일: 칸마다 칸 사이만큼 더 크게(맨 앞·끝 칸은 바깥 칸 사이 절반씩 더) — 칸 크기 합 = 미리보기 표 크기(칸 + 칸 사이)
+    const grow = function(a) { const g = L.sp, n = a.length; return a.map(function(x, i) { return x + (g ? g + (i === 0 ? g / 2 : 0) + (i === n - 1 ? g / 2 : 0) : 0); }); };
+    // trs: [{ h, cells }], cw: 칸 폭(mm) — 칸 폭 합 = 표 폭(정수 오차는 마지막 칸이 받음)
     const table = function(trs, cwMm) {
-      const TW = hu(L.tw), CW = cwMm.map(hu), nCol = CW.length;
-      CW[nCol - 1] += TW - SP * (nCol + 1) - CW.reduce(function(a, b) { return a + b; }, 0);
-      let xml = '', tH = SP;
+      const TW = hu(L.tw), CW = grow(cwMm).map(hu), RH = grow(trs.map(function(row) { return row.h; })).map(hu), nCol = CW.length;
+      CW[nCol - 1] += TW - CW.reduce(function(a, b) { return a + b; }, 0);
+      let xml = '', tH = 0;
       trs.forEach(function(row, r) {
-        const h = hu(row.h); tH += h + SP;
+        const h = RH[r]; tH += h;
         let col = 0;
         xml += '<hp:tr>' + row.cells.map(function(x) {
-          const cs = x.cs || 1, w = CW.slice(col, col + cs).reduce(function(a, b) { return a + b; }, 0) + SP * (cs - 1);
+          const cs = x.cs || 1, w = CW.slice(col, col + cs).reduce(function(a, b) { return a + b; }, 0);
           const s = '<hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + H.bf[x._bf] + '">' +
             '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + P(PP_C, R(H.cp[x._cp], T(x.t))) + '</hp:subList>' +
             '<hp:cellAddr colAddr="' + col + '" rowAddr="' + r + '"/><hp:cellSpan colSpan="' + cs + '" rowSpan="1"/><hp:cellSz width="' + w + '" height="' + h + '"/>' +
@@ -18979,7 +18994,7 @@
           return s;
         }).join('') + '</hp:tr>';
       });
-      return '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + trs.length + '" colCnt="' + nCol + '" cellSpacing="' + SP + '" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
+      return '<hp:tbl id="' + (tid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="' + trs.length + '" colCnt="' + nCol + '" cellSpacing="0" borderFillIDRef="' + H.bf[0] + '" noAdjust="0">' +
         '<hp:sz width="' + TW + '" widthRelTo="ABSOLUTE" height="' + tH + '" heightRelTo="ABSOLUTE" protect="0"/>' +
         '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
         '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>' + xml + '</hp:tbl>';

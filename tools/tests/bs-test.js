@@ -337,8 +337,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     const tz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await bsBuildHwpx(bsCfg()))).file('Contents/section0.xml').async('string');
       const main = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g).pop(), sp = +main.match(/cellSpacing="(\d+)"/)[1], W = +main.match(/<hp:sz width="(\d+)"/)[1], Hh = +main.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1];
       const trs = main.match(/<hp:tr>[\s\S]*?<\/hp:tr>/g), row = trs[trs.length - 1], ws = [...row.matchAll(/<hp:cellSz width="(\d+)" height="(\d+)"/g)];
-      return { sp, w: ws.reduce((a, m) => a + +m[1], 0) + sp * (ws.length + 1) === W, h: trs.reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0) + sp * (trs.length + 1) === Hh }; });
-    check('타일 한글 파일: 칸 사이(cellSpacing) + 칸 폭·높이 합 = 표 크기', tz.sp > 0 && tz.w && tz.h, tz);
+      const L = bsLayout(bsCfg()), mm = x => Math.round(x * 7200 / 25.4), bfId = row.match(/borderFillIDRef="(\d+)"/)[1];
+      const hd = await (await JSZip.loadAsync(await bsBuildHwpx(bsCfg()))).file('Contents/header.xml').async('string'), bf = hd.match(new RegExp('<hh:borderFill id="' + bfId + '"[\\s\\S]*?</hh:borderFill>'))[0];
+      return { sp, gap: L.sp, white: (bf.match(/Border type="SOLID" width="1.5 mm" color="#FFFFFF"/g) || []).length, w: ws.reduce((a, m) => a + +m[1], 0) === W && W === mm(L.tw),
+        h: trs.reduce((a, r) => a + +r.match(/<hp:cellSz width="\d+" height="(\d+)"/)[1], 0) === Hh && Math.abs(Hh - mm(L.tRows.reduce((a, r) => a + r.h, 0) + L.sp * (L.tRows.length + 1))) <= trs.length }; });
+    check('타일 한글 파일: 칸 사이(cellSpacing)는 쓰지 않고(한글에서 표가 길어져 다음 쪽으로 넘어감) 칸 사이 굵기의 흰 테두리로, 칸 폭·높이 합 = 표 크기 = 미리보기', tz.sp === 0 && tz.gap === 1.5 && tz.white === 4 && tz.w && tz.h, tz);
   }
   await P.click('#bs-designs [data-design="mono"]'); await P.waitForTimeout(200);
   const st4 = await look();
@@ -346,6 +349,19 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const fits = [];
   for (const d of ['classic', 'mono', 'navy', 'green', 'pastel', 'blue', 'coral', 'bold']) { await P.click('#bs-designs [data-design="' + d + '"]'); await P.waitForTimeout(120); const x = await prev(); fits.push(d + ':' + (!x.fit && x.bottom >= 15 && x.bottom < 23)); }
   check('디자인 8개 모두 한 장에 꽉 차게(아래 여백 안)', fits.every(x => x.endsWith('true')), fits);
+  // 교시 9개 + 부제: 파스텔만 칸 사이 때문에 혼자 한 장을 넘던 것(사용자) — 칸 사이가 여유를 대신하고, 그래도 넘치면 칸 사이를 좁힘
+  const sub0 = await P.evaluate(() => document.getElementById('bs-sub').value), np0 = await P.evaluate(() => bsCfg()[bsCfg().mode].nP);
+  await P.click('#bs-np [data-np="9"]'); await setText(P, '#bs-sub', '2026학년도 2학기'); await P.waitForTimeout(200);
+  const fits9 = [];
+  for (const d of ['classic', 'mono', 'navy', 'green', 'pastel', 'blue', 'coral', 'bold']) { await P.click('#bs-designs [data-design="' + d + '"]'); await P.waitForTimeout(120); const x = await prev(); fits9.push(d + ':' + (!x.fit && x.bottom >= 15)); }
+  check('교시 9개 + 부제: 디자인 8개 모두 한 장에(파스텔도)', fits9.every(x => x.endsWith('true')), fits9);
+  // 글씨를 키워 가며: 다른 디자인(네이비)이 들어가는 크기면 파스텔도 들어감(넘칠 때는 칸 사이를 좁혀서)
+  const sizes = await P.evaluate(() => { const c0 = bsCfg(), d = k => BS_DESIGNS.find(x => x.k === k), out = [];
+    for (let s = 20; s <= 32; s++) { const c = Object.assign({}, c0, { hSize: s, nSize: s, tmSize: s, mSize: s }), nv = bsLayout(Object.assign({}, c, { style: d('navy').style, tStyle: d('navy').tStyle })), ps = bsLayout(Object.assign({}, c, { style: 'tiles', tStyle: d('pastel').tStyle }));
+      out.push({ s, navy: !nv.over, pastel: !ps.over, sp: ps.sp }); }
+    return out; });
+  check('글씨 크기 20~32pt: 네이비가 한 장에 들어가면 파스텔도(칸 사이를 좁혀서라도), 좁힌 경우도 있음', sizes.every(x => !x.navy || x.pastel) && sizes.some(x => x.pastel && x.sp < 1.5), sizes);
+  await P.click('#bs-np [data-np="' + np0 + '"]'); await setText(P, '#bs-sub', sub0); await P.waitForTimeout(200);
   await P.click('#bs-designs [data-design="classic"]'); await P.waitForTimeout(150);
   check('고른 디자인은 내 설정에 저장(design)', await P.evaluate(() => JSON.parse(localStorage.getItem('fm-bs')).design === 'classic' && document.querySelector('#bs-designs .on').dataset.design === 'classic'));
 
