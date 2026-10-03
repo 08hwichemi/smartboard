@@ -233,7 +233,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('한 반(3학년 2반)을 통째로 넣으면 수업반 이름이 "2반"으로', (await P.evaluate(() => paSub().classes.map(x => x.name + (x.auto ? '*' : '') + x.c).join())) === '2반2' && (await P.innerText('#pa-classes')).includes('2반'));
   for (const n of ['7반', '4반', '6반']) { await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, n); }
   check('반을 7·4·6 순서로 더해도 숫자 순(2·4·6·7반)', (await P.evaluate(() => paSub().classes.map(x => x.name).join())) === '2반,4반,6반,7반' && (await P.evaluate(() => [...document.querySelectorAll('#pa-classes [data-cid]')].map(b => b.childNodes[0].textContent).join())) === '2반,4반,6반,7반');
-  await P.selectOption('#pa-subj', (await cfg(P)).subjects[0].id); await P.waitForTimeout(200);
+  check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '📚 화학Ⅱ|📚 물리학Ⅰ|＋ 과목');
+  await P.click('#pa-subjs [data-sid="' + (await cfg(P)).subjects[0].id + '"]'); await P.waitForTimeout(200);
   check('과목 고르기로 화학Ⅱ로 돌아옴(1반)', (await P.evaluate(() => paSub().name + paCls(paSub()).name)) === '화학Ⅱ1반');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
@@ -251,8 +252,9 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await setVal(P, '[data-fid="sn-' + A.subs[1].id + '"]', '전기화학');
   await setVal(P, '[data-fid="sp-' + A.subs[1].id + '"]', '15, 10, 5');
   A = (await cfg(P)).subjects[0].areas[0];
-  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 2, 영역 만점 30', A.min === 2 && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /만점 30/.test(await P.innerText('#pa-pane .pa-area')), A);
-  check('배점 미리보기: "15~1 (15가지)"', /15~1/.test(await P.innerText('#pa-pane .pa-area')) && /15가지/.test(await P.innerText('#pa-pane .pa-area')));
+  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 2, 영역 만점 30', A.min === 2 && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), A);
+  check('배점 미리보기: 작은 점수부터 "1~15 (15가지)", "5, 10, 15" — 세부영역 한 줄', /1~15 \(15가지\)/.test(await P.innerText('#pa-pane .pa-area')) && /5, 10, 15 \(3가지\)/.test(await P.innerText('#pa-pane .pa-area')) &&
+    await P.evaluate(() => { const r = document.querySelector('#pa-pane .pa-sub-row:not(.pa-sub-hd)'); const ys = [...r.children].map(e => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)); return Math.max(...ys) - Math.min(...ys) <= 3; }));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
   let A2 = (await cfg(P)).subjects[0].areas[1];
   await P.fill('#pa-pane .pa-area >> nth=1 >> .pa-aname', '화학자료분석'); await P.press('#pa-pane .pa-area >> nth=1 >> .pa-aname', 'Tab'); await P.waitForTimeout(150);
@@ -260,6 +262,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await setVal(P, '[data-fid="sp-' + A2.subs[0].id + '"]', '30 25 20');
   await P.click('#pa-pane .pa-area >> nth=1 >> input[type=checkbox]'); await P.waitForTimeout(150);
   A2 = (await cfg(P)).subjects[0].areas[1];
+  check('영역 두 개(+ 더하기 칸)가 한 줄에 나란히 — 1600px 화면이면 한 줄에 셋', await P.evaluate(() => { const a = document.querySelectorAll('#pa-pane .pa-area'); const n = document.querySelector('#pa-pane .pa-area-new'); return a.length === 2 && [a[1], n].every(e => Math.abs(a[0].getBoundingClientRect().top - e.getBoundingClientRect().top) < 2); }));
   check('둘째 영역: 배점 30·25·20, 평가내용 칸 끔, 최하점 없음', A2.name === '화학자료분석' && A2.note === false && A2.min == null && await P.evaluate((a) => paAreaMax(a), A2) === 30, A2);
   check('파싱: "0-10" "5,5,3" "abc"', JSON.stringify(await P.evaluate(() => [paParsePts('0-10').length, paParsePts('5,5,3'), paParsePts('abc')])) === JSON.stringify([11, [5, 3], []]));
 
@@ -268,7 +271,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
-  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 "반응속도(15점)" 아래 넣을 수 있는 점수', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\(15점\)\s*15~1/.test(await P.innerText('#pa-pane thead')) && /전기화학\(15점\)\s*15, 10, 5/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
+  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 "반응속도(15점)" 아래 넣을 수 있는 점수', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\(15점\)\s*1~15/.test(await P.innerText('#pa-pane thead')) && /전기화학\(15점\)\s*5, 10, 15/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
   check('Enter = 아래 칸으로', await P.evaluate(() => document.activeElement.dataset.r === '1' && document.activeElement.dataset.col === '0'));
   await P.keyboard.type('16');
   check('배점에 없는 점수는 치는 동안 빨갛게', await P.evaluate(() => document.activeElement.classList.contains('bad')));
@@ -362,7 +365,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   // 다시 열면 그대로(새로고침)
   await P.reload(); await P.waitForFunction(() => window.currentTeacher && syncAppStarted === true); await P.click('#rail-pa-btn'); await P.waitForTimeout(300);
-  check('새로고침 후에도 마지막 탭(세특)·과목 그대로', (await P.evaluate(() => paTab())) === 'sk' && (await P.inputValue('#pa-subj')) === (await cfg(P)).subjects[0].id);
+  check('새로고침 후에도 마지막 탭(세특)·과목 그대로', (await P.evaluate(() => paTab())) === 'sk' && (await P.evaluate(() => document.querySelector('#pa-subjs .theme-active').dataset.sid)) === (await cfg(P)).subjects[0].id);
   // 다른 레일 누르면 닫힘, 다시 누르면 홈
   await P.click('#rail-monthly-btn'); await P.waitForTimeout(300);
   check('다른 레일(월간일정표)을 누르면 수행평가 화면 닫힘', !(await P.isVisible('#pa-page')) && !(await P.evaluate(() => document.getElementById('rail-pa-btn').classList.contains('active'))));

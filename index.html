@@ -566,7 +566,8 @@
     #pa-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
     #pa-tabs { margin: 12px 0 10px; display: inline-flex; }
     #pa-tabs .top-btn { font-weight: 800; }
-    #pa-classes .top-btn { font-weight: 800; padding: 4px 10px; }
+    #pa-classes .top-btn, #pa-subjs .top-btn { font-weight: 800; padding: 4px 10px; }
+    .pa-hsep { width: 1px; height: 22px; background: var(--border-color); }
     #pa-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #pa-save-state.dirty { color: #B45309; }
     .pa-beta { font-size: 10.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 6px; padding: 1px 7px; }
@@ -595,8 +596,23 @@
     .pa-pick.in { opacity: .55; cursor: default; }
     .pa-x { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }
     .pa-x:hover { color: var(--alert); background: rgba(220,38,38,0.08); }
-    .pa-area .se-sec-title { gap: 8px; }
-    .pa-area .pa-aname { width: 220px; flex: none; font-weight: 800; }
+    .pa-areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px; align-items: start; }
+    .pa-area { padding: 10px 12px 12px; }
+    .pa-area-head { display: flex; align-items: center; gap: 8px; }
+    .pa-area-no { font-size: 12px; font-weight: 800; color: var(--accent-color); white-space: nowrap; }
+    .pa-area-opts { display: flex; align-items: center; gap: 14px; margin: 8px 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .pa-sub-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+    .pa-sub-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px minmax(0, 0.9fr) 30px 22px; gap: 5px; align-items: center; }
+    .pa-sub-row .lp-input { padding: 5px 7px; }
+    .pa-sub-hd span { font-size: 10.5px; font-weight: 800; color: var(--text-sub); }
+    .pa-sub-hd span:nth-child(4) { text-align: center; }
+    .pa-sub-row .pa-pts { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pa-sub-max { text-align: center; font-size: 13px; }
+    .pa-area-new { border: 1.5px dashed var(--accent-color); background: var(--accent-soft); color: var(--accent-color); border-radius: 10px; min-height: 92px; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    .pa-area-new b { font-size: 13.5px; }
+    .pa-area-new span { font-size: 11.5px; color: var(--text-sub); font-weight: 700; }
+    .pa-area-new:hover { filter: brightness(0.97); }
+    .pa-area .pa-aname { width: auto; flex: 1 1 auto; min-width: 0; font-weight: 800; padding: 5px 8px; }
     .pa-form .lp-input { width: 100%; }
     .pa-inl { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     .pa-inl .pa-min { width: 70px !important; flex: none; }
@@ -3614,8 +3630,9 @@
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
-      <select id="pa-subj" class="mini-select" style="min-width:110px;" onchange="paPickSubject(this.value)" title="과목"></select>
-      <div class="top-btn-cluster" id="pa-classes"></div>
+      <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
+      <span class="pa-hsep"></span>
+      <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
       <span id="pa-save-state"></span>
@@ -13967,10 +13984,12 @@
     });
     return out.filter(function(x, i, arr) { return arr.indexOf(x) === i; }).sort(function(x, y) { return y - x; });
   }
+  // 보여 줄 때는 작은 점수부터(1~15, 5, 10, 15) — 사용자: "작은 값-큰 값이 보기 편하다"
   function paPtsText(list) {
-    // 1씩 이어지면 "15~1"처럼 줄여서 보여 준다
-    if (list.length >= 4 && list.every(function(x, i) { return i === 0 || paNum(list[i - 1] - x) === 1; })) return list[0] + '~' + list[list.length - 1];
-    return list.join(', ');
+    const up = list.slice().sort(function(x, y) { return x - y; });
+    // 1씩 이어지면 "1~15"처럼 줄여서
+    if (up.length >= 4 && up.every(function(x, i) { return i === 0 || paNum(x - up[i - 1]) === 1; })) return up[0] + '~' + up[up.length - 1];
+    return up.join(', ');
   }
   function paSubMax(sub) { const p = paParsePts(sub.pts); return p.length ? p[0] : 0; }
   function paAreaMax(a) { return paNum(a.subs.reduce(function(t, x) { return t + paSubMax(x); }, 0)); }
@@ -14086,9 +14105,9 @@
     const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
     const c = paCfg(), sub = paSub(c), cls = paCls(sub);
     // 머리: 과목 고르기 + 반 칩
-    const sel = document.getElementById('pa-subj');
-    sel.innerHTML = c.subjects.length ? c.subjects.map(function(s) { return '<option value="' + s.id + '"' + (sub && s.id === sub.id ? ' selected' : '') + '>' + paEsc(s.name) + '</option>'; }).join('') : '<option value="">과목 없음</option>';
-    sel.disabled = !c.subjects.length;
+    document.getElementById('pa-subjs').innerHTML = c.subjects.map(function(s) {
+      return '<button class="top-btn' + (sub && s.id === sub.id ? ' theme-active' : '') + '" data-sid="' + s.id + '" onclick="paPickSubject(\'' + s.id + '\')">📚 ' + paEsc(s.name) + '</button>';
+    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddSubject()" title="과목 더하기">＋ 과목</button>';
     document.getElementById('pa-classes').innerHTML = sub ? sub.classes.map(function(x) {
       const n = paRoster(sub.id, x.id).length;
       return '<button class="top-btn' + (cls && x.id === cls.id ? ' theme-active' : '') + '" data-cid="' + x.id + '" onclick="paPickClass(\'' + x.id + '\')" title="' + paEsc(x.name) + ' · 학생 ' + n + '명">' + paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></button>';
@@ -14369,33 +14388,31 @@
 
   // ----- ② 영역·배점 -----
   function paAreasHtml(sub) {
-    let h = '<div class="pa-scroll"><div class="se-muted" style="margin-bottom:8px;">영역(예: 개념 구조화)마다 세부영역과 <b>줄 수 있는 점수</b>를 적어요 — "15, 12, 9" 처럼 쉼표로, 1씩 이어지면 "1~15". ' +
-      '점수 입력 때 여기 없는 점수는 못 넣어요. <b>최하점</b> = 미제출·미응시 학생에게 주는 기본 점수(점수 입력에서 "최하점"을 체크하면 합계가 이 점수).</div>';
-    if (!sub.areas.length) h += '<div class="se-box se-sbox pa-empty">영역이 아직 없어요.</div>';
+    let h = '<div class="pa-scroll"><div class="se-muted" style="margin-bottom:8px;">세부영역마다 <b>줄 수 있는 점수</b>를 적어요 — "5, 10, 15"처럼 쉼표로, 1씩 이어지면 "1-15". 점수 입력 때 여기 없는 점수는 못 넣어요. ' +
+      '<b>최하점</b> = 미제출·미응시 학생에게 주는 점수(점수 입력에서 체크하면 합계가 이 점수).</div><div class="pa-areas">';
     sub.areas.forEach(function(a, ai) {
       const max = paAreaMax(a);
-      h += '<div class="se-box se-sbox pa-area" data-aid="' + a.id + '"><div class="se-sec"><span class="se-sec-title">영역 ' + (ai + 1) +
+      h += '<div class="se-box pa-area" data-aid="' + a.id + '"><div class="pa-area-head">' +
+        '<span class="pa-area-no">영역 ' + (ai + 1) + '</span>' +
         '<input class="lp-input pa-aname" data-fid="an-' + a.id + '" value="' + paEsc(a.name) + '" placeholder="영역 이름" onchange="paEditArea(\'' + a.id + '\', \'name\', this.value)">' +
-        '<span class="pa-badge">만점 ' + max + '</span></span><span class="pa-tools">' +
-        '<label class="pa-inl">최하점 <input class="lp-input pa-min" data-fid="am-' + a.id + '" type="number" step="0.5" min="0" value="' + (a.min == null ? '' : a.min) + '" placeholder="없음" onchange="paEditArea(\'' + a.id + '\', \'min\', this.value)"></label>' +
-        '<label class="pa-inl"><input type="checkbox"' + (a.note ? ' checked' : '') + ' onchange="paEditArea(\'' + a.id + '\', \'note\', this.checked)"> 평가내용 칸</label>' +
-        (ai > 0 ? '<button class="top-btn" title="앞으로" onclick="paMoveArea(\'' + a.id + '\', -1)">▲</button>' : '') +
-        '<button class="top-btn pa-danger" onclick="paDeleteArea(\'' + a.id + '\')">🗑</button></span></div>';
+        '<span class="pa-badge">' + max + '점</span>' +
+        (ai > 0 ? '<button class="pa-x" tabindex="-1" title="앞으로" onclick="paMoveArea(\'' + a.id + '\', -1)">◀</button>' : '') +
+        '<button class="pa-x" tabindex="-1" title="이 영역 지우기" onclick="paDeleteArea(\'' + a.id + '\')">🗑</button></div>' +
+        '<div class="pa-area-opts"><label class="pa-inl">최하점 <input class="lp-input pa-min" data-fid="am-' + a.id + '" type="number" step="0.5" min="0" value="' + (a.min == null ? '' : a.min) + '" placeholder="없음" onchange="paEditArea(\'' + a.id + '\', \'min\', this.value)">점</label>' +
+        '<label class="pa-inl"><input type="checkbox"' + (a.note ? ' checked' : '') + ' onchange="paEditArea(\'' + a.id + '\', \'note\', this.checked)"> 평가내용 칸 쓰기</label></div>';
       if (a.min != null && max && a.min > max) h += '<div class="pa-warn">⚠️ 최하점(' + a.min + ')이 만점(' + max + ')보다 커요.</div>';
-      h += '<table class="se-table pa-table pa-subs"><thead><tr><th style="width:28%;">세부영역</th><th>줄 수 있는 점수</th><th style="width:70px;">만점</th><th style="width:34px;"></th></tr></thead><tbody>';
+      h += '<div class="pa-sub-list"><div class="pa-sub-row pa-sub-hd"><span>세부영역</span><span>줄 수 있는 점수</span><span></span><span>만점</span><span></span></div>';
       a.subs.forEach(function(x) {
         const p = paParsePts(x.pts);
-        h += '<tr><td><input class="lp-input" data-fid="sn-' + x.id + '" value="' + paEsc(x.name) + '" placeholder="세부영역 이름" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'name\', this.value)"></td>' +
-          '<td><input class="lp-input" data-fid="sp-' + x.id + '" value="' + paEsc(x.pts) + '" placeholder="예: 15, 12, 9, 6  또는  1~15" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'pts\', this.value)">' +
-          '<div class="pa-pts">' + (p.length ? '→ ' + paEsc(paPtsText(p)) + ' <span class="se-muted">(' + p.length + '가지)</span>' : '<span class="pa-warn-t">점수를 적어 주세요</span>') + '</div></td>' +
-          '<td class="se-c">' + (p.length ? p[0] : '-') + '</td><td class="se-c"><button class="pa-x" title="세부영역 지우기" onclick="paDeleteSub(\'' + a.id + '\', \'' + x.id + '\')">✕</button></td></tr>';
+        h += '<div class="pa-sub-row"><input class="lp-input" data-fid="sn-' + x.id + '" value="' + paEsc(x.name) + '" placeholder="세부영역 이름" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'name\', this.value)">' +
+          '<input class="lp-input" data-fid="sp-' + x.id + '" value="' + paEsc(x.pts) + '" placeholder="예: 1-10 / 5, 10, 15" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'pts\', this.value)">' +
+          '<span class="pa-pts" title="' + paEsc(p.slice().reverse().join(', ')) + '">' + (p.length ? '→ ' + paEsc(paPtsText(p)) + ' <span class="se-muted">(' + p.length + '가지)</span>' : '<span class="pa-warn-t">점수를 적어 주세요</span>') + '</span>' +
+          '<b class="pa-sub-max">' + (p.length ? p[0] : '-') + '</b><button class="pa-x" tabindex="-1" title="세부영역 지우기" onclick="paDeleteSub(\'' + a.id + '\', \'' + x.id + '\')">✕</button></div>';
       });
-      h += '</tbody></table><button class="top-btn pa-add" onclick="paAddSub(\'' + a.id + '\')">＋ 세부영역</button></div>';
+      h += '</div><button class="top-btn pa-add" onclick="paAddSub(\'' + a.id + '\')">＋ 세부영역</button></div>';
     });
-    const total = paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0));
-    h += '<div class="pa-row"><button class="se-addbtn" style="width:auto; padding:7px 16px;" onclick="paAddArea()">＋ 영역 더하기</button>' +
-      (sub.areas.length ? '<span class="se-muted">영역 ' + sub.areas.length + '개 · 모두 합쳐 만점 <b>' + total + '</b></span>' : '') + '</div></div>';
-    return h;
+    h += '<button class="pa-area-new" onclick="paAddArea()"><b>＋ 영역 더하기</b>' + (sub.areas.length ? '<span>영역 ' + sub.areas.length + '개 · 모두 합쳐 ' + paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0)) + '점</span>' : '<span>예: 개념 구조화, 실험 보고서</span>') + '</button>';
+    return h + '</div></div>';
   }
   function paWithArea(aid, fn) {
     const c = paCfg(), s = paSub(c);
@@ -14475,7 +14492,7 @@
       (a.min != null ? '<col style="width:58px">' : '') + a.subs.map(function() { return '<col style="width:' + subW + 'px">'; }).join('') + '<col style="width:86px">' + (a.note ? '<col>' : '') + '</colgroup>' +
       '<thead><tr><th>반</th><th>번호</th><th>이름</th>' +
       (a.min != null ? '<th title="미제출·미응시 — 합계를 최하점(' + a.min + ')으로">최하점<div class="pa-th-sub">' + a.min + '점</div></th>' : '') +
-      a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.join(', ')) + '">' + paEsc(x.name || '세부') + '(' + (p.length ? p[0] : 0) + '점)<div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
+      a.subs.map(function(x) { const p = paParsePts(x.pts); return '<th class="pa-th-wrap" title="넣을 수 있는 점수: ' + paEsc(p.slice().reverse().join(', ')) + '">' + paEsc(x.name || '세부') + '(' + (p.length ? p[0] : 0) + '점)<div class="pa-th-pts">' + paEsc(paPtsText(p) || '점수 없음') + '</div></th>'; }).join('') +
       '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th>평가내용</th>' : '') + '</tr></thead><tbody>';
     ro.forEach(function(st, ri) {
       const k = paSk(st), rec = sc[k] || {}, v = rec.v || {}, r = paAreaResult(a, rec);
