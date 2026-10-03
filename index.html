@@ -530,9 +530,9 @@
     .se-cell:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); min-height: 150px; }
     .se-bytes { font-size: 10.5px; color: var(--text-sub); font-weight: 700; text-align: right; margin-top: 1px; }
     .se-bytes.over { color: var(--alert); }
-    #se-students { width: 250px; flex: 0 0 auto; overflow-y: auto; min-height: 0; }
+    #se-students { width: 280px; flex: 0 0 auto; overflow-y: auto; min-height: 0; }
     #se-students .se-stu:last-child { border-bottom: 0; }
-    .se-stu { display: grid; grid-template-columns: 26px 1fr auto auto; gap: 5px; padding: 6px 8px; cursor: pointer; border-bottom: 1px solid var(--border-color); align-items: center; font-size: 12.5px; }
+    .se-stu { display: grid; grid-template-columns: 26px 1fr auto auto auto; gap: 4px; padding: 6px 8px; cursor: pointer; border-bottom: 1px solid var(--border-color); align-items: center; font-size: 12.5px; }
     .se-stu:hover { background: var(--accent-soft); }
     .se-stu.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
     .se-stu b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -561,6 +561,38 @@
     .se-fin-table td.se-bcell.over, .se-fin-table td.se-bcell.over b { color: var(--alert); }
     .se-fin-table td.se-bcell .se-left-n { color: #1E7B3A; }
     .se-drafttag { display: inline-block; font-size: 10.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 6px; padding: 0 6px; margin-top: 4px; cursor: pointer; }
+    /* 행발 관찰 기록: 기록 줄(날짜·글·덕목·✎✕) + 새 기록 칸(커서가 있거나 고른 덕목이 있으면 덕목 단추가 펼쳐짐) + 덕목 모아 보기 */
+    .se-obs-list { margin-bottom: 4px; }
+    .se-obs-item { display: flex; align-items: baseline; gap: 6px; padding: 3px 2px; border-bottom: 1px dashed var(--border-color); font-size: calc(var(--fz-sgb) - 1px); line-height: 1.5; }
+    .se-obs-item.editing { flex-wrap: wrap; align-items: center; }
+    .se-obs-date { flex: 0 0 auto; min-width: 34px; font-size: 11px; font-weight: 800; color: var(--text-sub); font-variant-numeric: tabular-nums; }
+    .se-obs-text { flex: 1; min-width: 0; white-space: pre-wrap; word-break: break-all; color: var(--text-main); }
+    .se-obs-btns { flex: 0 0 auto; display: inline-flex; gap: 1px; opacity: .35; }
+    .se-obs-item:hover .se-obs-btns { opacity: 1; }
+    .se-obs-btns button { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 11px; padding: 1px 5px; border-radius: 6px; font-family: inherit; }
+    .se-obs-btns button:hover { background: var(--accent-soft); color: var(--accent-color); }
+    .se-obs-input, .se-obs-edit { width: 100%; box-sizing: border-box; font-family: inherit; font-size: calc(var(--fz-sgb) - 1px); padding: 5px 8px; border: 1px dashed var(--border-color); border-radius: 7px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    .se-obs-edit { flex: 1; min-width: 200px; border-style: solid; border-color: var(--accent-color); }
+    .se-obs-input:focus { border-style: solid; border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .se-obs-picks { display: none; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 4px; }
+    .se-obs-add:focus-within .se-obs-picks, .se-obs-add.has-pick .se-obs-picks, .se-obs-item.editing .se-obs-picks { display: flex; }
+    .se-obs-item.editing .se-obs-picks { flex-basis: 100%; padding-left: 40px; }
+    .se-obs-picks .top-btn { font-size: 11px; padding: 2px 10px; }
+    .se-vchip { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-sub); border-radius: 10px; padding: 1px 8px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .se-vchip.on { border-color: var(--accent-color); background: var(--accent-color); color: #fff; }
+    .se-vtag { display: inline-block; font-size: 10.5px; font-weight: 800; border-radius: 7px; padding: 0 6px; margin: 1px 2px 1px 0; white-space: nowrap; }
+    .se-vtag.on { background: var(--accent-soft); color: var(--accent-color); }
+    .se-vtag.miss { background: var(--tt-bg); color: var(--text-sub); opacity: .55; }
+    .se-obs-cov { font-size: 11px; line-height: 1.7; }
+    .se-obs-cnt { display: block; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; }
+    .se-obs-cnt b { color: var(--text-main); font-size: 12.5px; }
+    #se-box-obs .se-sec { flex-wrap: wrap; }
+    #se-box-obs .se-obs-cov { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-weight: 600; }
+    #se-box-obs .se-obs-cnt { display: inline; margin: 0 6px 0 0; }
+    .se-obs-table td { padding: 6px 8px; }
+    .se-vedit { border: 0; background: none; color: var(--accent-color); font: inherit; font-size: 10.5px; font-weight: 800; cursor: pointer; padding: 1px 4px; border-radius: 6px; }
+    .se-vedit:hover { background: var(--accent-soft); }
+    .se-dot.cur { outline: 1.5px solid var(--accent-color); outline-offset: 0; }
     #se-memo { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); outline: none; }
     #se-memo:focus { border-color: var(--accent-color); }
     .se-fin-table { table-layout: fixed; width: 100%; }
@@ -1940,7 +1972,7 @@
     </div>
     <div class="top-btn-cluster" id="sgb-tabs" style="margin-bottom: 10px;">
       <button class="top-btn theme-active" data-tab="check" onclick="setSgbTab('check')">✍️ 문장 점검</button>
-      <button class="top-btn" data-tab="edit" onclick="setSgbTab('edit')" title="자율·진로 활동 문장을 학생별로 모아 골라 합치고 바이트에 맞게 다듬는 전체 화면">🗂 자율·진로 편집기</button>
+      <button class="top-btn" data-tab="edit" onclick="setSgbTab('edit')" title="자율·진로 활동 문장을 학생별로 모아 골라 합치고, 행발은 관찰 기록을 보며 쓰고, 바이트에 맞게 다듬는 전체 화면">🗂 자율·진로·행발 편집기</button>
       <button class="top-btn" data-tab="find" onclick="setSgbTab('find')">🔍 길라잡이 찾기</button>
     </div>
     <div id="sgb-pane-check" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
@@ -2195,7 +2227,7 @@
       <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 파일로 백업 (선택)</div>
       <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5; display:flex; flex-direction:column; gap:5px;" id="backup-scope">
         <div>내 자료는 로그인한 계정으로 서버에 자동 저장돼서 다른 기기에서도 그대로 이어져요. 그것과 별개로 내 컴퓨터에 파일로 보관하고 싶을 때 받으세요.</div>
-        <div><b style="color:var(--text-main);">담기는 것</b> — 내 개인 자료 <b>전부</b>: 캘린더·할 일·상담 기록·즐겨찾기 + 수행평가·자율·진로·결석계·좌석배치·월간일정표·조퇴증·양식 설정 등 모든 기능</div>
+        <div><b style="color:var(--text-main);">담기는 것</b> — 내 개인 자료 <b>전부</b>: 캘린더·할 일·상담 기록·즐겨찾기 + 수행평가·자율·진로·행발·결석계·좌석배치·월간일정표·조퇴증·양식 설정 등 모든 기능</div>
         <div><b style="color:var(--text-main);">안 담기는 것</b> — 학교 공용 자료(시간표·명렬표·공지·당번·학사일정 — 관리자가 관리)</div>
         <div>⚠️ 학생 이름·세특·결석 기록이 들어 있어요. 공용 PC·메신저에 두지 말고 잘 보관하세요.</div>
         <div><b style="color:var(--text-main);">복원</b>하면 내 자료 전부가 파일 내용으로 바뀌어요(파일에 없는 것은 지워짐). 수행평가·자율·진로만 옮기거나 학기 끝에 보관할 땐 그 화면의 <b>엑셀 내려받기·가져오기</b>가 편해요.</div>
@@ -3650,14 +3682,14 @@
   <div id="se-page-header">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seBackToSgb()">← 생기부</button>
-      <div style="font-weight: 800; font-size: 16px;">🗂 자율·진로 편집기</div>
+      <div style="font-weight: 800; font-size: 16px;">🗂 자율·진로·행발 편집기</div>
       <button class="top-btn tour-btn" id="se-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="seOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <select id="se-grade" class="mini-select" style="width:74px;" onchange="seOnClassChange('grade')"></select>
       <select id="se-class" class="mini-select" style="width:64px;" onchange="seOnClassChange('class')"></select>
       <span id="se-limit-note" class="se-muted"></span>
-      <button class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
-      <button class="top-btn" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자료 입력·최종 내용을 엑셀(데이터·최종 시트)로 내려받습니다">📊 엑셀 내려받기</button>
-      <button class="top-btn" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로 자료를 모두 지웁니다">🗑 초기화</button>
+      <button class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(자율 입력·진로 입력·행발 관찰·최종 시트)이나 예전에 쓰던 자율·진로 엑셀(데이터·최종 시트)을 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
+      <button class="top-btn" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자율·진로 받은 내용, 행발 관찰 기록, 최종을 엑셀로 내려받습니다">📊 엑셀 내려받기</button>
+      <button class="top-btn" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로·행발 자료를 모두 지웁니다">🗑 초기화</button>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
       <span id="se-save-state"></span>
@@ -13132,9 +13164,14 @@
   // 올라가고(기존 항목별 동기화), 변경 이력도 그 칸 크기만 남는다. 입력 중엔 화면에만 있다가 **칸을 벗어날 때(blur/change)** 저장 →
   // 글자마다 올리지 않음. 내 계정에만 저장(RLS), 다른 선생님·관리자는 못 본다.
   // 편집 탭의 편집 칸은 se-drf-…(다듬는 중), 최종 탭은 se-fin-…(📊 최종에 넣기로만 바뀜). 편집 칸이 최종과 같으면 se-drf는 안 남긴다.
-  const SE_CFG_KEY = 'se-cfg';   // { g, c, tab, kind, finAll }
-  const SE_KINDS = ['a', 'p'];
-  const SE_KIND_LABEL = { a: '자율', p: '진로' };
+  // 행발(행동특성 및 종합의견)은 부서에서 받는 자료가 없고 담임이 1년 동안 본 것으로 쓴다 → ① 자리가 "관찰 기록"(학생마다 날짜·한 줄·덕목 표시를
+  // se-obs-학년-반-번호에 쌓음), ② 편집에서 그 기록을 옆에 띄워 두고 직접 쓴다(합치기 없음). 편집 칸·최종·메모는 자율·진로와 같다(kind 'b').
+  const SE_CFG_KEY = 'se-cfg';   // { g, c, tab, kind, finAll, virtues }
+  const SE_KINDS = ['a', 'p'];   // 받은 문장을 골라 합치는 종류(영역·체크가 있음)
+  const SE_ALL_KINDS = ['a', 'p', 'b'];   // + 행발
+  const SE_KIND_LABEL = { a: '자율', p: '진로', b: '행발' };
+  const SE_LIMIT_FIELD = { a: 'a', p: 'p', b: 'behav' };   // SGB_LIMITS의 칸 이름
+  const SE_VIRTUES = ['성실', '책임', '배려', '협력', '리더십', '자기주도', '정직', '소통'];   // 덕목 표시 기본(선생님이 바꿀 수 있음 — se-cfg.virtues)
   const SE_DEFAULT_AREAS = { a: ['1인 1역할'], p: ['진로 독서'] };   // 처음 열 때 보기용 — 선생님이 이름을 바꾸거나 더하고 지운다
   let seRoster = [], seRosterKey = '', seSelNum = null, seTypingKey = null;
   // 설명서 동안(seDemo)은 진짜 저장소 대신 예시 자료(가짜 반·학생·문장) 안에서만 읽고 쓴다 — 선생님 자료·서버는 건드리지 않음(수행평가 paDemo와 같은 방식).
@@ -13150,7 +13187,7 @@
     scheduleBackupWrite();
   }
   function seClassKey() { const c = seCfg(); return c.g && c.c ? c.g + '-' + c.c : ''; }
-  function seKind() { return seCfg().kind === 'p' ? 'p' : 'a'; }
+  function seKind() { const k = seCfg().kind; return k === 'p' || k === 'b' ? k : 'a'; }
   function seTab() { const t = seCfg().tab; return t === 'edit' || t === 'final' ? t : 'src'; }
   function seIsOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none'; }
 
@@ -13187,13 +13224,14 @@
   function seHasDraft(num, kind) { const d = seGet(seDraftKey(num, kind)); return !!d && d !== seGet(seFinKey(num, kind)); }
   function seStKey(num) { return 'se-st-' + seClassKey() + '-' + num; }
   function seRosterKeyName(ck) { return 'se-roster-' + (ck || seClassKey()); }
+  function seObsKey(num) { return 'se-obs-' + seClassKey() + '-' + num; }
 
   // ----- 📅 학년도 -----
   // 칸 키(se-src-학년-반-…)엔 학년도가 없어서, 내년에 같은 반을 맡으면 지난해 학생 글이 그대로 보이고 서버에도 계속 쌓인다.
   // → 반마다 자료를 처음 쓴 학년도를 se-yr-학년-반에 적어 두고(이 기능 전에 쓴 자료는 편집기를 열 때 올해로), 새 학년도(3월)가
   //   되면 지난 학년도 반을 알려 엑셀로 받은 뒤 지우게 한다(수행평가와 같은 방식). 지난 학년도 반은 그해 명단 사본(se-roster-)으로
   //   보여 줘서, 받는 엑셀에 새 학년도 학생 이름이 섞이지 않게 한다.
-  const SE_DATA_RE = /^se-(src|fin|drf|st|areas|roster)-(\d+)-(\d+)(-|$)/;
+  const SE_DATA_RE = /^se-(src|fin|drf|st|obs|areas|roster)-(\d+)-(\d+)(-|$)/;
   function seSchoolYear(d) { d = d || new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; }
   function seYearKey(ck) { return 'se-yr-' + ck; }
   function seClassYear(ck) { return Number(seGet(seYearKey(ck))) || 0; }
@@ -13276,16 +13314,33 @@
     seSet(seStKey(num), empty ? '' : JSON.stringify(v));
   }
 
+  // ----- 👀 행발 관찰 기록: 학생마다 [{ id, d: 'YYYY-MM-DD', t: 글, v: [덕목] }] (날짜 순) -----
+  function seObs(num) {
+    let v = null;
+    try { v = JSON.parse(seGet(seObsKey(num)) || 'null'); } catch (e) {}
+    return Array.isArray(v) ? seObsSort(v.filter(function(o) { return o && typeof o.t === 'string' && o.t.trim(); }).map(function(o) {
+      return { id: String(o.id || seNewId()), d: typeof o.d === 'string' ? o.d : '', t: o.t, v: Array.isArray(o.v) ? o.v.filter(function(x) { return typeof x === 'string' && x; }) : [] };
+    })) : [];
+  }
+  function seObsSort(list) { return list.sort(function(x, y) { return x.d < y.d ? -1 : x.d > y.d ? 1 : 0; }); }   // 날짜 순, 같은 날짜는 넣은 순서 그대로(안정 정렬)
+  function seSaveObs(num, list) {
+    seObsSort(list);
+    return seSet(seObsKey(num), list.length ? JSON.stringify(list) : '');
+  }
+  function seVirtues() { const v = seCfg().virtues; return Array.isArray(v) && v.length ? v : SE_VIRTUES; }
+  function seToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function seObsDateLabel(d) { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? Number(m[1]) + '/' + Number(m[2]) : ''; }
+
   // ----- 한도: 학년 → 입시 연도 → 글자 수(한글 기준) × 3바이트 -----
   function seGrade() { return seCfg().g || null; }
-  function seLimitBytes(kind) { return sgbLimitsFor(seGrade())[kind] * 3; }
+  function seLimitBytes(kind) { return sgbLimitsFor(seGrade())[SE_LIMIT_FIELD[kind] || kind] * 3; }
   function seLimitNote() {
     const g = seGrade();
     if (!g) return '';
     const y = sgbAdmissionYear(g);
     const L = sgbLimitsFor(g);
-    if (L.a === L.p) return '고' + g + ' = ' + y + ' 입시 기준: 자율·진로 각 ' + L.a + '자(' + (L.a * 3) + '바이트)';   // 같으면 짧게(머리 줄이 한 줄에 들어가게)
-    return '고' + g + ' = ' + y + ' 입시 기준: 자율 ' + L.a + '자(' + (L.a * 3) + '바이트) · 진로 ' + L.p + '자(' + (L.p * 3) + '바이트)';
+    // 바이트는 아래 자율/진로/행발 단추에 있으니 여기선 글자 수만(머리 줄이 한 줄에 들어가게), 자율·진로가 같으면 짧게
+    return '고' + g + ' = ' + y + ' 입시 기준: ' + (L.a === L.p ? '자율·진로 각 ' + L.a + '자' : '자율 ' + L.a + '자 · 진로 ' + L.p + '자') + ' · 행발 ' + L.behav + '자';
   }
   function seBytes(t) { return sgbCount(t).bytes; }
   function seFmt(n) { return Number(n || 0).toLocaleString('ko-KR'); }
@@ -13391,21 +13446,30 @@
     d['se-fin-' + ck + '-2-a'] = T.b1 + ' ' + T.b2;
     d['se-drf-' + ck + '-2-a'] = T.b1 + ' 자치회 부회장으로 반 티 정하기 회의를 이끌며 여러 의견을 조율함.';   // 최종과 다른 편집(주황 테두리)
     d['se-fin-' + ck + '-2-p'] = T.q1;
+    // 행발: 관찰 기록(1~3번) + 1번 최종
+    const y = seSchoolYear(), od = function(m, dd) { return (m < 3 ? y + 1 : y) + '-' + String(m).padStart(2, '0') + '-' + String(dd).padStart(2, '0'); };
+    const obs = function(n, list) { d['se-obs-' + ck + '-' + n] = JSON.stringify(list.map(function(o, i) { return { id: 'do' + n + i, d: od(o[0], o[1]), t: o[2], v: o[3] }; })); };
+    obs(1, [[4, 12, '청소 시간에 아무도 보지 않는데 교실 뒤 사물함 위를 정리함.', ['성실', '책임']],
+      [6, 3, '모둠 발표 때 말이 적은 친구에게 먼저 역할을 물어보고 함께 준비함.', ['배려', '협력']],
+      [9, 18, '학급 회의에서 반대 의견도 끝까지 듣고 두 의견을 합친 안을 냄.', ['소통', '리더십']]]);
+    obs(2, [[5, 8, '아침 자습 시간에 스스로 계획표를 세워 공부함.', ['자기주도']], [7, 10, '분실물을 주워 바로 교무실에 가져다줌.', ['정직']]]);
+    obs(3, [[4, 25, '체육 시간에 다친 친구를 보건실까지 데려다줌.', ['배려']]]);
+    d['se-fin-' + ck + '-1-b'] = '맡은 일을 누가 보지 않아도 끝까지 해내는 성실하고 책임감 있는 학생으로, 청소 시간에 교실 구석구석을 스스로 정리함. 모둠 활동에서 말이 적은 친구에게 먼저 역할을 물어 함께 준비하는 등 배려심이 깊으며, 학급 회의에서 서로 다른 의견을 끝까지 듣고 합친 안을 내어 친구들의 신뢰를 받음.';
     return d;
   }
   let seTourPrev = null;
-  const seTourTab = function(tab, num) { return function() { if (num) seSelNum = num; seSetCfg({ tab: tab }); seRenderAll(); }; };
+  const seTourTab = function(tab, num, kind) { return function() { if (num) seSelNum = num; seSetCfg({ tab: tab, kind: kind || 'a' }); seRenderAll(); }; };
   const SE_TOUR_STEPS = [
     { selector: '#se-page-header', before: seTourTab('src'), title: '🗂 자율·진로 편집기에 오신 것을 환영해요!',
-      desc: '여러 부서에서 받은 자율·진로 문장을 학생별로 모아, 골라 합치고, 바이트에 맞게 다듬는 곳이에요.\n\n순서는 딱 세 단계예요.\n① 📥 자료 입력 — 받은 문장을 학생·영역별로 넣기\n② ✍️ 편집 — 학생마다 넣을 문장을 골라 합치고 다듬은 뒤 📊 최종에 넣기\n③ 📊 최종 — 완성본을 확인하고 📋 복사해서 나이스에 붙여 넣기\n\n지금 보이는 건 예시 반(가짜 학생 5명)이라 마음껏 눌러 봐도 선생님 자료는 바뀌지 않아요. 설명서를 닫으면 원래 화면으로 돌아가요.\n\n실제로 적은 내용은 선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요). 칸에 적는 동안엔 화면에만 있다가 칸을 벗어나면 저장돼요.' },
+      desc: '여러 부서에서 받은 자율·진로 문장을 학생별로 모아, 골라 합치고, 바이트에 맞게 다듬는 곳이에요. 행발은 평소 적어 둔 관찰 기록을 보며 여기서 직접 써요.\n\n순서는 딱 세 단계예요.\n① 📥 자료 입력 — 받은 문장을 학생·영역별로 넣기\n② ✍️ 편집 — 학생마다 넣을 문장을 골라 합치고 다듬은 뒤 📊 최종에 넣기\n③ 📊 최종 — 완성본을 확인하고 📋 복사해서 나이스에 붙여 넣기\n\n지금 보이는 건 예시 반(가짜 학생 5명)이라 마음껏 눌러 봐도 선생님 자료는 바뀌지 않아요. 설명서를 닫으면 원래 화면으로 돌아가요.\n\n실제로 적은 내용은 선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요). 칸에 적는 동안엔 화면에만 있다가 칸을 벗어나면 저장돼요.' },
     { selector: '#se-grade', before: seTourTab('src'), title: '학년·반 고르기',
       desc: '자료는 반마다 따로예요. 담임 선생님은 담임 반으로 시작해요. 옆에 그 학년의 바이트 한도(입시 연도 기준, 한글 1자 = 3바이트)가 나와요.' },
     { selector: '#se-tabs', before: seTourTab('src'), title: '세 탭 = 세 단계',
       desc: '① 자료 입력 → ② 편집 → ③ 최종 순서로 왼쪽부터 차례로 쓰면 돼요. 탭을 바꿔도 위쪽 줄은 그대로 있고 아래 내용만 바뀌어요.' },
     { selector: '#se-next', before: seTourTab('edit', 2), title: '다음 할 일',
       desc: '탭 아래 상자가 지금 할 일 한 가지를 알려 줘요(지금 고른 자율/진로 기준). 단추를 누르면 그 화면·그 학생으로 가고, 눌러야 할 곳은 반짝여요.\n탭 옆 ✓ = 끝난 단계, "다음" = 다음에 할 단계예요. 다 끝나면 초록 "완료"로 바뀌어요.' },
-    { selector: '#se-kind', before: seTourTab('src'), title: '자율 / 진로 고르기',
-      desc: '자율과 진로는 영역도 문장도 따로예요. 이 버튼은 세 탭 모두 같은 자리에 있어요. 최종 탭에선 "전체"를 누르면 자율·진로를 나란히 볼 수 있어요.' },
+    { selector: '#se-kind', before: seTourTab('src'), title: '자율 / 진로 / 행발 고르기',
+      desc: '자율·진로·행발은 문장도 한도도 따로예요. 이 버튼은 세 탭 모두 같은 자리에 있어요. 최종 탭에선 "전체"를 누르면 셋을 나란히 볼 수 있어요.\n행발은 받은 자료가 없어서 ① 탭이 "관찰 기록"으로 바뀌어요(설명서 끝쪽에서 보여 드려요).' },
     { selector: '#se-src-list', before: seTourTab('src'), title: '📥 자료 입력 — 넣는 방법은 두 가지',
       desc: '방법 1. 엑셀 양식으로 한꺼번에 (추천)\n  ① 표 머리의 "＋ 영역 추가"로 부서 활동(예: 1인 1역할, 진로 특강)을 먼저 만들어요 — 자율·진로 둘 다\n  ② 📊 엑셀 내려받기 → "자율 입력"·"진로 입력" 시트에 부서에서 받은 문장을 복사해 붙여 넣고 저장\n  ③ 📥 엑셀 가져오기로 그 파일을 넣으면 끝!\n\n방법 2. 여기에 직접\n  칸을 눌러 적거나, 엑셀에서 여러 칸을 복사해 한 칸에 붙여 넣으면 그 칸부터 아래·오른쪽으로 이어서 채워져요.' },
     { selector: '#se-add-area', before: seTourTab('src'), title: '＋ 영역 추가 · 이름 바꾸기 · 지우기',
@@ -13426,24 +13490,28 @@
       desc: '다 다듬었으면 꼭 📊 최종에 넣기! 그래야 최종 탭에 들어가요(편집 칸만 고쳐서는 최종이 안 바뀌어요 — 아래에 "최종과 같아요/달라요"가 나와요).\n📋 복사는 나이스에 바로 붙여 넣고 싶을 때, 지우기는 편집 칸만 비워요.' },
     { selector: '#se-box-memo', before: seTourTab('edit', 1), title: '📝 메모',
       desc: '"진로독서 줄이고 큐리어톤 위주로"처럼 그 학생에 대한 메모를 남겨요. 선생님에게만 보여요.' },
+    { selector: '#se-src-list', before: seTourTab('src', 0, 'b'), title: '👀 행발 ① 관찰 기록',
+      desc: '행발은 부서에서 받는 자료 없이 담임 선생님이 1년 동안 본 것으로 쓰죠. 그래서 평소에 학생마다 눈에 띈 모습을 한 줄씩 쌓아 두는 곳이에요.\n\n· 학생 줄의 칸에 적고 Enter — 날짜는 저절로 붙고, 커서가 그대로라 한 학생에 여러 개 이어서 적을 수 있어요(칸을 벗어나도 저장돼요).\n· 칸을 누르면 아래에 덕목(성실·책임·배려…) 단추가 나와요. 눌러 표시해 두면 오른쪽 "덕목 모아 보기"에 학생마다 아직 못 본 면이 흐리게 보여요. 덕목 이름은 "✎ 덕목 바꾸기"로 바꿀 수 있어요.\n· 기록 옆 ✎는 고치기, ✕는 지우기예요.' },
+    { selector: '#se-box-obs', before: seTourTab('edit', 1, 'b'), title: '👀 행발 ② 관찰 기록 보며 쓰기',
+      desc: '편집 탭에서 행발을 고르면 받은 내용 대신 그 학생의 관찰 기록이 나와요. 이 기록을 보면서 아래 편집 칸에 행발을 직접 쓰고, 자율·진로처럼 📊 최종에 넣기를 눌러요. 쓰다가 떠오른 일은 여기 기록 칸에 바로 더 적어도 돼요.' },
     { selector: '#se-final-list', before: seTourTab('final'), title: '📊 최종 — 확인하고 나이스로',
-      desc: '최종에 넣은 문장이 학생별로 모여 있어요. 처음엔 자율·진로를 나란히(전체) 보여 주고, 위 자율/진로 버튼으로 하나만 볼 수도 있어요.\n바이트 칸 = 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.\n📋로 한 명씩 복사해 나이스에 붙여 넣고, ✎를 누르면 그 학생 편집으로 가요. "✏️ 최종에 안 넣은 편집 있음"이 보이면 편집 탭에서 최종에 넣기를 안 누른 거예요.' },
+      desc: '최종에 넣은 문장이 학생별로 모여 있어요. 처음엔 자율·진로·행발을 나란히(전체) 보여 주고, 위 자율/진로/행발 버튼으로 하나만 볼 수도 있어요.\n바이트 칸 = 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.\n📋로 한 명씩 복사해 나이스에 붙여 넣고, ✎를 누르면 그 학생 편집으로 가요. "✏️ 최종에 안 넣은 편집 있음"이 보이면 편집 탭에서 최종에 넣기를 안 누른 거예요.' },
     { selector: '#se-reset-btn', before: seTourTab('final'), title: '🗑 초기화',
-      desc: '지금 고른 반의 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지워요. 두 번 확인하고, 되돌릴 수 없어요 — 지우기 전에 📊 엑셀 내려받기로 보관해 두면 안심이에요.\n\n수고하셨습니다! 🎉' },
+      desc: '지금 고른 반의 자율·진로·행발 자료(받은 내용·관찰 기록·편집·최종·영역·메모)를 모두 지워요. 두 번 확인하고, 되돌릴 수 없어요 — 지우기 전에 📊 엑셀 내려받기로 보관해 두면 안심이에요.\n\n수고하셨습니다! 🎉' },
   ];
   function seOpenTour() {
     const c = seCfg();
     const g = Number(c.g) || 2, k = Number(c.g) && Number(c.c) ? Number(c.c) : 1;
     seTourPrev = { roster: seRoster, key: seRosterKey, sel: seSelNum };
     seDemo = seDemoStore(g, k);
-    seRosterKey = ''; seSelNum = 1; seTypingKey = null;
+    seRosterKey = ''; seSelNum = 1; seTypingKey = null; seObsPick = {}; seObsEditId = null;
     seLoadRoster();   // 예시에선 서버에 안 묻고 바로 예시 학생
     seFillClassSelects();
     seSaveState('');
     seRenderAll();
     openPageTour(SE_TOUR_STEPS, function() {
       const p = seTourPrev; seTourPrev = null;
-      seDemo = null; seTypingKey = null;
+      seDemo = null; seTypingKey = null; seObsPick = {}; seObsEditId = null;
       if (p) { seRoster = p.roster; seRosterKey = p.key; seSelNum = p.sel; }
       seFillClassSelects();
       seSaveState('');
@@ -13463,7 +13531,7 @@
     let k = parseInt(document.getElementById('se-class').value) || null;
     if (which === 'grade') { k = null; document.getElementById('se-class').innerHTML = '<option value="">반</option>' + (g ? classOptionsHtml(g, null) : ''); }
     seSetCfg({ g: g, c: k });
-    seSelNum = null;
+    seSelNum = null; seObsPick = {}; seObsEditId = null;
     await seLoadRoster();
     seRenderAll();
   }
@@ -13476,6 +13544,11 @@
     edit: '받은 내용을 체크해 합친 뒤 다듬고, 다 되면 <b>📊 최종에 넣기</b>를 눌러요(복사·붙여 넣기 필요 없음). <b>📋 복사</b>는 나이스에 바로 붙여 넣을 때.',
     final: '📊 최종에 넣은 문장이에요. <b>📋</b>으로 한 명씩 복사해 나이스에 붙여 넣어요.'
   };
+  const SE_HINTS_B = {
+    src: '학생마다 눈에 띈 모습을 <b>한 줄씩</b> 쌓아 두세요(Enter — 날짜는 저절로). 덕목을 눌러 표시하면 오른쪽에 학생마다 <b>아직 못 본 면</b>이 흐리게 보여요.',
+    edit: '관찰 기록을 보면서 편집 칸에 행발을 직접 쓰고, 다 되면 <b>📊 최종에 넣기</b>. 쓰다가 떠오른 일은 기록 칸에 바로 더 적어도 돼요.'
+  };
+  function seStepLabel(t) { return t === 'src' && seKind() === 'b' ? '① 관찰 기록' : SE_STEP_TABS[t]; }
 
   function seRenderAll() {
     if (!seIsOpen()) return;
@@ -13485,7 +13558,7 @@
     ['src', 'edit', 'final'].forEach(function(t) { document.getElementById('se-pane-' + t).style.display = t === tab ? 'flex' : 'none'; });
     document.getElementById('se-limit-note').textContent = seLimitNote();
     seKindButtons(tab);
-    document.getElementById('se-kind-hint').innerHTML = SE_HINTS[tab];
+    document.getElementById('se-kind-hint').innerHTML = (seKind() === 'b' && tab !== 'final' ? SE_HINTS_B : SE_HINTS)[tab];
     if (!seClassKey()) {
       const msg = '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:40px 20px;">학년과 반을 고르세요.</div>';
       document.getElementById('se-src-list').style.width = document.getElementById('se-final-list').style.width = '';
@@ -13496,7 +13569,7 @@
       document.getElementById('se-final-note').textContent = '';
       return;
     }
-    if (tab === 'src') seRenderSrc();
+    if (tab === 'src') { if (seKind() === 'b') seRenderObs(); else seRenderSrc(); }
     else if (tab === 'edit') seRenderEdit();
     else seRenderFinal();
     seGlowNext();
@@ -13507,24 +13580,53 @@
   // 누를 단추를 알려 주고, 그 화면에 눌러야 할 곳이 있으면 반짝이게. 설명서를 안 읽는 선생님도 화면만 보고 따라가게.
   const SE_STEP_TABS = { src: '① 자료 입력', edit: '② 편집', final: '③ 최종' };
   // 학생 한 명이 이 자율/진로에서 할 일이 남았나: 받은 문장이 있는데 최종이 없음(todo) · 최종과 다른 편집(draft) · 최종이 한도를 넘음(over)
+  // 행발은 받은 자료와 상관없이 모든 학생이 써야 하므로 최종이 없으면 할 일.
   function seStuTodo(num, kind, areas) {
     if (seHasDraft(num, kind)) return 'draft';
     const fin = seGet(seFinKey(num, kind));
     if (fin.trim()) return seBytes(fin) > seLimitBytes(kind) ? 'over' : '';
+    if (kind === 'b') return 'todo';
     return (areas || seAreas(kind)).some(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }) ? 'todo' : '';
   }
   function seKindInfo(kind) {
-    const areas = seAreas(kind);
-    const withSrc = seRoster.filter(function(s) { return areas.some(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }); });
+    const areas = kind === 'b' ? [] : seAreas(kind);
+    const withSrc = seRoster.filter(kind === 'b' ? function(s) { return seObs(s.num).length > 0; } : function(s) { return areas.some(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }); });
     const todo = seRoster.filter(function(s) { return seStuTodo(s.num, kind, areas); });
-    return { areas: areas, withSrc: withSrc, todo: todo, done: withSrc.length > 0 && !todo.length };
+    return { areas: areas, withSrc: withSrc, todo: todo, done: (kind === 'b' ? seRoster.length > 0 : withSrc.length > 0) && !todo.length };
   }
   function seNextInfo() {
     const go = function(tab, extra) { return Object.assign({ tab: tab }, extra || {}); };
     if (!seClassKey()) return { st: {}, next: null };
     if (!seRoster.length) return { st: {}, next: go('src', { msg: '이 반 명렬표에 학생이 없어요. 관리자가 명렬표를 올리면 저절로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣어도 돼요.', glow: '#se-import-btn' }) };
-    const kind = seKind(), other = kind === 'a' ? 'p' : 'a', K = SE_KIND_LABEL[kind], OK = SE_KIND_LABEL[other];
+    const kind = seKind(), K = SE_KIND_LABEL[kind];
     const I = seKindInfo(kind), N = seRoster.length, st = {};
+    // 이 종류를 다 끝냈을 때: 아직 안 끝난 다른 종류(자율 → 진로 → 행발 순)로 안내, 다 끝났으면 ③ 최종으로
+    const doneNext = function(msg) {
+      const other = SE_ALL_KINDS.filter(function(k) { return k !== kind && !seKindInfo(k).done; })[0];
+      return other ? { done: true, msg: msg + ' 이제 <b>' + SE_KIND_LABEL[other] + '</b>도 해 볼까요?', act: "seSetKind('" + other + "')", btn: SE_KIND_LABEL[other] + '로 →' }
+        : go('final', { done: true, msg: '<b>자율·진로·행발</b> 최종을 모두 넣었어요! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.' });
+    };
+    if (kind === 'b') {
+      // ① 관찰 기록은 쌓아 가는 것 — 모든 학생에게 하나 이상이면 ✓. ②·③ = 모든 학생 최종.
+      st.src = I.withSrc.length === N;
+      st.srcCnt = I.withSrc.length && !st.src ? I.withSrc.length + '/' + N + '명' : '';
+      st.edit = st.final = I.done;
+      st.editCnt = !I.done && I.todo.length < N ? (N - I.todo.length) + '/' + N + '명' : '';
+      const noObs = N - I.withSrc.length;
+      let next;
+      if (!I.withSrc.length && I.todo.length === N && !seRoster.some(function(s) { return seDraftText(s.num, 'b').trim(); }))
+        next = go('src', { msg: '평소 학생마다 눈에 띈 모습을 <b>한 줄씩</b> 적어 두세요(Enter — 날짜는 저절로). 덕목을 눌러 표시해 두면 학생마다 아직 못 본 면이 보여요. 학기 말엔 <b>② 편집</b>에서 이 기록을 보며 행발을 써요.', glow: '#se-src-list .se-obs-input' });
+      else if (I.todo.length) {
+        const s = I.todo.find(function(x) { return x.num === seSelNum; }) || I.todo[0], why = seStuTodo(s.num, 'b'), draft = seDraftText(s.num, 'b').trim(), n = seObs(s.num).length;
+        const how = why === 'draft' ? '다듬은 글이 아직 최종에 안 들어갔어요 — <b>📊 최종에 넣기</b>를 누르세요.'
+          : why === 'over' ? '최종이 한도(' + seFmt(seLimitBytes('b')) + '바이트)를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
+          : draft ? '편집 칸을 다듬은 뒤 <b>📊 최종에 넣기</b>를 누르세요.'
+          : (n ? '관찰 기록 ' + n + '개를 보면서' : '관찰 기록이 없어요 — 떠오르는 모습을 기록 칸에 적어 두거나 바로') + ' 편집 칸에 행발을 쓰고 <b>📊 최종에 넣기</b>.';
+        next = go('edit', { num: s.num, msg: '<b>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</b> 행발: ' + how + ' <span class="se-muted">(행발 남은 학생 ' + I.todo.length + '명' + (noObs ? ' · 관찰 기록 없는 학생 ' + noObs + '명' : '') + ')</span>',
+          glow: why === 'draft' || why === 'over' || draft ? '#se-put-btn' : '#se-draft' });
+      } else next = doneNext('<b>행발</b> 최종을 모두 넣었어요(' + N + '명)! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.');
+      return { st: st, next: next };
+    }
     st.src = I.withSrc.length > 0;
     st.srcCnt = st.src && I.withSrc.length < N ? I.withSrc.length + '/' + N + '명' : '';
     st.edit = I.done;
@@ -13542,11 +13644,7 @@
         : sel.length ? '<b>⬇ 합쳐서 편집 칸에 넣기</b>를 누른 뒤 다듬고 <b>📊 최종에 넣기</b>.' : '받은 내용에서 넣을 것을 체크하세요 → 합치기 → 다듬기 → <b>📊 최종에 넣기</b>.';
       const glow = why === 'draft' || why === 'over' || draft ? '#se-put-btn' : sel.length ? '#se-combine-btn' : '#se-box-src .se-card:not(.none)';
       next = go('edit', { num: s.num, msg: '<b>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</b> ' + K + ': ' + how + ' <span class="se-muted">(' + K + ' 남은 학생 ' + I.todo.length + '명)</span>', glow: glow });
-    } else {
-      const O = seKindInfo(other);
-      if (!O.done) next = { done: true, msg: '<b>' + K + '</b> 최종을 모두 넣었어요(' + I.withSrc.length + '명)! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요. 이제 <b>' + OK + '</b>도 해 볼까요?', act: "seSetKind('" + other + "')", btn: OK + '로 →' };
-      else next = go('final', { done: true, msg: '<b>자율·진로</b> 최종을 모두 넣었어요! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.' });
-    }
+    } else next = doneNext('<b>' + K + '</b> 최종을 모두 넣었어요(' + I.withSrc.length + '명)! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.');
     return { st: st, next: next };
   }
   function seRenderSteps() {
@@ -13557,13 +13655,13 @@
       const mark = st[t] ? '<span class="pa-st-ok">✓</span>' : t === 'src' && st.srcCnt ? '<span class="pa-cnt">' + st.srcCnt + '</span>' : t === 'edit' && st.editCnt ? '<span class="pa-cnt">' + st.editCnt + '</span>' : '';
       const isNext = nx && nx.tab === t && !nx.done;
       return (i ? '<span class="pa-arrow">›</span>' : '') + '<button class="top-btn' + (t === cur ? ' theme-active' : '') + (isNext ? ' pa-step-next' : '') + '" data-tab="' + t + '" onclick="seSetTab(\'' + t + '\')">' +
-        SE_STEP_TABS[t] + mark + (isNext && t !== cur ? '<span class="pa-st-next">다음</span>' : '') + '</button>';
+        seStepLabel(t) + mark + (isNext && t !== cur ? '<span class="pa-st-next">다음</span>' : '') + '</button>';
     }).join('');
     const box = document.getElementById('se-next');
     if (!box) return;
     if (!nx) { box.innerHTML = ''; return; }
     let btn = '';
-    if (nx.tab && nx.tab !== cur) btn = '<button class="top-btn" onclick="seGoNext()">' + SE_STEP_TABS[nx.tab] + '(으)로 가기 →</button>';
+    if (nx.tab && nx.tab !== cur) btn = '<button class="top-btn" onclick="seGoNext()">' + seStepLabel(nx.tab) + '(으)로 가기 →</button>';
     else if (nx.tab === 'edit' && nx.num && nx.num !== seSelNum) btn = '<button class="top-btn" onclick="seGoNext()">' + nx.num + '번으로 →</button>';
     else if (nx.act) btn = '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>';
     box.innerHTML = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-lbl">' + (nx.done ? '완료' : '다음 할 일') + '</span><span class="pa-next-msg">' + nx.msg + '</span>' + btn + '</div>';
@@ -13594,7 +13692,7 @@
   }
   function seKindButtons(tab) {
     const cur = tab === 'final' && seFinAll() ? 'all' : seKind();
-    document.getElementById('se-kind').innerHTML = SE_KINDS.map(function(k) {
+    document.getElementById('se-kind').innerHTML = SE_ALL_KINDS.map(function(k) {
       return '<button class="top-btn' + (k === cur ? ' theme-active' : '') + '" data-kind="' + k + '" onclick="seSetKind(\'' + k + '\')">' + SE_KIND_LABEL[k] + ' <span style="font-weight:600; opacity:.75;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></button>';
     }).join('') + (tab === 'final' ? '<button class="top-btn' + (cur === 'all' ? ' theme-active' : '') + '" data-kind="all" onclick="seSetKind(\'all\')">전체</button>' : '');
   }
@@ -13696,6 +13794,136 @@
     document.getElementById('se-src-msg').innerHTML = '📋 ' + filled + '칸을 채웠어요' + (over ? ' · 학생·영역이 모자라 못 넣은 칸 ' + over + '개(영역을 더 만들거나 명렬표를 확인하세요)' : '') + '.';
   }
 
+  // ----- ① 행발 관찰 기록 -----
+  // 반 전체 표: 학생 줄마다 지금까지의 기록(날짜·글·덕목) + 새 기록 칸(Enter = 쌓고 커서는 그 칸에 그대로 — 한 학생에 여러 개, 칸을 벗어나도 저장)
+  // + 오른쪽 "덕목 모아 보기"(표시한 덕목은 진하게, 아직 못 본 면은 흐리게). 새 기록 칸에 커서가 있으면 덕목 단추가 펼쳐짐 — 누를 때 칸에서
+  // 커서가 빠지지 않게 mousedown을 막음. 기록의 ✎ = 그 자리에서 글·덕목 고치기(Enter 저장·Esc 취소, 글을 비우면 지움), ✕ = 지우기.
+  // ② 편집에서도 같은 기록 상자를 띄워 보면서 쓰고, 거기서 바로 더 적을 수도 있다.
+  let seObsPick = {}, seObsEditId = null;   // 새 기록에 고른 덕목(학생 번호별, 화면에만) / 고치는 중인 기록 id
+  function seObsScope() { return document.getElementById('se-pane-' + seTab()) || document; }   // 숨긴 다른 탭에 남은 옛 표는 건드리지 않게
+  function seVirtueChipsHtml(sel, handler) {
+    return seVirtues().map(function(v) {
+      return '<button type="button" tabindex="-1" class="se-vchip' + (sel.indexOf(v) !== -1 ? ' on' : '') + '" data-v="' + escapeHtmlAttr(v) + '" onmousedown="event.preventDefault()" onclick="' + handler + '(this)">' + escapeHtmlAttr(v) + '</button>';
+    }).join('');
+  }
+  function seObsItemHtml(num, o) {
+    if (seObsEditId === o.id) {
+      return '<div class="se-obs-item editing" data-id="' + o.id + '"><span class="se-obs-date">' + seObsDateLabel(o.d) + '</span>' +
+        '<input type="text" class="se-obs-edit" value="' + escapeHtmlAttr(o.t) + '" data-num="' + num + '" data-id="' + o.id + '" spellcheck="false" onkeydown="seObsEditKey(event, this)">' +
+        '<div class="se-obs-picks">' + seVirtueChipsHtml(o.v, 'seObsEditPick') +
+        '<button class="top-btn" onclick="seObsEditSave(' + num + ')">저장</button><button class="top-btn" onclick="seObsEditCancel(' + num + ')">취소</button></div></div>';
+    }
+    return '<div class="se-obs-item" data-id="' + o.id + '"><span class="se-obs-date">' + seObsDateLabel(o.d) + '</span><span class="se-obs-text">' + escapeHtmlAttr(o.t) +
+      o.v.map(function(v) { return ' <span class="se-vtag on">' + escapeHtmlAttr(v) + '</span>'; }).join('') + '</span>' +
+      '<span class="se-obs-btns"><button tabindex="-1" title="고치기(글·덕목)" onclick="seObsEditStart(' + num + ',\'' + o.id + '\')">✎</button><button tabindex="-1" title="이 기록 지우기" onclick="seObsDel(' + num + ',\'' + o.id + '\')">✕</button></span></div>';
+  }
+  function seObsBlockHtml(num, hint) {
+    const list = seObs(num), pick = seObsPick[num] || [];
+    return '<div class="se-obs-block" data-num="' + num + '">' +
+      (list.length ? '<div class="se-obs-list">' + list.map(function(o) { return seObsItemHtml(num, o); }).join('') + '</div>'
+        : hint ? '<div class="se-muted" style="padding:2px 0 8px;">아직 관찰 기록이 없어요. 아래 칸에 적거나, <b>① 관찰 기록</b> 탭에서 반 전체를 한 표로 적을 수 있어요.</div>' : '') +
+      '<div class="se-obs-add' + (pick.length ? ' has-pick' : '') + '"><input type="text" class="se-obs-input" data-num="' + num + '" placeholder="눈에 띈 모습 한 줄 — Enter로 쌓기 (날짜는 저절로)" spellcheck="false"' +
+      ' oninput="seSaveState(\'typing\')" onkeydown="seObsInputKey(event, this)" onchange="seObsAdd(this, false)">' +
+      '<div class="se-obs-picks"><span class="se-muted">덕목 표시</span>' + seVirtueChipsHtml(pick, 'seObsPickToggle') + '</div></div></div>';
+  }
+  function seObsCovHtml(num) {
+    const list = seObs(num), seen = {};
+    list.forEach(function(o) { o.v.forEach(function(v) { seen[v] = (seen[v] || 0) + 1; }); });
+    return '<div class="se-obs-cov" data-num="' + num + '"><span class="se-obs-cnt">기록 <b>' + list.length + '</b>개</span>' + seVirtues().map(function(v) {
+      return '<span class="se-vtag' + (seen[v] ? ' on' : ' miss') + '" title="' + (seen[v] ? escapeHtmlAttr(v) + ' — 기록 ' + seen[v] + '개' : '아직 ' + escapeHtmlAttr(v) + '(을)를 표시한 기록이 없어요') + '">' + escapeHtmlAttr(v) + '</span>';
+    }).join('') + '</div>';
+  }
+  function seRenderObs() {
+    const list = document.getElementById('se-src-list');
+    list.style.width = '';
+    document.getElementById('se-src-msg').textContent = '';   // 자율·진로 표에 붙여 넣은 안내가 남지 않게
+    if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); return; }
+    let html = '<table class="se-table se-obs-table" style="width:100%; min-width:760px;"><colgroup><col style="width:40px;"><col style="width:64px;"><col><col style="width:250px;"></colgroup>' +
+      '<thead><tr><th class="se-left">번호</th><th>이름</th><th>관찰 기록 <span style="font-weight:600;">(✎ 고치기 · ✕ 지우기)</span></th>' +
+      '<th>덕목 모아 보기 <button class="se-vedit" id="se-virtue-edit" title="덕목 이름 바꾸기·더하기·빼기" onclick="seEditVirtues()">✎ 덕목 바꾸기</button></th></tr></thead><tbody>';
+    seRoster.forEach(function(s) {
+      html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c se-name">' + escapeHtmlAttr(s.name) + '</td><td>' + seObsBlockHtml(s.num) + '</td><td>' + seObsCovHtml(s.num) + '</td></tr>';
+    });
+    list.innerHTML = html + '</tbody></table>';
+  }
+  // 한 학생 기록만 다시 그림(지금 탭 안에서만) — focus면 그 학생 새 기록 칸에 커서를 되돌림(이어서 적게)
+  function seObsRefresh(num, focus) {
+    const sc = seObsScope();
+    sc.querySelectorAll('.se-obs-block[data-num="' + num + '"]').forEach(function(el) { el.outerHTML = seObsBlockHtml(num, seTab() === 'edit'); });
+    sc.querySelectorAll('.se-obs-cov[data-num="' + num + '"]').forEach(function(el) { el.outerHTML = seObsCovHtml(num); });
+    if (focus) { const inp = sc.querySelector('.se-obs-input[data-num="' + num + '"]'); if (inp) inp.focus(); }
+    seStepsSoon();
+  }
+  function seObsInputKey(e, inp) {
+    if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중
+    if (e.key === 'Enter') { e.preventDefault(); seObsAdd(inp, true); }
+    else if (e.key === 'Escape' && inp.value) { e.preventDefault(); inp.value = ''; seSaveState(''); }
+  }
+  function seObsAdd(inp, keep) {
+    const num = Number(inp.dataset.num), t = inp.value.replace(/\s+/g, ' ').trim();
+    if (!t) { if (seSaveStateIs('typing')) seSaveState(''); return; }
+    const list = seObs(num);
+    list.push({ id: seNewId(), d: seToday(), t: t, v: (seObsPick[num] || []).slice() });
+    inp.value = '';
+    delete seObsPick[num];
+    if (!seSaveObs(num, list)) return;
+    if (keep) { seObsRefresh(num, true); return; }
+    // 칸을 벗어나며 저장된 때: 누르던 곳(✎·다른 단추)의 클릭이 사라지지 않게 마우스를 뗀 뒤 다시 그림
+    setTimeout(function run() { if (paPtrDown) { setTimeout(run, 30); return; } if (seIsOpen()) seObsRefresh(num, false); }, 0);
+  }
+  function seObsPickToggle(btn) {
+    const add = btn.closest('.se-obs-add'), num = Number(btn.closest('.se-obs-block').dataset.num), v = btn.dataset.v;
+    const on = !btn.classList.contains('on');
+    const arr = (seObsPick[num] || []).filter(function(x) { return x !== v; });
+    if (on) arr.push(v);
+    if (arr.length) seObsPick[num] = arr; else delete seObsPick[num];
+    btn.classList.toggle('on', on);
+    add.classList.toggle('has-pick', arr.length > 0);
+    const inp = add.querySelector('.se-obs-input');
+    if (inp && document.activeElement !== inp) inp.focus();
+  }
+  function seObsEditStart(num, id) {
+    seObsEditId = id;
+    seObsRefresh(num);
+    const el = seObsScope().querySelector('.se-obs-edit[data-id="' + id + '"]');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
+  function seObsEditPick(btn) { btn.classList.toggle('on'); }
+  function seObsEditKey(e, inp) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter') { e.preventDefault(); seObsEditSave(Number(inp.dataset.num)); }
+    else if (e.key === 'Escape') { e.preventDefault(); seObsEditCancel(Number(inp.dataset.num)); }
+  }
+  function seObsEditSave(num) {
+    const inp = seObsScope().querySelector('.se-obs-edit[data-id="' + seObsEditId + '"]');
+    if (!inp) { seObsEditId = null; return; }
+    const t = inp.value.replace(/\s+/g, ' ').trim(), vs = seVirtues();
+    const picked = Array.from(inp.closest('.se-obs-item').querySelectorAll('.se-vchip.on')).map(function(b) { return b.dataset.v; });
+    const list = seObs(num), o = list.find(function(x) { return x.id === seObsEditId; });
+    seObsEditId = null;
+    if (o) {
+      if (t) { o.t = t; o.v = o.v.filter(function(x) { return vs.indexOf(x) === -1; }).concat(picked); }   // 지금 목록에 없는(예전에 바꾼) 덕목 표시는 그대로
+      else list.splice(list.indexOf(o), 1);
+      seSaveObs(num, list);
+    }
+    seObsRefresh(num);
+  }
+  function seObsEditCancel(num) { seObsEditId = null; seObsRefresh(num); }
+  async function seObsDel(num, id) {
+    const list = seObs(num), o = list.find(function(x) { return x.id === id; });
+    if (!o) return;
+    if (!(await customConfirm('이 관찰 기록을 지울까요?\n' + seObsDateLabel(o.d) + ' ' + o.t))) return;
+    seSaveObs(num, list.filter(function(x) { return x.id !== id; }));
+    seObsRefresh(num);
+  }
+  async function seEditVirtues() {
+    const r = await customPrompt('덕목 이름을 쉼표로 나눠 적어요(16개까지).\n관찰 기록에 눌러 표시해 두면, 학생마다 아직 못 본 면이 흐리게 보여요.\n비우면 처음 목록으로 돌아가요.', seVirtues().join(', '));
+    if (r == null) return;
+    const list = String(r).split(/[,，、\/\n]+/).map(function(x) { return x.trim(); }).filter(function(x, i, a) { return x && a.indexOf(x) === i; }).slice(0, 16);
+    seSetCfg({ virtues: list.length && list.join() !== SE_VIRTUES.join() ? list : null });
+    seRenderAll();
+  }
+
   // ----- ② 편집 -----
   // 학생 목록 점 = 편집 칸 글의 바이트(회색 없음/초록/빨강 초과), 최종에 아직 안 넣은 편집이 있으면 주황 테두리.
   function seFinStatus(num, kind) {
@@ -13704,11 +13932,12 @@
     const b = seBytes(t), lim = seLimitBytes(kind);
     return { cls: (b > lim ? 'over' : 'ok') + (d ? ' draft' : ''), text: seFmt(b), draft: d };
   }
+  // 점 세 개 = 자율·진로·행발 바이트(지금 고른 종류는 테두리로 진하게)
   function seStudentRowHtml(s) {
-    const a = seFinStatus(s.num, 'a'), p = seFinStatus(s.num, 'p');
     const tip = function(k, x) { return SE_KIND_LABEL[k] + ' 바이트' + (x.draft ? ' — 최종에 아직 안 넣은 편집이 있어요' : ''); };
+    const cur = seKind();
     return '<div class="se-stu' + (s.num === seSelNum ? ' sel' : '') + '" data-num="' + s.num + '" onclick="seSelectStudent(' + s.num + ')"><span>' + s.num + '</span><b>' + escapeHtmlAttr(s.name) + '</b>' +
-      '<span class="se-dot ' + a.cls + '" title="' + tip('a', a) + '">' + a.text + '</span><span class="se-dot ' + p.cls + '" title="' + tip('p', p) + '">' + p.text + '</span></div>';
+      SE_ALL_KINDS.map(function(k) { const x = seFinStatus(s.num, k); return '<span class="se-dot ' + x.cls + (k === cur ? ' cur' : '') + '" data-kind="' + k + '" title="' + tip(k, x) + '">' + x.text + '</span>'; }).join('') + '</div>';
   }
   function seRefreshStudentRow(num) {
     const s = seRoster.find(function(x) { return x.num === num; });
@@ -13728,7 +13957,7 @@
     stu.innerHTML = seRoster.map(seStudentRowHtml).join('');
     const s = seRoster.find(function(x) { return x.num === seSelNum; }) || seRoster[0];
     seSelNum = s.num;
-    const kind = seKind(), areas = seAreas(kind), st = seSt(s.num), sel = st.sel[kind];
+    const kind = seKind(), areas = kind === 'b' ? [] : seAreas(kind), st = seSt(s.num), sel = st.sel[kind] || [];
     const i = seRoster.indexOf(s);
     const draft = seDraftText(s.num, kind);
     const lim = seLimitBytes(kind);
@@ -13738,6 +13967,10 @@
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(1)"' + (i >= seRoster.length - 1 ? ' disabled' : '') + '>다음 ▶</button>' +
       '<span class="se-muted" style="margin-left:auto;">' + SE_KIND_LABEL[kind] + ' 편집 중</span></div>';
     html += '<div id="se-edit-scroll">';
+    if (kind === 'b') {
+      // 행발: 받은 내용 대신 관찰 기록(보면서 쓰기, 여기서 더 적을 수도)
+      html += '<div class="se-box se-sbox" id="se-box-obs"><div class="se-sec"><span class="se-sec-title">👀 관찰 기록 — 보면서 쓰기</span>' + seObsCovHtml(s.num) + '</div>' + seObsBlockHtml(s.num, true) + '</div>';
+    } else {
     // 받은 내용
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
     const joined = chosen.map(function(a) { return seGet(seSrcKey(s.num, a.id)).trim(); }).join(' ');
@@ -13756,9 +13989,10 @@
         (none ? '' : '<div class="se-card-text">' + escapeHtmlAttr(v) + '</div>') + '</label>';
     });
     html += '<div style="display:flex; gap:8px; margin:6px 0 4px;"><button class="top-btn" id="se-combine-btn" style="flex:1; padding:7px; font-weight:800;" onclick="seCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div></div>';
+    }
     // 편집 칸
     html += '<div class="se-box se-sbox" id="se-box-draft"><div class="se-sec"><span>✍️ ' + SE_KIND_LABEL[kind] + ' 편집 칸 — 다듬은 뒤 📊 최종에 넣기</span></div>';
-    html += '<textarea id="se-draft" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="합친 문장을 여기서 다듬어요. 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
+    html += '<textarea id="se-draft" data-num="' + s.num + '" data-kind="' + kind + '" placeholder="' + (kind === 'b' ? '위 관찰 기록을 보면서 행발을 써요.' : '합친 문장을 여기서 다듬어요.') + ' 적는 대로 바이트와 기재 불가 표현을 바로 점검해요." spellcheck="false"' +
       ' oninput="seOnDraftInput(this)" onchange="seOnDraftChange(this)" onblur="seOnDraftChange(this)">' + escapeHtmlAttr(draft) + '</textarea>';
     html += '<div style="display:flex; gap:8px; margin-top:6px;"><button class="top-btn" style="flex:1 1 0; padding:7px;" onclick="seClearDraft()">지우기</button>' +
       '<button class="top-btn" id="se-copy-btn" style="flex:1 1 0; padding:7px; font-weight:800;" onclick="seCopyDraft()">📋 복사</button>' +
@@ -13897,12 +14131,13 @@
     const list = document.getElementById('se-final-list');
     list.style.width = '';
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); document.getElementById('se-final-note').textContent = ''; return; }
-    const kinds = seFinAll() ? SE_KINDS : [seKind()];
-    const stat = { a: { n: 0, over: 0, draft: 0 }, p: { n: 0, over: 0, draft: 0 } };
-    // 한 가지만 볼 때도 글 칸 폭은 "전체"일 때와 같게(화면 끝까지 늘어나면 한 줄이 너무 길어 읽기 힘듦).
+    const kinds = seFinAll() ? SE_ALL_KINDS : [seKind()];
+    const stat = { a: { n: 0, over: 0, draft: 0 }, p: { n: 0, over: 0, draft: 0 }, b: { n: 0, over: 0, draft: 0 } };
+    // 한 가지만 볼 때 글 칸 폭은 두 가지를 나란히 볼 때만큼(화면 끝까지 늘어나면 한 줄이 너무 길어 읽기 힘듦). "전체"(자율·진로·행발 세 가지)는
+    // 글 칸이 230px보다 좁아지면 옆으로 스크롤.
     // 흰 상자도 표 폭에 맞춰 줄인다(오른쪽에 빈 흰 칸이 남지 않게).
     if (kinds.length === 1) list.style.width = 'calc(280px + (100% - 416px) / 2 + 2px)';
-    let html = '<table class="se-table se-fin-table"' + (kinds.length === 1 ? ' style="min-width:640px;"' : '') + '><colgroup><col style="width:40px;"><col style="width:64px;">' +
+    let html = '<table class="se-table se-fin-table"' + (kinds.length === 1 ? ' style="min-width:640px;"' : ' style="min-width:' + (144 + kinds.length * 366) + 'px;"') + '><colgroup><col style="width:40px;"><col style="width:64px;">' +
       kinds.map(function() { return '<col><col style="width:96px;"><col style="width:40px;">'; }).join('') + '<col style="width:40px;"></colgroup>' +
       '<thead><tr><th class="se-left">번호</th><th>이름</th>' +
       kinds.map(function(k) { return '<th>' + SE_KIND_LABEL[k] + ' 최종 <span style="font-weight:600;">(' + seFmt(seLimitBytes(k)) + '바이트)</span></th><th>바이트</th><th>복사</th>'; }).join('') + '<th>편집</th></tr></thead><tbody>';
@@ -13931,7 +14166,7 @@
     ck = ck || seClassKey();
     const out = [];
     if (!ck) return out;
-    const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-drf-' + ck + '-', 'se-st-' + ck + '-'];
+    const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-drf-' + ck + '-', 'se-st-' + ck + '-', 'se-obs-' + ck + '-'];
     const all = seDemo ? Object.keys(seDemo) : Array.from({ length: localStorage.length }, function(_, i) { return localStorage.key(i); });
     all.forEach(function(k) {
       if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === 'se-areas-' + ck || k === seRosterKeyName(ck) || k === seYearKey(ck))) out.push(k);
@@ -13943,7 +14178,7 @@
     const box = document.getElementById('se-oldyear');
     if (!box) return;
     const old = seDemo ? [] : seOldClasses();
-    box.innerHTML = old.length ? '<div class="pa-oldyear"><span><b>지난 학년도</b> 자율·진로 자료가 남아 있어요. 새 학년도가 시작됐으니 반마다 <b>엑셀로 받은 뒤 지워</b> 주세요 — 같은 반을 다시 맡으면 지난해 글이 섞여 보이고, 쌓이면 저장 공간이 모자라요.</span>' +
+    box.innerHTML = old.length ? '<div class="pa-oldyear"><span><b>지난 학년도</b> 자율·진로·행발 자료가 남아 있어요. 새 학년도가 시작됐으니 반마다 <b>엑셀로 받은 뒤 지워</b> 주세요 — 같은 반을 다시 맡으면 지난해 글이 섞여 보이고, 쌓이면 저장 공간이 모자라요.</span>' +
       old.map(function(ck) {
         const p = ck.split('-');
         return '<span class="se-oldcls" data-ck="' + ck + '"><b>' + seClassYear(ck) + '학년도 ' + p[0] + '학년 ' + p[1] + '반</b> <button class="top-btn" onclick="seOldExport(\'' + ck + '\')">📊 엑셀로 받기</button><button class="top-btn" onclick="seOldDelete(\'' + ck + '\')">🗑 지우기</button></span>';
@@ -13961,7 +14196,7 @@
   async function seOldDelete(ck) {
     const keys = seClassKeys(ck), p = ck.split('-');
     if (!keys.length) return seRenderAll();
-    if (!(await customConfirm(seClassYear(ck) + '학년도 ' + p[0] + '학년 ' + p[1] + '반 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지울까요?\n먼저 📊 엑셀로 받아 두세요.'))) return;
+    if (!(await customConfirm(seClassYear(ck) + '학년도 ' + p[0] + '학년 ' + p[1] + '반 자율·진로·행발 자료(받은 내용·관찰 기록·편집·최종·영역·메모)를 모두 지울까요?\n먼저 📊 엑셀로 받아 두세요.'))) return;
     if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
     keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
     scheduleBackupWrite();
@@ -13973,7 +14208,7 @@
     if (!c.g || !c.c) return;
     const keys = seClassKeys();
     if (!keys.length) return customAlert('지울 자료가 없어요.');
-    if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지울까요?'))) return;
+    if (!(await customConfirm(c.g + '학년 ' + c.c + '반의 자율·진로·행발 자료(받은 내용·관찰 기록·편집·최종·영역·메모)를 모두 지울까요?'))) return;
     if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
     if (seDemo) keys.forEach(function(k) { delete seDemo[k]; });
     else { keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} }); scheduleBackupWrite(); }
@@ -13992,7 +14227,8 @@
     try { wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); } catch (e) { return customAlert('엑셀 파일을 읽지 못했어요: ' + (e && e.message ? e.message : e)); }
     const dSh = wb.Sheets['데이터'], fSh = wb.Sheets['최종'];
     const kSh = { a: wb.Sheets['자율 입력'] || wb.Sheets['자율'], p: wb.Sheets['진로 입력'] || wb.Sheets['진로'] };
-    if (!dSh && !kSh.a && !kSh.p) return customAlert('"자율 입력"·"진로 입력" 시트(또는 예전 양식의 "데이터" 시트)가 없어요. 자율·진로 엑셀 파일이 맞는지 확인해 주세요.');
+    const oSh = wb.Sheets['행발 관찰'] || wb.Sheets['관찰 기록'];
+    if (!dSh && !kSh.a && !kSh.p && !oSh && !fSh) return customAlert('"자율 입력"·"진로 입력"·"행발 관찰"·"최종" 시트(또는 예전 양식의 "데이터" 시트)가 없어요. 이 편집기에서 내려받은 엑셀 파일이 맞는지 확인해 주세요.');
     const cell = function(sh, r, c) { const x = sh && sh[XLSX.utils.encode_cell({ r: r, c: c })]; return x && x.v != null ? String(x.v) : ''; };
     // 읽을 곳 목록: { sh, hr(머리 줄), numCol, nameCol, cols: [{ c, kind, name }] }
     const srcs = [];
@@ -14029,7 +14265,7 @@
       }
       srcs.push(src);
     });
-    if (!srcs.length) return customAlert('입력 시트 위쪽에서 "번호" 칸을 못 찾았어요.');
+    if (!srcs.length && !oSh && !fSh) return customAlert('입력 시트 위쪽에서 "번호" 칸을 못 찾았어요.');
     const all = seAllAreas();
     const cols = { a: [], p: [] };
     srcs.forEach(function(src) {
@@ -14062,12 +14298,12 @@
     let fin = 0;
     if (fSh) {
       const fr = XLSX.utils.decode_range(fSh['!ref'] || 'A1:A1');
-      let fa = -1, fp = -1, fn = -1;
-      for (let c = 0; c <= fr.e.c; c++) { const h = cell(fSh, 0, c).trim(); if (h === '번호') fn = c; if (h === '자율') fa = c; if (h === '진로') fp = c; }
+      let fa = -1, fp = -1, fb = -1, fn = -1;
+      for (let c = 0; c <= fr.e.c; c++) { const h = cell(fSh, 0, c).trim(); if (h === '번호') fn = c; if (h === '자율') fa = c; if (h === '진로') fp = c; if (h === '행발' || /^행동\s*특성/.test(h)) fb = c; }
       if (fn >= 0) for (let r = 1; r <= fr.e.r; r++) {
         const num = parseInt(cell(fSh, r, fn));
         if (!num) continue;
-        [['a', fa], ['p', fp]].forEach(function(x) {
+        [['a', fa], ['p', fp], ['b', fb]].forEach(function(x) {
           if (x[1] < 0) return;
           const v = cell(fSh, r, x[1]).replace(/\r\n?/g, '\n').trim();
           if (!v) return;
@@ -14077,14 +14313,49 @@
         });
       }
     }
+    // 행발 관찰: 위 세 줄 안의 "번호" 줄이 머리, 날짜·덕목·관찰 기록 칸. 같은 학생에 같은 글이 이미 있으면 건너뜀.
+    let obsN = 0;
+    if (oSh) {
+      const rng = XLSX.utils.decode_range(oSh['!ref'] || 'A1:A1');
+      let hr = -1;
+      for (let r = 0; r <= Math.min(2, rng.e.r) && hr < 0; r++) if (findCol(oSh, r, rng.e.c, '번호') >= 0) hr = r;
+      const col = function(labels) { for (let i = 0; i < labels.length; i++) { const c = findCol(oSh, hr, rng.e.c, labels[i]); if (c >= 0) return c; } return -1; };
+      const cn = hr >= 0 ? col(['번호']) : -1, cm = hr >= 0 ? col(['이름']) : -1, cd = hr >= 0 ? col(['날짜']) : -1, cv = hr >= 0 ? col(['덕목']) : -1, ct = hr >= 0 ? col(['관찰 기록', '관찰', '기록', '내용']) : -1;
+      const add = {};
+      if (cn >= 0 && ct >= 0) for (let r = hr + 1; r <= rng.e.r; r++) {
+        const num = parseInt(cell(oSh, r, cn)), t = cell(oSh, r, ct).replace(/\s+/g, ' ').trim();
+        if (!num) continue;
+        const nm = cm >= 0 ? cell(oSh, r, cm).trim() : '';
+        if (nm && !names.some(function(x) { return x.num === num; })) names.push({ num: num, name: nm });
+        if (!t) continue;
+        const list = add[num] || (add[num] = seObs(num));
+        if (list.some(function(x) { return x.t.replace(/\s+/g, ' ').trim() === t; })) { kept++; continue; }
+        const dc = cd >= 0 ? oSh[XLSX.utils.encode_cell({ r: r, c: cd })] : null;
+        list.push({ id: seNewId(), d: seObsParseDate(dc ? dc.v : '') || seToday(), t: t, v: cv >= 0 ? cell(oSh, r, cv).split(/[,，、·\/\n]+/).map(function(x) { return x.trim(); }).filter(Boolean) : [] });
+        obsN++;
+      }
+      Object.keys(add).forEach(function(num) { seSaveObs(Number(num), add[num]); });
+    }
     if (names.length && !seRoster.length) { seSet(seRosterKeyName(), JSON.stringify(names)); seRosterKey = ''; await seLoadRoster(); }
     seRenderAll();
-    customAlert('가져왔어요.\n· 영역: 자율 ' + cols.a.length + '개, 진로 ' + cols.p.length + '개\n· 받은 내용 ' + filled + '칸, 완성본 ' + fin + '칸' +
+    customAlert('가져왔어요.\n· 영역: 자율 ' + cols.a.length + '개, 진로 ' + cols.p.length + '개\n· 받은 내용 ' + filled + '칸, 완성본 ' + fin + '칸' + (oSh ? ', 행발 관찰 기록 ' + obsN + '개' : '') +
       (kept ? '\n· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요' : '') +
       (names.length && seRoster.length && !seRoster.some(function(s) { return names.some(function(n) { return n.num === s.num; }); }) ? '\n⚠️ 파일의 번호가 이 반 명렬표와 하나도 안 맞아요. 학년·반을 확인하세요.' : ''));
   }
+  // 엑셀 날짜 칸: 날짜로 적힌 칸(일련번호) · "2026-04-12" · "2026.4.12" · "4/12"(학년도 안의 날짜로) → 'YYYY-MM-DD', 모르면 ''
+  function seObsParseDate(v) {
+    const p2 = function(n) { return String(n).padStart(2, '0'); };
+    if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Math.round((v - 25569) * 86400000)); return d.getUTCFullYear() + '-' + p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()); }
+    const t = String(v || '').trim();
+    let m = /^(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/.exec(t);
+    if (m) return m[1] + '-' + p2(m[2]) + '-' + p2(m[3]);
+    m = /^(\d{1,2})\s*[./월]\s*(\d{1,2})/.exec(t);
+    if (m && +m[1] >= 1 && +m[1] <= 12) { const y = seSchoolYear(); return (+m[1] < 3 ? y + 1 : y) + '-' + p2(m[1]) + '-' + p2(m[2]); }
+    return '';
+  }
   // 📊 엑셀 내려받기: 칸 너비·줄바꿈·테두리·머리 색·틀 고정·필터·인쇄(A4 가로 폭 맞춤)까지 넣으려고 ExcelJS를 쓴다(누를 때만 받아 옴).
-  // 시트: "자율 입력"·"진로 입력"(1행 번호·이름·영역 이름 — 예전 "데이터" 한 시트는 옆으로 너무 길어 나눔) / "최종"(1행 번호·이름·자율·바이트·진로·바이트).
+  // 시트: "자율 입력"·"진로 입력"(1행 번호·이름·영역 이름 — 예전 "데이터" 한 시트는 옆으로 너무 길어 나눔) / "행발 관찰"(기록 하나가 한 줄)
+  //   / "최종"(1행 번호·이름·자율·바이트·진로·바이트·행발·바이트).
   // 가져오기는 이 모양과 예전 "데이터" 시트 모양 둘 다 읽는다(왕복). 바이트는 사용자 엑셀과 같은 식 (LENB-LEN)*3+LEN*2-LENB(한글 3·영문 1) — 엑셀에서 고쳐도 바로 다시 셈.
   async function seExportExcel() {
     if (!seClassKey() || !seRoster.length) return customAlert('내려받을 자료가 없어요.');
@@ -14134,36 +14405,58 @@
       inputSheet('a', 'D9EAD3');
       inputSheet('p', 'FCE5CD');
 
-      // ---- 최종 ----
-      const TW = 70, la = seLimitBytes('a'), lp = seLimitBytes('p');
+      // ---- 행발 관찰: 기록 하나가 한 줄(번호·이름·날짜·덕목·관찰 기록) — 기록 없는 학생도 한 줄(엑셀에서 채워 가져올 수 있게) ----
+      const OBG = 'D9E2F3', OW = 80;
+      const o = wb.addWorksheet('행발 관찰', { properties: { tabColor: { argb: 'FF' + OBG } }, pageSetup: Object.assign({}, page, { printTitlesRow: '1:1' }), views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }] });
+      o.columns = [{ width: 6 }, { width: 9 }, { width: 11 }, { width: 18 }, { width: OW }];
+      ['번호', '이름', '날짜', '덕목', '관찰 기록'].forEach(function(h, i) { head(o.getCell(1, 1 + i), h, i >= 2 ? OBG : null); });
+      o.getCell(1, 4).note = '쉼표로 나눠 적어요. 예: 성실, 배려';
+      o.getRow(1).height = 22;
+      let orow = 2;
+      seRoster.forEach(function(st) {
+        const list = seObs(st.num);
+        (list.length ? list : [null]).forEach(function(x) {
+          const r = o.getRow(orow++);
+          body(r.getCell(1), st.num, true); body(r.getCell(2), st.name, true);
+          body(r.getCell(3), x ? x.d : '', true); body(r.getCell(4), x ? x.v.join(', ') : ''); body(r.getCell(5), x ? x.t : '');
+          fit(r, [[x ? x.t : '', OW], [x ? x.v.join(', ') : '', 18]]);
+        });
+      });
+      o.autoFilter = { from: { row: 1, column: 1 }, to: { row: Math.max(1, orow - 1), column: 5 } };
+
+      // ---- 최종: 번호·이름 + 자율·진로·행발마다 글·바이트 ----
+      const TW = 70, cols = [['a', 'D9EAD3'], ['p', 'FCE5CD'], ['b', OBG]];
       const f = wb.addWorksheet('최종', { properties: { tabColor: { argb: 'FF1F3A5F' } }, pageSetup: Object.assign({}, page, { printTitlesRow: '1:1' }), views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }] });
-      f.columns = [{ width: 6 }, { width: 9 }, { width: TW }, { width: 10 }, { width: TW }, { width: 10 }];
+      f.columns = [{ width: 6 }, { width: 9 }].concat([].concat.apply([], cols.map(function() { return [{ width: TW }, { width: 10 }]; })));
       head(f.getCell(1, 1), '번호'); head(f.getCell(1, 2), '이름');
-      head(f.getCell(1, 3), '자율', 'D9EAD3'); head(f.getCell(1, 4), '바이트');
-      head(f.getCell(1, 5), '진로', 'FCE5CD'); head(f.getCell(1, 6), '바이트');
-      f.getCell(1, 4).note = '자율 한도 ' + la + '바이트(' + (la / 3) + '자) — 넘으면 빨간색';
-      f.getCell(1, 6).note = '진로 한도 ' + lp + '바이트(' + (lp / 3) + '자) — 넘으면 빨간색';
+      const L = 'CDEFGHIJ';
+      cols.forEach(function(x, i) {
+        const lim = seLimitBytes(x[0]);
+        head(f.getCell(1, 3 + i * 2), SE_KIND_LABEL[x[0]], x[1]); head(f.getCell(1, 4 + i * 2), '바이트');
+        f.getCell(1, 4 + i * 2).note = SE_KIND_LABEL[x[0]] + ' 한도 ' + lim + '바이트(' + (lim / 3) + '자) — 넘으면 빨간색';
+      });
       f.getRow(1).height = 22;
       const bytesF = function(col, r) { const x = col + r; return '(LENB(' + x + ')-LEN(' + x + '))*3+LEN(' + x + ')*2-LENB(' + x + ')'; };
       seRoster.forEach(function(st, k) {
-        const rn = 2 + k, r = f.getRow(rn);
-        const fa = seGet(seFinKey(st.num, 'a')), fp = seGet(seFinKey(st.num, 'p'));
+        const rn = 2 + k, r = f.getRow(rn), cells = [];
         body(r.getCell(1), st.num, true); body(r.getCell(2), st.name, true);
-        body(r.getCell(3), fa); body(r.getCell(5), fp);
-        body(r.getCell(4), { formula: bytesF('C', rn), result: seBytes(fa) }, true);
-        body(r.getCell(6), { formula: bytesF('E', rn), result: seBytes(fp) }, true);
-        r.getCell(4).numFmt = r.getCell(6).numFmt = '#,##0';
-        fit(r, [[fa, TW], [fp, TW]]);
+        cols.forEach(function(x, i) {
+          const t = seGet(seFinKey(st.num, x[0]));
+          body(r.getCell(3 + i * 2), t);
+          body(r.getCell(4 + i * 2), { formula: bytesF(L[i * 2], rn), result: seBytes(t) }, true);
+          r.getCell(4 + i * 2).numFmt = '#,##0';
+          cells.push([t, TW]);
+        });
+        fit(r, cells);
       });
       const lastRow = 1 + seRoster.length;
       const over = function(lim) { return [{ type: 'cellIs', operator: 'greaterThan', formulae: [lim], style: { font: { color: { argb: 'FFC00000' }, bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFDE2E1' } } } }]; };
-      f.addConditionalFormatting({ ref: 'D2:D' + lastRow, rules: over(la) });
-      f.addConditionalFormatting({ ref: 'F2:F' + lastRow, rules: over(lp) });
-      f.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastRow, column: 6 } };
-      wb.views = [{ activeTab: 2 }];   // 열면 최종 시트부터
+      cols.forEach(function(x, i) { const b = L[i * 2 + 1]; f.addConditionalFormatting({ ref: b + '2:' + b + lastRow, rules: over(seLimitBytes(x[0])) }); });
+      f.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastRow, column: 2 + cols.length * 2 } };
+      wb.views = [{ activeTab: 3 }];   // 열면 최종 시트부터
 
       const buf = await wb.xlsx.writeBuffer();
-      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '자율진로_' + c.g + '-' + c.c + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '자율진로행발_' + c.g + '-' + c.c + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
     }

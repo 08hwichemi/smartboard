@@ -252,7 +252,8 @@ handleDb = async function(pageInfo, req) {
   await P.click('#sgb-tabs [data-tab="edit"]'); await wait(600);
   check('편집기 탭 → 전체 화면 열리고 패널 닫힘, 레일 생기부 버튼 켜짐', await shown() && !(await panelShown()) && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
   const head = await P.evaluate(() => ({ g: document.getElementById('se-grade').value, c: document.getElementById('se-class').value, note: document.getElementById('se-limit-note').textContent, tab: seTab() }));
-  check('담임 반(3-1)으로 시작, 한도 안내 자율 1,500·진로 1,500', head.g === '3' && head.c === '1' && /자율·진로 각 500자\(1500바이트\)/.test(head.note) && head.tab === 'src', head);
+  check('담임 반(3-1)으로 시작, 한도 안내 자율·진로 각 500자 · 행발 300자(고3 = 2027 입시)', head.g === '3' && head.c === '1' && /자율·진로 각 500자 · 행발 300자/.test(head.note) && head.tab === 'src', head);
+  check('자율/진로/행발 단추에 바이트 한도(1,500 · 1,500 · 900)', (await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.textContent.trim()).join('|'))) === '자율 (1,500바이트)|진로 (1,500바이트)|행발 (900바이트)');
   const rows = await P.evaluate(() => [...document.querySelectorAll('#se-src-list tbody tr')].map(r => r.dataset.num));
   check('자료 입력 표에 명렬표 학생 5명', rows.join(',') === '1,2,3,4,5', rows);
   check('기본 영역: 자율 "1인 1역할" 1개 (아직 저장 안 됨)', (await areas('a')).map(a => a.name).join() === '1인 1역할' && (await ls(pc, 'se-areas-3-1')) === null);
@@ -267,7 +268,7 @@ handleDb = async function(pageInfo, req) {
   const kb = await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.dataset.kind).join());
   await P.click('#se-tabs [data-tab="src"]'); await wait(200);
   const kbSrc = await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.dataset.kind).join());
-  check('자율/진로 버튼은 자료 입력·편집·최종 모두 같은 자리, "전체"는 최종 탭에만', pos.src === pos.edit && pos.edit === pos.final && kb === 'a,p,all' && kbSrc === 'a,p', { pos, kb, kbSrc });
+  check('자율/진로/행발 버튼은 자료 입력·편집·최종 모두 같은 자리, "전체"는 최종 탭에만', pos.src === pos.edit && pos.edit === pos.final && kb === 'a,p,b,all' && kbSrc === 'a,p,b', { pos, kb, kbSrc });
   // 영역 1개여도 표 폭은 영역 3개일 때처럼(한 칸이 화면 끝까지 늘어나지 않게)
   const w1 = await P.evaluate(() => { const l = document.getElementById('se-src-list'), t = l.querySelector('table'); return { cell: l.querySelector('textarea.se-cell').getBoundingClientRect().width, list: document.getElementById('se-pane-src').clientWidth, box: l.getBoundingClientRect().width, table: t.getBoundingClientRect().width }; });
   check('영역 1개: 칸 폭 ≈ (화면 − 번호·이름·추가 열) / 3', Math.abs(w1.cell - (w1.list - 234) / 3) < 16, w1);
@@ -423,10 +424,11 @@ handleDb = async function(pageInfo, req) {
   // ---- 최종 탭 ----
   await P.click('#se-tabs [data-tab="final"]'); await wait(300);
   check('최종 탭은 처음엔 "전체"(자율·진로 나란히) — 편집 탭에서 자율/진로를 바꿔도 그대로', await P.evaluate(() => document.querySelector('#se-kind [data-kind="all"]').classList.contains('theme-active') && /자율 최종/.test(document.querySelector('#se-final-list thead').textContent) && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent)));
-  const wAll = await P.evaluate(() => document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt[data-kind="p"]').getBoundingClientRect().width);
+  check('전체 = 자율·진로·행발 세 가지 나란히', await P.evaluate(() => /행발 최종/.test(document.querySelector('#se-final-list thead').textContent) && document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td.se-txt').length === 3));
   await P.click('#se-kind [data-kind="p"]'); await wait(300);
-  check('진로만: 진로 열만, 글 칸 폭은 전체일 때와 같음(한 줄이 너무 길지 않게)', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)) &&
-    Math.abs(wAll - await P.evaluate(() => document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt').getBoundingClientRect().width)) < 3, wAll);
+  const wP = await P.evaluate(() => ({ w: document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt').getBoundingClientRect().width, pane: document.getElementById('se-pane-final').clientWidth }));
+  check('진로만: 진로 열만, 글 칸 폭은 두 가지 나란히 볼 때만큼(한 줄이 너무 길지 않게)', await P.evaluate(() => document.querySelectorAll('#se-final-list thead th').length === 6 && /진로 최종/.test(document.querySelector('#se-final-list thead').textContent) && !/자율 최종/.test(document.querySelector('#se-final-list thead').textContent)) &&
+    Math.abs(wP.w - (wP.pane - 416) / 2) < 6, wP);
   const fb = await P.evaluate(() => { const l = document.getElementById('se-final-list'); return { box: l.getBoundingClientRect().width, table: l.querySelector('table').getBoundingClientRect().width, pane: document.getElementById('se-pane-final').clientWidth }; });
   check('진로만: 흰 상자도 표 폭에 맞춰 줄어듦(오른쪽 빈 흰 칸 없음)', fb.box < fb.pane - 100 && Math.abs(fb.box - fb.table) < 4, fb);
   const pOnly = await P.evaluate(() => [...document.querySelectorAll('#se-final-list tbody tr[data-num="1"] td')].map(t => t.textContent.trim()));
@@ -485,10 +487,10 @@ handleDb = async function(pageInfo, req) {
       const xb = X.read(buf, { type: 'buffer' });
       const rows = (n) => X.utils.sheet_to_json(xb.Sheets[n], { header: 1, defval: '' });
       const sa = rows('자율 입력'), sp = rows('진로 입력'), ff = X.utils.sheet_to_json(xb.Sheets['최종'], { header: 1 });
-      check('엑셀 내려받기: 자율 입력·진로 입력 시트 따로(1행 번호·이름·영역 이름) + 최종(번호·이름·자율·바이트·진로·바이트)', /^자율진로_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '자율 입력,진로 입력,최종' &&
+      check('엑셀 내려받기: 자율 입력·진로 입력 시트 따로(1행 번호·이름·영역 이름) + 행발 관찰 + 최종(번호·이름·자율·바이트·진로·바이트·행발·바이트)', /^자율진로행발_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '자율 입력,진로 입력,행발 관찰,최종' &&
         sa[0].join() === '번호,이름,1인 1역할,자치 활동,좌우명' && sa[1][0] === 1 && sa[1][1] === '가나다' && sa[1][2] === '교실 문단속을 맡아 성실히 수행함.' && sa[1][4] === '엑셀 1번 좌우명' &&
         sp[0].join() === '번호,이름,진로 독서,큐리어톤' && sp[1][3] === '엑셀 1번 큐리어톤' && sa.length === 6 && sp.length === 6 &&
-        ff[0].join() === '번호,이름,자율,바이트,진로,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, sheets: xb.SheetNames, a: sa.slice(0, 2), p: sp.slice(0, 2), f: ff.slice(0, 2) });
+        ff[0].join() === '번호,이름,자율,바이트,진로,바이트,행발,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, sheets: xb.SheetNames, a: sa.slice(0, 2), p: sp.slice(0, 2), f: ff.slice(0, 2) });
       const EJ = require(path.join(path.dirname(EXCELJS_PATH), '..'));
       const ew = new EJ.Workbook(); await ew.xlsx.load(buf);
       const ed = ew.getWorksheet('자율 입력'), ep = ew.getWorksheet('진로 입력'), ef = ew.getWorksheet('최종');
@@ -500,8 +502,8 @@ handleDb = async function(pageInfo, req) {
         h2: ef.getRow(2).height, h3: ef.getRow(3).height, landscape: ef.pageSetup.orientation, fit: ef.pageSetup.fitToWidth, active: ew.views && ew.views[0] && ew.views[0].activeTab
       };
       check('엑셀 서식: 칸 너비(영역 40·최종 70), 줄바꿈·위 맞춤, 머리 굵게·테두리', fmt.dW === 40 && fmt.pW === 40 && fmt.fW[0] === 70 && fmt.fW[1] === 10 && fmt.wrapD && fmt.wrapF && fmt.top === 'top' && fmt.bold && fmt.border, fmt);
-      check('엑셀 서식: 세 시트 모두 필터·틀 고정(번호·이름 2열·머리 1행), 열면 최종 시트', fmt.filterD && fmt.filterP && fmt.filterF && [fmt.viewF, fmt.viewD, fmt.viewP].every(v => v && v.state === 'frozen' && v.ySplit === 1 && v.xSplit === 2) && fmt.active === 2, fmt);
-      check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|F2:F6:1500' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
+      check('엑셀 서식: 세 시트 모두 필터·틀 고정(번호·이름 2열·머리 1행), 열면 최종 시트', fmt.filterD && fmt.filterP && fmt.filterF && [fmt.viewF, fmt.viewD, fmt.viewP].every(v => v && v.state === 'frozen' && v.ySplit === 1 && v.xSplit === 2) && fmt.active === 3 && fmt.filterF === 'A1:H6', fmt);
+      check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|F2:F6:1500|H2:H6:900' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
       // 내려받은 파일을 다시 가져오면 다 이미 적힌 칸이라 아무것도 안 바뀜(왕복)
       const rt = path.join(require('os').tmpdir(), 'se-roundtrip.xlsx');
       fs.writeFileSync(rt, buf);
@@ -534,6 +536,8 @@ handleDb = async function(pageInfo, req) {
     seen.push(st);
     if (/받은 내용/.test(st.title)) demoChk.edit = await P.evaluate(() => ({ cards: document.querySelectorAll('#se-box-src .se-card.on').length, sum: document.getElementById('se-sum').className, draft: document.getElementById('se-draft').value.length, orange: !!document.querySelector('#se-students .se-stu[data-num="2"] .se-dot.draft') }));
     if (/최종 — 확인하고/.test(st.title)) demoChk.fin = await P.evaluate(() => ({ txt: document.querySelectorAll('#se-final-list td.se-txt:not(:has(.se-empty))').length, draftTag: document.querySelectorAll('#se-final-list .se-drafttag').length }));
+    if (/행발 ① 관찰 기록/.test(st.title)) demoChk.obs = await P.evaluate(() => ({ tab: document.querySelector('#se-tabs [data-tab="src"]').textContent, items: document.querySelectorAll('#se-src-list .se-obs-item').length, rows: document.querySelectorAll('#se-src-list .se-obs-table tbody tr').length, on: document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-cov .se-vtag.on').length }));
+    if (/행발 ② /.test(st.title)) demoChk.obsEdit = await P.evaluate(() => ({ items: document.querySelectorAll('#se-box-obs .se-obs-item').length, src: !!document.getElementById('se-box-src'), draft: document.getElementById('se-draft').dataset.kind, fin: document.getElementById('se-draft').value.length }));
     if (/편집 칸 — 다듬기/.test(st.title)) {   // 예시 화면에서 고쳐도 선생님 자료·서버엔 안 들어감
       await P.fill('#se-draft', '예시에서 고친 글'); await P.evaluate(() => document.getElementById('se-draft').blur()); await wait(100);
     }
@@ -541,7 +545,10 @@ handleDb = async function(pageInfo, req) {
     await P.click('#tour-next-btn'); await wait(300);
   }
   check('설명서 예시: 편집 탭에 체크한 카드·합친 바이트·편집 글, 2번 학생 주황 테두리 / 최종 탭에 완성본·"최종에 안 넣은 편집"', demoChk.edit && demoChk.edit.cards === 2 && /ok/.test(demoChk.edit.sum) && demoChk.edit.draft > 50 && demoChk.edit.orange &&
-    demoChk.fin && demoChk.fin.txt >= 4 && demoChk.fin.draftTag === 2, demoChk);   // 2번 학생 + 위에서 예시 편집 칸을 고친 1번 학생
+    demoChk.fin && demoChk.fin.txt >= 5 && demoChk.fin.draftTag === 2, demoChk);   // 2번 학생 + 위에서 예시 편집 칸을 고친 1번 학생
+  check('설명서 예시 행발: ① 관찰 기록 표(5명, 기록 6개, 1번 덕목 6개 표시) · ② 관찰 기록 보며 쓰기(1번 기록 3개, 받은 내용 상자 없음, 행발 최종 글)',
+    demoChk.obs && /관찰 기록/.test(demoChk.obs.tab) && demoChk.obs.rows === 5 && demoChk.obs.items === 6 && demoChk.obs.on === 6 &&
+    demoChk.obsEdit && demoChk.obsEdit.items === 3 && !demoChk.obsEdit.src && demoChk.obsEdit.draft === 'b' && demoChk.obsEdit.fin > 100, demoChk);
   const nSteps = await P.evaluate(() => SE_TOUR_STEPS.length);
   check('설명서: 모든 단계를 다 보여줌(건너뛴 것 없음), 칸마다 빛 비춤', seen.length === nSteps && seen.every(x => x.sp > 0) && seen[seen.length - 1].prog === nSteps + ' / ' + nSteps, seen.map(x => x.prog + ' ' + x.title));
   check('설명서: 전체 흐름(세 단계) → 넣는 방법 두 가지(엑셀 양식/직접) → 편집(최종에 넣기) → 최종 순서, 탭도 따라 바뀜',
@@ -621,6 +628,112 @@ handleDb = async function(pageInfo, req) {
   check('"진로로 →" → 진로로 바뀌고 다음 할 일 = 진로 문장 넣기', (await P.evaluate(() => seKind())) === 'p' && /진로<\/b> 문장을 넣으세요|진로 문장을 넣으세요/.test(await P.innerText('#se-next')));
   await P.evaluate(() => { seSetCfg({ kind: 'a' }); seRenderAll(); });
   await P.selectOption('#se-class', '1'); await wait(500);
+
+  // ---- 👀 행발: ① 관찰 기록(반 전체 표 · Enter로 쌓기 · 덕목 표시 · 고치기·지우기) → ② 기록 보며 쓰기 → 최종·엑셀 ----
+  await P.click('#se-tabs [data-tab="src"]'); await wait(200);
+  await P.click('#se-kind [data-kind="b"]'); await wait(2500);   // 앞에서 고친 것이 다 올라간 뒤부터 셈
+  const hb0 = await P.evaluate(() => ({ table: !!document.querySelector('#se-src-list .se-obs-table'), rows: document.querySelectorAll('#se-src-list .se-obs-table tbody tr').length, srcTable: !!document.querySelector('#se-src-list .se-src-table'),
+    tab: document.querySelector('#se-tabs [data-tab="src"]').textContent, msg: document.querySelector('#se-next .pa-next-msg').textContent, glow: !!document.querySelector('#se-src-list tr[data-num="1"] .se-obs-input.pa-glow'),
+    cov: document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-cov .se-vtag.miss').length, hint: document.getElementById('se-kind-hint').textContent }));
+  check('행발 고르면 ① 탭이 "관찰 기록" 표(학생 5명, 영역 표 아님) + 다음 할 일 = 한 줄씩 적기·첫 칸 반짝임 + 덕목 8개 모두 흐림', hb0.table && hb0.rows === 5 && !hb0.srcTable && /^① 관찰 기록/.test(hb0.tab) && /한 줄씩/.test(hb0.msg) && hb0.glow && hb0.cov === 8 && /아직 못 본 면/.test(hb0.hint), hb0);
+  upserts.length = 0;
+  const obsIn = (n) => '#se-src-list tr[data-num="' + n + '"] .se-obs-input';
+  await P.click(obsIn(1)); await P.keyboard.type('청소 시간에 교실 뒤를 스스로 정리함');
+  const picksShown = await P.isVisible('#se-src-list tr[data-num="1"] .se-obs-picks');
+  await P.click('#se-src-list tr[data-num="1"] .se-obs-add .se-vchip[data-v="성실"]');
+  await P.click('#se-src-list tr[data-num="1"] .se-obs-add .se-vchip[data-v="책임"]');
+  const stillFocus = await P.evaluate(() => document.activeElement && document.activeElement.matches('tr[data-num="1"] .se-obs-input') && document.activeElement.value.length > 0);
+  await P.keyboard.press('Enter'); await wait(200);
+  const hb1 = await P.evaluate(() => ({ obs: JSON.parse(localStorage.getItem('se-obs-3-1-1') || '[]'), focus: document.activeElement && document.activeElement.matches('tr[data-num="1"] .se-obs-input'), val: document.activeElement && document.activeElement.value,
+    items: document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-item').length, on: [...document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-cov .se-vtag.on')].map(e => e.textContent).join(), cnt: document.querySelector('#se-src-list tr[data-num="1"] .se-obs-cnt').textContent, today: seToday() }));
+  check('관찰 기록: 칸을 누르면 덕목 단추가 펼쳐지고, 눌러도 커서는 칸에 그대로', picksShown && stillFocus);
+  check('관찰 기록: Enter → 오늘 날짜·글·덕목(성실·책임)으로 쌓이고, 커서는 그 칸에 그대로(빈 칸) · 덕목 모아 보기에 진하게 · "기록 1개"', hb1.obs.length === 1 && hb1.obs[0].t === '청소 시간에 교실 뒤를 스스로 정리함' && hb1.obs[0].d === hb1.today && hb1.obs[0].v.join() === '성실,책임' &&
+    hb1.focus && hb1.val === '' && hb1.items === 1 && hb1.on === '성실,책임' && hb1.cnt === '기록 1개', hb1);
+  await P.keyboard.type('모둠 발표 때 친구 역할을 먼저 물어봄');
+  await P.click(obsIn(2)); await wait(300);
+  const hb2 = await P.evaluate(() => ({ n: JSON.parse(localStorage.getItem('se-obs-3-1-1') || '[]').length, focus: document.activeElement && document.activeElement.matches('tr[data-num="2"] .se-obs-input'), items: document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-item').length }));
+  if (process.env.SE_SHOTS) { await P.click(obsIn(2)); await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-behav-obs.png') }); }
+  check('관찰 기록: 적다가 다른 학생 칸을 누르면(칸을 벗어나면) 저장되고, 누른 칸으로 커서가 감(클릭 안 빗나감)', hb2.n === 2 && hb2.focus && hb2.items === 2, hb2);
+  await wait(2500);
+  check('관찰 기록: 학생 한 명 = 서버 항목 하나(se-obs-3-1-1)만 올라감', (serverVal(T1, 'se-obs-3-1-1') || '').includes('모둠 발표') && upserts.flat().every(k => k === 'se-obs-3-1-1' || k === 'se-yr-3-1' || k === 'se-cfg'), upserts);
+  // ✎ 고치기(글·덕목) · ✕ 지우기
+  await P.hover('#se-src-list tr[data-num="1"] .se-obs-item:nth-child(2)');
+  await P.click('#se-src-list tr[data-num="1"] .se-obs-item:nth-child(2) .se-obs-btns button[title^="고치기"]'); await wait(200);
+  await P.fill('#se-src-list .se-obs-edit', '모둠 발표 때 말이 적은 친구에게 먼저 역할을 물어봄');
+  await P.click('#se-src-list .se-obs-item.editing .se-vchip[data-v="배려"]');
+  await P.press('#se-src-list .se-obs-edit', 'Enter'); await wait(200);
+  const hb3 = await P.evaluate(() => JSON.parse(localStorage.getItem('se-obs-3-1-1'))[1]);
+  check('✎ 고치기: 글·덕목(배려) 바뀜, Enter로 저장', hb3.t === '모둠 발표 때 말이 적은 친구에게 먼저 역할을 물어봄' && hb3.v.join() === '배려' && !(await P.isVisible('#se-src-list .se-obs-edit')), hb3);
+  await P.evaluate(() => { const l = JSON.parse(localStorage.getItem('se-obs-3-1-1')); l.push({ id: 'x1', d: '2026-03-05', t: '지울 기록', v: [] }); localStorage.setItem('se-obs-3-1-1', JSON.stringify(l)); seRenderAll(); });
+  check('날짜 순으로 보임(3/5 기록이 맨 위)', (await P.evaluate(() => document.querySelector('#se-src-list tr[data-num="1"] .se-obs-item .se-obs-date').textContent)) === '3/5');
+  await P.click('#se-src-list tr[data-num="1"] .se-obs-item[data-id="x1"] .se-obs-btns button[title*="지우기"]'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
+  check('✕ 지우기(확인) → 그 기록만 빠짐', await P.evaluate(() => JSON.parse(localStorage.getItem('se-obs-3-1-1')).map(o => o.id).indexOf('x1') === -1 && JSON.parse(localStorage.getItem('se-obs-3-1-1')).length === 2));
+  // 덕목 바꾸기
+  await P.click('#se-virtue-edit'); await wait(200);
+  await P.fill('#custom-prompt-input', '성실, 책임, 나눔'); await P.click('#custom-prompt-ok-btn'); await wait(300);
+  const vv = await P.evaluate(() => ({ cfg: seCfg().virtues, cov: [...document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-cov .se-vtag')].map(e => e.textContent + (e.classList.contains('on') ? '+' : '')).join(), tags: [...document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-item .se-vtag')].map(e => e.textContent).join() }));
+  check('✎ 덕목 바꾸기: 성실·책임·나눔으로 — 덕목 모아 보기도 바뀌고, 기록의 예전 덕목 표시(배려)는 그대로', vv.cfg.join() === '성실,책임,나눔' && vv.cov === '성실+,책임+,나눔' && /배려/.test(vv.tags), vv);
+  await P.click('#se-virtue-edit'); await wait(200);
+  await P.fill('#custom-prompt-input', ''); await P.click('#custom-prompt-ok-btn'); await wait(300);
+  check('덕목 칸을 비우면 처음 목록(8개)으로', await P.evaluate(() => seVirtues().length === 8 && document.querySelectorAll('#se-src-list tr[data-num="1"] .se-obs-cov .se-vtag').length === 8));
+  const hb4 = await P.evaluate(() => ({ tab: document.querySelector('#se-tabs [data-tab="src"]').textContent, msg: document.querySelector('#se-next .pa-next-msg').textContent, next: [...document.querySelectorAll('#se-tabs .pa-step-next')].map(b => b.dataset.tab).join() }));
+  check('다음 할 일(기록이 생긴 뒤): ② 편집에서 1번 행발 쓰기 + ① 탭 "1/5명"', /1\/5명/.test(hb4.tab) && /1번/.test(hb4.msg) && /관찰 기록 2개를 보면서/.test(hb4.msg) && /관찰 기록 없는 학생 4명/.test(hb4.msg) && hb4.next === 'edit', hb4);
+  // ② 편집: 받은 내용 대신 관찰 기록 + 거기서 더 적기 + 편집 칸·최종
+  await P.click('#se-next .top-btn'); await wait(300);
+  const he1 = await P.evaluate(() => ({ tab: seTab(), sel: seSelNum, obs: !!document.getElementById('se-box-obs'), src: !!document.getElementById('se-box-src'), items: document.querySelectorAll('#se-box-obs .se-obs-item').length, kind: document.getElementById('se-draft').dataset.kind,
+    head: document.querySelector('#se-box-obs .se-obs-cnt').textContent, glow: !!document.querySelector('#se-draft.pa-glow'), dots: document.querySelectorAll('#se-students .se-stu[data-num="1"] .se-dot').length, cur: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot.cur').dataset.kind,
+    ph: document.getElementById('se-draft').placeholder, limit: document.getElementById('se-count').textContent }));
+  check('② 편집(행발): 받은 내용 대신 "관찰 기록 — 보면서 쓰기"(기록 2개), 편집 칸 반짝임, 학생 목록 점 3개(행발 테두리), 한도 900바이트', he1.tab === 'edit' && he1.sel === 1 && he1.obs && !he1.src && he1.items === 2 && he1.kind === 'b' && he1.head === '기록 2개' && he1.glow && he1.dots === 3 && he1.cur === 'b' && /관찰 기록을 보면서/.test(he1.ph) && /900바이트\(300자\)/.test(he1.limit), he1);
+  await P.click('#se-box-obs .se-obs-input'); await P.keyboard.type('쓰다가 떠오른 기록'); await P.keyboard.press('Enter'); await wait(200);
+  check('② 편집에서도 바로 기록을 더 적음(머리 "기록 3개"로)', await P.evaluate(() => JSON.parse(localStorage.getItem('se-obs-3-1-1')).length === 3 && document.querySelector('#se-box-obs .se-obs-cnt').textContent === '기록 3개' && document.querySelectorAll('#se-box-obs .se-obs-item').length === 3));
+  if (process.env.SE_SHOTS) await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-behav-edit.png') });
+  await P.fill('#se-draft', '맡은 일을 끝까지 해내는 성실한 학생임.'); await P.evaluate(() => document.getElementById('se-draft').blur()); await wait(100);
+  await P.click('#se-put-btn'); await wait(300);
+  check('📊 최종에 넣기 → se-fin-3-1-1-b, se-drf 없음', await P.evaluate(() => localStorage.getItem('se-fin-3-1-1-b') === '맡은 일을 끝까지 해내는 성실한 학생임.' && localStorage.getItem('se-drf-3-1-1-b') === null && /ok/.test(document.querySelector('#se-students .se-stu[data-num="1"] .se-dot[data-kind="b"]').className)));
+  const he2 = await P.evaluate(() => ({ msg: document.querySelector('#se-next .pa-next-msg').textContent, btn: (document.querySelector('#se-next .top-btn') || {}).textContent }));
+  check('다음 할 일: 다음 학생(2번) 행발 — 관찰 기록 없으면 그렇다고', /2번/.test(he2.msg) && /관찰 기록이 없어요/.test(he2.msg) && he2.btn === '2번으로 →', he2);
+  await P.evaluate(() => { [2, 3, 4, 5].forEach(n => seSet(seFinKey(n, 'b'), n + '번 행발')); seRenderAll(); });
+  const he3 = await P.evaluate(() => ({ done: !!document.querySelector('#se-next .pa-next.done'), msg: document.querySelector('#se-next .pa-next-msg').textContent, ok: [...document.querySelectorAll('#se-tabs .pa-st-ok')].map(e => e.parentNode.dataset.tab).join() }));
+  check('행발 모두 최종 → "완료"(행발 5명), ②③ ✓(① 관찰 기록은 모든 학생에게 있어야 ✓)', he3.done && /행발<\/?b?>? ?최종을 모두 넣었어요\(5명\)|행발 최종을 모두 넣었어요\(5명\)/.test(he3.msg) && he3.ok === 'edit,final', he3);
+  await P.click('#se-tabs [data-tab="final"]'); await P.click('#se-kind [data-kind="all"]'); await wait(300);
+  check('③ 최종 전체에 행발 열(1번 글·바이트 / 900)', await P.evaluate(() => { const td = document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt[data-kind="b"]'); return !!td && td.textContent === '맡은 일을 끝까지 해내는 성실한 학생임.' && / \/ 900/.test(td.nextElementSibling.textContent); }));
+  // 엑셀 왕복: 행발 관찰 시트(기록 한 줄씩, 기록 없는 학생도 한 줄) → 1번 기록을 지우고 가져오면 그대로 되살아남 · 최종 행발 칸도
+  if (XLSXLIB && EXCELJS_PATH) {
+    const X = require(XLSXLIB);
+    const got = await P.evaluate(() => new Promise((res) => {
+      const orig = window.fmSaveNow;
+      window.fmSaveNow = async (blob, name) => { window.fmSaveNow = orig; const b = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); res({ name, b64: btoa(s) }); };
+      seExportExcel();
+    }));
+    const buf = Buffer.from(got.b64, 'base64');
+    const xb = X.read(buf, { type: 'buffer' });
+    const ob = X.utils.sheet_to_json(xb.Sheets['행발 관찰'], { header: 1, defval: '' });
+    const ff = X.utils.sheet_to_json(xb.Sheets['최종'], { header: 1, defval: '' });
+    const before1 = await P.evaluate(() => localStorage.getItem('se-obs-3-1-1'));
+    check('엑셀 행발 관찰 시트: 머리(번호·이름·날짜·덕목·관찰 기록) + 1번 기록 3줄 + 2~5번 빈 줄 하나씩, 최종 시트 행발·바이트', ob[0].join() === '번호,이름,날짜,덕목,관찰 기록' && ob.length === 1 + 3 + 4 &&
+      ob[1][0] === 1 && /^\d{4}-\d{2}-\d{2}$/.test(ob[1][2]) && ob.slice(1).some(r => r[3] === '배려' && /말이 적은 친구/.test(r[4])) && ob.slice(1).some(r => r[3] === '성실, 책임') && ob[4][0] === 2 && ob[4][4] === '' &&
+      ff[1][6] === '맡은 일을 끝까지 해내는 성실한 학생임.' && ff[1][7] === sgbBytesOf('맡은 일을 끝까지 해내는 성실한 학생임.'), { ob, f: ff[1] });
+    const rt = path.join(require('os').tmpdir(), 'se-obs-roundtrip.xlsx');
+    fs.writeFileSync(rt, buf);
+    await P.evaluate(() => { localStorage.removeItem('se-obs-3-1-1'); localStorage.removeItem('se-fin-3-1-1-b'); seRenderAll(); });
+    await P.setInputFiles('#se-import-input', rt); await wait(800);
+    try { fs.unlinkSync(rt); } catch (e) {}
+    const imMsg = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
+    await P.click('#custom-alert-overlay button'); await wait(200);
+    const after1 = await P.evaluate(() => ({ obs: JSON.parse(localStorage.getItem('se-obs-3-1-1') || '[]'), fin: localStorage.getItem('se-fin-3-1-1-b') }));
+    const strip = (l) => JSON.stringify(JSON.parse(l || '[]').map(o => [o.d, o.t, o.v]));
+    check('엑셀 가져오기: 지운 1번 관찰 기록 3개(날짜·덕목 그대로)와 행발 최종이 되살아남, 안내에 "행발 관찰 기록 3개"', strip(JSON.stringify(after1.obs)) === strip(before1) && after1.fin === '맡은 일을 끝까지 해내는 성실한 학생임.' && /행발 관찰 기록 3개/.test(imMsg), { imMsg, after1 });
+    await P.setInputFiles('#se-import-input', (() => { fs.writeFileSync(rt, buf); return rt; })()); await wait(800);
+    try { fs.unlinkSync(rt); } catch (e) {}
+    const imMsg2 = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
+    await P.click('#custom-alert-overlay button'); await wait(200);
+    check('같은 파일을 또 가져오면 관찰 기록이 겹쳐 들어가지 않음(0개)', /행발 관찰 기록 0개/.test(imMsg2) && (await P.evaluate(() => JSON.parse(localStorage.getItem('se-obs-3-1-1')).length)) === 3, imMsg2);
+    check('날짜 읽기: 엑셀 날짜 칸·2026.4.12·4/12(학년도 안)', await P.evaluate(() => { const y = seSchoolYear(); return seObsParseDate(46124) === '2026-04-12' && seObsParseDate('2026.4.12') === '2026-04-12' && seObsParseDate('4/12') === y + '-04-12' && seObsParseDate('1/5') === (y + 1) + '-01-05' && seObsParseDate('아무거나') === ''; }));
+  }
+  if (process.env.SE_SHOTS) await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-behav-final.png') });
+  await P.evaluate(() => { seSetCfg({ kind: 'a', finAll: true }); seSetTab('src'); });
+
   const before = await P.evaluate(() => Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg').length);
   await P.click('#se-page-header button:has-text("초기화")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
