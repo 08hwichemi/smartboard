@@ -685,8 +685,18 @@ handleDb = async function(pageInfo, req) {
     head: document.querySelector('#se-box-obs .se-obs-cnt').textContent, glow: !!document.querySelector('#se-draft.pa-glow'), dots: document.querySelectorAll('#se-students .se-stu[data-num="1"] .se-dot').length, cur: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot.cur').dataset.kind,
     ph: document.getElementById('se-draft').placeholder, limit: document.getElementById('se-count').textContent }));
   check('② 편집(행발): 받은 내용 대신 "관찰 기록 — 보면서 쓰기"(기록 2개), 편집 칸 반짝임, 학생 목록 점 3개(행발 테두리), 한도 900바이트', he1.tab === 'edit' && he1.sel === 1 && he1.obs && !he1.src && he1.items === 2 && he1.kind === 'b' && he1.head === '기록 2개' && he1.glow && he1.dots === 3 && he1.cur === 'b' && /관찰 기록을 보면서/.test(he1.ph) && /900바이트\(300자\)/.test(he1.limit), he1);
-  await P.click('#se-box-obs .se-obs-input'); await P.keyboard.type('쓰다가 떠오른 기록'); await P.keyboard.press('Enter'); await wait(200);
-  check('② 편집에서도 바로 기록을 더 적음(머리 "기록 3개"로)', await P.evaluate(() => JSON.parse(localStorage.getItem('se-obs-3-1-1')).length === 3 && document.querySelector('#se-box-obs .se-obs-cnt').textContent === '기록 3개' && document.querySelectorAll('#se-box-obs .se-obs-item').length === 3));
+  check('② 편집의 관찰 기록은 보기만(새 기록 칸·✎·✕ 없음 — 적기·고치기는 ①에서)', await P.evaluate(() => !document.querySelector('#se-box-obs .se-obs-input') && !document.querySelector('#se-box-obs .se-obs-btns') && document.querySelectorAll('#se-box-obs .se-obs-item').length === 2));
+  await P.evaluate(() => { window.__clip = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { window.__clip = t; } } }); });
+  const tdl = await P.evaluate(() => { const d = new Date(); return (d.getMonth() + 1) + '/' + d.getDate(); });
+  await P.click('#se-obs-copy'); await wait(200);
+  const hcp = await P.evaluate(() => ({ clip: window.__clip, btn: document.getElementById('se-obs-copy').textContent }));
+  check('📋 관찰 기록 복사: 한 줄에 하나씩 "날짜 글 (덕목, 덕목)"', hcp.clip === tdl + ' 청소 시간에 교실 뒤를 스스로 정리함 (성실, 책임)\n' + tdl + ' 모둠 발표 때 말이 적은 친구에게 먼저 역할을 물어봄 (배려)' && /2개 복사했어요/.test(hcp.btn), hcp);
+  // ①에서 더 적으면 ②에 보임
+  await P.evaluate(() => { const l = JSON.parse(localStorage.getItem('se-obs-3-1-1')); l.push({ id: 'x2', d: seToday(), t: '쓰다가 떠오른 기록', v: [] }); localStorage.setItem('se-obs-3-1-1', JSON.stringify(l)); seRenderAll(); });
+  check('기록이 늘면 ② 머리 "기록 3개"', await P.evaluate(() => document.querySelector('#se-box-obs .se-obs-cnt').textContent === '기록 3개' && document.querySelectorAll('#se-box-obs .se-obs-item').length === 3));
+  await P.click('#se-students .se-stu[data-num="2"]'); await wait(200);
+  check('기록 없는 학생: ②에 "① 관찰 기록 탭에서 적어 두면" 안내, 복사 단추 꺼짐', await P.evaluate(() => /① 관찰 기록/.test(document.getElementById('se-box-obs').textContent) && document.getElementById('se-obs-copy').disabled));
+  await P.click('#se-students .se-stu[data-num="1"]'); await wait(200);
   if (process.env.SE_SHOTS) await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-behav-edit.png') });
   await P.fill('#se-draft', '맡은 일을 끝까지 해내는 성실한 학생임.'); await P.evaluate(() => document.getElementById('se-draft').blur()); await wait(100);
   await P.click('#se-put-btn'); await wait(300);

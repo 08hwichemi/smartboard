@@ -13543,7 +13543,7 @@
     { selector: '#se-src-list', before: seTourTab('src', 0, 'b'), title: '👀 행발 ① 관찰 기록',
       desc: '행발은 부서에서 받는 자료 없이 담임 선생님이 1년 동안 본 것으로 쓰죠. 그래서 평소에 학생마다 눈에 띈 모습을 한 줄씩 쌓아 두는 곳이에요.\n\n· 학생 줄의 칸에 적고 Enter — 날짜는 저절로 붙고, 커서가 그대로라 한 학생에 여러 개 이어서 적을 수 있어요(칸을 벗어나도 저장돼요).\n· 칸을 누르면 아래에 덕목(성실·책임·배려…) 단추가 나와요. 눌러 표시해 두면 오른쪽 "덕목 모아 보기"에 학생마다 아직 못 본 면이 흐리게 보여요. 덕목 이름은 "✎ 덕목 바꾸기"로 바꿀 수 있어요.\n· 기록 옆 ✎는 고치기, ✕는 지우기예요.' },
     { selector: '#se-box-obs', before: seTourTab('edit', 1, 'b'), title: '👀 행발 ② 관찰 기록 보며 쓰기',
-      desc: '편집 탭에서 행발을 고르면 받은 내용 대신 그 학생의 관찰 기록이 나와요. 이 기록을 보면서 아래 편집 칸에 행발을 직접 쓰고, 자율·진로처럼 📊 최종에 넣기를 눌러요. 쓰다가 떠오른 일은 여기 기록 칸에 바로 더 적어도 돼요.' },
+      desc: '편집 탭에서 행발을 고르면 받은 내용 대신 그 학생의 관찰 기록이 나와요(여기선 보기만 — 적기·고치기는 ① 관찰 기록에서). 이 기록을 보면서 아래 편집 칸에 행발을 직접 쓰고, 자율·진로처럼 📊 최종에 넣기를 눌러요.\n📋 관찰 기록 복사를 누르면 기록이 한 줄에 하나씩(날짜·글·덕목) 복사돼요 — AI에 넣어 초안을 받거나 다른 곳에 붙여 넣을 때 써요.' },
     { selector: '#se-final-list', before: seTourTab('final'), title: '📊 최종 — 확인하고 나이스로',
       desc: '최종에 넣은 문장이 학생별로 모여 있어요. 처음엔 자율·진로·행발을 나란히(전체) 보여 주고, 위 자율/진로/행발 버튼으로 하나만 볼 수도 있어요.\n바이트 칸 = 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.\n📋로 한 명씩 복사해 나이스에 붙여 넣고, ✎를 누르면 그 학생 편집으로 가요. "✏️ 최종에 안 넣은 편집 있음"이 보이면 편집 탭에서 최종에 넣기를 안 누른 거예요.' },
     { selector: '#se-reset-btn', before: seTourTab('final'), title: '🗑 초기화',
@@ -13596,7 +13596,7 @@
   };
   const SE_HINTS_B = {
     src: '학생마다 눈에 띈 모습을 <b>한 줄씩</b> 쌓아 두세요(Enter — 날짜는 저절로). 덕목을 눌러 표시하면 오른쪽에 학생마다 <b>아직 못 본 면</b>이 흐리게 보여요.',
-    edit: '관찰 기록을 보면서 편집 칸에 행발을 직접 쓰고, 다 되면 <b>📊 최종에 넣기</b>. 쓰다가 떠오른 일은 기록 칸에 바로 더 적어도 돼요.'
+    edit: '관찰 기록을 보면서 편집 칸에 행발을 직접 쓰고, 다 되면 <b>📊 최종에 넣기</b>. 기록은 <b>📋 관찰 기록 복사</b>로 AI 등에 붙여 넣을 수 있어요(적기·고치기는 ① 관찰 기록에서).'
   };
   function seStepLabel(t) { return t === 'src' && seKind() === 'b' ? '① 관찰 기록' : SE_STEP_TABS[t]; }
 
@@ -13671,7 +13671,7 @@
         const how = why === 'draft' ? '다듬은 글이 아직 최종에 안 들어갔어요 — <b>📊 최종에 넣기</b>를 누르세요.'
           : why === 'over' ? '최종이 한도(' + seFmt(seLimitBytes('b')) + '바이트)를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
           : draft ? '편집 칸을 다듬은 뒤 <b>📊 최종에 넣기</b>를 누르세요.'
-          : (n ? '관찰 기록 ' + n + '개를 보면서' : '관찰 기록이 없어요 — 떠오르는 모습을 기록 칸에 적어 두거나 바로') + ' 편집 칸에 행발을 쓰고 <b>📊 최종에 넣기</b>.';
+          : (n ? '관찰 기록 ' + n + '개를 보면서' : '관찰 기록이 없어요 — <b>① 관찰 기록</b>에 적어 두거나 바로') + ' 편집 칸에 행발을 쓰고 <b>📊 최종에 넣기</b>.';
         next = go('edit', { num: s.num, msg: '<b>' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</b> 행발: ' + how + ' <span class="se-muted">(행발 남은 학생 ' + I.todo.length + '명' + (noObs ? ' · 관찰 기록 없는 학생 ' + noObs + '명' : '') + ')</span>',
           glow: why === 'draft' || why === 'over' || draft ? '#se-put-btn' : '#se-draft' });
       } else next = doneNext('<b>행발</b> 최종을 모두 넣었어요(' + N + '명)! <b>③ 최종</b>에서 한 명씩 복사해 나이스에 붙여 넣으세요.');
@@ -13848,7 +13848,7 @@
   // 반 전체 표: 학생 줄마다 지금까지의 기록(날짜·글·덕목) + 새 기록 칸(Enter = 쌓고 커서는 그 칸에 그대로 — 한 학생에 여러 개, 칸을 벗어나도 저장)
   // + 오른쪽 "덕목 모아 보기"(표시한 덕목은 진하게, 아직 못 본 면은 흐리게). 새 기록 칸에 커서가 있으면 덕목 단추가 펼쳐짐 — 누를 때 칸에서
   // 커서가 빠지지 않게 mousedown을 막음. 기록의 ✎ = 그 자리에서 글·덕목 고치기(Enter 저장·Esc 취소, 글을 비우면 지움), ✕ = 지우기.
-  // ② 편집에서도 같은 기록 상자를 띄워 보면서 쓰고, 거기서 바로 더 적을 수도 있다.
+  // ② 편집에서는 그 학생 기록을 보기만 하고(적기·고치기는 ①에서만) 📋 관찰 기록 복사(날짜·글·덕목 — AI에 넣거나 메모장에 붙일 때).
   let seObsPick = {}, seObsEditId = null;   // 새 기록에 고른 덕목(학생 번호별, 화면에만) / 고치는 중인 기록 id
   function seObsScope() { return document.getElementById('se-pane-' + seTab()) || document; }   // 숨긴 다른 탭에 남은 옛 표는 건드리지 않게
   function seVirtueChipsHtml(sel, handler) {
@@ -13867,14 +13867,37 @@
       o.v.map(function(v) { return ' <span class="se-vtag on">' + escapeHtmlAttr(v) + '</span>'; }).join('') + '</span>' +
       '<span class="se-obs-btns"><button tabindex="-1" title="고치기(글·덕목)" onclick="seObsEditStart(' + num + ',\'' + o.id + '\')">✎</button><button tabindex="-1" title="이 기록 지우기" onclick="seObsDel(' + num + ',\'' + o.id + '\')">✕</button></span></div>';
   }
-  function seObsBlockHtml(num, hint) {
+  function seObsBlockHtml(num) {
     const list = seObs(num), pick = seObsPick[num] || [];
     return '<div class="se-obs-block" data-num="' + num + '">' +
-      (list.length ? '<div class="se-obs-list">' + list.map(function(o) { return seObsItemHtml(num, o); }).join('') + '</div>'
-        : hint ? '<div class="se-muted" style="padding:2px 0 8px;">아직 관찰 기록이 없어요. 아래 칸에 적거나, <b>① 관찰 기록</b> 탭에서 반 전체를 한 표로 적을 수 있어요.</div>' : '') +
+      (list.length ? '<div class="se-obs-list">' + list.map(function(o) { return seObsItemHtml(num, o); }).join('') + '</div>' : '') +
       '<div class="se-obs-add' + (pick.length ? ' has-pick' : '') + '"><input type="text" class="se-obs-input" data-num="' + num + '" placeholder="눈에 띈 모습 한 줄 — Enter로 쌓기 (날짜는 저절로)" spellcheck="false"' +
       ' oninput="seSaveState(\'typing\')" onkeydown="seObsInputKey(event, this)" onchange="seObsAdd(this, false)">' +
       '<div class="se-obs-picks"><span class="se-muted">덕목 표시</span>' + seVirtueChipsHtml(pick, 'seObsPickToggle') + '</div></div></div>';
+  }
+  // ② 편집용: 보기만(✎·✕·새 기록 칸 없음)
+  function seObsViewHtml(num) {
+    const list = seObs(num);
+    if (!list.length) return '<div class="se-obs-block" data-num="' + num + '"><div class="se-muted" style="padding:2px 0 4px;">아직 관찰 기록이 없어요. <b>① 관찰 기록</b> 탭에서 적어 두면 여기에 보여요.</div></div>';
+    return '<div class="se-obs-block view" data-num="' + num + '"><div class="se-obs-list">' + list.map(function(o) {
+      return '<div class="se-obs-item" data-id="' + o.id + '"><span class="se-obs-date">' + seObsDateLabel(o.d) + '</span><span class="se-obs-text">' + escapeHtmlAttr(o.t) +
+        o.v.map(function(v) { return ' <span class="se-vtag on">' + escapeHtmlAttr(v) + '</span>'; }).join('') + '</span></div>';
+    }).join('') + '</div></div>';
+  }
+  // 복사할 글: 한 줄에 기록 하나 "4/12 글 (성실, 책임)"
+  function seObsText(num) {
+    return seObs(num).map(function(o) { return (seObsDateLabel(o.d) ? seObsDateLabel(o.d) + ' ' : '') + o.t + (o.v.length ? ' (' + o.v.join(', ') + ')' : ''); }).join('\n');
+  }
+  async function seObsCopy(num, btn) {
+    const text = seObsText(num);
+    const done = function(msg) { btn.textContent = msg; clearTimeout(seObsCopy._t); seObsCopy._t = setTimeout(function() { const b2 = document.getElementById('se-obs-copy'); if (b2) b2.textContent = '📋 관찰 기록 복사'; }, 1800); };
+    if (!text) { done('복사할 기록이 없어요'); return; }
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+    if (!ok) {
+      try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e) {}
+    }
+    done(ok ? '✅ ' + seObs(num).length + '개 복사했어요' : '복사하지 못했어요');
   }
   function seObsCovHtml(num) {
     const list = seObs(num), seen = {};
@@ -13899,7 +13922,7 @@
   // 한 학생 기록만 다시 그림(지금 탭 안에서만) — focus면 그 학생 새 기록 칸에 커서를 되돌림(이어서 적게)
   function seObsRefresh(num, focus) {
     const sc = seObsScope();
-    sc.querySelectorAll('.se-obs-block[data-num="' + num + '"]').forEach(function(el) { el.outerHTML = seObsBlockHtml(num, seTab() === 'edit'); });
+    sc.querySelectorAll('.se-obs-block[data-num="' + num + '"]').forEach(function(el) { el.outerHTML = el.classList.contains('view') || seTab() === 'edit' ? seObsViewHtml(num) : seObsBlockHtml(num); });
     sc.querySelectorAll('.se-obs-cov[data-num="' + num + '"]').forEach(function(el) { el.outerHTML = seObsCovHtml(num); });
     if (focus) { const inp = sc.querySelector('.se-obs-input[data-num="' + num + '"]'); if (inp) inp.focus(); }
     seStepsSoon();
@@ -14018,8 +14041,9 @@
       '<span class="se-muted" style="margin-left:auto;">' + SE_KIND_LABEL[kind] + ' 편집 중</span></div>';
     html += '<div id="se-edit-scroll">';
     if (kind === 'b') {
-      // 행발: 받은 내용 대신 관찰 기록(보면서 쓰기, 여기서 더 적을 수도)
-      html += '<div class="se-box se-sbox" id="se-box-obs"><div class="se-sec"><span class="se-sec-title">👀 관찰 기록 — 보면서 쓰기</span>' + seObsCovHtml(s.num) + '</div>' + seObsBlockHtml(s.num, true) + '</div>';
+      // 행발: 받은 내용 대신 관찰 기록(보기만 — 적기·고치기는 ①에서) + 📋 복사
+      html += '<div class="se-box se-sbox" id="se-box-obs"><div class="se-sec"><span class="se-sec-title">👀 관찰 기록 — 보면서 쓰기</span>' + seObsCovHtml(s.num) +
+        '<button class="top-btn" id="se-obs-copy" style="font-size:11px; padding:3px 10px; margin-left:auto;" title="이 학생 관찰 기록을 한 줄에 하나씩(날짜·글·덕목) 복사해요 — AI에 넣거나 다른 곳에 붙여 넣을 때"' + (seObs(s.num).length ? '' : ' disabled') + ' onclick="seObsCopy(' + s.num + ', this)">📋 관찰 기록 복사</button></div>' + seObsViewHtml(s.num) + '</div>';
     } else {
     // 받은 내용
     const chosen = areas.filter(function(a) { return sel.indexOf(a.id) !== -1 && seGet(seSrcKey(s.num, a.id)).trim(); });
