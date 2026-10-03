@@ -594,6 +594,12 @@
     .se-obs-table td { padding: 6px 8px; }
     .se-vedit { border: 0; background: none; color: var(--accent-color); font: inherit; font-size: 10.5px; font-weight: 800; cursor: pointer; padding: 1px 4px; border-radius: 6px; }
     .se-vedit:hover { background: var(--accent-soft); }
+    .se-career { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 12px; font-weight: 800; color: var(--text-main); }
+    .se-career input { width: 220px; font-family: inherit; font-size: 13px; padding: 4px 8px; border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    .se-career input:focus { border-color: var(--accent-color); }
+    .se-career span { font-size: 11.5px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+    .se-career span b { color: var(--accent-color); }
+    .se-career-tag { font-size: 11px; font-weight: 700; color: var(--text-sub); background: var(--tt-bg); border-radius: 6px; padding: 1px 7px; margin-bottom: 3px; display: inline-block; }
     .se-dot.cur { outline: 1.5px solid var(--accent-color); outline-offset: 0; }
     #se-memo { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); outline: none; }
     #se-memo:focus { border-color: var(--accent-color); }
@@ -13349,7 +13355,8 @@
     seRenderAll();
   }
 
-  // 학생별 상태: { sel: { a: [영역id], p: [영역id] }, memo: '' }
+  // 학생별 상태: { sel: { a: [영역id], p: [영역id] }, memo: '', career: '' }
+  // career = 진로 희망 분야: 나이스에선 진로 특기사항과 따로 적지만 진로 한도를 같이 써서(문장 점검기처럼 합쳐 셈), 진로 한도 = 한도 − 이 바이트.
   function seSt(num) {
     let v = null;
     try { v = JSON.parse(seGet(seStKey(num)) || 'null'); } catch (e) {}
@@ -13357,11 +13364,13 @@
     if (!v.sel || typeof v.sel !== 'object') v.sel = {};
     SE_KINDS.forEach(function(k) { if (!Array.isArray(v.sel[k])) v.sel[k] = []; });
     if (typeof v.memo !== 'string') v.memo = '';
+    if (typeof v.career !== 'string') v.career = '';
     return v;
   }
   function seSetSt(num, patch) {
     const v = Object.assign(seSt(num), patch);
-    const empty = !v.memo && SE_KINDS.every(function(k) { return !v.sel[k].length; });
+    if (!v.career) delete v.career;
+    const empty = !v.memo && !v.career && SE_KINDS.every(function(k) { return !v.sel[k].length; });
     seSet(seStKey(num), empty ? '' : JSON.stringify(v));
   }
 
@@ -13385,6 +13394,9 @@
   // ----- 한도: 학년 → 입시 연도 → 글자 수(한글 기준) × 3바이트 -----
   function seGrade() { return seCfg().g || null; }
   function seLimitBytes(kind) { return sgbLimitsFor(seGrade())[SE_LIMIT_FIELD[kind] || kind] * 3; }
+  // 학생 한 명의 한도: 진로는 진로 희망 분야 바이트만큼 뺀 것
+  function seCareerBytes(num) { return seBytes(seSt(num).career || ''); }
+  function seLimitFor(num, kind) { return kind === 'p' ? Math.max(0, seLimitBytes('p') - seCareerBytes(num)) : seLimitBytes(kind); }
   function seLimitNote() {
     const g = seGrade();
     if (!g) return '';
@@ -13506,7 +13518,7 @@
     src(3, 'da1', '학급 식물 도우미를 맡아 화분에 물을 주고 성장 일지를 꾸준히 기록함.'); src(3, 'da3', '학교 축제 공연 무대 진행을 도우며 순서표를 관리함.');
     src(3, 'dp2', '관심 직업을 다룬 책을 읽고 그 직업에 필요한 역량을 정리함.');
     src(4, 'da1', '칠판 정리 도우미를 맡아 수업 전후 칠판과 교탁을 정돈함.');
-    d['se-st-' + ck + '-1'] = JSON.stringify({ sel: { a: ['da1', 'da2'], p: ['dp1', 'dp2'] }, memo: '축제는 빼고 자치회 위주로' });
+    d['se-st-' + ck + '-1'] = JSON.stringify({ sel: { a: ['da1', 'da2'], p: ['dp1', 'dp2'] }, memo: '축제는 빼고 자치회 위주로', career: '데이터 과학자' });
     d['se-st-' + ck + '-2'] = JSON.stringify({ sel: { a: ['da1', 'da2'], p: ['dp1'] }, memo: '' });
     d['se-fin-' + ck + '-1-a'] = T.a1 + ' ' + T.a2;
     d['se-fin-' + ck + '-1-p'] = T.p1 + ' ' + T.p2;
@@ -13548,7 +13560,7 @@
     { selector: '#se-students', before: seTourTab('edit', 1), title: '✍️ 편집 — 학생 목록',
       desc: '학생을 누르면 오른쪽에 그 학생 자료가 나와요. 이름 옆 두 숫자는 자율·진로 바이트예요.\n회색 = 아직 없음 · 초록 = 한도 안 · 빨강 = 한도 넘음\n주황 테두리 = 편집했는데 아직 최종에 안 넣음(예시: 2번 이바다의 자율)' },
     { selector: '#se-edit-head', before: seTourTab('edit', 1), title: '◀ 이전 · 다음 ▶',
-      desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.' },
+      desc: '한 학생을 끝내면 "다음 ▶"으로 넘어가요. 목록에서 바로 눌러도 돼요.\n진로를 고르면 이름 옆에 "진로 희망 분야" 칸이 나와요. 나이스에선 따로 적지만 진로 한도를 같이 쓰니, 적어 두면 그 바이트만큼 뺀 한도로 계산해요(예시: 1번 김하늘 — 진로를 눌러 보세요).' },
     { selector: '#se-box-src', before: seTourTab('edit', 1), title: '📥 받은 내용 — 넣을 것을 체크',
       desc: '자료 입력에서 넣은 문장이 영역마다 카드로 나와요. 넣을 것을 체크하면 제목 옆 테두리 상자에 "합치면 몇 바이트"가 바로 보여요(초록 = 한도 안, 빨강 = 넘음 — 자료 입력 탭에서는 바이트를 안 보여 줘요). "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 체크한 문장을 띄어쓰기로 이어 붙여 아래 편집 칸에 넣어 줘요.' },
     { selector: '#se-box-draft', before: seTourTab('edit', 1), title: '✍️ 편집 칸 — 다듬기',
@@ -13651,7 +13663,7 @@
   function seStuTodo(num, kind, areas) {
     if (seHasDraft(num, kind)) return 'draft';
     const fin = seGet(seFinKey(num, kind));
-    if (fin.trim()) return seBytes(fin) > seLimitBytes(kind) ? 'over' : '';
+    if (fin.trim()) return seBytes(fin) > seLimitFor(num, kind) ? 'over' : '';
     if (kind === 'b') return 'todo';
     return (areas || seAreas(kind)).some(function(a) { return seGet(seSrcKey(num, a.id)).trim(); }) ? 'todo' : '';
   }
@@ -13706,7 +13718,7 @@
       const s = I.todo.find(function(x) { return x.num === seSelNum; }) || I.todo[0], why = seStuTodo(s.num, kind, I.areas);
       const draft = seDraftText(s.num, kind).trim(), sel = seSt(s.num).sel[kind].filter(function(id) { return seGet(seSrcKey(s.num, id)).trim(); });
       const how = why === 'draft' ? '다듬은 글이 아직 최종에 안 들어갔어요 — <b>📊 최종에 넣기</b>를 누르세요.'
-        : why === 'over' ? '최종이 한도(' + seFmt(seLimitBytes(kind)) + '바이트)를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
+        : why === 'over' ? '최종이 한도(' + seFmt(seLimitFor(s.num, kind)) + '바이트' + (kind === 'p' && seCareerBytes(s.num) ? ' — 진로 희망 분야 뺀 것' : '') + ')를 넘어요 — 편집 칸에서 줄인 뒤 <b>📊 최종에 넣기</b>.'
         : draft ? '편집 칸을 다듬은 뒤 <b>📊 최종에 넣기</b>를 누르세요.'
         : sel.length ? '<b>⬇ 합쳐서 편집 칸에 넣기</b>를 누른 뒤 다듬고 <b>📊 최종에 넣기</b>.' : '받은 내용에서 넣을 것을 체크하세요 → 합치기 → 다듬기 → <b>📊 최종에 넣기</b>.';
       const glow = why === 'draft' || why === 'over' || draft ? '#se-put-btn' : sel.length ? '#se-combine-btn' : '#se-box-src .se-card:not(.none)';
@@ -14019,7 +14031,7 @@
   function seFinStatus(num, kind) {
     const t = seDraftText(num, kind), d = seHasDraft(num, kind);
     if (!t.trim()) return { cls: 'empty' + (d ? ' draft' : ''), text: '-', draft: d };
-    const b = seBytes(t), lim = seLimitBytes(kind);
+    const b = seBytes(t), lim = seLimitFor(num, kind);
     return { cls: (b > lim ? 'over' : 'ok') + (d ? ' draft' : ''), text: seFmt(b), draft: d };
   }
   // 점 세 개 = 자율·진로·행발 바이트(지금 고른 종류는 테두리로 진하게)
@@ -14040,9 +14052,15 @@
     const n = seRoster[i + d];
     if (n) seSelectStudent(n.num);
   }
+  // 다시 그려도 보던 자리 그대로: 같은 학생이면 오른쪽 스크롤, 학생 목록 스크롤은 늘, 커서가 있던 칸(편집 칸·메모·희망 분야)과 커서 위치도.
+  // (예전엔 받은 내용을 체크할 때마다 통째로 다시 그려 스크롤이 맨 위로 올라갔음)
   function seRenderEdit() {
     const stu = document.getElementById('se-students');
     const ed = document.getElementById('se-editor');
+    const oldScroll = document.getElementById('se-edit-scroll'), keep = {
+      num: oldScroll ? Number(oldScroll.dataset.num) : null, top: oldScroll ? oldScroll.scrollTop : 0, list: stu.scrollTop,
+      focus: document.activeElement && ed.contains(document.activeElement) && document.activeElement.id ? document.activeElement.id : null };
+    if (keep.focus) { const a = document.activeElement; try { keep.sel = [a.selectionStart, a.selectionEnd]; } catch (e) {} }
     if (!seRoster.length) { stu.innerHTML = ''; ed.innerHTML = seNoStudentsHtml(); return; }
     stu.innerHTML = seRoster.map(seStudentRowHtml).join('');
     const s = seRoster.find(function(x) { return x.num === seSelNum; }) || seRoster[0];
@@ -14050,13 +14068,14 @@
     const kind = seKind(), areas = kind === 'b' ? [] : seAreas(kind), st = seSt(s.num), sel = st.sel[kind] || [];
     const i = seRoster.indexOf(s);
     const draft = seDraftText(s.num, kind);
-    const lim = seLimitBytes(kind);
+    const lim = seLimitFor(s.num, kind);
     let html = '<div id="se-edit-head" class="se-box">' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
       '<div style="font-weight:800; font-size:15px;">' + s.num + '번 ' + escapeHtmlAttr(s.name) + '</div>' +
       '<button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="seMoveStudent(1)"' + (i >= seRoster.length - 1 ? ' disabled' : '') + '>다음 ▶</button>' +
+      (kind === 'p' ? seCareerHtml(s.num) : '') +
       '<span class="se-muted" style="margin-left:auto;">' + SE_KIND_LABEL[kind] + ' 편집 중</span></div>';
-    html += '<div id="se-edit-scroll">';
+    html += '<div id="se-edit-scroll" data-num="' + s.num + '">';
     if (kind === 'b') {
       // 행발: 받은 내용 대신 관찰 기록(보기만 — 적기·고치기는 ①에서) + 📋 복사
       html += '<div class="se-box se-sbox" id="se-box-obs"><div class="se-sec"><span class="se-sec-title">👀 관찰 기록 — 보면서 쓰기</span>' + seObsCovHtml(s.num) +
@@ -14096,7 +14115,29 @@
     html += '</div>';
     ed.innerHTML = html;
     seRenderFinCount();
+    stu.scrollTop = keep.list;
+    if (keep.num === s.num) document.getElementById('se-edit-scroll').scrollTop = keep.top;
+    if (keep.focus && keep.num === s.num) {
+      const el = document.getElementById(keep.focus);
+      if (el) { el.focus({ preventScroll: true }); if (keep.sel) try { el.setSelectionRange(keep.sel[0], keep.sel[1]); } catch (e) {} }
+    }
     seStepsSoon();
+  }
+  // 진로 희망 분야 칸(이름 줄, 진로일 때): 적는 대로 바이트·남는 한도, 칸을 벗어나면 저장하고 한도에 맞춰 다시 그림
+  function seCareerHtml(num) {
+    const v = seSt(num).career || '';
+    return '<label class="se-career" title="나이스 진로활동의 진로 희망 분야 — 특기사항과 따로 적지만 진로 한도를 같이 써요(문장 점검기처럼 합쳐 셈). 여기 적으면 진로 한도에서 이만큼 빼고 계산해요.">진로 희망 분야' +
+      '<input type="text" id="se-career" data-num="' + num + '" value="' + escapeHtmlAttr(v) + '" placeholder="예: 생명과학 연구원" spellcheck="false" oninput="seCareerInput(this)" onchange="seCareerSave(this)" onkeydown="if (event.key === \'Enter\' && !event.isComposing) this.blur()">' +
+      '<span id="se-career-bytes">' + seCareerNote(seBytes(v)) + '</span></label>';
+  }
+  function seCareerNote(cb) { return cb ? seFmt(cb) + '바이트 → 진로 한도 <b>' + seFmt(Math.max(0, seLimitBytes('p') - cb)) + '</b>' : '진로 한도 <b>' + seFmt(seLimitBytes('p')) + '</b>'; }
+  function seCareerInput(inp) { seSaveState('typing'); document.getElementById('se-career-bytes').innerHTML = seCareerNote(seBytes(inp.value.trim())); }
+  function seCareerSave(inp) {
+    const num = Number(inp.dataset.num), v = inp.value.replace(/\s+/g, ' ').trim();
+    if ((seSt(num).career || '') === v) { if (seSaveStateIs('typing')) seSaveState(''); return; }
+    seSetSt(num, { career: v });
+    // 한도가 바뀌어 합친 바이트 상자·편집 칸 바이트·학생 목록 점·다음 할 일이 모두 달라짐 — 클릭이 사라지지 않게 마우스를 뗀 뒤
+    setTimeout(function run() { if (paPtrDown) { setTimeout(run, 30); return; } if (seIsOpen() && seTab() === 'edit') seRenderEdit(); }, 0);
   }
   function seToggleSel(num, kind, areaId, on) {
     const st = seSt(num);
@@ -14144,7 +14185,7 @@
     const cur = seGet(seFinKey(num, kind));
     if (!v && !cur) return;
     if (!v && !(await customConfirm('편집 칸이 비어 있어요. 최종에 든 ' + SE_KIND_LABEL[kind] + ' 문장을 지울까요?'))) return;
-    const b = seBytes(v), lim = seLimitBytes(kind);
+    const b = seBytes(v), lim = seLimitFor(num, kind);
     if (v && b > lim && !(await customConfirm(seFmt(b - lim) + '바이트 넘어요(' + seFmt(b) + ' / ' + seFmt(lim) + '). 그래도 최종에 넣을까요?'))) return;
     if (ta.value !== v) ta.value = v;
     if (seTypingKey === 'draft') seTypingKey = null;
@@ -14166,11 +14207,11 @@
     const ta = document.getElementById('se-draft');
     if (!ta) return;
     const kind = ta.dataset.kind, text = ta.value;
-    const c = sgbCount(text), limit = seLimitBytes(kind), over = c.bytes > limit;
+    const c = sgbCount(text), limit = seLimitFor(Number(ta.dataset.num), kind), over = c.bytes > limit, cb = kind === 'p' ? seCareerBytes(Number(ta.dataset.num)) : 0;
     const countEl = document.getElementById('se-count');
     countEl.className = 'sgb-count' + (over ? ' over' : '');
     countEl.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span>' +
-      '<span><b>' + seFmt(c.bytes) + '</b>바이트 <span class="sgb-limit">/ ' + seFmt(limit) + '바이트(' + (limit / 3) + '자)' +
+      '<span><b>' + seFmt(c.bytes) + '</b>바이트 <span class="sgb-limit">/ ' + seFmt(limit) + '바이트' + (cb ? '(진로 희망 분야 ' + seFmt(cb) + '바이트 뺌)' : '(' + (limit / 3) + '자)') +
       (over ? ' · <b>' + seFmt(c.bytes - limit) + '바이트 넘음</b>' : ' · ' + seFmt(limit - c.bytes) + '바이트 남음') + '</span></span>';
     const bar = document.getElementById('se-bar');
     bar.className = 'sgb-bar' + (over ? ' over' : '');
@@ -14212,9 +14253,9 @@
 
   // ----- ③ 최종 -----
   // 바이트 칸: 쓴 바이트 / 한도, 그 아래 남은(초록)·넘은(빨강) 바이트.
-  function seBytesCellHtml(t, k) {
+  function seBytesCellHtml(t, k, num) {
     if (!t.trim()) return '<td class="se-bcell"><span class="se-dot empty">-</span></td>';
-    const b = seBytes(t), lim = seLimitBytes(k), over = b > lim;
+    const b = seBytes(t), lim = seLimitFor(num, k), over = b > lim;
     return '<td class="se-bcell' + (over ? ' over' : '') + '"><b>' + seFmt(b) + '</b> / ' + seFmt(lim) + '<br>' +
       (over ? seFmt(b - lim) + ' 넘음' : '<span class="se-left-n">' + seFmt(lim - b) + ' 남음</span>') + '</td>';
   }
@@ -14236,11 +14277,12 @@
       html += '<tr data-num="' + s.num + '"><td class="se-c se-left">' + s.num + '</td><td class="se-c se-name">' + escapeHtmlAttr(s.name) + '</td>';
       kinds.forEach(function(k) {
         const t = seGet(seFinKey(s.num, k)), d = seHasDraft(s.num, k);
-        if (t.trim()) { stat[k].n++; if (seBytes(t) > seLimitBytes(k)) stat[k].over++; }
+        if (t.trim()) { stat[k].n++; if (seBytes(t) > seLimitFor(s.num, k)) stat[k].over++; }
+        const car = k === 'p' ? seSt(s.num).career : '';
         if (d) stat[k].draft++;
-        html += '<td class="se-txt" data-kind="' + k + '">' + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') +
+        html += '<td class="se-txt" data-kind="' + k + '">' + (car ? '<div class="se-career-tag" title="진로 희망 분야 — 나이스에 따로 적고, 진로 한도를 같이 써요">희망 분야: ' + escapeHtmlAttr(car) + ' <b>' + seFmt(seBytes(car)) + '바이트</b></div>' : '') + (t.trim() ? escapeHtmlAttr(t) : '<span class="se-empty">(아직 없음)</span>') +
           (d ? '<div><span class="se-drafttag" title="편집 탭에서 다듬은 글이 최종과 달라요" onclick="seSetCfg({ kind: \'' + k + '\' }); seSelNum=' + s.num + '; seSetTab(\'edit\')">✏️ 최종에 안 넣은 편집 있음</span></div>' : '') + '</td>' +
-          seBytesCellHtml(t, k) +
+          seBytesCellHtml(t, k, s.num) +
           '<td class="se-c">' + (t.trim() ? '<button class="ab-icon-btn" title="복사" onclick="seCopyText(seGet(seFinKey(' + s.num + ',\'' + k + '\')), this)">📋</button>' : '') + '</td>';
       });
       html += '<td class="se-c"><button class="ab-icon-btn" title="편집" onclick="seSelNum=' + s.num + '; seSetTab(\'edit\')">✎</button></td></tr>';
@@ -14386,14 +14428,18 @@
         });
       }
     });
-    let fin = 0;
+    let fin = 0, carN = 0;
     if (fSh) {
       const fr = XLSX.utils.decode_range(fSh['!ref'] || 'A1:A1');
-      let fa = -1, fp = -1, fb = -1, fn = -1;
-      for (let c = 0; c <= fr.e.c; c++) { const h = cell(fSh, 0, c).trim(); if (h === '번호') fn = c; if (h === '자율') fa = c; if (h === '진로') fp = c; if (h === '행발' || /^행동\s*특성/.test(h)) fb = c; }
+      let fa = -1, fp = -1, fb = -1, fn = -1, fc = -1;
+      for (let c = 0; c <= fr.e.c; c++) { const h = cell(fSh, 0, c).trim(); if (h === '번호') fn = c; if (h === '자율') fa = c; if (h === '진로') fp = c; if (h === '행발' || /^행동\s*특성/.test(h)) fb = c; if (/희망/.test(h) && /진로/.test(h)) fc = c; }
       if (fn >= 0) for (let r = 1; r <= fr.e.r; r++) {
         const num = parseInt(cell(fSh, r, fn));
         if (!num) continue;
+        if (fc >= 0) {   // 진로 희망 분야: 빈 칸만
+          const cv = cell(fSh, r, fc).replace(/\s+/g, ' ').trim();
+          if (cv) { if ((seSt(num).career || '').trim()) kept++; else { seSetSt(num, { career: cv }); carN++; } }
+        }
         [['a', fa], ['p', fp], ['b', fb]].forEach(function(x) {
           if (x[1] < 0) return;
           const v = cell(fSh, r, x[1]).replace(/\r\n?/g, '\n').trim();
@@ -14429,7 +14475,7 @@
     }
     if (names.length && !seRoster.length) { seSet(seRosterKeyName(), JSON.stringify(names)); seRosterKey = ''; await seLoadRoster(); }
     seRenderAll();
-    customAlert('가져왔어요.\n· 영역: 자율 ' + cols.a.length + '개, 진로 ' + cols.p.length + '개\n· 받은 내용 ' + filled + '칸, 완성본 ' + fin + '칸' + (oSh ? ', 행발 관찰 기록 ' + obsN + '개' : '') +
+    customAlert('가져왔어요.\n· 영역: 자율 ' + cols.a.length + '개, 진로 ' + cols.p.length + '개\n· 받은 내용 ' + filled + '칸, 완성본 ' + fin + '칸' + (carN ? ', 진로 희망 분야 ' + carN + '명' : '') + (oSh ? ', 행발 관찰 기록 ' + obsN + '개' : '') +
       (kept ? '\n· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요' : '') +
       (names.length && seRoster.length && !seRoster.some(function(s) { return names.some(function(n) { return n.num === s.num; }); }) ? '\n⚠️ 파일의 번호가 이 반 명렬표와 하나도 안 맞아요. 학년·반을 확인하세요.' : ''));
   }
@@ -14515,35 +14561,38 @@
       });
       o.autoFilter = { from: { row: 1, column: 1 }, to: { row: Math.max(1, orow - 1), column: 5 } };
 
-      // ---- 최종: 번호·이름 + 자율·진로·행발마다 글·바이트 ----
-      const TW = 70, cols = [['a', 'D9EAD3'], ['p', 'FCE5CD'], ['b', OBG]];
+      // ---- 최종: 번호·이름 + 자율(글·바이트) · 진로 희망 분야 · 진로(글·바이트 = 희망 분야와 합쳐 셈) · 행발(글·바이트) ----
+      // 열: A 번호 B 이름 C 자율 D 바이트 E 진로 희망 분야 F 진로 G 바이트 H 행발 I 바이트
+      const TW = 70, CW = 22;
       const f = wb.addWorksheet('최종', { properties: { tabColor: { argb: 'FF1F3A5F' } }, pageSetup: Object.assign({}, page, { printTitlesRow: '1:1' }), views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }] });
-      f.columns = [{ width: 6 }, { width: 9 }].concat([].concat.apply([], cols.map(function() { return [{ width: TW }, { width: 10 }]; })));
-      head(f.getCell(1, 1), '번호'); head(f.getCell(1, 2), '이름');
-      const L = 'CDEFGHIJ';
-      cols.forEach(function(x, i) {
+      f.columns = [{ width: 6 }, { width: 9 }, { width: TW }, { width: 10 }, { width: CW }, { width: TW }, { width: 10 }, { width: TW }, { width: 10 }];
+      const fcols = [['a', 3, 'C', 'D', 'D9EAD3'], ['p', 6, 'F', 'G', 'FCE5CD'], ['b', 8, 'H', 'I', OBG]];   // 종류, 글 열 번호, 글 열, 바이트 열, 머리 색
+      head(f.getCell(1, 1), '번호'); head(f.getCell(1, 2), '이름'); head(f.getCell(1, 5), '진로 희망 분야', 'FCE5CD');
+      f.getCell(1, 5).note = '나이스에선 진로 특기사항과 따로 적지만 진로 한도를 같이 써요 — 진로 바이트는 이 칸과 합쳐 셈';
+      fcols.forEach(function(x) {
         const lim = seLimitBytes(x[0]);
-        head(f.getCell(1, 3 + i * 2), SE_KIND_LABEL[x[0]], x[1]); head(f.getCell(1, 4 + i * 2), '바이트');
-        f.getCell(1, 4 + i * 2).note = SE_KIND_LABEL[x[0]] + ' 한도 ' + lim + '바이트(' + (lim / 3) + '자) — 넘으면 빨간색';
+        head(f.getCell(1, x[1]), SE_KIND_LABEL[x[0]], x[4]); head(f.getCell(1, x[1] + 1), '바이트');
+        f.getCell(1, x[1] + 1).note = SE_KIND_LABEL[x[0]] + ' 한도 ' + lim + '바이트(' + (lim / 3) + '자)' + (x[0] === 'p' ? ' — 진로 희망 분야와 합쳐 셈' : '') + ' — 넘으면 빨간색';
       });
       f.getRow(1).height = 22;
       const bytesF = function(col, r) { const x = col + r; return '(LENB(' + x + ')-LEN(' + x + '))*3+LEN(' + x + ')*2-LENB(' + x + ')'; };
       seRoster.forEach(function(st, k) {
-        const rn = 2 + k, r = f.getRow(rn), cells = [];
-        body(r.getCell(1), st.num, true); body(r.getCell(2), st.name, true);
-        cols.forEach(function(x, i) {
+        const rn = 2 + k, r = f.getRow(rn), cells = [], car = seSt(st.num).career || '';
+        body(r.getCell(1), st.num, true); body(r.getCell(2), st.name, true); body(r.getCell(5), car);
+        fcols.forEach(function(x) {
           const t = seGet(seFinKey(st.num, x[0]));
-          body(r.getCell(3 + i * 2), t);
-          body(r.getCell(4 + i * 2), { formula: bytesF(L[i * 2], rn), result: seBytes(t) }, true);
-          r.getCell(4 + i * 2).numFmt = '#,##0';
+          body(r.getCell(x[1]), t);
+          body(r.getCell(x[1] + 1), { formula: bytesF(x[2], rn) + (x[0] === 'p' ? '+' + bytesF('E', rn) : ''), result: seBytes(t) + (x[0] === 'p' ? seBytes(car) : 0) }, true);
+          r.getCell(x[1] + 1).numFmt = '#,##0';
           cells.push([t, TW]);
         });
+        cells.push([car, CW]);
         fit(r, cells);
       });
       const lastRow = 1 + seRoster.length;
       const over = function(lim) { return [{ type: 'cellIs', operator: 'greaterThan', formulae: [lim], style: { font: { color: { argb: 'FFC00000' }, bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFDE2E1' } } } }]; };
-      cols.forEach(function(x, i) { const b = L[i * 2 + 1]; f.addConditionalFormatting({ ref: b + '2:' + b + lastRow, rules: over(seLimitBytes(x[0])) }); });
-      f.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastRow, column: 2 + cols.length * 2 } };
+      fcols.forEach(function(x) { f.addConditionalFormatting({ ref: x[3] + '2:' + x[3] + lastRow, rules: over(seLimitBytes(x[0])) }); });
+      f.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastRow, column: 9 } };
       wb.views = [{ activeTab: 3 }];   // 열면 최종 시트부터
 
       const buf = await wb.xlsx.writeBuffer();

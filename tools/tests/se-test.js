@@ -418,6 +418,42 @@ handleDb = async function(pageInfo, req) {
   check('📋 복사 → 편집 칸 글 그대로', await P.evaluate(() => window.__clip === document.getElementById('se-draft').value && /복사했어요/.test(document.getElementById('se-copy-btn').textContent)));
   await P.fill('#se-memo', '진로독서 줄이고, 큐리어톤'); await P.keyboard.press('Tab'); await wait(200);
   check('메모 저장', (await P.evaluate(() => JSON.parse(localStorage.getItem('se-st-3-1-1')).memo)) === '진로독서 줄이고, 큐리어톤');
+
+  // ---- 받은 내용을 체크해도 스크롤 그대로(예전엔 체크할 때마다 맨 위로 올라감) ----
+  await P.setViewportSize({ width: 1600, height: 560 }); await wait(200);
+  const scr = await P.evaluate(async () => {
+    const el = document.getElementById('se-edit-scroll'), max = el.scrollHeight - el.clientHeight;
+    el.scrollTop = Math.min(120, max); const before = el.scrollTop;
+    const box = () => document.querySelector('#se-box-src .se-card:not(.none) input');
+    box().click(); await new Promise(r => setTimeout(r, 200));
+    const after = document.getElementById('se-edit-scroll').scrollTop, on = box().checked;
+    box().click(); await new Promise(r => setTimeout(r, 200));
+    return { max, before, after, on, again: document.getElementById('se-edit-scroll').scrollTop, back: box().checked };
+  });
+  check('받은 내용 체크·풀기: 오른쪽 스크롤 자리 그대로', scr.before > 0 && scr.after === scr.before && scr.again === scr.before && scr.on !== scr.back, scr);
+  await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
+
+  // ---- 진로 희망 분야: 나이스에선 따로 적지만 진로 한도를 같이 씀 → 진로 한도 = 1,500 − 희망 분야 바이트 ----
+  check('자율에선 진로 희망 분야 칸 없음', await P.evaluate(() => !document.getElementById('se-career')));
+  await P.click('#se-kind [data-kind="p"]'); await wait(200);
+  const cb = sgbBytesOf('데이터 과학자'), plim = (1500 - cb).toLocaleString('ko-KR');
+  const car0 = await P.evaluate(() => ({ has: !!document.getElementById('se-career'), inHead: !!document.querySelector('#se-edit-head #se-career'), note: document.getElementById('se-career-bytes').textContent }));
+  check('진로: 이름 줄에 "진로 희망 분야" 칸 + 진로 한도 1,500', car0.has && car0.inHead && /진로 한도 1,500/.test(car0.note), car0);
+  await P.fill('#se-career', '데이터 과학자');
+  check('적는 대로 바이트·남는 진로 한도', new RegExp(cb + '바이트 → 진로 한도 ' + plim).test(await P.innerText('#se-career-bytes')), await P.innerText('#se-career-bytes'));
+  await P.press('#se-career', 'Enter'); await wait(300);
+  if (process.env.SE_SHOTS) await P.screenshot({ path: path.join(process.env.SE_SHOTS, 'se-career.png') });
+  const car1 = await P.evaluate(() => ({ st: JSON.parse(localStorage.getItem('se-st-3-1-1')), cnt: document.getElementById('se-count').textContent, sum: document.getElementById('se-sum').textContent, val: document.getElementById('se-career').value }));
+  check('Enter(칸 벗어남) → 학생 상태에 저장(메모 그대로), 편집 칸·합친 바이트 한도 = 1,500 − 희망 분야', car1.st.career === '데이터 과학자' && car1.st.memo === '진로독서 줄이고, 큐리어톤' && car1.val === '데이터 과학자' &&
+    car1.cnt.includes('/ ' + plim + '바이트(진로 희망 분야 ' + cb + '바이트 뺌)') && car1.sum.includes('/ ' + plim + '바이트'), car1);
+  await P.evaluate((n) => { seSet(seFinKey(1, 'p'), '가'.repeat(n)); seRenderAll(); }, Math.floor((1500 - cb) / 3) + 1);
+  const car2 = await P.evaluate(() => ({ dot: document.querySelector('#se-students .se-stu[data-num="1"] .se-dot[data-kind="p"]').className }));
+  check('희망 분야 때문에 넘는 진로 최종 → 학생 목록 진로 점 빨강', /over/.test(car2.dot), car2);
+  await P.click('#se-tabs [data-tab="final"]'); await P.click('#se-kind [data-kind="p"]'); await wait(300);
+  const car3 = await P.evaluate(() => { const td = document.querySelector('#se-final-list tbody tr[data-num="1"] td.se-txt'); return { tag: td.querySelector('.se-career-tag') && td.querySelector('.se-career-tag').textContent, b: td.nextElementSibling.textContent, over: td.nextElementSibling.classList.contains('over') }; });
+  check('③ 최종 진로: 글 위에 "희망 분야: 데이터 과학자 n바이트", 바이트 칸 한도 = 1,500 − 희망 분야, 넘음 빨강', car3.tag === '희망 분야: 데이터 과학자 ' + cb + '바이트' && car3.b.includes(' / ' + plim) && car3.over, car3);
+  await P.evaluate(() => { seSet(seFinKey(1, 'p'), ''); seSetSt(1, { career: '' }); seSetCfg({ kind: 'a', finAll: true }); seSetTab('edit'); });
+  check('희망 분야를 비우면 학생 상태에서 빠짐', await P.evaluate(() => !('career' in JSON.parse(localStorage.getItem('se-st-3-1-1')))));
   // 다음 학생·진로 전환
   await P.click('#se-edit-head button:has-text("다음")'); await wait(200);
   check('다음 ▶ → 2번', await P.evaluate(() => seSelNum === 2 && document.querySelector('#se-students .se-stu.sel').dataset.num === '2' && document.getElementById('se-draft').value === ''));
@@ -507,7 +543,7 @@ handleDb = async function(pageInfo, req) {
       check('엑셀 내려받기: 자율 입력·진로 입력 시트 따로(1행 번호·이름·영역 이름) + 행발 관찰 + 최종(번호·이름·자율·바이트·진로·바이트·행발·바이트)', /^자율진로행발_3-1_\d{4}-\d{2}-\d{2}\.xlsx$/.test(got.name) && xb.SheetNames.join() === '자율 입력,진로 입력,행발 관찰,최종' &&
         sa[0].join() === '번호,이름,1인 1역할,자치 활동,좌우명' && sa[1][0] === 1 && sa[1][1] === '가나다' && sa[1][2] === '교실 문단속을 맡아 성실히 수행함.' && sa[1][4] === '엑셀 1번 좌우명' &&
         sp[0].join() === '번호,이름,진로 독서,큐리어톤' && sp[1][3] === '엑셀 1번 큐리어톤' && sa.length === 6 && sp.length === 6 &&
-        ff[0].join() === '번호,이름,자율,바이트,진로,바이트,행발,바이트' && ff[1][3] === 1503 && ff[1][4] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, sheets: xb.SheetNames, a: sa.slice(0, 2), p: sp.slice(0, 2), f: ff.slice(0, 2) });
+        ff[0].join() === '번호,이름,자율,바이트,진로 희망 분야,진로,바이트,행발,바이트' && ff[1][3] === 1503 && ff[1][5] === '진로독서 프로젝트로 책을 읽고 토론함.' && ff.length === 6, { name: got.name, sheets: xb.SheetNames, a: sa.slice(0, 2), p: sp.slice(0, 2), f: ff.slice(0, 2) });
       const EJ = require(path.join(path.dirname(EXCELJS_PATH), '..'));
       const ew = new EJ.Workbook(); await ew.xlsx.load(buf);
       const ed = ew.getWorksheet('자율 입력'), ep = ew.getWorksheet('진로 입력'), ef = ew.getWorksheet('최종');
@@ -519,8 +555,8 @@ handleDb = async function(pageInfo, req) {
         h2: ef.getRow(2).height, h3: ef.getRow(3).height, landscape: ef.pageSetup.orientation, fit: ef.pageSetup.fitToWidth, active: ew.views && ew.views[0] && ew.views[0].activeTab
       };
       check('엑셀 서식: 칸 너비(영역 40·최종 70), 줄바꿈·위 맞춤, 머리 굵게·테두리', fmt.dW === 40 && fmt.pW === 40 && fmt.fW[0] === 70 && fmt.fW[1] === 10 && fmt.wrapD && fmt.wrapF && fmt.top === 'top' && fmt.bold && fmt.border, fmt);
-      check('엑셀 서식: 세 시트 모두 필터·틀 고정(번호·이름 2열·머리 1행), 열면 최종 시트', fmt.filterD && fmt.filterP && fmt.filterF && [fmt.viewF, fmt.viewD, fmt.viewP].every(v => v && v.state === 'frozen' && v.ySplit === 1 && v.xSplit === 2) && fmt.active === 3 && fmt.filterF === 'A1:H6', fmt);
-      check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|F2:F6:1500|H2:H6:900' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
+      check('엑셀 서식: 세 시트 모두 필터·틀 고정(번호·이름 2열·머리 1행), 열면 최종 시트', fmt.filterD && fmt.filterP && fmt.filterF && [fmt.viewF, fmt.viewD, fmt.viewP].every(v => v && v.state === 'frozen' && v.ySplit === 1 && v.xSplit === 2) && fmt.active === 3 && fmt.filterF === 'A1:I6', fmt);
+      check('엑셀 서식: 바이트 = 사용자 엑셀과 같은 식(LENB), 계산값 1503, 한도 넘으면 빨강(조건부 서식 1500), 긴 글 줄은 높게, A4 가로 폭 맞춤', /LENB\(C2\)/.test(fmt.formula) && fmt.result === 1503 && fmt.cf === 'D2:D6:1500|G2:G6:1500|I2:I6:900' && fmt.h2 > fmt.h3 && fmt.landscape === 'landscape' && fmt.fit === 1, fmt);
       // 내려받은 파일을 다시 가져오면 다 이미 적힌 칸이라 아무것도 안 바뀜(왕복)
       const rt = path.join(require('os').tmpdir(), 'se-roundtrip.xlsx');
       fs.writeFileSync(rt, buf);
@@ -641,6 +677,13 @@ handleDb = async function(pageInfo, req) {
   await P.click('#se-put-btn'); await wait(300);
   const f4 = await P.evaluate(() => ({ done: !!document.querySelector('#se-next .pa-next.done'), btn: (document.querySelector('#se-next .top-btn') || {}).textContent, ok: [...document.querySelectorAll('#se-tabs .pa-st-ok')].length }));
   check('다음 할 일 따라가기: ② 편집 1번 → 카드 반짝임 → 합치기 반짝임 → 최종에 넣기 반짝임 → "완료" + ①②③ ✓ + "진로로 →"', f1.tab === 'edit:1' && /se-card/.test(f1.glow) && f2 === 'se-combine-btn' && f3 === 'se-put-btn' && f4.done && f4.btn === '진로로 →' && f4.ok === 3, { f1, f2, f3, f4 });
+  const lst = await P.evaluate(async () => {
+    const l = document.getElementById('se-students'); l.scrollTop = 300; const before = l.scrollTop;
+    document.querySelector('#se-students .se-stu[data-num="20"]').click(); await new Promise(r => setTimeout(r, 200));
+    const r = { max: l.scrollHeight - l.clientHeight, before, after: document.getElementById('se-students').scrollTop, sel: seSelNum };
+    seSelectStudent(1); return r;
+  });
+  check('학생 목록에서 아래쪽 학생(20번)을 눌러도 목록 스크롤 그대로', lst.before > 0 && lst.after === lst.before && lst.sel === 20, lst);
   await P.click('#se-next .top-btn'); await wait(250);
   check('"진로로 →" → 진로로 바뀌고 다음 할 일 = 진로 문장 넣기', (await P.evaluate(() => seKind())) === 'p' && /진로<\/b> 문장을 넣으세요|진로 문장을 넣으세요/.test(await P.innerText('#se-next')));
   await P.evaluate(() => { seSetCfg({ kind: 'a' }); seRenderAll(); });
@@ -728,6 +771,7 @@ handleDb = async function(pageInfo, req) {
   // 엑셀 왕복: 행발 관찰 시트(기록 한 줄씩, 기록 없는 학생도 한 줄) → 1번 기록을 지우고 가져오면 그대로 되살아남 · 최종 행발 칸도
   if (XLSXLIB && EXCELJS_PATH) {
     const X = require(XLSXLIB);
+    await P.evaluate(() => seSetSt(1, { career: '데이터 과학자' }));
     const got = await P.evaluate(() => new Promise((res) => {
       const orig = window.fmSaveNow;
       window.fmSaveNow = async (blob, name) => { window.fmSaveNow = orig; const b = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); res({ name, b64: btoa(s) }); };
@@ -740,17 +784,18 @@ handleDb = async function(pageInfo, req) {
     const before1 = await P.evaluate(() => localStorage.getItem('se-obs-3-1-1'));
     check('엑셀 행발 관찰 시트: 머리(번호·이름·날짜·덕목·관찰 기록) + 1번 기록 3줄 + 2~5번 빈 줄 하나씩, 최종 시트 행발·바이트', ob[0].join() === '번호,이름,날짜,덕목,관찰 기록' && ob.length === 1 + 3 + 4 &&
       ob[1][0] === 1 && /^\d{4}-\d{2}-\d{2}$/.test(ob[1][2]) && ob.slice(1).some(r => r[3] === '배려' && /말이 적은 친구/.test(r[4])) && ob.slice(1).some(r => r[3] === '성실, 책임') && ob[4][0] === 2 && ob[4][4] === '' &&
-      ff[1][6] === '맡은 일을 끝까지 해내는 성실한 학생임.' && ff[1][7] === sgbBytesOf('맡은 일을 끝까지 해내는 성실한 학생임.'), { ob, f: ff[1] });
+      ff[1][7] === '맡은 일을 끝까지 해내는 성실한 학생임.' && ff[1][8] === sgbBytesOf('맡은 일을 끝까지 해내는 성실한 학생임.') &&
+      ff[1][4] === '데이터 과학자' && ff[1][6] === sgbBytesOf(ff[1][5]) + sgbBytesOf('데이터 과학자'), { ob, f: ff[1] });   // 진로 바이트 = 진로 + 희망 분야
     const rt = path.join(require('os').tmpdir(), 'se-obs-roundtrip.xlsx');
     fs.writeFileSync(rt, buf);
-    await P.evaluate(() => { localStorage.removeItem('se-obs-3-1-1'); localStorage.removeItem('se-fin-3-1-1-b'); seRenderAll(); });
+    await P.evaluate(() => { localStorage.removeItem('se-obs-3-1-1'); localStorage.removeItem('se-fin-3-1-1-b'); seSetSt(1, { career: '' }); seRenderAll(); });
     await P.setInputFiles('#se-import-input', rt); await wait(800);
     try { fs.unlinkSync(rt); } catch (e) {}
     const imMsg = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
     await P.click('#custom-alert-overlay button'); await wait(200);
-    const after1 = await P.evaluate(() => ({ obs: JSON.parse(localStorage.getItem('se-obs-3-1-1') || '[]'), fin: localStorage.getItem('se-fin-3-1-1-b') }));
+    const after1 = await P.evaluate(() => ({ obs: JSON.parse(localStorage.getItem('se-obs-3-1-1') || '[]'), fin: localStorage.getItem('se-fin-3-1-1-b'), career: seSt(1).career }));
     const strip = (l) => JSON.stringify(JSON.parse(l || '[]').map(o => [o.d, o.t, o.v]));
-    check('엑셀 가져오기: 지운 1번 관찰 기록 3개(날짜·덕목 그대로)와 행발 최종이 되살아남, 안내에 "행발 관찰 기록 3개"', strip(JSON.stringify(after1.obs)) === strip(before1) && after1.fin === '맡은 일을 끝까지 해내는 성실한 학생임.' && /행발 관찰 기록 3개/.test(imMsg), { imMsg, after1 });
+    check('엑셀 가져오기: 지운 1번 관찰 기록 3개(날짜·덕목 그대로)와 행발 최종이 되살아남, 안내에 "행발 관찰 기록 3개"', strip(JSON.stringify(after1.obs)) === strip(before1) && after1.fin === '맡은 일을 끝까지 해내는 성실한 학생임.' && /행발 관찰 기록 3개/.test(imMsg) && after1.career === '데이터 과학자' && /진로 희망 분야 1명/.test(imMsg), { imMsg, after1 });
     await P.setInputFiles('#se-import-input', (() => { fs.writeFileSync(rt, buf); return rt; })()); await wait(800);
     try { fs.unlinkSync(rt); } catch (e) {}
     const imMsg2 = await P.evaluate(() => document.getElementById('custom-alert-msg').innerText);
