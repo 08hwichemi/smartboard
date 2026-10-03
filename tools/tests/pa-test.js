@@ -376,6 +376,47 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('완성본 모아 보기: 완성 1/10, 바이트', /완성 1 \/ 10명/.test(await P.innerText('#pa-pane')) && /1,500/.test(await P.innerText('#pa-pane')));
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '5-sk-fin.png') });
+  // ===== 📊 엑셀 내려받기(백업) / 📥 가져오기 =====
+  check('위쪽 메뉴에 📥 엑셀 가져오기 · 📊 엑셀 내려받기', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export'));
+  if (ExcelJSNode && EXCELJS_PATH) {
+    await P.click('#pa-xl-export'); await P.waitForTimeout(200);
+    const opts = await P.evaluate(() => [...document.querySelectorAll('#pa-modal [data-xl]')].map(b => b.dataset.xl + (b.checked ? '1' : '0')).join());
+    check('내려받기 창: 담을 것 4개(영역별 점수·평가내용·합계·세특), 처음엔 모두 체크', opts === 'sc1,nt1,sum1,sk1', opts);
+    await P.click('#pa-modal [data-xl="sum"]');
+    check('고른 것을 기억(pa-ui xl)', (await P.evaluate(() => paUi().xl && paUi().xl.sum)) === false);
+    const [xdl] = await Promise.all([P.waitForEvent('download'), P.click('#pa-xl-go')]);
+    const xf = await xdl.path();
+    const xb = new ExcelJSNode.Workbook(); await xb.xlsx.readFile(xf);
+    const names = xb.worksheets.map(w => w.name + (w.state && w.state !== 'visible' ? '(' + w.state + ')' : ''));
+    check('파일: 영역마다 시트 + 세특 + 숨긴 _정보, 합계는 빼서 없음, 이름 = 수행평가_과목_반_날짜', names.join() === '개념 구조화,화학자료분석,세특,_정보(veryHidden)' && /^수행평가_화학Ⅱ_1반_\d{4}-\d{2}-\d{2}\.xlsx$/.test(await P.evaluate(() => window.__saveName)), [names, await P.evaluate(() => window.__saveName)]);
+    const a1 = xb.getWorksheet('개념 구조화'), hd = [1, 2, 3, 4, 5, 6, 7, 8].map(c => String(a1.getCell(1, c).value || '').replace(/\n/g, ' '));
+    check('영역 시트 머리: 반·번호·이름·최하점(2점)·세부(만점)·합계(30점)·평가내용', hd.join('|') === '반|번호|이름|최하점 (2점)|반응속도 (15점)|전기화학 (15점)|합계 (30점)|평가내용', hd);
+    const v1 = a1.views[0], dv = a1.getCell(2, 5).dataValidation, sumF = a1.getCell(2, 7).value;
+    check('서식: 틀 고정(3열·1행)·필터·머리 색, 점수 칸은 배점 목록으로 막음, 합계는 식(최하점이면 최하점)', v1.state === 'frozen' && v1.xSplit === 3 && v1.ySplit === 1 && !!a1.autoFilter &&
+      a1.getCell(1, 1).fill && a1.getCell(1, 1).fill.fgColor && dv && dv.type === 'list' && /1,2,3/.test(dv.formulae[0]) && /배점/.test(dv.error) &&
+      sumF && /IF\(D2<>"",2,IF\(COUNT\(E2:F2\)=2,SUM\(E2:F2\),""\)\)/.test(sumF.formula) && a1.getCell(2, 5).value === 15, { v1, dv, sumF });
+    const skS = xb.getWorksheet('세특'), fin1 = String(skS.getCell(2, 4).value || '');
+    check('세특 시트: 완성본·바이트 식·한도 넘으면 빨강(조건부 서식)', /결과를 정리함/.test(fin1) && /LENB\(D2\)/.test(skS.getCell(2, 5).value.formula) && skS.getCell(2, 5).value.result === sgbBytesOf(fin1) && JSON.stringify(skS.conditionalFormattings || skS.conditionalFormatting || '').includes('1500'), fin1);
+    // 가져오기: 빈 수업반에 넣으면 학생·점수·최하점·평가내용·세특이 그대로 — 배점에 없는 점수(99)는 뺌
+    const S2 = xb.getWorksheet('화학자료분석'); let sc2 = 0; for (let c = 4; c <= 8; c++) if (/점\)$/.test(String(S2.getCell(1, c).value || '').replace(/\n/g, '')) && !/^합계/.test(String(S2.getCell(1, c).value))) { sc2 = c; break; }
+    S2.getCell(11, sc2).value = 99;
+    const xf2 = path.join(require('os').tmpdir(), 'pa-backup-in.xlsx'); await xb.xlsx.writeFile(xf2);
+    const orig = await P.evaluate(() => { const sub = paSub(), cls = paCls(sub); const c = paCfg(); c.subjects.find(s => s.id === sub.id).classes.push({ id: 'zzbk', name: '9반' }); paSaveCfg(c); paSetUi({ c: 'zzbk' }); paRenderAll(); return { sid: sub.id, cid: cls.id }; });
+    await P.setInputFiles('#pa-xl-input', xf2);
+    const imsg = await readAlert(P);
+    const cmp = await P.evaluate((o) => { const sub = paSub(), same = (f) => sub.areas.every(a => f(o.cid, a) === f('zzbk', a));
+      return { ro: JSON.stringify(paRoster(o.sid, o.cid)) === JSON.stringify(paRoster(o.sid, 'zzbk')),
+        sc: same((cid, a) => { const v = paScores(o.sid, cid, a.id); return JSON.stringify(Object.keys(v).sort().map(k => [k, v[k].m || 0, Object.keys(v[k].v || {}).sort().map(x => x + '=' + v[k].v[x])])); }),
+        nt: paRoster(o.sid, o.cid).every(st => sub.areas.every(a => paGet(paNtKey(o.sid, o.cid, a.id, paSk(st))) === paGet(paNtKey(o.sid, 'zzbk', a.id, paSk(st))))),
+        sk: paRoster(o.sid, o.cid).every(st => paGet(paFinKey(o.sid, o.cid, paSk(st))) === paGet(paFinKey(o.sid, 'zzbk', paSk(st)))) }; }, orig);
+    check('📥 빈 수업반에 가져오기: 학생 10명·점수·최하점·평가내용·세특이 원래 반과 같게', cmp.ro && cmp.sc && cmp.nt && cmp.sk && /학생 10명/.test(imsg) && /세특 1명/.test(imsg) && /최하점 1명/.test(imsg), { cmp, imsg });
+    check('배점에 없는 점수(99)는 넣지 않고 알림', /배점에 없는 점수 1칸/.test(imsg), imsg);
+    await P.setInputFiles('#pa-xl-input', xf2);
+    const imsg2 = await readAlert(P);
+    check('한 번 더 가져오면 이미 적힌 칸은 그대로(0칸 채움)', /점수 0칸 · 최하점 0명 · 평가내용 0칸 · 세특 0명/.test(imsg2) && /이미 적힌 칸 \d+개는 그대로/.test(imsg2), imsg2);
+    try { fs.unlinkSync(xf2); } catch (e) {}
+    await P.evaluate((o) => { ['ro', 'sc', 'nt', 'st', 'drf', 'fin'].forEach(t => paRemoveKeys('pa-' + t + '-' + o.sid + '-zzbk')); const c = paCfg(); const s = c.subjects.find(x => x.id === o.sid); s.classes = s.classes.filter(x => x.id !== 'zzbk'); paSaveCfg(c); paSetUi({ c: o.cid, xl: null }); paRenderAll(); }, orig);
+  } else console.log('  ⚠️ exceljs가 없어 엑셀 백업 검사는 건너뜀');
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);
   const keys = Object.keys(await lsKeys(P, '^pa-'));
@@ -432,3 +473,5 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await browser.close();
   process.exit(failures ? 1 : 0);
 })();
+
+function sgbBytesOf(t) { let b = 0; for (const ch of t) { const c = ch.codePointAt(0); b += c <= 0x7F ? 1 : c <= 0x7FF ? 2 : c <= 0xFFFF ? 3 : 4; } return b; }

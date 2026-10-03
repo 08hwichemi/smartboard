@@ -657,6 +657,11 @@
     .pa-modal { position: fixed; inset: 0; z-index: 9000; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
     .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
+    .pa-xl-opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px; line-height: 1.55; }
+    .pa-xl-opt input { margin: 3px 0 0; width: auto !important; flex: none; }
+    .pa-xl-opt > span { flex: 1; text-align: left; }
+    .pa-xl-opt .se-muted { display: block; font-size: 11.5px; }
+    .pa-xl-opt.off { opacity: .5; cursor: default; }
     .pa-modal-box #pa-new-hours { width: 90px; flex: none; }
     .pa-modal-box #pa-new-name { width: auto; flex: 1; }
     .pa-tt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
@@ -3646,6 +3651,8 @@
       <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
+      <label class="top-btn" id="pa-xl-import" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 지금 수업반에 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" style="display:none;" onchange="paXlImport(this.files[0]); this.value='';"></label>
+      <button class="top-btn" id="pa-xl-export" style="font-size:11px; padding:4px 10px;" onclick="paXlOpen()" title="지금 수업반의 점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용, 담을 것은 골라요)">📊 엑셀 내려받기</button>
       <span id="pa-save-state"></span>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
       <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
@@ -14915,6 +14922,291 @@
     customAlert(lines.join('\n'));
   }
 
+
+  // ----- 📊 엑셀 내려받기 / 📥 가져오기 (백업 — 수업반 하나 = 파일 하나) -----
+  // 담을 것을 골라 내려받음(pa-ui의 xl에 기억): 영역별 점수(영역마다 시트 — 최하점·세부 점수·합계 식, 점수 칸은 배점 목록으로 막음),
+  // 평가내용(영역 시트에 칸), 합계(학생 × 영역 합계·총점·확인), 세특(완성본·바이트 식·한도 넘으면 빨강). 모양은 자율·진로 엑셀과 같게
+  // (머리 색·칸 너비·줄바꿈·테두리·틀 고정·필터·A4 가로 폭 맞춤·머리 줄 반복). 숨긴 "_정보" 시트에 영역·세부영역 id와 학생 명단을 적어 두어
+  // 가져오기가 시트·열 이름이 바뀌어도 맞춰 넣는다(없으면 이름으로). 가져오기는 빈 칸만 채우고, 배점에 없는 점수는 뺀다.
+  const PA_XL_OPTS = [
+    ['sc', '영역별 점수', '영역마다 시트 하나 — 최하점·세부 점수·합계(엑셀에서 고치면 다시 계산). 점수 칸은 배점에 있는 점수만 넣을 수 있게 막아 둬요.'],
+    ['nt', '평가내용', '영역 시트 오른쪽에 평가내용 칸'],
+    ['sum', '합계', '학생별 영역 합계·총점·확인(빈칸·오류) 한 시트'],
+    ['sk', '세특', '완성본과 바이트(한도 넘으면 빨강)']
+  ];
+  function paXlOptsGet() { const v = paUi().xl; const o = {}; PA_XL_OPTS.forEach(function(x) { o[x[0]] = !v || v[x[0]] !== false; }); return o; }
+  function paXlSheetName(name, used) {
+    let n = String(name || '영역').replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 28) || '영역';
+    if (['합계', '세특', '_정보'].indexOf(n) !== -1) n += ' 영역';
+    let out = n, i = 2;
+    while (used.indexOf(out) !== -1) out = n.slice(0, 25) + ' (' + (i++) + ')';
+    used.push(out);
+    return out;
+  }
+  function paXlOpen() {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
+    const ro = paRoster(sub.id, cls.id);
+    if (!ro.length) return customAlert('이 수업반에 학생이 없어요. ① 과목·학생에서 학생을 넣어 주세요.');
+    let ov = document.getElementById('pa-modal');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
+    const o = paXlOptsGet();
+    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📊 엑셀 내려받기 — ' + paEsc(sub.name) + ' · ' + paEsc(cls.name) + ' (' + ro.length + '명)</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+      '<div class="se-muted" style="margin-bottom:10px;">담을 것을 골라요. 받은 파일은 위 <b>📥 엑셀 가져오기</b>로 다시 넣을 수 있어요(빈 칸만 채워요).</div>' +
+      PA_XL_OPTS.map(function(x) {
+        const off = (x[0] === 'sc' || x[0] === 'nt' || x[0] === 'sum') && !sub.areas.length;
+        return '<label class="pa-xl-opt' + (off ? ' off' : '') + '"><input type="checkbox" data-xl="' + x[0] + '"' + (o[x[0]] && !off ? ' checked' : '') + (off ? ' disabled' : '') + ' onchange="paXlOptChange()">' +
+          '<span><b>' + x[1] + '</b><span class="se-muted">' + x[2] + (off ? ' (영역이 아직 없어요)' : '') + '</span></span></label>';
+      }).join('') +
+      '<div class="pa-row" style="justify-content:flex-end; margin-top:10px;"><button class="top-btn" onclick="paCloseModal()">취소</button>' +
+      '<button class="top-btn pa-primary" id="pa-xl-go" onclick="paXlExport()">📊 내려받기</button></div></div>';
+    ov.style.display = 'flex';
+    paXlOptChange(true);
+  }
+  function paXlOptChange(noSave) {
+    const boxes = [...document.querySelectorAll('#pa-modal [data-xl]')];
+    const any = boxes.some(function(b) { return b.checked; }), go = document.getElementById('pa-xl-go');
+    if (go) go.disabled = !any;
+    if (noSave === true) return;
+    const xl = Object.assign({}, paUi().xl || {});
+    boxes.forEach(function(b) { if (!b.disabled) xl[b.dataset.xl] = b.checked; });
+    paSetUi({ xl: xl });
+  }
+  async function paXlExport() {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls) return;
+    const o = {}; document.querySelectorAll('#pa-modal [data-xl]').forEach(function(b) { o[b.dataset.xl] = b.checked && !b.disabled; });
+    if (!o.sc && !o.nt && !o.sum && !o.sk) return;
+    const ro = paRoster(sub.id, cls.id);
+    try {
+      await sccLoadExcelJS();
+      const wb = new ExcelJS.Workbook();
+      const FONT = '맑은 고딕';
+      const fill = function(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; };
+      const thin = { style: 'thin', color: { argb: 'FFBFBFBF' } };
+      const box = { top: thin, left: thin, bottom: thin, right: thin };
+      const head = function(cell, v, bg) {
+        cell.value = v; cell.font = { name: FONT, size: 10, bold: true }; cell.fill = fill(bg || 'E7EEF6'); cell.border = box;
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      };
+      const body = function(cell, v, center) {
+        cell.value = v; cell.font = { name: FONT, size: 10 }; cell.border = box;
+        cell.alignment = center ? { horizontal: 'center', vertical: 'top' } : { horizontal: 'left', vertical: 'top', wrapText: true };
+      };
+      const page = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1', margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+      const lines = function(text, width) {
+        return String(text || '').split('\n').reduce(function(n, ln) {
+          let w = 0; for (const ch of ln) w += ch.charCodeAt(0) > 0x2E7F ? 2 : 1;
+          return n + Math.max(1, Math.ceil(w / Math.max(1, width - 1)));
+        }, 0);
+      };
+      const fit = function(row, cells) { row.height = Math.min(409, Math.max(18, 14.5 * Math.max.apply(null, cells.map(function(x) { return lines(x[0], x[1]); })) + 4)); };
+      const colL = function(n) { let t = ''; while (n > 0) { const m = (n - 1) % 26; t = String.fromCharCode(65 + m) + t; n = Math.floor((n - 1) / 26); } return t; };
+      const stuCols = function(sh, bg) {
+        head(sh.getCell(1, 1), '반', bg); head(sh.getCell(1, 2), '번호', bg); head(sh.getCell(1, 3), '이름', bg);
+      };
+      const stuCells = function(r, st) { body(r.getCell(1), st.c || null, true); body(r.getCell(2), st.n || null, true); body(r.getCell(3), st.name, true); };
+      const used = [], info = [];
+      const AREA_BG = ['D9EAD3', 'FCE5CD', 'DDEBF7', 'EADCF4', 'FFF2CC', 'F4CCCC'];
+      const NW = 60, last = 1 + ro.length;
+      if (o.sc || o.nt) sub.areas.forEach(function(a, ai) {
+        const bg = AREA_BG[ai % AREA_BG.length];
+        const name = paXlSheetName(a.name, used);
+        const sc = paScores(sub.id, cls.id, a.id);
+        const notes = ro.map(function(st) { return paGet(paNtKey(sub.id, cls.id, a.id, paSk(st))); });
+        const withNote = o.nt && (a.note !== false || notes.some(Boolean));
+        if (!o.sc && !withNote) return;   // 평가내용만 고른 경우 평가내용 칸이 없는 영역은 시트를 안 만든다
+        const sh = wb.addWorksheet(name, { properties: { tabColor: { argb: 'FF' + bg } }, pageSetup: page, views: [{ state: 'frozen', xSplit: 3, ySplit: 1 }] });
+        const cols = [{ width: 6 }, { width: 6 }, { width: 10 }];
+        stuCols(sh, bg);
+        let c = 4; const map = { min: 0, note: 0, sum: 0, subs: {} };
+        if (o.sc && a.min != null) { map.min = c; cols.push({ width: 8 }); head(sh.getCell(1, c), '최하점\n(' + a.min + '점)', bg); sh.getCell(1, c).note = '미제출·미응시 학생은 ○ — 합계가 최하점(' + a.min + '점)이 돼요'; c++; }
+        const s0 = c;
+        if (o.sc) a.subs.forEach(function(x) {
+          const pts = paParsePts(x.pts);
+          map.subs[c] = x.id; cols.push({ width: 12 });
+          head(sh.getCell(1, c), (x.name || '세부영역') + '\n(' + paSubMax(x) + '점)', bg);
+          sh.getCell(1, c).note = '줄 수 있는 점수: ' + (paPtsText(pts) || '없음');
+          c++;
+        });
+        const s1 = c - 1;
+        if (o.sc) { map.sum = c; cols.push({ width: 9 }); head(sh.getCell(1, c), '합계\n(' + paAreaMax(a) + '점)', bg); c++; }
+        if (withNote) { map.note = c; cols.push({ width: NW }); head(sh.getCell(1, c), '평가내용', bg); c++; }
+        sh.columns = cols;
+        sh.getRow(1).height = 32;
+        ro.forEach(function(st, i) {
+          const rn = 2 + i, r = sh.getRow(rn), k = paSk(st), rec = sc[k] || {}, v = rec.v || {};
+          stuCells(r, st);
+          if (map.min) { body(r.getCell(map.min), rec.m ? '○' : null, true); r.getCell(map.min).dataValidation = { type: 'list', allowBlank: true, formulae: ['"○"'], showErrorMessage: true, errorTitle: '최하점', error: '최하점 학생은 ○만 넣어요' }; }
+          Object.keys(map.subs).forEach(function(cc) {
+            const x = a.subs.find(function(y) { return y.id === map.subs[cc]; }), cell = r.getCell(Number(cc));
+            const val = v[x.id];
+            body(cell, val == null || val === '' ? null : Number(val), true);
+            const list = paParsePts(x.pts).slice().reverse().join(',');
+            if (list && list.length <= 250) cell.dataValidation = { type: 'list', allowBlank: true, formulae: ['"' + list + '"'], showErrorMessage: true, errorStyle: 'stop', errorTitle: '배점', error: '배점을 확인하고 다시 입력하세요 (' + paPtsText(paParsePts(x.pts)) + ')' };
+          });
+          if (map.sum) {
+            const res = paAreaResult(a, rec), n = a.subs.length;
+            const rng = colL(s0) + rn + ':' + colL(s1) + rn;
+            const f = n ? (map.min ? 'IF(' + colL(map.min) + rn + '<>"",' + a.min + ',' : '') + 'IF(COUNT(' + rng + ')=' + n + ',SUM(' + rng + '),"")' + (map.min ? ')' : '') : '""';
+            body(r.getCell(map.sum), { formula: f, result: res.done && !res.bad ? res.total : '' }, true);
+            r.getCell(map.sum).font = { name: FONT, size: 10, bold: true };
+          }
+          if (map.note) body(r.getCell(map.note), notes[i] || null);
+          fit(r, map.note ? [[notes[i], NW]] : [['', 10]]);
+        });
+        sh.autoFilter = { from: { row: 1, column: 1 }, to: { row: last, column: c - 1 } };
+        info.push(['영역', name, a.id, JSON.stringify(map)]);
+      });
+      if (o.sum && sub.areas.length) {
+        const sh = wb.addWorksheet('합계', { properties: { tabColor: { argb: 'FF1F3A5F' } }, pageSetup: page, views: [{ state: 'frozen', xSplit: 3, ySplit: 1 }] });
+        used.push('합계');
+        stuCols(sh);
+        sub.areas.forEach(function(a, i) { head(sh.getCell(1, 4 + i), a.name + '\n(' + paAreaMax(a) + '점)', AREA_BG[i % AREA_BG.length]); });
+        const tc = 4 + sub.areas.length;
+        head(sh.getCell(1, tc), '총점\n(' + paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0)) + '점)'); head(sh.getCell(1, tc + 1), '확인');
+        sh.columns = [{ width: 6 }, { width: 6 }, { width: 10 }].concat(sub.areas.map(function() { return { width: 14 }; })).concat([{ width: 10 }, { width: 36 }]);
+        sh.getRow(1).height = 32;
+        paStudentTotals(sub, cls).forEach(function(t, i) {
+          const r = sh.getRow(2 + i);
+          stuCells(r, t.st);
+          t.rs.forEach(function(x, j) { body(r.getCell(4 + j), x.done && !x.bad ? x.total : null, true); });
+          body(r.getCell(tc), t.sum, true); r.getCell(tc).font = { name: FONT, size: 10, bold: true };
+          const miss = [];
+          t.rs.forEach(function(x, j) { const nm = sub.areas[j].name; if (x.bad) miss.push(nm + ' 점수 오류'); else if (!x.done) miss.push(nm + (x.any ? ' 덜 넣음' : ' 비어 있음')); else if (x.low) miss.push(nm + ' 최하점보다 낮음'); });
+          body(r.getCell(tc + 1), miss.length ? miss.join(', ') : '✅');
+          if (miss.length) r.getCell(tc + 1).font = { name: FONT, size: 10, color: { argb: 'FFC00000' } };
+          r.height = 18;
+        });
+        sh.autoFilter = { from: { row: 1, column: 1 }, to: { row: last, column: tc + 1 } };
+      }
+      if (o.sk) {
+        const sh = wb.addWorksheet('세특', { properties: { tabColor: { argb: 'FF7C3AED' } }, pageSetup: page, views: [{ state: 'frozen', xSplit: 3, ySplit: 1 }] });
+        used.push('세특');
+        const TW = 80, lim = sub.limit;
+        stuCols(sh); head(sh.getCell(1, 4), '세특 (' + paNeisName(sub) + ')', 'EADCF4'); head(sh.getCell(1, 5), '바이트');
+        sh.getCell(1, 5).note = '한도 ' + lim + '바이트(' + Math.floor(lim / 3) + '자) — 넘으면 빨간색';
+        sh.columns = [{ width: 6 }, { width: 6 }, { width: 10 }, { width: TW }, { width: 10 }];
+        sh.getRow(1).height = 22;
+        ro.forEach(function(st, i) {
+          const rn = 2 + i, r = sh.getRow(rn), t = paGet(paFinKey(sub.id, cls.id, paSk(st)));
+          stuCells(r, st); body(r.getCell(4), t || null);
+          const x = 'D' + rn;
+          body(r.getCell(5), { formula: '(LENB(' + x + ')-LEN(' + x + '))*3+LEN(' + x + ')*2-LENB(' + x + ')', result: seBytes(t) }, true);
+          r.getCell(5).numFmt = '#,##0';
+          fit(r, [[t, TW]]);
+        });
+        sh.addConditionalFormatting({ ref: 'E2:E' + last, rules: [{ type: 'cellIs', operator: 'greaterThan', formulae: [lim], style: { font: { color: { argb: 'FFC00000' }, bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFDE2E1' } } } }] });
+        sh.autoFilter = { from: { row: 1, column: 1 }, to: { row: last, column: 5 } };
+      }
+      // 숨긴 정보 시트: 가져오기가 영역·세부영역·학생을 정확히 맞추도록
+      const inf = wb.addWorksheet('_정보', { state: 'veryHidden' });
+      inf.addRow(['smartboard-pa', 1, sub.name, cls.name]);
+      info.forEach(function(x) { inf.addRow(x); });
+      inf.addRow(['학생', JSON.stringify(ro.map(function(st) { return { g: st.g || null, c: st.c || 0, n: st.n || 0, name: st.name }; }))]);
+      const buf = await wb.xlsx.writeBuffer();
+      paCloseModal();
+      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가_' + sub.name + '_' + cls.name + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    } catch (e) {
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
+    }
+  }
+  async function paXlImport(file) {
+    if (!file) return;
+    if (paDemo) return customAlert('설명서 예시 화면에서는 가져올 수 없어요. 설명서를 닫은 뒤 가져와 주세요.');
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls) return customAlert('과목과 수업반을 먼저 만들어 주세요.');
+    let wb;
+    try { await sccLoadExcelJS(); wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer()); }
+    catch (e) { return customAlert('엑셀 파일을 읽지 못했어요(.xlsx만 돼요).' + (e && e.message ? '\n(' + e.message + ')' : '')); }
+    const txt = function(ws, r, c) { return paCellText(ws.getCell(r, c)).trim(); };
+    // 숨긴 정보 시트
+    const infoWs = wb.getWorksheet('_정보'), infoAreas = {}; let infoRoster = null;
+    if (infoWs) for (let r = 1; r <= infoWs.rowCount; r++) {
+      const t0 = txt(infoWs, r, 1);
+      try {
+        if (t0 === '영역') infoAreas[txt(infoWs, r, 2)] = { id: txt(infoWs, r, 3), map: JSON.parse(txt(infoWs, r, 4) || '{}') };
+        if (t0 === '학생') infoRoster = JSON.parse(txt(infoWs, r, 2) || '[]');
+      } catch (e) {}
+    }
+    const headIdx = function(ws) {
+      const h = {}; for (let c = 1; c <= ws.columnCount; c++) h[c] = paNorm(txt(ws, 1, c).replace(/\(.*$/s, '').replace(/\n.*$/s, ''));
+      const find = function(re) { const k = Object.keys(h).find(function(c) { return re.test(h[c]); }); return k ? Number(k) : 0; };
+      return { h: h, ban: find(/^반$/), num: find(/^번호$/), name: find(/^(이름|성명)$/), min: find(/^최하점/), note: find(/^평가내용/), sk: find(/^세특/), sum: find(/^합계/) };
+    };
+    // 학생: 이 수업반에 학생이 없으면 파일의 명단으로 넣는다(백업을 빈 반에 되살릴 때)
+    let ro = paRoster(sub.id, cls.id), addedStu = 0;
+    if (!ro.length) {
+      let list = Array.isArray(infoRoster) ? infoRoster.filter(function(s) { return s && s.name; }) : [];
+      if (!list.length) wb.worksheets.some(function(ws) {
+        if (ws.name === '_정보') return false;
+        const H = headIdx(ws); if (!H.num || !H.name) return false;
+        for (let r = 2; r <= ws.rowCount; r++) { const n = Number(txt(ws, r, H.num)), nm = txt(ws, r, H.name); if (n && nm) list.push({ g: null, c: H.ban ? Number(txt(ws, r, H.ban)) || 0 : 0, n: n, name: nm }); }
+        return list.length > 0;
+      });
+      if (list.length) { addedStu = paMergeRoster(sub.id, cls.id, list.map(function(s) { return { g: s.g || null, c: Number(s.c) || 0, n: Number(s.n) || 0, name: String(s.name) }; })).added; ro = paRoster(sub.id, cls.id); }
+    }
+    const byKey = {}; ro.forEach(function(st) { byKey[(Number(st.c) || 0) + '-' + (Number(st.n) || 0)] = st; });
+    const findStu = function(ws, H, r) {
+      const n = Number(txt(ws, r, H.num)); if (!n) return null;
+      const c = H.ban ? Number(txt(ws, r, H.ban)) || 0 : 0;
+      return byKey[c + '-' + n] || (!H.ban ? ro.find(function(st) { return Number(st.n) === n && paNorm(st.name) === paNorm(txt(ws, r, H.name)); }) : null) || null;
+    };
+    const MIN_ON = ['○', 'o', '1', 'v', '✓', '✔', 'y', '예', '최하', '최하점'].map(paNorm);
+    let nSc = 0, nMin = 0, nNt = 0, nSk = 0, kept = 0, bad = 0; const nf = {}, skipped = [];
+    wb.worksheets.forEach(function(ws) {
+      if (ws.name === '_정보' || paNorm(ws.name) === '합계') return;
+      const H = headIdx(ws);
+      if (!H.num) { skipped.push(ws.name); return; }
+      if (H.sk && ws.name === '세특') {
+        for (let r = 2; r <= ws.rowCount; r++) {
+          const t = txt(ws, r, H.sk); if (!t) continue;
+          const st = findStu(ws, H, r); if (!st) { nf[txt(ws, r, H.ban) + '-' + txt(ws, r, H.num)] = 1; continue; }
+          const key = paFinKey(sub.id, cls.id, paSk(st));
+          if (paGet(key)) { kept++; continue; }
+          paSet(key, t.replace(/\r\n?/g, '\n')); nSk++;
+        }
+        return;
+      }
+      const inf = infoAreas[ws.name];
+      const a = (inf && sub.areas.find(function(x) { return x.id === inf.id; })) ||
+        sub.areas.find(function(x) { return paNorm(x.name) === paNorm(ws.name) || paNorm(paXlSheetName(x.name, [])) === paNorm(ws.name); });
+      if (!a) { skipped.push(ws.name); return; }
+      // 세부영역 열: 정보 시트 → 없으면 머리 이름
+      const subCols = {};
+      if (inf && inf.map && inf.map.subs) Object.keys(inf.map.subs).forEach(function(c) { if (a.subs.some(function(x) { return x.id === inf.map.subs[c]; })) subCols[c] = inf.map.subs[c]; });
+      if (!Object.keys(subCols).length) Object.keys(H.h).forEach(function(c) { const x = a.subs.find(function(y) { return H.h[c] && paNorm(y.name) === H.h[c]; }); if (x) subCols[c] = x.id; });
+      const sc = paScores(sub.id, cls.id, a.id);
+      for (let r = 2; r <= ws.rowCount; r++) {
+        if (!txt(ws, r, H.num)) continue;
+        const st = findStu(ws, H, r); if (!st) { nf[txt(ws, r, H.ban) + '-' + txt(ws, r, H.num)] = 1; continue; }
+        const k = paSk(st), rec = sc[k] || { v: {} }; rec.v = rec.v || {};
+        Object.keys(subCols).forEach(function(c) {
+          const t = txt(ws, r, Number(c)); if (t === '') return;
+          const x = a.subs.find(function(y) { return y.id === subCols[c]; });
+          if (rec.v[x.id] != null && rec.v[x.id] !== '') { kept++; return; }
+          if (!isFinite(Number(t)) || paParsePts(x.pts).indexOf(paNum(t)) === -1) { bad++; return; }
+          rec.v[x.id] = paNum(t); nSc++;
+        });
+        if (H.min && a.min != null) { const t = paNorm(txt(ws, r, H.min)); if (t && MIN_ON.indexOf(t) !== -1) { if (rec.m) kept++; else { rec.m = 1; nMin++; } } }
+        sc[k] = rec;
+        if (H.note) {
+          const t = txt(ws, r, H.note);
+          if (t) { const key = paNtKey(sub.id, cls.id, a.id, k); if (paGet(key)) kept++; else { paSet(key, t.replace(/\r\n?/g, '\n')); nNt++; } }
+        }
+      }
+      paSaveScores(sub.id, cls.id, a.id, sc);
+    });
+    paRenderAll();
+    const nfN = Object.keys(nf).length;
+    const msg = [(nSc + nMin + nNt + nSk + addedStu ? '✅ ' : '') + (addedStu ? '학생 ' + addedStu + '명, ' : '') + '점수 ' + nSc + '칸 · 최하점 ' + nMin + '명 · 평가내용 ' + nNt + '칸 · 세특 ' + nSk + '명을 채웠어요.'];
+    if (kept) msg.push('· 이미 적힌 칸 ' + kept + '개는 그대로 뒀어요(덮어쓰지 않아요).');
+    if (bad) msg.push('⚠️ 배점에 없는 점수 ' + bad + '칸은 넣지 않았어요(② 영역·배점 확인).');
+    if (nfN) msg.push('⚠️ 이 수업반에 없는 학생 ' + nfN + '명은 건너뛰었어요(반·번호로 찾아요).');
+    if (skipped.length) msg.push('⚠️ 맞는 영역이 없어 건너뛴 시트: ' + skipped.join(', ') + ' (② 영역·배점에서 영역 이름을 시트 이름과 같게)');
+    customAlert(msg.join('\n'));
+  }
+
   // ----- ⑤ 세특 -----
   function paStKey(sid, cid, k) { return 'pa-st-' + sid + '-' + cid + '-' + k; }
   function paFinKey(sid, cid, k) { return 'pa-fin-' + sid + '-' + cid + '-' + k; }
@@ -15116,6 +15408,8 @@
       desc: '넣을 영역을 체크하면 "합치면 몇 바이트"가 바로 보여요. "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 아래 편집 칸으로 들어가요.' },
     { selector: '#pa-put-btn', before: paTourTab('sk'), title: '⑤ 다듬고 완성본에 넣기',
       desc: '편집 칸에서 문장을 다듬으면 바이트와 기재하면 안 되는 표현을 바로 알려 줘요. 다 되면 📊 완성본에 넣기! 📋 복사로 나이스에 바로 붙여 넣을 수도 있어요.' },
+    { selector: '#pa-xl-export', before: paTourTab('sk'), title: '📊 엑셀 내려받기 · 📥 가져오기 (백업)',
+      desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 수업반 하나가 파일 하나이고, 영역별 점수·평가내용·합계·세특 가운데 담을 것을 골라요(필터·틀 고정·바이트 식 포함).\n📥 엑셀 가져오기로 그 파일을 다시 넣으면 빈 칸만 채워요 — 엑셀에서 점수를 미리 적어 와서 넣어도 돼요(배점에 없는 점수는 빼요).' },
     { selector: '#pa-sk-mode', before: paTourTab('sk'), title: '📊 완성본 모아 보기',
       desc: '반 전체 완성본을 바이트와 함께 한눈에 보고, 학생마다 📋로 복사해 나이스에 붙여 넣어요.\n\n수고하셨습니다! 🎉 이제 "＋ 과목"부터 시작해 보세요.' },
   ];
