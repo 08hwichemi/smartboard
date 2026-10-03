@@ -3666,9 +3666,9 @@
   <div id="pa-page-header">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
-      <div style="font-weight: 800; font-size: 16px;">수행평가</div>
+      <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
-      <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">설명서</button>
+      <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
       <button class="top-btn" id="pa-backup-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenBackup()" title="수행평가 자료(과목·학생·점수·평가내용·세특)를 JSON 파일로 받아 두거나, 그 파일로 되돌려요">백업</button>
       <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
       <span class="pa-hsep"></span>
@@ -14221,7 +14221,7 @@
   function paEmptyHtml() {
     const st = [['', '① 과목·학생', '과목을 만들고 학생을 넣어요. 내 시간표에서 고르면 한 번에.'], ['', '② 영역·배점', '영역(예: 실험 보고서)과 줄 수 있는 점수를 정해요.'],
       ['', '③ 점수 입력', '학생마다 점수를 넣어요. 엑셀에서 복사해 붙여도 돼요.'], ['', '④ 나이스 파일', '나이스에서 받은 파일에 점수를 채워 줘요. 그대로 올리면 끝!'], ['', '⑤ 세특 (선택)', '영역별 평가내용을 모아 세특을 써요.']];
-    return '<div class="pa-scroll"><div class="se-box pa-welcome"><h2>수행평가 점수를 넣고, 나이스에 올릴 파일을 만드는 곳이에요</h2>' +
+    return '<div class="pa-scroll"><div class="se-box pa-welcome"><h2>📊 수행평가 점수를 넣고, 나이스에 올릴 파일을 만드는 곳이에요</h2>' +
       '<div class="pa-w-sub">엑셀에 따로 정리하지 않아도 돼요. 아래 순서대로 하면 돼요. 시작하면 화면 위 <b>다음 할 일</b> 상자가 그때그때 무엇을 누를지 알려 드려요.</div>' +
       '<div class="pa-w-steps">' + st.map(function(x, i) { return '<div class="pa-w-step' + (i === 4 ? ' opt' : '') + '"><b>' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div>' +
       '<button class="top-btn pa-primary pa-w-go" id="pa-w-go" onclick="paAddSubject()">＋ 첫 과목 만들기</button>' +
@@ -14237,7 +14237,9 @@
     const go = function(tab, extra) { return Object.assign({ tab: tab }, extra || {}); };
     if (!sub) return { st: {}, next: go('setup', { msg: '<b>＋ 첫 과목 만들기</b>를 눌러 시작하세요. 내 시간표에서 과목을 고르면 과목·반이 한 번에 들어가요.', glow: '#pa-w-go' }) };
     const st = {}, ro = cls ? paRoster(sub.id, cls.id) : [];
-    st.setup = !!cls && ro.length > 0;
+    const emptyCls = sub.classes.filter(function(x) { return !paRoster(sub.id, x.id).length; });
+    st.setup = !!cls && !emptyCls.length;
+    st.setupCnt = sub.classes.length > 1 && emptyCls.length ? (sub.classes.length - emptyCls.length) + '/' + sub.classes.length + '반' : '';
     let areaTodo = null;
     if (!sub.areas.length) areaTodo = { msg: '<b>＋ 영역 더하기</b>를 눌러 수행평가 영역(예: 실험 보고서)을 만드세요.', glow: '#pa-pane .pa-area-new' };
     else sub.areas.some(function(a) {
@@ -14254,7 +14256,10 @@
     st.sum = st.score;
     let next;
     if (!cls) next = go('setup', { msg: '이 과목에 수업반이 없어요. 위의 <b>＋ 반</b>을 눌러 반을 만드세요.', glow: '#pa-classes .pa-add-cls', act: 'paAddClass()', btn: '＋ 반 만들기' });
-    else if (!st.setup) next = go('setup', { msg: '<b>' + paEsc(cls.name) + '</b> 학생을 넣으세요. <b>명렬표에서 고르기</b>(반 고르고 → 모두 체크 → 체크한 학생 더하기) 또는 엑셀에서 붙여 넣기.', glow: '#pa-pane .pa-add-stu' });
+    else if (!ro.length) next = go('setup', { msg: '<b>' + paEsc(cls.name) + '</b> 학생을 넣으세요. <b>명렬표에서 고르기</b>(반 고르고 → 모두 체크 → 체크한 학생 더하기) 또는 엑셀에서 붙여 넣기.' +
+      (sub.classes.length > 1 ? ' <span class="se-muted">(반 ' + sub.classes.length + '개 중 ' + (sub.classes.length - emptyCls.length) + '개 끝 · 안 쓰는 반은 "이 반 지우기")</span>' : ''), glow: '#pa-pane .pa-add-stu' });
+    else if (!st.setup) next = go('setup', { msg: '<b>' + paEsc(cls.name) + '</b> 학생은 다 넣었어요. <b>' + paEsc(emptyCls[0].name) + '</b>에도 학생을 넣으세요. <span class="se-muted">(반 ' + sub.classes.length + '개 중 ' + (sub.classes.length - emptyCls.length) + '개 끝 · 안 쓰는 반은 그 반에서 "이 반 지우기")</span>',
+      act: "paPickClass('" + emptyCls[0].id + "')", btn: paEsc(emptyCls[0].name) + '으로 →', glow: '#pa-classes [data-cid="' + emptyCls[0].id + '"]' });
     else if (!st.areas) next = go('areas', areaTodo);
     else if (!st.score) {
       const bad = rows.find(function(r) { return r.rs.some(function(x) { return x.bad; }); });
@@ -14280,7 +14285,7 @@
     paRenderSteps.next = nx;
     const tabs = document.getElementById('pa-tabs');
     if (tabs) tabs.innerHTML = Object.keys(PA_STEP_TABS).map(function(t, i) {
-      const mark = st[t] ? '<span class="pa-st-ok">✓</span>' : t === 'score' && st.scoreCnt ? '<span class="pa-cnt">' + st.scoreCnt + '</span>' : t === 'sk' ? '<span class="pa-st-opt">(선택)</span>' : '';
+      const mark = st[t] ? '<span class="pa-st-ok">✓</span>' : t === 'setup' && st.setupCnt ? '<span class="pa-cnt">' + st.setupCnt + '</span>' : t === 'score' && st.scoreCnt ? '<span class="pa-cnt">' + st.scoreCnt + '</span>' : t === 'sk' ? '<span class="pa-st-opt">(선택)</span>' : '';
       const isNext = sub && nx.tab === t && !nx.done;
       return (i ? '<span class="pa-arrow">›</span>' : '') + '<button class="top-btn' + (t === cur ? ' theme-active' : '') + (isNext ? ' pa-step-next' : '') + '" data-tab="' + t + '" onclick="paSetTab(\'' + t + '\')">' +
         PA_STEP_TABS[t] + mark + (isNext && t !== cur ? '<span class="pa-st-next">다음</span>' : '') + '</button>';
@@ -14330,7 +14335,7 @@
     const have = paCfg().subjects.map(function(x) { return paNorm(x.name); });
     const tt = paTtSubjects();
     window.__paTt = tt;
-    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>과목 더하기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+    ov.innerHTML = '<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>📚 과목 더하기</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
       '<div class="pa-sub-title">내 시간표에서 고르기 <span class="se-muted">과목 이름·시수·반이 한 번에 들어가요</span></div>' +
       (tt.length ? '<div class="pa-tt-list">' + tt.map(function(x, i) {
         const dup = have.indexOf(paNorm(x.name)) !== -1;
@@ -14374,7 +14379,7 @@
   function paOpenBackup() {
     if (paDemo) { customAlert('설명서(예시 화면) 중에는 백업할 수 없어요. 설명서를 닫고 다시 눌러 주세요.'); return; }
     const data = {}; paBackupKeys().forEach(function(k) { data[k] = localStorage.getItem(k); });
-    paModalShow('<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>수행평가 백업</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
+    paModalShow('<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>💾 수행평가 백업</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
       '<div class="se-muted" style="margin-bottom:12px; line-height:1.6;">입력한 자료는 늘 <b>내 계정에 자동 저장</b>돼요. 그래도 혹시 모르니 <b>나이스에 올리기 전·학기 끝</b>에 파일로 받아 두면 안심이에요.<br>' +
       '파일에는 과목·수업반·학생·영역·배점·점수·평가내용·세특이 모두 들어가요(학생 이름이 있으니 잘 보관하세요).</div>' +
       '<div class="pa-sub-title">지금 자료: <span class="se-muted" id="pa-bk-now">' + paEsc(paBackupSummary(data)) + '</span></div>' +
@@ -14516,7 +14521,7 @@
   }
   function paSetupHtml(sub, cls) {
     let h = '<div class="pa-scroll">';
-    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">과목</span><span class="pa-tools">' +
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">📚 과목</span><span class="pa-tools">' +
       '<button class="top-btn" onclick="paAddSubject()">＋ 과목 더하기</button><button class="top-btn" onclick="paClassesFromTt()" title="내 시간표에서 이 과목의 반(교실)을 가져와 없는 반만 더해요">시간표에서 반 가져오기</button><button class="top-btn pa-danger" onclick="paDeleteSubject()">이 과목 지우기</button></span></div>' +
       '<div class="pa-form">' +
       '<label>과목 이름<input class="lp-input" id="pa-f-name" value="' + paEsc(sub.name) + '" onchange="paEditSubject(\'name\', this.value)"></label>' +
@@ -14525,7 +14530,7 @@
       '</div><div class="se-muted">나이스 일괄등록 파일의 과목 칸: <b id="pa-neis-hint">' + paEsc(paNeisName(sub)) + '</b> (과목 이름(시수)) · 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
     if (!cls) return h + '<div class="se-box se-sbox pa-empty">수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div></div>';
     const ro = paRoster(sub.id, cls.id);
-    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">' + paEsc(cls.name) + ' 학생 <span class="pa-badge">' + ro.length + '명</span></span><span class="pa-tools">' +
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">👥 ' + paEsc(cls.name) + ' 학생 <span class="pa-badge">' + ro.length + '명</span></span><span class="pa-tools">' +
       '<button class="top-btn" onclick="paRenameClass()">반 이름</button><button class="top-btn pa-danger" onclick="paDeleteClass()">이 반 지우기</button>' +
       (ro.length ? '<button class="top-btn pa-danger" onclick="paClearRoster()">학생 모두 빼기</button>' : '') + '</span></div>';
     h += '<div class="pa-two"><div class="pa-col">';
@@ -15142,7 +15147,7 @@
     const chosen = areas.filter(function(a) { return st.sel.indexOf(a.id) !== -1 && paGet(paNtKey(sub.id, cls.id, a.id, k)).trim(); });
     const joined = chosen.map(function(a) { return paGet(paNtKey(sub.id, cls.id, a.id, k)).trim(); }).join(' ');
     const jb = seBytes(joined);
-    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">영역별 평가내용 — 넣을 것을 체크<span class="se-sum ' + (!chosen.length ? 'empty' : jb > lim ? 'over' : 'ok') + '">체크한 ' + chosen.length + '개 합치면 <b>' + paFmt(jb) + '</b> / ' + paFmt(lim) + '바이트</span></span></div>';
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">📋 영역별 평가내용 — 넣을 것을 체크<span class="se-sum ' + (!chosen.length ? 'empty' : jb > lim ? 'over' : 'ok') + '">체크한 ' + chosen.length + '개 합치면 <b>' + paFmt(jb) + '</b> / ' + paFmt(lim) + '바이트</span></span></div>';
     if (!areas.length) h += '<div class="se-muted">평가내용 칸을 쓰는 영역이 없어요(② 영역·배점에서 "평가내용 칸" 체크).</div>';
     areas.forEach(function(a) {
       const v = paGet(paNtKey(sub.id, cls.id, a.id, k)), on = st.sel.indexOf(a.id) !== -1, none = !v.trim();
@@ -15151,12 +15156,12 @@
         (none ? '' : '<div class="se-card-text">' + paEsc(v) + '</div>') + '</label>';
     });
     h += '<button class="top-btn" style="width:100%; padding:7px; font-weight:800; margin-top:4px;" onclick="paSkCombine()"' + (chosen.length ? '' : ' disabled') + '>체크한 내용을 합쳐서 편집 칸에 넣기</button></div>';
-    h += '<div class="se-box se-sbox"><div class="se-sec"><span>세특 편집 칸 — 다듬은 뒤 완성본에 넣기</span></div>' +
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span>✍️ 세특 편집 칸 — 다듬은 뒤 완성본에 넣기</span></div>' +
       '<textarea id="pa-draft" data-k="' + k + '" spellcheck="false" placeholder="합친 문장을 여기서 다듬어요. 바이트와 기재 불가 표현을 바로 점검해요." oninput="paSkDraftInput(this)" onchange="paSkDraftChange(this)" onblur="paSkDraftChange(this)">' + paEsc(paDraft(sub.id, cls.id, k)) + '</textarea>' +
       '<div class="pa-row" style="margin-top:6px;"><button class="top-btn" style="flex:1;" onclick="paSkClear()">지우기</button><button class="top-btn" id="pa-copy-btn" style="flex:1; font-weight:800;" onclick="paSkCopy()">복사</button>' +
       '<button class="top-btn pa-primary" id="pa-put-btn" style="flex:1.4;" onclick="paSkPut()">완성본에 넣기</button></div><div id="pa-put-state" class="se-muted"></div>' +
       '<div class="sgb-count" id="pa-count"></div><div class="sgb-bar" id="pa-bar"><div></div></div><div id="pa-result"></div></div>';
-    h += '<div class="se-box se-sbox"><div class="se-sec"><span>메모</span><span class="se-muted">나한테만 보이는 메모</span></div><input type="text" class="lp-input" style="width:100%; box-sizing:border-box;" value="' + paEsc(st.memo) + '" placeholder="이 학생 메모" onchange="paSkMemo(this.value)"></div>';
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span>📝 메모</span><span class="se-muted">나한테만 보이는 메모</span></div><input type="text" class="lp-input" style="width:100%; box-sizing:border-box;" value="' + paEsc(st.memo) + '" placeholder="이 학생 메모" onchange="paSkMemo(this.value)"></div>';
     return h + '</div>';
   }
   function paSkAfter() { paSkCount(); }
@@ -15276,7 +15281,7 @@
   }
   const paTourTab = function(tab, extra) { return function() { paSetUi(Object.assign({ tab: tab }, extra || {})); if (tab === 'sk') paSkSel = '1-1'; paRenderAll(); }; };
   const PA_TOUR_STEPS = [
-    { selector: '#pa-page-header', before: paTourTab('setup'), title: '수행평가에 오신 것을 환영해요!',
+    { selector: '#pa-page-header', before: paTourTab('setup'), title: '📊 수행평가에 오신 것을 환영해요!',
       desc: '수행평가 점수 입력부터 나이스 일괄등록 파일, 세특까지 한곳에서 해요. 지금 보이는 건 예시 화면이라 마음껏 둘러봐도 선생님 자료는 바뀌지 않아요.\n\n순서는 다섯 단계예요.\n① 과목·학생 → ② 영역·배점 → ③ 점수 입력 → ④ 합계·나이스 → ⑤ 세특' },
     { selector: '#pa-subjs', before: paTourTab('setup'), title: '과목',
       desc: '맡은 과목마다 단추가 하나씩 생겨요. "＋ 과목"을 누르면 내 시간표의 과목이 나와서, 누르기만 하면 과목 이름·시수·반이 한 번에 들어가요(시간표에 없으면 직접 입력).' },

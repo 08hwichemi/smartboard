@@ -249,7 +249,13 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
   // ===== ② 영역·배점 =====
-  check('학생을 넣으면 ① ✅, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  check('반 3개 중 1반만 넣으면 ① 안 끝남(1/3반) + 다음 할 일 = 2반에도 학생 + "2반으로" 단추', !/✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && /1\/3반/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) &&
+    /2반에도 학생을 넣으세요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")') && !(await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next')), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-next-class.png') });
+  await P.click('#pa-next button:has-text("2반으로")'); await P.waitForTimeout(150);
+  check('"2반으로" → 2반, 다음 할 일 = 2반 학생 넣기(반 3개 중 1개 끝)', (await P.evaluate(() => paCls(paSub()).name)) === '2반' && /2반 학생을 넣으세요[\s\S]*반 3개 중 1개 끝/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  await P.evaluate(() => { const s = paSub(); s.classes.forEach(x => { if (!paRoster(s.id, x.id).length) paMergeRoster(s.id, x.id, [{ g: 3, c: parseInt(x.name), n: 1, name: '다른반' + x.name }], false); }); paSetUi({ c: s.classes[0].id }); paRenderAll(); });
+  check('모든 반에 학생을 넣으면 ① ✓, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
   await P.click('#pa-next button:has-text("영역·배점")'); await P.waitForTimeout(150);
   check('다음 할 일 단추로 ② 탭 + "＋ 영역 더하기" 반짝임', (await P.evaluate(() => paTab())) === 'areas' && await P.evaluate(() => document.querySelector('#pa-pane .pa-area-new').classList.contains('pa-glow')));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
@@ -421,7 +427,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);
   const keys = Object.keys(await lsKeys(P, '^pa-'));
-  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 2 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
+  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 4 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
   check('서버(내 계정)로 올라감', serverVal(TB, 'pa-cfg') && keys.filter(k => k.startsWith('pa-sc-')).every(k => serverVal(TB, k)), keys.map(k => [k, !!serverVal(TB, k)]));
 
   // 다시 열면 그대로(새로고침)
