@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const html = fs.readFileSync(process.env.HTML_PATH || path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
 const T1 = '11111111-1111-1111-1111-111111111111';
@@ -25,10 +25,15 @@ function seed(teacherId, obj) {
 }
 function serverVal(teacherId, key) { const r = items.get(teacherId + '|' + key); return r ? r.value : undefined; }
 
-async function fireRealtime(teacherId) {
+// 진짜 Supabase처럼 바뀐 줄마다 신호 하나(payload.new = 줄 전체). 시각 글자 모양은 일부러 PostgREST와 다르게("… +00").
+async function fireRealtime(teacherId, rowsChanged) {
+  const payloads = (rowsChanged || [null]).map(r => r ? { eventType: 'UPDATE', new: { teacher_id: r.teacher_id, key: r.key, value: r.value, updated_at: r.updated_at.replace('T', ' ').replace('Z', '000+00') } } : {});
   for (const p of pages) {
     if (p.realtimeDown || p.page.isClosed()) continue;
-    try { await p.page.evaluate((tid) => window.__fireRealtime && window.__fireRealtime('user_data_items', tid), teacherId); } catch (e) {}
+    for (const pl of payloads) {
+      if (pl.new) p.rtBytes = (p.rtBytes || 0) + Buffer.byteLength(pl.new.value || '');
+      try { await p.page.evaluate(([tid, pl]) => window.__fireRealtime && window.__fireRealtime('user_data_items', tid, pl), [teacherId, pl]); } catch (e) {}
+    }
   }
 }
 
@@ -42,28 +47,33 @@ async function handleDb(pageInfo, req) {
   }
   if (table === 'user_data_items') {
     if (op === 'upsert') {
-      const touched = new Set();
+      const touched = new Map();
       for (const r of rows) {
         if (r.teacher_id !== pageInfo.uid) return { data: null, error: { message: 'RLS violation' } };
         const k = r.teacher_id + '|' + r.key;
         const old = items.get(k);
         if (old && old.value !== r.value) history.push({ teacher_id: r.teacher_id, key: r.key, old_value: old.value });
-        items.set(k, { teacher_id: r.teacher_id, key: r.key, value: r.value, updated_at: nowIso() });
-        touched.add(r.teacher_id);
+        const row = { teacher_id: r.teacher_id, key: r.key, value: r.value, updated_at: nowIso() };
+        items.set(k, row);
+        if (!touched.has(r.teacher_id)) touched.set(r.teacher_id, []);
+        touched.get(r.teacher_id).push(row);
       }
-      setTimeout(() => { for (const t of touched) fireRealtime(t); }, 50);
-      return { data: null, error: null };
+      setTimeout(() => { for (const [t, rs] of touched) fireRealtime(t, rs); }, 50);
+      return { data: req.ret ? rows.map(r => ({ key: r.key, updated_at: items.get(r.teacher_id + '|' + r.key).updated_at })) : null, error: null };
     }
     (pageInfo.pulls = pageInfo.pulls || []).push(filters.some(f => f.op === 'gt' && f.col === 'updated_at') ? 'inc' : 'full');
     let list = [...items.values()];
     for (const f of filters) {
       if (f.op === 'eq') list = list.filter(r => String(r[f.col]) === String(f.val));
       if (f.op === 'gt') list = list.filter(r => r[f.col] > f.val);
+      if (f.op === 'in') list = list.filter(r => f.val.indexOf(r[f.col]) !== -1);
     }
     if (pageInfo.uid) list = list.filter(r => r.teacher_id === pageInfo.uid); // RLS
     list.sort((a, b) => (a.updated_at < b.updated_at ? -1 : a.updated_at > b.updated_at ? 1 : a.key < b.key ? -1 : 1));
     if (range) list = list.slice(range[0], range[1] + 1);
-    return { data: list.map(r => ({ key: r.key, value: r.value, updated_at: r.updated_at })), error: null };
+    const withValue = !req.cols || /value/.test(req.cols);   // select('key, updated_at')면 값은 안 보냄
+    if (withValue) { pageInfo.valueBytes = (pageInfo.valueBytes || 0) + list.reduce((n, r) => n + Buffer.byteLength(r.value || ''), 0); (pageInfo.valueKeys = pageInfo.valueKeys || []).push(...list.map(r => r.key)); }
+    return { data: list.map(r => withValue ? ({ key: r.key, value: r.value, updated_at: r.updated_at }) : ({ key: r.key, updated_at: r.updated_at })), error: null };
   }
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
   return { data: null, error: null };
@@ -74,20 +84,21 @@ const mockLib = `
 (function(){
   const uid = new URLSearchParams(location.search).get('uid');
   const channels = [];
-  window.__fireRealtime = function(table, tid) {
+  window.__fireRealtime = function(table, tid, payload) {
     channels.forEach(function(ch){ ch.handlers.forEach(function(h){
       if (h.opts.table !== table) return;
       if (h.opts.filter && h.opts.filter !== 'teacher_id=eq.' + tid) return;
-      h.cb({});
+      h.cb(payload || {});
     }); });
   };
   function builder(table) {
-    const q = { table: table, op: 'select', filters: [], orders: [], range: null, rows: null, single: false, maybe: false };
+    const q = { table: table, op: 'select', filters: [], orders: [], range: null, rows: null, single: false, maybe: false, cols: null, ret: null };
     const b = {
-      select: function(){ return b; },
+      select: function(c){ if (q.op === 'select') q.cols = c || null; else q.ret = c || '*'; return b; },
       eq: function(c,v){ q.filters.push({op:'eq',col:c,val:v}); return b; },
       gt: function(c,v){ q.filters.push({op:'gt',col:c,val:v}); return b; },
-      gte: function(){ return b; }, lte: function(){ return b; }, in: function(){ return b; }, limit: function(){ return b; },
+      in: function(c,v){ q.filters.push({op:'in',col:c,val:v}); return b; },
+      gte: function(){ return b; }, lte: function(){ return b; }, limit: function(){ return b; },
       order: function(c){ q.orders.push(c); return b; },
       range: function(a,z){ q.range=[a,z]; return b; },
       single: function(){ q.single=true; return b; },
@@ -329,6 +340,24 @@ function check(label, cond, detail) {
   check('전체 받기 시각은 이 기기에만(서버로 안 올라감)', serverVal(T1, 'sync-last-full-pull') === undefined);
   await setLs(tablet, 'search-tt-1-1-s', '화면 값'); await wait(2500);
   check('다른 선생님 시간표 찾기 칸(search-tt-)은 서버로 안 올라감(화면 값)', serverVal(T1, 'search-tt-1-1-s') === undefined && !(await dirty(tablet)).includes('search-tt-1-1-s'));
+
+  console.log('\n[12] 저장할 때 받는 양(무료 전송량): 내 저장 메아리는 다시 안 받고, 다른 기기는 바뀐 값을 한 번씩만');
+  const dA = await openDevice(browser, '학교 PC', T1), dB = await openDevice(browser, '집 노트북', T1);
+  await wait(4500);   // 새로 연 기기가 처음에 올리는 것(과목 색 등)이 다 오간 뒤부터 셈
+  dA.valueBytes = 0; dB.valueBytes = 0; dA.pulls = []; dB.pulls = []; dA.valueKeys = []; dB.valueKeys = [];
+  const big = (i) => i + '번 세특 ' + '가'.repeat(1000);
+  for (let i = 1; i <= 5; i++) { await setLs(dA, 'se-fin-9-9-' + i + '-a', big(i)); await wait(2200); }   // 칸을 하나씩 채우며 저장(저장 5번)
+  await wait(1500);
+  const one = Buffer.byteLength(big(1));
+  check('저장한 기기는 제 저장 값을 다시 받지 않음(예전엔 저장마다 2분 안에 바뀐 값을 통째로 또 받음)', !dA.valueKeys.some(k => k.startsWith('se-fin-9-9-')) && dA.valueBytes < 100, { bytes: dA.valueBytes, pulls: dA.pulls, keys: dA.valueKeys });   // (새로 연 기기가 처음 올린 과목 색 16바이트 정도는 받을 수 있음)
+  check('다른 기기는 바뀐 값을 한 번씩만 받음(5칸 ≈ 5개 분량, 겹쳐 받기 없음)', dB.valueBytes > 0 && dB.valueBytes <= one * 5 + 100, { bytes: dB.valueBytes, one, pulls: dB.pulls });
+  check('다른 기기에 5칸 모두 들어옴', (await dB.page.evaluate(() => [1, 2, 3, 4, 5].map(i => localStorage.getItem('se-fin-9-9-' + i + '-a')).filter(Boolean).length)) === 5);
+  // 같은 칸을 다른 기기에서 고치면 저장한 기기에도 들어옴(시각이 달라 다시 받음)
+  dA.valueBytes = 0;
+  await setLs(dB, 'se-fin-9-9-1-a', '집에서 고친 글'); await wait(2500);
+  check('다른 기기에서 고친 칸은 받아 옴(그 칸 하나만)', await ls(dA, 'se-fin-9-9-1-a') === '집에서 고친 글' && dA.valueBytes === Buffer.byteLength('집에서 고친 글'), dA.valueBytes);
+  // 신호를 놓친 채 다시 열어도(바뀐 것만 받기) 이미 가진 값은 이름·시각만 보고 넘어감
+  check('서버 시각 글자 모양이 달라도 같은 시각으로 봄', await dA.page.evaluate(() => syncTsKey('2026-10-03T01:02:03.4Z') === syncTsKey('2026-10-03 01:02:03.400000+00') && syncTsKey('2026-10-03T01:02:03.123456+00:00') === syncTsKey('2026-10-03 01:02:03.123456+00') && syncTsKey('2026-10-03T01:02:03.1Z') !== syncTsKey('2026-10-03T01:02:03.2Z')));
 
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);

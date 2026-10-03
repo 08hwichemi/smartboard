@@ -4425,8 +4425,10 @@
     });
     try {
       for (let i = 0; i < rows.length; i += 500) {
-        const { error } = await sb.from('user_data_items').upsert(rows.slice(i, i + 500), { onConflict: 'teacher_id,key' });
+        // 서버가 매긴 시각만 돌려받아 둔다(이름·시각뿐이라 가벼움) → 곧 오는 내 저장의 실시간 신호·겹쳐 받기에서 이 값을 다시 받지 않음
+        const { data, error } = await sb.from('user_data_items').upsert(rows.slice(i, i + 500), { onConflict: 'teacher_id,key' }).select('key, updated_at');
         if (error) throw error;
+        (data || []).forEach(function(r) { if (r && r.key && r.updated_at && sent[r.key] === localStorage.getItem(r.key)) syncSeenAt[r.key] = syncTsKey(r.updated_at); });
       }
       // 올리는 동안 또 고친 항목은 목록에 남겨 두고, 올린 값 그대로인 것만 뺀다.
       const remaining = getSyncDirtyKeys().filter(function(k) {
@@ -4450,6 +4452,15 @@
   // 받은 시각 이후에 바뀐 것만 받는다(지운 항목도 value=null인 줄로 전달됨). 서버 쪽
   // 저장 순서와 커밋 순서가 살짝 어긋날 수 있어서 2분을 겹쳐서 다시 받는다 — 같은 값을
   // 또 받는 건 아무 영향이 없다. 여러 곳에서 동시에 불러도 한 번에 하나씩 차례로 돈다.
+  // 항목마다 이 기기가 가진 값의 서버 시각(이 탭이 열려 있는 동안만) — 같은 시각이면 값을 다시 받지 않는다.
+  const syncSeenAt = {};
+  // 서버 시각 글자 모양을 맞춤("2026-10-03T01:02:03.4+00:00" · "2026-10-03 01:02:03.400000+00" → 같은 값)
+  function syncTsKey(s) {
+    const m = /^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d):(\d\d)(?:\.(\d+))?\s*(Z|[+-]\d\d(?::?\d\d)?)?$/.exec(String(s || '').trim());
+    if (!m) return String(s);
+    const off = !m[8] || m[8] === 'Z' ? '+0000' : (m[8].replace(':', '') + '00').slice(0, 5);
+    return m.slice(1, 7).join('') + ((m[7] || '') + '000000').slice(0, 6) + off;
+  }
   let syncNeedsFullPull = false;
   let syncPullChain = Promise.resolve(false);
   let syncPullRetryTimer = null;
@@ -4463,15 +4474,43 @@
     full = full || syncNeedsFullPull;
     const cursor = localStorage.getItem(SYNC_CURSOR_KEY);
     const startedAt = Date.now();
-    const rows = [];
+    const rows = [], heads = [];
     try {
-      for (let from = 0; ; from += 1000) {
-        let q = sb.from('user_data_items').select('key, value, updated_at').eq('teacher_id', teacherId);
-        if (!full && cursor) q = q.gt('updated_at', new Date(new Date(cursor).getTime() - 2 * 60 * 1000).toISOString());
-        const { data, error } = await q.order('updated_at').order('key').range(from, from + 999);
-        if (error) throw error;
-        Array.prototype.push.apply(rows, data || []);
-        if (!data || data.length < 1000) break;
+      if (!full && cursor) {
+        // 바뀐 것만 받기: ① 2분 겹친 구간에서 바뀐 항목의 이름·시각만(가벼움) → ② 이 기기가 아직 못 본 것만 값까지.
+        // (예전엔 저장할 때마다 내 저장 신호를 받고 2분 안에 바뀐 값을 통째로 또 받아서, 칸을 이어 채우면 받는 양이 올린 양의 수십 배였음)
+        const since = new Date(new Date(cursor).getTime() - 2 * 60 * 1000).toISOString();
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await sb.from('user_data_items').select('key, updated_at').eq('teacher_id', teacherId).gt('updated_at', since).order('updated_at').order('key').range(from, from + 999);
+          if (error) throw error;
+          Array.prototype.push.apply(heads, data || []);
+          if (!data || data.length < 1000) break;
+        }
+        const need = [];
+        heads.forEach(function(h) { if (syncSeenAt[h.key] !== syncTsKey(h.updated_at) && need.indexOf(h.key) === -1) need.push(h.key); });
+        try {
+          for (let i = 0; i < need.length; i += 40) {   // 주소가 너무 길어지지 않게 40개씩
+            const { data, error } = await sb.from('user_data_items').select('key, value, updated_at').eq('teacher_id', teacherId).gt('updated_at', since).in('key', need.slice(i, i + 40));
+            if (error) throw error;
+            Array.prototype.push.apply(rows, data || []);
+          }
+        } catch (e) {
+          // 이름으로 고르기가 안 되면(이름에 특수 문자 등) 예전처럼 그 구간 값을 통째로 — 받기가 멈추지 않게
+          rows.length = 0;
+          for (let from = 0; ; from += 1000) {
+            const { data, error } = await sb.from('user_data_items').select('key, value, updated_at').eq('teacher_id', teacherId).gt('updated_at', since).order('updated_at').order('key').range(from, from + 999);
+            if (error) throw error;
+            Array.prototype.push.apply(rows, data || []);
+            if (!data || data.length < 1000) break;
+          }
+        }
+      } else {
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await sb.from('user_data_items').select('key, value, updated_at').eq('teacher_id', teacherId).order('updated_at').order('key').range(from, from + 999);
+          if (error) throw error;
+          Array.prototype.push.apply(rows, data || []);
+          if (!data || data.length < 1000) break;
+        }
       }
     } catch (e) {
       if (full) syncNeedsFullPull = true;
@@ -4498,7 +4537,7 @@
     }
     let newest = cursor ? new Date(cursor).getTime() : 0;
     let newestStr = cursor;
-    rows.forEach(function(r) {
+    heads.concat(rows).forEach(function(r) {
       const t = new Date(r.updated_at).getTime();
       if (t > newest) { newest = t; newestStr = r.updated_at; }
     });
@@ -4530,13 +4569,14 @@
     }
     const failedKeys = [];
     rows.forEach(function(r) {
+      if (r.updated_at) syncSeenAt[r.key] = syncTsKey(r.updated_at);   // 이 기기에서 고친 게 남아 있어 안 넣은 줄도 — 곧 내 값이 올라가 더 새것이 됨
       if (keepLocal(r.key)) return;
       const cur = localStorage.getItem(r.key);
       if (r.value === null || r.value === undefined) {
         if (cur !== null) { rawRemoveItem(r.key); changed = true; syncChangedKeys[r.key] = true; }
       } else if (cur !== r.value) {
         try { rawSetItem(r.key, r.value); changed = true; syncChangedKeys[r.key] = true; }
-        catch (e) { failedKeys.push(r.key); }
+        catch (e) { failedKeys.push(r.key); delete syncSeenAt[r.key]; }
       }
     });
     if (failedKeys.length > 0) {
@@ -4551,11 +4591,21 @@
   // (SUBSCRIBED) 그 사이 놓친 것도 받는다. 그래도 신호를 놓칠 수 있는 경우를 대비해,
   // 화면이 보이는 동안에는 30분마다 한 번 바뀐 게 있는지 가볍게 확인한다(요청마다 서버 로그가
   // 쌓이고 무료 요금제의 로그 한도가 있어서, 실시간 신호·화면 복귀·재연결로 이미 챙기는 걸 자주 반복하지 않음).
+  // 실시간 신호(payload.new = 바뀐 줄)가 내가 방금 올린 것·이미 받은 것뿐이면 아무것도 받지 않는다(제 저장 메아리).
+  // 줄 정보가 없는 신호(다시 연결됨·지움 등)나 모르는 줄이 하나라도 있으면 바뀐 것만 받기.
   let syncSubscribed = false;
   let syncPullDebounceTimer = null;
-  function scheduleIncrementalPull() {
+  let syncPendingSignals = [];
+  function scheduleIncrementalPull(payload) {
+    const r = payload && payload.new;
+    syncPendingSignals.push(r && r.key && r.updated_at ? { key: r.key, at: syncTsKey(r.updated_at) } : null);
     if (syncPullDebounceTimer) clearTimeout(syncPullDebounceTimer);
-    syncPullDebounceTimer = setTimeout(function() { syncPullDebounceTimer = null; pullRemoteChanges(false); }, 400);
+    syncPullDebounceTimer = setTimeout(function() {
+      syncPullDebounceTimer = null;
+      const sig = syncPendingSignals; syncPendingSignals = [];
+      if (sig.length && sig.every(function(x) { return x && syncSeenAt[x.key] === x.at; })) return;
+      pullRemoteChanges(false);
+    }, 400);
   }
   function subscribeToOwnDataChanges(teacherId) {
     if (syncSubscribed) return;
@@ -4566,7 +4616,7 @@
           event: '*', schema: 'public', table: 'user_data_items', filter: 'teacher_id=eq.' + teacherId
         }, scheduleIncrementalPull)
         .subscribe(function(status) {
-          if (status === 'SUBSCRIBED') scheduleIncrementalPull();
+          if (status === 'SUBSCRIBED') scheduleIncrementalPull(null);
         });
     } catch (e) {
       // 실시간 구독이 안 되더라도 저장 자체와 아래 주기 확인은 그대로 된다.
