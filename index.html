@@ -508,6 +508,15 @@
     .se-addbtn { width: 100%; border: 1.5px dashed var(--accent-color); background: var(--accent-soft); color: var(--accent-color); border-radius: 8px; padding: 5px 4px; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
     .se-addbtn:hover { filter: brightness(0.97); }
     .se-src-table td.se-addcell { border-left: 1.5px dashed var(--border-color); }
+    /* 처음(이 반에 받은 문장이 하나도 없을 때) 자료 입력 탭 위에 뜨는 단계 안내 — 수행평가 첫 화면처럼 ①→②→③ */
+    #se-start .se-start { padding: 10px 14px; margin-bottom: 8px; flex: 0 0 auto; }
+    .se-start-title { font-weight: 800; font-size: 13.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .se-start-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .se-start-step { border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.6; color: var(--text-sub); }
+    .se-start-step.now { border-color: var(--accent-color); background: var(--accent-soft); color: var(--text-main); }
+    .se-start-step b.n { color: var(--accent-color); font-size: 13px; }
+    .se-start-step .top-btn { font-size: 11px; padding: 3px 8px; margin: 4px 4px 0 0; }
+    @media (max-width: 760px) { .se-start-steps { grid-template-columns: 1fr; } }
     .se-noarea { color: var(--text-sub); font-size: 12px; line-height: 1.7; padding: 14px 10px; text-align: center; white-space: normal; }
     .se-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; background: var(--card-bg); min-width: 100%; }
     .se-table th { position: sticky; top: 0; background: var(--tt-bg); color: var(--text-sub); font-size: 11.5px; font-weight: 800; padding: 6px 6px; border-bottom: 2px solid var(--border-color); text-align: center; white-space: nowrap; z-index: 2; }
@@ -3592,9 +3601,9 @@
     <div id="se-main">
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:0 0 auto;">
         <div class="top-btn-cluster" id="se-tabs">
-          <button class="top-btn theme-active" data-tab="src" onclick="seSetTab('src')">📥 자료 입력</button>
-          <button class="top-btn" data-tab="edit" onclick="seSetTab('edit')">✍️ 편집</button>
-          <button class="top-btn" data-tab="final" onclick="seSetTab('final')">📊 최종</button>
+          <button class="top-btn theme-active" data-tab="src" onclick="seSetTab('src')">① 자료 입력</button>
+          <button class="top-btn" data-tab="edit" onclick="seSetTab('edit')">② 편집</button>
+          <button class="top-btn" data-tab="final" onclick="seSetTab('final')">③ 최종</button>
         </div>
         <span class="se-muted">🔒 <b>내 계정에만</b> 저장(다른 선생님·관리자 안 보임) · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
       </div>
@@ -3605,6 +3614,7 @@
       </div>
 
       <div id="se-pane-src" class="se-pane">
+        <div id="se-start"></div>
         <div id="se-src-msg" class="se-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div class="se-scroll se-box" id="se-src-list"></div>
       </div>
@@ -13272,7 +13282,7 @@
     { selector: '#se-grade', before: seTourTab('src'), title: '학년·반 고르기',
       desc: '자료는 반마다 따로예요. 담임 선생님은 담임 반으로 시작해요. 옆에 그 학년의 바이트 한도(입시 연도 기준, 한글 1자 = 3바이트)가 나와요.' },
     { selector: '#se-tabs', before: seTourTab('src'), title: '세 탭 = 세 단계',
-      desc: '📥 자료 입력 → ✍️ 편집 → 📊 최종 순서로 왼쪽부터 차례로 쓰면 돼요. 탭을 바꿔도 위쪽 줄은 그대로 있고 아래 내용만 바뀌어요.' },
+      desc: '① 자료 입력 → ② 편집 → ③ 최종 순서로 왼쪽부터 차례로 쓰면 돼요. 탭을 바꿔도 위쪽 줄은 그대로 있고 아래 내용만 바뀌어요.' },
     { selector: '#se-kind', before: seTourTab('src'), title: '자율 / 진로 고르기',
       desc: '자율과 진로는 영역도 문장도 따로예요. 이 버튼은 세 탭 모두 같은 자리에 있어요. 최종 탭에선 "전체"를 누르면 자율·진로를 나란히 볼 수 있어요.' },
     { selector: '#se-src-list', before: seTourTab('src'), title: '📥 자료 입력 — 넣는 방법은 두 가지',
@@ -13379,11 +13389,24 @@
   }
 
   // ----- ① 자료 입력 -----
+  // 이 반에 받은 문장이 하나도 없으면(처음) 표 위에 ①→②→③ 단계 안내. 문장이 하나라도 들어오면 사라진다.
+  function seStartHtml() {
+    if (!seRoster.length || seClassKeys().some(function(k) { return k.indexOf('se-src-') === 0; })) return '';
+    return '<div class="se-box se-start"><div class="se-start-title">🗂 이렇게 세 단계면 돼요' +
+      '<button class="top-btn tour-btn" style="font-size:11px; padding:3px 9px;" onclick="seOpenTour()">📖 예시 화면으로 설명서 보기</button></div><div class="se-start-steps">' +
+      '<div class="se-start-step now"><b class="n">① 자료 입력</b> ← 지금 여기<br>표 머리 <b>＋ 영역 추가</b>로 부서 활동마다 열을 만들고, 받은 문장을 넣어요.<br>' +
+        '<button class="top-btn" onclick="seExportExcel()">📊 엑셀 양식 내려받기</button><button class="top-btn" onclick="document.getElementById(\'se-import-input\').click()">📥 채운 엑셀 가져오기</button>' +
+        '<br>또는 칸에 직접 적거나 엑셀에서 여러 칸을 복사해 붙여 넣기</div>' +
+      '<div class="se-start-step"><b class="n">② 편집</b><br>학생마다 넣을 문장을 체크해 합치고, 바이트에 맞게 다듬은 뒤 <b>📊 최종에 넣기</b></div>' +
+      '<div class="se-start-step"><b class="n">③ 최종</b><br>완성본을 확인하고 <b>📋 복사</b>해서 나이스에 붙여 넣기</div>' +
+      '</div></div>';
+  }
   function seRenderSrc() {
     const kind = seKind();
     const areas = seAreas(kind);
     const list = document.getElementById('se-src-list');
     list.style.width = '';
+    document.getElementById('se-start').innerHTML = seStartHtml();
     if (!seRoster.length) { list.innerHTML = seNoStudentsHtml(); return; }
     // 영역이 3개보다 적으면 3개일 때 폭으로(한 칸이 화면 끝까지 늘어나지 않게), 많으면 화면을 나눠 쓰다 좁아지면 옆으로 스크롤.
     // 흰 상자도 표 폭에 맞춰 줄인다(상자만 화면 끝까지 남으면 그리다 만 것처럼 보임).
@@ -13418,6 +13441,17 @@
     const v = ta.value.replace(/\r\n?/g, '\n');
     if (seGet(ta.dataset.key) === v) { if (!seTypingKey && seSaveStateIs('typing')) seSaveState(''); return; }
     seSet(ta.dataset.key, v);
+    if (document.querySelector('#se-start .se-start')) seStartRefreshSoon();
+  }
+  // 첫 문장이 들어오면 단계 안내를 치운다. 칸을 벗어난 게 표 머리 단추를 누르려던 것이면 안내가 사라지며 표가 위로 올라가
+  // 클릭이 빗나가므로(수행평가에서 고친 것과 같은 종류) 마우스가 눌린 동안은 기다렸다 치운다.
+  function seStartRefreshSoon() {
+    clearTimeout(seStartRefreshSoon._t);
+    seStartRefreshSoon._t = setTimeout(function run() {
+      if (paPtrDown) { seStartRefreshSoon._t = setTimeout(run, 30); return; }
+      const el = document.getElementById('se-start');
+      if (el && seTab() === 'src') el.innerHTML = seStartHtml();
+    }, 0);
   }
   // 엑셀에서 복사한 여러 칸(탭·줄바꿈, 줄바꿈이 든 칸은 "…"로 싸임)을 한 칸에 붙여 넣으면 그 칸부터 아래·오른쪽으로 채운다.
   function seParseTsv(text) {
@@ -13521,7 +13555,7 @@
     html += '<div class="se-box se-sbox" id="se-box-src"><div class="se-sec"><span class="se-sec-title">📥 받은 내용 — 넣을 것을 체크' +
       '<span id="se-sum" class="se-sum ' + (!chosen.length ? 'empty' : (jOver ? 'over' : 'ok')) + '">체크한 ' + chosen.length + '개 합치면 <b>' + seFmt(jb) + '</b> / ' + seFmt(lim) + '바이트' +
       (chosen.length ? (jOver ? ' · <b>' + seFmt(jb - lim) + ' 넘음</b>' : ' · ' + seFmt(lim - jb) + ' 남음') : '') + '</span></span></div>';
-    if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "📥 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
+    if (!areas.length) html += '<div class="se-muted" style="padding:6px 0 10px;">' + SE_KIND_LABEL[kind] + ' 영역이 아직 없어요. "① 자료 입력" 탭에서 영역을 만들고 내용을 넣으세요.</div>';
     areas.forEach(function(a) {
       const v = seGet(seSrcKey(s.num, a.id));
       const on = sel.indexOf(a.id) !== -1, none = !v.trim();

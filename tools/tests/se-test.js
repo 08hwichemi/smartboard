@@ -256,6 +256,9 @@ handleDb = async function(pageInfo, req) {
   const rows = await P.evaluate(() => [...document.querySelectorAll('#se-src-list tbody tr')].map(r => r.dataset.num));
   check('자료 입력 표에 명렬표 학생 5명', rows.join(',') === '1,2,3,4,5', rows);
   check('기본 영역: 자율 "1인 1역할" 1개 (아직 저장 안 됨)', (await areas('a')).map(a => a.name).join() === '1인 1역할' && (await ls(pc, 'se-areas-3-1')) === null);
+  check('탭 = 단계 번호(수행평가처럼): ① 자료 입력 · ② 편집 · ③ 최종', (await P.evaluate(() => [...document.querySelectorAll('#se-tabs .top-btn')].map(b => b.textContent.trim()).join())) === '① 자료 입력,② 편집,③ 최종');
+  const start0 = await P.evaluate(() => { const b = document.querySelector('#se-start .se-start'); return b && { steps: [...b.querySelectorAll('.se-start-step')].map(x => (x.classList.contains('now') ? '*' : '') + x.querySelector('b.n').textContent).join(), btns: [...b.querySelectorAll('button')].map(x => x.textContent).join('|') }; });
+  check('처음(받은 문장 없음): 표 위에 ①→②→③ 단계 안내, 지금 단계 = ①, 엑셀 양식·가져오기·설명서 단추', start0 && start0.steps === '*① 자료 입력,② 편집,③ 최종' && /엑셀 양식 내려받기/.test(start0.btns) && /가져오기/.test(start0.btns) && /설명서/.test(start0.btns), start0);
 
   // ---- 고정된 머리: 자율/진로 버튼은 세 탭 모두 같은 자리 ----
   const kindPos = async () => P.evaluate(() => { const r = document.querySelector('#se-kind [data-kind="a"]').getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top); });
@@ -297,6 +300,7 @@ handleDb = async function(pageInfo, req) {
   const saved = await P.evaluate(() => localStorage.getItem('se-src-3-1-1-' + seAreas('a')[0].id));
   check('칸을 벗어나면 저장(학생·영역 단위 항목) → 서버에 그 항목만 올라감', saved === '교실 문단속을 맡아 성실히 수행함.' && serverVal(T1, 'se-src-3-1-1-' + a1) === saved && upserts.length === 1 && upserts[0].length === 1 && upserts[0][0] === 'se-src-3-1-1-' + a1, { saved, upserts });
   check('저장 표시', /저장됨/.test(await P.evaluate(() => document.getElementById('se-save-state').textContent)));
+  check('첫 문장이 들어오면 단계 안내는 사라지고, Tab으로 옮긴 칸에 커서 그대로', await P.evaluate(() => !document.querySelector('#se-start .se-start') && document.activeElement && document.activeElement.classList.contains('se-cell')));
 
   // ---- 여러 칸 붙여 넣기(엑셀 복사: 탭·줄바꿈, 줄바꿈 든 칸은 따옴표) ----
   const paste = (sel, text) => P.evaluate(([sel, text]) => {
@@ -593,6 +597,13 @@ handleDb = async function(pageInfo, req) {
   await P.selectOption('#se-class', '2'); await wait(500);
   const cls2 = await P.evaluate(() => ({ n: seRoster.length, areas: seAreas('a').map(a => a.name).join(), fin: localStorage.getItem('se-fin-3-2-1-a') }));
   check('3-2로 바꾸면 그 반 명렬표 28명·기본 영역·빈 자료', cls2.n === 28 && cls2.areas === '1인 1역할' && cls2.fin === null, cls2);
+  // 빈 반엔 단계 안내 — 첫 칸을 적고 바로 표 머리 단추를 눌러도(안내가 사라지며 표가 올라가도) 단추가 먹힘
+  check('빈 반(3-2)엔 단계 안내', await P.isVisible('#se-start .se-start'));
+  await P.click('#se-src-list tr[data-num="1"] textarea.se-cell'); await P.keyboard.type('첫 문장');
+  await P.click('#se-add-area'); await wait(300);
+  const promptUp = await P.isVisible('#custom-prompt-overlay');
+  if (promptUp) { await P.click('#custom-prompt-overlay button:has-text("취소")'); await wait(200); }
+  check('첫 칸 적고 바로 "＋ 영역 추가" → 창이 뜸(클릭 안 빗나감) + 안내 사라짐 + 글 저장', promptUp && !(await P.isVisible('#se-start .se-start')) && await P.evaluate(() => localStorage.getItem('se-src-3-2-1-' + seAreas('a')[0].id) === '첫 문장'));
   await P.selectOption('#se-class', '1'); await wait(500);
   const before = await P.evaluate(() => Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg').length);
   await P.click('#se-page-header button:has-text("초기화")'); await wait(200);
@@ -602,8 +613,8 @@ handleDb = async function(pageInfo, req) {
   await P.click('#se-page-header button:has-text("초기화")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(2500);
-  const afterReset = await P.evaluate(() => ({ n: Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg').length, rows: seRoster.length }));
-  check('초기화: 이 반 자료 모두 지움(서버에도 전달), 학생 목록은 그대로', afterReset.n === 0 && afterReset.rows === 5 && serverVal(T1, 'se-fin-3-1-1-a') === null, afterReset);
+  const afterReset = await P.evaluate(() => ({ n: Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg' && k.indexOf('-3-2-') === -1).length, rows: seRoster.length, other: localStorage.getItem('se-src-3-2-1-' + 'ad0') }));
+  check('초기화: 이 반 자료 모두 지움(서버에도 전달, 다른 반 3-2 것은 그대로), 학생 목록은 그대로', afterReset.n === 0 && afterReset.other === '첫 문장' && afterReset.rows === 5 && serverVal(T1, 'se-fin-3-1-1-a') === null, afterReset);
 
   const errs = [...pc.errors, ...pc2.errors, ...t2.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
