@@ -3849,7 +3849,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-03.1';
+  var BUILD_ID = '2026-10-03.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -14044,6 +14044,7 @@
   }
   function fmRender() {
     if (!fmIsOpen()) return;
+    const zt = document.getElementById('fm-zoom-text'); if (zt) zt.textContent = Math.round(fmZoomGet() * 100) + '%'; // 양식마다 따로 기억한 배율(빈 미리보기여도)
     if (fmCfg().kind === 'ws') { wsRender(); return; }
     if (fmCfg().kind === 'pe') { peRender(); return; }
     if (fmCfg().kind === 'bs') { bsRender(); return; }
@@ -14083,23 +14084,34 @@
     return '';
   }
   // 미리보기 확대/축소: 100% = 폭에 맞춤(예전 그대로), 거기에 배율을 곱한다. 화면에서 보기만 바뀜(인쇄는 zoom 1).
+  // 배율은 양식(시정표·명렬표 수합·학습지·수행평가)마다 따로, 개인 자료 'fm-zoom' {kind: 배율}로 기억(새로고침·다른 기기에서도).
   const FM_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
-  let fmZoomLevel = 1;
+  const FM_ZOOM_KEY = 'fm-zoom';
+  function fmZoomAll() {
+    let v = {};
+    try { v = JSON.parse(localStorage.getItem(FM_ZOOM_KEY) || '{}') || {}; } catch (e) {}
+    return v && typeof v === 'object' ? v : {};
+  }
+  function fmZoomGet() { const v = fmZoomAll()[fmCfg().kind]; return FM_ZOOMS.indexOf(v) >= 0 ? v : 1; }
   function fmZoomBy(dir) {
-    const i = FM_ZOOMS.indexOf(fmZoomLevel);
-    fmZoomLevel = dir === 0 ? 1 : FM_ZOOMS[Math.max(0, Math.min(FM_ZOOMS.length - 1, (i < 0 ? 2 : i) + dir))];
+    const cur = fmZoomGet(), i = FM_ZOOMS.indexOf(cur);
+    const next = dir === 0 ? 1 : FM_ZOOMS[Math.max(0, Math.min(FM_ZOOMS.length - 1, i + dir))];
+    const all = fmZoomAll();
+    if (next === 1) delete all[fmCfg().kind]; else all[fmCfg().kind] = next;
+    try { localStorage.setItem(FM_ZOOM_KEY, JSON.stringify(all)); } catch (e) {}
+    scheduleBackupWrite();
     const sc = document.getElementById('fm-prev-scroll'), before = sc.scrollHeight ? sc.scrollTop / sc.scrollHeight : 0;
     fmFitPreview();
     sc.scrollTop = before * sc.scrollHeight; // 보던 자리 근처 그대로
   }
   function fmFitPreview() {
     const box = document.getElementById('fm-pages'), sc = document.getElementById('fm-prev-scroll');
-    const t = document.getElementById('fm-zoom-text');
-    if (t) t.textContent = Math.round(fmZoomLevel * 100) + '%';
+    const zl = fmZoomGet(), t = document.getElementById('fm-zoom-text');
+    if (t) t.textContent = Math.round(zl * 100) + '%';
     const sheet = box.querySelector('.fm-sheet');
     if (!sheet) return;
     box.style.zoom = '';
-    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth) * fmZoomLevel;
+    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth) * zl;
     box.style.zoom = z > 0 ? String(z) : '';
     box.style.setProperty('--fmz', z > 0 ? String(z) : '1');
   }

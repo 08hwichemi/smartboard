@@ -795,19 +795,25 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       guides.push(await W.evaluate((k) => { const e = document.getElementById(k === 'roster' ? 'fm-guide' : k + '-guide'); return { k, h: e.offsetHeight, fit: e.scrollWidth <= e.clientWidth + 1, title: !!e.title }; }, k));
     }
     check('양식 위 안내는 늘 한 줄(1600px 화면에선 잘리지도 않음), 마우스를 올리면 전체 글', guides.every(g => g.h > 0 && g.h < 24 && g.fit && g.title), guides);
-    // 🔍 미리보기 확대/축소: 100% = 폭에 맞춤, + 누르면 커지고 옆으로 스크롤(왼쪽이 잘리지 않음), 숫자 누르면 100%, 탭을 바꿔도 배율 유지
+    // 🔍 미리보기 확대/축소: 100% = 폭에 맞춤, + 누르면 커지고 옆으로 스크롤(왼쪽이 잘리지 않음), 숫자 누르면 100%, 배율은 양식마다 따로 기억(개인 자료 fm-zoom)
     const zst = () => W.evaluate(() => { const sc = document.getElementById('fm-prev-scroll'), sh = document.querySelector('#fm-pages .fm-sheet'), r = sh.getBoundingClientRect(), sr = sc.getBoundingClientRect();
       return { t: document.getElementById('fm-zoom-text').textContent, w: r.width, left: r.left - sr.left, sw: sc.scrollWidth, cw: sc.clientWidth }; });
+    const zplus = async (n, sel) => { for (let i = 0; i < n; i++) await W.click('#fm-zoom-group button:' + sel); };
     const z0 = await zst();
-    await W.click('#fm-zoom-group button:last-of-type'); await W.click('#fm-zoom-group button:last-of-type'); await W.click('#fm-zoom-group button:last-of-type');
-    const z1 = await zst();
-    await W.click('#fm-kind-switch [data-kind="bs"]'); await W.waitForTimeout(250); const z2 = await zst();
-    await W.click('#fm-zoom-text'); const z3 = await zst();
-    await W.click('#fm-zoom-group button:first-of-type'); await W.click('#fm-zoom-group button:first-of-type'); const z4 = await zst();
-    await W.click('#fm-zoom-text'); await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(250);
-    check('🔍 미리보기 확대/축소: 100% = 폭에 맞춤, 200%면 두 배·옆으로 스크롤(왼쪽 안 잘림), 탭 바꿔도 유지, 숫자 누르면 100%, 50%는 절반',
-      z0.t === '100%' && z0.sw <= z0.cw && z1.t === '200%' && Math.abs(z1.w - z0.w * 2) < 3 && z1.sw > z1.cw && z1.left >= -1 && z2.t === '200%' && z2.sw > z2.cw &&
-      z3.t === '100%' && z4.t === '50%' && Math.abs(z4.w - z3.w / 2) < 3, { z0, z1, z2, z3, z4 });
+    await zplus(3, 'last-of-type'); const z1 = await zst();                                        // 학습지 200%
+    await W.click('#fm-kind-switch [data-kind="bs"]'); await W.waitForTimeout(250); const z2 = await zst(); // 시정표는 따로 → 100%
+    await zplus(2, 'first-of-type'); const z4 = await zst();                                       // 시정표 50%
+    await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(250); const z5 = await zst(); // 학습지로 오면 다시 200%
+    const zsaved = await W.evaluate(() => JSON.parse(localStorage.getItem('fm-zoom')));
+    await W.reload(); await W.waitForFunction(() => window.currentTeacher && typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 });
+    await W.click('#rail-forms-btn'); await W.waitForTimeout(500); const z7 = await zst(); // 새로고침해도 학습지는 200%
+    await W.click('#fm-zoom-text'); const z6 = await zst();
+    await W.click('#fm-kind-switch [data-kind="bs"]'); await W.waitForTimeout(250); const z8 = await zst(); await W.click('#fm-zoom-text');
+    await W.click('#fm-kind-switch [data-kind="ws"]'); await W.waitForTimeout(250);
+    check('🔍 미리보기 확대/축소: 100% = 폭에 맞춤, 200%면 두 배·옆으로 스크롤(왼쪽 안 잘림), 50%는 절반, 숫자 누르면 100%',
+      z0.t === '100%' && z0.sw <= z0.cw && z1.t === '200%' && Math.abs(z1.w - z0.w * 2) < 3 && z1.sw > z1.cw && z1.left >= -1 && z4.t === '50%' && Math.abs(z4.w - z2.w / 2) < 3 && z6.t === '100%', { z0, z1, z2, z4, z6 });
+    check('🔍 배율은 양식마다 따로 기억(학습지 200% · 시정표 50% — 탭을 오가도, 새로고침해도 각자 그대로, 개인 자료 fm-zoom)',
+      z2.t === '100%' && z5.t === '200%' && Math.abs(z5.w - z1.w) < 2 && zsaved.ws === 2 && zsaved.bs === 0.5 && z7.t === '200%' && z8.t === '50%', { z2, z5, z7, z8, zsaved });
     if (process.env.WS_OUT) { const b64 = await W.evaluate(async () => { const u8 = new Uint8Array(await (await wsBuildHwpx(wsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.WS_OUT, Buffer.from(b64, 'base64')); }
   }
   await W.click('#fm-kind-switch [data-kind="roster"]'); await W.waitForTimeout(300);
