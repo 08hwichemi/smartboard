@@ -577,6 +577,39 @@
     .pa-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
     .pa-scroll-x { flex: 1 1 auto; min-height: 0; overflow: auto; }
     .pa-empty { text-align: center; padding: 28px 14px; line-height: 1.8; }
+    /* 진행 순서(탭 = 할 일 순서) + 다음 할 일 줄 + 눌러야 할 곳 반짝임 — 설명서를 안 열어도 화면이 다음 할 일을 알려 줌 */
+    #pa-tabs .pa-arrow { align-self: center; color: var(--text-sub); opacity: .55; font-weight: 800; padding: 0 1px; pointer-events: none; }
+    #pa-tabs .top-btn { position: relative; }
+    #pa-tabs .pa-st-ok { color: #1E7B3A; margin-left: 4px; }
+    #pa-tabs .pa-st-opt { font-size: 10px; font-weight: 700; color: var(--text-sub); margin-left: 3px; }
+    #pa-tabs .pa-st-next { font-size: 10px; font-weight: 800; color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 6px; margin-left: 5px; }
+    #pa-tabs .pa-step-next:not(.theme-active) { box-shadow: inset 0 0 0 1.5px var(--accent-color); }
+    #pa-next { flex: 0 0 auto; margin: 0 0 10px; }
+    .pa-next { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--accent-color); background: var(--accent-soft); color: var(--text-main); font-size: 14px; line-height: 1.5; }
+    .pa-next .pa-next-ico { font-size: 20px; }
+    .pa-next .pa-next-lbl { font-weight: 800; color: var(--accent-color); white-space: nowrap; }
+    .pa-next .pa-next-msg { flex: 1 1 320px; min-width: 0; }
+    .pa-next .pa-next-msg .se-muted { font-size: 12.5px; }
+    .pa-next .top-btn { font-size: 13px !important; padding: 6px 14px !important; background: var(--accent-color) !important; color: #fff !important; border-color: var(--accent-color) !important; font-weight: 800; }
+    .pa-next.done { border-color: #1E7B3A; background: rgba(30,123,58,.08); }
+    .pa-next.done .pa-next-lbl { color: #1E7B3A; }
+    .pa-next.done .top-btn { background: #1E7B3A !important; border-color: #1E7B3A !important; }
+    .pa-glow { outline: 2.5px solid var(--accent-color) !important; outline-offset: 3px; border-radius: 10px; animation: paGlow 1.6s ease-in-out infinite; }
+    @keyframes paGlow { 0%, 100% { outline-color: var(--accent-color); } 50% { outline-color: transparent; } }
+    @media (prefers-reduced-motion: reduce) { .pa-glow { animation: none; } }
+    .pa-welcome { max-width: 980px; margin: 10px auto; text-align: center; padding: 26px 22px 24px; }
+    .pa-welcome h2 { font-size: 20px; margin: 0 0 6px; }
+    .pa-welcome .pa-w-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 18px; line-height: 1.6; }
+    .pa-w-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; text-align: left; }
+    .pa-w-step { border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; background: var(--card-bg); }
+    .pa-w-step b { display: block; font-size: 14px; margin: 4px 0 3px; }
+    .pa-w-step span { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
+    .pa-w-step .pa-w-ico { font-size: 24px; }
+    .pa-w-step.opt { border-style: dashed; }
+    .pa-welcome .pa-w-go { font-size: 16px !important; padding: 10px 24px !important; }
+    .pa-welcome .pa-w-more { margin-top: 12px; font-size: 12.5px; color: var(--text-sub); }
+    .pa-welcome .pa-w-more a { color: var(--accent-color); font-weight: 800; cursor: pointer; text-decoration: underline; }
+    @media (max-width: 900px) { .pa-w-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .pa-primary { border: 1.5px solid var(--accent-color) !important; background: var(--accent-soft) !important; color: var(--accent-color) !important; font-weight: 800 !important; }
     .pa-danger:hover { color: var(--alert) !important; border-color: var(--alert) !important; }
     .pa-tools { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -3655,6 +3688,7 @@
       </div>
       <span class="se-muted">🔒 <b>내 계정에만</b> 저장 · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
     </div>
+    <div id="pa-next"></div>
     <div id="pa-pane"></div>
   </div>
 </div>
@@ -14136,9 +14170,9 @@
     const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
     const c = paCfg(), sub = paSub(c), cls = paCls(sub);
     paRenderHead(c, sub, cls);
-    document.querySelectorAll('#pa-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === paTab()); });
     const pane = document.getElementById('pa-pane');
-    if (!sub) { pane.innerHTML = paEmptyHtml(); return; }
+    paRenderSteps(sub, cls);
+    if (!sub) { pane.innerHTML = paEmptyHtml(); paGlowNext(); return; }
     const t = paTab();
     if (t === 'setup') pane.innerHTML = paSetupHtml(sub, cls);
     else if (!cls) pane.innerHTML = '<div class="se-box se-sbox pa-empty">이 과목에 수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div>';
@@ -14146,6 +14180,7 @@
     else if (t === 'score') { pane.innerHTML = paScoreHtml(sub, cls); paScoreAfter(); }
     else if (t === 'sum') pane.innerHTML = paSumHtml(sub, cls);
     else if (t === 'sk') { pane.innerHTML = paSkHtml(sub, cls); paSkAfter(); }
+    paGlowNext();
   }
   // 칸을 고친 뒤(change) 바로 다시 그리면 Tab으로 옮겨 간 다음 칸의 커서가 사라진다 → 커서가 옮겨 간 뒤에 그리고, 그 칸(data-fid)에 커서를 되돌린다.
   // 칸을 고친 직후 단추를 누르면 change가 mousedown 때 일어나 다시 그리기가 클릭 도중에 끼어들어 그 단추가 바뀌고 클릭이 사라졌다
@@ -14179,10 +14214,109 @@
   function paSetTab(t) { paSetUi({ tab: t }); paRenderAll(); }
   function paPickSubject(id) { paSetUi({ s: id, c: '' }); paRenderAll(); }
   function paPickClass(id) { paSetUi({ c: id }); paRenderAll(); }
+  // 처음 들어온 선생님: 이 화면이 뭘 하는 곳인지 + 다섯 걸음을 그림처럼 + 큰 시작 단추 하나
   function paEmptyHtml() {
-    return '<div class="se-box se-sbox pa-empty"><div style="font-size:15px; font-weight:800; margin-bottom:6px;">📊 수행평가를 시작해 볼까요?</div>' +
-      '<div class="se-muted" style="margin-bottom:12px;">① 과목(예: 화학Ⅱ)을 만들고 → 그 과목의 수업반과 학생을 넣고 → ② 영역·배점을 정한 뒤 → ③ 점수를 입력하면<br>④ 나이스 수행평가 일괄등록 파일과 ⑤ 세특까지 이어서 만들 수 있어요.</div>' +
-      '<button class="top-btn pa-primary" onclick="paAddSubject()">＋ 첫 과목 만들기</button></div>';
+    const st = [['📚', '① 과목·학생', '과목을 만들고 학생을 넣어요. 내 시간표에서 고르면 한 번에.'], ['📏', '② 영역·배점', '영역(예: 실험 보고서)과 줄 수 있는 점수를 정해요.'],
+      ['✏️', '③ 점수 입력', '학생마다 점수를 넣어요. 엑셀에서 복사해 붙여도 돼요.'], ['📤', '④ 나이스 파일', '나이스에서 받은 파일에 점수를 채워 줘요. 그대로 올리면 끝!'], ['📝', '⑤ 세특 (선택)', '영역별 평가내용을 모아 세특을 써요.']];
+    return '<div class="pa-scroll"><div class="se-box pa-welcome"><h2>📊 수행평가 점수를 넣고, 나이스에 올릴 파일을 만드는 곳이에요</h2>' +
+      '<div class="pa-w-sub">엑셀에 따로 정리하지 않아도 돼요. 아래 순서대로 하면 돼요. 시작하면 화면 위 <b>👉 다음 할 일</b> 상자가 그때그때 무엇을 누를지 알려 드려요.</div>' +
+      '<div class="pa-w-steps">' + st.map(function(x, i) { return '<div class="pa-w-step' + (i === 4 ? ' opt' : '') + '"><span class="pa-w-ico">' + x[0] + '</span><b>' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div>' +
+      '<button class="top-btn pa-primary pa-w-go" id="pa-w-go" onclick="paAddSubject()">＋ 첫 과목 만들기</button>' +
+      '<div class="pa-w-more">먼저 구경만 해 보고 싶으면 <a onclick="paOpenTour()">📖 예시 화면으로 둘러보기</a> (선생님 자료는 안 바뀌어요)</div></div></div>';
+  }
+
+  // ----- 진행 순서 · 다음 할 일 -----
+  // 탭(①~⑤)이 곧 할 일 순서: 끝난 걸음 ✅, 다음 걸음엔 "다음" 표시. 탭 아래 "다음 할 일" 상자가 지금 할 일 한 가지와 누를 단추를 알려 주고,
+  // 그 화면에 눌러야 할 곳이 있으면 반짝이게(paGlowNext). 설명서를 안 읽는 선생님도 화면만 보고 따라가게.
+  function paNeisDoneKey(sub, cls) { return sub.id + '-' + cls.id; }
+  function paMarkNeis() { const sub = paSub(), cls = paCls(sub); if (!sub || !cls) return; const u = paUi(), n = Object.assign({}, u.neis || {}); n[paNeisDoneKey(sub, cls)] = 1; paSetUi({ neis: n }); paRenderSteps(sub, cls); }
+  function paNextInfo(sub, cls) {
+    const go = function(tab, extra) { return Object.assign({ tab: tab }, extra || {}); };
+    if (!sub) return { st: {}, next: go('setup', { msg: '<b>＋ 첫 과목 만들기</b>를 눌러 시작하세요. 내 시간표에서 과목을 고르면 과목·반이 한 번에 들어가요.', glow: '#pa-w-go' }) };
+    const st = {}, ro = cls ? paRoster(sub.id, cls.id) : [];
+    st.setup = !!cls && ro.length > 0;
+    let areaTodo = null;
+    if (!sub.areas.length) areaTodo = { msg: '<b>＋ 영역 더하기</b>를 눌러 수행평가 영역(예: 실험 보고서)을 만드세요.', glow: '#pa-pane .pa-area-new' };
+    else sub.areas.some(function(a) {
+      if (!a.subs.length) { areaTodo = { msg: '<b>' + paEsc(a.name) + '</b>에 <b>＋ 세부영역</b>을 눌러 채점 기준을 더하세요.', glow: '#pa-pane .pa-area[data-aid="' + a.id + '"] .pa-add' }; return true; }
+      const x = a.subs.find(function(y) { return !paParsePts(y.pts).length; });
+      if (x) { areaTodo = { msg: '<b>' + paEsc(a.name) + '</b>' + (x.name ? ' · ' + paEsc(x.name) : '') + '에 <b>줄 수 있는 점수</b>를 적으세요. <span class="se-muted">예: 1-10 (1점부터 10점까지) · 5, 10, 15 (이 셋만)</span>', glow: '#pa-pane [data-fid="sp-' + x.id + '"]' }; return true; }
+      return false;
+    });
+    st.areas = !areaTodo;
+    let rows = null, okN = 0;
+    if (st.setup && st.areas) { rows = paStudentTotals(sub, cls); okN = rows.filter(function(r) { return r.ok; }).length; }
+    st.score = !!rows && okN === ro.length;
+    st.scoreCnt = rows ? okN + '/' + ro.length + '명' : '';
+    st.sum = st.score && !!(paUi().neis || {})[paNeisDoneKey(sub, cls)];
+    let next;
+    if (!cls) next = go('setup', { msg: '이 과목에 수업반이 없어요. 위의 <b>＋ 반</b>을 눌러 반을 만드세요.', glow: '#pa-classes .pa-add-cls', act: 'paAddClass()', btn: '＋ 반 만들기' });
+    else if (!st.setup) next = go('setup', { msg: '<b>' + paEsc(cls.name) + '</b> 학생을 넣으세요. <b>명렬표에서 고르기</b>(반 고르고 → 모두 체크 → 체크한 학생 더하기) 또는 엑셀에서 붙여 넣기.', glow: '#pa-pane .pa-add-stu' });
+    else if (!st.areas) next = go('areas', areaTodo);
+    else if (!st.score) {
+      const bad = rows.find(function(r) { return r.rs.some(function(x) { return x.bad; }); });
+      let ai = -1, left = 0;
+      sub.areas.forEach(function(a, i) { const n = rows.filter(function(r) { return !r.rs[i].done; }).length; if (n && ai < 0) { ai = i; left = n; } });
+      if (ai < 0 && bad) next = go('sum', { msg: '배점에 없는 점수가 들어간 학생이 있어요. 아래 표의 <b>⚠️ 확인</b> 칸을 보고 ③에서 고치세요.' });
+      else {
+        const a = sub.areas[ai < 0 ? 0 : ai];
+        next = go('score', { area: a.id, msg: '<b>' + paEsc(a.name) + '</b> 점수를 넣으세요 — <b>' + left + '명</b> 남았어요. <span class="se-muted">칸을 누르고 숫자 → Enter(아래 칸). 미제출·미응시는 최하점 체크.</span>' });
+      }
+    }
+    else if (!st.sum) next = go('sum', { msg: '점수를 다 넣었어요! 나이스 > 수행평가 일괄등록에서 받은 엑셀을 <b>📥 나이스에서 받은 파일에 채우기</b>로 올리면 점수가 채워진 파일이 내려와요.', glow: '#pa-neis-fill' });
+    else {
+      const other = sub.classes.find(function(x) { if (x.id === cls.id) return false; const r2 = paRoster(sub.id, x.id); return !r2.length || !(paUi().neis || {})[paNeisDoneKey(sub, x)]; });
+      next = other ? go('', { done: true, msg: '<b>' + paEsc(cls.name) + '</b>은 나이스 파일까지 끝났어요! 다음 반으로 가세요.', act: "paPickClass('" + other.id + "')", btn: paEsc(other.name) + '으로 →' })
+        : go('', { done: true, msg: '<b>' + paEsc(sub.name) + '</b>은 모든 반이 끝났어요! 세특이 필요하면 <b>⑤ 세특</b>에서 영역별 평가내용을 모아 쓰세요.' });
+    }
+    return { st: st, next: next };
+  }
+  const PA_STEP_TABS = { setup: '① 과목·학생', areas: '② 영역·배점', score: '③ 점수 입력', sum: '④ 합계·나이스', sk: '⑤ 세특' };
+  function paRenderSteps(sub, cls) {
+    const info = paNextInfo(sub, cls), st = info.st, nx = info.next, cur = paTab();
+    paRenderSteps.next = nx;
+    const tabs = document.getElementById('pa-tabs');
+    if (tabs) tabs.innerHTML = Object.keys(PA_STEP_TABS).map(function(t, i) {
+      const mark = st[t] ? '<span class="pa-st-ok">✅</span>' : t === 'score' && st.scoreCnt ? '<span class="pa-cnt">' + st.scoreCnt + '</span>' : t === 'sk' ? '<span class="pa-st-opt">(선택)</span>' : '';
+      const isNext = sub && nx.tab === t && !nx.done;
+      return (i ? '<span class="pa-arrow">›</span>' : '') + '<button class="top-btn' + (t === cur ? ' theme-active' : '') + (isNext ? ' pa-step-next' : '') + '" data-tab="' + t + '" onclick="paSetTab(\'' + t + '\')">' +
+        PA_STEP_TABS[t] + mark + (isNext && t !== cur ? '<span class="pa-st-next">다음</span>' : '') + '</button>';
+    }).join('');
+    const box = document.getElementById('pa-next');
+    if (!box) return;
+    if (!sub) { box.innerHTML = ''; return; }
+    let btn = '';
+    if (nx.tab && nx.tab !== cur) btn = '<button class="top-btn" onclick="paGoNext()">' + PA_STEP_TABS[nx.tab] + '(으)로 가기 →</button>';
+    else if (nx.tab === 'score' && nx.area && nx.area !== (paCurArea(sub) || {}).id) btn = '<button class="top-btn" onclick="paGoNext()">이 영역으로 →</button>';
+    else if (nx.act) btn = '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>';
+    box.innerHTML = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-ico">' + (nx.done ? '🎉' : '👉') + '</span><span class="pa-next-lbl">' + (nx.done ? '잘했어요' : '다음 할 일') + '</span>' +
+      '<span class="pa-next-msg">' + nx.msg + '</span>' + btn + '</div>';
+  }
+  function paGoNext() {
+    const nx = paRenderSteps.next;
+    if (!nx) return;
+    const patch = {};
+    if (nx.tab) patch.tab = nx.tab;
+    if (nx.area) patch.area = nx.area;
+    paSetUi(patch);
+    paRenderAll();
+  }
+  // 눌러야 할 곳 반짝임(지금 화면에 있을 때만)
+  function paGlowNext() {
+    document.querySelectorAll('#pa-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    const nx = paRenderSteps.next;
+    if (!nx || !nx.glow || (nx.tab && nx.tab !== paTab())) return;
+    const el = document.querySelector(nx.glow);
+    if (el) el.classList.add('pa-glow');
+  }
+  // 점수 칸을 고친 뒤처럼 화면 전체를 다시 안 그릴 때 — 단추를 누르는 중엔 기다렸다가(클릭이 사라지지 않게)
+  function paStepsSoon() {
+    clearTimeout(paStepsSoon._t);
+    paStepsSoon._t = setTimeout(function run() {
+      if (paPtrDown) { paStepsSoon._t = setTimeout(run, 30); return; }
+      const sub = paSub(); if (!sub) return;
+      paRenderSteps(sub, paCls(sub)); paGlowNext();
+    }, 0);
   }
 
   // ----- ① 과목·학생 -----
@@ -14329,7 +14463,7 @@
       return '<tr><td class="se-c">' + (s.g ? s.g + '-' : '') + (s.c || '') + '</td><td class="se-c">' + (s.n || '') + '</td><td class="se-c pa-name">' + paEsc(s.name) + '</td>' +
         '<td class="se-c"><button class="pa-x" title="이 학생 빼기" onclick="paRemoveStudent(\'' + paSk(s) + '\')">✕</button></td></tr>';
     }).join('') + '</tbody></table></div>';
-    h += '</div><div class="pa-col">';
+    h += '</div><div class="pa-col pa-add-stu">';
     h += '<div class="pa-sub-title">📋 엑셀에서 붙여 넣기</div>' +
       '<textarea id="pa-paste" class="lp-input" rows="6" placeholder="엑셀에서 반·번호·이름(또는 학번·이름) 칸을 복사해 붙여 넣으세요.&#10;예) 1⇥3⇥홍길동   /   30103⇥홍길동   /   1-3 홍길동"></textarea>' +
       '<div class="pa-row"><button class="top-btn pa-primary" onclick="paPasteRoster()">붙여 넣은 학생 넣기</button><span id="pa-paste-msg" class="se-muted">이미 있는 학생(같은 반·번호)은 그대로 둬요 · 다시 넣으려면 "학생 모두 빼기" 뒤에</span></div>';
@@ -14624,6 +14758,7 @@
     const done = ro.filter(function(st) { return paAreaResult(ctx.a, sc[paSk(st)]).done; }).length;
     const cnt = document.querySelector('#pa-pane .pa-area-tabs .theme-active .pa-cnt');
     if (cnt) { cnt.textContent = done + '/' + ro.length; cnt.classList.toggle('ok', done === ro.length); }
+    paStepsSoon();
   }
   function paOnMin(k, on) {
     const ctx = paScCtx(), sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id);
@@ -14778,6 +14913,7 @@
       });
       const buf = await wb.xlsx.writeBuffer();
       fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가일괄등록_' + paNeisName(sub) + '_' + cls.name + '.xlsx');
+      paMarkNeis();
     } catch (e) {
       customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
     }
@@ -14867,6 +15003,7 @@
       if (ws) { const out = await wb.xlsx.writeBuffer(); blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); }
       else { const out = XLSX.write(xwb, { type: 'array', bookType: 'xls' }); blob = new Blob([out], { type: 'application/vnd.ms-excel' }); }
       fmSaveNow(blob, file.name.replace(/(\.xlsx?)$/i, '_점수$1'));
+      paMarkNeis();
     } catch (e) { customAlert('파일을 만들지 못했어요.' + (e && e.message ? '\n(' + e.message + ')' : '')); return; }
     const lines = ['✅ 점수 ' + filled + '칸을 채운 파일을 내려받았어요. 나이스에 그대로 올리면 돼요.'];
     if (empty) lines.push('· 점수가 덜 들어간(또는 오류) 칸 ' + empty + '개는 비워 뒀어요.');

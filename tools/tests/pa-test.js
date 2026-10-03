@@ -196,6 +196,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('시범 선생님: 레일 "양식" 다음에 수행평가', await P.evaluate(() => { const b = document.getElementById('rail-pa-btn'); return getComputedStyle(b).display !== 'none' && b.previousElementSibling.id === 'rail-forms-btn' && b.innerText.includes('수행평가'); }));
   await P.click('#rail-pa-btn'); await P.waitForTimeout(300);
   check('누르면 수행평가 화면 + 처음 안내(과목 만들기)', await P.isVisible('#pa-page') && /첫 과목 만들기/.test(await P.innerText('#pa-pane')) && !(await P.isVisible('#main-dashboard')));
+  check('처음 안내: 이 화면이 뭘 하는 곳인지 + 다섯 걸음 + 시작 단추 반짝임', /나이스에 올릴 파일을 만드는 곳/.test(await P.innerText('#pa-pane')) && (await P.$$('#pa-pane .pa-w-step')).length === 5 && await P.evaluate(() => document.getElementById('pa-w-go').classList.contains('pa-glow')));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '0-welcome.png') });
 
   // ===== ① 과목·학생 =====
   await P.click('#pa-pane button:has-text("첫 과목 만들기")'); await P.waitForSelector('#pa-modal', { state: 'visible' });
@@ -208,6 +210,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('나이스 과목 칸 = 과목(시수) "화학Ⅱ(3)"', /화학Ⅱ\(3\)/.test(await P.innerText('#pa-pane')) && (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(3)');
   await setVal(P, '#pa-f-hours', '4');
   check('시수 고치면 나이스 과목 칸도 + 칸을 벗어나도 다음 칸에 커서', (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(4)' && await P.evaluate(() => document.activeElement && document.activeElement.id === 'pa-f-limit'));
+  check('다음 할 일: 학생 넣기 + 학생 넣는 곳 반짝임', /다음 할 일[\s\S]*1반[\s\S]*학생을 넣으세요/.test(await P.innerText('#pa-next')) && await P.evaluate(() => document.querySelector('#pa-pane .pa-add-stu').classList.contains('pa-glow')), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '0-next-students.png') });
   await P.fill('#pa-paste', '1\t20\t그대로');
   await setVal(P, '#pa-f-hours', '3');
   check('과목 칸을 고쳐도 붙여 넣기 칸 글은 그대로', (await P.inputValue('#pa-paste')) === '1\t20\t그대로' && /화학Ⅱ\(3\)/.test(await P.innerText('#pa-neis-hint')));
@@ -245,7 +249,9 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
   // ===== ② 영역·배점 =====
-  await P.click('#pa-tabs [data-tab="areas"]'); await P.waitForTimeout(150);
+  check('학생을 넣으면 ① ✅, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✅/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  await P.click('#pa-next button:has-text("영역·배점")'); await P.waitForTimeout(150);
+  check('다음 할 일 단추로 ② 탭 + "＋ 영역 더하기" 반짝임', (await P.evaluate(() => paTab())) === 'areas' && await P.evaluate(() => document.querySelector('#pa-pane .pa-area-new').classList.contains('pa-glow')));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
   await P.fill('#pa-pane .pa-aname', '개념 구조화'); await P.press('#pa-pane .pa-aname', 'Tab'); await P.waitForTimeout(150);
   check('영역 이름 저장 + Tab으로 옮긴 칸(최하점)에 커서 그대로', (await cfg(P)).subjects[0].areas[0].name === '개념 구조화' && await P.evaluate(() => document.activeElement && document.activeElement.classList.contains('pa-min')));
@@ -283,6 +289,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '2-areas.png') });
   // ===== ③ 점수 입력 =====
+  check('배점을 다 적으면 ② ✅ + 다음 할 일 = 개념 구조화 점수 10명', /✅/.test(await P.innerText('#pa-tabs [data-tab="areas"]')) && /개념 구조화 점수를 넣으세요 — 10명 남았어요/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
@@ -347,6 +354,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   });
 
   // ===== ④ 합계·나이스 =====
+  await P.evaluate(() => paRenderAll());
+  check('남은 학생 한 명(화학자료분석)이면 다음 할 일이 그 영역 + "이 영역으로" 단추', /화학자료분석 점수를 넣으세요 — 1명 남았어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("이 영역으로")'), await P.innerText('#pa-next'));
   await P.click('#pa-tabs [data-tab="sum"]'); await P.waitForTimeout(200);
   const sumTxt = await P.innerText('#pa-pane');
   check('합계: 입력 끝 9/10명, 마지막 학생 "화학자료분석 비어 있음"', /입력 끝 9 \/ 10명/.test(sumTxt) && /화학자료분석 비어 있음/.test(sumTxt), sumTxt.slice(0, 300));
@@ -381,6 +390,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   } else console.log('  ⚠️ exceljs가 없어 나이스 파일 검사는 건너뜀(npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-sum.png') });
+  // 다 넣고 나이스 파일까지 만들면 🎉 + 다음 반으로
+  await P.evaluate(() => { const s = paSub(), x = paCls(s), a2 = s.areas[1], ro = paRoster(s.id, x.id), v2 = paScores(s.id, x.id, a2.id); v2[paSk(ro[ro.length - 1])] = { v: { [a2.subs[0].id]: 30 } }; paSaveScores(s.id, x.id, a2.id, v2); paMarkNeis(); paRenderAll(); });
+  check('모두 넣고 나이스 파일까지 → ③·④ ✅ + 🎉 "다음 반" 단추', /✅/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✅/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
+    /나이스 파일까지 끝났어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")'), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-done.png') });
   // ===== ⑤ 세특 =====
   await P.click('#pa-tabs [data-tab="sk"]'); await P.waitForTimeout(200);
   check('세특: 학생 목록 + 평가내용 칸 쓰는 영역 카드만(개념 구조화)', await P.evaluate(() => document.querySelectorAll('#pa-sk-students .se-stu').length) === 10 && (await P.innerText('#pa-sk-editor')).includes('개념 구조화') && !(await P.innerText('#pa-sk-editor')).includes('화학자료분석'));
