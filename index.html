@@ -709,6 +709,7 @@
     #pa-term { font-weight: 800; }
     .pa-oldyear { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 14px; margin-bottom: 8px; border: 1.5px solid #F59E0B; background: #FFFBEB; border-radius: 10px; font-size: 12.5px; color: #78350F; flex: 0 0 auto; }
     .pa-oldyear .top-btn { font-size: 11.5px; padding: 4px 10px; }
+    .se-oldcls { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
     .pa-copy-term { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--accent-color); border-radius: 10px; background: var(--accent-soft); }
     .pa-backup { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 10px; padding: 2px 3px 2px 8px; background: var(--card-bg); }
     .pa-backup .top-btn { font-size: 11px; padding: 3px 9px; }
@@ -2187,12 +2188,18 @@
 </div>
 
 <div class="overlay" id="backup-overlay">
-  <div class="modal-box" style="width: 340px; text-align: center;">
+  <div class="modal-box" style="width: 380px; max-width: calc(100vw - 32px); text-align: center;">
     <div style="font-weight: 800; font-size: 16px; margin-bottom: 12px;">💾 데이터 백업 / 복원</div>
 
     <div style="background: var(--tt-bg); border-radius: 12px; padding: 14px; margin-bottom: 15px; text-align: left;">
       <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 파일로 백업 (선택)</div>
-      <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5;">⚪ 캘린더 · 할일 · 상담기록 등 내용은 로그인한 계정으로 서버에 자동 저장되어, 다른 기기에서 같은 계정으로 로그인해도 그대로 이어서 볼 수 있습니다. 그것과는 별개로, 내 컴퓨터에 파일로도 따로 보관해두고 싶다면 아래 버튼을 눌러주세요.</div>
+      <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5; display:flex; flex-direction:column; gap:5px;" id="backup-scope">
+        <div>내 자료는 로그인한 계정으로 서버에 자동 저장돼서 다른 기기에서도 그대로 이어져요. 그것과 별개로 내 컴퓨터에 파일로 보관하고 싶을 때 받으세요.</div>
+        <div><b style="color:var(--text-main);">담기는 것</b> — 내 개인 자료 <b>전부</b>: 캘린더·할 일·상담 기록·즐겨찾기 + 수행평가·자율·진로·결석계·좌석배치·월간일정표·조퇴증·양식 설정 등 모든 기능</div>
+        <div><b style="color:var(--text-main);">안 담기는 것</b> — 학교 공용 자료(시간표·명렬표·공지·당번·학사일정 — 관리자가 관리)</div>
+        <div>⚠️ 학생 이름·세특·결석 기록이 들어 있어요. 공용 PC·메신저에 두지 말고 잘 보관하세요.</div>
+        <div><b style="color:var(--text-main);">복원</b>하면 내 자료 전부가 파일 내용으로 바뀌어요(파일에 없는 것은 지워짐). 수행평가·자율·진로만 옮기거나 학기 끝에 보관할 땐 그 화면의 <b>엑셀 내려받기·가져오기</b>가 편해요.</div>
+      </div>
       <div style="display:flex; flex-direction:column; gap:6px;">
         <button class="top-btn accent" style="padding:8px;" onclick="manualBackupNow()">💾 지금 바로 백업 다운로드</button>
         <input type="file" id="json-backup-input" accept=".json" style="display: none;" onchange="restoreFromBackupFile(event)">
@@ -3660,6 +3667,7 @@
   </div>
   <div id="se-body">
     <div id="se-main">
+      <div id="se-oldyear"></div>
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:0 0 auto;">
         <div class="top-btn-cluster" id="se-tabs">
           <button class="top-btn theme-active" data-tab="src" onclick="seSetTab('src')">① 자료 입력</button>
@@ -3997,6 +4005,8 @@
   const SYNC_OWNER_KEY = 'sync-owner-teacher-id'; // 이 브라우저의 개인 자료가 누구 것인지
   const SYNC_CURSOR_KEY = 'sync-last-pulled-at';  // 서버에서 마지막으로 받아온 변경 시각(서버 시계)
   const SYNC_SEEDED_KEY = 'sync-initial-pull-done'; // 이 계정 자료를 서버에서 한 번이라도 다 받아왔는지
+  const SYNC_FULL_AT_KEY = 'sync-last-full-pull';    // 이 기기에서 마지막으로 전체를 받은 때(ms)
+  const SYNC_FULL_EVERY = 7 * 24 * 60 * 60 * 1000;   // 바뀐 것만 받다가 이만큼 지나면 한 번 전체를 받아 맞춘다
   const syncLocalEditAt = {}; // 키별로 이 기기에서 마지막으로 고친 시각(서버 자료 받기와 겹칠 때 판단용)
   let syncPushTimer = null;
   let rawSetItem, rawRemoveItem;
@@ -4306,10 +4316,14 @@
     subscribeToOwnDataChanges(teacher.id);
   }
 
-  // 로그인할 때(=페이지를 열 때마다) 서버에서 이 선생님 자료 전체를 받아서 이 기기를
-  // 서버와 맞춘다. 단, 이 기기에서 고쳤는데 아직 서버에 못 올린 항목(dirty)은 절대
-  // 서버 값으로 덮어쓰지 않고, 받아온 뒤 바로 서버에 올린다 — 인터넷이 끊긴 채로
-  // 입력했거나 저장 직후 탭을 닫았어도 다음에 열 때 올라간다.
+  // 로그인할 때(=페이지를 열 때마다) 서버 자료를 받아서 이 기기를 서버와 맞춘다. 단, 이
+  // 기기에서 고쳤는데 아직 서버에 못 올린 항목(dirty)은 절대 서버 값으로 덮어쓰지 않고,
+  // 받아온 뒤 바로 서버에 올린다 — 인터넷이 끊긴 채로 입력했거나 저장 직후 탭을 닫았어도
+  // 다음에 열 때 올라간다.
+  // 전체를 받는 건 이 기기에서 처음이거나 마지막 전체 받기가 7일 지났을 때만이고, 그 밖엔
+  // 지난번 받은 뒤 바뀐 것만 받는다(지운 항목도 value = null 줄로 남아 있어 그대로 전달됨).
+  // 예전엔 열 때마다 전체를 받아서, 수행평가·세특 자료가 쌓이면(한 사람 1MB 안팎) 50명이
+  // 하루 몇 번씩 여는 것만으로 무료 월 전송량(5GB, 면접ON과 합산)을 넘길 수 있었다.
   async function syncOnLogin(teacherId) {
     if (localStorage.getItem(SYNC_OWNER_KEY) !== teacherId) {
       // 이 브라우저에 남아 있는 개인 자료가 다른 계정 것(공용 PC)이거나 예전 동기화 방식
@@ -4317,7 +4331,9 @@
       clearPersonalDataFromThisDevice();
       rawSetItem(SYNC_OWNER_KEY, teacherId);
     }
-    await pullRemoteChanges(true);
+    const lastFull = Number(localStorage.getItem(SYNC_FULL_AT_KEY)) || 0;
+    const full = localStorage.getItem(SYNC_SEEDED_KEY) !== teacherId || !localStorage.getItem(SYNC_CURSOR_KEY) || !(Date.now() - lastFull < SYNC_FULL_EVERY);
+    await pullRemoteChanges(full);
     pushDirtyItems();
   }
 
@@ -4432,7 +4448,7 @@
       syncPullRetryTimer = setTimeout(function() { syncPullRetryTimer = null; pullRemoteChanges(false); }, 15000);
       return false;
     }
-    if (full) syncNeedsFullPull = false;
+    if (full) { syncNeedsFullPull = false; rawSetItem(SYNC_FULL_AT_KEY, String(Date.now())); }
     clearSyncError();
     // 첫 받기 전에 이 기기에서 생긴 값(대부분 화면을 그리며 채운 기본값)은 서버에 이미
     // 있는 항목이면 서버 값을 따른다. 서버에 없는 항목만 이 기기 값을 올린다.
@@ -5631,12 +5647,14 @@
   // 이 기기에서만 의미 있는 값 — 서버로 올리지도, 서버에서 받아온 자료로 덮어쓰지도
   // 않는다. 로그인 토큰, 동기화 내부 기록(sync-*, 예전 방식의 backup-*), 탭 위치 같은
   // 화면 상태(PC와 휴대폰이 서로 달라야 함 — 예전엔 PC의 main-tab 값이 휴대폰에 복원되며
-  // 모바일 캘린더가 사라졌었다), 브라우저에 붙은 다른 프로그램이 남긴 값(statsig.* 등).
+  // 모바일 캘린더가 사라졌었다), 브라우저에 붙은 다른 프로그램이 남긴 값(statsig.* 등),
+  // 다른 선생님 시간표 찾기 칸(search-tt-* — last-search와 관리자 시간표로 언제든 다시 그리는
+  // 화면 값인데, 예전엔 볼 때마다 70칸을 저장해 서버 줄·변경 이력이 가장 많이 쌓였다).
   // 서버의 public.is_device_local_key()와 같은 규칙이어야 한다.
   function isLocalOnlyKey(key) {
     if (!key) return true;
     return isAuthSessionKey(key) || key.indexOf('sb-') === 0 || key.indexOf('statsig.') === 0 ||
-      key.indexOf('backup-') === 0 || key.indexOf('sync-') === 0 || key.indexOf('practiceFboxOpen') === 0 ||
+      key.indexOf('backup-') === 0 || key.indexOf('sync-') === 0 || key.indexOf('practiceFboxOpen') === 0 || key.indexOf('search-tt-') === 0 ||
       key === 'main-tab' || key === 'news-tab' || key === 'last-search' || key === 'last-auto-backup-date';
   }
 
@@ -5690,7 +5708,7 @@
   async function restoreFromBackupFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-    const ok = await customConfirm('선택한 백업 파일로 복원합니다. 현재 화면의 내용은 백업 시점 내용으로 덮어씌워집니다. 계속할까요?');
+    const ok = await customConfirm('선택한 백업 파일로 복원합니다. 내 자료 전부(캘린더·할 일부터 수행평가·자율·진로까지)가 백업 시점 내용으로 바뀌고, 파일에 없는 것은 지워집니다. 계속할까요?');
     if (!ok) { event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = async function(e) {
@@ -8838,7 +8856,6 @@
     applyScheduleToGrid('search-tt', s);
     applyChangeOverlayToGrid('search-tt', n);
     updateCellColors('search-tt');
-    saveElements('#search-timetable-grid .editable');
   }
 
   function setMyTimetable() {
@@ -13145,6 +13162,8 @@
     if (seDemo) { if (v) seDemo[k] = v; else delete seDemo[k]; return true; }
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
     catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
+    const m = v && SE_DATA_RE.exec(k);
+    if (m && !seClassYear(m[2] + '-' + m[3])) try { localStorage.setItem(seYearKey(m[2] + '-' + m[3]), String(seSchoolYear())); } catch (e) {}
     scheduleBackupWrite();
     seSaveState('saved');
     return true;
@@ -13167,7 +13186,28 @@
   function seDraftText(num, kind) { return seGet(seDraftKey(num, kind)) || seGet(seFinKey(num, kind)); }
   function seHasDraft(num, kind) { const d = seGet(seDraftKey(num, kind)); return !!d && d !== seGet(seFinKey(num, kind)); }
   function seStKey(num) { return 'se-st-' + seClassKey() + '-' + num; }
-  function seRosterKeyName() { return 'se-roster-' + seClassKey(); }
+  function seRosterKeyName(ck) { return 'se-roster-' + (ck || seClassKey()); }
+
+  // ----- 📅 학년도 -----
+  // 칸 키(se-src-학년-반-…)엔 학년도가 없어서, 내년에 같은 반을 맡으면 지난해 학생 글이 그대로 보이고 서버에도 계속 쌓인다.
+  // → 반마다 자료를 처음 쓴 학년도를 se-yr-학년-반에 적어 두고(이 기능 전에 쓴 자료는 편집기를 열 때 올해로), 새 학년도(3월)가
+  //   되면 지난 학년도 반을 알려 엑셀로 받은 뒤 지우게 한다(수행평가와 같은 방식). 지난 학년도 반은 그해 명단 사본(se-roster-)으로
+  //   보여 줘서, 받는 엑셀에 새 학년도 학생 이름이 섞이지 않게 한다.
+  const SE_DATA_RE = /^se-(src|fin|drf|st|areas|roster)-(\d+)-(\d+)(-|$)/;
+  function seSchoolYear(d) { d = d || new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; }
+  function seYearKey(ck) { return 'se-yr-' + ck; }
+  function seClassYear(ck) { return Number(seGet(seYearKey(ck))) || 0; }
+  function seIsOldClass(ck) { const y = seClassYear(ck || seClassKey()); return !!y && y < seSchoolYear(); }
+  function seDataClasses() {
+    const out = {};
+    for (let i = 0; i < localStorage.length; i++) { const m = SE_DATA_RE.exec(localStorage.key(i) || ''); if (m) out[m[2] + '-' + m[3]] = true; }
+    return Object.keys(out);
+  }
+  function seStampYears() {
+    if (seDemo) return;
+    seDataClasses().forEach(function(ck) { if (!seClassYear(ck)) try { localStorage.setItem(seYearKey(ck), String(seSchoolYear())); } catch (e) {} });
+  }
+  function seOldClasses() { return seDataClasses().filter(seIsOldClass).sort(); }
 
   // 영역: { a: [{id, name}], p: [{id, name}] } — 반마다 따로. 아직 없으면 기본 보기(저장은 처음 고칠 때).
   function seAllAreas() {
@@ -13262,14 +13302,21 @@
     const key = c.g + '-' + c.c;
     if (seRosterKey === key) return;
     if (seDemo) { seRoster = SE_DEMO_ROSTER.slice(); seRosterKey = key; return; }
-    let rows = [];
-    try {
-      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
-      if (error) throw error;
-      rows = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
-    } catch (e) { rows = []; }
-    // 명렬표에 아직 학생이 없으면 엑셀에서 가져온 번호·이름을 쓴다.
-    if (!rows.length) { try { rows = JSON.parse(seGet(seRosterKeyName()) || '[]'); } catch (e) { rows = []; } }
+    let rows = [], saved = [];
+    try { saved = JSON.parse(seGet(seRosterKeyName()) || '[]'); } catch (e) { saved = []; }
+    // 지난 학년도 반은 그해 명단 사본으로(지금 명렬표는 새 학년도 학생)
+    if (seIsOldClass(key) && saved.length) rows = saved;
+    else {
+      try {
+        const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
+        if (error) throw error;
+        rows = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
+      } catch (e) { rows = []; }
+      // 자료가 있는 반은 명단 사본을 둔다(새 학년도에 지난해 자료를 그해 학생 이름으로 보고 받을 수 있게) — 바뀔 때만 저장됨
+      if (rows.length && seClassYear(key) && !seIsOldClass(key) && seGet(seRosterKeyName()) !== JSON.stringify(rows)) try { localStorage.setItem(seRosterKeyName(), JSON.stringify(rows)); } catch (e) {}
+      // 명렬표에 아직 학생이 없으면 엑셀에서 가져온 번호·이름을 쓴다.
+      if (!rows.length) rows = saved;
+    }
     seRoster = rows;
     seRosterKey = key;
     if (seSelNum == null || !seRoster.some(function(s) { return s.num === seSelNum; })) seSelNum = seRoster.length ? seRoster[0].num : null;
@@ -13304,6 +13351,7 @@
     const c = seCfg();
     const t = window.currentTeacher;
     if (!c.g && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) seSetCfg({ g: Number(t.homeroom_grade), c: Number(t.homeroom_class) });
+    seStampYears();
     seFillClassSelects();
     await seLoadRoster();
     seRenderAll();
@@ -13432,6 +13480,7 @@
   function seRenderAll() {
     if (!seIsOpen()) return;
     const tab = seTab();
+    seRenderOldYear();
     seRenderSteps();
     ['src', 'edit', 'final'].forEach(function(t) { document.getElementById('se-pane-' + t).style.display = t === tab ? 'flex' : 'none'; });
     document.getElementById('se-limit-note').textContent = seLimitNote();
@@ -13878,15 +13927,46 @@
   }
 
   // ----- 🗑 초기화 -----
-  function seClassKeys() {
-    const ck = seClassKey(), out = [];
+  function seClassKeys(ck) {
+    ck = ck || seClassKey();
+    const out = [];
     if (!ck) return out;
     const pre = ['se-src-' + ck + '-', 'se-fin-' + ck + '-', 'se-drf-' + ck + '-', 'se-st-' + ck + '-'];
     const all = seDemo ? Object.keys(seDemo) : Array.from({ length: localStorage.length }, function(_, i) { return localStorage.key(i); });
     all.forEach(function(k) {
-      if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === seAreasKey() || k === seRosterKeyName())) out.push(k);
+      if (k && (pre.some(function(p) { return k.indexOf(p) === 0; }) || k === 'se-areas-' + ck || k === seRosterKeyName(ck) || k === seYearKey(ck))) out.push(k);
     });
     return out;
+  }
+  // 지난 학년도 반 안내(편집기 맨 위): 반마다 📊 엑셀로 받기 · 🗑 지우기
+  function seRenderOldYear() {
+    const box = document.getElementById('se-oldyear');
+    if (!box) return;
+    const old = seDemo ? [] : seOldClasses();
+    box.innerHTML = old.length ? '<div class="pa-oldyear"><span><b>지난 학년도</b> 자율·진로 자료가 남아 있어요. 새 학년도가 시작됐으니 반마다 <b>엑셀로 받은 뒤 지워</b> 주세요 — 같은 반을 다시 맡으면 지난해 글이 섞여 보이고, 쌓이면 저장 공간이 모자라요.</span>' +
+      old.map(function(ck) {
+        const p = ck.split('-');
+        return '<span class="se-oldcls" data-ck="' + ck + '"><b>' + seClassYear(ck) + '학년도 ' + p[0] + '학년 ' + p[1] + '반</b> <button class="top-btn" onclick="seOldExport(\'' + ck + '\')">📊 엑셀로 받기</button><button class="top-btn" onclick="seOldDelete(\'' + ck + '\')">🗑 지우기</button></span>';
+      }).join('') + '</div>' : '';
+  }
+  async function seShowClass(ck) {
+    const p = ck.split('-');
+    seSetCfg({ g: Number(p[0]), c: Number(p[1]) });
+    seSelNum = null; seRosterKey = '';
+    seFillClassSelects();
+    await seLoadRoster();
+    seRenderAll();
+  }
+  async function seOldExport(ck) { await seShowClass(ck); await seExportExcel(); }
+  async function seOldDelete(ck) {
+    const keys = seClassKeys(ck), p = ck.split('-');
+    if (!keys.length) return seRenderAll();
+    if (!(await customConfirm(seClassYear(ck) + '학년도 ' + p[0] + '학년 ' + p[1] + '반 자율·진로 자료(받은 내용·편집·최종·영역·메모)를 모두 지울까요?\n먼저 📊 엑셀로 받아 두세요.'))) return;
+    if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
+    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
+    scheduleBackupWrite();
+    if (seClassKey() === ck) { seRosterKey = ''; await seLoadRoster(); }
+    seRenderAll();
   }
   async function seResetClass() {
     const c = seCfg();

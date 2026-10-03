@@ -1,5 +1,5 @@
 // 가짜 Supabase 서버(Node 메모리) 하나에 PC/휴대폰 브라우저 두 개를 붙여서
-// index.html의 실제 동기화 코드를 시나리오별로 돌려 본다.
+// index.html의 실제 동기화 코드를 시나리오별로 돌려 본다(다시 열 때 바뀐 것만 받기 포함).
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -54,6 +54,7 @@ async function handleDb(pageInfo, req) {
       setTimeout(() => { for (const t of touched) fireRealtime(t); }, 50);
       return { data: null, error: null };
     }
+    (pageInfo.pulls = pageInfo.pulls || []).push(filters.some(f => f.op === 'gt' && f.col === 'updated_at') ? 'inc' : 'full');
     let list = [...items.values()];
     for (const f of filters) {
       if (f.op === 'eq') list = list.filter(r => String(r[f.col]) === String(f.val));
@@ -311,6 +312,23 @@ function check(label, cond, detail) {
   await setLs(tablet, 'cal-memo-2026-10-10', '태블릿 메모');
   await wait(2500);
   check('이후 태블릿 입력은 정상 저장', serverVal(T1, 'cal-memo-2026-10-10') === '태블릿 메모');
+
+  console.log('\n[11] 다시 열 때는 바뀐 것만 받음(무료 전송량) — 7일에 한 번은 전체를 받아 맞춤');
+  const reopen = async (d) => { d.pulls = []; await d.page.reload(); await d.page.waitForFunction(() => typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 }); await wait(800); };
+  tablet.realtimeDown = true;
+  items.set(T1 + '|cal-memo-2026-10-11', { teacher_id: T1, key: 'cal-memo-2026-10-11', value: '닫혀 있는 동안 쓴 메모', updated_at: nowIso() });
+  await reopen(tablet);
+  tablet.realtimeDown = false;
+  check('다시 열면 전체가 아니라 바뀐 것만 받음', tablet.pulls.length > 0 && !tablet.pulls.includes('full'), tablet.pulls);
+  check('닫혀 있는 동안 다른 기기에서 쓴 것도 받아옴', await ls(tablet, 'cal-memo-2026-10-11') === '닫혀 있는 동안 쓴 메모');
+  // 서버에서 줄이 통째로 없어진 항목(관리자가 SQL로 지움 등)은 바뀐 것만 받기로는 모름 → 7일 지나 전체 받기 때 지움
+  await tablet.page.evaluate(() => { rawSetItem('cal-memo-2020-01-01', '서버에 없는 옛 항목'); rawSetItem('sync-last-full-pull', String(Date.now() - 8 * 24 * 3600 * 1000)); });
+  await reopen(tablet);
+  check('마지막 전체 받기가 7일 지나면 전체를 받고, 서버에 없는 항목은 이 기기에서도 지움', tablet.pulls[0] === 'full' && await ls(tablet, 'cal-memo-2020-01-01') === null &&
+    Date.now() - Number(await ls(tablet, 'sync-last-full-pull')) < 60000, [tablet.pulls, await ls(tablet, 'cal-memo-2020-01-01')]);
+  check('전체 받기 시각은 이 기기에만(서버로 안 올라감)', serverVal(T1, 'sync-last-full-pull') === undefined);
+  await setLs(tablet, 'search-tt-1-1-s', '화면 값'); await wait(2500);
+  check('다른 선생님 시간표 찾기 칸(search-tt-)은 서버로 안 올라감(화면 값)', serverVal(T1, 'search-tt-1-1-s') === undefined && !(await dirty(tablet)).includes('search-tt-1-1-s'));
 
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);

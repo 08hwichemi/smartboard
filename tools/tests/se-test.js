@@ -629,8 +629,26 @@ handleDb = async function(pageInfo, req) {
   await P.click('#se-page-header button:has-text("초기화")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(2500);
-  const afterReset = await P.evaluate(() => ({ n: Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg' && k.indexOf('-3-2-') === -1).length, rows: seRoster.length, other: localStorage.getItem('se-src-3-2-1-' + 'ad0') }));
-  check('초기화: 이 반 자료 모두 지움(서버에도 전달, 다른 반 3-2 것은 그대로), 학생 목록은 그대로', afterReset.n === 0 && afterReset.other === '첫 문장' && afterReset.rows === 5 && serverVal(T1, 'se-fin-3-1-1-a') === null, afterReset);
+  const afterReset = await P.evaluate(() => ({ n: Object.keys(localStorage).filter(k => k.indexOf('se-') === 0 && k !== 'se-cfg' && k.indexOf('-3-2-') === -1 && !/-3-2$/.test(k)), rows: seRoster.length, other: localStorage.getItem('se-src-3-2-1-' + 'ad0') }));
+  check('초기화: 이 반 자료 모두 지움(학년도 표시 포함, 서버에도 전달, 다른 반 3-2 것은 그대로), 학생 목록은 그대로', afterReset.n.length === 0 && afterReset.other === '첫 문장' && afterReset.rows === 5 && serverVal(T1, 'se-fin-3-1-1-a') === null, afterReset);
+
+  // ---- 📅 학년도 정리: 키에 학년도가 없어 내년에 같은 반을 맡으면 지난해 글이 섞여 보임 → 반마다 처음 쓴 학년도를 적고, 새 학년도엔 엑셀로 받은 뒤 지우게 ----
+  const yr = await P.evaluate(() => ({ now: seSchoolYear(), y32: localStorage.getItem('se-yr-3-2'), banner: document.getElementById('se-oldyear').textContent }));
+  check('자료를 쓰면 그 반에 올해 학년도가 적힘(se-yr-3-2, 서버에도), 지난 학년도 안내 없음', yr.y32 === String(yr.now) && !yr.banner && serverVal(T1, 'se-yr-3-2') === String(yr.now), yr);
+  // 학년도가 바뀐 것처럼: 3-2 자료를 지난 학년도로, 그해 명단 사본은 다른 이름
+  await P.evaluate((y) => { localStorage.setItem('se-yr-3-2', String(y - 1)); localStorage.setItem('se-roster-3-2', JSON.stringify([{ num: 1, name: '작년학생' }, { num: 2, name: '작년둘' }])); seRenderAll(); }, yr.now);
+  await wait(200);
+  const ob = await P.evaluate(() => ({ text: document.getElementById('se-oldyear').innerText, cls: [...document.querySelectorAll('#se-oldyear .se-oldcls')].map(e => e.dataset.ck).join() }));
+  check('새 학년도: 맨 위에 "지난 학년도 … 3학년 2반 📊 엑셀로 받기 · 🗑 지우기" 안내', ob.cls === '3-2' && new RegExp((yr.now - 1) + '학년도 3학년 2반').test(ob.text) && /엑셀로 받기/.test(ob.text), ob);
+  await P.evaluate(() => { window.__seExp = null; window.seExportExcel = async function() { window.__seExp = { ck: seClassKey(), names: seRoster.map(s => s.name).join() }; }; });
+  await P.click('#se-oldyear .se-oldcls[data-ck="3-2"] button:has-text("엑셀로 받기")'); await wait(500);
+  const exp = await P.evaluate(() => window.__seExp);
+  check('📊 엑셀로 받기 → 그 반으로 바꿔서 내려받음, 학생은 그해 명단 사본(지금 명렬표의 새 학생 아님)', exp && exp.ck === '3-2' && exp.names === '작년학생,작년둘' && (await P.inputValue('#se-class')) === '2', exp);
+  await P.click('#se-oldyear .se-oldcls[data-ck="3-2"] button:has-text("지우기")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(200);
+  await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(2500);
+  const od = await P.evaluate(() => ({ left: Object.keys(localStorage).filter(k => /^se-.*-3-2(-|$)/.test(k)), banner: document.getElementById('se-oldyear').textContent, rows: seRoster.length }));
+  check('🗑 지우기(두 번 확인) → 그 반 자료·학년도·명단 사본 모두 지움(서버에도), 안내 사라짐, 지금 명렬표 학생으로', od.left.length === 0 && !od.banner && od.rows === 28 && serverVal(T1, 'se-src-3-2-1-ad0') === null && serverVal(T1, 'se-yr-3-2') === null, od);
 
   const errs = [...pc.errors, ...pc2.errors, ...t2.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
