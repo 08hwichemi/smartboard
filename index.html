@@ -614,7 +614,6 @@
     .pa-hsep { width: 1px; height: 22px; background: var(--border-color); }
     #pa-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #pa-save-state.dirty { color: #B45309; }
-    .pa-beta { font-size: 10.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 6px; padding: 1px 7px; }
     .pa-cnt { display: inline-block; margin-left: 5px; font-size: 10.5px; font-weight: 800; color: var(--text-sub); background: var(--tt-bg); border-radius: 7px; padding: 0 5px; }
     .pa-cnt.ok { color: #1E7B3A; background: #DDF5E3; }
     .pa-add-cls { border-style: dashed !important; color: var(--accent-color) !important; }
@@ -1799,6 +1798,11 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 13.5l2 2 4-4"/></svg></div>
       <div class="rail-label">생기부</div>
     </div>
+    <!-- 📊 수행평가: 모든 선생님(생기부 바로 아래 — 세특까지 이어지는 일) -->
+    <div class="rail-item" id="rail-pa-btn" title="수행평가" onclick="railToggle('rail-pa-btn', openPa)">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 2.5h6v3H9z"/><path d="M8 11l2 2 4-4M8 17h8"/></svg></div>
+      <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">수행평가</div>
+    </div>
     <div class="rail-item" id="rail-persontt-btn" title="시간표" onclick="railToggle('rail-persontt-btn', openPersonTT)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
       <div class="rail-label">시간표</div>
@@ -1814,11 +1818,6 @@
     <div class="rail-item" id="rail-forms-btn" title="양식 만들기" onclick="railToggle('rail-forms-btn', openForms)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg></div>
       <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">양식</div>
-    </div>
-    <!-- 📊 수행평가: 시범(PA_BETA_IDS에 든 선생님만 보임 — paUpdateRail) -->
-    <div class="rail-item" id="rail-pa-btn" style="display:none;" title="수행평가 (시범)" onclick="railToggle('rail-pa-btn', openPa)">
-      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 2.5h6v3H9z"/><path d="M8 11l2 2 4-4M8 17h8"/></svg></div>
-      <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">수행평가</div>
     </div>
     <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공용 기능과 구분해 둠 -->
     <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
@@ -3746,7 +3745,6 @@
     <div class="pa-hrow">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
-      <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
       <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
       <div class="pa-htools">
       <div class="pa-backup" id="pa-backup" title="자료는 칸을 벗어날 때마다 선생님 계정에 저장돼요. 보관용으로 엑셀에 받아 두거나 다시 넣을 때 써요."><span class="pa-backup-label">💾 백업</span>
@@ -5525,7 +5523,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴 위쪽은 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부 문장 점검, 시간표 만들기, 월간일정표, 이름표), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(좌석배치표, 조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴 위쪽은 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부 문장 점검, 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(좌석배치표, 조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -14563,7 +14561,7 @@
     }, true);
   });
 
-  // ===== 📊 수행평가 (시범 — 아직 이용휘 선생님만) =====
+  // ===== 📊 수행평가 (10/4부터 모든 선생님 — 레일 생기부 바로 아래) =====
   // 사용자가 1학기에 쓰던 엑셀(.xlsm: 데이터·영역1~3·합계·세특·최종 시트)을 옮긴 것.
   //   과목(여러 개) → 수업반(과목마다 여러 반, 원반이든 선택과목처럼 섞인 반이든) → 학생(붙여 넣기 / 명렬표에서 고르기)
   //   → 영역·세부영역·줄 수 있는 점수(배점)·최하점 → 영역별 점수 입력(배점에 없는 점수는 못 넣음) + 평가내용
@@ -14575,9 +14573,9 @@
   //   pa-sc-과목-반-영역       {"반-번호": {v: {세부id: 점수}, m: 1(최하점)}}
   //   pa-nt-과목-반-영역-반-번호  평가내용
   //   pa-st/pa-drf/pa-fin-과목-반-반-번호  세특 고른 영역·메모 / 다듬는 글 / 완성본
-  // 공개할 때: PA_OPEN_ALL = true.
-  const PA_OPEN_ALL = false;
-  const PA_BETA_IDS = ['409a92ff-9590-4fee-bbe7-0cdc8994b37b']; // 이용휘(관리자) — 먼저 써 보고 검증되면 공개
+  // 10/4 모든 선생님에게 공개(PA_OPEN_ALL). 다시 시범으로 돌리려면 false — 그때는 PA_BETA_IDS 선생님만 레일에 보임.
+  const PA_OPEN_ALL = true;
+  const PA_BETA_IDS = ['409a92ff-9590-4fee-bbe7-0cdc8994b37b']; // 이용휘(관리자) — 시범 때 먼저 써 본 분
   const PA_LIMIT = 1500;   // 교과 세특 500자 = 1,500바이트(과목마다 바꿀 수 있음)
   function paAllowed() { const t = window.currentTeacher; return PA_OPEN_ALL || !!(t && PA_BETA_IDS.indexOf(t.id) !== -1); }
   function paUpdateRail() { const b = document.getElementById('rail-pa-btn'); if (b) b.style.display = paAllowed() ? 'flex' : 'none'; }

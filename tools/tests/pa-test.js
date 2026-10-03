@@ -189,11 +189,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   // ===== 시범 선생님만 =====
   const other = await openDevice(browser, '다른교사', T1);
-  check('시범이 아닌 선생님: 레일에 수행평가 없음', await other.page.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display === 'none'));
+  check('모든 선생님에게 공개: 시범 선생님이 아니어도 레일에 수행평가', await other.page.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display !== 'none' && document.getElementById('rail-pa-btn').title === '수행평가'));
   await other.ctx.close();
   const d = await openDevice(browser, '시범교사', TB);
   const P = d.page;
-  check('시범 선생님: 레일 "양식" 다음에 수행평가', await P.evaluate(() => { const b = document.getElementById('rail-pa-btn'); return getComputedStyle(b).display !== 'none' && b.previousElementSibling.id === 'rail-forms-btn' && b.innerText.includes('수행평가'); }));
+  check('레일 "생기부" 바로 아래에 수행평가, 머리에 "시범" 표시 없음', await P.evaluate(() => { const b = document.getElementById('rail-pa-btn'); return getComputedStyle(b).display !== 'none' && b.previousElementSibling.id === 'rail-sgb-btn' && b.innerText.includes('수행평가') && !document.querySelector('#pa-page .pa-beta') && !/시범/.test(document.getElementById('pa-page-header').innerText); }));
   await P.click('#rail-pa-btn'); await P.waitForTimeout(300);
   check('누르면 수행평가 화면 + 처음 안내(과목 만들기)', await P.isVisible('#pa-page') && /첫 과목 만들기/.test(await P.innerText('#pa-pane')) && !(await P.isVisible('#main-dashboard')));
   check('처음 안내: 이 화면이 뭘 하는 곳인지 + 다섯 걸음 + 시작 단추 반짝임', /나이스에 올릴 파일을 만드는 곳/.test(await P.innerText('#pa-pane')) && (await P.$$('#pa-pane .pa-w-step')).length === 5 && await P.evaluate(() => document.getElementById('pa-w-go').classList.contains('pa-glow')));
