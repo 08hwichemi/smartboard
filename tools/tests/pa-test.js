@@ -372,8 +372,28 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.click('#rail-pa-btn'); await P.waitForTimeout(200); await P.click('#rail-pa-btn'); await P.waitForTimeout(200);
   check('수행평가 버튼을 한 번 더 누르면 홈', !(await P.isVisible('#pa-page')) && await P.isVisible('#main-dashboard'));
 
+  // ===== 📖 설명서: 예시 화면으로 다섯 탭을 차례로, 선생님 자료·서버는 그대로 =====
+  await P.click('#rail-pa-btn'); await P.waitForTimeout(200);
+  const before = JSON.stringify(await lsKeys(P, '^pa-')), upBefore = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
+  await P.click('#pa-tour-btn'); await P.waitForTimeout(300);
+  const want = await P.evaluate(() => PA_TOUR_STEPS.map(s => s.title));
+  const seen = [], miss = [];
+  for (let i = 0; i < want.length + 2; i++) {
+    if (!(await P.evaluate(() => document.getElementById('tour-overlay').style.display === 'block'))) break;
+    const t = await P.innerText('#tour-card-title');
+    if (seen[seen.length - 1] !== t) seen.push(t);
+    if (i === 0) check('설명서 첫 화면: 예시 자료(화학Ⅱ·1반 5명) + "저장 안 돼요" 표시', (await P.innerText('#pa-subjs')).includes('화학Ⅱ') && /예시 화면/.test(await P.innerText('#pa-save-state')) && /5/.test(await P.innerText('#pa-classes')));
+    if (process.env.PA_SHOTS && [0, 4, 9, 13, 16].includes(i)) { await P.waitForTimeout(400); await P.screenshot({ path: path.join(process.env.PA_SHOTS, 'tour-' + i + '.png') }); }
+    await P.click('#tour-next-btn'); await P.waitForTimeout(250);
+  }
+  want.forEach(t => { if (seen.indexOf(t) === -1) miss.push(t); });
+  check('설명서: ' + want.length + '단계 모두 그 자리 요소를 찾아 보여 줌(건너뛴 단계 없음)', miss.length === 0 && seen.length === want.length, { miss, seen: seen.length, want: want.length });
+  const after = JSON.stringify(await lsKeys(P, '^pa-')), upAfter = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
+  check('설명서가 끝나면 원래 화면으로 + 선생님 자료(localStorage·서버) 그대로', before === after && upBefore === upAfter && (await P.evaluate(() => document.getElementById('tour-overlay').style.display !== 'block' && !paDemo)) && (await P.innerText('#pa-subjs')).includes('화학Ⅱ') && (await P.innerText('#pa-save-state')).indexOf('예시') === -1);
+
   // ===== 지우기 =====
-  await P.click('#rail-pa-btn'); await P.waitForTimeout(200); await P.click('#pa-tabs [data-tab="setup"]'); await P.waitForTimeout(200);
+  if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
+  await P.click('#pa-tabs [data-tab="setup"]'); await P.waitForTimeout(200);
   await P.click('#pa-pane button:has-text("이 과목 지우기")'); await answerConfirm(P, true); await answerConfirm(P, true); await P.waitForTimeout(200);
   const left = Object.keys(await lsKeys(P, '^pa-(ro|sc|nt|st|drf|fin)-'));
   check('과목 지우기(두 번 확인): 그 과목 자료만 지우고 다른 과목(물리학Ⅰ)으로', left.length === 1 && /^pa-ro-/.test(left[0]) && (await cfg(P)).subjects.map(x => x.name).join() === '물리학Ⅰ' && (await P.inputValue('#pa-f-name')) === '물리학Ⅰ', left);

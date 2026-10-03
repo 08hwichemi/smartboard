@@ -3630,6 +3630,7 @@
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
+      <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
       <div class="top-btn-cluster" id="pa-subjs" title="과목"></div>
       <span class="pa-hsep"></span>
       <div class="top-btn-cluster" id="pa-classes" title="수업반"></div>
@@ -13888,9 +13889,12 @@
   function paIsOpen() { const pg = document.getElementById('pa-page'); return !!pg && pg.style.display !== 'none'; }
 
   // ----- 저장 -----
-  function paGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  // 설명서 동안(paDemo)은 진짜 저장소 대신 예시 자료 안에서만 읽고 쓴다 — 선생님 자료·서버는 건드리지 않음.
+  let paDemo = null;
+  function paGet(k) { if (paDemo) return paDemo[k] || ''; try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function paSet(k, v) {
     v = String(v == null ? '' : v);
+    if (paDemo) { if (v) paDemo[k] = v; else delete paDemo[k]; return true; }
     if (paGet(k) === v) return true;
     try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
     catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
@@ -14102,6 +14106,7 @@
   const PA_TABS = [['setup', '① 과목·학생'], ['areas', '② 영역·배점'], ['score', '③ 점수 입력'], ['sum', '④ 합계·나이스'], ['sk', '⑤ 세특']];
   function paRenderAll() {
     if (!paIsOpen()) return;
+    if (paDemo) { const ss = document.getElementById('pa-save-state'); if (ss) { ss.className = 'dirty'; ss.textContent = '📖 설명서 예시 화면 — 저장 안 돼요'; } }
     const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
     const c = paCfg(), sub = paSub(c), cls = paCls(sub);
     // 머리: 과목 고르기 + 반 칩
@@ -14218,7 +14223,8 @@
   }
   function paRemoveKeys(prefix) {
     const keys = [];
-    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(prefix) === 0) keys.push(k); }
+    if (paDemo) Object.keys(paDemo).forEach(function(k) { if (k.indexOf(prefix) === 0) keys.push(k); });
+    else for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(prefix) === 0) keys.push(k); }
     keys.forEach(function(k) { paSet(k, ''); });
     return keys.length;
   }
@@ -14501,7 +14507,7 @@
       a.subs.forEach(function(x, xi) {
         const val = v[x.id] == null ? '' : v[x.id];
         const bad = val !== '' && paParsePts(x.pts).indexOf(paNum(val)) === -1;
-        h += '<td class="se-c"><input class="pa-sc' + (bad ? ' bad' : '') + '" inputmode="decimal" autocomplete="off" data-k="' + k + '" data-x="' + x.id + '" data-r="' + ri + '" data-col="' + xi + '" value="' + val + '"' + (rec.m ? ' disabled' : '') +
+        h += '<td class="se-c"><input class="pa-sc' + (bad ? ' bad' : '') + '" inputmode="decimal" autocomplete="off" data-k="' + k + '" data-x="' + x.id + '" data-r="' + ri + '" data-col="' + xi + '" value="' + val + '"' + (rec.m && a.min != null ? ' disabled' : '') +
           ' oninput="paScInput(this)" onchange="paScCommit(this)" onkeydown="paScKeydown(event, this)" onpaste="paScPaste(event, this)" onfocus="this.select()"></td>';
       });
       h += '<td class="se-c pa-total" data-k="' + k + '">' + paTotalHtml(r) + '</td>';
@@ -14605,20 +14611,21 @@
     e.preventDefault();
     const ctx = paScCtx(), sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id), ro = paRoster(ctx.sub.id, ctx.cls.id);
     const r0 = Number(inp.dataset.r), c0 = Number(inp.dataset.col);
-    let ok = 0, bad = [];
+    let ok = 0, bad = [], skipMin = 0;
     rows.forEach(function(row, i) {
       const st = ro[r0 + i];
       row.forEach(function(cell, j) {
         const x = ctx.a.subs[c0 + j], v = String(cell).trim();
         if (!st || !x || v === '') return;
         const k = paSk(st), rec = sc[k] || { v: {} }; rec.v = rec.v || {};
+        if (rec.m && ctx.a.min != null) { skipMin++; return; }   // 최하점 처리한 학생은 건너뜀
         if (!isFinite(Number(v)) || paParsePts(x.pts).indexOf(paNum(v)) === -1) { bad.push(paStuLabel(st) + ' ' + (x.name || '') + ' "' + v + '"'); return; }
         rec.v[x.id] = paNum(v); sc[k] = rec; ok++;
       });
     });
     paSaveScores(ctx.sub.id, ctx.cls.id, ctx.a.id, sc);
     paRenderAll();
-    if (bad.length) customAlert(ok + '칸을 넣었어요.\n줄 수 없는 점수라서 뺀 칸 ' + bad.length + '개:\n' + bad.slice(0, 12).join('\n') + (bad.length > 12 ? '\n…' : ''));
+    if (bad.length || skipMin) customAlert(ok + '칸을 넣었어요.' + (skipMin ? '\n최하점 처리한 학생 칸 ' + skipMin + '개는 건너뛰었어요.' : '') + (bad.length ? '\n줄 수 없는 점수라서 뺀 칸 ' + bad.length + '개:\n' + bad.slice(0, 12).join('\n') + (bad.length > 12 ? '\n…' : '') : ''));
   }
   function paNoteInput(ta) {
     paSaveState('typing'); paAutoSize(ta);
@@ -14646,8 +14653,8 @@
     const rows = paStudentTotals(sub, cls);
     const okN = rows.filter(function(r) { return r.ok; }).length;
     let h = '<div class="pa-row" style="margin-bottom:8px;"><span class="se-sum ' + (rows.length && okN === rows.length ? 'ok' : okN ? '' : 'empty') + '">입력 끝 <b>' + okN + '</b> / ' + rows.length + '명</span>' +
-      '<button class="top-btn pa-primary" onclick="paNeisMake()" title="나이스 수행평가 일괄등록 양식과 같은 모양(과목|반|번호|성명|영역별 만점·점수)으로 새로 만듭니다">📤 나이스 일괄등록 파일 만들기</button>' +
-      '<label class="top-btn" style="cursor:pointer; margin:0;" title="나이스에서 받은 수행평가 일괄등록 엑셀을 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줍니다(추천 — 나이스 양식 그대로)">📥 나이스에서 받은 파일에 채우기<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="paNeisFill(this.files[0]); this.value=\'\';"></label>' +
+      '<button class="top-btn pa-primary" id="pa-neis-make" onclick="paNeisMake()" title="나이스 수행평가 일괄등록 양식과 같은 모양(과목|반|번호|성명|영역별 만점·점수)으로 새로 만듭니다">📤 나이스 일괄등록 파일 만들기</button>' +
+      '<label class="top-btn" id="pa-neis-fill" style="cursor:pointer; margin:0;" title="나이스에서 받은 수행평가 일괄등록 엑셀을 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줍니다(추천 — 나이스 양식 그대로)">📥 나이스에서 받은 파일에 채우기<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="paNeisFill(this.files[0]); this.value=\'\';"></label>' +
       '<span class="se-muted">나이스 > 수행평가 일괄등록에서 받은 파일에 채우는 걸 추천해요(영역 이름이 같아야 해요).</span></div>';
     if (!sub.areas.length || !rows.length) return h + '<div class="se-box se-sbox pa-empty">' + (!sub.areas.length ? '영역이 아직 없어요.' : '학생이 없어요.') + '</div>';
     h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-sum-table"><thead><tr><th>반</th><th>번호</th><th>이름</th>' +
@@ -14802,7 +14809,7 @@
     const ro = paRoster(sub.id, cls.id);
     if (!ro.length) return '<div class="se-box se-sbox pa-empty">' + paEsc(cls.name) + '에 학생이 없어요.</div>';
     const fin = !!paUi().skFin;
-    let h = '<div class="pa-row" style="margin-bottom:8px;"><div class="top-btn-cluster"><button class="top-btn' + (fin ? '' : ' theme-active') + '" onclick="paSetUi({ skFin: false }); paRenderAll();">✍️ 편집</button>' +
+    let h = '<div class="pa-row" style="margin-bottom:8px;"><div class="top-btn-cluster" id="pa-sk-mode"><button class="top-btn' + (fin ? '' : ' theme-active') + '" onclick="paSetUi({ skFin: false }); paRenderAll();">✍️ 편집</button>' +
       '<button class="top-btn' + (fin ? ' theme-active' : '') + '" onclick="paSetUi({ skFin: true }); paRenderAll();">📊 완성본 모아 보기</button></div>' +
       '<span class="se-muted">③ 점수 입력에서 적은 영역별 평가내용을 골라 합치고 다듬어요 · 한도 ' + paFmt(sub.limit) + '바이트(' + Math.floor(sub.limit / 3) + '자)</span></div>';
     if (fin) return h + paSkFinHtml(sub, cls, ro);
@@ -14931,6 +14938,74 @@
         '<td class="se-bcell' + (over ? ' over' : '') + '"><b>' + paFmt(b) + '</b><br>/ ' + paFmt(sub.limit) + '</td><td class="se-c">' + (t ? '<button class="pa-x" title="복사" onclick="seCopyText(paGet(paFinKey(\'' + sub.id + '\', \'' + cls.id + '\', \'' + k + '\')), this)">📋</button>' : '') + '</td></tr>';
     });
     return h + '</tbody></table></div>';
+  }
+
+  // ----- 📖 수행평가 설명서 -----
+  // 예시 자료(가짜 과목·학생·점수)를 보여 주며 ①→⑤ 탭을 차례로 짚는다. 예시는 paDemo 안에만 있어서 선생님 자료·서버는 그대로,
+  // 끝나면(완료·닫기) 원래 화면으로 돌아온다.
+  function paDemoStore() {
+    const d = {}, J = function(k, v) { d[k] = JSON.stringify(v); };
+    J('pa-cfg', { subjects: [{ id: 'dsub', name: '화학Ⅱ', hours: 3, limit: 1500,
+      classes: [{ id: 'dc1', name: '1반', g: 3, c: 1 }, { id: 'dc2', name: '2반', g: 3, c: 2 }],
+      areas: [
+        { id: 'da1', name: '실험 보고서', min: 2, note: true, subs: [{ id: 'dx1', name: '탐구 설계', pts: '1-5' }, { id: 'dx2', name: '결과 해석', pts: '2, 4, 6, 8, 10' }] },
+        { id: 'da2', name: '개념 구조화', min: 4, note: true, subs: [{ id: 'dx3', name: '개념도', pts: '5, 10, 15' }] },
+      ] }] });
+    J('pa-ui', { s: 'dsub', c: 'dc1', tab: 'setup', area: 'da1' });
+    J('pa-ro-dsub-dc1', [{ g: 3, c: 1, n: 1, name: '김하늘' }, { g: 3, c: 1, n: 2, name: '이바다' }, { g: 3, c: 1, n: 3, name: '박구름' }, { g: 3, c: 3, n: 7, name: '최별' }, { g: 3, c: 5, n: 12, name: '정나래' }]);
+    J('pa-sc-dsub-dc1-da1', { '1-1': { v: { dx1: 5, dx2: 10 } }, '1-2': { v: { dx1: 4, dx2: 8 } }, '1-3': { m: 1, v: {} }, '3-7': { v: { dx1: 3 } } });
+    J('pa-sc-dsub-dc1-da2', { '1-1': { v: { dx3: 15 } }, '1-2': { v: { dx3: 10 } }, '1-3': { v: { dx3: 5 } }, '3-7': { v: { dx3: 10 } } });
+    d['pa-nt-dsub-dc1-da1-1-1'] = '반응 속도에 영향을 주는 요인을 스스로 설계한 실험으로 비교하고, 변인 통제의 한계를 짚어 보완 방법을 제안함.';
+    d['pa-nt-dsub-dc1-da1-1-2'] = '온도에 따른 반응 속도 변화를 그래프로 정리하고 활성화 에너지와 연결해 설명함.';
+    d['pa-nt-dsub-dc1-da2-1-1'] = '화학 평형 단원의 개념을 르샤틀리에 원리를 중심으로 구조화하여 개념 간 관계를 명확히 나타냄.';
+    J('pa-st-dsub-dc1-1-1', { sel: ['da1', 'da2'], memo: '' });
+    d['pa-fin-dsub-dc1-1-1'] = '반응 속도에 영향을 주는 요인을 스스로 설계한 실험으로 비교하고, 변인 통제의 한계를 짚어 보완 방법을 제안함. 화학 평형 단원의 개념을 르샤틀리에 원리를 중심으로 구조화하여 개념 간 관계를 명확히 나타냄.';
+    return d;
+  }
+  const paTourTab = function(tab, extra) { return function() { paSetUi(Object.assign({ tab: tab }, extra || {})); if (tab === 'sk') paSkSel = '1-1'; paRenderAll(); }; };
+  const PA_TOUR_STEPS = [
+    { selector: '#pa-page-header', before: paTourTab('setup'), title: '📊 수행평가에 오신 것을 환영해요!',
+      desc: '수행평가 점수 입력부터 나이스 일괄등록 파일, 세특까지 한곳에서 해요. 지금 보이는 건 예시 화면이라 마음껏 둘러봐도 선생님 자료는 바뀌지 않아요.\n\n순서는 다섯 단계예요.\n① 과목·학생 → ② 영역·배점 → ③ 점수 입력 → ④ 합계·나이스 → ⑤ 세특' },
+    { selector: '#pa-subjs', before: paTourTab('setup'), title: '📚 과목',
+      desc: '맡은 과목마다 단추가 하나씩 생겨요. "＋ 과목"을 누르면 내 시간표의 과목이 나와서, 누르기만 하면 과목 이름·시수·반이 한 번에 들어가요(시간표에 없으면 직접 입력).' },
+    { selector: '#pa-classes', before: paTourTab('setup'), title: '👥 수업반',
+      desc: '과목마다 수업반이 여러 개예요. 반 옆 숫자는 학생 수예요. "＋ 반"으로 더하고, 반은 숫자 순서로 정리돼요.' },
+    { selector: '#pa-pane .pa-form', before: paTourTab('setup'), title: '① 과목 이름 · 시수 · 세특 한도',
+      desc: '나이스 일괄등록 파일의 과목 칸은 "과목 이름(시수)"로 저절로 만들어져요(예: 화학Ⅱ(3)). 세특 바이트 한도는 보통 500자 = 1,500바이트예요.' },
+    { selector: '#pa-paste', before: paTourTab('setup'), title: '① 학생 넣기 — 엑셀에서 붙여 넣기',
+      desc: '선택과목처럼 여러 반 학생이 섞인 수업은 엑셀에서 반·번호·이름(또는 학번·이름) 칸을 복사해 여기에 붙여 넣고 "붙여 넣은 학생 넣기"를 눌러요. 머리 줄(반·번호·이름)은 알아서 빼요.' },
+    { selector: '#pa-pick-list', before: paTourTab('setup'), title: '① 학생 넣기 — 명렬표에서 고르기',
+      desc: '원반 수업이면 학년·반을 고르고 "모두 체크" → "체크한 학생 더하기"로 한 번에 넣어요. 한 반을 통째로 넣으면 수업반 이름도 그 반으로 바뀌어요.' },
+    { selector: '#pa-pane .pa-area', before: paTourTab('areas'), title: '② 영역 · 최하점 · 평가내용 칸',
+      desc: '영역(예: 실험 보고서)마다 카드가 하나예요. 이름 옆 숫자가 영역 만점이에요.\n최하점 = 미제출·미응시 학생에게 주는 점수예요. "평가내용 칸 쓰기"를 켜면 점수 입력 옆에 평가내용(세특 재료) 칸이 생겨요.' },
+    { selector: '#pa-pane .pa-sub-row:not(.pa-sub-hd)', before: paTourTab('areas'), title: '② 세부영역과 줄 수 있는 점수',
+      desc: '세부영역마다 줄 수 있는 점수를 적어요 — 1씩이면 "1-5", 띄엄띄엄이면 "2, 4, 6, 8, 10". 옆에 어떻게 읽었는지 바로 보여요. 점수 입력에서는 여기 없는 점수를 넣을 수 없어요.' },
+    { selector: '#pa-pane .pa-area-tabs', before: paTourTab('score', { area: 'da1' }), title: '③ 점수 입력 — 영역 고르기',
+      desc: '영역마다 따로 입력해요. 탭 옆 "2/5"는 다 넣은 학생 수예요.' },
+    { selector: '#pa-pane .pa-score-table thead', before: paTourTab('score', { area: 'da1' }), title: '③ 점수 칸',
+      desc: '칸 제목 아래 초록 글씨가 넣을 수 있는 점수예요. 숫자를 치고 Enter를 누르면 아래 학생으로 내려가요. 줄 수 없는 점수는 빨갛게 표시되고 저장되지 않아요. 엑셀에서 한 열을 복사해 붙여 넣어도 돼요.' },
+    { selector: '#pa-pane .pa-mchk', before: paTourTab('score', { area: 'da1' }), title: '③ 최하점',
+      desc: '미제출·미응시 학생은 체크하면 점수 칸이 잠기고 합계가 최하점이 돼요(합계 옆 "최하" 표시).' },
+    { selector: '#pa-pane .pa-note', before: paTourTab('score', { area: 'da1' }), title: '③ 평가내용',
+      desc: '학생마다 이 영역의 평가내용을 적어요. 바이트가 바로 보이고, ⑤ 세특에서 이 내용을 골라 합쳐요. 칸을 벗어나면 저장돼요.' },
+    { selector: '#pa-pane .pa-sum-table', before: paTourTab('sum'), title: '④ 합계 — 맞게 넣었는지 확인',
+      desc: '학생마다 영역별 점수와 총점이 나와요. 확인 칸에 ⚠️가 있으면 빈칸·점수 오류·최하점보다 낮은 점수 같은 문제가 있다는 뜻이에요.' },
+    { selector: '#pa-neis-fill', before: paTourTab('sum'), title: '④ 나이스로 보내기',
+      desc: '추천: 나이스 > 수행평가 일괄등록에서 양식을 내려받아 "📥 나이스에서 받은 파일에 채우기"로 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줘요. 그 파일을 그대로 나이스에 올리면 끝!\n"📤 나이스 일괄등록 파일 만들기"는 같은 모양의 파일을 새로 만들어요. 영역 이름은 나이스와 같게 맞춰 두세요.' },
+    { selector: '#pa-sk-students', before: paTourTab('sk'), title: '⑤ 세특 — 학생 고르기',
+      desc: '학생을 누르면 오른쪽에 영역별 평가내용이 나와요. 숫자는 세특 바이트예요(초록 = 한도 안, 빨강 = 넘음).' },
+    { selector: '#pa-sk-editor .se-card', before: paTourTab('sk'), title: '⑤ 넣을 평가내용 체크 → 합치기',
+      desc: '넣을 영역을 체크하면 "합치면 몇 바이트"가 바로 보여요. "⬇ 체크한 내용을 합쳐서 편집 칸에 넣기"를 누르면 아래 편집 칸으로 들어가요.' },
+    { selector: '#pa-put-btn', before: paTourTab('sk'), title: '⑤ 다듬고 완성본에 넣기',
+      desc: '편집 칸에서 문장을 다듬으면 바이트와 기재하면 안 되는 표현을 바로 알려 줘요. 다 되면 📊 완성본에 넣기! 📋 복사로 나이스에 바로 붙여 넣을 수도 있어요.' },
+    { selector: '#pa-sk-mode', before: paTourTab('sk'), title: '📊 완성본 모아 보기',
+      desc: '반 전체 완성본을 바이트와 함께 한눈에 보고, 학생마다 📋로 복사해 나이스에 붙여 넣어요.\n\n수고하셨습니다! 🎉 이제 "＋ 과목"부터 시작해 보세요.' },
+  ];
+  function paOpenTour() {
+    paDemo = paDemoStore();
+    paSkSel = null;
+    paRenderAll();
+    openPageTour(PA_TOUR_STEPS, function() { paDemo = null; paSkSel = null; paSaveState(''); paRenderAll(); });
   }
 
   // ===== 📄 양식 만들기 =====
