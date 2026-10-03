@@ -695,6 +695,8 @@
     #pa-sk-students .se-stu { grid-template-columns: 40px 1fr auto 0; }
     #pa-sk-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; padding-left: 16px; }
     .pa-sk-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+    #pa-page { --fz-sgb: 13px; }
+    #pa-pane { zoom: var(--pa-zoom, 1); }
     #pa-draft { width: 100%; box-sizing: border-box; min-height: 170px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); outline: none; }
     #pa-draft:focus { border-color: var(--accent-color); }
     #pa-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -3674,8 +3676,8 @@
       <button class="top-btn" id="pa-xl-export" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📊 엑셀 내려받기</button>
       </div>
       <span id="pa-save-state"></span>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
-      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('pa', -1)" title="수행평가 화면 글씨·칸 작게">A-</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('pa', 1)" title="수행평가 화면 글씨·칸 크게">A+</button>
     </div>
   </div>
   <div id="pa-main">
@@ -7496,12 +7498,13 @@
     } catch(e) { customAlert('삭제 실패. 인터넷 연결을 확인해주세요.'); }
   }
 
-  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'hwp': 12, 'sgb': 13, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
+  let fontSizes = { 'tt': 13, 'noti': 16, 'todo': 13, 'cal': 11, 'halfcal': 9, 'roster': 11, 'hwp': 12, 'sgb': 13, 'pa': 13, 'tt-mobile': 14, 'cal-mobile': 14, 'staff-tt': 12 };
   function changeFontSize(target, dir) {
     fontSizes[target] += dir;
     if(fontSizes[target] < 9) fontSizes[target] = 9; 
     if(fontSizes[target] > 20) fontSizes[target] = 20; 
     document.documentElement.style.setProperty('--fz-' + target, fontSizes[target] + 'px');
+    if (target === 'pa') paApplyZoom();
     localStorage.setItem('fz-' + target, fontSizes[target]);
   }
 
@@ -9745,6 +9748,7 @@
       if(saved) {
         fontSizes[k] = parseInt(saved);
         document.documentElement.style.setProperty('--fz-' + k, fontSizes[k] + 'px');
+        if (k === 'pa') paApplyZoom();
       }
     });
 
@@ -13998,6 +14002,9 @@
   const PA_LIMIT = 1500;   // 교과 세특 500자 = 1,500바이트(과목마다 바꿀 수 있음)
   function paAllowed() { const t = window.currentTeacher; return PA_OPEN_ALL || !!(t && PA_BETA_IDS.indexOf(t.id) !== -1); }
   function paUpdateRail() { const b = document.getElementById('rail-pa-btn'); if (b) b.style.display = paAllowed() ? 'flex' : 'none'; }
+  // 수행평가 글씨 크기(A−/A+): 표·칸 크기가 px로 정해져 있어 글씨만 키우면 칸이 안 맞으므로, 화면(#pa-pane) 전체를 같은 비율로 키운다(기본 13 = 100%).
+  // 세특 편집 칸이 쓰는 생기부 글씨 크기(--fz-sgb)는 수행평가 안에선 13px로 고정 — 예전엔 A−/A+가 그 값만 바꿔 세특 칸만 커졌음.
+  function paApplyZoom() { document.documentElement.style.setProperty('--pa-zoom', String((fontSizes.pa || 13) / 13)); }
   function paIsOpen() { const pg = document.getElementById('pa-page'); return !!pg && pg.style.display !== 'none'; }
 
   // ----- 저장 -----

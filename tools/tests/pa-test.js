@@ -461,6 +461,23 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.name === '1반').id }); paRenderAll(); });
     paths.concat([xf3]).forEach(pth => { try { fs.unlinkSync(pth); } catch (e) {} });
   } else console.log('  ⚠️ exceljs가 없어 엑셀 백업 검사는 건너뜀');
+  // ===== 글씨 크기(A−/A+): 수행평가 화면 전체가 같은 비율로(예전엔 세특 칸만 커짐), 자율·진로 글씨 크기와 따로 =====
+  await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
+  const fz0 = await P.evaluate(() => ({ h: document.querySelector('#pa-pane .pa-sc').getBoundingClientRect().height, name: document.querySelector('#pa-pane .pa-name, #pa-pane td.se-c').getBoundingClientRect().height, sgb: getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim() }));
+  for (let i = 0; i < 3; i++) await P.click('#pa-page-header button:has-text("A+")');
+  await P.waitForTimeout(150);
+  const fz1 = await P.evaluate(() => ({ h: document.querySelector('#pa-pane .pa-sc').getBoundingClientRect().height, name: document.querySelector('#pa-pane .pa-name, #pa-pane td.se-c').getBoundingClientRect().height, zoom: getComputedStyle(document.getElementById('pa-pane')).zoom,
+    sgb: getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim(), saved: localStorage.getItem('fz-pa') }));
+  check('A+ 세 번: 점수 칸·이름 칸까지 같은 비율로 커짐(16/13), 자율·진로(생기부) 글씨 크기는 그대로, 계정에 기억', Math.abs(fz1.h / fz0.h - 16 / 13) < 0.03 && fz1.name > fz0.name * 1.15 && fz1.sgb === fz0.sgb && fz1.saved === '16', { fz0, fz1 });
+  await P.click('#pa-tabs [data-tab="sk"]'); await P.waitForTimeout(200);
+  await P.evaluate(() => { const b = [...document.querySelectorAll('#pa-pane button')].find(x => /편집/.test(x.textContent) && !/모아/.test(x.textContent)); if (b) b.click(); });
+  await P.waitForTimeout(200);
+  const dr = await P.evaluate(() => getComputedStyle(document.getElementById('pa-draft')).fontSize);
+  check('세특 편집 칸 글씨는 13px 그대로(두 번 커지지 않음) — 화면 비율로만 커짐', dr === '13px', dr);
+  for (let i = 0; i < 3; i++) await P.click('#pa-page-header button:has-text("A-")');
+  await P.waitForTimeout(100);
+  check('A− 세 번이면 원래대로', (await P.evaluate(() => getComputedStyle(document.getElementById('pa-pane')).zoom)) === '1');
+
   // ===== 🗓️ 학기 =====
   const TERM0 = await P.evaluate(() => paTermNow());
   check('학기: 머리에 학기 고르기(지금 학기), 과목마다 학기', (await P.inputValue('#pa-term')) === TERM0 && await P.evaluate((t) => paCfg().subjects.every(s => s.term === t), TERM0) &&
