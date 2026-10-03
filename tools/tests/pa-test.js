@@ -449,9 +449,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '5-sk-fin.png') });
   // ===== 📊 엑셀 내려받기(백업) / 📥 가져오기 =====
-  check('위쪽 메뉴에 "💾 백업" 묶음 — 💾 백업(전체 백업 파일 창) · 엑셀 가져오기 · 엑셀 내려받기, 한 줄 머리', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') && /^💾 백업/.test((await P.innerText('#pa-backup')).trim()) &&
-    await P.evaluate(() => ['#pa-xl-import', '#pa-xl-export', '#pa-backup-btn'].every(q => !!document.querySelector('#pa-backup ' + q)) &&
-      true));
+  // 💾 백업은 단추가 아니라 묶음 이름표(JSON 백업 파일은 없앰 — 사용자: 엑셀 가져오기·내려받기로), 엑셀 가져오기도 다른 단추와 같은 <button>(label이면 글씨체가 달랐음)
+  const bkHead = await P.evaluate(() => { const g = document.getElementById('pa-backup'), f = q => getComputedStyle(document.querySelector(q)).fontFamily;
+    return { label: g.firstElementChild.tagName + ':' + g.firstElementChild.textContent.trim(), btns: [...g.querySelectorAll('button')].map(b => b.id).join(), font: f('#pa-xl-import') === f('#pa-xl-export'), json: typeof window.paOpenBackup }; });
+  check('위쪽 메뉴에 "💾 백업" 묶음 — 이름표 💾 백업 · 엑셀 가져오기 · 엑셀 내려받기(두 단추 글씨체 같음), JSON 백업 없음', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') &&
+    bkHead.label === 'SPAN:💾 백업' && bkHead.btns === 'pa-xl-import,pa-xl-export' && bkHead.font && bkHead.json === 'undefined', bkHead);
   // 머리: 첫 줄 = 제목·설명서 + 백업·화면 크기, 둘째 줄 = 학기·과목·반 — 노트북 폭(1366)에서 화면 크기를 키워도 머리 높이 그대로(본문만 커짐)
   {
     const vp = P.viewportSize(); await P.setViewportSize({ width: 1366, height: 768 });
@@ -624,28 +626,6 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('설명서: ' + want.length + '단계 모두 그 자리 요소를 찾아 보여 줌(건너뛴 단계 없음)', miss.length === 0 && seen.length === want.length, { miss, seen: seen.length, want: want.length });
   const after = JSON.stringify(await lsKeys(P, '^pa-')), upAfter = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
   check('설명서가 끝나면 원래 화면으로 + 선생님 자료(localStorage·서버) 그대로', before === after && upBefore === upAfter && (await P.evaluate(() => document.getElementById('tour-overlay').style.display !== 'block' && !paDemo)) && (await P.innerText('#pa-subjs')).includes('화학Ⅱ') && (await P.innerText('#pa-save-state')).indexOf('예시') === -1);
-
-  // ===== 💾 백업(JSON) =====
-  if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
-  await P.evaluate(() => { window.__bk = null; window.fmSaveNow = function(b, n) { window.__bkName = n; b.text().then(t => { window.__bk = t; }); }; });
-  await P.click('#pa-backup-btn'); await P.waitForSelector('#pa-modal', { state: 'visible' });
-  check('백업 창: 지금 자료 요약(과목 2개 · 학생 수)', /과목 2개\(화학Ⅱ 3반, 물리학Ⅰ 4반\) · 학생 \d+명/.test(await P.innerText('#pa-bk-now')), await P.innerText('#pa-bk-now'));
-  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '6-backup.png') });
-  await P.click('#pa-bk-save'); await P.waitForTimeout(200);
-  const bkTxt = await P.evaluate(() => window.__bk), bk = JSON.parse(bkTxt || '{}'), nowPa = await lsKeys(P, '^pa-');
-  check('백업 파일: 수행평가_백업_날짜.json, pa- 키 모두 그대로', /^수행평가_백업_\d{4}-\d\d-\d\d_\d{4}\.json$/.test(await P.evaluate(() => window.__bkName)) && bk.app === 'smartboard-pa' && JSON.stringify(bk.data) === JSON.stringify(nowPa), [await P.evaluate(() => window.__bkName), Object.keys(bk.data || {}).length, Object.keys(nowPa).length]);
-  // 자료를 망가뜨린 뒤 되돌리기
-  await P.evaluate((k) => { paSet(k, ''); paSet('pa-zz-test', 'x'); }, scKey);
-  const loadBk = async (txt, name) => { await P.setInputFiles('#pa-bk-load input', { name: name, mimeType: 'application/json', buffer: Buffer.from(txt) }); };
-  await loadBk('{"a":1}', 'x.json');
-  check('다른 파일은 안 받음(알림)', /수행평가 백업 파일이 아니에요/.test(await readAlert(P)));
-  await loadBk(bkTxt, 'bk.json');
-  await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' });
-  const bkMsg = await P.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
-  await answerConfirm(P, true);
-  const bkDone = await readAlert(P);
-  check('되돌리기: 파일·지금 요약을 보여 주고 묻고 → 파일 내용 그대로(망가진 점수 돌아옴, 파일에 없던 키는 지움)', /파일\([^)]*\): 과목 2개/.test(bkMsg) && /지금: 과목 2개/.test(bkMsg) && /되돌렸어요/.test(bkDone) &&
-    JSON.stringify(await lsKeys(P, '^pa-')) === JSON.stringify(nowPa) && !(await P.isVisible('#pa-modal')), bkMsg);
 
   // ===== 지우기 =====
   if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }

@@ -712,8 +712,7 @@
     .pa-copy-term { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--accent-color); border-radius: 10px; background: var(--accent-soft); }
     .pa-backup { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 10px; padding: 2px 3px 2px 8px; background: var(--card-bg); }
     .pa-backup .top-btn { font-size: 11px; padding: 3px 9px; }
-    .pa-backup { padding-left: 3px; }
-    .pa-backup .pa-backup-main { font-weight: 800; }
+    .pa-backup-label { font-size: 11px; font-weight: 800; color: var(--text-sub); white-space: nowrap; padding-right: 2px; } /* 단추가 아니라 묶음 이름표 */
     .pa-xl-opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px; line-height: 1.55; }
     .pa-xl-opt input { margin: 3px 0 0; width: auto !important; flex: none; }
     .pa-xl-opt > span { flex: 1; text-align: left; }
@@ -2849,10 +2848,7 @@
     </div>
     <div id="ms-header-save-group" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="msExportData()" title="지금 설정과 일정을 파일로 저장합니다">💾 저장</button>
-      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
-        📂 불러오기
-        <input type="file" id="ms-import-input" accept=".json" style="display:none;" onchange="msImportData(event)">
-      </label>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다" onclick="this.nextElementSibling.click()">📂 불러오기</button><input type="file" id="ms-import-input" accept=".json" style="display:none;" onchange="msImportData(event)">
       <select id="ms-cfg-print-size" class="mini-select" style="font-size:11px;" onchange="msUpdatePrintScale()" title="인쇄 용지 크기">
         <option value="1">A4 용지</option>
         <option value="1.22">B4 용지</option>
@@ -3019,10 +3015,7 @@
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="lpOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <span id="lp-save-group" style="display:flex; gap:6px; align-items:center;">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="lpSaveSettings()" title="지금 설정을 파일로 저장합니다">💾 저장</button>
-      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다">
-        📂 불러오기
-        <input type="file" id="lp-import-input" accept=".json" style="display:none;" onchange="lpLoadSettings(event)">
-      </label>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="저장해둔 파일을 불러옵니다" onclick="this.nextElementSibling.click()">📂 불러오기</button><input type="file" id="lp-import-input" accept=".json" style="display:none;" onchange="lpLoadSettings(event)">
       </span>
     </div>
     <div id="lp-zoom-group" style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:5px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소">
@@ -3152,9 +3145,7 @@
       <div style="font-weight: 800; font-size: 16px;">📋 결석계</div>
       <select id="ab-grade" class="mini-select" style="width:74px;" onchange="abOnClassChange('grade')"></select>
       <select id="ab-class" class="mini-select" style="width:64px;" onchange="abOnClassChange('class')"></select>
-      <label class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다">
-        📥 엑셀 가져오기<input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
-      </label>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다" onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="abResetClass()" title="지금 고른 반의 결석 기록을 모두 지웁니다">🗑 초기화</button>
       <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b>내 계정에만</b> 저장돼요(다른 선생님·관리자 화면엔 안 보임).</span>
     </div>
@@ -3657,9 +3648,7 @@
       <select id="se-grade" class="mini-select" style="width:74px;" onchange="seOnClassChange('grade')"></select>
       <select id="se-class" class="mini-select" style="width:64px;" onchange="seOnClassChange('class')"></select>
       <span id="se-limit-note" class="se-muted"></span>
-      <label class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">
-        📥 엑셀 가져오기<input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
-      </label>
+      <button class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 자율·진로 엑셀 파일(데이터·최종 시트)을 그대로 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
       <button class="top-btn" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자료 입력·최종 내용을 엑셀(데이터·최종 시트)로 내려받습니다">📊 엑셀 내려받기</button>
       <button class="top-btn" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로 자료를 모두 지웁니다">🗑 초기화</button>
     </div>
@@ -3717,8 +3706,8 @@
       <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
       <button class="top-btn tour-btn" id="pa-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="paOpenTour()" title="처음 사용하시나요? 예시 화면으로 순서대로 안내해요(선생님 자료는 안 바뀌어요)">📖 설명서</button>
       <div class="pa-htools">
-      <div class="pa-backup" id="pa-backup" title="자료는 칸을 벗어날 때마다 선생님 계정에 저장돼요. 보관용으로 엑셀에 받아 두거나 다시 넣을 때 써요."><button class="top-btn pa-backup-main" id="pa-backup-btn" onclick="paOpenBackup()" title="수행평가 자료(모든 학기·과목·학생·점수·평가내용·세특)를 통째로 백업 파일 하나로 받아 두거나, 그 파일로 되돌려요">💾 백업</button>
-        <label class="top-btn" id="pa-xl-import" style="cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요.">📥 엑셀 가져오기<input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';"></label>
+      <div class="pa-backup" id="pa-backup" title="자료는 칸을 벗어날 때마다 선생님 계정에 저장돼요. 보관용으로 엑셀에 받아 두거나 다시 넣을 때 써요."><span class="pa-backup-label">💾 백업</span>
+        <button class="top-btn" id="pa-xl-import" style="cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(또는 그 모양으로 채운 파일)을 넣어요 — 여러 파일을 한꺼번에 골라도 파일마다 과목·반을 알아서 찾아 넣어요. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="pa-xl-input" accept=".xlsx" multiple style="display:none;" onchange="paXlImport(this.files); this.value='';">
       <button class="top-btn" id="pa-xl-export" onclick="paXlOpen()" title="점수·평가내용·합계·세특을 엑셀로 내려받아요(백업·보관용) — 과목·수업반과 담을 것을 골라요(반마다 파일 하나)">📤 엑셀 내려받기</button>
       </div>
       <span id="pa-save-state"></span>
@@ -3869,10 +3858,7 @@
 
       <div id="pt-design-save-row" style="display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
         <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptSaveSettings()">💾 디자인 저장</button>
-        <label class="top-btn" style="flex:1; font-size:11px; padding:6px; text-align:center; cursor:pointer; margin:0;">
-          📂 불러오기
-          <input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
-        </label>
+        <button class="top-btn" style="flex:1; font-size:11px; padding:6px; text-align:center; cursor:pointer; margin:0;" onclick="this.nextElementSibling.click()">📂 불러오기</button><input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
       </div>
     </div>
 
@@ -14649,72 +14635,11 @@
   }
   function paCloseModal() { const ov = document.getElementById('pa-modal'); if (ov) ov.style.display = 'none'; }
 
-  // ----- 💾 백업(JSON) -----
-  // 자료는 늘 내 계정(서버)에도 저장되지만, 혹시 모를 때를 위해 수행평가 자료(pa-로 시작하는 키 모두)만 파일로 받아 두고 되돌릴 수 있게.
-  // 파일 = { app: 'smartboard-pa', v: 1, at: 만든 때, data: { 키: 값 } }. 되돌리기 = 지금 수행평가 자료를 파일 내용으로 바꿈(파일에 없는 수행평가 키는 지움).
-  const PA_BACKUP_APP = 'smartboard-pa';
-  function paBackupKeys() {
-    const out = [];
-    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf('pa-') === 0) out.push(k); }
-    return out;
-  }
   function paModalShow(html) {
     let ov = document.getElementById('pa-modal');
     if (!ov) { ov = document.createElement('div'); ov.id = 'pa-modal'; ov.className = 'modal-overlay pa-modal'; ov.onclick = function(e) { if (e.target === ov) paCloseModal(); }; document.body.appendChild(ov); }
     ov.innerHTML = html;
     ov.style.display = 'flex';
-  }
-  // 백업 자료 요약: 과목(반 수) · 학생 수 · 점수 넣은 영역 수
-  function paBackupSummary(data) {
-    let cfg = null; try { cfg = JSON.parse(data['pa-cfg'] || 'null'); } catch (e) {}
-    const subs = cfg && Array.isArray(cfg.subjects) ? cfg.subjects : [];
-    let stu = 0, sc = 0;
-    Object.keys(data).forEach(function(k) {
-      if (k.indexOf('pa-ro-') === 0) { try { const r = JSON.parse(data[k]); if (Array.isArray(r)) stu += r.length; } catch (e) {} }
-      else if (k.indexOf('pa-sc-') === 0) sc++;
-    });
-    return subs.length ? '과목 ' + subs.length + '개(' + subs.map(function(x) { return (x.name || '과목') + ' ' + ((x.classes || []).length) + '반'; }).join(', ') + ') · 학생 ' + stu + '명 · 점수 넣은 영역 ' + sc + '개' : '수행평가 자료 없음';
-  }
-  function paOpenBackup() {
-    if (paDemo) { customAlert('설명서(예시 화면) 중에는 백업할 수 없어요. 설명서를 닫고 다시 눌러 주세요.'); return; }
-    const data = {}; paBackupKeys().forEach(function(k) { data[k] = localStorage.getItem(k); });
-    paModalShow('<div class="modal-box pa-modal-box"><div class="pa-modal-head"><b>💾 수행평가 백업</b><button class="pa-x" onclick="paCloseModal()">✕</button></div>' +
-      '<div class="se-muted" style="margin-bottom:12px; line-height:1.6;">입력한 자료는 늘 <b>내 계정에 자동 저장</b>돼요. 그래도 혹시 모르니 <b>나이스에 올리기 전·학기 끝</b>에 파일로 받아 두면 안심이에요.<br>' +
-      '파일에는 과목·수업반·학생·영역·배점·점수·평가내용·세특이 모두 들어가요(학생 이름이 있으니 잘 보관하세요).</div>' +
-      '<div class="pa-sub-title">지금 자료: <span class="se-muted" id="pa-bk-now">' + paEsc(paBackupSummary(data)) + '</span></div>' +
-      '<div class="pa-row" style="margin:6px 0 16px;"><button class="top-btn pa-primary" id="pa-bk-save" onclick="paBackupSave()" style="font-size:13px; padding:8px 16px;">💾 백업 파일 받기 (.json)</button></div>' +
-      '<div class="pa-sub-title">백업 파일로 되돌리기</div>' +
-      '<div class="se-muted" style="margin-bottom:6px;">지금 수행평가 자료가 <b>파일 내용으로 바뀌어요</b>(다른 화면 자료는 그대로). 고르면 무엇이 들었는지 먼저 보여 드려요.</div>' +
-      '<label class="top-btn" id="pa-bk-load" style="cursor:pointer; margin:0; display:inline-block;">📂 백업 파일 고르기<input type="file" accept=".json,application/json" style="display:none;" onchange="paBackupLoad(this.files[0]); this.value=\'\';"></label></div>');
-  }
-  function paBackupSave() {
-    const keys = paBackupKeys();
-    if (!keys.length) { customAlert('아직 백업할 수행평가 자료가 없어요.'); return; }
-    const data = {}; keys.forEach(function(k) { data[k] = localStorage.getItem(k); });
-    const now = new Date(), p2 = function(n) { return String(n).padStart(2, '0'); };
-    const stamp = now.getFullYear() + '-' + p2(now.getMonth() + 1) + '-' + p2(now.getDate()) + '_' + p2(now.getHours()) + p2(now.getMinutes());
-    const json = JSON.stringify({ app: PA_BACKUP_APP, v: 1, at: now.toISOString(), data: data }, null, 1);
-    fmSaveNow(new Blob([json], { type: 'application/json' }), '수행평가_백업_' + stamp + '.json');
-    const b = document.getElementById('pa-bk-save'); if (b) { b.textContent = '받았어요 — 다운로드 폴더를 보세요'; }
-  }
-  async function paBackupLoad(file) {
-    if (!file) return;
-    let obj = null;
-    try { obj = JSON.parse(await file.text()); } catch (e) {}
-    const data = obj && obj.app === PA_BACKUP_APP && obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data) ? obj.data : null;
-    if (!data || !Object.keys(data).every(function(k) { return k.indexOf('pa-') === 0 && typeof data[k] === 'string'; })) {
-      customAlert('수행평가 백업 파일이 아니에요.\n"백업 파일 받기"로 받은 수행평가_백업_….json 파일을 골라 주세요.' + (obj && !obj.app ? '\n(대시보드 전체 백업 파일은 홈의 "백업"에서 되돌려요.)' : ''));
-      return;
-    }
-    const at = obj.at ? new Date(obj.at) : null;
-    const when = at && !isNaN(at) ? at.getFullYear() + '. ' + (at.getMonth() + 1) + '. ' + at.getDate() + '. ' + String(at.getHours()).padStart(2, '0') + ':' + String(at.getMinutes()).padStart(2, '0') : '알 수 없음';
-    const cur = {}; paBackupKeys().forEach(function(k) { cur[k] = localStorage.getItem(k); });
-    if (!(await customConfirm('이 백업 파일로 되돌릴까요?\n\n파일(' + when + '): ' + paBackupSummary(data) + '\n지금: ' + paBackupSummary(cur) + '\n\n지금 수행평가 자료는 파일 내용으로 바뀌어요. 되돌릴 수 없으니, 걱정되면 먼저 "백업 파일 받기"로 지금 자료도 받아 두세요.'))) return;
-    Object.keys(cur).forEach(function(k) { if (!Object.prototype.hasOwnProperty.call(data, k)) paSet(k, ''); });
-    Object.keys(data).forEach(function(k) { paSet(k, data[k]); });
-    paCloseModal();
-    paRenderAll();
-    customAlert('백업 파일(' + when + ')로 되돌렸어요.');
   }
   function paCreateSubject(name, hours, classes) {
     const c = paCfg();
@@ -15253,7 +15178,7 @@
     const okN = rows.filter(function(r) { return r.ok; }).length;
     let h = '<div class="pa-row" style="margin-bottom:8px;"><span class="se-sum ' + (rows.length && okN === rows.length ? 'ok' : okN ? '' : 'empty') + '">입력 끝 <b>' + okN + '</b> / ' + rows.length + '명</span>' +
       '<button class="top-btn pa-primary" id="pa-neis-make" onclick="paNeisMake()" title="나이스 수행평가 일괄등록 양식과 같은 모양(과목|반|번호|성명|영역별 만점·점수)으로 새로 만듭니다">📤 나이스 일괄등록 파일 만들기</button>' +
-      '<label class="top-btn" id="pa-neis-fill" style="cursor:pointer; margin:0;" title="나이스에서 받은 수행평가 일괄등록 엑셀을 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줍니다(추천 — 나이스 양식 그대로)">📥 나이스에서 받은 파일에 채우기<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="paNeisFill(this.files[0]); this.value=\'\';"></label>' +
+      '<button class="top-btn" id="pa-neis-fill" style="cursor:pointer; margin:0;" title="나이스에서 받은 수행평가 일괄등록 엑셀을 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줍니다(추천 — 나이스 양식 그대로)" onclick="this.nextElementSibling.click()">📥 나이스에서 받은 파일에 채우기</button><input type="file" accept=".xlsx,.xls" style="display:none;" onchange="paNeisFill(this.files[0]); this.value=\'\';">' +
       '<span class="se-muted">나이스 > 수행평가 일괄등록에서 받은 파일에 채우는 걸 추천해요(영역 이름이 같아야 해요).</span></div>';
     if (sub.areas.length && rows.length) h += '<div class="pa-row pa-copy-row"><span class="pa-sub-title" style="margin:0;">나이스에 직접 넣을 때</span>' +
       sub.areas.map(function(a, i) { return '<button class="top-btn" data-copy="' + i + '" onclick="paCopyCol(' + i + ')" title="' + paEsc(a.name) + ' 점수를 반·번호 순으로 한 줄에 한 명씩 복사해요">📋 ' + paEsc(a.name) + ' 복사</button>'; }).join('') +
@@ -16018,7 +15943,7 @@
     { selector: '#pa-put-btn', before: paTourTab('sk'), title: '⑤ 다듬고 완성본에 넣기',
       desc: '편집 칸에서 문장을 다듬으면 바이트와 기재하면 안 되는 표현을 바로 알려 줘요. 다 되면 완성본에 넣기! 복사로 나이스에 바로 붙여 넣을 수도 있어요.' },
     { selector: '#pa-backup', before: paTourTab('sk'), title: '백업',
-      desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 엑셀 내려받기에서 과목·수업반(모든 과목·반도 한 번에)과 담을 것(영역별 점수·평가내용·합계·세특)을 골라요 — 반마다 엑셀 파일이 하나씩 받아져요.\n엑셀 가져오기로 그 파일들을 한꺼번에 골라 넣으면 파일마다 과목·반을 알아서 찾아 빈 칸만 채워요. 맨 앞 백업 단추는 수행평가 자료를 통째로 파일 하나로 받아 두고 되돌리는 곳이에요.' },
+      desc: '자료는 칸을 벗어날 때마다 선생님 계정에 저장되지만, 보관용으로 엑셀에 받아 둘 수 있어요. 엑셀 내려받기에서 과목·수업반(모든 과목·반도 한 번에)과 담을 것(영역별 점수·평가내용·합계·세특)을 골라요 — 반마다 엑셀 파일이 하나씩 받아져요.\n엑셀 가져오기로 그 파일들을 한꺼번에 골라 넣으면 파일마다 과목·반을 알아서 찾아 빈 칸만 채워요.' },
     { selector: '#pa-sk-mode', before: paTourTab('sk'), title: '완성본 모아 보기',
       desc: '반 전체 완성본을 바이트와 함께 한눈에 보고, 학생마다 복사 단추로 복사해 나이스에 붙여 넣어요.\n\n수고하셨습니다! 이제 "＋ 과목"부터 시작해 보세요.' },
   ];
