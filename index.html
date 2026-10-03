@@ -561,6 +561,84 @@
     .se-fin-table td.se-txt .se-empty { color: var(--text-sub); opacity: .6; }
     #se-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
     #se-save-state.dirty { color: #B45309; }
+    /* ===== 📊 수행평가 (#pa-page) — 자율·진로 편집기(se-) 모양을 그대로 빌려 씀 ===== */
+    #pa-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
+    #pa-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
+    #pa-tabs { margin: 12px 0 10px; display: inline-flex; }
+    #pa-tabs .top-btn { font-weight: 800; }
+    #pa-classes .top-btn { font-weight: 800; padding: 4px 10px; }
+    #pa-save-state { font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+    #pa-save-state.dirty { color: #B45309; }
+    .pa-beta { font-size: 10.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 6px; padding: 1px 7px; }
+    .pa-cnt { display: inline-block; margin-left: 5px; font-size: 10.5px; font-weight: 800; color: var(--text-sub); background: var(--tt-bg); border-radius: 7px; padding: 0 5px; }
+    .pa-cnt.ok { color: #1E7B3A; background: #DDF5E3; }
+    .pa-add-cls { border-style: dashed !important; color: var(--accent-color) !important; }
+    .pa-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+    .pa-scroll-x { flex: 1 1 auto; min-height: 0; overflow: auto; }
+    .pa-empty { text-align: center; padding: 28px 14px; line-height: 1.8; }
+    .pa-primary { border: 1.5px solid var(--accent-color) !important; background: var(--accent-soft) !important; color: var(--accent-color) !important; font-weight: 800 !important; }
+    .pa-danger:hover { color: var(--alert) !important; border-color: var(--alert) !important; }
+    .pa-tools { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .pa-tools .top-btn { font-size: 11px; padding: 3px 9px; }
+    .pa-badge { font-size: 11.5px; font-weight: 800; color: var(--accent-color); background: var(--accent-soft); border-radius: 8px; padding: 1px 8px; }
+    .pa-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 14px; margin-bottom: 6px; }
+    .pa-form label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); }
+    .pa-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .pa-roster-wrap { max-height: 520px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+    .pa-table td.pa-name { font-weight: 800; }
+    .pa-sub-title { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+    .pa-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .pa-row .top-btn { font-size: 11.5px; padding: 5px 11px; }
+    #pa-paste { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; resize: vertical; }
+    .pa-pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px; max-height: 230px; overflow-y: auto; margin-top: 8px; padding: 6px; border: 1px solid var(--border-color); border-radius: 8px; }
+    .pa-pick { font-size: 12px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+    .pa-pick.in { opacity: .55; cursor: default; }
+    .pa-x { border: 0; background: none; color: var(--text-sub); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }
+    .pa-x:hover { color: var(--alert); background: rgba(220,38,38,0.08); }
+    .pa-area .se-sec-title { gap: 8px; }
+    .pa-area .pa-aname { width: 220px; flex: none; font-weight: 800; }
+    .pa-form .lp-input { width: 100%; }
+    .pa-inl { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+    .pa-inl .pa-min { width: 70px !important; flex: none; }
+    .pa-subs { width: 100%; table-layout: fixed; margin: 4px 0 8px; }
+    .pa-subs td { vertical-align: middle; }
+    .pa-subs .lp-input { width: 100%; box-sizing: border-box; }
+    .pa-pts { font-size: 11px; color: #1E7B3A; font-weight: 700; margin-top: 2px; }
+    .pa-warn { font-size: 12px; font-weight: 700; color: #B45309; background: #FEF3C7; border-radius: 8px; padding: 5px 10px; margin: 4px 0 8px; }
+    .pa-warn-t { color: #B45309; }
+    .pa-add { font-size: 11.5px; padding: 4px 12px; border-style: dashed; color: var(--accent-color); }
+    .pa-area-tabs { margin-bottom: 6px; flex-wrap: wrap; }
+    .pa-area-tabs .top-btn { font-weight: 800; }
+    .pa-hint { margin-bottom: 8px; }
+    .pa-th-sub { font-size: 10px; font-weight: 700; color: var(--text-sub); opacity: .8; }
+    .pa-score-table td { vertical-align: middle; }
+    .pa-sc { width: 58px; text-align: center; font-family: inherit; font-size: 14px; font-weight: 800; padding: 5px 4px; border: 1.5px solid var(--border-color); border-radius: 7px; background: var(--card-bg); color: var(--text-main); outline: none; font-variant-numeric: tabular-nums; }
+    .pa-sc:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .pa-sc.bad { border-color: var(--alert); background: #FDE7E7; color: #B42318; }
+    .pa-sc:disabled { opacity: .35; }
+    .pa-sc.shake { animation: paShake .3s; }
+    @keyframes paShake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+    #pa-tip { position: fixed; z-index: 99990; display: none; max-width: 330px; font-size: 12px; font-weight: 700; color: #fff; background: #B42318; border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.2); pointer-events: none; }
+    .pa-total { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pa-total .pa-part { color: var(--text-sub); }
+    .pa-bad { color: var(--alert); }
+    .pa-lowt { color: #B45309; }
+    .pa-mtag { font-size: 9.5px; font-weight: 800; color: #B45309; background: #FEF3C7; border-radius: 5px; padding: 0 4px; margin-left: 3px; vertical-align: 2px; }
+    .pa-note { min-width: 300px; resize: vertical; min-height: 34px; }
+    .pa-note:focus { min-height: 0; }
+    .pa-sum-table tr.pa-miss td { background: #FFFBEB; }
+    .pa-chk { font-size: 11.5px; font-weight: 700; white-space: nowrap; color: #B45309; }
+    .pa-sk-body { display: flex; flex: 1; min-height: 0; }
+    #pa-sk-students { width: 220px; flex: 0 0 auto; overflow-y: auto; min-height: 0; }
+    #pa-sk-students .se-stu { grid-template-columns: 40px 1fr auto 0; }
+    #pa-sk-editor { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; padding-left: 16px; }
+    .pa-sk-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+    #pa-draft { width: 100%; box-sizing: border-box; min-height: 170px; resize: vertical; font-family: inherit; font-size: var(--fz-sgb); line-height: 1.6; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--card-bg); color: var(--text-main); outline: none; }
+    #pa-draft:focus { border-color: var(--accent-color); }
+    #pa-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    #pa-pane > * { flex: 0 0 auto; }
+    #pa-pane > .pa-scroll, #pa-pane > .pa-scroll-x, #pa-pane > .pa-sk-body { flex: 1 1 auto; min-height: 0; }
+    @media (max-width: 1100px) { .pa-form, .pa-two { grid-template-columns: 1fr; } }
     @media (max-width: 1100px) { #se-students { width: 190px; } .se-stu { grid-template-columns: 24px 1fr; } .se-stu .se-dot { display: none; } }
     @media (max-width: 760px) { #se-body { flex-direction: column; } #se-students { width: 100%; max-height: 150px; } #se-editor { padding-left: 0; padding-top: 10px; } #se-main { padding: 0 10px 10px; } }
     .fav-cell.empty { border: 1.25px dashed var(--border-color); background: transparent; color: var(--text-sub); }
@@ -1590,6 +1668,11 @@
     <div class="rail-item" id="rail-forms-btn" title="양식 만들기" onclick="railToggle('rail-forms-btn', openForms)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg></div>
       <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">양식</div>
+    </div>
+    <!-- 📊 수행평가: 시범(PA_BETA_IDS에 든 선생님만 보임 — paUpdateRail) -->
+    <div class="rail-item" id="rail-pa-btn" style="display:none;" title="수행평가 (시범)" onclick="railToggle('rail-pa-btn', openPa)">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 2.5h6v3H9z"/><path d="M8 11l2 2 4-4M8 17h8"/></svg></div>
+      <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">수행평가</div>
     </div>
     <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공용 기능과 구분해 둠 -->
     <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
@@ -3510,6 +3593,36 @@
   </div>
 </div>
 
+<div id="pa-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
+  <div id="pa-page-header">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px;">📊 수행평가</div>
+      <span class="pa-beta" title="아직 시범 — 지금은 보이는 선생님만 써요">시범</span>
+      <select id="pa-subj" class="mini-select" style="min-width:110px;" onchange="paPickSubject(this.value)" title="과목"></select>
+      <div class="top-btn-cluster" id="pa-classes"></div>
+    </div>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <span id="pa-save-state"></span>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+    </div>
+  </div>
+  <div id="pa-main">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:0 0 auto;">
+      <div class="top-btn-cluster" id="pa-tabs">
+        <button class="top-btn" data-tab="setup" onclick="paSetTab('setup')">① 과목·학생</button>
+        <button class="top-btn" data-tab="areas" onclick="paSetTab('areas')">② 영역·배점</button>
+        <button class="top-btn" data-tab="score" onclick="paSetTab('score')">③ 점수 입력</button>
+        <button class="top-btn" data-tab="sum" onclick="paSetTab('sum')">④ 합계·나이스</button>
+        <button class="top-btn" data-tab="sk" onclick="paSetTab('sk')">⑤ 세특</button>
+      </div>
+      <span class="se-muted">🔒 <b>내 계정에만</b> 저장 · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
+    </div>
+    <div id="pa-pane"></div>
+  </div>
+</div>
+
 <div id="persontt-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
   <div id="pt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -4056,6 +4169,7 @@
     document.getElementById('user-chip-name').innerText = data.name;
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
     document.getElementById('rail-settings-btn').style.display = data.is_admin ? 'flex' : 'none';
+    paUpdateRail();
     // 수업변경 담당: 본인 시간표가 없어도 "내 시간표" 칸의 수업변경 버튼을 보인다(홈 둘째 줄엔 따로 두지 않음).
     document.body.classList.toggle('schedule-manager', !!data.schedule_manager);
 
@@ -4437,6 +4551,7 @@
     closeNametagPage();
     closeFormPage();
     closeSePage();
+    closePaPage();
     if (!window.currentTeacher || !window.currentTeacher.is_admin) return;
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
@@ -4464,6 +4579,7 @@
     closeNametagPage();
     closeFormPage();
     closeSePage();
+    closePaPage();
     document.getElementById('settings-page').style.display = 'none';
     const seatchartPage = document.getElementById('seatchart-page');
     if (seatchartPage) seatchartPage.style.display = 'none';
@@ -13718,6 +13834,981 @@
       if (item && !railOpensOverlay(item)) closeSePage();
     }, true);
   });
+
+  // ===== 📊 수행평가 (시범 — 아직 이용휘 선생님만) =====
+  // 사용자가 1학기에 쓰던 엑셀(.xlsm: 데이터·영역1~3·합계·세특·최종 시트)을 옮긴 것.
+  //   과목(여러 개) → 수업반(과목마다 여러 반, 원반이든 선택과목처럼 섞인 반이든) → 학생(붙여 넣기 / 명렬표에서 고르기)
+  //   → 영역·세부영역·줄 수 있는 점수(배점)·최하점 → 영역별 점수 입력(배점에 없는 점수는 못 넣음) + 평가내용
+  //   → 합계 확인 + 나이스 "수행평가 일괄등록" 엑셀(과목|반|번호|성명|영역마다 만점(N)/점수) → 세특(자율·진로 편집기처럼 골라 합치고 다듬기).
+  // 저장은 자율·진로 편집기와 같은 방식 — 개인 자료(localStorage → 내 계정에만 동기화)를 잘게 나눠서, 칸을 벗어날 때만.
+  //   pa-cfg  {subjects: [{id, name, neis, limit, classes: [{id, name}], areas: [{id, name, min, note, subs: [{id, name, pts}]}]}]}
+  //   pa-ui   {s, c, tab, area, skFin}            (지금 고른 과목·반·탭)
+  //   pa-ro-과목-반           [{g, c, n, name}]     (학생)
+  //   pa-sc-과목-반-영역       {"반-번호": {v: {세부id: 점수}, m: 1(최하점)}}
+  //   pa-nt-과목-반-영역-반-번호  평가내용
+  //   pa-st/pa-drf/pa-fin-과목-반-반-번호  세특 고른 영역·메모 / 다듬는 글 / 완성본
+  // 공개할 때: PA_OPEN_ALL = true.
+  const PA_OPEN_ALL = false;
+  const PA_BETA_IDS = ['409a92ff-9590-4fee-bbe7-0cdc8994b37b']; // 이용휘(관리자) — 먼저 써 보고 검증되면 공개
+  const PA_LIMIT = 1500;   // 교과 세특 500자 = 1,500바이트(과목마다 바꿀 수 있음)
+  function paAllowed() { const t = window.currentTeacher; return PA_OPEN_ALL || !!(t && PA_BETA_IDS.indexOf(t.id) !== -1); }
+  function paUpdateRail() { const b = document.getElementById('rail-pa-btn'); if (b) b.style.display = paAllowed() ? 'flex' : 'none'; }
+  function paIsOpen() { const pg = document.getElementById('pa-page'); return !!pg && pg.style.display !== 'none'; }
+
+  // ----- 저장 -----
+  function paGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function paSet(k, v) {
+    v = String(v == null ? '' : v);
+    if (paGet(k) === v) return true;
+    try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
+    catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
+    scheduleBackupWrite();
+    paSaveState('saved');
+    return true;
+  }
+  function paJson(k, def) { try { const v = JSON.parse(paGet(k) || 'null'); return v == null ? def : v; } catch (e) { return def; } }
+  function paSaveState(s) {
+    const el = document.getElementById('pa-save-state');
+    if (!el) return;
+    el.className = s === 'typing' ? 'dirty' : '';
+    el.textContent = s === 'typing' ? '✏️ 입력 중 — 칸을 벗어나면 저장' : s === 'saved' ? '💾 저장됨' : '';
+  }
+  function paNewId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function paEsc(s) { return escapeHtmlAttr(s == null ? '' : String(s)); }
+  function paFmt(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+  function paNum(v) { return Math.round(Number(v) * 100) / 100; }
+
+  // ----- 설정(과목·반·영역) -----
+  function paCfg() {
+    const v = paJson('pa-cfg', {});
+    const c = { subjects: Array.isArray(v.subjects) ? v.subjects : [] };
+    c.subjects = c.subjects.filter(function(s) { return s && s.id; }).map(function(s) {
+      return {
+        id: String(s.id), name: String(s.name || '과목'), neis: String(s.neis || ''), limit: Number(s.limit) > 0 ? Number(s.limit) : PA_LIMIT,
+        classes: (Array.isArray(s.classes) ? s.classes : []).filter(function(x) { return x && x.id; }).map(function(x) { return { id: String(x.id), name: String(x.name || '반') }; }),
+        areas: (Array.isArray(s.areas) ? s.areas : []).filter(function(a) { return a && a.id; }).map(function(a) {
+          return {
+            id: String(a.id), name: String(a.name || '영역'), min: a.min === '' || a.min == null || !isFinite(Number(a.min)) ? null : Number(a.min), note: a.note !== false,
+            subs: (Array.isArray(a.subs) ? a.subs : []).filter(function(x) { return x && x.id; }).map(function(x) { return { id: String(x.id), name: String(x.name || ''), pts: String(x.pts || '') }; }),
+          };
+        }),
+      };
+    });
+    return c;
+  }
+  function paSaveCfg(c) { paSet('pa-cfg', JSON.stringify({ subjects: c.subjects })); }
+  function paUi() { const v = paJson('pa-ui', {}); return v && typeof v === 'object' ? v : {}; }
+  function paSetUi(patch) { paSet('pa-ui', JSON.stringify(Object.assign(paUi(), patch))); }
+  function paSub(c) { c = c || paCfg(); const u = paUi(); return c.subjects.find(function(s) { return s.id === u.s; }) || c.subjects[0] || null; }
+  function paCls(sub) { if (!sub) return null; const u = paUi(); return sub.classes.find(function(x) { return x.id === u.c; }) || sub.classes[0] || null; }
+  function paTab() { return paUi().tab || 'setup'; }
+
+  // 줄 수 있는 점수: "15, 12, 9" / "1~15" / "0-10" / "10 8 6" — 큰 것부터, 같은 값은 하나.
+  function paParsePts(str) {
+    const out = [];
+    String(str || '').split(/[,，\s/·]+/).forEach(function(tok) {
+      if (!tok) return;
+      const m = tok.match(/^(\d+(?:\.\d+)?)[~\-–](\d+(?:\.\d+)?)$/);
+      if (m) {
+        let a = Number(m[1]), b = Number(m[2]);
+        if (a > b) { const t = a; a = b; b = t; }
+        if (b - a <= 300) for (let x = a; x <= b + 1e-9; x += 1) out.push(paNum(x));
+        return;
+      }
+      const v = Number(tok);
+      if (isFinite(v) && v >= 0) out.push(paNum(v));
+    });
+    return out.filter(function(x, i, arr) { return arr.indexOf(x) === i; }).sort(function(x, y) { return y - x; });
+  }
+  function paPtsText(list) {
+    // 1씩 이어지면 "15~1"처럼 줄여서 보여 준다
+    if (list.length >= 4 && list.every(function(x, i) { return i === 0 || paNum(list[i - 1] - x) === 1; })) return list[0] + '~' + list[list.length - 1];
+    return list.join(', ');
+  }
+  function paSubMax(sub) { const p = paParsePts(sub.pts); return p.length ? p[0] : 0; }
+  function paAreaMax(a) { return paNum(a.subs.reduce(function(t, x) { return t + paSubMax(x); }, 0)); }
+
+  // ----- 학생 -----
+  function paRosterKey(sid, cid) { return 'pa-ro-' + sid + '-' + cid; }
+  function paRoster(sid, cid) {
+    const v = paJson(paRosterKey(sid, cid), []);
+    return (Array.isArray(v) ? v : []).filter(function(s) { return s && s.name; });
+  }
+  function paSortRoster(list) {
+    return list.slice().sort(function(a, b) { return (Number(a.c) || 0) - (Number(b.c) || 0) || (Number(a.n) || 0) - (Number(b.n) || 0) || (Number(a.g) || 0) - (Number(b.g) || 0); });
+  }
+  function paSaveRoster(sid, cid, list) { paSet(paRosterKey(sid, cid), list.length ? JSON.stringify(paSortRoster(list)) : ''); }
+  function paSk(s) { return (s.c || 0) + '-' + (s.n || 0); }   // 학생 열쇠 = 반-번호(한 수업반 안에서 겹치지 않음)
+  function paStuLabel(s) { return (s.c ? s.c + '반 ' : '') + (s.n ? s.n + '번 ' : '') + s.name; }
+
+  // 엑셀에서 복사한 학생 줄: "1⇥3⇥홍길동"(반·번호·이름) / "3⇥1⇥3⇥홍길동"(학년·반·번호·이름) / "30103⇥홍길동"(학번) / "1-3 홍길동" / "3번 홍길동"
+  function paParseRosterText(text) {
+    const out = [], bad = [];
+    String(text || '').replace(/\r\n?/g, '\n').split('\n').forEach(function(line) {
+      const raw = line.trim();
+      if (!raw) return;
+      let cells = line.indexOf('\t') !== -1 ? line.split('\t') : raw.split(/[\s,]+/);
+      cells = cells.map(function(x) { return x.trim(); }).filter(Boolean);
+      const nums = [], names = [];
+      cells.forEach(function(x) {
+        const y = x.replace(/[반번학년]$/, '');
+        if (/^\d+$/.test(y)) nums.push(Number(y));
+        else if (/^\d+(-\d+){1,2}$/.test(y)) y.split('-').forEach(function(z) { nums.push(Number(z)); });
+        else names.push(x);
+      });
+      const name = names.filter(function(x) { return /[가-힣A-Za-z]/.test(x) && !/^(반|번호|이름|성명|학번|학년)$/.test(x); }).join(' ');
+      if (!name) { if (nums.length) bad.push(raw); return; }
+      let g = null, c = null, n = null;
+      if (nums.length >= 3) { g = nums[nums.length - 3]; c = nums[nums.length - 2]; n = nums[nums.length - 1]; }
+      else if (nums.length === 2) { c = nums[0]; n = nums[1]; }
+      else if (nums.length === 1) {
+        const s = String(nums[0]);
+        if (s.length === 5) { g = Number(s[0]); c = Number(s.slice(1, 3)); n = Number(s.slice(3)); }       // 30103 = 3학년 1반 3번
+        else if (s.length === 4) { g = Number(s[0]); c = Number(s[1]); n = Number(s.slice(2)); }           // 3103
+        else n = nums[0];
+      } else { bad.push(raw); return; }
+      out.push({ g: g, c: c, n: n, name: name });
+    });
+    return { list: out, bad: bad };
+  }
+
+  // ----- 점수 -----
+  function paScKey(sid, cid, aid) { return 'pa-sc-' + sid + '-' + cid + '-' + aid; }
+  function paScores(sid, cid, aid) { const v = paJson(paScKey(sid, cid, aid), {}); return v && typeof v === 'object' ? v : {}; }
+  function paSaveScores(sid, cid, aid, obj) {
+    Object.keys(obj).forEach(function(k) { const r = obj[k]; if (!r || (!r.m && !Object.keys(r.v || {}).length)) delete obj[k]; });
+    paSet(paScKey(sid, cid, aid), Object.keys(obj).length ? JSON.stringify(obj) : '');
+  }
+  function paNtKey(sid, cid, aid, sk) { return 'pa-nt-' + sid + '-' + cid + '-' + aid + '-' + sk; }
+  // 한 학생의 한 영역 결과: { total, done(모든 세부 점수 있음 또는 최하점), bad(배점에 없는 점수), low(최하점보다 낮음), min(최하점 처리) }
+  function paAreaResult(a, rec) {
+    rec = rec || {};
+    const v = rec.v || {};
+    if (rec.m && a.min != null) return { total: a.min, done: true, bad: false, low: false, min: true, any: true };
+    let total = 0, filled = 0, bad = false;
+    a.subs.forEach(function(x) {
+      const s = v[x.id];
+      if (s == null || s === '') return;
+      filled++;
+      total += Number(s);
+      if (paParsePts(x.pts).indexOf(paNum(s)) === -1) bad = true;
+    });
+    total = paNum(total);
+    const done = a.subs.length > 0 && filled === a.subs.length;
+    return { total: filled ? total : null, done: done, bad: bad, low: done && a.min != null && total < a.min, min: false, any: filled > 0 };
+  }
+
+  // ----- 열고 닫기 -----
+  function closePaPage() {
+    const pg = document.getElementById('pa-page');
+    if (pg) pg.style.display = 'none';
+    const btn = document.getElementById('rail-pa-btn');
+    if (btn) btn.classList.remove('active');
+  }
+  async function openPa() {
+    if (!paAllowed()) return;
+    closeAbsencePage(); closeNametagPage(); closeFormPage(); closeSePage();
+    document.querySelector('.top-bar-row').style.display = 'none';
+    document.querySelector('.quick-row').style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'none';
+    ['settings-page', 'seatchart-page', 'monthly-page', 'leavepass-page', 'persontt-page'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.classList.remove('active');
+    });
+    closeHwpKeys(); closeSgb(); closeStudentRoster();
+    const um = document.getElementById('user-menu-dropdown'); if (um) um.style.display = 'none';
+    document.getElementById('pa-page').style.display = 'flex';
+    document.getElementById('rail-pa-btn').classList.add('active');
+    paSaveState('');
+    paRenderAll();
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    const rail = document.getElementById('app-rail');
+    if (rail) rail.addEventListener('click', function(e) {
+      const item = e.target.closest('.rail-item');
+      if (item && item.id !== 'rail-pa-btn' && !railOpensOverlay(item)) closePaPage();
+    }, true);
+  });
+
+  // ----- 그리기 -----
+  const PA_TABS = [['setup', '① 과목·학생'], ['areas', '② 영역·배점'], ['score', '③ 점수 입력'], ['sum', '④ 합계·나이스'], ['sk', '⑤ 세특']];
+  function paRenderAll() {
+    if (!paIsOpen()) return;
+    const tip = document.getElementById('pa-tip'); if (tip) tip.style.display = 'none';
+    const c = paCfg(), sub = paSub(c), cls = paCls(sub);
+    // 머리: 과목 고르기 + 반 칩
+    const sel = document.getElementById('pa-subj');
+    sel.innerHTML = c.subjects.length ? c.subjects.map(function(s) { return '<option value="' + s.id + '"' + (sub && s.id === sub.id ? ' selected' : '') + '>' + paEsc(s.name) + '</option>'; }).join('') : '<option value="">과목 없음</option>';
+    sel.disabled = !c.subjects.length;
+    document.getElementById('pa-classes').innerHTML = sub ? sub.classes.map(function(x) {
+      const n = paRoster(sub.id, x.id).length;
+      return '<button class="top-btn' + (cls && x.id === cls.id ? ' theme-active' : '') + '" data-cid="' + x.id + '" onclick="paPickClass(\'' + x.id + '\')" title="' + paEsc(x.name) + ' · 학생 ' + n + '명">' + paEsc(x.name) + '<span class="pa-cnt">' + n + '</span></button>';
+    }).join('') + '<button class="top-btn pa-add-cls" onclick="paAddClass()" title="이 과목에 수업반 더하기">＋ 반</button>' : '';
+    document.querySelectorAll('#pa-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === paTab()); });
+    const pane = document.getElementById('pa-pane');
+    if (!sub) { pane.innerHTML = paEmptyHtml(); return; }
+    const t = paTab();
+    if (t === 'setup') pane.innerHTML = paSetupHtml(sub, cls);
+    else if (!cls) pane.innerHTML = '<div class="se-box se-sbox pa-empty">이 과목에 수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div>';
+    else if (t === 'areas') pane.innerHTML = paAreasHtml(sub);
+    else if (t === 'score') { pane.innerHTML = paScoreHtml(sub, cls); paScoreAfter(); }
+    else if (t === 'sum') pane.innerHTML = paSumHtml(sub, cls);
+    else if (t === 'sk') { pane.innerHTML = paSkHtml(sub, cls); paSkAfter(); }
+  }
+  // 칸을 고친 뒤(change) 바로 다시 그리면 Tab으로 옮겨 간 다음 칸의 커서가 사라진다 → 커서가 옮겨 간 뒤에 그리고, 그 칸(data-fid)에 커서를 되돌린다.
+  function paRenderSoon() {
+    clearTimeout(paRenderSoon._t);
+    paRenderSoon._t = setTimeout(function() {
+      const ae = document.activeElement, fid = ae && ae.closest && ae.closest('#pa-page') ? (ae.dataset && ae.dataset.fid) || ae.id : '';
+      let s0 = null, s1 = null; try { s0 = ae.selectionStart; s1 = ae.selectionEnd; } catch (e) {}
+      paRenderAll();
+      if (!fid) return;
+      const el = document.querySelector('#pa-page [data-fid="' + fid + '"]') || document.getElementById(fid);
+      if (el && el !== document.activeElement) { el.focus(); try { if (s0 != null) el.setSelectionRange(s0, s1); } catch (e) {} }
+    }, 0);
+  }
+  function paSetTab(t) { paSetUi({ tab: t }); paRenderAll(); }
+  function paPickSubject(id) { paSetUi({ s: id, c: '' }); paRenderAll(); }
+  function paPickClass(id) { paSetUi({ c: id }); paRenderAll(); }
+  function paEmptyHtml() {
+    return '<div class="se-box se-sbox pa-empty"><div style="font-size:15px; font-weight:800; margin-bottom:6px;">📊 수행평가를 시작해 볼까요?</div>' +
+      '<div class="se-muted" style="margin-bottom:12px;">① 과목(예: 화학Ⅱ)을 만들고 → 그 과목의 수업반과 학생을 넣고 → ② 영역·배점을 정한 뒤 → ③ 점수를 입력하면<br>④ 나이스 수행평가 일괄등록 파일과 ⑤ 세특까지 이어서 만들 수 있어요.</div>' +
+      '<button class="top-btn pa-primary" onclick="paAddSubject()">＋ 첫 과목 만들기</button></div>';
+  }
+
+  // ----- ① 과목·학생 -----
+  async function paAddSubject() {
+    const name = String(await customPrompt('과목 이름 (예: 화학Ⅱ, 물리학Ⅰ)', '') || '').trim();
+    if (!name) return;
+    const c = paCfg();
+    const s = { id: paNewId(), name: name, neis: '', limit: PA_LIMIT, classes: [{ id: paNewId(), name: '1반' }], areas: [] };
+    c.subjects.push(s);
+    paSaveCfg(c);
+    paSetUi({ s: s.id, c: s.classes[0].id, tab: 'setup' });
+    paRenderAll();
+  }
+  function paEditSubject(field, value) {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    if (field === 'name') { value = String(value || '').trim(); if (!value) { paRenderAll(); return; } }
+    if (field === 'limit') { value = Math.round(Number(value)); if (!(value >= 100 && value <= 6000)) { paRenderAll(); return; } }
+    if (field === 'neis') value = String(value || '').trim();
+    s[field] = value;
+    paSaveCfg(c);
+    paRenderSoon();
+  }
+  function paRemoveKeys(prefix) {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf(prefix) === 0) keys.push(k); }
+    keys.forEach(function(k) { paSet(k, ''); });
+    return keys.length;
+  }
+  const PA_DATA_KINDS = ['ro', 'sc', 'nt', 'st', 'drf', 'fin'];
+  async function paDeleteSubject() {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    if (!(await customConfirm('"' + s.name + '" 과목을 지울까요?\n수업반·학생·영역·점수·평가내용·세특이 모두 지워져요.'))) return;
+    if (!(await customConfirm('정말 지울까요? 되돌릴 수 없어요.'))) return;
+    PA_DATA_KINDS.forEach(function(k) { paRemoveKeys('pa-' + k + '-' + s.id + '-'); });
+    c.subjects = c.subjects.filter(function(x) { return x.id !== s.id; });
+    paSaveCfg(c);
+    paSetUi({ s: c.subjects[0] ? c.subjects[0].id : '', c: '' });
+    paRenderAll();
+  }
+  async function paAddClass() {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    const name = String(await customPrompt('수업반 이름 (예: 1반, 3-2, A반)', (s.classes.length + 1) + '반') || '').trim();
+    if (!name) return;
+    const x = { id: paNewId(), name: name };
+    s.classes.push(x);
+    paSaveCfg(c);
+    paSetUi({ c: x.id });
+    paRenderAll();
+  }
+  async function paRenameClass() {
+    const c = paCfg(), s = paSub(c), x = paCls(s);
+    if (!x) return;
+    const name = String(await customPrompt('수업반 이름 바꾸기', x.name) || '').trim();
+    if (!name || name === x.name) return;
+    x.name = name;
+    paSaveCfg(c);
+    paRenderAll();
+  }
+  async function paDeleteClass() {
+    const c = paCfg(), s = paSub(c), x = paCls(s);
+    if (!x) return;
+    if (!(await customConfirm('"' + x.name + '" 수업반을 지울까요?\n이 반의 학생·점수·평가내용·세특이 모두 지워져요.'))) return;
+    PA_DATA_KINDS.forEach(function(k) { paRemoveKeys('pa-' + k + '-' + s.id + '-' + x.id + '-'); });
+    paSet(paRosterKey(s.id, x.id), '');
+    s.classes = s.classes.filter(function(y) { return y.id !== x.id; });
+    paSaveCfg(c);
+    paSetUi({ c: s.classes[0] ? s.classes[0].id : '' });
+    paRenderAll();
+  }
+  function paSetupHtml(sub, cls) {
+    let h = '<div class="pa-scroll">';
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">📚 과목</span><span class="pa-tools">' +
+      '<button class="top-btn" onclick="paAddSubject()">＋ 과목 더하기</button><button class="top-btn pa-danger" onclick="paDeleteSubject()">🗑 이 과목 지우기</button></span></div>' +
+      '<div class="pa-form">' +
+      '<label>과목 이름<input class="lp-input" id="pa-f-name" value="' + paEsc(sub.name) + '" onchange="paEditSubject(\'name\', this.value)"></label>' +
+      '<label>나이스 과목 칸<input class="lp-input" id="pa-f-neis" value="' + paEsc(sub.neis) + '" placeholder="' + paEsc(sub.name) + ' (예: 화학Ⅱ(3))" onchange="paEditSubject(\'neis\', this.value)"></label>' +
+      '<label>세특 바이트 한도<input class="lp-input" type="number" id="pa-f-limit" min="100" max="6000" step="1" value="' + sub.limit + '" onchange="paEditSubject(\'limit\', this.value)"></label>' +
+      '</div><div class="se-muted">나이스 과목 칸 = 나이스 일괄등록 파일의 "과목" 칸에 들어갈 글(받은 파일과 똑같이, 비우면 과목 이름). 세특 한도는 보통 500자 = 1,500바이트.</div></div>';
+    if (!cls) return h + '<div class="se-box se-sbox pa-empty">수업반이 아직 없어요. 위의 <b>＋ 반</b>을 눌러 만드세요.</div></div>';
+    const ro = paRoster(sub.id, cls.id);
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">👥 ' + paEsc(cls.name) + ' 학생 <span class="pa-badge">' + ro.length + '명</span></span><span class="pa-tools">' +
+      '<button class="top-btn" onclick="paRenameClass()">✎ 반 이름</button><button class="top-btn pa-danger" onclick="paDeleteClass()">🗑 이 반 지우기</button>' +
+      (ro.length ? '<button class="top-btn pa-danger" onclick="paClearRoster()">학생 모두 빼기</button>' : '') + '</span></div>';
+    h += '<div class="pa-two"><div class="pa-col">';
+    if (!ro.length) h += '<div class="pa-empty se-muted">아직 학생이 없어요. 오른쪽에서 붙여 넣거나 명렬표에서 골라 넣으세요.</div>';
+    else h += '<div class="pa-roster-wrap"><table class="se-table pa-table"><thead><tr><th>반</th><th>번호</th><th>이름</th><th></th></tr></thead><tbody>' + ro.map(function(s) {
+      return '<tr><td class="se-c">' + (s.g ? s.g + '-' : '') + (s.c || '') + '</td><td class="se-c">' + (s.n || '') + '</td><td class="se-c pa-name">' + paEsc(s.name) + '</td>' +
+        '<td class="se-c"><button class="pa-x" title="이 학생 빼기" onclick="paRemoveStudent(\'' + paSk(s) + '\')">✕</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+    h += '</div><div class="pa-col">';
+    h += '<div class="pa-sub-title">📋 엑셀에서 붙여 넣기</div>' +
+      '<textarea id="pa-paste" class="lp-input" rows="6" placeholder="엑셀에서 반·번호·이름(또는 학번·이름) 칸을 복사해 붙여 넣으세요.&#10;예) 1⇥3⇥홍길동   /   30103⇥홍길동   /   1-3 홍길동"></textarea>' +
+      '<div class="pa-row"><button class="top-btn pa-primary" onclick="paPasteRoster(false)">붙여 넣은 학생 더하기</button><button class="top-btn" onclick="paPasteRoster(true)">이것으로 바꾸기</button><span id="pa-paste-msg" class="se-muted"></span></div>';
+    h += '<div class="pa-sub-title" style="margin-top:14px;">🧑‍🎓 명렬표에서 고르기 <span class="se-muted">원반 수업이면 반 전체를 한 번에</span></div>' +
+      '<div class="pa-row"><select id="pa-pick-g" class="mini-select" onchange="paPickLoad()"></select><select id="pa-pick-c" class="mini-select" onchange="paPickLoad()"></select>' +
+      '<button class="top-btn" onclick="paPickAll(true)">모두 체크</button><button class="top-btn" onclick="paPickAll(false)">모두 해제</button></div>' +
+      '<div id="pa-pick-list" class="pa-pick-list"></div><div class="pa-row"><button class="top-btn pa-primary" onclick="paPickAdd()">체크한 학생 더하기</button><span id="pa-pick-msg" class="se-muted"></span></div>';
+    h += '</div></div></div></div>';
+    setTimeout(paPickInit, 0);
+    return h;
+  }
+  function paMergeRoster(sid, cid, add, replace) {
+    const cur = replace ? [] : paRoster(sid, cid);
+    let added = 0, dup = 0;
+    add.forEach(function(s) {
+      const k = paSk(s);
+      if (cur.some(function(x) { return paSk(x) === k; })) { dup++; return; }
+      cur.push(s); added++;
+    });
+    paSaveRoster(sid, cid, cur);
+    return { added: added, dup: dup };
+  }
+  async function paPasteRoster(replace) {
+    const sub = paSub(), cls = paCls(sub), ta = document.getElementById('pa-paste');
+    if (!cls || !ta) return;
+    const p = paParseRosterText(ta.value);
+    if (!p.list.length) { customAlert('학생을 찾지 못했어요. 한 줄에 한 명씩 반·번호·이름(또는 학번·이름)이 있게 붙여 넣어 주세요.'); return; }
+    if (replace && paRoster(sub.id, cls.id).length && !(await customConfirm('지금 학생 명단을 붙여 넣은 ' + p.list.length + '명으로 바꿀까요?\n(빠지는 학생의 점수는 남아 있다가 다시 넣으면 돌아와요)'))) return;
+    const r = paMergeRoster(sub.id, cls.id, p.list, replace);
+    paRenderAll();
+    const m = document.getElementById('pa-paste-msg');
+    if (m) m.textContent = r.added + '명 넣음' + (r.dup ? ' · 이미 있는 ' + r.dup + '명은 그대로' : '') + (p.bad.length ? ' · 못 읽은 줄 ' + p.bad.length + '개' : '');
+  }
+  async function paClearRoster() {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls || !(await customConfirm(cls.name + ' 학생을 모두 뺄까요?\n(점수·평가내용은 남아 있다가 같은 반·번호 학생을 다시 넣으면 돌아와요)'))) return;
+    paSaveRoster(sub.id, cls.id, []);
+    paRenderAll();
+  }
+  function paRemoveStudent(k) {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls) return;
+    paSaveRoster(sub.id, cls.id, paRoster(sub.id, cls.id).filter(function(s) { return paSk(s) !== k; }));
+    paRenderAll();
+  }
+  let paPickRows = [];
+  async function paPickInit() {
+    const gs = document.getElementById('pa-pick-g'), cs = document.getElementById('pa-pick-c');
+    if (!gs || !cs) return;
+    const st = await ensureClassStructureLoaded();
+    const u = paUi(), t = window.currentTeacher || {};
+    const g0 = Number(u.pg) || Number(t.homeroom_grade) || 1;
+    gs.innerHTML = Array.from({ length: st.gradeCount || 3 }, function(_, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === g0 ? ' selected' : '') + '>' + (i + 1) + '학년</option>'; }).join('');
+    paPickFillClasses(Number(u.pc) || 1);
+    paPickLoad();
+  }
+  function paPickFillClasses(want) {
+    const gs = document.getElementById('pa-pick-g'), cs = document.getElementById('pa-pick-c');
+    const st = window.classStructure || { classCounts: [6, 6, 6] };
+    const n = (st.classCounts || [])[Number(gs.value) - 1] || 6;
+    const cur = Number(want || cs.value) || 1;
+    cs.innerHTML = Array.from({ length: n }, function(_, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === cur ? ' selected' : '') + '>' + (i + 1) + '반</option>'; }).join('');
+  }
+  async function paPickLoad() {
+    const gs = document.getElementById('pa-pick-g'), cs = document.getElementById('pa-pick-c'), box = document.getElementById('pa-pick-list');
+    if (!gs || !box) return;
+    if (document.activeElement === gs) paPickFillClasses();
+    const g = Number(gs.value), c = Number(cs.value);
+    paSetUi({ pg: g, pc: c });
+    box.innerHTML = '<div class="se-muted">불러오는 중…</div>';
+    let rows = [];
+    try {
+      const { data, error } = await sb.from('students').select('number, name').eq('grade', g).eq('class_no', c).order('number');
+      if (error) throw error;
+      rows = (data || []).map(function(s) { return { g: g, c: c, n: Number(s.number), name: s.name }; });
+    } catch (e) { box.innerHTML = '<div class="se-muted">명렬표를 불러오지 못했어요.</div>'; return; }
+    paPickRows = rows;
+    const sub = paSub(), cls = paCls(sub), have = cls ? paRoster(sub.id, cls.id).map(paSk) : [];
+    box.innerHTML = rows.length ? rows.map(function(s, i) {
+      const in_ = have.indexOf(paSk(s)) !== -1;
+      return '<label class="pa-pick' + (in_ ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (in_ ? ' disabled' : ' checked') + '>' + s.n + ' ' + paEsc(s.name) + (in_ ? ' <span class="se-muted">(있음)</span>' : '') + '</label>';
+    }).join('') : '<div class="se-muted">' + g + '학년 ' + c + '반 명렬표가 비어 있어요.</div>';
+  }
+  function paPickAll(on) { document.querySelectorAll('#pa-pick-list input:not(:disabled)').forEach(function(x) { x.checked = on; }); }
+  function paPickAdd() {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls) return;
+    const add = [];
+    document.querySelectorAll('#pa-pick-list input:checked:not(:disabled)').forEach(function(x) { const s = paPickRows[Number(x.dataset.i)]; if (s) add.push(s); });
+    if (!add.length) { customAlert('더할 학생을 체크해 주세요.'); return; }
+    const r = paMergeRoster(sub.id, cls.id, add, false);
+    paRenderAll();
+    setTimeout(function() { const m = document.getElementById('pa-pick-msg'); if (m) m.textContent = r.added + '명 넣음'; }, 50);
+  }
+
+  // ----- ② 영역·배점 -----
+  function paAreasHtml(sub) {
+    let h = '<div class="pa-scroll"><div class="se-muted" style="margin-bottom:8px;">영역(예: 개념 구조화)마다 세부영역과 <b>줄 수 있는 점수</b>를 적어요 — "15, 12, 9" 처럼 쉼표로, 1씩 이어지면 "1~15". ' +
+      '점수 입력 때 여기 없는 점수는 못 넣어요. <b>최하점</b> = 미제출·미응시 학생에게 주는 기본 점수(점수 입력에서 "최하점"을 체크하면 합계가 이 점수).</div>';
+    if (!sub.areas.length) h += '<div class="se-box se-sbox pa-empty">영역이 아직 없어요.</div>';
+    sub.areas.forEach(function(a, ai) {
+      const max = paAreaMax(a);
+      h += '<div class="se-box se-sbox pa-area" data-aid="' + a.id + '"><div class="se-sec"><span class="se-sec-title">영역 ' + (ai + 1) +
+        '<input class="lp-input pa-aname" data-fid="an-' + a.id + '" value="' + paEsc(a.name) + '" placeholder="영역 이름" onchange="paEditArea(\'' + a.id + '\', \'name\', this.value)">' +
+        '<span class="pa-badge">만점 ' + max + '</span></span><span class="pa-tools">' +
+        '<label class="pa-inl">최하점 <input class="lp-input pa-min" data-fid="am-' + a.id + '" type="number" step="0.5" min="0" value="' + (a.min == null ? '' : a.min) + '" placeholder="없음" onchange="paEditArea(\'' + a.id + '\', \'min\', this.value)"></label>' +
+        '<label class="pa-inl"><input type="checkbox"' + (a.note ? ' checked' : '') + ' onchange="paEditArea(\'' + a.id + '\', \'note\', this.checked)"> 평가내용 칸</label>' +
+        (ai > 0 ? '<button class="top-btn" title="앞으로" onclick="paMoveArea(\'' + a.id + '\', -1)">▲</button>' : '') +
+        '<button class="top-btn pa-danger" onclick="paDeleteArea(\'' + a.id + '\')">🗑</button></span></div>';
+      if (a.min != null && max && a.min > max) h += '<div class="pa-warn">⚠️ 최하점(' + a.min + ')이 만점(' + max + ')보다 커요.</div>';
+      h += '<table class="se-table pa-table pa-subs"><thead><tr><th style="width:28%;">세부영역</th><th>줄 수 있는 점수</th><th style="width:70px;">만점</th><th style="width:34px;"></th></tr></thead><tbody>';
+      a.subs.forEach(function(x) {
+        const p = paParsePts(x.pts);
+        h += '<tr><td><input class="lp-input" data-fid="sn-' + x.id + '" value="' + paEsc(x.name) + '" placeholder="세부영역 이름" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'name\', this.value)"></td>' +
+          '<td><input class="lp-input" data-fid="sp-' + x.id + '" value="' + paEsc(x.pts) + '" placeholder="예: 15, 12, 9, 6  또는  1~15" onchange="paEditSub(\'' + a.id + '\', \'' + x.id + '\', \'pts\', this.value)">' +
+          '<div class="pa-pts">' + (p.length ? '→ ' + paEsc(paPtsText(p)) + ' <span class="se-muted">(' + p.length + '가지)</span>' : '<span class="pa-warn-t">점수를 적어 주세요</span>') + '</div></td>' +
+          '<td class="se-c">' + (p.length ? p[0] : '-') + '</td><td class="se-c"><button class="pa-x" title="세부영역 지우기" onclick="paDeleteSub(\'' + a.id + '\', \'' + x.id + '\')">✕</button></td></tr>';
+      });
+      h += '</tbody></table><button class="top-btn pa-add" onclick="paAddSub(\'' + a.id + '\')">＋ 세부영역</button></div>';
+    });
+    const total = paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0));
+    h += '<div class="pa-row"><button class="se-addbtn" style="width:auto; padding:7px 16px;" onclick="paAddArea()">＋ 영역 더하기</button>' +
+      (sub.areas.length ? '<span class="se-muted">영역 ' + sub.areas.length + '개 · 모두 합쳐 만점 <b>' + total + '</b></span>' : '') + '</div></div>';
+    return h;
+  }
+  function paWithArea(aid, fn) {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    const a = s.areas.find(function(x) { return x.id === aid; });
+    if (!a) return;
+    if (fn(a, s) === false) { paRenderSoon(); return; }
+    paSaveCfg(c);
+    paRenderSoon();
+  }
+  function paAddArea() {
+    const c = paCfg(), s = paSub(c);
+    if (!s) return;
+    s.areas.push({ id: paNewId(), name: '영역' + (s.areas.length + 1), min: null, note: true, subs: [{ id: paNewId(), name: '', pts: '' }] });
+    paSaveCfg(c);
+    paRenderAll();
+    const last = document.querySelectorAll('#pa-pane .pa-aname');
+    if (last.length) { last[last.length - 1].focus(); last[last.length - 1].select(); }
+  }
+  function paEditArea(aid, field, v) {
+    paWithArea(aid, function(a) {
+      if (field === 'name') { v = String(v || '').trim(); if (!v) return false; a.name = v; }
+      else if (field === 'min') a.min = v === '' || !isFinite(Number(v)) ? null : paNum(v);
+      else if (field === 'note') a.note = !!v;
+    });
+  }
+  function paMoveArea(aid, d) {
+    const c = paCfg(), s = paSub(c);
+    const i = s.areas.findIndex(function(x) { return x.id === aid; }), j = i + d;
+    if (i < 0 || j < 0 || j >= s.areas.length) return;
+    const t = s.areas[i]; s.areas[i] = s.areas[j]; s.areas[j] = t;
+    paSaveCfg(c);
+    paRenderAll();
+  }
+  async function paDeleteArea(aid) {
+    const c = paCfg(), s = paSub(c), a = s && s.areas.find(function(x) { return x.id === aid; });
+    if (!a) return;
+    if (!(await customConfirm('"' + a.name + '" 영역을 지울까요?\n모든 반의 이 영역 점수·평가내용도 함께 지워져요.'))) return;
+    s.classes.forEach(function(x) { paSet(paScKey(s.id, x.id, a.id), ''); paRemoveKeys('pa-nt-' + s.id + '-' + x.id + '-' + a.id + '-'); });
+    s.areas = s.areas.filter(function(x) { return x.id !== aid; });
+    paSaveCfg(c);
+    paRenderAll();
+  }
+  function paAddSub(aid) { paWithArea(aid, function(a) { a.subs.push({ id: paNewId(), name: '', pts: '' }); }); }
+  function paEditSub(aid, xid, field, v) {
+    paWithArea(aid, function(a) {
+      const x = a.subs.find(function(y) { return y.id === xid; });
+      if (!x) return false;
+      x[field] = String(v || '').trim();
+    });
+  }
+  async function paDeleteSub(aid, xid) {
+    const s = paSub(), a = s && s.areas.find(function(x) { return x.id === aid; });
+    if (!a) return;
+    const used = s.classes.some(function(x) { const sc = paScores(s.id, x.id, aid); return Object.keys(sc).some(function(k) { return sc[k].v && sc[k].v[xid] != null; }); });
+    if (used && !(await customConfirm('이 세부영역에 입력된 점수가 있어요. 지울까요?'))) return;
+    paWithArea(aid, function(a2) { a2.subs = a2.subs.filter(function(y) { return y.id !== xid; }); });
+  }
+
+  // ----- ③ 점수 입력 -----
+  function paCurArea(sub) { const u = paUi(); return sub.areas.find(function(a) { return a.id === u.area; }) || sub.areas[0] || null; }
+  function paScoreHtml(sub, cls) {
+    if (!sub.areas.length) return '<div class="se-box se-sbox pa-empty">영역이 아직 없어요. <button class="top-btn" onclick="paSetTab(\'areas\')">② 영역·배점</button>에서 먼저 만드세요.</div>';
+    const ro = paRoster(sub.id, cls.id);
+    if (!ro.length) return '<div class="se-box se-sbox pa-empty">' + paEsc(cls.name) + '에 학생이 없어요. <button class="top-btn" onclick="paSetTab(\'setup\')">① 과목·학생</button>에서 넣으세요.</div>';
+    const a = paCurArea(sub), sc = paScores(sub.id, cls.id, a.id);
+    let h = '<div class="pa-area-tabs top-btn-cluster">' + sub.areas.map(function(x) {
+      const s2 = paScores(sub.id, cls.id, x.id), done = ro.filter(function(st) { return paAreaResult(x, s2[paSk(st)]).done; }).length;
+      return '<button class="top-btn' + (x.id === a.id ? ' theme-active' : '') + '" onclick="paPickArea(\'' + x.id + '\')">' + paEsc(x.name) + ' <span class="pa-cnt' + (done === ro.length ? ' ok' : '') + '">' + done + '/' + ro.length + '</span></button>';
+    }).join('') + '</div>';
+    const noPts = a.subs.filter(function(x) { return !paParsePts(x.pts).length; });
+    h += '<div class="se-muted pa-hint">' + a.subs.map(function(x) { return '<b>' + paEsc(x.name || '세부') + '</b> ' + paEsc(paPtsText(paParsePts(x.pts)) || '점수 없음'); }).join(' · ') +
+      (a.min != null ? ' · 최하점 <b>' + a.min + '</b>' : '') + ' — Enter = 아래 칸, 엑셀에서 한 열 복사해 붙여 넣기도 돼요</div>';
+    if (noPts.length) h += '<div class="pa-warn">⚠️ 줄 수 있는 점수가 없는 세부영역이 있어요 — ② 영역·배점에서 적어 주세요.</div>';
+    h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-score-table"><thead><tr><th>반</th><th>번호</th><th>이름</th>' +
+      (a.min != null ? '<th title="미제출·미응시 — 합계를 최하점(' + a.min + ')으로">최하점</th>' : '') +
+      a.subs.map(function(x) { return '<th>' + paEsc(x.name || '세부') + '<div class="pa-th-sub">' + (paSubMax(x) || '-') + '점</div></th>'; }).join('') +
+      '<th>합계<div class="pa-th-sub">' + paAreaMax(a) + '점</div></th>' + (a.note ? '<th style="min-width:320px;">평가내용</th>' : '') + '</tr></thead><tbody>';
+    ro.forEach(function(st, ri) {
+      const k = paSk(st), rec = sc[k] || {}, v = rec.v || {}, r = paAreaResult(a, rec);
+      h += '<tr data-k="' + k + '"><td class="se-c">' + (st.c || '') + '</td><td class="se-c">' + (st.n || '') + '</td><td class="se-c pa-name">' + paEsc(st.name) + '</td>';
+      if (a.min != null) h += '<td class="se-c"><input type="checkbox" class="pa-mchk"' + (rec.m ? ' checked' : '') + ' onchange="paOnMin(\'' + k + '\', this.checked)"></td>';
+      a.subs.forEach(function(x, xi) {
+        const val = v[x.id] == null ? '' : v[x.id];
+        const bad = val !== '' && paParsePts(x.pts).indexOf(paNum(val)) === -1;
+        h += '<td class="se-c"><input class="pa-sc' + (bad ? ' bad' : '') + '" inputmode="decimal" autocomplete="off" data-k="' + k + '" data-x="' + x.id + '" data-r="' + ri + '" data-col="' + xi + '" value="' + val + '"' + (rec.m ? ' disabled' : '') +
+          ' oninput="paScInput(this)" onchange="paScCommit(this)" onkeydown="paScKeydown(event, this)" onpaste="paScPaste(event, this)" onfocus="this.select()"></td>';
+      });
+      h += '<td class="se-c pa-total" data-k="' + k + '">' + paTotalHtml(r) + '</td>';
+      if (a.note) {
+        const nt = paGet(paNtKey(sub.id, cls.id, a.id, k));
+        h += '<td><textarea class="se-cell pa-note" rows="1" data-k="' + k + '" placeholder="평가내용" oninput="paNoteInput(this)" onchange="paNoteCommit(this)" onblur="paNoteCommit(this)">' + paEsc(nt) + '</textarea>' + seBytesHtml(nt, sub.limit, 'pa-nb') + '</td>';
+      }
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    return h;
+  }
+  function paTotalHtml(r) {
+    if (r.total == null) return '<span class="se-muted">-</span>';
+    return '<b class="' + (r.bad ? 'pa-bad' : r.low ? 'pa-lowt' : r.done ? '' : 'pa-part') + '" title="' + (r.min ? '최하점 처리' : r.bad ? '배점에 없는 점수가 있어요' : r.low ? '최하점보다 낮아요' : r.done ? '' : '아직 다 안 넣음') + '">' + r.total + (r.min ? '<span class="pa-mtag">최하</span>' : '') + '</b>';
+  }
+  function paScoreAfter() {
+    document.querySelectorAll('#pa-pane .pa-note').forEach(paAutoSize);
+  }
+  function paAutoSize(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(220, ta.scrollHeight + 2) + 'px'; }
+  function paPickArea(id) { paSetUi({ area: id }); paRenderAll(); }
+  function paScCtx() { const sub = paSub(), cls = paCls(sub), a = sub && paCurArea(sub); return { sub: sub, cls: cls, a: a }; }
+  function paScInput(inp) {
+    const x = paScCtx().a.subs.find(function(y) { return y.id === inp.dataset.x; });
+    const v = inp.value.trim();
+    inp.classList.toggle('bad', v !== '' && (!x || !isFinite(Number(v)) || paParsePts(x.pts).indexOf(paNum(v)) === -1));
+    paSaveState('typing');
+  }
+  // 칸을 벗어날 때: 배점에 있는 점수면 저장, 아니면 알리고 원래 값으로.
+  function paScCommit(inp) {
+    const ctx = paScCtx(), x = ctx.a.subs.find(function(y) { return y.id === inp.dataset.x; });
+    const sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id), k = inp.dataset.k;
+    const rec = sc[k] || { v: {} }; rec.v = rec.v || {};
+    const old = rec.v[inp.dataset.x] == null ? '' : String(rec.v[inp.dataset.x]);
+    const v = inp.value.trim();
+    if (v === '') { delete rec.v[inp.dataset.x]; }
+    else {
+      const pts = x ? paParsePts(x.pts) : [];
+      if (!isFinite(Number(v)) || pts.indexOf(paNum(v)) === -1) {
+        inp.value = old; inp.classList.toggle('bad', false);
+        paSaveState('');
+        paFlash(inp, '"' + v + '"점은 줄 수 없어요 — ' + (x ? (x.name || '세부영역') + ': ' + (paPtsText(pts) || '점수 없음') : ''));
+        return;
+      }
+      rec.v[inp.dataset.x] = paNum(v);
+    }
+    sc[k] = rec;
+    paSaveScores(ctx.sub.id, ctx.cls.id, ctx.a.id, sc);
+    paRefreshRow(k);
+  }
+  // 칸 옆에 잠깐 뜨는 경고(알림창은 입력 흐름을 끊어서)
+  function paFlash(inp, msg) {
+    let tip = document.getElementById('pa-tip');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'pa-tip'; document.body.appendChild(tip); }
+    const r = inp.getBoundingClientRect();
+    tip.textContent = '⚠️ ' + msg;
+    tip.style.left = Math.max(8, Math.min(innerWidth - 340, r.left)) + 'px';
+    tip.style.top = (r.bottom + 6) + 'px';
+    tip.style.display = 'block';
+    inp.classList.add('shake');
+    clearTimeout(paFlash._t);
+    paFlash._t = setTimeout(function() { tip.style.display = 'none'; inp.classList.remove('shake'); }, 2600);
+  }
+  function paRefreshRow(k) {
+    const ctx = paScCtx(), r = paAreaResult(ctx.a, paScores(ctx.sub.id, ctx.cls.id, ctx.a.id)[k]);
+    const td = document.querySelector('#pa-pane .pa-total[data-k="' + k + '"]');
+    if (td) td.innerHTML = paTotalHtml(r);
+    // 영역 탭의 "입력 n/N"
+    const ro = paRoster(ctx.sub.id, ctx.cls.id), sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id);
+    const done = ro.filter(function(st) { return paAreaResult(ctx.a, sc[paSk(st)]).done; }).length;
+    const cnt = document.querySelector('#pa-pane .pa-area-tabs .theme-active .pa-cnt');
+    if (cnt) { cnt.textContent = done + '/' + ro.length; cnt.classList.toggle('ok', done === ro.length); }
+  }
+  function paOnMin(k, on) {
+    const ctx = paScCtx(), sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id);
+    const rec = sc[k] || { v: {} };
+    if (on) rec.m = 1; else delete rec.m;
+    sc[k] = rec;
+    paSaveScores(ctx.sub.id, ctx.cls.id, ctx.a.id, sc);
+    document.querySelectorAll('#pa-pane .pa-sc[data-k="' + k + '"]').forEach(function(i) { i.disabled = on; });
+    paRefreshRow(k);
+  }
+  function paScMove(inp, dr, dc) {
+    const r = Number(inp.dataset.r) + dr, c = Number(inp.dataset.col) + dc;
+    const n = document.querySelector('#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + c + '"]');
+    if (n) { n.focus(); return true; }
+    return false;
+  }
+  function paScKeydown(e, inp) {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); if (!paScMove(inp, e.shiftKey && e.key === 'Enter' ? -1 : 1, 0)) inp.blur(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); paScMove(inp, -1, 0); }
+    else if (e.key === 'ArrowRight' && inp.selectionStart === inp.value.length) { if (paScMove(inp, 0, 1)) e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' && inp.selectionStart === 0 && inp.selectionEnd === 0) { if (paScMove(inp, 0, -1)) e.preventDefault(); }
+    else if (e.key === 'Escape') { const ctx = paScCtx(), rec = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id)[inp.dataset.k] || {}; inp.value = rec.v && rec.v[inp.dataset.x] != null ? rec.v[inp.dataset.x] : ''; inp.classList.remove('bad'); inp.blur(); }
+  }
+  // 엑셀에서 여러 칸을 복사해 붙여 넣으면 이 칸부터 아래(·오른쪽)로 채운다. 배점에 없는 점수는 빼고 알려 줌.
+  function paScPaste(e, inp) {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const rows = seParseTsv(text || '');
+    if (rows.length <= 1 && (rows[0] || []).length <= 1) return;
+    e.preventDefault();
+    const ctx = paScCtx(), sc = paScores(ctx.sub.id, ctx.cls.id, ctx.a.id), ro = paRoster(ctx.sub.id, ctx.cls.id);
+    const r0 = Number(inp.dataset.r), c0 = Number(inp.dataset.col);
+    let ok = 0, bad = [];
+    rows.forEach(function(row, i) {
+      const st = ro[r0 + i];
+      row.forEach(function(cell, j) {
+        const x = ctx.a.subs[c0 + j], v = String(cell).trim();
+        if (!st || !x || v === '') return;
+        const k = paSk(st), rec = sc[k] || { v: {} }; rec.v = rec.v || {};
+        if (!isFinite(Number(v)) || paParsePts(x.pts).indexOf(paNum(v)) === -1) { bad.push(paStuLabel(st) + ' ' + (x.name || '') + ' "' + v + '"'); return; }
+        rec.v[x.id] = paNum(v); sc[k] = rec; ok++;
+      });
+    });
+    paSaveScores(ctx.sub.id, ctx.cls.id, ctx.a.id, sc);
+    paRenderAll();
+    if (bad.length) customAlert(ok + '칸을 넣었어요.\n줄 수 없는 점수라서 뺀 칸 ' + bad.length + '개:\n' + bad.slice(0, 12).join('\n') + (bad.length > 12 ? '\n…' : ''));
+  }
+  function paNoteInput(ta) {
+    paSaveState('typing'); paAutoSize(ta);
+    const sub = paSub(), b = ta.nextElementSibling;
+    if (b) b.outerHTML = seBytesHtml(ta.value, sub.limit, 'pa-nb');
+  }
+  function paNoteCommit(ta) {
+    const ctx = paScCtx();
+    if (!ctx.a) return;
+    paSet(paNtKey(ctx.sub.id, ctx.cls.id, ctx.a.id, ta.dataset.k), ta.value.replace(/\r\n?/g, '\n').trim());
+  }
+
+  // ----- ④ 합계·나이스 -----
+  function paStudentTotals(sub, cls) {
+    const ro = paRoster(sub.id, cls.id);
+    const scs = {}; sub.areas.forEach(function(a) { scs[a.id] = paScores(sub.id, cls.id, a.id); });
+    return ro.map(function(st) {
+      const k = paSk(st);
+      const rs = sub.areas.map(function(a) { return paAreaResult(a, scs[a.id][k]); });
+      const all = rs.every(function(r) { return r.done && !r.bad; });
+      return { st: st, k: k, rs: rs, sum: all ? paNum(rs.reduce(function(t, r) { return t + r.total; }, 0)) : null, ok: all };
+    });
+  }
+  function paSumHtml(sub, cls) {
+    const rows = paStudentTotals(sub, cls);
+    const okN = rows.filter(function(r) { return r.ok; }).length;
+    let h = '<div class="pa-row" style="margin-bottom:8px;"><span class="se-sum ' + (rows.length && okN === rows.length ? 'ok' : okN ? '' : 'empty') + '">입력 끝 <b>' + okN + '</b> / ' + rows.length + '명</span>' +
+      '<button class="top-btn pa-primary" onclick="paNeisMake()" title="나이스 수행평가 일괄등록 양식과 같은 모양(과목|반|번호|성명|영역별 만점·점수)으로 새로 만듭니다">📤 나이스 일괄등록 파일 만들기</button>' +
+      '<label class="top-btn" style="cursor:pointer; margin:0;" title="나이스에서 받은 수행평가 일괄등록 엑셀을 올리면, 반·번호가 같은 학생 칸에 점수를 채워 돌려줍니다(추천 — 나이스 양식 그대로)">📥 나이스에서 받은 파일에 채우기<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="paNeisFill(this.files[0]); this.value=\'\';"></label>' +
+      '<span class="se-muted">나이스 > 수행평가 일괄등록에서 받은 파일에 채우는 걸 추천해요(영역 이름이 같아야 해요).</span></div>';
+    if (!sub.areas.length || !rows.length) return h + '<div class="se-box se-sbox pa-empty">' + (!sub.areas.length ? '영역이 아직 없어요.' : '학생이 없어요.') + '</div>';
+    h += '<div class="se-box pa-scroll-x"><table class="se-table pa-table pa-sum-table"><thead><tr><th>반</th><th>번호</th><th>이름</th>' +
+      sub.areas.map(function(a) { return '<th>' + paEsc(a.name) + '<div class="pa-th-sub">만점 ' + paAreaMax(a) + '</div></th>'; }).join('') +
+      '<th>합계<div class="pa-th-sub">' + paNum(sub.areas.reduce(function(t, a) { return t + paAreaMax(a); }, 0)) + '</div></th><th>확인</th></tr></thead><tbody>';
+    rows.forEach(function(r) {
+      const miss = [];
+      r.rs.forEach(function(x, i) { if (x.bad) miss.push(sub.areas[i].name + ' 점수 오류'); else if (!x.done) miss.push(sub.areas[i].name + (x.any ? ' 덜 넣음' : ' 비어 있음')); else if (x.low) miss.push(sub.areas[i].name + ' 최하점보다 낮음'); });
+      h += '<tr' + (r.ok ? '' : ' class="pa-miss"') + '><td class="se-c">' + (r.st.c || '') + '</td><td class="se-c">' + (r.st.n || '') + '</td><td class="se-c pa-name">' + paEsc(r.st.name) + '</td>' +
+        r.rs.map(function(x) { return '<td class="se-c">' + paTotalHtml(x) + '</td>'; }).join('') +
+        '<td class="se-c"><b>' + (r.sum == null ? '-' : r.sum) + '</b></td><td class="pa-chk">' + (miss.length ? '⚠️ ' + paEsc(miss.join(', ')) : '✅') + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    return h;
+  }
+  function paScoreText(r) { return r && r.done && !r.bad && r.total != null ? String(r.total) : ''; }
+  async function paConfirmIncomplete(sub, cls) {
+    const rows = paStudentTotals(sub, cls), miss = rows.filter(function(r) { return !r.ok; }).length;
+    return !miss || await customConfirm(rows.length + '명 중 ' + miss + '명의 점수가 다 안 들어갔거나 오류가 있어요(그 칸은 비워 둬요). 그래도 만들까요?');
+  }
+  async function paNeisMake() {
+    const sub = paSub(), cls = paCls(sub);
+    if (!cls || !sub.areas.length) return;
+    if (!(await paConfirmIncomplete(sub, cls))) return;
+    try {
+      await sccLoadExcelJS();
+      const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet('empty0');
+      ws.columns = [{ width: 7.14 }, { width: 7.14 }, { width: 7.14 }, { width: 21.43 }].concat(sub.areas.map(function() { return { width: 21.43 }; }));
+      const thin = { style: 'thin' }, border = { top: thin, left: thin, bottom: thin, right: thin };
+      const head = function(cell, v) { cell.value = v; cell.numFmt = '@'; cell.border = border; cell.alignment = { horizontal: 'center', vertical: 'middle' }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDDDDD' } }; };
+      ['과목', '반', '번호', '성명'].forEach(function(t, i) { head(ws.getCell(1, i + 1), t); head(ws.getCell(2, i + 1), null); head(ws.getCell(3, i + 1), null); ws.mergeCells(1, i + 1, 3, i + 1); });
+      sub.areas.forEach(function(a, i) { head(ws.getCell(1, 5 + i), a.name); head(ws.getCell(2, 5 + i), '만점(' + paAreaMax(a) + ')'); head(ws.getCell(3, 5 + i), '점수'); });
+      const rows = paStudentTotals(sub, cls);
+      rows.forEach(function(r, ri) {
+        const vals = [sub.neis || sub.name, String(r.st.c || ''), String(r.st.n || ''), r.st.name].concat(r.rs.map(paScoreText));
+        vals.forEach(function(v, ci) {
+          const cell = ws.getCell(4 + ri, ci + 1);
+          cell.value = v; cell.numFmt = '@'; cell.border = border;
+          cell.alignment = { horizontal: ci < 4 ? undefined : 'center', vertical: 'middle' };
+        });
+      });
+      const buf = await wb.xlsx.writeBuffer();
+      fmSaveNow(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '수행평가일괄등록_' + (sub.neis || sub.name) + '_' + cls.name + '.xlsx');
+    } catch (e) {
+      customAlert('엑셀 파일을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.' + (e && e.message ? '\n(' + e.message + ')' : ''));
+    }
+  }
+  function paNorm(s) { return String(s == null ? '' : s).replace(/\s+/g, '').toLowerCase(); }
+  function paCellText(cell) {
+    if (!cell) return '';
+    const v = cell.value;
+    if (v == null) return '';
+    if (typeof v === 'object') { if (v.richText) return v.richText.map(function(r) { return r.text; }).join(''); if (v.result != null) return String(v.result); if (v.text != null) return String(v.text); }
+    return String(v);
+  }
+  // 나이스에서 받은 일괄등록 파일을 읽어 점수 칸을 채운다. 머리: 과목|반|번호|성명 다음 열마다 영역 이름(1줄)·만점(N)(2줄)·점수(3줄).
+  // 받은 파일 그대로(글꼴·테두리·글 서식) 두고 점수 칸만 글로 채운다(나이스 양식 칸이 모두 글 서식 '@').
+  function paNeisLayout(grid) {
+    // grid: 행마다 칸 글 배열(0부터)
+    let hr = -1, col = {};
+    for (let r = 0; r < Math.min(grid.length, 15) && hr < 0; r++) {
+      const row = grid[r] || [];
+      const find = function(re) { return row.findIndex(function(t) { return re.test(paNorm(t)); }); };
+      const b = find(/^반$/), n = find(/^번호$/), nm = find(/^(성명|이름)$/);
+      if (b >= 0 && n >= 0 && nm >= 0) { hr = r; col = { ban: b, num: n, name: nm, subj: find(/^과목/) }; }
+    }
+    if (hr < 0) return null;
+    const first = Math.max(col.ban, col.num, col.name) + 1;
+    const areas = [];
+    for (let c = first; c < (grid[hr] || []).length; c++) { const t = String(grid[hr][c] || '').trim(); if (t) areas.push({ col: c, name: t }); }
+    // 데이터 시작: "점수" 줄 다음, 없으면 머리 다음 줄부터 번호가 숫자인 첫 줄
+    let start = hr + 1;
+    for (let r = hr + 1; r < Math.min(grid.length, hr + 5); r++) { if ((grid[r] || []).some(function(t) { return paNorm(t) === '점수'; })) start = r + 1; }
+    areas.forEach(function(a) {
+      for (let r = hr + 1; r < start; r++) { const m = String((grid[r] || [])[a.col] || '').match(/만점\s*\(?\s*(\d+(?:\.\d+)?)/); if (m) a.max = Number(m[1]); }
+    });
+    return { hr: hr, col: col, areas: areas, start: start };
+  }
+  async function paNeisFill(file) {
+    const sub = paSub(), cls = paCls(sub);
+    if (!file || !cls) return;
+    if (!sub.areas.length) { customAlert('영역이 아직 없어요.'); return; }
+    const isXls = /\.xls$/i.test(file.name);
+    let grid = [], wb = null, ws = null, xwb = null, xws = null;
+    try {
+      const buf = await file.arrayBuffer();
+      if (!isXls) {
+        await sccLoadExcelJS();
+        wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); ws = wb.worksheets[0];
+        for (let r = 1; r <= ws.rowCount; r++) { const row = []; for (let c = 1; c <= Math.max(ws.columnCount, 4); c++) row.push(paCellText(ws.getCell(r, c)).trim()); grid.push(row); }
+      } else {
+        xwb = XLSX.read(new Uint8Array(buf), { type: 'array', cellStyles: true }); xws = xwb.Sheets[xwb.SheetNames[0]];
+        grid = XLSX.utils.sheet_to_json(xws, { header: 1, raw: false, defval: '' }).map(function(r) { return r.map(function(t) { return String(t).trim(); }); });
+      }
+    } catch (e) { customAlert('파일을 읽지 못했어요. 나이스에서 받은 엑셀 파일(.xlsx)이 맞는지 확인해 주세요.' + (e && e.message ? '\n(' + e.message + ')' : '')); return; }
+    const L = paNeisLayout(grid);
+    if (!L || !L.areas.length) { customAlert('나이스 수행평가 일괄등록 파일 모양이 아니에요.\n(첫 줄에 과목·반·번호·성명과 영역 이름이 있어야 해요)'); return; }
+    // 영역 맞추기: 이름이 같은 것 → 아니면 순서대로(개수가 같을 때만)
+    const map = L.areas.map(function(x) { return sub.areas.find(function(a) { return paNorm(a.name) === paNorm(x.name); }) || null; });
+    if (map.some(function(m) { return !m; })) {
+      if (L.areas.length === sub.areas.length && await customConfirm('파일의 영역 이름이 스마트보드와 달라요.\n파일: ' + L.areas.map(function(x) { return x.name; }).join(', ') + '\n스마트보드: ' + sub.areas.map(function(a) { return a.name; }).join(', ') + '\n\n순서대로 맞춰 채울까요?')) {
+        L.areas.forEach(function(x, i) { map[i] = sub.areas[i]; });
+      } else if (map.every(function(m) { return !m; })) { customAlert('파일의 영역(' + L.areas.map(function(x) { return x.name; }).join(', ') + ')과 같은 이름의 영역이 없어요. ② 영역·배점에서 이름을 맞춰 주세요.'); return; }
+    }
+    const warn = [];
+    L.areas.forEach(function(x, i) { const a = map[i]; if (a && x.max != null && paAreaMax(a) !== x.max) warn.push('"' + x.name + '" 만점: 파일 ' + x.max + ' / 스마트보드 ' + paAreaMax(a)); });
+    const totals = paStudentTotals(sub, cls), byKey = {};
+    totals.forEach(function(t) { byKey[Number(t.st.c) + '-' + Number(t.st.n)] = t; });
+    let filled = 0, empty = 0; const notFound = [], nameDiff = [], used = {};
+    for (let r = L.start; r < grid.length; r++) {
+      const row = grid[r] || [];
+      const c = Number(row[L.col.ban]), n = Number(row[L.col.num]), name = String(row[L.col.name] || '').trim();
+      if (!n && !name) continue;
+      const t = byKey[c + '-' + n];
+      if (!t) { notFound.push((c || '?') + '반 ' + (n || '?') + '번 ' + name); continue; }
+      used[t.k] = 1;
+      if (name && paNorm(name) !== paNorm(t.st.name)) nameDiff.push(c + '반 ' + n + '번 파일 "' + name + '" / 스마트보드 "' + t.st.name + '"');
+      L.areas.forEach(function(x, i) {
+        const a = map[i]; if (!a) return;
+        const v = paScoreText(t.rs[sub.areas.indexOf(a)]);
+        if (v === '') { empty++; return; }
+        if (ws) { const cell = ws.getCell(r + 1, x.col + 1); cell.value = v; if (!cell.numFmt) cell.numFmt = '@'; }
+        else { const ref = XLSX.utils.encode_cell({ r: r, c: x.col }); xws[ref] = Object.assign(xws[ref] || {}, { t: 's', v: v, w: v }); }
+        filled++;
+      });
+    }
+    const missing = totals.filter(function(t) { return !used[t.k]; }).map(function(t) { return paStuLabel(t.st); });
+    try {
+      let blob;
+      if (ws) { const out = await wb.xlsx.writeBuffer(); blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); }
+      else { const out = XLSX.write(xwb, { type: 'array', bookType: 'xls' }); blob = new Blob([out], { type: 'application/vnd.ms-excel' }); }
+      fmSaveNow(blob, file.name.replace(/(\.xlsx?)$/i, '_점수$1'));
+    } catch (e) { customAlert('파일을 만들지 못했어요.' + (e && e.message ? '\n(' + e.message + ')' : '')); return; }
+    const lines = ['✅ 점수 ' + filled + '칸을 채운 파일을 내려받았어요. 나이스에 그대로 올리면 돼요.'];
+    if (empty) lines.push('· 점수가 덜 들어간(또는 오류) 칸 ' + empty + '개는 비워 뒀어요.');
+    if (warn.length) lines.push('⚠️ 만점이 달라요 — 나이스 영역 설정을 확인하세요:\n  ' + warn.join('\n  '));
+    if (notFound.length) lines.push('⚠️ 이 반에 없는 학생(비워 둠) ' + notFound.length + '명: ' + notFound.slice(0, 8).join(', ') + (notFound.length > 8 ? ' …' : ''));
+    if (missing.length) lines.push('⚠️ 파일에 없는 우리 반 학생 ' + missing.length + '명: ' + missing.slice(0, 8).join(', ') + (missing.length > 8 ? ' …' : ''));
+    if (nameDiff.length) lines.push('⚠️ 이름이 다른 학생(반·번호로 채움): ' + nameDiff.slice(0, 5).join(', '));
+    customAlert(lines.join('\n'));
+  }
+
+  // ----- ⑤ 세특 -----
+  function paStKey(sid, cid, k) { return 'pa-st-' + sid + '-' + cid + '-' + k; }
+  function paFinKey(sid, cid, k) { return 'pa-fin-' + sid + '-' + cid + '-' + k; }
+  function paDrfKey(sid, cid, k) { return 'pa-drf-' + sid + '-' + cid + '-' + k; }
+  function paSt(sid, cid, k) { const v = paJson(paStKey(sid, cid, k), {}); return { sel: Array.isArray(v.sel) ? v.sel : [], memo: typeof v.memo === 'string' ? v.memo : '' }; }
+  function paSetSt(sid, cid, k, patch) { const v = Object.assign(paSt(sid, cid, k), patch); paSet(paStKey(sid, cid, k), !v.sel.length && !v.memo ? '' : JSON.stringify(v)); }
+  function paDraft(sid, cid, k) { return paGet(paDrfKey(sid, cid, k)) || paGet(paFinKey(sid, cid, k)); }
+  let paSkSel = null;
+  function paSkHtml(sub, cls) {
+    const ro = paRoster(sub.id, cls.id);
+    if (!ro.length) return '<div class="se-box se-sbox pa-empty">' + paEsc(cls.name) + '에 학생이 없어요.</div>';
+    const fin = !!paUi().skFin;
+    let h = '<div class="pa-row" style="margin-bottom:8px;"><div class="top-btn-cluster"><button class="top-btn' + (fin ? '' : ' theme-active') + '" onclick="paSetUi({ skFin: false }); paRenderAll();">✍️ 편집</button>' +
+      '<button class="top-btn' + (fin ? ' theme-active' : '') + '" onclick="paSetUi({ skFin: true }); paRenderAll();">📊 완성본 모아 보기</button></div>' +
+      '<span class="se-muted">③ 점수 입력에서 적은 영역별 평가내용을 골라 합치고 다듬어요 · 한도 ' + paFmt(sub.limit) + '바이트(' + Math.floor(sub.limit / 3) + '자)</span></div>';
+    if (fin) return h + paSkFinHtml(sub, cls, ro);
+    if (!paSkSel || !ro.some(function(s) { return paSk(s) === paSkSel; })) paSkSel = paSk(ro[0]);
+    h += '<div class="pa-sk-body"><div id="pa-sk-students" class="se-box">' + ro.map(function(s) { return paSkStuHtml(sub, cls, s); }).join('') + '</div><div id="pa-sk-editor">' + paSkEditorHtml(sub, cls, ro) + '</div></div>';
+    return h;
+  }
+  function paSkStuHtml(sub, cls, s) {
+    const k = paSk(s), t = paDraft(sub.id, cls.id, k), b = seBytes(t);
+    const dr = paGet(paDrfKey(sub.id, cls.id, k)), hasDraft = !!dr && dr !== paGet(paFinKey(sub.id, cls.id, k));
+    const cls2 = !t.trim() ? 'empty' : b > sub.limit ? 'over' : 'ok';
+    return '<div class="se-stu' + (k === paSkSel ? ' sel' : '') + '" data-k="' + k + '" onclick="paSkPick(\'' + k + '\')"><span>' + (s.c ? s.c + '-' : '') + s.n + '</span><b>' + paEsc(s.name) + '</b>' +
+      '<span class="se-dot ' + cls2 + (hasDraft ? ' draft' : '') + '" title="세특 바이트' + (hasDraft ? ' — 완성본에 아직 안 넣은 편집이 있어요' : '') + '">' + (t.trim() ? paFmt(b) : '-') + '</span><span></span></div>';
+  }
+  function paSkPick(k) { paSkSel = k; paRenderAll(); }
+  function paSkMove(d) {
+    const sub = paSub(), cls = paCls(sub), ro = paRoster(sub.id, cls.id);
+    const i = ro.findIndex(function(s) { return paSk(s) === paSkSel; }), n = ro[i + d];
+    if (n) paSkPick(paSk(n));
+  }
+  function paSkEditorHtml(sub, cls, ro) {
+    const s = ro.find(function(x) { return paSk(x) === paSkSel; }), k = paSkSel, i = ro.indexOf(s);
+    const st = paSt(sub.id, cls.id, k), areas = sub.areas.filter(function(a) { return a.note; });
+    const lim = sub.limit;
+    let h = '<div id="se-edit-head" class="se-box"><button class="top-btn" onclick="paSkMove(-1)"' + (i <= 0 ? ' disabled' : '') + '>◀ 이전</button>' +
+      '<div style="font-weight:800; font-size:15px;">' + paEsc(paStuLabel(s)) + '</div><button class="top-btn" onclick="paSkMove(1)"' + (i >= ro.length - 1 ? ' disabled' : '') + '>다음 ▶</button></div><div class="pa-sk-scroll">';
+    const chosen = areas.filter(function(a) { return st.sel.indexOf(a.id) !== -1 && paGet(paNtKey(sub.id, cls.id, a.id, k)).trim(); });
+    const joined = chosen.map(function(a) { return paGet(paNtKey(sub.id, cls.id, a.id, k)).trim(); }).join(' ');
+    const jb = seBytes(joined);
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span class="se-sec-title">📥 영역별 평가내용 — 넣을 것을 체크<span class="se-sum ' + (!chosen.length ? 'empty' : jb > lim ? 'over' : 'ok') + '">체크한 ' + chosen.length + '개 합치면 <b>' + paFmt(jb) + '</b> / ' + paFmt(lim) + '바이트</span></span></div>';
+    if (!areas.length) h += '<div class="se-muted">평가내용 칸을 쓰는 영역이 없어요(② 영역·배점에서 "평가내용 칸" 체크).</div>';
+    areas.forEach(function(a) {
+      const v = paGet(paNtKey(sub.id, cls.id, a.id, k)), on = st.sel.indexOf(a.id) !== -1, none = !v.trim();
+      h += '<label class="se-card' + (on && !none ? ' on' : '') + (none ? ' none' : '') + '"><div class="se-card-head"><input type="checkbox"' + (on && !none ? ' checked' : '') + (none ? ' disabled' : '') +
+        ' onchange="paSkToggle(\'' + a.id + '\', this.checked)"><span>' + paEsc(a.name) + '</span>' + (none ? '<span class="se-bytes">(비어 있음)</span>' : seBytesHtml(v, 0)) + '</div>' +
+        (none ? '' : '<div class="se-card-text">' + paEsc(v) + '</div>') + '</label>';
+    });
+    h += '<button class="top-btn" style="width:100%; padding:7px; font-weight:800; margin-top:4px;" onclick="paSkCombine()"' + (chosen.length ? '' : ' disabled') + '>⬇ 체크한 내용을 합쳐서 편집 칸에 넣기</button></div>';
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span>✍️ 세특 편집 칸 — 다듬은 뒤 완성본에 넣기</span></div>' +
+      '<textarea id="pa-draft" data-k="' + k + '" spellcheck="false" placeholder="합친 문장을 여기서 다듬어요. 바이트와 기재 불가 표현을 바로 점검해요." oninput="paSkDraftInput(this)" onchange="paSkDraftChange(this)" onblur="paSkDraftChange(this)">' + paEsc(paDraft(sub.id, cls.id, k)) + '</textarea>' +
+      '<div class="pa-row" style="margin-top:6px;"><button class="top-btn" style="flex:1;" onclick="paSkClear()">지우기</button><button class="top-btn" id="pa-copy-btn" style="flex:1; font-weight:800;" onclick="paSkCopy()">📋 복사</button>' +
+      '<button class="top-btn pa-primary" id="pa-put-btn" style="flex:1.4;" onclick="paSkPut()">📊 완성본에 넣기</button></div><div id="pa-put-state" class="se-muted"></div>' +
+      '<div class="sgb-count" id="pa-count"></div><div class="sgb-bar" id="pa-bar"><div></div></div><div id="pa-result"></div></div>';
+    h += '<div class="se-box se-sbox"><div class="se-sec"><span>📝 메모</span><span class="se-muted">나한테만 보이는 메모</span></div><input type="text" class="lp-input" style="width:100%; box-sizing:border-box;" value="' + paEsc(st.memo) + '" placeholder="이 학생 메모" onchange="paSkMemo(this.value)"></div>';
+    return h + '</div>';
+  }
+  function paSkAfter() { paSkCount(); }
+  function paSkCtx() { const sub = paSub(), cls = paCls(sub); return { sub: sub, cls: cls, k: paSkSel }; }
+  function paSkToggle(aid, on) {
+    const x = paSkCtx(), st = paSt(x.sub.id, x.cls.id, x.k);
+    st.sel = st.sel.filter(function(a) { return a !== aid; });
+    if (on) st.sel.push(aid);
+    paSetSt(x.sub.id, x.cls.id, x.k, { sel: st.sel });
+    paRenderAll();
+  }
+  function paSkMemo(v) { const x = paSkCtx(); paSetSt(x.sub.id, x.cls.id, x.k, { memo: String(v || '').trim() }); }
+  async function paSkCombine() {
+    const x = paSkCtx(), st = paSt(x.sub.id, x.cls.id, x.k);
+    const parts = x.sub.areas.filter(function(a) { return a.note && st.sel.indexOf(a.id) !== -1; }).map(function(a) { return paGet(paNtKey(x.sub.id, x.cls.id, a.id, x.k)).trim(); }).filter(Boolean);
+    if (!parts.length) return;
+    const joined = parts.join(' '), ta = document.getElementById('pa-draft');
+    if (ta.value.trim() && ta.value.trim() !== joined && !(await customConfirm('편집 칸에 이미 적힌 내용을 지우고 체크한 내용으로 바꿀까요?'))) return;
+    ta.value = joined;
+    paSkDraftChange(ta);
+    paSkCount();
+    ta.focus();
+  }
+  function paSkDraftInput() { paSaveState('typing'); paSkCount(); }
+  function paSkDraftChange(ta) {
+    const x = paSkCtx();
+    if (!ta || !x.cls) return;
+    const v = ta.value.replace(/\r\n?/g, '\n'), k = ta.dataset.k;
+    paSet(paDrfKey(x.sub.id, x.cls.id, k), v === paGet(paFinKey(x.sub.id, x.cls.id, k)) ? '' : v);
+    const el = document.querySelector('#pa-sk-students .se-stu[data-k="' + k + '"]'), s = paRoster(x.sub.id, x.cls.id).find(function(y) { return paSk(y) === k; });
+    if (el && s) el.outerHTML = paSkStuHtml(x.sub, x.cls, s);
+    paSkPutState();
+  }
+  async function paSkPut() {
+    const x = paSkCtx(), ta = document.getElementById('pa-draft'), btn = document.getElementById('pa-put-btn');
+    if (!ta) return;
+    const v = ta.value.replace(/\r\n?/g, '\n').trim(), k = ta.dataset.k, cur = paGet(paFinKey(x.sub.id, x.cls.id, k));
+    if (!v && !cur) return;
+    if (!v && !(await customConfirm('편집 칸이 비어 있어요. 완성본을 지울까요?'))) return;
+    const b = seBytes(v);
+    if (v && b > x.sub.limit && !(await customConfirm(paFmt(b - x.sub.limit) + '바이트 넘어요(' + paFmt(b) + ' / ' + paFmt(x.sub.limit) + '). 그래도 완성본에 넣을까요?'))) return;
+    ta.value = v;
+    paSet(paFinKey(x.sub.id, x.cls.id, k), v);
+    paSet(paDrfKey(x.sub.id, x.cls.id, k), '');
+    paSkDraftChange(ta);
+    if (btn) { btn.textContent = v ? '✅ 완성본에 넣었어요' : '✅ 완성본에서 지웠어요'; setTimeout(function() { const b2 = document.getElementById('pa-put-btn'); if (b2) b2.textContent = '📊 완성본에 넣기'; }, 1800); }
+  }
+  function paSkPutState() {
+    const x = paSkCtx(), ta = document.getElementById('pa-draft'), el = document.getElementById('pa-put-state');
+    if (!ta || !el) return;
+    const fin = paGet(paFinKey(x.sub.id, x.cls.id, ta.dataset.k)), v = ta.value.replace(/\r\n?/g, '\n');
+    el.textContent = v.trim() === fin.trim() ? (fin.trim() ? '✅ 완성본과 같아요' : '완성본이 아직 없어요') : (fin.trim() ? '✏️ 완성본과 달라요 — 📊 완성본에 넣기를 눌러야 바뀌어요' : '✏️ 아직 완성본에 안 넣었어요');
+  }
+  function paSkCount() {
+    const x = paSkCtx(), ta = document.getElementById('pa-draft');
+    if (!ta) return;
+    const c = sgbCount(ta.value), lim = x.sub.limit, over = c.bytes > lim;
+    const ce = document.getElementById('pa-count');
+    ce.className = 'sgb-count' + (over ? ' over' : '');
+    ce.innerHTML = '<span>공백 제외 <b>' + c.noSpace + '</b>자</span><span>공백 포함 <b>' + c.withSpace + '</b>자</span><span><b>' + paFmt(c.bytes) + '</b>바이트 <span class="sgb-limit">/ ' + paFmt(lim) + '바이트' +
+      (over ? ' · <b>' + paFmt(c.bytes - lim) + '바이트 넘음</b>' : ' · ' + paFmt(lim - c.bytes) + '바이트 남음') + '</span></span>';
+    const bar = document.getElementById('pa-bar');
+    bar.className = 'sgb-bar' + (over ? ' over' : '');
+    bar.firstChild.style.width = Math.min(100, c.bytes / lim * 100) + '%';
+    document.getElementById('pa-result').innerHTML = ta.value.trim() ? sgbFindingsHtml(ta.value) : '';
+    paSkPutState();
+  }
+  async function paSkCopy() {
+    const ta = document.getElementById('pa-draft'), btn = document.getElementById('pa-copy-btn');
+    if (!ta || !ta.value) return;
+    await seCopyText(ta.value, btn);
+  }
+  function paSkClear() { const ta = document.getElementById('pa-draft'); if (!ta) return; ta.value = ''; paSkDraftChange(ta); paSkCount(); ta.focus(); }
+  function paSkFinHtml(sub, cls, ro) {
+    const done = ro.filter(function(s) { return paGet(paFinKey(sub.id, cls.id, paSk(s))).trim(); }).length;
+    let h = '<div class="se-muted" style="margin-bottom:6px;">완성 ' + done + ' / ' + ro.length + '명 — 📋를 누르면 나이스에 붙여 넣을 수 있게 복사돼요.</div>' +
+      '<div class="se-box pa-scroll-x"><table class="se-table pa-table se-fin-table"><colgroup><col style="width:70px"><col style="width:90px"><col><col style="width:110px"><col style="width:46px"></colgroup>' +
+      '<thead><tr><th>반·번호</th><th>이름</th><th>세특 완성본</th><th>바이트</th><th></th></tr></thead><tbody>';
+    ro.forEach(function(s) {
+      const k = paSk(s), t = paGet(paFinKey(sub.id, cls.id, k)), b = seBytes(t), over = b > sub.limit;
+      h += '<tr><td class="se-c">' + (s.c ? s.c + '-' : '') + s.n + '</td><td class="se-c pa-name">' + paEsc(s.name) + '</td><td class="se-txt">' + (t ? paEsc(t) : '<span class="se-empty">아직 없음</span>') + '</td>' +
+        '<td class="se-bcell' + (over ? ' over' : '') + '"><b>' + paFmt(b) + '</b><br>/ ' + paFmt(sub.limit) + '</td><td class="se-c">' + (t ? '<button class="pa-x" title="복사" onclick="seCopyText(paGet(paFinKey(\'' + sub.id + '\', \'' + cls.id + '\', \'' + k + '\')), this)">📋</button>' : '') + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
 
   // ===== 📄 양식 만들기 =====
   // 선생님들이 한글로 매번 새로 만드는 양식을, 칸만 채우면 A4로 바로 인쇄하거나 한글 파일(.hwpx)로 내려받게 한다.
