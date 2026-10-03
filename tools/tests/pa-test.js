@@ -196,6 +196,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('시범 선생님: 레일 "양식" 다음에 수행평가', await P.evaluate(() => { const b = document.getElementById('rail-pa-btn'); return getComputedStyle(b).display !== 'none' && b.previousElementSibling.id === 'rail-forms-btn' && b.innerText.includes('수행평가'); }));
   await P.click('#rail-pa-btn'); await P.waitForTimeout(300);
   check('누르면 수행평가 화면 + 처음 안내(과목 만들기)', await P.isVisible('#pa-page') && /첫 과목 만들기/.test(await P.innerText('#pa-pane')) && !(await P.isVisible('#main-dashboard')));
+  check('처음 안내: 이 화면이 뭘 하는 곳인지 + 다섯 걸음 + 시작 단추 반짝임', /나이스에 올릴 파일을 만드는 곳/.test(await P.innerText('#pa-pane')) && (await P.$$('#pa-pane .pa-w-step')).length === 5 && await P.evaluate(() => document.getElementById('pa-w-go').classList.contains('pa-glow')));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '0-welcome.png') });
 
   // ===== ① 과목·학생 =====
   await P.click('#pa-pane button:has-text("첫 과목 만들기")'); await P.waitForSelector('#pa-modal', { state: 'visible' });
@@ -208,6 +210,8 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('나이스 과목 칸 = 과목(시수) "화학Ⅱ(3)"', /화학Ⅱ\(3\)/.test(await P.innerText('#pa-pane')) && (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(3)');
   await setVal(P, '#pa-f-hours', '4');
   check('시수 고치면 나이스 과목 칸도 + 칸을 벗어나도 다음 칸에 커서', (await P.evaluate(() => paNeisName(paSub()))) === '화학Ⅱ(4)' && await P.evaluate(() => document.activeElement && document.activeElement.id === 'pa-f-limit'));
+  check('다음 할 일: 학생 넣기 + 학생 넣는 곳 반짝임', /다음 할 일[\s\S]*1반[\s\S]*학생을 넣으세요/.test(await P.innerText('#pa-next')) && await P.evaluate(() => document.querySelector('#pa-pane .pa-add-stu').classList.contains('pa-glow')), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '0-next-students.png') });
   await P.fill('#pa-paste', '1\t20\t그대로');
   await setVal(P, '#pa-f-hours', '3');
   check('과목 칸을 고쳐도 붙여 넣기 칸 글은 그대로', (await P.inputValue('#pa-paste')) === '1\t20\t그대로' && /화학Ⅱ\(3\)/.test(await P.innerText('#pa-neis-hint')));
@@ -239,17 +243,25 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('반·번호가 같은 다른 학년 학생은 넣지 않고 알림', /다른 학년/.test(clashMsg) && /2학년/.test(clashMsg) && (await P.evaluate(() => paRoster(paSub().id, paCls(paSub()).id).length)) === 6, clashMsg);
   for (const n of ['7반', '4반', '6반']) { await P.click('#pa-classes .pa-add-cls'); await answerPrompt(P, n); }
   check('반을 7·4·6 순서로 더해도 숫자 순(2·4·6·7반)', (await P.evaluate(() => paSub().classes.map(x => x.name).join())) === '2반,4반,6반,7반' && (await P.evaluate(() => [...document.querySelectorAll('#pa-classes [data-cid]')].map(b => b.childNodes[0].textContent).join())) === '2반,4반,6반,7반');
-  check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '📚 화학Ⅱ|📚 물리학Ⅰ|＋ 과목');
+  check('과목은 머리의 단추(드롭다운 아님): 화학Ⅱ·물리학Ⅰ·＋ 과목', (await P.evaluate(() => [...document.querySelectorAll('#pa-subjs .top-btn')].map(b => b.textContent.trim()).join('|'))) === '화학Ⅱ|물리학Ⅰ|＋ 과목');
   await P.click('#pa-subjs [data-sid="' + (await cfg(P)).subjects[0].id + '"]'); await P.waitForTimeout(200);
   check('과목 고르기로 화학Ⅱ로 돌아옴(1반)', (await P.evaluate(() => paSub().name + paCls(paSub()).name)) === '화학Ⅱ1반');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-setup.png') });
   // ===== ② 영역·배점 =====
-  await P.click('#pa-tabs [data-tab="areas"]'); await P.waitForTimeout(150);
+  check('반 3개 중 1반만 넣으면 ① 안 끝남(1/3반) + 다음 할 일 = 2반에도 학생 + "2반으로" 단추', !/✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && /1\/3반/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) &&
+    /2반에도 학생을 넣으세요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")') && !(await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next')), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '1-next-class.png') });
+  await P.click('#pa-next button:has-text("2반으로")'); await P.waitForTimeout(150);
+  check('"2반으로" → 2반, 다음 할 일 = 2반 학생 넣기(반 3개 중 1개 끝)', (await P.evaluate(() => paCls(paSub()).name)) === '2반' && /2반 학생을 넣으세요[\s\S]*반 3개 중 1개 끝/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  await P.evaluate(() => { const s = paSub(); s.classes.forEach(x => { if (!paRoster(s.id, x.id).length) paMergeRoster(s.id, x.id, [{ g: 3, c: parseInt(x.name), n: 1, name: '다른반' + x.name }], false); }); paSetUi({ c: s.classes[0].id }); paRenderAll(); });
+  check('모든 반에 학생을 넣으면 ① ✓, ②에 "다음" 표시 + 다음 할 일 = 영역 만들기', /✓/.test(await P.innerText('#pa-tabs [data-tab="setup"]')) && await P.isVisible('#pa-tabs [data-tab="areas"] .pa-st-next') && /영역 더하기/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
+  await P.click('#pa-next button:has-text("영역·배점")'); await P.waitForTimeout(150);
+  check('다음 할 일 단추로 ② 탭 + "＋ 영역 더하기" 반짝임', (await P.evaluate(() => paTab())) === 'areas' && await P.evaluate(() => document.querySelector('#pa-pane .pa-area-new').classList.contains('pa-glow')));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
   await P.fill('#pa-pane .pa-aname', '개념 구조화'); await P.press('#pa-pane .pa-aname', 'Tab'); await P.waitForTimeout(150);
   check('영역 이름 저장 + Tab으로 옮긴 칸(최하점)에 커서 그대로', (await cfg(P)).subjects[0].areas[0].name === '개념 구조화' && await P.evaluate(() => document.activeElement && document.activeElement.classList.contains('pa-min')));
-  await P.keyboard.type('2'); await P.keyboard.press('Tab'); await P.waitForTimeout(150);
+  await P.keyboard.press('Space'); await P.keyboard.press('Tab'); await P.waitForTimeout(150);
   let A = (await cfg(P)).subjects[0].areas[0];
   await setVal(P, '[data-fid="sn-' + A.subs[0].id + '"]', '반응속도');
   await setVal(P, '[data-fid="sp-' + A.subs[0].id + '"]', '1~15');
@@ -264,7 +276,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   A = (await cfg(P)).subjects[0].areas[0];
   await setVal(P, '[data-fid="sp-' + A.subs[1].id + '"]', '15, 10, 5');
   A = (await cfg(P)).subjects[0].areas[0];
-  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 2, 영역 만점 30', A.min === 2 && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), A);
+  check('세부영역 2개·배점(1~15 / 15,10,5)·최하점 = 가장 낮은 점수 합 1 + 5 = 6, 영역 만점 30', A.min != null && await P.evaluate((a) => paAreaMin(a), A) === 6 && /최하점 칸 쓰기\s*6점/.test(await P.innerText('#pa-pane .pa-area')) && A.subs.map(x => x.name).join() === '반응속도,전기화학' && await P.evaluate((a) => paAreaMax(a), A) === 30 && /30점/.test(await P.innerText('#pa-pane .pa-area')), [A, await P.evaluate((a) => paAreaMin(a), A), (await P.innerText('#pa-pane .pa-area')).slice(0, 160)]);
   check('배점 미리보기: 작은 점수부터 "1~15 (15가지)", "5, 10, 15" — 세부영역 한 줄', /1~15 \(15가지\)/.test(await P.innerText('#pa-pane .pa-area')) && /5, 10, 15 \(3가지\)/.test(await P.innerText('#pa-pane .pa-area')) &&
     await P.evaluate(() => { const r = document.querySelector('#pa-pane .pa-sub-row:not(.pa-sub-hd)'); const ys = [...r.children].map(e => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)); return Math.max(...ys) - Math.min(...ys) <= 3; }));
   await P.click('#pa-pane button:has-text("영역 더하기")'); await P.waitForTimeout(150);
@@ -272,7 +284,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.fill('#pa-pane .pa-area >> nth=1 >> .pa-aname', '화학자료분석'); await P.press('#pa-pane .pa-area >> nth=1 >> .pa-aname', 'Tab'); await P.waitForTimeout(150);
   await setVal(P, '[data-fid="sn-' + A2.subs[0].id + '"]', '자료분석');
   await setVal(P, '[data-fid="sp-' + A2.subs[0].id + '"]', '30 25 20');
-  await P.click('#pa-pane .pa-area >> nth=1 >> input[type=checkbox]'); await P.waitForTimeout(150);
+  await P.click('#pa-pane .pa-area >> nth=1 >> input[type=checkbox]:not(.pa-min)'); await P.waitForTimeout(150);
   A2 = (await cfg(P)).subjects[0].areas[1];
   check('영역 두 개(+ 더하기 칸)가 한 줄에 나란히 — 1600px 화면이면 한 줄에 셋', await P.evaluate(() => { const a = document.querySelectorAll('#pa-pane .pa-area'); const n = document.querySelector('#pa-pane .pa-area-new'); return a.length === 2 && [a[1], n].every(e => Math.abs(a[0].getBoundingClientRect().top - e.getBoundingClientRect().top) < 2); }));
   check('둘째 영역: 배점 30·25·20, 평가내용 칸 끔, 최하점 없음', A2.name === '화학자료분석' && A2.note === false && A2.min == null && await P.evaluate((a) => paAreaMax(a), A2) === 30, A2);
@@ -283,10 +295,19 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '2-areas.png') });
   // ===== ③ 점수 입력 =====
+  check('배점을 다 적으면 ② ✅ + 다음 할 일 = 개념 구조화 점수 10명', /✓/.test(await P.innerText('#pa-tabs [data-tab="areas"]')) && /개념 구조화 점수를 넣으세요 — 10명 남았어요/.test(await P.innerText('#pa-next')), await P.innerText('#pa-next'));
   await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
   const sc = (r, col) => '#pa-pane .pa-sc[data-r="' + r + '"][data-col="' + col + '"]';
   await P.click(sc(0, 0)); await P.keyboard.type('15'); await P.keyboard.press('Enter'); await P.waitForTimeout(100);
-  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 "반응속도(15점)" 아래 넣을 수 있는 점수', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\(15점\)\s*1~15/.test(await P.innerText('#pa-pane thead')) && /전기화학\(15점\)\s*5, 10, 15/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
+  check('점수 입력 머리: 영역 탭 "개념 구조화(30점)", 칸 머리 세 줄(반응속도 / 15점 / 넣을 수 있는 점수)', /개념 구조화\(30점\)/.test(await P.innerText('#pa-pane .pa-area-tabs')) && /반응속도\s*15점\s*1~15/.test(await P.innerText('#pa-pane thead')) && /전기화학\s*15점\s*5, 10, 15/.test(await P.innerText('#pa-pane thead')), await P.innerText('#pa-pane thead'));
+  // 긴 세부영역 이름도 한 줄(칸 폭이 이름에 맞게 넓어짐) — 끝나면 이름 되돌림
+  const setSubName = (n) => P.evaluate((n) => { const c = paCfg(), a = paSub(c).areas[0]; a.subs[1].name = n; paSaveCfg(c); paRenderAll(); }, n);
+  await setSubName('자료 분석 및 결과 도출'); await P.waitForTimeout(150);
+  const thInfo = await P.evaluate(() => { const th = document.querySelectorAll('#pa-pane .pa-score-table th.pa-th-wrap')[1], nm = th.querySelector('.pa-th-name'); return { lines: Math.round(nm.getBoundingClientRect().height / parseFloat(getComputedStyle(nm).lineHeight)), parts: [...th.children].map(e => e.className) }; });
+  check('긴 세부영역 이름("자료 분석 및 결과 도출")도 머리에서 한 줄 + 세 줄(이름 / 점수 / 넣을 수 있는 점수)', thInfo.lines === 1 && thInfo.parts.join() === 'pa-th-name,pa-th-sub,pa-th-pts', thInfo);
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-longname.png') });
+  await setSubName('전기화학'); await P.waitForTimeout(150);
+  await P.click(sc(1, 0));
   check('Enter = 아래 칸으로', await P.evaluate(() => document.activeElement.dataset.r === '1' && document.activeElement.dataset.col === '0'));
   await P.keyboard.type('16');
   check('배점에 없는 점수는 치는 동안 빨갛게', await P.evaluate(() => document.activeElement.classList.contains('bad')));
@@ -311,11 +332,32 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('Enter: 최하점(잠긴) 학생 칸은 건너뛰고 그 아래 학생으로 + 점수는 제 학생에게', await P.evaluate(() => document.activeElement.dataset.r) === '3' &&
     await P.evaluate(() => { const s = paSub(), x = paCls(s), a = s.areas[0]; return (paScores(s.id, x.id, a.id)['1-2'] || {}).v[a.subs[1].id]; }) === 5);
   await P.keyboard.press('Escape');
-  check('최하점 체크 → 합계 2(최하) + 점수 칸 잠김', /^2/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].every(i => i.disabled)));
+  const minCells = () => P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc[data-k="1-7"]')].map(i => (i.disabled ? 'x' : '') + i.value).join());
+  check('최하점 체크 → 세부영역마다 가장 낮은 점수(1, 5)가 칸에 들어가고 잠김 + 합계 6(최하)', /^6/.test((await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim()) && (await minCells()) === 'x1,x5', await minCells());
+  await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
+  check('최하점 체크를 풀면 전에 넣은 점수(13, 빈칸)로 돌아옴', (await minCells()) === '13,' && (await P.innerText('#pa-pane .pa-total[data-k="1-7"]')).trim() === '13', await minCells());
+  await P.click('#pa-pane tr[data-k="1-7"] .pa-mchk'); await P.waitForTimeout(150);
+  await P.evaluate(() => paRenderAll()); await P.waitForTimeout(100);
+  check('다시 그려도 최하점 칸은 1, 5(잠김)', (await minCells()) === 'x1,x5', await minCells());
   // 평가내용
   await P.fill('#pa-pane .pa-note[data-k="1-1"]', '반응 속도에 영향을 주는 요인을 실험으로 탐구함.'); await P.press('#pa-pane .pa-note[data-k="1-1"]', 'Tab'); await P.waitForTimeout(150);
   check('평가내용은 학생마다 따로 저장', Object.values(await lsKeys(P, '^pa-nt-')).join() === '반응 속도에 영향을 주는 요인을 실험으로 탐구함.');
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-score.png') });
+  // 🧹 점수 지우기 / 평가내용 지우기 — 이 반·이 영역만. 취소하면 그대로, 지운 뒤엔 되돌려 놓고 계속
+  const scKey = await P.evaluate(() => { const s = paSub(), x = paCls(s); return paScKey(s.id, x.id, s.areas[0].id); });
+  const scSaved = await P.evaluate((k) => paGet(k), scKey), ntSaved = await lsKeys(P, '^pa-nt-');
+  check('지우기 단추 두 개(점수·평가내용)', await P.isVisible('#pa-clear-sc') && await P.isVisible('#pa-clear-nt'));
+  await P.click('#pa-clear-sc'); await answerConfirm(P, false);
+  check('점수 지우기 취소 → 그대로', (await P.evaluate((k) => paGet(k), scKey)) === scSaved);
+  await P.click('#pa-clear-sc');
+  const clrMsg = await P.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await answerConfirm(P, true); await P.waitForTimeout(150);
+  check('점수 지우기 → 이 영역 점수·최하점 체크 모두 사라짐', (await P.evaluate((k) => paGet(k), scKey)) === '' && /최하점 체크도 풀려요/.test(clrMsg) &&
+    await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-sc')].every(i => i.value === '' && !i.disabled) && ![...document.querySelectorAll('#pa-pane .pa-mchk')].some(c => c.checked)), clrMsg);
+  check('점수 지우기는 평가내용을 안 건드림', JSON.stringify(await lsKeys(P, '^pa-nt-')) === JSON.stringify(ntSaved));
+  await P.click('#pa-clear-nt'); await answerConfirm(P, true); await P.waitForTimeout(150);
+  check('평가내용 지우기 → 이 영역 평가내용 모두 사라짐', !Object.values(await lsKeys(P, '^pa-nt-')).some(v => v) && await P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-note')].every(t => t.value === '')));
+  await P.evaluate(({ k, v, nt }) => { paSet(k, v); Object.keys(nt).forEach(x => paSet(x, nt[x])); paRenderAll(); }, { k: scKey, v: scSaved, nt: ntSaved }); await P.waitForTimeout(100);
   // 나머지 학생 채우기(빠르게 — 함수로): 영역1 두 세부 모두, 영역2
   await P.evaluate(() => {
     const s = paSub(), x = paCls(s), ro = paRoster(s.id, x.id);
@@ -325,12 +367,30 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     paSaveScores(s.id, x.id, a1.id, v1); paSaveScores(s.id, x.id, a2.id, v2);
   });
 
+  // 화면 크기(🔍 − 100% +): 화면 전체를 같은 비율로 — 점수 표 칸 폭도 같이 커져서 안 틀어짐, 계정에 기억
+  const thW = () => P.evaluate(() => [...document.querySelectorAll('#pa-pane .pa-score-table thead th')].slice(0, 4).map(th => Math.round(th.getBoundingClientRect().width)));
+  const w100 = await thW();
+  await P.click('#pa-zoom-group button[title="크게"]'); await P.click('#pa-zoom-group button[title="크게"]'); await P.waitForTimeout(200);
+  const w125 = await thW();
+  check('크게 두 번 → 125%: 글씨·칸 폭이 함께 1.25배(표 그대로), 화면 밖으로 안 넘침, 계정에 기억', (await P.innerText('#pa-zoom-text')) === '125%' && (await P.evaluate(() => localStorage.getItem('zoom-pa'))) === '125' &&
+    w125.every((w, i) => Math.abs(w - w100[i] * 1.25) <= 2) && await P.evaluate(() => document.getElementById('pa-main').getBoundingClientRect().bottom <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth), [w100, w125]);
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '3-zoom125.png') });
+  await P.click('#pa-zoom-text'); await P.waitForTimeout(150);
+  check('% 글자를 누르면 100%(기억도 지움)', (await P.innerText('#pa-zoom-text')) === '100%' && (await P.evaluate(() => localStorage.getItem('zoom-pa'))) === null && JSON.stringify(await thW()) === JSON.stringify(w100));
   // ===== ④ 합계·나이스 =====
+  await P.evaluate(() => paRenderAll());
+  check('남은 학생 한 명(화학자료분석)이면 다음 할 일이 그 영역 + "이 영역으로" 단추', /화학자료분석 점수를 넣으세요 — 1명 남았어요/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("이 영역으로")'), await P.innerText('#pa-next'));
+  const paneTop = () => P.evaluate(() => [Math.round(document.getElementById('pa-next').getBoundingClientRect().height), Math.round(document.getElementById('pa-pane').getBoundingClientRect().top)]);
+  const withBtn = await paneTop();
+  await P.click('#pa-next button:has-text("이 영역으로")'); await P.waitForTimeout(200);
+  const noBtn = await paneTop();
+  check('"이 영역으로" 단추가 있든 없든 다음 할 일 상자 높이·아래 화면 위치 그대로(탭 옮길 때 안 움직임)', !(await P.isVisible('#pa-next button')) && JSON.stringify(withBtn) === JSON.stringify(noBtn), [withBtn, noBtn]);
+  check('한글은 띄어쓰기에서만 줄바꿈(word-break: keep-all) — 머리 칸·안내 글', await P.evaluate(() => getComputedStyle(document.querySelector('#pa-pane thead th')).wordBreak === 'keep-all' && getComputedStyle(document.querySelector('#pa-next .pa-next-msg')).wordBreak === 'keep-all'));
   await P.click('#pa-tabs [data-tab="sum"]'); await P.waitForTimeout(200);
   const sumTxt = await P.innerText('#pa-pane');
   check('합계: 입력 끝 9/10명, 마지막 학생 "화학자료분석 비어 있음"', /입력 끝 9 \/ 10명/.test(sumTxt) && /화학자료분석 비어 있음/.test(sumTxt), sumTxt.slice(0, 300));
   const totals = await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(t => [t.k, t.sum]));
-  check('최하점 학생 합계 = 2 + 영역2', totals.find(t => t[0] === '1-7')[1] === 2 + [30, 25, 20][2 % 3] || totals.find(t => t[0] === '1-7')[1] != null, totals);
+  check('최하점 학생 합계 = 6 + 영역2', totals.find(t => t[0] === '1-7')[1] === 6 + [30, 25, 20][2 % 3], totals);
   if (ExcelJSNode && EXCELJS_PATH) {
     // 만들기
     await P.evaluate(() => { const o = fmSaveNow; window.fmSaveNow = function(b, n) { window.__saveName = n; return o(b, n); }; });
@@ -360,6 +420,18 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   } else console.log('  ⚠️ exceljs가 없어 나이스 파일 검사는 건너뜀(npm i exceljs@4.4.0 후 NODE_PATH에 추가)');
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-sum.png') });
+  // 📋 점수 복사(나이스에 직접 붙여 넣는 선생님용) — 반·번호 순, 덜 넣은 학생은 빈 줄
+  await P.evaluate(() => { window.__clip = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (t) => { window.__clip = t; return Promise.resolve(); } } }); });
+  await P.click('#pa-pane [data-copy="1"]'); await P.waitForTimeout(150);
+  const clip1 = await P.evaluate(() => window.__clip), want1c = await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(r => paScoreText(r.rs[1])).join('\n'));
+  check('📋 화학자료분석 복사: 10줄, 마지막(안 넣은 학생)은 빈 줄 + 안내', clip1 === want1c && clip1.split('\n').length === 10 && clip1.split('\n')[9] === '' && /10명 복사됨[\s\S]*1명은 빈칸/.test(await P.innerText('#pa-copy-msg')), [clip1, await P.innerText('#pa-copy-msg')]);
+  await P.click('#pa-pane [data-copy="-1"]'); await P.waitForTimeout(150);
+  check('📋 합계 복사', (await P.evaluate(() => window.__clip)) === (await P.evaluate(() => paStudentTotals(paSub(), paCls(paSub())).map(r => r.sum == null ? '' : String(r.sum)).join('\n'))));
+  // 점수만 다 넣으면(나이스 파일을 안 만들어도) ③·④ ✅ + 🎉 + 다음 반으로
+  await P.evaluate(() => { const s = paSub(), x = paCls(s), a2 = s.areas[1], ro = paRoster(s.id, x.id), v2 = paScores(s.id, x.id, a2.id); v2[paSk(ro[ro.length - 1])] = { v: { [a2.subs[0].id]: 30 } }; paSaveScores(s.id, x.id, a2.id, v2); paRenderAll(); });
+  check('점수를 다 넣으면 ③·④ ✅ + 🎉 "다음 반" 단추', /✓/.test(await P.innerText('#pa-tabs [data-tab="score"]')) && /✓/.test(await P.innerText('#pa-tabs [data-tab="sum"]')) &&
+    /1반 점수를 다 넣었어요[\s\S]*점수 복사/.test(await P.innerText('#pa-next')) && await P.isVisible('#pa-next button:has-text("2반으로")'), await P.innerText('#pa-next'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '4-done.png') });
   // ===== ⑤ 세특 =====
   await P.click('#pa-tabs [data-tab="sk"]'); await P.waitForTimeout(200);
   check('세특: 학생 목록 + 평가내용 칸 쓰는 영역 카드만(개념 구조화)', await P.evaluate(() => document.querySelectorAll('#pa-sk-students .se-stu').length) === 10 && (await P.innerText('#pa-sk-editor')).includes('개념 구조화') && !(await P.innerText('#pa-sk-editor')).includes('화학자료분석'));
@@ -377,14 +449,16 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
 
   if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '5-sk-fin.png') });
   // ===== 📊 엑셀 내려받기(백업) / 📥 가져오기 =====
-  check('위쪽 메뉴에 "💾 백업" 묶음 — 📥 엑셀 가져오기 · 📊 엑셀 내려받기', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') && /^💾 백업/.test((await P.innerText('#pa-backup')).trim()) && await P.evaluate(() => !!document.querySelector('#pa-backup #pa-xl-import') && !!document.querySelector('#pa-backup #pa-xl-export')));
+  check('위쪽 메뉴에 "💾 백업" 묶음 — 💾 백업(전체 백업 파일 창) · 엑셀 가져오기 · 엑셀 내려받기, 한 줄 머리', await P.isVisible('#pa-xl-import') && await P.isVisible('#pa-xl-export') && /^💾 백업/.test((await P.innerText('#pa-backup')).trim()) &&
+    await P.evaluate(() => ['#pa-xl-import', '#pa-xl-export', '#pa-backup-btn'].every(q => !!document.querySelector('#pa-backup ' + q)) &&
+      Math.abs(document.getElementById('pa-backup').getBoundingClientRect().top - document.getElementById('pa-term').getBoundingClientRect().top) < 12));
   if (ExcelJSNode && EXCELJS_PATH) {
     await P.click('#pa-xl-export'); await P.waitForTimeout(200);
     const opts = await P.evaluate(() => [...document.querySelectorAll('#pa-modal [data-xl]')].map(b => b.dataset.xl + (b.checked ? '1' : '0')).join());
     await P.screenshot({ path: process.env.PA_SHOTS ? path.join(process.env.PA_SHOTS, 'xl-modal.png') : 'pa-xl.png' });
     check('내려받기 창: 담을 것 4개(영역별 점수·평가내용·합계·세특), 처음엔 모두 체크', opts === 'sc1,nt1,sum1,sk1', opts);
     const picks0 = await P.evaluate(() => ({ subs: document.querySelectorAll('#pa-modal [data-xs]').length, on: [...document.querySelectorAll('#pa-modal [data-xc]:checked')].map(b => b.dataset.cid), cur: paCls(paSub()).id, go: document.getElementById('pa-xl-go').textContent }));
-    check('과목·수업반 고르기: 과목 2개가 다 보이고, 처음엔 지금 반만 체크', picks0.subs === 2 && picks0.on.join() === picks0.cur && picks0.go === '📊 내려받기', picks0);
+    check('과목·수업반 고르기: 과목 2개가 다 보이고, 처음엔 지금 반만 체크', picks0.subs === 2 && picks0.on.join() === picks0.cur && picks0.go === '📤 내려받기', picks0);
     await P.click('#pa-modal [data-xl="sum"]');
     check('고른 것을 기억(pa-ui xl)', (await P.evaluate(() => paUi().xl && paUi().xl.sum)) === false);
     const [xdl] = await Promise.all([P.waitForEvent('download'), P.click('#pa-xl-go')]);
@@ -393,7 +467,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     const names = xb.worksheets.map(w => w.name + (w.state && w.state !== 'visible' ? '(' + w.state + ')' : ''));
     check('파일: 영역마다 시트 + 세특 + 숨긴 _정보, 합계는 빼서 없음, 이름 = 수행평가_과목_반_날짜', names.join() === '개념 구조화,화학자료분석,세특,_정보(veryHidden)' && /^수행평가_\d{4}-[12]학기_화학Ⅱ_1반_\d{4}-\d{2}-\d{2}\.xlsx$/.test(await P.evaluate(() => window.__saveName)), [names, await P.evaluate(() => window.__saveName)]);
     const a1 = xb.getWorksheet('개념 구조화'), hd = [1, 2, 3, 4, 5, 6, 7, 8].map(c => String(a1.getCell(1, c).value || '').replace(/\n/g, ' '));
-    check('영역 시트 머리: 반·번호·이름·최하점(2점)·세부(만점)·합계(30점)·평가내용', hd.join('|') === '반|번호|이름|최하점 (2점)|반응속도 (15점)|전기화학 (15점)|합계 (30점)|평가내용', hd);
+    check('영역 시트 머리: 반·번호·이름·최하점(6점 = 세부영역 가장 낮은 점수 합)·세부(만점)·합계(30점)·평가내용', hd.join('|') === '반|번호|이름|최하점 (6점)|반응속도 (15점)|전기화학 (15점)|합계 (30점)|평가내용', hd);
     const colW = [5, 6].map(c => a1.getColumn(c).width);
     // 긴 세부영역 이름: 칸이 제목만큼 넓어지고(최대 28) 더 길면 머리 줄이 높아짐
     const longW = await P.evaluate(async () => {
@@ -408,11 +482,12 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     const v1 = a1.views[0], dv = a1.getCell(2, 5).dataValidation, sumF = a1.getCell(2, 7).value;
     check('서식: 틀 고정(3열·1행)·필터·머리 색, 점수 칸은 배점 목록으로 막음, 합계는 식(최하점이면 최하점)', v1.state === 'frozen' && v1.xSplit === 3 && v1.ySplit === 1 && !!a1.autoFilter &&
       a1.getCell(1, 1).fill && a1.getCell(1, 1).fill.fgColor && dv && dv.type === 'list' && /1,2,3/.test(dv.formulae[0]) && /배점/.test(dv.error) &&
-      sumF && /IF\(D2<>"",2,IF\(COUNT\(E2:F2\)=2,SUM\(E2:F2\),""\)\)/.test(sumF.formula) && a1.getCell(2, 5).value === 15, { v1, dv, sumF });
+      sumF && /IF\(D2<>"",6,IF\(COUNT\(E2:F2\)=2,SUM\(E2:F2\),""\)\)/.test(sumF.formula) && a1.getCell(2, 5).value === 15, { v1, dv, sumF });
     const skS = xb.getWorksheet('세특'), fin1 = String(skS.getCell(2, 4).value || '');
     check('세특 시트: 완성본·바이트 식·한도 넘으면 빨강(조건부 서식)', /결과를 정리함/.test(fin1) && /LENB\(D2\)/.test(skS.getCell(2, 5).value.formula) && skS.getCell(2, 5).value.result === sgbBytesOf(fin1) && JSON.stringify(skS.conditionalFormattings || skS.conditionalFormatting || '').includes('1500'), fin1);
     // 가져오기: 빈 수업반에 넣으면 학생·점수·최하점·평가내용·세특이 그대로 — 배점에 없는 점수(99)는 뺌
     const S2 = xb.getWorksheet('화학자료분석'); let sc2 = 0; for (let c = 4; c <= 8; c++) if (/점\)$/.test(String(S2.getCell(1, c).value || '').replace(/\n/g, '')) && !/^합계/.test(String(S2.getCell(1, c).value))) { sc2 = c; break; }
+    const badKey = String(S2.getCell(11, 1).value || 0) + '-' + String(S2.getCell(11, 2).value || 0);   // 이 학생의 이 칸만 99로 바꿈 → 비교에서 뺌
     S2.getCell(11, sc2).value = 99;
     // 과목·반을 지운 뒤 되살리는 경우: 파일의 과목·반이 스마트보드에 없으면(하나만 골랐을 때) 지금 고른 반에 넣는다
     const infS = xb.getWorksheet('_정보'); [3, 4, 5, 6].forEach(c => { infS.getCell(1, c).value = '없음' + c; });
@@ -420,9 +495,11 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     const orig = await P.evaluate(() => { const sub = paSub(), cls = paCls(sub); const c = paCfg(); c.subjects.find(s => s.id === sub.id).classes.push({ id: 'zzbk', name: '9반' }); paSaveCfg(c); paSetUi({ c: 'zzbk' }); paRenderAll(); return { sid: sub.id, cid: cls.id }; });
     await P.setInputFiles('#pa-xl-input', xf2);
     const imsg = await readAlert(P);
+    orig.badKey = badKey;
     const cmp = await P.evaluate((o) => { const sub = paSub(), same = (f) => sub.areas.every(a => f(o.cid, a) === f('zzbk', a));
       return { ro: JSON.stringify(paRoster(o.sid, o.cid)) === JSON.stringify(paRoster(o.sid, 'zzbk')),
-        sc: same((cid, a) => { const v = paScores(o.sid, cid, a.id); return JSON.stringify(Object.keys(v).sort().map(k => [k, v[k].m || 0, Object.keys(v[k].v || {}).sort().map(x => x + '=' + v[k].v[x])])); }),
+        sc: same((cid, a) => { const v = paScores(o.sid, cid, a.id); if (a.name === '화학자료분석') delete v[o.badKey];
+          return JSON.stringify(Object.keys(v).sort().map(k => [k, v[k].m || 0, Object.keys(v[k].v || {}).sort().map(x => x + '=' + v[k].v[x])])); }),
         nt: paRoster(o.sid, o.cid).every(st => sub.areas.every(a => paGet(paNtKey(o.sid, o.cid, a.id, paSk(st))) === paGet(paNtKey(o.sid, 'zzbk', a.id, paSk(st))))),
         sk: paRoster(o.sid, o.cid).every(st => paGet(paFinKey(o.sid, o.cid, paSk(st))) === paGet(paFinKey(o.sid, 'zzbk', paSk(st)))) }; }, orig);
     check('📥 빈 수업반에 가져오기: 학생 10명·점수·최하점·평가내용·세특이 원래 반과 같게', cmp.ro && cmp.sc && cmp.nt && cmp.sk && /학생 10명/.test(imsg) && /세특 1명/.test(imsg) && /최하점 1명/.test(imsg), { cmp, imsg });
@@ -447,37 +524,20 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
     for (let i = 0; i < 40 && dls.length < allN; i++) await P.waitForTimeout(150);
     await P.waitForTimeout(600); P.off('download', onDl);
     const dnames = await P.evaluate(() => window.__saveNames);
-    check('모든 과목·반: 반마다 .xlsx 하나씩(zip 아님) ' + allN + '개', allN >= 2 && goTxt === '📊 엑셀 ' + allN + '개 내려받기' && dls.length === allN && dnames.every(n => /^수행평가_.+_\d{4}-\d{2}-\d{2}\.xlsx$/.test(n)) && new Set(dnames).size === allN, { allN, goTxt, dnames });
+    check('모든 과목·반: 반마다 .xlsx 하나씩(zip 아님) ' + allN + '개', allN >= 2 && goTxt === '📤 엑셀 ' + allN + '개 내려받기' && dls.length === allN && dnames.every(n => /^수행평가_.+_\d{4}-\d{2}-\d{2}\.xlsx$/.test(n)) && new Set(dnames).size === allN, { allN, goTxt, dnames });
     const paths = []; for (const d of dls) { const pth = path.join(require('os').tmpdir(), 'pa-multi-' + paths.length + '.xlsx'); fs.copyFileSync(await d.path(), pth); paths.push(pth); }
     await P.setInputFiles('#pa-xl-input', paths);
     const mmsg = await readAlert(P);
-    const want = await P.evaluate(() => paCfg().subjects.flatMap(s => s.classes.filter(x => paRoster(s.id, x.id).length).map(x => '📚 ' + s.name + ' ' + x.name + ':')));
+    const want = await P.evaluate(() => paCfg().subjects.flatMap(s => s.classes.filter(x => paRoster(s.id, x.id).length).map(x => s.name + ' ' + x.name + ':')));
     check('여러 파일을 한꺼번에 가져오기: 파일마다 과목·반을 알아서 찾음(이미 있는 칸은 그대로)', new RegExp(allN + '개 반을 가져왔어요').test(mmsg) && want.every(w => mmsg.includes(w)) && !/점수 [1-9]/.test(mmsg) && !/건너뛴 파일/.test(mmsg), { mmsg, want });
     // 지금 반이 아닌 반의 파일 하나만 골라도 그 반으로
     await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.id !== paCls(s).id).id }); paRenderAll(); });
     await P.setInputFiles('#pa-xl-input', xf3);
     const omsg = await readAlert(P);
-    check('다른 반에 있으면서 그 반 파일 하나만 가져와도 제 반(화학Ⅱ 1반)으로', /📚 화학Ⅱ 1반:/.test(omsg), omsg);
+    check('다른 반에 있으면서 그 반 파일 하나만 가져와도 제 반(화학Ⅱ 1반)으로', /화학Ⅱ 1반:/.test(omsg), omsg);
     await P.evaluate(() => { const s = paSub(); paSetUi({ c: s.classes.find(x => x.name === '1반').id }); paRenderAll(); });
     paths.concat([xf3]).forEach(pth => { try { fs.unlinkSync(pth); } catch (e) {} });
   } else console.log('  ⚠️ exceljs가 없어 엑셀 백업 검사는 건너뜀');
-  // ===== 글씨 크기(A−/A+): 수행평가 화면 전체가 같은 비율로(예전엔 세특 칸만 커짐), 자율·진로 글씨 크기와 따로 =====
-  await P.click('#pa-tabs [data-tab="score"]'); await P.waitForTimeout(200);
-  const fz0 = await P.evaluate(() => ({ h: document.querySelector('#pa-pane .pa-sc').getBoundingClientRect().height, name: document.querySelector('#pa-pane .pa-name, #pa-pane td.se-c').getBoundingClientRect().height, sgb: getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim() }));
-  for (let i = 0; i < 3; i++) await P.click('#pa-page-header button:has-text("A+")');
-  await P.waitForTimeout(150);
-  const fz1 = await P.evaluate(() => ({ h: document.querySelector('#pa-pane .pa-sc').getBoundingClientRect().height, name: document.querySelector('#pa-pane .pa-name, #pa-pane td.se-c').getBoundingClientRect().height, zoom: getComputedStyle(document.getElementById('pa-pane')).zoom,
-    sgb: getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim(), saved: localStorage.getItem('fz-pa') }));
-  check('A+ 세 번: 점수 칸·이름 칸까지 같은 비율로 커짐(16/13), 자율·진로(생기부) 글씨 크기는 그대로, 계정에 기억', Math.abs(fz1.h / fz0.h - 16 / 13) < 0.03 && fz1.name > fz0.name * 1.15 && fz1.sgb === fz0.sgb && fz1.saved === '16', { fz0, fz1 });
-  await P.click('#pa-tabs [data-tab="sk"]'); await P.waitForTimeout(200);
-  await P.evaluate(() => { const b = [...document.querySelectorAll('#pa-pane button')].find(x => /편집/.test(x.textContent) && !/모아/.test(x.textContent)); if (b) b.click(); });
-  await P.waitForTimeout(200);
-  const dr = await P.evaluate(() => getComputedStyle(document.getElementById('pa-draft')).fontSize);
-  check('세특 편집 칸 글씨는 13px 그대로(두 번 커지지 않음) — 화면 비율로만 커짐', dr === '13px', dr);
-  for (let i = 0; i < 3; i++) await P.click('#pa-page-header button:has-text("A-")');
-  await P.waitForTimeout(100);
-  check('A− 세 번이면 원래대로', (await P.evaluate(() => getComputedStyle(document.getElementById('pa-pane')).zoom)) === '1');
-
   // ===== 🗓️ 학기 =====
   const TERM0 = await P.evaluate(() => paTermNow());
   check('학기: 머리에 학기 고르기(지금 학기), 과목마다 학기', (await P.inputValue('#pa-term')) === TERM0 && await P.evaluate((t) => paCfg().subjects.every(s => s.term === t), TERM0) &&
@@ -502,7 +562,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   await P.evaluate((t) => { const c = paCfg(), s0 = c.subjects[0], ns = JSON.parse(JSON.stringify(s0)); ns.id = 'oldsub'; ns.term = t; ns.classes = [{ id: 'oldc', name: '5반' }];
     c.subjects.push(ns); paSaveCfg(c); paSaveRoster('oldsub', 'oldc', [{ c: 5, n: 1, name: '작년학생' }]); paSaveScores('oldsub', 'oldc', ns.areas[0].id, { '5-1': { v: { [ns.areas[0].subs[0].id]: 15 } } }); paRenderAll(); }, OLD);
   check('지난 학년도 과목이 있으면 안내 띠(백업 받고 지우기), 지금 학기 과목 목록엔 안 보임', /학년도<\/b> 수행평가 자료가 남아 있어요/.test(await P.innerHTML('#pa-oldyear')) && !(await P.innerText('#pa-subjs')).includes('5반') && !(await P.evaluate(() => paTermSubs(paCfg()).some(s => s.id === 'oldsub'))));
-  await P.click('#pa-oldyear button:has-text("모두 백업 받기")'); await P.waitForTimeout(200);
+  await P.click('#pa-oldyear button:has-text("모두 엑셀로 백업")'); await P.waitForTimeout(200);
   const oldPick = await P.evaluate(() => ({ subs: [...document.querySelectorAll('#pa-modal [data-xs]')].map(b => b.dataset.xs), on: [...document.querySelectorAll('#pa-modal [data-xc]:checked')].map(b => b.dataset.cid) }));
   check('모두 백업 받기: 지난 학년도 과목·반만, 처음부터 모두 체크', oldPick.subs.join() === 'oldsub' && oldPick.on.join() === 'oldc', oldPick);
   await P.evaluate(() => paCloseModal());
@@ -514,7 +574,7 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   // ===== 저장·동기화 =====
   await P.evaluate(() => flushPendingSaveAndSync && flushPendingSaveAndSync()); await wait(2500);
   const keys = Object.keys(await lsKeys(P, '^pa-'));
-  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 2 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
+  check('저장 키: pa-cfg·pa-ui·pa-ro·pa-sc(영역마다)·pa-nt·pa-st·pa-fin', ['pa-cfg', 'pa-ui'].every(k => keys.includes(k)) && keys.filter(k => k.startsWith('pa-ro-')).length === 4 && keys.filter(k => k.startsWith('pa-sc-')).length === 2 && keys.some(k => k.startsWith('pa-st-')), keys);
   check('서버(내 계정)로 올라감', serverVal(TB, 'pa-cfg') && keys.filter(k => k.startsWith('pa-sc-')).every(k => serverVal(TB, k)), keys.map(k => [k, !!serverVal(TB, k)]));
 
   // 다시 열면 그대로(새로고침)
@@ -553,6 +613,28 @@ async function setVal(P, sel, v) { await P.fill(sel, String(v)); await P.press(s
   check('설명서: ' + want.length + '단계 모두 그 자리 요소를 찾아 보여 줌(건너뛴 단계 없음)', miss.length === 0 && seen.length === want.length, { miss, seen: seen.length, want: want.length });
   const after = JSON.stringify(await lsKeys(P, '^pa-')), upAfter = [...items.keys()].filter(k => k.includes('|pa-')).map(k => k + '=' + items.get(k).value).join('\n');
   check('설명서가 끝나면 원래 화면으로 + 선생님 자료(localStorage·서버) 그대로', before === after && upBefore === upAfter && (await P.evaluate(() => document.getElementById('tour-overlay').style.display !== 'block' && !paDemo)) && (await P.innerText('#pa-subjs')).includes('화학Ⅱ') && (await P.innerText('#pa-save-state')).indexOf('예시') === -1);
+
+  // ===== 💾 백업(JSON) =====
+  if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
+  await P.evaluate(() => { window.__bk = null; window.fmSaveNow = function(b, n) { window.__bkName = n; b.text().then(t => { window.__bk = t; }); }; });
+  await P.click('#pa-backup-btn'); await P.waitForSelector('#pa-modal', { state: 'visible' });
+  check('백업 창: 지금 자료 요약(과목 2개 · 학생 수)', /과목 2개\(화학Ⅱ 3반, 물리학Ⅰ 4반\) · 학생 \d+명/.test(await P.innerText('#pa-bk-now')), await P.innerText('#pa-bk-now'));
+  if (process.env.PA_SHOTS) await P.screenshot({ path: path.join(process.env.PA_SHOTS, '6-backup.png') });
+  await P.click('#pa-bk-save'); await P.waitForTimeout(200);
+  const bkTxt = await P.evaluate(() => window.__bk), bk = JSON.parse(bkTxt || '{}'), nowPa = await lsKeys(P, '^pa-');
+  check('백업 파일: 수행평가_백업_날짜.json, pa- 키 모두 그대로', /^수행평가_백업_\d{4}-\d\d-\d\d_\d{4}\.json$/.test(await P.evaluate(() => window.__bkName)) && bk.app === 'smartboard-pa' && JSON.stringify(bk.data) === JSON.stringify(nowPa), [await P.evaluate(() => window.__bkName), Object.keys(bk.data || {}).length, Object.keys(nowPa).length]);
+  // 자료를 망가뜨린 뒤 되돌리기
+  await P.evaluate((k) => { paSet(k, ''); paSet('pa-zz-test', 'x'); }, scKey);
+  const loadBk = async (txt, name) => { await P.setInputFiles('#pa-bk-load input', { name: name, mimeType: 'application/json', buffer: Buffer.from(txt) }); };
+  await loadBk('{"a":1}', 'x.json');
+  check('다른 파일은 안 받음(알림)', /수행평가 백업 파일이 아니에요/.test(await readAlert(P)));
+  await loadBk(bkTxt, 'bk.json');
+  await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' });
+  const bkMsg = await P.evaluate(() => document.getElementById('custom-confirm-msg').innerText);
+  await answerConfirm(P, true);
+  const bkDone = await readAlert(P);
+  check('되돌리기: 파일·지금 요약을 보여 주고 묻고 → 파일 내용 그대로(망가진 점수 돌아옴, 파일에 없던 키는 지움)', /파일\([^)]*\): 과목 2개/.test(bkMsg) && /지금: 과목 2개/.test(bkMsg) && /되돌렸어요/.test(bkDone) &&
+    JSON.stringify(await lsKeys(P, '^pa-')) === JSON.stringify(nowPa) && !(await P.isVisible('#pa-modal')), bkMsg);
 
   // ===== 지우기 =====
   if (!(await P.isVisible('#pa-page'))) { await P.click('#rail-pa-btn'); await P.waitForTimeout(200); }
