@@ -541,6 +541,59 @@ function check(label, cond, detail) {
   await P.click('#ab-tabs [data-tab="input"]'); await wait(150);
   await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
 
+  // 🔍 화면 크기: 왼쪽 세 탭 내용(맨 위 안내 글 + 표)을 같은 비율로, 탭 줄·미리보기는 그대로, 계정에 기억
+  await P.selectOption('#ab-class', '1'); await wait(300);
+  {
+    const zs = () => P.evaluate(() => { const R = q => document.querySelector(q).getBoundingClientRect(); const L = document.getElementById('ab-list');
+      return { txt: document.getElementById('ab-zoom-text').textContent, hintH: Math.round(R('#ab-pane-input .ab-muted').height * 10) / 10, hintFs: parseFloat(getComputedStyle(document.querySelector('#ab-pane-input .ab-muted')).fontSize),
+        rowH: Math.round(R('#ab-list tr.ab-new').height), thH: Math.round(R('#ab-list thead th').height), tabsH: Math.round(R('#ab-tabs').height), prevW: Math.round(R('#ab-right').width),
+        zoomEl: document.getElementById('ab-pane-input').style.zoom, hOver: L.scrollWidth > L.clientWidth + 1, reason: Math.round(document.querySelectorAll('#ab-list thead tr:first-child th')[3].getBoundingClientRect().width), leftScroll: document.getElementById('ab-left').scrollTop }; });
+    const z0 = await zs();
+    check('화면 크기: 처음 100%', z0.txt === '100%' && z0.zoomEl === '', z0);
+    await P.click('#ab-zoom-group button[title="크게"]'); await P.click('#ab-zoom-group button[title="크게"]'); await wait(300);
+    const z1 = await zs();
+    check('화면 크기 + 두 번 → 125%: 안내 글·입력 표가 같은 비율로 커짐', z1.txt === '125%' && z1.zoomEl === '1.25' && Math.abs(z1.rowH / z0.rowH - 1.25) < 0.08 && Math.abs(z1.thH / z0.thH - 1.25) < 0.1 && z1.hintH > z0.hintH * 1.15, [z0, z1]);
+    check('화면 크기: 탭 줄·미리보기 폭은 그대로', z1.tabsH === z0.tabsH && z1.prevW === z0.prevW && z1.leftScroll === 0, z1);
+    check('화면 크기: 키워도 "구체적인 사유" 칸이 남음(모자라면 목록 안에서 옆으로 스크롤), 100%는 옆 스크롤 없음', !z0.hOver && z0.reason >= 200 && z1.reason >= 140, [z0, z1]);
+    check('화면 크기: 계정 자료 zoom-ab', await ls(pc, 'zoom-ab') === '125');
+    await wait(1600);
+    check('화면 크기: 서버(계정)에 저장', serverVal(T1, 'zoom-ab') === '125', serverVal(T1, 'zoom-ab'));
+    await P.locator('#absence-page').screenshot({ path: 'ab-zoom125.png' });
+    // 학생별 현황·휴일 탭도 같은 비율, 28명 반은 여전히 한 화면
+    await P.selectOption('#ab-class', '2'); await wait(400);
+    await P.click('#ab-tabs [data-tab="stat"]'); await wait(300);
+    const zst = await P.evaluate(() => { const l = document.getElementById('ab-stat'); return { z: document.getElementById('ab-pane-stat').style.zoom, fits: l.scrollHeight <= l.clientHeight + 1, rh: document.querySelector('#ab-stat tbody tr').getBoundingClientRect().height }; });
+    check('화면 크기: 학생별 현황도 125%, 28명 한 화면 그대로', zst.z === '1.25' && zst.fits && zst.rh >= 24, zst);
+    await P.locator('#absence-page').screenshot({ path: 'ab-zoom125-stat.png' });
+    await P.click('#ab-tabs [data-tab="hol"]'); await wait(200);
+    check('화면 크기: 휴일 탭도 125%', await P.evaluate(() => document.getElementById('ab-pane-hol').style.zoom === '1.25'));
+    await P.click('#ab-tabs [data-tab="input"]'); await P.selectOption('#ab-class', '1'); await wait(300);
+    // 작은 화면에서도 목록만 스크롤(탭·안내 제자리)
+    await P.setViewportSize({ width: 1366, height: 600 }); await wait(300);
+    const zb = await P.evaluate(() => ['#ab-tabs', '#ab-pane-input .ab-muted'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)));
+    { const b = await P.locator('#ab-list tbody tr').first().boundingBox(); await P.mouse.move(b.x + 40, b.y + 5); }
+    for (let k = 0; k < 6; k++) { await P.mouse.wheel(0, 300); await wait(60); }
+    const zw = await P.evaluate(() => ({ list: document.getElementById('ab-list').scrollTop, left: document.getElementById('ab-left').scrollTop, tops: ['#ab-tabs', '#ab-pane-input .ab-muted'].map(q => Math.round(document.querySelector(q).getBoundingClientRect().top)),
+      fits: document.getElementById('ab-left').getBoundingClientRect().bottom <= innerHeight + 1 }));
+    check('화면 크기 125% + 1366: 목록만 스크롤, 탭·안내 제자리', zw.list > 0 && zw.left === 0 && zw.fits && JSON.stringify(zw.tops) === JSON.stringify(zb), [zw, zb]);
+    check('화면 크기 125% + 1366: 사유 칸 보임', await P.evaluate(() => document.querySelectorAll('#ab-list thead tr:first-child th')[3].getBoundingClientRect().width >= 140));
+    await P.locator('#absence-page').screenshot({ path: 'ab-zoom125-1366.png' });
+    await P.evaluate(() => { document.getElementById('ab-list').scrollTop = 0; });
+    await P.setViewportSize({ width: 1600, height: 1000 }); await wait(200);
+    // 끝(150%)·처음(90%)에서 멈춤, 100% 글자 누르면 처음으로(자료 지움)
+    for (let k = 0; k < 4; k++) await P.click('#ab-zoom-group button[title="크게"]');
+    check('화면 크기: 150%에서 멈춤', await P.evaluate(() => document.getElementById('ab-zoom-text').textContent) === '150%');
+    for (let k = 0; k < 6; k++) await P.click('#ab-zoom-group button[title="작게"]');
+    check('화면 크기: 90%에서 멈춤', await P.evaluate(() => document.getElementById('ab-zoom-text').textContent === '90%' && document.getElementById('ab-pane-input').style.zoom === '0.9'));
+    await P.click('#ab-zoom-text'); await wait(200);
+    check('화면 크기: 100% 글자 누르면 100%·자료 지움', await P.evaluate(() => document.getElementById('ab-zoom-text').textContent === '100%' && document.getElementById('ab-pane-input').style.zoom === '' && localStorage.getItem('zoom-ab') === null));
+    // 다시 열 때 기억한 크기로
+    await P.evaluate(() => localStorage.setItem('zoom-ab', '110'));
+    await P.click('#rail-home-btn'); await wait(300); await P.click('#rail-absence-btn'); await wait(500);
+    check('화면 크기: 다시 열면 기억한 크기(110%)', await P.evaluate(() => document.getElementById('ab-zoom-text').textContent === '110%' && document.getElementById('ab-pane-input').style.zoom === '1.1'));
+    await P.click('#ab-zoom-text'); await wait(200);
+  }
+
   // 🗑 초기화: 이 반 기록만, 두 번 확인
   await P.selectOption('#ab-class', '1'); await wait(300);
   const nBefore = (await recs()).length, allBefore = await P.evaluate(() => abAllRecords().length);

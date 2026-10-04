@@ -73,6 +73,11 @@
       #app-rail .rail-item { padding: 4px 0; gap: 2px; flex-shrink: 0; }
       #app-rail .rail-sep { margin: 1px 0; }
     }
+    /* 노트북 브라우저 창 안 높이(약 650px)에서도 "공통"·"학급" 선까지 한 화면에 — 아주 낮을 때만 더 좁게 */
+    @media (max-height: 700px) {
+      #app-rail .rail-item { padding: 3px 0; }
+      #app-rail .rail-sep { margin: 0; line-height: 1.1; }
+    }
 
     /* ===== 상단 바 ===== */
     .top-bar-row { flex: 0 0 auto; height: 70px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); }
@@ -752,9 +757,9 @@
     .pa-score-table td.pa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pa-modal { position: fixed; inset: 0; z-index: 1050; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; }
     .pa-modal-box { width: min(640px, 92vw); padding: 18px 20px; zoom: var(--pa-zoom, 1); }
-    #se-zoom-group, #pa-zoom-group { display: flex; align-items: center; gap: 6px; background: var(--tt-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
-    #se-zoom-group .top-btn, #pa-zoom-group .top-btn { padding: 2px 8px; font-size: 12px; }
-    #se-zoom-text, #pa-zoom-text { font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; cursor: pointer; }
+    #se-zoom-group, #pa-zoom-group, #ab-zoom-group { display: flex; align-items: center; gap: 6px; background: var(--tt-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); }
+    #se-zoom-group .top-btn, #pa-zoom-group .top-btn, #ab-zoom-group .top-btn { padding: 2px 8px; font-size: 12px; }
+    #se-zoom-text, #pa-zoom-text, #ab-zoom-text { font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; cursor: pointer; }
     .pa-modal-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 12px; }
     /* 머리 오른쪽 "💾 백업" 묶음: 엑셀 가져오기·내려받기 */
     #pa-term { font-weight: 800; }
@@ -1182,7 +1187,8 @@
     #ab-body { display: flex; flex: 1; min-height: 0; }
     /* 세 탭 모두: 탭·안내·입력칸은 제자리, 아래 목록(.ab-scroll)만 스크롤 — 목록의 제목 줄은 그 안에서 맨 위에 고정 */
     #ab-left { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 16px; box-sizing: border-box; }
-    #ab-tabs { margin: 16px 0 12px; flex: 0 0 auto; }
+    #ab-tabrow { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: 16px 0 12px; flex: 0 0 auto; max-width: 1180px; }
+    #ab-tabs { flex: 0 0 auto; }
     #ab-left .ab-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
     #ab-left .ab-pane > div { flex: 0 0 auto; }
     #ab-left .ab-pane > .ab-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -1203,6 +1209,8 @@
     .ab-table tr.ab-new td { background: var(--accent-soft); box-shadow: inset 0 -2px 0 var(--accent-color); padding: 6px 4px 8px; cursor: default; }
     /* 입력 표는 제목 줄과 "새" 줄을 함께 고정 — 아래로 내려 봐도 위로 다시 올리지 않고 바로 새로 적을 수 있게 */
     #ab-list .ab-grid thead { position: sticky; top: 0; z-index: 3; }
+    /* 🔍 화면 크기를 키우면 폭을 정한 칸들이 커져 "구체적인 사유" 칸이 0까지 줄었다 — 표가 900px보다 좁아지지 않게(사유 칸 130px 남짓), 모자라면 목록 안에서 옆으로 스크롤. 100%면 1366 화면도 그대로 */
+    #ab-list .ab-grid { min-width: 900px; }
     #ab-list .ab-grid thead th { position: static; }
     .ab-table tr.ab-editrow td { background: var(--card-bg); box-shadow: inset 0 2px 0 var(--accent-color), inset 0 -2px 0 var(--accent-color); padding: 6px 4px; cursor: default; }
     .ab-table tr.ab-new:hover, .ab-table tr.ab-editrow:hover { background: none; }
@@ -1226,7 +1234,7 @@
     .ab-icon-btn { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
     .ab-icon-btn:hover { border-color: var(--accent-color); }
     /* 작은 화면(1366 등)에선 미리보기 칸을 줄여 입력 표의 "구체적인 사유" 칸이 찌그러지지 않게 */
-    @media (max-width: 1500px) { #ab-right { width: 360px; } #ab-left { padding: 0 12px 14px; } #ab-tabs { margin-top: 14px; } }
+    @media (max-width: 1500px) { #ab-right { width: 360px; } #ab-left { padding: 0 12px 14px; } #ab-tabrow { margin-top: 14px; } }
     .ab-num { display: inline-block; min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; }
     #ab-list select.ab-in { font-variant-numeric: tabular-nums; }
     #ab-list td.ab-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1910,6 +1918,8 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
     </div>
+    <!-- 홈 아래 ~ 좌석배치표 = 모든 선생님이 쓰는 공통 기능 -->
+    <div class="rail-sep" aria-hidden="true"><span>공통</span></div>
     <div class="rail-item" id="rail-roster-btn" title="명렬표" onclick="openStudentRoster()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
       <div class="rail-label">명렬표</div>
@@ -1943,12 +1953,12 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg></div>
       <div class="rail-label" style="white-space:nowrap; letter-spacing:-0.03em;">양식</div>
     </div>
-    <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공용 기능과 구분해 둠 -->
-    <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
     <div class="rail-item" id="rail-seatchart-btn" title="좌석배치표" onclick="railToggle('rail-seatchart-btn', openSeatChart)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M9.5 4v16M14.5 4v16"/></svg></div>
       <div class="rail-label">좌석배치표</div>
     </div>
+    <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공통 기능과 구분해 둠 -->
+    <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
     <div class="rail-item" id="rail-leavepass-btn" title="조퇴증" onclick="railToggle('rail-leavepass-btn', openLeavePass)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><circle cx="16.5" cy="16.5" r="1.6"/></svg></div>
       <div class="rail-label">조퇴증</div>
@@ -3296,10 +3306,15 @@
   </div>
   <div id="ab-body">
     <div id="ab-left">
+      <div id="ab-tabrow">
       <div class="top-btn-cluster" id="ab-tabs">
         <button class="top-btn theme-active" data-tab="input" onclick="abSetTab('input')">✏️ 결석 현황 입력</button>
         <button class="top-btn" data-tab="stat" onclick="abSetTab('stat')">📊 학생별 현황</button>
         <button class="top-btn" data-tab="hol" onclick="abSetTab('hol')">📅 휴일</button>
+      </div>
+      <div id="ab-zoom-group" title="화면 크기 — 아래 입력 표·안내 글을 같은 비율로 키우거나 줄여요(미리보기는 그대로, 내 계정에 기억)">
+        <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="abZoomBy(-1)" title="작게">−</button><span id="ab-zoom-text" onclick="abZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="abZoomBy(1)" title="크게">+</button>
+      </div>
       </div>
 
       <div id="ab-pane-input" class="ab-pane">
@@ -5685,7 +5700,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴 위쪽은 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(좌석배치표, 조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴의 "공통" 선 아래는 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식, 좌석배치표), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -12714,6 +12729,7 @@
       window.addEventListener('resize', function() { abFitPaper(); abFitStat(); });
     }
     abApplyTab();
+    abApplyZoom();
     abRenderAll();
     await Promise.all([abLoadRoster(), abLoadNeisHolidays(), abLoadForms().catch(function() {})]);
     abRenderAll();
@@ -12752,6 +12768,24 @@
   function abNameOf(num) {
     const s = abRoster.find(function(x) { return x.num === Number(num); });
     return s ? s.name : '';
+  }
+
+  // ----- 화면 크기(🔍 − 100% +) -----
+  // 왼쪽 세 탭 내용(안내 글 + 입력 표·학생별 현황·휴일)을 같은 비율로(CSS zoom) — 글씨만 키우면 칸 폭을 정한 입력 표가 틀어져서.
+  // 탭 줄·미리보기는 그대로. 계정 자료 'zoom-ab'(100%는 지움 — 수행평가 'zoom-pa'와 같은 방식).
+  const AB_ZOOMS = [90, 100, 110, 125, 150];
+  function abZoomGet() { let z = 100; try { z = parseInt(localStorage.getItem('zoom-ab'), 10) || 100; } catch (e) {} return AB_ZOOMS.indexOf(z) >= 0 ? z : 100; }
+  function abApplyZoom() {
+    const z = abZoomGet();
+    ['ab-pane-input', 'ab-pane-stat', 'ab-pane-hol'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
+    const t = document.getElementById('ab-zoom-text'); if (t) t.textContent = z + '%';
+    abFitStat();
+  }
+  function abZoomBy(d) {
+    const i = AB_ZOOMS.indexOf(abZoomGet()), z = d === 0 ? 100 : AB_ZOOMS[Math.max(0, Math.min(AB_ZOOMS.length - 1, i + d))];
+    try { if (z === 100) localStorage.removeItem('zoom-ab'); else localStorage.setItem('zoom-ab', String(z)); } catch (e) {}
+    scheduleBackupWrite();
+    abApplyZoom();
   }
 
   // ----- 탭 -----
@@ -12919,7 +12953,7 @@
         '<button class="ab-icon-btn" onclick="abFilter(null)">✕ 전체 보기</button>';
     } else fEl.style.display = 'none';
     let h = '<table class="ab-table ab-grid"><colgroup><col style="width:32px"><col style="width:106px"><col style="width:94px"><col><col style="width:108px"><col style="width:108px">' +
-      '<col style="width:42px"><col style="width:108px"><col style="width:13%"><col style="width:58px"></colgroup>' +
+      '<col style="width:42px"><col style="width:108px"><col style="width:13%"><col style="width:64px"></colgroup>' +
       '<thead><tr><th>연번</th><th>번호·이름</th><th>결석 사유</th><th>구체적인 사유</th><th>시작 일자</th><th>종료 일자</th><th>일수</th><th>작성 일자</th><th>증빙서류</th><th></th></tr>';
     h += '<tr class="ab-new"><td style="font-weight:800; color:var(--accent-color);">새</td>' +
       abRowCells('ab-n-', { num: abFilterNum != null ? abFilterNum : '' }) +
