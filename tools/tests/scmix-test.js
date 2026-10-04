@@ -180,7 +180,7 @@ function check(label, cond, detail) {
   const P = pc.page;
   await P.click('#rail-seatchart-btn'); await wait(600);
   check('처음엔 붙여넣기 칸 숨김', await P.evaluate(() => getComputedStyle(document.getElementById('sc-mix-box')).display === 'none'));
-  await P.check('#sc-mix-toggle'); await wait(300)
+  await P.click('#sc-mode-mix'); await wait(300)
   check('섞기 켜면 붙여넣기 칸 보이고 학년/반 숨김', await P.evaluate(() => getComputedStyle(document.getElementById('sc-mix-box')).display !== 'none' && getComputedStyle(document.getElementById('sc-roster-select-row')).display === 'none'));
   await P.fill('#sc-mix-names', '20305\t김철수\n10101 가나다\n3. 박영희\n\n김철수\n나민수, 다솜');
   await P.click('#sc-mix-apply-btn'); await wait(300);
@@ -202,12 +202,12 @@ function check(label, cond, detail) {
   const pc2 = await openDevice(browser, 'PC2', T1);
   const Q = pc2.page;
   await Q.click('#rail-seatchart-btn'); await wait(600);
-  await Q.check('#sc-mix-toggle'); await wait(500);
+  await Q.click('#sc-mode-mix'); await wait(500);
   const q = await Q.evaluate(() => ({ n: scStudents.length, names: document.getElementById('sc-mix-names').value, seated: [...document.querySelectorAll('.sc-desk .sc-desk-name')].map(d => d.innerText).filter(Boolean).length }));
   check('서버(계정)에 올라감', !!serverVal(T1, 'sc-data-mix'));
   check('다른 기기: 명단·배치 복원', q.n === 6 && q.names.includes('김철수') && q.seated === 5, q);
   // 섞기 해제 → 한 반 모드
-  await Q.uncheck('#sc-mix-toggle'); await wait(300);
+  await Q.click('#sc-mode-class'); await wait(300);
   check('섞기 끄면 학년/반 선택 다시 보임', await Q.evaluate(() => getComputedStyle(document.getElementById('sc-roster-select-row')).display !== 'none' && scStudents.length === 0));
   // 홈 갔다가 다시 열어도 섞기 유지(PC)
   await P.click('#rail-seatchart-btn'); await wait(300);

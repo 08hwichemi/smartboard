@@ -203,11 +203,20 @@ async function build(P, groups, rows, seats) {
   // 디자인 테마 한 줄 / 넓은 화면 두 줄
   const lay = await P.evaluate(() => {
     const tops = [...document.querySelectorAll('.sc-theme-btn')].map(b => Math.round(b.getBoundingClientRect().top));
-    const r = document.getElementById('sc-roster-section').getBoundingClientRect(), d = document.getElementById('sc-design-section').getBoundingClientRect();
-    return { one: new Set(tops).size === 1 && tops.length === 4, w: document.getElementById('sc-panel').offsetWidth, two: d.left > r.right - 1 && Math.abs(d.top - r.top) < 2 };
+    const R = id => document.getElementById(id).getBoundingClientRect();
+    const r = R('sc-roster-section'), a = R('sc-arrange-section'), d = R('sc-design-section'), sp = R('sc-special-seat-row');
+    return { n: tops.length, rows: new Set(tops).size, w: document.getElementById('sc-panel').offsetWidth,
+      two: a.left > r.right - 1 && Math.abs(a.top - r.top) < 2 && d.left === a.left && d.top > a.bottom && sp.left < a.left,
+      hole: Math.abs(R('sc-col-1').height - R('sc-col-2').height) };
   });
-  check('종이 디자인 테마 4개 한 줄', lay.one, lay);
-  check('넓은 화면(1600)은 왼쪽 칸 넓게 두 줄(디자인 = 오른쪽 줄)', lay.w >= 560 && lay.two, lay);
+  check('종이 디자인 테마 12개 = 4개씩 3줄', lay.n === 12 && lay.rows === 3, lay);
+  check('넓은 화면(1600)은 왼쪽 칸 넓게 두 줄(왼쪽 = 명단·구조·특수 좌석, 오른쪽 = 자리 채우기·디자인)', lay.w >= 560 && lay.two, lay);
+  check('두 줄 높이 비슷(빈 곳 적음, 차이 200px 안)', lay.hole < 200, lay);
+  check('원반/이동반 단추 둘 다 보이고 원반이 눌림', await P.evaluate(() => document.getElementById('sc-mode-class').classList.contains('sc-on') && !document.getElementById('sc-mode-mix').classList.contains('sc-on') && document.getElementById('sc-mode-mix').offsetWidth > 0 && document.getElementById('sc-mix-toggle').offsetWidth === 0));
+  await P.click('#sc-theme-mint'); await wait(200);
+  check('새 테마(민트) → 책상 색', await P.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--sc-desk-card-bg').trim() === '#ccfbf1' && document.getElementById('sc-theme-mint').classList.contains('sc-active')));
+  await P.evaluate(() => scSetTheme('없는테마'));
+  check('모르는 테마 이름은 기본으로', await P.evaluate(() => scCurrentPrintTheme === 'classic'));
 
   // 2학년 3반: 배치 → 자동 저장 → 목록
   await pickClass(P, 2, 3);
@@ -243,8 +252,8 @@ async function build(P, groups, rows, seats) {
   check('다시 열면 마지막 배치(2-5)', (await deskNames(P)).includes('학생25-1') && await P.evaluate(() => document.getElementById('sc-class-select').value === '5' && document.getElementById('sc-footer-2').value === '2-5 문구'));
 
   // 섞기 묶음 두 개
-  await P.check('#sc-mix-toggle'); await wait(400);
-  check('섞기 켜면 새 묶음(이름 칸·자리 비움)', await P.evaluate(() => document.getElementById('sc-mix-label').value === '' && document.getElementById('sc-mix-names').value === '' && ![...document.querySelectorAll('.sc-desk-name')].some(d => d.innerText)));
+  await P.click('#sc-mode-mix'); await wait(400);
+  check('🔀 이동반 누르면 새 이동반(이름 칸·자리 비움)·단추 눌림', await P.evaluate(() => document.getElementById('sc-mix-label').value === '' && document.getElementById('sc-mix-names').value === '' && ![...document.querySelectorAll('.sc-desk-name')].some(d => d.innerText) && document.getElementById('sc-mode-mix').classList.contains('sc-on')));
   await wait(1200);
   check('명단 넣기 전엔 빈 묶음 안 만듦', !(await ls(pc, 'sc-data-mix')));
   await P.fill('#sc-mix-label', '화학Ⅱ A'); await P.press('#sc-mix-label', 'Tab');
@@ -255,7 +264,7 @@ async function build(P, groups, rows, seats) {
   const m1 = JSON.parse(await ls(pc, 'sc-data-mix') || 'null');
   check('첫 묶음 = sc-data-mix (예전 열쇠 그대로)', m1 && m1.mix && m1.mixLabel === '화학Ⅱ A' && m1.mixNames.includes('박라'), m1 && m1.mixLabel);
   await P.click('#sc-mix-new-btn'); await wait(300);
-  check('＋ 새 묶음 → 빈 묶음', await P.evaluate(() => document.getElementById('sc-mix-label').value === '' && document.getElementById('sc-mix-names').value === '' && scStudents.length === 0));
+  check('＋ 새 이동반 → 빈 이동반', await P.evaluate(() => document.getElementById('sc-mix-label').value === '' && document.getElementById('sc-mix-names').value === '' && scStudents.length === 0));
   await P.fill('#sc-mix-label', '물리 B'); await P.press('#sc-mix-label', 'Tab');
   await P.fill('#sc-mix-names', '최하\n정마');
   await P.click('#sc-mix-apply-btn'); await wait(200);
@@ -267,10 +276,12 @@ async function build(P, groups, rows, seats) {
   check('목록에서 화학Ⅱ A → 그 명단·배치', await P.evaluate(() => document.getElementById('sc-mix-label').value === '화학Ⅱ A' && scStudents.length === 3) && (await deskNames(P)).includes('박라'));
   // 섞기 중 목록에서 반 고르면 섞기 꺼짐
   await P.selectOption('#sc-saved-select', 'sc-data-2-3'); await wait(500);
-  check('섞기 중 반 고르면 섞기 꺼지고 그 반', await P.evaluate(() => !scIsMix() && document.getElementById('sc-class-select').value === '3') && (await deskNames(P)).includes('학생23-1'));
+  check('이동반 중 목록에서 반 고르면 원반으로·그 반', await P.evaluate(() => !scIsMix() && document.getElementById('sc-class-select').value === '3' && document.getElementById('sc-mode-class').classList.contains('sc-on')) && (await deskNames(P)).includes('학생23-1'));
+  await P.click('#sc-mode-class'); await wait(300);
+  check('이미 원반이면 원반 단추는 아무것도 안 함', await P.evaluate(() => document.getElementById('sc-class-select').value === '3') && (await deskNames(P)).includes('학생23-1'));
   check('화학Ⅱ A 묶음은 그대로', JSON.parse(await ls(pc, 'sc-data-mix')).mixNames.includes('김가'));
   // 섞기 다시 켜면 이 탭에서 마지막에 본 묶음
-  await P.check('#sc-mix-toggle'); await wait(500);
+  await P.click('#sc-mode-mix'); await wait(500);
   check('섞기 다시 켜면 마지막에 본 묶음(화학Ⅱ A)', await P.evaluate(() => document.getElementById('sc-mix-label').value) === '화학Ⅱ A');
 
   // 다른 기기: 목록·마지막 배치
@@ -297,8 +308,11 @@ async function build(P, groups, rows, seats) {
 
   // 좁은 화면(1366)은 예전처럼 한 줄
   await P.setViewportSize({ width: 1366, height: 768 }); await wait(300);
-  const narrow = await P.evaluate(() => ({ w: document.getElementById('sc-panel').offsetWidth, tops: new Set([...document.querySelectorAll('.sc-theme-btn')].map(b => Math.round(b.getBoundingClientRect().top))).size }));
-  check('1366은 왼쪽 칸 320 한 줄·테마 한 줄', narrow.w === 320 && narrow.tops === 1, narrow);
+  const narrow = await P.evaluate(() => ({ w: document.getElementById('sc-panel').offsetWidth, tops: new Set([...document.querySelectorAll('.sc-theme-btn')].map(b => Math.round(b.getBoundingClientRect().top))).size,
+    order: ['sc-roster-section', 'sc-special-seat-row', 'sc-arrange-section', 'sc-design-section'].map(id => document.getElementById(id).getBoundingClientRect().top).every((v, i, a) => !i || v > a[i - 1]) }));
+  check('1366은 왼쪽 칸 320 한 줄(명단 → 특수 좌석 → 자리 채우기 → 디자인 순)·테마 4개씩 3줄', narrow.w === 320 && narrow.tops === 3 && narrow.order, narrow);
+  const mixBtn = await P.evaluate(() => { const b = document.getElementById('sc-mode-mix'); return b.scrollWidth <= b.clientWidth + 1; });
+  check('좁은 칸에서도 이동반 단추 글자 안 넘침', mixBtn);
 
   const errs = [...pc.errors, ...pc2.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
