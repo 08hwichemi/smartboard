@@ -248,7 +248,7 @@ function show(name, seen) {
   // 이전 버튼: 시간표 만들기에서 학생 단계 → 이전 → 1단계(내 시간표 탭으로 돌아감)
   await P.click('#rail-persontt-btn'); await wait(600);
   await P.evaluate(() => ptOpenTour()); await wait(200);
-  for (let k = 0; k < 2; k++) { await P.click('#tour-next-btn'); await wait(250); }
+  for (let k = 0; k < 3; k++) { await P.click('#tour-next-btn'); await wait(250); }
   check('이전/다음: 학생 단계', (await P.evaluate(() => document.getElementById('tour-card-title').innerText)).includes('학생 고르기'));
   await P.click('#tour-prev-btn'); await wait(250);
   check('이전 누르면 1단계 + 내 시간표 탭', (await P.evaluate(() => document.getElementById('tour-card-title').innerText)).includes('1단계') && await P.evaluate(() => ptCurrentTab === 'me'));

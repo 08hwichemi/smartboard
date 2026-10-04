@@ -188,6 +188,44 @@ function check(label, cond, detail) {
   check('글자가 잘리지 않음', tops.every(t => t.sw <= t.cw), tops);
   await P.locator('#pt-theme-grid').screenshot({ path: 'ptsel-theme.png' });
 
+  // 넓은 화면 두 줄 + 지금 할 일 상자(①→⑤ 한 단계씩, 건너뛰지 않음)
+  const nbox = () => P.evaluate(() => ({ t: document.getElementById('pt-next').innerText, done: !!document.querySelector('#pt-next .pa-next.done'),
+    glow: [...document.querySelectorAll('#persontt-page .pa-glow')].map(e => e.id), st: [1, 2, 3, 4].map(i => document.getElementById('pt-st-' + i).textContent) }));
+  const R = (id) => P.evaluate((id) => { const r = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; }, id);
+  const sch = await R('pt-box-school'), siz = await R('pt-box-size'), des = await R('pt-box-design');
+  check('넓은 화면: 왼쪽 = 학교·크기, 오른쪽 = 색상·디자인(맨 위 나란히)', siz.l === sch.l && siz.t > sch.b && des.l > sch.r - 1 && Math.abs(des.t - sch.t) < 2, { sch, siz, des });
+  check('넓은 화면(1600×1000) 내 시간표: 왼쪽 칸 스크롤 없음', await P.evaluate(() => { const p = document.getElementById('pt-panel'); return p.scrollHeight <= p.clientHeight; }));
+  check('칸 제목에 ②③④, 위쪽에 ①⑤', await P.evaluate(() => ['pt-box-school', 'pt-box-size', 'pt-box-design'].map(id => document.querySelector('#' + id + ' .pt-no').textContent).join('') === '②③④' && [...document.querySelectorAll('.pt-hdr-no')].map(e => e.textContent).join('') === '①⑤'));
+  const ptSeen = [];
+  let nb = await nbox(); ptSeen.push(nb.t.match(/[①②③④⑤]/)[0]);
+  check('① 내 시간표: 탭 설명·탭 반짝·다음 단추', /① 지금 할 일/.test(nb.t) && /내 시간표/.test(nb.t) && /학생 시간표/.test(nb.t) && nb.glow.includes('pt-tab-switch') && /다음: ② 학교/.test(nb.t), nb);
+  check('내 시간표가 비었으면 알려 줌', /비어 있어요/.test(nb.t));
+  const ptNext = async () => { await P.click('#pt-next .top-btn:not(.pt-again)'); await wait(300); nb = await nbox(); ptSeen.push((nb.t.match(/[①②③④⑤]/) || ['?'])[0]); };
+  await ptNext();
+  check('② 학교/학기: 무엇인지·예시·칸 반짝', /② 지금 할 일/.test(nb.t) && /학교명/.test(nb.t) && /학기명/.test(nb.t) && nb.glow.includes('pt-box-school') && nb.st[1] === '지금', nb);
+  await ptNext();
+  check('③ 크기: 너비·높이·글씨·모서리 설명', /③ 지금 할 일/.test(nb.t) && /전체 너비·높이/.test(nb.t) && /과목명/.test(nb.t) && /모서리/.test(nb.t) && nb.st[1] === '✓' && nb.st[2] === '지금', nb);
+  await ptNext();
+  check('④ 색상·스타일·글꼴 설명', /④ 지금 할 일/.test(nb.t) && /색상 테마/.test(nb.t) && /표 스타일/.test(nb.t) && /글꼴/.test(nb.t) && nb.glow.includes('pt-box-design'), nb);
+  await ptNext();
+  check('⑤ 출력: 모양·인쇄·이미지·PDF·완료 모양·①~④ ✓', nb.done && /⑤/.test(nb.t) && /카드 1장/.test(nb.t) && /이미지/.test(nb.t) && /PDF/.test(nb.t) && nb.glow.includes('pt-print-layout') && nb.st.every(x => x === '✓'), nb);
+  check('단계가 하나도 건너뛰지 않음(①②③④⑤)', ptSeen.join('') === '①②③④⑤', ptSeen);
+  await P.evaluate(() => ptSwitchTab('me')); await wait(300);
+  check('다시 열어도(같은 탭) 마지막 단계 기억', (await nbox()).done);
+  await P.click('#pt-next .pt-again'); await wait(300);
+  check('"처음부터 안내"를 누르면 ①', /① 지금 할 일/.test((await nbox()).t));
+  // 학생 탭: 학생을 고르기 전엔 ①(학년 → 반 → 학생), 고르면 그 학생 + 다음
+  await P.evaluate(() => ptSwitchTab('student')); await wait(700);
+  nb = await nbox();
+  check('학생 탭 ①: 학년·반·학생 고르는 순서 설명·학년 칸 반짝·다음 단추 없음', /학생 고르기/.test(nb.t) && /학년/.test(nb.t) && /이 학생만/.test(nb.t) && nb.glow.includes('pt-student-grade') && !/다음:/.test(nb.t), nb);
+  check('학생 탭 칸 제목 ① 학생 고르기 + "지금"', await P.evaluate(() => document.querySelector('#pt-student-controls .pt-no').textContent === '①') && nb.st[0] === '지금');
+  await P.selectOption('#pt-student-grade', '2'); await wait(300);
+  check('학년 고르면 반 칸 반짝', (await nbox()).glow.includes('pt-student-class'));
+  await P.selectOption('#pt-student-class', '1'); await wait(400);
+  nb = await nbox();
+  check('반 고르면 첫 학생이 골라지고 "다음: ② 학교"', /20101/.test(nb.t) && /다음: ② 학교/.test(nb.t), nb);
+  await P.evaluate(() => { document.getElementById('pt-student-grade').value = ''; ptOnGradeChange(); }); await wait(300);
+
   // 학생 시간표: 학년/반/범위 기억
   await P.evaluate(() => ptSwitchTab('student')); await wait(600);
   await P.selectOption('#pt-student-grade', '2'); await wait(200);

@@ -1545,6 +1545,27 @@
     #pt-panel { width: 330px; flex: 0 0 auto; border-right: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; box-sizing: border-box; background: var(--card-bg); }
     #pt-panel { background: var(--bg-color); gap: 12px !important; }
     .pt-card-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .pt-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .pt-no { font-weight: 900; color: var(--accent-color); }
+    .pt-box-title.pt-step { display: flex; align-items: center; gap: 5px; color: var(--text-main); }
+    .pt-st:empty { display: none; }
+    .pt-st { margin-left: auto; font-size: 10.5px; font-weight: 800; }
+    .pt-st.ok { color: #1E7B3A; }
+    .pt-st.next { color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 7px; }
+    #pt-next:empty { display: none; }
+    #pt-next .pa-next { flex-wrap: wrap; font-size: 12.5px; min-height: 0; padding: 8px 11px; gap: 4px 8px; }
+    #pt-next .pa-next-msg { flex: 1 1 210px; line-height: 1.6; }
+    #pt-next .top-btn { font-size: 12px !important; padding: 5px 12px !important; margin-left: auto; }
+    #pt-next .pt-again { background: none !important; border: none !important; color: var(--text-sub) !important; text-decoration: underline; font-weight: 600; padding: 0 4px !important; }
+    .pt-hdr-no { font-weight: 900; color: var(--accent-color); font-size: 13px; }
+    /* 노트북(1440 미만): ①⑤ 번호를 넣어도 머리가 한 줄이 되게 여백만 조금 줄임 */
+    @media (max-width: 1439px) { #pt-page-header { padding-left: 12px !important; padding-right: 12px !important; } #pt-header-actions { gap: 4px !important; } }
+    /* 넓은 화면: 좌석배치표·월간일정표처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = ① 학생·② 학교·③ 크기, 오른쪽 = ④ 색상·스타일·글꼴. 좁으면 위아래 */
+    @media (min-width: 1440px) {
+      #pt-panel { width: clamp(640px, calc(100vw - 820px), 760px); flex-direction: row; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; }
+      #pt-panel > #pt-next { flex: 0 0 100%; }
+      #pt-panel > .pt-col { flex: 1 1 0; }
+    }
     .pt-box-title { font-weight: 800; font-size: 13px; color: var(--text-sub); }
     .pt-font-row { display: flex; gap: 6px; align-items: center; }
     .pt-font-row .pt-font-select { flex: 1; min-width: 0; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); font-size: 13px; font-weight: 700; }
@@ -3858,6 +3879,7 @@
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🗓️ 시간표 만들기</div>
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ptOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <span class="pt-hdr-no" title="1단계">①</span>
       <div class="tab-switch" id="pt-tab-switch">
         <button class="tab-btn active" id="pt-tab-me-btn" onclick="ptSwitchTab('me')">⭐ 내 시간표</button>
         <button class="tab-btn" id="pt-tab-student-btn" onclick="ptSwitchTab('student')">👨‍🎓 학생 시간표</button>
@@ -3875,6 +3897,7 @@
         <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptSaveSettings()" title="지금 꾸민 디자인을 파일로 저장합니다(다른 선생님과 나누기)">💾 디자인 저장</button>
         <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" onclick="this.nextElementSibling.click()" title="저장해 둔 디자인 파일을 불러옵니다">📂 디자인 불러오기</button><input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
       </div>
+      <span class="pt-hdr-no" title="5단계 · 출력">⑤</span>
       <select id="pt-print-layout" class="mini-select" onchange="ptRender()">
         <option value="card">🪪 카드 1장</option>
         <option value="1">📄 A4 (1x1)</option>
@@ -3883,7 +3906,7 @@
         <option value="6">📄 A4 (2x3)</option>
         <option value="mobile">📱 모바일 배경화면</option>
       </select>
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptPrint()">🖨️ 인쇄</button>
+      <button class="top-btn" id="pt-print-btn" style="font-size:11px; padding:4px 10px;" onclick="ptPrint()">🖨️ 인쇄</button>
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptExportImage()">🖼️ 이미지</button>
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" id="pt-pdf-btn" onclick="ptExportPDF()">📄 PDF</button>
     </div>
@@ -3891,7 +3914,10 @@
 
   <div id="pt-body">
     <div id="pt-panel">
-      <div id="pt-student-controls" style="display:none; flex-direction:column; gap:10px;">
+     <div id="pt-next"></div>
+     <div class="pt-col" id="pt-col-1">
+      <div id="pt-student-controls" class="pt-card-box" style="display:none; flex-direction:column; gap:10px;">
+        <div class="pt-box-title pt-step"><span class="pt-no">①</span> 👨‍🎓 학생 고르기<span class="pt-st" id="pt-st-1"></span></div>
         <div style="display:flex; gap:6px;">
           <select id="pt-student-grade" class="mini-select" style="flex:1;" onchange="ptOnGradeChange()"><option value="">학년</option></select>
           <select id="pt-student-class" class="mini-select" style="flex:1;" onchange="ptOnClassChange()"><option value="">반</option></select>
@@ -3908,13 +3934,27 @@
       </div>
 
       <div class="pt-card-box" id="pt-box-school">
-        <div class="pt-box-title">🏫 학교 / 학기 표시</div>
+        <div class="pt-box-title pt-step"><span class="pt-no">②</span> 🏫 학교 / 학기 표시<span class="pt-st" id="pt-st-2"></span></div>
         <input type="text" id="pt-cfg-school" class="mini-select" placeholder="학교명" oninput="ptRender(); ptAutoSave();">
         <input type="text" id="pt-cfg-term" class="mini-select" placeholder="학기명 (예: 2026학년도 1학기)" oninput="ptRender(); ptAutoSave();">
       </div>
 
+      <div class="pt-card-box" id="pt-box-size">
+        <div class="pt-box-title pt-step"><span class="pt-no">③</span> 📐 시간표 크기 조절 (가로/세로 비율)<span class="pt-st" id="pt-st-3"></span></div>
+          <div class="pt-slider-row"><label for="pt-sl-width">전체 너비 ↔️</label><input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
+        <div class="pt-box-title" style="margin-top:10px;">🔠 세부 글자 크기 조절</div>
+          <div class="pt-slider-row"><label for="pt-sl-title">제목 크기</label><input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-name">이름 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-sub">과목명 크기</label><input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-info">교사/교실 크기</label><input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-time">교시 시간 크기</label><input type="range" id="pt-sl-time" min="7" max="14" value="9" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
+      </div>
+     </div>
+     <div class="pt-col" id="pt-col-2">
       <div class="pt-card-box" id="pt-box-design">
-        <div class="pt-box-title">🌈 과목별 색상 테마 (4종 12색)</div>
+        <div class="pt-box-title pt-step"><span class="pt-no">④</span> 🌈 과목별 색상 테마 (4종 12색)<span class="pt-st" id="pt-st-4"></span></div>
         <div class="pt-theme-grid" id="pt-theme-grid"></div>
         <div class="pt-box-title">표 스타일 (총 6종)</div>
         <div class="pt-style-grid" id="pt-style-grid"></div>
@@ -3959,20 +3999,7 @@
           <button type="button" class="pt-font-nav" onclick="ptChangeFont(1)">▶</button>
         </div>
       </div>
-
-      <div class="pt-card-box" id="pt-box-size">
-        <div class="pt-box-title">📐 시간표 크기 조절 (가로/세로 비율)</div>
-          <div class="pt-slider-row"><label for="pt-sl-width">전체 너비 ↔️</label><input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
-        <div class="pt-box-title" style="margin-top:10px;">🔠 세부 글자 크기 조절</div>
-          <div class="pt-slider-row"><label for="pt-sl-title">제목 크기</label><input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-name">이름 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-sub">과목명 크기</label><input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-info">교사/교실 크기</label><input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-time">교시 시간 크기</label><input type="range" id="pt-sl-time" min="7" max="14" value="9" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
-      </div>
-
+     </div>
     </div>
 
     <div id="pt-preview">
@@ -20568,6 +20595,7 @@
   let ptCurrentTab = 'me';
   let ptStudentsByGrade = { 1: [], 2: [], 3: [] };
   let ptStudentDataLoaded = false;
+  let ptStudentDataReady = false; // 학생 시간표를 다 받아 온 뒤(안내 상자의 "아직 안 올라옴"이 받는 중에 깜빡이지 않게)
   let ptUploadTargetGrade = 1;
   let ptVisualZoom = 1;
   let ptCurrentPage = 1;
@@ -20716,6 +20744,7 @@
       if (error) throw error;
       (data || []).forEach(function(row) { ptStudentsByGrade[row.grade] = row.students || []; });
     } catch (e) { /* 아직 테이블이 없거나 업로드된 자료가 없을 수 있음 */ }
+    ptStudentDataReady = true;
     gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(null);
     ptRestoreStudentSel();
   }
@@ -21144,6 +21173,7 @@
   }
 
   function ptRender() {
+    ptNextSoon();
     const area = document.getElementById('pt-render-area');
     const layout = document.getElementById('pt-print-layout').value;
 
@@ -21335,22 +21365,108 @@
     event.target.value = '';
   }
 
+  // ----- 진행 순서 · 지금 할 일(좌석배치표처럼) -----
+  // ① 무엇을 만들지(탭 · 학생이면 학생 고르기) → ② 학교/학기 → ③ 크기 → ④ 색상·스타일·글꼴 → ⑤ 출력. 확인·선택 단계는 상자의 "다음 →"로 넘어감.
+  // 탭마다 따로, 계정 자료(pt-guide)로 기억 — 다 해 본 선생님은 다시 열어도 ⑤(완료)부터. 학생 탭인데 학생을 안 골랐으면 ①로.
+  const PT_GUIDE_KEY = 'pt-guide';
+  function ptGuideAll() { try { const v = JSON.parse(localStorage.getItem(PT_GUIDE_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
+  function ptGuideGo(n) {
+    const all = ptGuideAll();
+    all[ptCurrentTab] = n;
+    try { localStorage.setItem(PT_GUIDE_KEY, JSON.stringify(all)); scheduleBackupWrite(); } catch (e) {}
+    ptRenderNext();
+  }
+  function ptNextInfo() {
+    const tab = ptCurrentTab, all = ptGuideAll();
+    let cur = +all[tab] || 1;
+    const stu = tab === 'student' ? ptCurrentStudent() : null;
+    if (tab === 'student' && !stu) cur = 1;
+    const go = function(n, label) { return { act: 'ptGuideGo(' + n + ')', btn: label }; };
+    let n;
+    if (cur === 1 && tab === 'me') {
+      const me = ptBuildMyPerson();
+      n = Object.assign({ msg: '<b>무엇을 만들지</b> 위쪽 탭에서 골라요.' +
+        '<br>· <b>⭐ 내 시간표</b>(지금): 로그인한 선생님의 수업 시간표가 저절로 들어와요 — 교실·책상에 붙이거나 휴대폰 배경화면으로.' +
+        '<br>· <b>👨‍🎓 학생 시간표</b>: 학교에 올라간 학생 시간표로 학생마다(또는 반 전체) 카드를 만들어 나눠 줘요.' +
+        (me.schedule.length ? '<br><span class="se-muted">내 수업 ' + me.schedule.length + '시간을 불러왔어요.</span>' : '<br>⚠️ 내 시간표가 비어 있어요 — 학교 교사 시간표에 내 이름이 있는지 관리자에게 확인해 주세요.') +
+        '<br>👉 내 시간표를 만들 거면 다음으로.', glow: '#pt-tab-switch' }, go(2, '다음: ② 학교/학기 →'));
+    } else if (cur === 1) {
+      const grade = document.getElementById('pt-student-grade').value, cls = document.getElementById('pt-student-class').value;
+      const noData = ptStudentDataReady && !Object.keys(ptStudentsByGrade).some(function(g) { return (ptStudentsByGrade[g] || []).length; });
+      if (noData) n = { msg: '⚠️ 아직 학교에 <b>학생 시간표가 올라오지 않았어요</b>. 관리자가 설정 화면에서 학년별 학생 시간표 엑셀을 올리면 여기서 고를 수 있어요.<br>그동안은 위쪽 <b>⭐ 내 시간표</b>를 만들어 보세요.', glow: '#pt-tab-switch' };
+      else if (!stu) n = { msg: '<b>① 학생 고르기</b> — 왼쪽 칸에서 차례로:' +
+          '<br>1) <b>학년</b> → 2) <b>반</b> → 3) <b>학생</b>(◀ ▶로 한 명씩 넘겨 보기)' +
+          '<br>· <b>👤 이 학생만</b>: 고른 학생 한 명만 출력 · <b>🏫 반 전체</b>: 그 반 학생 모두를 한 번에(A4 여러 장)' +
+          '<br><span class="se-muted">고른 학년·반은 기억해 둬서 다음에 열면 그대로예요.</span>', glow: !grade ? '#pt-student-grade' : !cls ? '#pt-student-class' : '#pt-student-select' };
+      else n = Object.assign({ msg: '<b>' + escapeHtmlAttr(stu.num) + ' ' + escapeHtmlAttr(stu.name) + '</b> 시간표를 불러왔어요(오른쪽 미리보기). ◀ ▶로 다른 학생도 넘겨 볼 수 있어요.' +
+          '<br>· <b>👤 이 학생만</b> / <b>🏫 반 전체</b>: 출력할 범위 — 지금 <b>' + (ptScope === 'class' ? '반 전체' : '이 학생만') + '</b>.' +
+          (cls ? '' : '<br>👉 지금은 ' + grade + '학년 전체 학생이 나와요 — <b>반</b>을 고르면 그 반 학생만 나와요.') +
+          '<br>👉 다 골랐으면 다음으로.', glow: cls ? '#pt-student-controls' : '#pt-student-class' }, go(2, '다음: ② 학교/학기 →'));
+    } else if (cur === 2) {
+      n = Object.assign({ msg: '<b>② 학교 / 학기 표시</b> — 카드 맨 위에 작게 나오는 글이에요.' +
+        '<br>· <b>학교명</b>(예: 부광고등학교) · <b>학기명</b>(예: 2026학년도 2학기) — 적는 대로 미리보기에 바로 나와요.' +
+        '<br>👉 맞으면 다음으로.', glow: '#pt-box-school' }, go(3, '다음: ③ 크기 조절 →'));
+    } else if (cur === 3) {
+      n = Object.assign({ msg: '<b>③ 크기 조절</b> — 슬라이더를 밀면서 미리보기를 보세요.' +
+        '<br>· <b>전체 너비·높이</b>: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.' +
+        '<br>· <b>제목·이름·과목명·교사/교실·교시 시간 크기</b>: 칸 안 글씨 크기 — 과목명이 잘리면 줄이세요.' +
+        '<br>· <b>모서리 둥글기</b>: 칸 모서리를 둥글게/각지게.' +
+        '<br>👉 기본 그대로 써도 돼요 — 다음으로.', glow: '#pt-box-size' }, go(4, '다음: ④ 색상·디자인 →'));
+    } else if (cur === 4) {
+      n = Object.assign({ msg: '<b>④ 색상 · 표 스타일 · 글꼴</b> — 눌러 보면서 마음에 드는 모양을 고르세요.' +
+        '<br>· <b>과목별 색상 테마</b> 4가지: 과목마다 색이 저절로 정해져요.' +
+        '<br>· <b>표 스타일</b> 6가지: 둥근 버블·노션 실선·컬러 띠·레트로 3D·투명 테두리·포스트잇.' +
+        '<br>· <b>글꼴</b>: ◀ ▶로 넘기며 바꿔요(단정한 글꼴 · 손글씨 · 굵은 제목용).' +
+        '<br><span class="se-muted">내 시간표·학생 시간표 디자인은 따로 저절로 기억돼요.</span>', glow: '#pt-box-design' }, go(5, '다음: ⑤ 출력 →'));
+    } else {
+      n = { done: true, msg: '<b>⑤ 출력</b> — 위쪽 오른쪽 <b>⑤</b>에서 모양을 고른 뒤 뽑아요.' +
+        '<br>· 모양: <b>카드 1장</b> · <b>A4에 1·2·4·6장</b>(반 전체면 여러 쪽 — 미리보기 위 ◀ ▶) · <b>모바일 배경화면</b>' +
+        '<br>· <b>🖨️ 인쇄</b>(인쇄 창에서 "PDF로 저장"도 돼요) · <b>🖼️ 이미지</b>(여러 명이면 ZIP) · <b>📄 PDF</b>' +
+        '<br><span class="se-muted">💾 디자인 저장은 꾸민 디자인을 파일로 다른 선생님과 나눌 때만.</span>', glow: '#pt-print-layout', act: 'ptPrint()', btn: '🖨️ 인쇄', again: true };
+    }
+    n.step = cur;
+    return n;
+  }
+  function ptNextSoon() {
+    clearTimeout(ptNextSoon._t);
+    ptNextSoon._t = setTimeout(ptRenderNext, 120);
+  }
+  function ptRenderNext() {
+    const box = document.getElementById('pt-next'), page = document.getElementById('persontt-page');
+    if (!box || !page || page.style.display === 'none') return;
+    const nx = ptNextInfo();
+    ptRenderNext.next = nx;
+    [1, 2, 3, 4].forEach(function(i) {
+      const el = document.getElementById('pt-st-' + i);
+      if (!el) return;
+      const ok = i < nx.step, now = i === nx.step;
+      el.className = 'pt-st' + (ok ? ' ok' : now ? ' next' : '');
+      el.textContent = ok ? '✓' : now ? '지금' : '';
+    });
+    const btn = (nx.again ? '<button class="top-btn pt-again" onclick="ptGuideGo(1)">처음부터 안내</button>' : '') + (nx.act ? '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>' : '');
+    const html = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-msg"><span class="pa-next-lbl">' + (nx.done ? '⑤ ✅ 마지막' : ['', '①', '②', '③', '④'][nx.step] + ' 지금 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
+    if (box.innerHTML !== html) box.innerHTML = html;
+    document.querySelectorAll('#persontt-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    if (nx.glow && tourMode !== 'page') { const el = document.querySelector(nx.glow); if (el && el.offsetParent) el.classList.add('pa-glow'); }
+  }
+
   // ----- 시간표 만들기 설명서 -----
   const ptTourSteps = [
-    { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만들 수 있는 화면이에요. 위에서 종류를 고르고, 왼쪽 설정을 위에서부터 차례로 한 뒤, 오른쪽 미리보기를 확인하고 인쇄하면 돼요.' },
-    { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 시간표로 만들어요.\n👨‍🎓 학생 시간표: 관리자가 올린 학생 시간표로 만들어요.\n두 탭의 디자인은 따로 저장돼요.', before: function() { ptSwitchTab('me'); } },
-    { selector: '#pt-student-controls', title: '👨‍🎓 학생 고르기', desc: '학생 시간표 탭에서는 학년·반을 고르고 ◀▶로 학생을 넘겨 보세요. 고른 학년·반은 기억해 둬서 다음에 열면 그대로 나와요.\n👤 이 학생만: 고른 학생 한 명만 출력\n🏫 반 전체: 그 반 학생 모두를 한 번에 출력', before: function() { ptSwitchTab('student'); } },
-    { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요.' },
-    { selector: '#pt-box-design', title: '3단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 자동으로 정해져요.\n표 스타일 6가지와 글꼴도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
-    { selector: '#pt-box-size', title: '4단계. 크기 조절', desc: '카드 전체 너비·높이와 제목·이름·과목·교시 시간 글씨 크기, 모서리 둥글기를 슬라이더로 맞춰요.' },
-    { selector: '#pt-design-save-row', title: '5단계. 디자인 저장 (선택)', desc: '위쪽 오른쪽 💾 디자인 저장 / 📂 디자인 불러오기 — 꾸민 디자인은 자동으로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
-    { selector: '#pt-preview', title: '6단계. 미리보기', desc: '지금 설정대로 만들어질 모습이에요. 반 전체나 A4 여러 장일 때는 위쪽 ◀▶로 쪽을 넘겨 볼 수 있어요.' },
+    { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만드는 화면이에요.\n\n① 무엇을 만들지 → ② 학교/학기 → ③ 크기 → ④ 색상·디자인 → ⑤ 출력 순서로 하면 돼요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-next', title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n칸 제목의 ①②③④와 위쪽의 ①⑤가 순서예요. 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 수업 시간표가 저절로 들어와요.\n👨‍🎓 학생 시간표: 학교에 올라간 학생 시간표로 학생마다(또는 반 전체) 카드를 만들어요.\n두 탭의 디자인은 따로 기억돼요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-student-controls', title: '1단계. 학생 고르기 (학생 시간표)', desc: '학생 시간표 탭에서는 학년 → 반 → 학생을 고르고 ◀▶로 학생을 넘겨 보세요. 고른 학년·반은 기억해 둬서 다음에 열면 그대로 나와요.\n👤 이 학생만: 고른 학생 한 명만 출력\n🏫 반 전체: 그 반 학생 모두를 한 번에 출력', before: function() { ptSwitchTab('student'); } },
+    { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 작게 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요. 적는 대로 미리보기에 바로 나와요.' },
+    { selector: '#pt-box-size', title: '3단계. 크기 조절', desc: '· 전체 너비·높이: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.\n· 제목·이름·과목명·교사/교실·교시 시간 크기: 칸 안 글씨 — 과목명이 잘리면 줄이세요.\n· 모서리 둥글기: 칸 모서리를 둥글게/각지게.' },
+    { selector: '#pt-box-design', title: '4단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 저절로 정해져요.\n표 스타일 6가지(둥근 버블·노션 실선·컬러 띠·레트로 3D·투명 테두리·포스트잇)와 글꼴(◀ ▶)도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
+    { selector: '#pt-preview', title: '미리보기', desc: '지금 설정대로 만들어질 모습이에요. 반 전체나 A4 여러 장일 때는 위쪽 ◀▶로 쪽을 넘겨 볼 수 있어요.' },
     { selector: '#pt-zoom-group', title: '미리보기 확대/축소', desc: '화면에서 보기만 크게/작게 해요. 인쇄 크기에는 영향이 없어요.' },
-    { selector: '#pt-header-actions', title: '7단계. 출력하기', desc: '먼저 모양을 고르세요: 카드 1장, A4에 1·2·4·6장, 모바일 배경화면.\n🖨️ 인쇄: 인쇄 창에서 "PDF로 저장"도 돼요.\n🖼️ 이미지: 그림 파일로 저장(여러 명이면 ZIP)\n📄 PDF: PDF 파일로 바로 저장\n수고하셨습니다! 🎉' }
+    { selector: '#pt-design-save-row', title: '디자인 파일 저장 (선택)', desc: '위쪽 오른쪽 💾 디자인 저장 / 📂 디자인 불러오기 — 꾸민 디자인은 저절로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
+    { selector: '#pt-header-actions', title: '5단계. 출력하기', desc: '⑤에서 모양을 먼저 고르세요: 카드 1장, A4에 1·2·4·6장, 모바일 배경화면.\n🖨️ 인쇄: 인쇄 창에서 "PDF로 저장"도 돼요.\n🖼️ 이미지: 그림 파일로 저장(여러 명이면 ZIP)\n📄 PDF: PDF 파일로 바로 저장\n수고하셨습니다! 🎉' }
   ];
   function ptOpenTour() {
     const origTab = ptCurrentTab;
-    openPageTour(ptTourSteps, function() { if (ptCurrentTab !== origTab) ptSwitchTab(origTab); });
+    openPageTour(ptTourSteps, function() { if (ptCurrentTab !== origTab) ptSwitchTab(origTab); ptRenderNext(); });
   }
 
   async function openPersonTT() {
