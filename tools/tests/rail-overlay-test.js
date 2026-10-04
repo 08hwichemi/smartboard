@@ -223,18 +223,19 @@ function check(label, cond, detail) {
 const PAGES = [
   ['rail-persontt-btn', 'persontt-page', '시간표'], ['rail-monthly-btn', 'monthly-page', '월간일정표'], ['rail-nametag-btn', 'nametag-page', '이름표'],
   ['rail-forms-btn', 'form-page', '양식'], ['rail-seatchart-btn', 'seatchart-page', '좌석배치표'], ['rail-leavepass-btn', 'leavepass-page', '조퇴증'],
-  ['rail-absence-btn', 'absence-page', '결석계'], [null, 'se-page', '자율·진로 편집기'], ['rail-home-btn', 'main-dashboard', '홈'],
+  ['rail-absence-btn', 'absence-page', '결석계'], ['rail-sgb-btn', 'se-page', '생기부(문장 점검·길라잡이)'], [null, 'se-page', '생기부(편집기)'], ['rail-home-btn', 'main-dashboard', '홈'],
 ];
-const OVERLAYS = [['rail-roster-btn', 'roster-overlay', '명렬표', 'closeStudentRoster()'], ['rail-hwpkeys-btn', 'hwpkeys-overlay', '단축키', 'closeHwpKeys()'], ['rail-sgb-btn', 'sgb-overlay', '생기부', 'closeSgb()']];
+// 생기부는 10/4부터 창이 아니라 화면(위 PAGES) — 창처럼 뜨는 패널은 명렬표·단축키 둘
+const OVERLAYS = [['rail-roster-btn', 'roster-overlay', '명렬표', 'closeStudentRoster()'], ['rail-hwpkeys-btn', 'hwpkeys-overlay', '단축키', 'closeHwpKeys()']];
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());
   const pc = await openDevice(browser, 'PC', T1);
   const P = pc.page;
-  const shownPages = () => P.evaluate((ids) => ids.filter(id => { const el = document.getElementById(id); return el && getComputedStyle(el).display !== 'none'; }), PAGES.map(p => p[1]));
+  const shownPages = () => P.evaluate((ids) => ids.filter(id => { const el = document.getElementById(id); return el && getComputedStyle(el).display !== 'none'; }), [...new Set(PAGES.map(p => p[1]))]); // 생기부 두 탭은 같은 화면(se-page)
   const ovShown = (id) => P.evaluate((id) => document.getElementById(id).style.display === 'flex', id);
   const openPage = async (btn, page) => {
-    if (btn) await P.click('#' + btn); else await P.evaluate(() => openSeEditor());
+    if (btn === 'rail-sgb-btn') await P.evaluate(() => setSgbTab('check')); else if (btn) await P.click('#' + btn); else await P.evaluate(() => openSeEditor());
     await wait(500);
   };
   for (const [btn, page, label] of PAGES) {
@@ -249,27 +250,29 @@ const OVERLAYS = [['rail-roster-btn', 'roster-overlay', '명렬표', 'closeStude
       check(label + ' 위에서 ' + olabel + ' 열었다 닫아도 ' + label + ' 그대로', before.join() === page && during.join() === page && ovOn && after.join() === page && !(await ovShown(ov)), { before, during, ovOn, after });
     }
   }
-  // 레일 버튼을 다시 눌러 닫아도 마찬가지(명렬표·단축키·생기부 버튼은 토글)
+  // 레일 버튼을 다시 눌러 닫아도 마찬가지(명렬표·단축키 버튼은 토글)
   await P.evaluate(() => goHome()); await wait(200);
   await P.click('#rail-absence-btn'); await wait(500);
   for (const [ob, ov, olabel] of OVERLAYS) {
     await P.click('#' + ob); await wait(300); await P.click('#' + ob); await wait(300);
     check('결석계 위에서 ' + olabel + ' 버튼 두 번(열고 닫기) → 결석계 그대로', (await shownPages()).join() === 'absence-page' && !(await ovShown(ov)));
   }
-  // 세 패널은 한 번에 하나만
+  // 두 패널은 한 번에 하나만
   await P.click('#rail-roster-btn'); await wait(300);
   await P.click('#rail-hwpkeys-btn'); await wait(300);
   check('명렬표 펴 둔 채 단축키 → 명렬표 닫히고 단축키만', !(await ovShown('roster-overlay')) && await ovShown('hwpkeys-overlay'));
-  await P.click('#rail-sgb-btn'); await wait(300);
-  check('단축키 펴 둔 채 생기부 → 단축키 닫히고 생기부만', !(await ovShown('hwpkeys-overlay')) && await ovShown('sgb-overlay'));
   await P.click('#rail-roster-btn'); await wait(300);
-  check('생기부 펴 둔 채 명렬표 → 생기부 닫히고 명렬표만, 밑에 결석계 그대로', !(await ovShown('sgb-overlay')) && await ovShown('roster-overlay') && (await shownPages()).join() === 'absence-page');
+  check('단축키 펴 둔 채 명렬표 → 단축키 닫히고 명렬표만, 밑에 결석계 그대로', !(await ovShown('hwpkeys-overlay')) && await ovShown('roster-overlay') && (await shownPages()).join() === 'absence-page');
+  // 생기부는 화면: 패널을 펴 둔 채 생기부 → 패널 닫히고 결석계 대신 생기부
+  await P.click('#rail-sgb-btn'); await wait(400);
+  check('명렬표 펴 둔 채 생기부 → 명렬표 닫히고 생기부 화면(결석계 닫힘)', !(await ovShown('roster-overlay')) && (await shownPages()).join() === 'se-page');
+  await P.click('#rail-roster-btn'); await wait(300);
   // 패널을 펴 둔 채 다른 화면 버튼 → 패널 닫히고 그 화면
   await P.click('#rail-monthly-btn'); await wait(500);
   check('명렬표 펴 둔 채 월간일정표 → 명렬표 닫히고 월간일정표', !(await ovShown('roster-overlay')) && (await shownPages()).join() === 'monthly-page');
-  await P.click('#rail-sgb-btn'); await wait(300);
+  await P.click('#rail-sgb-btn'); await wait(400);
   await P.click('#rail-nametag-btn'); await wait(500);
-  check('생기부 펴 둔 채 이름표 → 생기부 닫히고 이름표', !(await ovShown('sgb-overlay')) && (await shownPages()).join() === 'nametag-page');
+  check('생기부 화면에서 이름표 → 생기부 닫히고 이름표', (await shownPages()).join() === 'nametag-page');
   check('페이지 오류 없음', pc.errors.length === 0, pc.errors);
   await browser.close();
   console.log(failures ? '실패 ' + failures + '건' : '모든 검사 통과');

@@ -185,7 +185,7 @@ function check(label, cond, detail) {
 
   const pc = await openDevice(browser, 'PC', T1);
   const P = pc.page;
-  const open = () => P.evaluate(() => document.getElementById('sgb-overlay').style.display === 'flex');
+  const open = () => P.evaluate(() => { const pg = document.getElementById('se-page'); return pg.style.display === 'flex' && pg.classList.contains('sgbp-check'); });
   const type = async (t) => { await P.fill('#sgb-text', t); await wait(120); };
   const count = () => P.evaluate(() => document.getElementById('sgb-count').innerText.replace(/\s+/g, ' '));
   const finds = () => P.evaluate(() => [...document.querySelectorAll('#sgb-result .sgb-find[data-check]')].map(e => (e.classList.contains('no') ? 'no:' : 'chk:') + e.dataset.check));
@@ -202,7 +202,12 @@ function check(label, cond, detail) {
   check('레일 순서: 단축키 바로 아래 생기부', order[order.indexOf('단축키') + 1] === '생기부 문장 점검', order);
 
   await P.click('#rail-sgb-btn'); await wait(300);
-  check('누르면 열림 + 버튼 표시 + 입력칸에 커서', await open() && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.activeElement.id === 'sgb-text'));
+  check('누르면 생기부 화면(문장 점검·길라잡이 탭) + 버튼 표시 + 입력칸에 커서', await open() && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.activeElement.id === 'sgb-text'));
+  check('창이 아니라 화면: 홈 숨김, 예전 겹치는 창 없음', await P.evaluate(() => document.getElementById('main-dashboard').style.display === 'none' && !document.getElementById('sgb-overlay')));
+  const halves = await P.evaluate(() => { const c = document.getElementById('sgb-pane-check').getBoundingClientRect(), f = document.getElementById('sgb-pane-find').getBoundingClientRect(); return { cw: Math.round(c.width), fw: Math.round(f.width), side: f.left > c.right - 1 && Math.abs(c.top - f.top) < 2 }; });
+  check('한 화면 반반: 왼쪽 문장 점검 · 오른쪽 길라잡이(같은 폭)', halves.side && Math.abs(halves.cw - halves.fw) < 3, halves);
+  check('머리 탭 두 개(문장 점검·길라잡이 / 편집기), 첫 탭 켜짐, 편집기 전용 단추는 숨김', await P.evaluate(() => [...document.querySelectorAll('#sgb-tabs .tab-btn')].map(b => b.dataset.tab + (b.classList.contains('active') ? '*' : '')).join() === 'check*,edit' &&
+    document.getElementById('se-export-btn').offsetParent === null && document.getElementById('se-zoom-group').offsetParent === null && document.querySelector('#se-page .sgbc-only').offsetParent !== null));
   const areas = () => P.evaluate(() => [...document.querySelectorAll('#sgb-areas .top-btn')].map(b => b.innerText + (b.classList.contains('theme-active') ? '*' : '')).join(','));
   check('영역 4개, 처음엔 세특 묶음', await areas() === '과세특·개세특·자율자치 (500자)*,진로 (500자),동아리 (500자),행특 (300자)', await areas());
   check('세특 묶음엔 앞말 칸 없음', await P.evaluate(() => document.getElementById('sgb-prefix-row').style.display === 'none'));
@@ -230,7 +235,7 @@ function check(label, cond, detail) {
   await type('가'.repeat(495));
   check('본문만으론 1485지만 동아리명 합치면 넘음', await P.evaluate(() => document.getElementById('sgb-count').classList.contains('over')) && /2바이트 넘음/.test(await count()), await count());
   await P.fill('#sgb-text', '과학 실험 설계에 관심이 많아 산화 환원 반응을 주제로 탐구함.'); await wait(120);
-  await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb-club.png' });
+  await P.locator('#sgb-view').screenshot({ path: 'sgb-club.png' });
   await type('가'.repeat(495));
   check('동아리명은 계정 자료로 기억', await ls(pc, 'sgb-club-name') === '(과학탐구반)');
   await P.click('#sgb-areas [data-area="s500"]'); await wait(100);
@@ -263,7 +268,7 @@ function check(label, cond, detail) {
   check('줄바꿈 = 엔터 2바이트로 셈', await P.evaluate(() => { const t = document.getElementById('sgb-text').value; return sgbCount(t).bytes === sgbCount(t.replace('\n', '')).bytes + 2; }));
   const pages = await P.evaluate(() => [...document.querySelectorAll('.sgb-find-page')].map(e => e.innerText));
   check('근거 쪽 표시', pages.every(p => /^p\.\d+/.test(p)), pages);
-  await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb.png' });
+  await P.locator('#sgb-view').screenshot({ path: 'sgb.png' });
 
   await type('AI와 SNS, TV를 활용한 탐구 보고서를 작성함. 모둠 활동에서 역할을 성실히 수행함.');
   const f2 = await finds();
@@ -301,31 +306,30 @@ function check(label, cond, detail) {
   check('복사했다는 표시', /복사했어요/.test(await P.innerText('#sgb-copy-btn')));
   await wait(2000);
   check('잠시 뒤 버튼 글자 원래대로(괄호 설명 없이 "📋 복사")', (await P.innerText('#sgb-copy-btn')).trim() === '📋 복사');
-  await P.click('#sgb-overlay button:has-text("지우기")'); await wait(100);
+  await P.click('#sgb-pane-check button:has-text("지우기")'); await wait(100);
   await P.click('#sgb-copy-btn'); await wait(100);
   check('빈 칸에서 복사 → 안내', /복사할 문장이 없어요/.test(await P.innerText('#sgb-copy-btn')));
 
   check('지우기 → 비움', await P.inputValue('#sgb-text') === '' && /0바이트/.test(await count()));
 
-  await P.click('#sgb-overlay button:has-text("A+")'); await wait(150);
+  await P.click('#se-page .sgbc-only button:has-text("A+")'); await wait(150);
   check('A+ → 14px, 계정 자료로 저장', await ls(pc, 'fz-sgb') === '14' && await P.evaluate(() => getComputedStyle(document.getElementById('sgb-text')).fontSize) === '14px');
 
-  const overflow = await P.evaluate(() => { const b = document.querySelector('#sgb-overlay .modal-box'); return b.scrollWidth > b.clientWidth + 1; });
+  const overflow = await P.evaluate(() => { const b = document.getElementById('sgb-view'); return b.scrollWidth > b.clientWidth + 1; });
   check('가로로 넘치지 않음', !overflow);
 
   // ----- 길라잡이 찾기 -----
-  check('처음엔 찾기 자료를 안 받음', guideFetches.length === 0, guideFetches);
-  await P.click('#sgb-tabs [data-tab="find"]'); await wait(600);
+  check('찾기 자료는 생기부를 연 뒤 한 번만 받음', guideFetches.length === 1, guideFetches);
+  await P.click('#sgb-find-q'); await wait(300);
   const fl = () => P.evaluate(() => ({
     secs: [...document.querySelectorAll('#sgb-find-list .sgbf-sec')].map(e => e.innerText),
     qa: document.querySelectorAll('#sgb-find-list .sgbf-item[data-qa]').length,
     pg: document.querySelectorAll('#sgb-find-list .sgbf-item[data-page]').length }));
-  check('찾기 탭 → 자료 받음(1번), 입력칸에 커서', guideFetches.length === 1 && await P.evaluate(() => document.activeElement.id === 'sgb-find-q'), guideFetches);
-  check('문장 점검 칸은 숨김', await P.evaluate(() => document.getElementById('sgb-pane-check').style.display === 'none'));
+  check('길라잡이 찾기 칸도 같은 화면에 보임(문장 점검과 함께)', await P.evaluate(() => document.getElementById('sgb-pane-find').offsetParent !== null && document.getElementById('sgb-pane-check').offsetParent !== null));
   const g0 = await fl();
   check('빈 칸: Q&A 53개를 장별로', g0.qa === 53 && g0.secs[0] === '처리요령' && g0.pg === 0, g0);
-  const light = await P.evaluate(() => ({ answers: [...document.querySelectorAll('#sgb-find-list .sgbf-a')].filter(a => a.innerHTML).length, blur: getComputedStyle(document.getElementById('sgb-overlay')).backdropFilter, h: document.getElementById('sgb-find-list').scrollHeight }));
-  check('가볍게: 답 전문은 안 그림, 흐림 효과 없음', light.answers === 0 && light.blur === 'none', light);
+  const light = await P.evaluate(() => ({ answers: [...document.querySelectorAll('#sgb-find-list .sgbf-a')].filter(a => a.innerHTML).length, h: document.getElementById('sgb-find-list').scrollHeight }));
+  check('가볍게: 답 전문은 안 그림', light.answers === 0, light);
   await P.fill('#sgb-find-q', '영문'); await wait(200);
   const g1 = await fl();
   check('"영문" → Q&A와 본문 쪽 둘 다', g1.qa >= 1 && g1.pg >= 1 && /^Q&A \d+개$/.test(g1.secs[0]), g1);
@@ -342,7 +346,7 @@ function check(label, cond, detail) {
   await P.fill('#sgb-find-q', '자율동아리'); await wait(200);
   const g4 = await fl();
   check('"자율동아리" 찾기', g4.qa + g4.pg > 0, g4);
-  await P.locator('#sgb-overlay .modal-box').screenshot({ path: 'sgb-find.png' });
+  await P.locator('#sgb-view').screenshot({ path: 'sgb-find.png' });
   // 답 펼치기
   const ans = () => P.evaluate(() => { const a = document.querySelector('#sgb-find-list .sgbf-item[data-qa] .sgbf-a'); return a.style.display === 'none' ? '' : a.innerText; });
   const a0 = await ans();
@@ -355,34 +359,38 @@ function check(label, cond, detail) {
   check('없으면 안내', /찾는 말이 없어요/.test(await P.innerText('#sgb-find-list')));
   await P.fill('#sgb-find-q', '<img src=x>'); await wait(150);
   check('찾는 말에 태그 넣어도 안전', await P.evaluate(() => !document.querySelector('#sgb-find-list img')));
-  check('찾기 탭 기억(계정 자료)', await ls(pc, 'sgb-tab') === 'find');
   await P.click('#rail-sgb-btn'); await wait(150); await P.click('#rail-sgb-btn'); await wait(300);
-  check('다시 열면 찾기 탭, 자료는 다시 안 받음', await P.evaluate(() => document.getElementById('sgb-pane-find').style.display === 'flex') && guideFetches.length === 1, guideFetches);
+  check('닫았다 다시 열어도 찾던 말 그대로·자료는 다시 안 받음', await open() && await P.inputValue('#sgb-find-q') === '<img src=x>' && guideFetches.length === 1, guideFetches);
+  await P.evaluate(() => { localStorage.setItem('sgb-tab', 'find'); });
+  check('예전 기억 값("find" = 길라잡이 탭)은 문장 점검·길라잡이 탭으로', await P.evaluate(() => sgbTab()) === 'check');
   // 실제 PDF가 있고 쪽 수가 맞음
   const pdfOk = fs.existsSync(path.join(ROOT, 'sgb/2026-guide.pdf')) && fs.statSync(path.join(ROOT, 'sgb/2026-guide.pdf')).size > 1e6;
   check('sgb/2026-guide.pdf 있음', pdfOk);
-  await P.click('#sgb-tabs [data-tab="check"]'); await wait(200);
-  check('문장 점검 탭으로 돌아옴', await P.evaluate(() => document.getElementById('sgb-pane-check').style.display === 'flex' && document.activeElement.id === 'sgb-text'));
+  // 탭: 편집기 ↔ 문장 점검·길라잡이 (같은 화면에서 바로)
+  await P.click('#sgb-tabs [data-tab="edit"]'); await wait(600);
+  check('편집기 탭 → 같은 화면에서 편집기, 문장 점검 숨김, 편집기 단추 보임', await P.evaluate(() => { const pg = document.getElementById('se-page'); return pg.style.display === 'flex' && !pg.classList.contains('sgbp-check') && document.getElementById('se-body').offsetParent !== null && document.getElementById('sgb-view').offsetParent === null && document.getElementById('se-export-btn').offsetParent !== null; }));
+  check('편집기 탭 기억(계정 자료)', await ls(pc, 'sgb-tab') === 'edit');
+  await P.click('#rail-sgb-btn'); await wait(200); await P.click('#rail-sgb-btn'); await wait(600);
+  check('다시 열면 마지막 탭(편집기)', await P.evaluate(() => !document.getElementById('se-page').classList.contains('sgbp-check') && document.querySelector('#sgb-tabs .tab-btn.active').dataset.tab === 'edit'));
+  await P.click('#sgb-tabs [data-tab="check"]'); await wait(300);
+  check('문장 점검·길라잡이 탭으로 돌아옴(쓰던 문장 그대로)', await open() && await P.evaluate(() => document.activeElement.id === 'sgb-text') && await ls(pc, 'sgb-tab') === 'check');
 
-  // 닫기·다른 패널과 번갈아
+  // 닫기·다른 메뉴와 번갈아(이제 창이 아니라 화면 — 다른 화면처럼)
   await P.click('#rail-sgb-btn'); await wait(200);
-  check('같은 버튼 한 번 더 → 닫힘', !(await open()) && !(await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active'))));
-  await P.click('#rail-sgb-btn'); await wait(200);
+  check('같은 버튼 한 번 더 → 홈으로', !(await open()) && !(await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active'))) && await P.evaluate(() => document.getElementById('main-dashboard').style.display !== 'none'));
+  await P.click('#rail-sgb-btn'); await wait(300);
   check('다시 열면 마지막 영역(세특 묶음)', /자율자치 \(500자\)\*/.test(await areas()), await areas());
-  await P.mouse.click(1400, 500); await wait(200);
-  check('바깥 누르면 닫힘', !(await open()));
-  await P.click('#rail-sgb-btn'); await wait(200);
   await P.click('#rail-hwpkeys-btn'); await wait(300);
-  check('단축키 누르면 생기부 닫히고 단축키 열림', !(await open()) && await P.evaluate(() => document.getElementById('hwpkeys-overlay').style.display === 'flex'));
-  await P.click('#rail-sgb-btn'); await wait(300);
-  check('생기부 누르면 단축키 닫힘', await open() && await P.evaluate(() => document.getElementById('hwpkeys-overlay').style.display === 'none'));
+  check('단축키는 생기부 화면 위에 창으로(밑에 생기부 그대로)', await open() && await P.evaluate(() => document.getElementById('hwpkeys-overlay').style.display === 'flex'));
+  await P.evaluate(() => closeHwpKeys()); await wait(200);
+  check('단축키 닫으면 생기부 그대로', await open());
   await P.click('.rail-item[title="명렬표"]'); await wait(500);
-  check('명렬표 누르면 생기부 닫힘', !(await open()) && await P.evaluate(() => document.getElementById('roster-overlay').style.display === 'flex'));
-  await P.click('#rail-sgb-btn'); await wait(300);
-  check('생기부 누르면 명렬표 닫힘', await open() && await P.evaluate(() => document.getElementById('roster-overlay').style.display === 'none'));
+  check('명렬표도 생기부 위에 창으로', await open() && await P.evaluate(() => document.getElementById('roster-overlay').style.display === 'flex'));
+  await P.evaluate(() => closeStudentRoster()); await wait(200);
   await P.click('#rail-monthly-btn'); await wait(600);
-  check('다른 메뉴(월간일정표) 누르면 닫힘', !(await open()) && await P.evaluate(() => document.getElementById('monthly-page').style.display === 'flex'));
-  await P.click('#rail-sgb-btn'); await wait(200);
+  check('다른 메뉴(월간일정표) 누르면 생기부 닫히고 그 화면', !(await open()) && await P.evaluate(() => document.getElementById('monthly-page').style.display === 'flex' && document.getElementById('se-page').style.display === 'none'));
+  await P.click('#rail-sgb-btn'); await wait(300);
+  check('월간일정표에서 생기부 누르면 생기부만', await open() && await P.evaluate(() => document.getElementById('monthly-page').style.display === 'none'));
   await P.click('#rail-home-btn'); await wait(300);
   check('홈 누르면 닫힘', !(await open()));
 

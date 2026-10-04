@@ -473,7 +473,16 @@
     .sgbf-item mark { background: rgba(245,190,40,0.45); color: inherit; border-radius: 3px; padding: 0 1px; }
     /* ===== 🗂 생기부 자율·진로 편집기 (#se-page) ===== */
     /* 편집기 글씨는 13px로 고정 — 생기부 문장 점검기 글씨 크기(A-/A+, --fz-sgb)와 따로. 크기는 🔍 화면 배율(본문 #se-main에 zoom)로. */
-    #se-page { --fz-sgb: 13px; }
+    #se-body { --fz-sgb: 13px; }
+    /* 생기부 화면 = 탭 두 개: 문장 점검·길라잡이(#sgb-view, 반반) / 자율·진로·행발 편집기(#se-body). #se-page.sgbp-check면 첫 탭. */
+    #se-page.sgbp-check #se-body, #se-page:not(.sgbp-check) #sgb-view { display: none !important; }
+    #se-page.sgbp-check .se-only, #se-page:not(.sgbp-check) .sgbc-only { display: none !important; }
+    #sgb-view { display: flex; flex: 1; min-height: 0; gap: 14px; padding: 14px 18px; box-sizing: border-box; background: var(--bg-color); }
+    .sgbv-col { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; box-sizing: border-box; }
+    .sgbv-title { font-weight: 800; font-size: 14px; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .sgbv-title .se-muted { font-size: 11.5px; font-weight: 600; }
+    #sgb-view #sgb-text { min-height: 240px; }
+    @media (max-width: 1000px) { #sgb-view { flex-direction: column; overflow-y: auto; } .sgbv-col { flex: 0 0 auto; min-height: 520px; } }
     #se-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
     #se-body { display: flex; flex: 1; min-height: 0; }
     #se-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 20px 14px; box-sizing: border-box; }
@@ -829,7 +838,6 @@
     .updatebar .updatebar-x:hover { opacity: 1; }
     body.has-update #app-shell { padding-top: var(--updatebar-h, 40px); box-sizing: border-box; }
     body.has-update #hwpkeys-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
-    body.has-update #sgb-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     body.has-update #roster-overlay { top: var(--updatebar-h, 40px); height: calc(100% - var(--updatebar-h, 40px)); }
     /* 모바일 화면(#mobile-shell)은 #app-shell과 별개의 형제 요소라 위 규칙의 영향을
        받지 않는다 — 새 버전 알림 띠(position:fixed, z-index:10000)가 뜨면 그 띠가
@@ -2053,59 +2061,6 @@
     </div>
     <div style="display: flex; margin-top: 12px;">
       <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeStudentRoster()">닫기</button>
-    </div>
-  </div>
-</div>
-
-<!-- 📝 생기부 문장 점검 — 단축키처럼 왼쪽에 붙어 열리는 패널. 규칙은 SGB_RULES 한곳에 모여 있음(해마다 길라잡이 보고 교체).
-     학생 문장은 이 화면(브라우저) 안에서만 점검하고 어디에도 저장·전송하지 않는다. -->
-<div class="overlay" id="sgb-overlay" style="left: 68px; width: calc(100% - 68px); justify-content: flex-start; align-items: stretch; background: rgba(0,0,0,0.25); backdrop-filter: none;" onclick="if (event.target === this) closeSgb()">
-  <div class="modal-box" style="width: 640px; max-width: 90vw; height: 100%; max-height: 100%; margin: 0; border-radius: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; flex-direction: column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; gap:6px;">
-      <div style="font-weight: 800; font-size: 15px; white-space:nowrap;">📝 생기부 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
-      <div style="display:flex; gap:6px; align-items:center;">
-        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
-        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
-      </div>
-    </div>
-    <div class="top-btn-cluster" id="sgb-tabs" style="margin-bottom: 10px;">
-      <button class="top-btn theme-active" data-tab="check" onclick="setSgbTab('check')">✍️ 문장 점검</button>
-      <button class="top-btn" data-tab="edit" onclick="setSgbTab('edit')" title="자율·진로 활동 문장을 학생별로 모아 골라 합치고, 행발은 관찰 기록을 보며 쓰고, 바이트에 맞게 다듬는 전체 화면">🗂 자율·진로·행발 편집기</button>
-      <button class="top-btn" data-tab="find" onclick="setSgbTab('find')">🔍 길라잡이 찾기</button>
-    </div>
-    <div id="sgb-pane-check" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
-    <div class="top-btn-cluster" id="sgb-areas" style="margin-bottom: 8px; flex-wrap: wrap;"></div>
-    <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;">
-      <div id="sgb-prefix-row" style="display:none; align-items:center; gap:8px; margin-bottom:8px;">
-        <label for="sgb-prefix" id="sgb-prefix-label" style="flex:0 0 auto; font-size:12.5px; font-weight:800;"></label>
-        <input type="text" id="sgb-prefix" class="admin-input" style="flex:1; margin:0;" oninput="onSgbPrefixInput()">
-        <span id="sgb-prefix-bytes" style="flex:0 0 auto; font-size:12px; font-weight:700; color:var(--text-sub);"></span>
-      </div>
-      <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
-      <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <button class="top-btn" style="flex: 1 1 0; padding:7px;" onclick="clearSgb()">지우기</button>
-        <button class="top-btn" id="sgb-copy-btn" style="flex: 1 1 0; padding:7px; font-weight:800;" onclick="copySgb()">📋 복사</button>
-      </div>
-      <div class="sgb-count" id="sgb-count"></div>
-      <div class="sgb-bar" id="sgb-bar"><div></div></div>
-      <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px; white-space: pre-line;"></div>
-      <div id="sgb-result"></div>
-    </div>
-    <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
-      🔒 적은 문장은 이 화면 안에서만 점검하고 <b>저장하거나 어디로 보내지 않아요</b>(새로고침하면 지워짐). ·
-      자동 점검은 놓치는 것이 있을 수 있어요 — 최종 확인은 직접 해 주세요. · 쪽 번호는 「<span id="sgb-src"></span>」 기준.
-    </div>
-    </div>
-    <div id="sgb-pane-find" style="flex: 1; min-height: 0; display: none; flex-direction: column;">
-      <input type="text" id="sgb-find-q" class="admin-input" placeholder="🔍 궁금한 말 (예: 자율동아리, 영문, 봉사 시간, 전학)" oninput="renderSgbFind()" style="margin-bottom: 8px;">
-      <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="sgb-find-list"></div>
-      <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
-        <b>p.○ 열기</b>를 누르면 길라잡이 PDF가 새 탭에서 그 쪽으로 열려요. · 「주요 변경 사항」(p.8~73)은 2023~2026 4개년 비교표라
-        <b>2026학년도 칸</b>을 보세요. · 길라잡이는 참고 자료로, 법령·지침(기재요령)보다 우선하지 않아요(p.3).
-      </div>
-    </div>
-    <div style="display: flex; gap: 8px; margin-top: 10px;">
-      <button class="top-btn accent" style="flex: 1; padding:8px;" onclick="closeSgb()">닫기</button>
     </div>
   </div>
 </div>
@@ -3811,25 +3766,35 @@
   </div>
 </div>
 
-<!-- 🗂 생기부 자율·진로 편집기 — 생기부 패널의 "자율·진로 편집기" 탭에서 여는 전체 화면. 각 부서에서 받은 문장을 학생별로 모아
+<!-- 🗂 생기부 자율·진로 편집기 — 레일 "생기부" 화면의 둘째 탭(첫 탭 = 문장 점검·길라잡이, 같은 #se-page). 각 부서에서 받은 문장을 학생별로 모아
      골라 합치고 바이트에 맞게 다듬는다(사용자가 쓰던 엑셀 양식을 옮긴 것). 자료는 내 계정에만 저장(학생·칸 단위 항목, 칸을 벗어날 때 저장). -->
 <div id="se-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
   <div id="se-page-header">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="seBackToSgb()">← 생기부</button>
-      <div style="font-weight: 800; font-size: 16px;">🗂 자율·진로·행발 편집기</div>
-      <button class="top-btn tour-btn" id="se-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="seOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
-      <select id="se-grade" class="mini-select" style="width:74px;" onchange="seOnClassChange('grade')"></select>
-      <select id="se-class" class="mini-select" style="width:64px;" onchange="seOnClassChange('class')"></select>
-      <span id="se-limit-note" class="se-muted"></span>
-      <button class="top-btn" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(자율 입력·진로 입력·행발 관찰·최종 시트)이나 예전에 쓰던 자율·진로 엑셀(데이터·최종 시트)을 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
-      <button class="top-btn" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자율·진로 받은 내용, 행발 관찰 기록, 최종을 엑셀로 내려받습니다">📊 엑셀 내려받기</button>
-      <button class="top-btn" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로·행발 자료를 모두 지웁니다">🗑 초기화</button>
+      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
+      <div style="font-weight: 800; font-size: 16px; white-space:nowrap;">📝 생기부 <span id="sgb-year" style="font-size:11px; font-weight:700; color:var(--text-sub);"></span></div>
+      <div class="tab-switch" id="sgb-tabs">
+        <button class="tab-btn" data-tab="check" onclick="setSgbTab('check')" title="왼쪽 문장 점검 · 오른쪽 길라잡이 찾기를 한 화면에">✍️ 문장 점검 · 🔍 길라잡이</button>
+        <button class="tab-btn" data-tab="edit" onclick="setSgbTab('edit')" title="자율·진로 활동 문장을 학생별로 모아 골라 합치고, 행발은 관찰 기록을 보며 쓰고, 바이트에 맞게 다듬는 화면">🗂 자율·진로·행발 편집기</button>
+      </div>
+      <button class="top-btn tour-btn se-only" id="se-tour-btn" style="font-size:11px; padding:4px 10px;" onclick="seOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <select id="se-grade" class="mini-select se-only" style="width:74px;" onchange="seOnClassChange('grade')"></select>
+      <select id="se-class" class="mini-select se-only" style="width:64px;" onchange="seOnClassChange('class')"></select>
+      <span id="se-limit-note" class="se-muted se-only"></span>
+      <button class="top-btn se-only" id="se-import-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="📊 엑셀 내려받기로 받은 파일(자율 입력·진로 입력·행발 관찰·최종 시트)이나 예전에 쓰던 자율·진로 엑셀(데이터·최종 시트)을 가져옵니다. 이미 적힌 칸은 그대로 두고 빈 칸만 채워요." onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="se-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="seImportExcel(this.files[0]); this.value='';">
+      <button class="top-btn se-only" id="se-export-btn" style="font-size:11px; padding:4px 10px;" onclick="seExportExcel()" title="지금 반의 자율·진로 받은 내용, 행발 관찰 기록, 최종을 엑셀로 내려받습니다">📊 엑셀 내려받기</button>
+      <button class="top-btn se-only" id="se-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="seResetClass()" title="지금 고른 반의 자율·진로·행발 자료를 모두 지웁니다">🗑 초기화</button>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
+      <span class="sgbc-only" style="display:flex; gap:6px; align-items:center;" title="문장 점검·길라잡이 글씨 크기">
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', -1)">A-</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('sgb', 1)">A+</button>
+      </span>
+      <div class="se-only" style="display:flex; gap:6px; align-items:center;">
       <span id="se-save-state"></span>
       <div id="se-zoom-group" title="화면 크기 — 아래 편집기 화면을 같은 비율로 키우거나 줄여요(표가 틀어지지 않아요, 내 계정에 기억)">
         <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="seZoomBy(-1)" title="작게">−</button><span id="se-zoom-text" onclick="seZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="seZoomBy(1)" title="크게">+</button>
+      </div>
       </div>
     </div>
   </div>
@@ -3867,6 +3832,42 @@
       <div id="se-pane-final" class="se-pane" style="display:none;">
         <div id="se-final-note" class="se-muted" style="margin-bottom:6px;"></div>
         <div class="se-scroll se-box" id="se-final-list"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 📝 문장 점검(왼쪽) · 🔍 길라잡이(오른쪽) — 생기부 첫 탭. 학생 문장은 이 화면(브라우저) 안에서만 점검하고 저장·전송하지 않는다. -->
+  <div id="sgb-view">
+    <div id="sgb-pane-check" class="sgbv-col">
+    <div class="sgbv-title">✍️ 문장 점검 <span class="se-muted">바이트·기재 불가 표현을 적는 대로 점검</span></div>
+    <div class="top-btn-cluster" id="sgb-areas" style="margin-bottom: 8px; flex-wrap: wrap;"></div>
+    <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;">
+      <div id="sgb-prefix-row" style="display:none; align-items:center; gap:8px; margin-bottom:8px;">
+        <label for="sgb-prefix" id="sgb-prefix-label" style="flex:0 0 auto; font-size:12.5px; font-weight:800;"></label>
+        <input type="text" id="sgb-prefix" class="admin-input" style="flex:1; margin:0;" oninput="onSgbPrefixInput()">
+        <span id="sgb-prefix-bytes" style="flex:0 0 auto; font-size:12px; font-weight:700; color:var(--text-sub);"></span>
+      </div>
+      <textarea id="sgb-text" placeholder="여기에 문장을 붙여 넣거나 적으세요. 적는 대로 바로 점검해요." oninput="renderSgb()" spellcheck="false"></textarea>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button class="top-btn" style="flex: 1 1 0; padding:7px;" onclick="clearSgb()">지우기</button>
+        <button class="top-btn" id="sgb-copy-btn" style="flex: 1 1 0; padding:7px; font-weight:800;" onclick="copySgb()">📋 복사</button>
+      </div>
+      <div class="sgb-count" id="sgb-count"></div>
+      <div class="sgb-bar" id="sgb-bar"><div></div></div>
+      <div id="sgb-note" style="font-size: 11.5px; color: var(--text-sub); margin: -4px 0 10px; white-space: pre-line;"></div>
+      <div id="sgb-result"></div>
+    </div>
+    <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+      🔒 적은 문장은 이 화면 안에서만 점검하고 <b>저장하거나 어디로 보내지 않아요</b>(새로고침하면 지워짐). ·
+      자동 점검은 놓치는 것이 있을 수 있어요 — 최종 확인은 직접 해 주세요. · 쪽 번호는 「<span id="sgb-src"></span>」 기준.
+    </div>
+    </div>
+    <div id="sgb-pane-find" class="sgbv-col">
+      <div class="sgbv-title">🔍 길라잡이 찾기 <span class="se-muted">학교생활기록부 기재요령 찾아보기</span></div>
+      <input type="text" id="sgb-find-q" class="admin-input" placeholder="🔍 궁금한 말 (예: 자율동아리, 영문, 봉사 시간, 전학)" oninput="renderSgbFind()" style="margin-bottom: 8px;">
+      <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="sgb-find-list"></div>
+      <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+        <b>p.○ 열기</b>를 누르면 길라잡이 PDF가 새 탭에서 그 쪽으로 열려요. · 「주요 변경 사항」(p.8~73)은 2023~2026 4개년 비교표라
+        <b>2026학년도 칸</b>을 보세요. · 길라잡이는 참고 자료로, 법령·지침(기재요령)보다 우선하지 않아요(p.3).
       </div>
     </div>
   </div>
@@ -4888,9 +4889,9 @@
   // (사용자 요청: 숨겨져 있고 창이 작아서 불편하다 — 홈 화면 자리를 통째로 설정으로 바꾸는 게 낫다).
   // 그래서 #main-dashboard ↔ #settings-page를 스위치하고, 왼쪽 레일의 활성 표시도 같이 옮긴다.
   // 왼쪽 레일 버튼을 한 번 더 누르면(이미 그 화면이 열려 있으면) 홈으로 돌아간다 — 명렬표와 같은 동작.
-  // 명렬표·단축키·생기부는 지금 화면 위에 창처럼 뜨는 패널 — 이 버튼을 눌렀다고 밑의 화면(결석계·이름표·양식·편집기 등)을 닫으면
+  // 명렬표·단축키는 지금 화면 위에 창처럼 뜨는 패널(생기부는 10/4부터 창이 아니라 화면) — 이 버튼을 눌렀다고 밑의 화면(결석계·이름표·양식·생기부 등)을 닫으면
   // 패널을 닫았을 때 빈 화면만 남는다. 세 패널은 서로 닫아 주므로 한 번에 하나만 뜬다.
-  const RAIL_OVERLAY_IDS = ['rail-roster-btn', 'rail-hwpkeys-btn', 'rail-sgb-btn'];
+  const RAIL_OVERLAY_IDS = ['rail-roster-btn', 'rail-hwpkeys-btn']; // 생기부는 10/4부터 창이 아니라 화면
   function railOpensOverlay(item) { return !!item && RAIL_OVERLAY_IDS.indexOf(item.id) !== -1; }
   function railToggle(btnId, openFn) {
     const btn = document.getElementById(btnId);
@@ -5662,7 +5663,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴 위쪽은 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부 문장 점검, 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(좌석배치표, 조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴 위쪽은 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(좌석배치표, 조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -7077,22 +7078,15 @@
     document.getElementById('sgb-text').focus();
   }
 
+  // 레일 "생기부" = 한 화면(#se-page)에 탭 두 개 — ✍️ 문장 점검 · 🔍 길라잡이(반반) / 🗂 자율·진로·행발 편집기.
+  // 예전엔 문장 점검·길라잡이가 화면 위에 뜨는 창이었고 거기서 편집기 탭을 눌러 들어가야 해서 불편했음(사용자 요청으로 바꿈).
+  // 마지막에 본 탭으로 열고(sgb-tab), 열려 있을 때 한 번 더 누르면 홈으로(다른 화면처럼).
+  function sgbPageOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none'; }
   function openSgb() {
-    const overlay = document.getElementById('sgb-overlay');
-    if (overlay.style.display === 'flex') { closeSgb(); return; }
-    closeStudentRoster();
-    closeHwpKeys();
-    overlay.style.display = 'flex';
-    document.getElementById('rail-sgb-btn').classList.add('active');
-    applySgbTab();
+    if (sgbPageOpen()) { goHome(); return; }
+    setSgbTab(sgbTab());
   }
-
-  function closeSgb() {
-    const overlay = document.getElementById('sgb-overlay');
-    if (overlay) overlay.style.display = 'none';
-    const btn = document.getElementById('rail-sgb-btn');
-    if (btn && !(typeof seIsOpen === 'function' && seIsOpen())) btn.classList.remove('active');
-  }
+  function closeSgb() { /* 예전 창(오버레이)은 없어짐 — 다른 화면에서 부르는 곳이 있어 남겨 둠 */ }
 
   // ----- 🔍 길라잡이 찾기 -----
   // 찾기 자료(sgb/<연도>-guide.json, 약 400KB)는 이 탭을 처음 열 때만 받는다(index.html에 넣으면 모든 선생님이 매번 받게 됨).
@@ -7114,24 +7108,27 @@
   function sgbTab() {
     let v = null;
     try { v = localStorage.getItem(SGB_TAB_KEY); } catch (e) {}
-    return v === 'find' ? 'find' : 'check';
+    return v === 'edit' ? 'edit' : 'check'; // 예전 값 'find'(길라잡이)는 이제 문장 점검과 한 탭
   }
+  function sgbSaveTab(tab) {
+    let v = null;
+    try { v = localStorage.getItem(SGB_TAB_KEY); } catch (e) {}
+    if (v === tab) return;
+    try { localStorage.setItem(SGB_TAB_KEY, tab); } catch (e) {}
+    scheduleBackupWrite();
+  }
+  function sgbMarkTabs(tab) { document.querySelectorAll('#sgb-tabs .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === tab); }); }
   function setSgbTab(tab) {
-    if (tab === 'edit') { openSeEditor(); return; }   // 자율·진로 편집기는 패널이 아니라 전체 화면
-    if (sgbTab() !== tab) {
-      try { localStorage.setItem(SGB_TAB_KEY, tab); } catch (e) {}
-      scheduleBackupWrite();
-    }
-    applySgbTab();
+    if (tab === 'edit') { openSeEditor(); return; }
+    sgbSaveTab('check');
+    if (seDemo && pageTour) closePageTour();   // 편집기 설명서 도중에 탭을 바꾸면 설명서도 끝내 예시 자료를 치운다
+    seShowPage();
+    document.getElementById('se-page').classList.add('sgbp-check');
+    sgbMarkTabs('check');
+    renderSgb(); renderSgbFind();
+    document.getElementById('sgb-text').focus();
   }
-  function applySgbTab() {
-    const tab = sgbTab();
-    document.querySelectorAll('#sgb-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
-    document.getElementById('sgb-pane-check').style.display = tab === 'check' ? 'flex' : 'none';
-    document.getElementById('sgb-pane-find').style.display = tab === 'find' ? 'flex' : 'none';
-    if (tab === 'find') { renderSgbFind(); document.getElementById('sgb-find-q').focus(); }
-    else { renderSgb(); document.getElementById('sgb-text').focus(); }
-  }
+  function applySgbTab() { if (sgbPageOpen()) setSgbTab(sgbTab()); }
 
   // 찾을 말: 띄어쓰기로 나눈 낱말이 모두 들어 있어야 함. 낱말 안의 띄어쓰기 차이는 무시("봉사시간" = "봉사 시간").
   function sgbTermRes(q) {
@@ -13910,7 +13907,7 @@
   // ===== 🗂 생기부 자율·진로 편집기 =====
   // 자율·진로 활동은 여러 부서가 문장을 보내 주고 담임이 바이트에 맞게 골라 합쳐 정리해야 한다. 사용자가 쓰던 엑셀
   // (데이터 시트 = 학생×영역 원문, 자율·진로 시트 = 학생 하나 골라 체크해 합치고 다듬기, 최종 시트 = 학생별 완성본·바이트)을
-  // 그대로 옮긴 것. 생기부 패널의 "자율·진로 편집기" 탭에서 전체 화면으로 연다.
+  // 그대로 옮긴 것. 레일 "생기부" 화면의 "자율·진로·행발 편집기" 탭(같은 화면의 첫 탭은 문장 점검·길라잡이).
   // 저장: 학생 한 명의 칸 하나가 localStorage 항목 하나(se-src-학년-반-번호-영역id / se-fin-…-a|p / se-st-…)라서 바뀐 칸만 서버에
   // 올라가고(기존 항목별 동기화), 변경 이력도 그 칸 크기만 남는다. 입력 중엔 화면에만 있다가 **칸을 벗어날 때(blur/change)** 저장 →
   // 글자마다 올리지 않음. 내 계정에만 저장(RLS), 다른 선생님·관리자는 못 본다.
@@ -13940,7 +13937,8 @@
   function seClassKey() { const c = seCfg(); return c.g && c.c ? c.g + '-' + c.c : ''; }
   function seKind() { const k = seCfg().kind; return k === 'p' || k === 'b' ? k : 'a'; }
   function seTab() { const t = seCfg().tab; return t === 'edit' || t === 'final' ? t : 'src'; }
-  function seIsOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none'; }
+  // 편집기 탭이 보일 때만 참(생기부 화면이 문장 점검 탭이면 거짓 — 숨은 편집기를 다시 그리지 않게)
+  function seIsOpen() { const pg = document.getElementById('se-page'); return !!pg && pg.style.display !== 'none' && !pg.classList.contains('sgbp-check'); }
 
   function seGet(k) { if (seDemo) return seDemo[k] || ''; try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   // 값이 실제로 바뀐 칸만 저장(같은 값이면 서버에도 안 올라감). 빈 값은 항목을 지운다.
@@ -14142,9 +14140,10 @@
     const pg = document.getElementById('se-page');
     if (pg) pg.style.display = 'none';
     const btn = document.getElementById('rail-sgb-btn');
-    if (btn && document.getElementById('sgb-overlay').style.display !== 'flex') btn.classList.remove('active');
+    if (btn) btn.classList.remove('active');
   }
-  async function openSeEditor() {
+  // 생기부 화면(문장 점검·길라잡이 / 편집기 두 탭이 같이 씀)을 띄우기만 — 다른 화면은 닫음
+  function seShowPage() {
     closeAbsencePage(); closeNametagPage(); closeFormPage(); closePaPage();
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
@@ -14159,6 +14158,12 @@
     const um = document.getElementById('user-menu-dropdown'); if (um) um.style.display = 'none';
     document.getElementById('se-page').style.display = 'flex';
     document.getElementById('rail-sgb-btn').classList.add('active');
+  }
+  async function openSeEditor() {
+    sgbSaveTab('edit');
+    seShowPage();
+    document.getElementById('se-page').classList.remove('sgbp-check');
+    sgbMarkTabs('edit');
     seSaveState('');
     seApplyZoom();
     await ensureClassStructureLoaded();
@@ -14170,7 +14175,7 @@
     await seLoadRoster();
     seRenderAll();
   }
-  function seBackToSgb() { closeSePage(); openSgb(); }
+  function seBackToSgb() { setSgbTab('check'); }
   // 화면 크기(🔍 − 100% +): 수행평가와 같은 방식 — 본문(#se-main)만 같은 비율로(CSS zoom), 머리 줄은 그대로(노트북에서 머리가 넘어가지 않게).
   // 글씨만 키우면 칸 폭이 정해진 표가 틀어지고, 생기부 문장 점검기와 같은 값이라 거기까지 바뀌었음. 계정 자료 'zoom-se'(100%는 지움).
   const SE_ZOOMS = [90, 100, 110, 125, 150];
@@ -15304,7 +15309,7 @@
     const rail = document.getElementById('app-rail');
     if (rail) rail.addEventListener('click', function(e) {
       const item = e.target.closest('.rail-item');
-      if (item && !railOpensOverlay(item)) closeSePage();
+      if (item && item.id !== 'rail-sgb-btn' && !railOpensOverlay(item)) closeSePage();
     }, true);
   });
 

@@ -232,7 +232,7 @@ handleDb = async function(pageInfo, req) {
   const P = pc.page;
   await P.evaluate(() => { window.__clip = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { window.__clip = t; } } }); });
   const shown = () => P.evaluate(() => document.getElementById('se-page').style.display === 'flex');
-  const panelShown = () => P.evaluate(() => document.getElementById('sgb-overlay').style.display === 'flex');
+  const panelShown = () => P.evaluate(() => { const pg = document.getElementById('se-page'); return pg.style.display === 'flex' && pg.classList.contains('sgbp-check'); }); // 생기부 화면의 문장 점검·길라잡이 탭
   const areas = (k) => P.evaluate((k) => seAreas(k), k);
 
   // ---- 한도 표 ----
@@ -243,14 +243,14 @@ handleDb = async function(pageInfo, req) {
   check('입시 연도: 2026학년도 고3 = 2027, 고1 = 2029, 2025학년도 고3 = 2026', lim.y3 === 2027 && lim.y1 === 2029 && lim.old === 2026, lim);
   check('한도: 2027·2028~ 입시 자율 500·진로 500·봉사 50·행특 300, 2026 입시 진로 700·봉사 250·행특 500', lim.g3.p === 500 && lim.g3.behav === 300 && lim.g3.vol === 50 && lim.g1.p === 500 && lim.g3old.p === 700 && lim.g3old.vol === 250 && lim.g3old.behav === 500 && lim.far.p === 500, lim);
 
-  // ---- 생기부 패널 탭 → 편집기 ----
+  // ---- 생기부 화면 탭 → 편집기 ----
   await P.click('#rail-sgb-btn'); await wait(300);
-  const tabs = await P.evaluate(() => [...document.querySelectorAll('#sgb-tabs .top-btn')].map(b => b.dataset.tab));
-  check('생기부 패널 탭 순서: 문장 점검 · 자율·진로 편집기 · 길라잡이 찾기', tabs.join(',') === 'check,edit,find', tabs);
+  const tabs = await P.evaluate(() => [...document.querySelectorAll('#sgb-tabs .tab-btn')].map(b => b.dataset.tab));
+  check('생기부 화면 탭: 문장 점검·길라잡이 · 자율·진로·행발 편집기', tabs.join(',') === 'check,edit' && await panelShown(), tabs);
   const note = await P.evaluate(() => document.getElementById('sgb-note').textContent);
   check('문장 점검 안내에 담임 학년 기준(고3 = 2027 입시)', /고3 = 2027 입시/.test(note), note);
   await P.click('#sgb-tabs [data-tab="edit"]'); await wait(600);
-  check('편집기 탭 → 전체 화면 열리고 패널 닫힘, 레일 생기부 버튼 켜짐', await shown() && !(await panelShown()) && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
+  check('편집기 탭 → 같은 화면에서 편집기(문장 점검 탭 꺼짐), 레일 생기부 버튼 켜짐', await shown() && !(await panelShown()) && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
   const head = await P.evaluate(() => ({ g: document.getElementById('se-grade').value, c: document.getElementById('se-class').value, note: document.getElementById('se-limit-note').textContent, tab: seTab() }));
   check('담임 반(3-1)으로 시작, 한도 안내 자율·진로 각 500자 · 행발 300자(고3 = 2027 입시)', head.g === '3' && head.c === '1' && /자율·진로 각 500자 · 행발 300자/.test(head.note) && head.tab === 'src', head);
   check('자율/진로/행발 단추에 바이트 한도(1,500 · 1,500 · 900)', (await P.evaluate(() => [...document.querySelectorAll('#se-kind .top-btn')].map(b => b.textContent.trim()).join('|'))) === '자율 (1,500바이트)|진로 (1,500바이트)|행발 (900바이트)');
@@ -264,7 +264,7 @@ handleDb = async function(pageInfo, req) {
   // ---- 🔍 화면 크기(수행평가와 같은 방식) — 생기부 문장 점검기 글씨 크기와 따로 ----
   const zf = () => P.evaluate(() => ({ cell: getComputedStyle(document.querySelector('#se-src-list textarea.se-cell')).fontSize, main: getComputedStyle(document.getElementById('se-main')).zoom,
     head: getComputedStyle(document.getElementById('se-page-header')).zoom, text: document.getElementById('se-zoom-text').textContent, key: localStorage.getItem('zoom-se') }));
-  check('머리에 A-/A+ 대신 🔍 − 100% +', await P.evaluate(() => !!document.getElementById('se-zoom-group') && ![...document.querySelectorAll('#se-page-header button')].some(b => /^A[-+]$/.test(b.textContent.trim()))));
+  check('편집기 탭 머리엔 A-/A+ 대신 🔍 − 100% +(A-/A+는 문장 점검 탭에서만 보임)', await P.evaluate(() => !!document.getElementById('se-zoom-group') && document.getElementById('se-zoom-group').offsetParent !== null && ![...document.querySelectorAll('#se-page-header button')].some(b => /^A[-+]$/.test(b.textContent.trim()) && b.offsetParent !== null)));
   await P.evaluate(() => changeFontSize('sgb', 3));
   const z0 = await zf();
   check('생기부 문장 점검기 글씨를 키워도(16px) 편집기 글씨는 13px 그대로', z0.cell === '13px' && z0.text === '100%' && (await P.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--fz-sgb').trim())) === '16px', z0);
@@ -630,14 +630,19 @@ handleDb = async function(pageInfo, req) {
   const t2keys = await t2.page.evaluate(() => Object.keys(localStorage).filter(k => k.indexOf('se-') === 0));
   check('다른 선생님에겐 자료 없음', t2keys.length === 0 && [...items.keys()].every(k => !(k.startsWith(T2) && k.includes('|se-'))), t2keys);
 
-  // ---- 열고 닫기 ----
-  await P.click('#rail-sgb-btn'); await wait(300);
-  check('편집기 위에서 레일 생기부 → 패널이 위에 열리고 편집기는 그대로', await shown() && await panelShown());
-  await P.click('#sgb-overlay button:has-text("닫기")'); await wait(200);
-  check('패널 닫아도 편집기 그대로·레일 버튼 켜짐', await shown() && !(await panelShown()) && await P.evaluate(() => document.getElementById('rail-sgb-btn').classList.contains('active')));
-  await P.click('#se-page-header button:has-text("← 생기부")'); await wait(300);
-  check('← 생기부 → 편집기 닫고 패널 열림', !(await shown()) && await panelShown());
+  // ---- 열고 닫기(생기부 = 한 화면, 탭 두 개) ----
+  await P.click('#sgb-tabs [data-tab="check"]'); await wait(300);
+  check('편집기 → 문장 점검·길라잡이 탭: 같은 화면에서 바뀜·레일 버튼 켜짐', await panelShown() && await P.evaluate(() => document.getElementById('se-body').offsetParent === null && document.getElementById('rail-sgb-btn').classList.contains('active')));
+  check('문장 점검 탭에서는 편집기를 다시 그리지 않음(seIsOpen 거짓)', await P.evaluate(() => !seIsOpen()));
   await P.click('#sgb-tabs [data-tab="edit"]'); await wait(400);
+  check('다시 편집기 탭 → 쓰던 반·탭 그대로', await shown() && await P.evaluate(() => seIsOpen() && seCfg().g === 3 && seCfg().c === 1));
+  await P.click('#rail-sgb-btn'); await wait(300);
+  check('열려 있을 때 레일 생기부 한 번 더 → 홈으로', await P.evaluate(() => document.getElementById('se-page').style.display === 'none' && document.getElementById('main-dashboard').style.display !== 'none'));
+  await P.click('#rail-sgb-btn'); await wait(500);
+  check('다시 누르면 마지막 탭(편집기)으로', await shown() && !(await panelShown()));
+  await P.click('#se-page-header button:has-text("← 홈으로")'); await wait(300);
+  check('← 홈으로 → 닫힘', await P.evaluate(() => document.getElementById('se-page').style.display === 'none'));
+  await P.click('#rail-sgb-btn'); await wait(400);
   await P.click('#rail-absence-btn'); await wait(400);
   check('결석계 누르면 편집기 닫힘', !(await shown()) && await P.evaluate(() => document.getElementById('absence-page').style.display === 'flex' && !document.getElementById('rail-sgb-btn').classList.contains('active')));
   await P.click('#rail-sgb-btn'); await wait(200); await P.click('#sgb-tabs [data-tab="edit"]'); await wait(400);
