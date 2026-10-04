@@ -193,9 +193,11 @@ function check(label, cond, detail) {
     glow: [...document.querySelectorAll('#persontt-page .pa-glow')].map(e => e.id), st: [1, 2, 3, 4].map(i => document.getElementById('pt-st-' + i).textContent) }));
   const R = (id) => P.evaluate((id) => { const r = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; }, id);
   const sch = await R('pt-box-school'), siz = await R('pt-box-size'), des = await R('pt-box-design');
-  check('넓은 화면: 왼쪽 = 학교·크기, 오른쪽 = 색상·디자인(맨 위 나란히)', siz.l === sch.l && siz.t > sch.b && des.l > sch.r - 1 && Math.abs(des.t - sch.t) < 2, { sch, siz, des });
+  const fsz = await R('pt-box-fsize');
+  check('넓은 화면: 왼쪽 = 학교 → 색상·디자인, 오른쪽 = 시간표 크기 → 세부 글자', des.l === sch.l && des.t > sch.b && siz.l > sch.r - 1 && fsz.l === siz.l, { sch, siz, des, fsz });
+  check('높이 맞춤: 시간표 크기 = 학교/학기 줄, 세부 글자 = 색상·디자인 줄', Math.abs(siz.t - sch.t) < 2 && Math.abs(siz.b - sch.b) < 2 && Math.abs(fsz.t - des.t) < 2 && Math.abs(fsz.b - des.b) < 2, { sch, siz, des, fsz });
   check('넓은 화면(1600×1000) 내 시간표: 왼쪽 칸 스크롤 없음', await P.evaluate(() => { const p = document.getElementById('pt-panel'); return p.scrollHeight <= p.clientHeight; }));
-  check('칸 제목에 ②③④, 위쪽에 ①⑤', await P.evaluate(() => ['pt-box-school', 'pt-box-size', 'pt-box-design'].map(id => document.querySelector('#' + id + ' .pt-no').textContent).join('') === '②③④' && [...document.querySelectorAll('.pt-hdr-no')].map(e => e.textContent).join('') === '①⑤'));
+  check('칸 제목에 ②③④, 위쪽에 ①⑤', await P.evaluate(() => ['pt-box-school', 'pt-box-design', 'pt-box-size'].map(id => document.querySelector('#' + id + ' .pt-no').textContent).join('') === '②③④' && [...document.querySelectorAll('.pt-hdr-no')].map(e => e.textContent).join('') === '①⑤'));
   const ptSeen = [];
   let nb = await nbox(); ptSeen.push(nb.t.match(/[①②③④⑤]/)[0]);
   check('① 내 시간표: 탭 설명·탭 반짝·다음 단추', /① 지금 할 일/.test(nb.t) && /내 시간표/.test(nb.t) && /학생 시간표/.test(nb.t) && nb.glow.includes('pt-tab-switch') && /다음: ② 학교/.test(nb.t), nb);
@@ -204,9 +206,9 @@ function check(label, cond, detail) {
   await ptNext();
   check('② 학교/학기: 무엇인지·예시·칸 반짝', /② 지금 할 일/.test(nb.t) && /학교명/.test(nb.t) && /학기명/.test(nb.t) && nb.glow.includes('pt-box-school') && nb.st[1] === '지금', nb);
   await ptNext();
-  check('③ 크기: 너비·높이·글씨·모서리 설명', /③ 지금 할 일/.test(nb.t) && /전체 너비·높이/.test(nb.t) && /과목명/.test(nb.t) && /모서리/.test(nb.t) && nb.st[1] === '✓' && nb.st[2] === '지금', nb);
+  check('③ 색상·스타일·글꼴 설명(학교 다음 = 디자인)', /③ 지금 할 일/.test(nb.t) && /색상 테마/.test(nb.t) && /표 스타일/.test(nb.t) && /글꼴/.test(nb.t) && nb.glow.includes('pt-box-design') && nb.st[1] === '✓' && nb.st[2] === '지금', nb);
   await ptNext();
-  check('④ 색상·스타일·글꼴 설명', /④ 지금 할 일/.test(nb.t) && /색상 테마/.test(nb.t) && /표 스타일/.test(nb.t) && /글꼴/.test(nb.t) && nb.glow.includes('pt-box-design'), nb);
+  check('④ 크기: 너비·높이·글씨·모서리 설명(디자인 다음 = 크기)', /④ 지금 할 일/.test(nb.t) && /전체 너비·높이/.test(nb.t) && /과목명/.test(nb.t) && /모서리/.test(nb.t) && nb.glow.includes('pt-box-fsize') && nb.st[2] === '✓' && nb.st[3] === '지금', nb);
   await ptNext();
   check('⑤ 출력: 모양·인쇄·이미지·PDF·완료 모양·①~④ ✓', nb.done && /⑤/.test(nb.t) && /카드 1장/.test(nb.t) && /이미지/.test(nb.t) && /PDF/.test(nb.t) && nb.glow.includes('pt-print-layout') && nb.st.every(x => x === '✓'), nb);
   check('단계가 하나도 건너뛰지 않음(①②③④⑤)', ptSeen.join('') === '①②③④⑤', ptSeen);
@@ -218,6 +220,8 @@ function check(label, cond, detail) {
   await P.evaluate(() => ptSwitchTab('student')); await wait(700);
   nb = await nbox();
   check('학생 탭 ①: 학년·반·학생 고르는 순서 설명·학년 칸 반짝·다음 단추 없음', /학생 고르기/.test(nb.t) && /학년/.test(nb.t) && /이 학생만/.test(nb.t) && nb.glow.includes('pt-student-grade') && !/다음:/.test(nb.t), nb);
+  { const stu = await R('pt-student-controls'), sz = await R('pt-box-size'), sc = await R('pt-box-school');
+    check('학생 탭: ① 학생 고르기가 맨 위 한 줄 전체, 아래는 시간표 크기 = 학교 줄', stu.r >= sz.r - 1 && stu.b < sc.t && Math.abs(sz.t - sc.t) < 2 && Math.abs(sz.b - sc.b) < 2, { stu, sz, sc }); }
   check('학생 탭 칸 제목 ① 학생 고르기 + "지금"', await P.evaluate(() => document.querySelector('#pt-student-controls .pt-no').textContent === '①') && nb.st[0] === '지금');
   await P.selectOption('#pt-student-grade', '2'); await wait(300);
   check('학년 고르면 반 칸 반짝', (await nbox()).glow.includes('pt-student-class'));

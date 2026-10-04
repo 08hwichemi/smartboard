@@ -1545,7 +1545,6 @@
     #pt-panel { width: 330px; flex: 0 0 auto; border-right: 1px solid var(--border-color); padding: 14px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; box-sizing: border-box; background: var(--card-bg); }
     #pt-panel { background: var(--bg-color); gap: 12px !important; }
     .pt-card-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-    .pt-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .pt-no { font-weight: 900; color: var(--accent-color); }
     .pt-box-title.pt-step { display: flex; align-items: center; gap: 5px; color: var(--text-main); }
     .pt-st:empty { display: none; }
@@ -1560,11 +1559,23 @@
     .pt-hdr-no { font-weight: 900; color: var(--accent-color); font-size: 13px; }
     /* 노트북(1440 미만): ①⑤ 번호를 넣어도 머리가 한 줄이 되게 여백만 조금 줄임 */
     @media (max-width: 1439px) { #pt-page-header { padding-left: 12px !important; padding-right: 12px !important; } #pt-header-actions { gap: 4px !important; } }
-    /* 넓은 화면: 좌석배치표·월간일정표처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = ① 학생·② 학교·③ 크기, 오른쪽 = ④ 색상·스타일·글꼴. 좁으면 위아래 */
+    .pt-opt { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+    /* 넓은 화면: 좌석배치표·월간일정표처럼 왼쪽 칸을 넓혀 두 줄 — 줄을 맞춘 격자:
+       (학생 탭이면 맨 위 한 줄 전체에 ① 학생 고르기) 왼쪽 ② 학교/학기 · ③ 색상·스타일·글꼴 / 오른쪽 ④ 시간표 크기(②와 같은 높이) · 세부 글자 크기(③과 같은 높이) — 슬라이더 사이를 벌려 높이를 맞춤.
+       좁으면 위아래(같은 순서). 학생 탭이면 #pt-panel.pt-has-stu(ptSwitchTab). */
     @media (min-width: 1440px) {
-      #pt-panel { width: clamp(640px, calc(100vw - 820px), 760px); flex-direction: row; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; }
-      #pt-panel > #pt-next { flex: 0 0 100%; }
-      #pt-panel > .pt-col { flex: 1 1 0; }
+      #pt-panel { width: clamp(640px, calc(100vw - 820px), 760px); display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; align-content: start;
+        grid-template-areas: "next next" "school size" "design fsize"; }
+      #pt-panel.pt-has-stu { grid-template-areas: "next next" "stu stu" "school size" "design fsize"; }
+      /* 학생 탭: ① 학생 고르기를 한 줄 전체로(안쪽은 학년·반 | 이 학생만·반 전체 / 학생 넘기기) — 아래 칸들은 내 시간표 탭과 같은 줄 맞춤 */
+      #pt-panel.pt-has-stu #pt-student-controls { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px 10px !important; }
+      #pt-student-controls > .pt-box-title { grid-column: 1 / -1; }
+      #pt-student-controls > div:last-child { grid-column: 1 / -1; }
+      #pt-next { grid-area: next; } #pt-student-controls { grid-area: stu; } #pt-box-school { grid-area: school; } #pt-box-design { grid-area: design; }
+      #pt-box-size { grid-area: size; } #pt-box-fsize { grid-area: fsize; }
+      #pt-box-size, #pt-box-fsize { justify-content: space-between; }
+      #pt-panel .pt-card-box { padding: 12px; }
+      #pt-panel .pt-style-btn { padding: 8px 6px; }
     }
     .pt-box-title { font-weight: 800; font-size: 13px; color: var(--text-sub); }
     .pt-font-row { display: flex; gap: 6px; align-items: center; }
@@ -3915,7 +3926,6 @@
   <div id="pt-body">
     <div id="pt-panel">
      <div id="pt-next"></div>
-     <div class="pt-col" id="pt-col-1">
       <div id="pt-student-controls" class="pt-card-box" style="display:none; flex-direction:column; gap:10px;">
         <div class="pt-box-title pt-step"><span class="pt-no">①</span> 👨‍🎓 학생 고르기<span class="pt-st" id="pt-st-1"></span></div>
         <div style="display:flex; gap:6px;">
@@ -3939,22 +3949,8 @@
         <input type="text" id="pt-cfg-term" class="mini-select" placeholder="학기명 (예: 2026학년도 1학기)" oninput="ptRender(); ptAutoSave();">
       </div>
 
-      <div class="pt-card-box" id="pt-box-size">
-        <div class="pt-box-title pt-step"><span class="pt-no">③</span> 📐 시간표 크기 조절 (가로/세로 비율)<span class="pt-st" id="pt-st-3"></span></div>
-          <div class="pt-slider-row"><label for="pt-sl-width">전체 너비 ↔️</label><input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
-        <div class="pt-box-title" style="margin-top:10px;">🔠 세부 글자 크기 조절</div>
-          <div class="pt-slider-row"><label for="pt-sl-title">제목 크기</label><input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-name">이름 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-sub">과목명 크기</label><input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-info">교사/교실 크기</label><input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-time">교시 시간 크기</label><input type="range" id="pt-sl-time" min="7" max="14" value="9" oninput="ptUpdateVars()"></div>
-          <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
-      </div>
-     </div>
-     <div class="pt-col" id="pt-col-2">
       <div class="pt-card-box" id="pt-box-design">
-        <div class="pt-box-title pt-step"><span class="pt-no">④</span> 🌈 과목별 색상 테마 (4종 12색)<span class="pt-st" id="pt-st-4"></span></div>
+        <div class="pt-box-title pt-step"><span class="pt-no">③</span> 🌈 과목별 색상 테마 (4종 12색)<span class="pt-st" id="pt-st-3"></span></div>
         <div class="pt-theme-grid" id="pt-theme-grid"></div>
         <div class="pt-box-title">표 스타일 (총 6종)</div>
         <div class="pt-style-grid" id="pt-style-grid"></div>
@@ -3999,7 +3995,20 @@
           <button type="button" class="pt-font-nav" onclick="ptChangeFont(1)">▶</button>
         </div>
       </div>
-     </div>
+      <div class="pt-card-box" id="pt-box-size">
+        <div class="pt-box-title pt-step"><span class="pt-no">④</span> 📐 시간표 크기 조절 (가로/세로 비율)<span class="pt-st" id="pt-st-4"></span></div>
+          <div class="pt-slider-row"><label for="pt-sl-width">전체 너비 ↔️</label><input type="range" id="pt-sl-width" min="250" max="500" value="360" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-height">전체 높이 ↕️</label><input type="range" id="pt-sl-height" min="400" max="700" value="520" oninput="ptUpdateVars()"></div>
+      </div>
+      <div class="pt-card-box" id="pt-box-fsize">
+        <div class="pt-box-title pt-step">🔠 세부 글자 크기 조절 <span class="pt-opt">(④)</span></div>
+          <div class="pt-slider-row"><label for="pt-sl-title">제목 크기</label><input type="range" id="pt-sl-title" min="12" max="28" value="18" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-name">이름 크기</label><input type="range" id="pt-sl-name" min="12" max="24" value="16" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-sub">과목명 크기</label><input type="range" id="pt-sl-sub" min="10" max="24" value="16" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-info">교사/교실 크기</label><input type="range" id="pt-sl-info" min="8" max="14" value="11" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-time">교시 시간 크기</label><input type="range" id="pt-sl-time" min="7" max="14" value="9" oninput="ptUpdateVars()"></div>
+          <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
+      </div>
     </div>
 
     <div id="pt-preview">
@@ -20662,6 +20671,7 @@
     document.getElementById('pt-tab-me-btn').classList.toggle('active', tab === 'me');
     document.getElementById('pt-tab-student-btn').classList.toggle('active', tab === 'student');
     document.getElementById('pt-student-controls').style.display = tab === 'student' ? 'flex' : 'none';
+    document.getElementById('pt-panel').classList.toggle('pt-has-stu', tab === 'student');
     if (tab === 'student') {
       ptEnsureStudentDataLoaded();
     }
@@ -21405,19 +21415,19 @@
     } else if (cur === 2) {
       n = Object.assign({ msg: '<b>② 학교 / 학기 표시</b> — 카드 맨 위에 작게 나오는 글이에요.' +
         '<br>· <b>학교명</b>(예: 부광고등학교) · <b>학기명</b>(예: 2026학년도 2학기) — 적는 대로 미리보기에 바로 나와요.' +
-        '<br>👉 맞으면 다음으로.', glow: '#pt-box-school' }, go(3, '다음: ③ 크기 조절 →'));
+        '<br>👉 맞으면 다음으로.', glow: '#pt-box-school' }, go(3, '다음: ③ 색상·디자인 →'));
     } else if (cur === 3) {
-      n = Object.assign({ msg: '<b>③ 크기 조절</b> — 슬라이더를 밀면서 미리보기를 보세요.' +
-        '<br>· <b>전체 너비·높이</b>: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.' +
-        '<br>· <b>제목·이름·과목명·교사/교실·교시 시간 크기</b>: 칸 안 글씨 크기 — 과목명이 잘리면 줄이세요.' +
-        '<br>· <b>모서리 둥글기</b>: 칸 모서리를 둥글게/각지게.' +
-        '<br>👉 기본 그대로 써도 돼요 — 다음으로.', glow: '#pt-box-size' }, go(4, '다음: ④ 색상·디자인 →'));
-    } else if (cur === 4) {
-      n = Object.assign({ msg: '<b>④ 색상 · 표 스타일 · 글꼴</b> — 눌러 보면서 마음에 드는 모양을 고르세요.' +
+      n = Object.assign({ msg: '<b>③ 색상 · 표 스타일 · 글꼴</b> — 눌러 보면서 마음에 드는 모양을 고르세요.' +
         '<br>· <b>과목별 색상 테마</b> 4가지: 과목마다 색이 저절로 정해져요.' +
         '<br>· <b>표 스타일</b> 6가지: 둥근 버블·노션 실선·컬러 띠·레트로 3D·투명 테두리·포스트잇.' +
         '<br>· <b>글꼴</b>: ◀ ▶로 넘기며 바꿔요(단정한 글꼴 · 손글씨 · 굵은 제목용).' +
-        '<br><span class="se-muted">내 시간표·학생 시간표 디자인은 따로 저절로 기억돼요.</span>', glow: '#pt-box-design' }, go(5, '다음: ⑤ 출력 →'));
+        '<br><span class="se-muted">내 시간표·학생 시간표 디자인은 따로 저절로 기억돼요.</span>', glow: '#pt-box-design' }, go(4, '다음: ④ 크기 조절 →'));
+    } else if (cur === 4) {
+      n = Object.assign({ msg: '<b>④ 크기 조절</b> — 슬라이더를 밀면서 미리보기를 보세요.' +
+        '<br>· <b>전체 너비·높이</b>: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.' +
+        '<br>· <b>제목·이름·과목명·교사/교실·교시 시간 크기</b>: 칸 안 글씨 크기 — 과목명이 잘리면 줄이세요.' +
+        '<br>· <b>모서리 둥글기</b>: 칸 모서리를 둥글게/각지게.' +
+        '<br>👉 기본 그대로 써도 돼요 — 다음으로.', glow: '#pt-box-fsize' }, go(5, '다음: ⑤ 출력 →'));
     } else {
       n = { done: true, msg: '<b>⑤ 출력</b> — 위쪽 오른쪽 <b>⑤</b>에서 모양을 고른 뒤 뽑아요.' +
         '<br>· 모양: <b>카드 1장</b> · <b>A4에 1·2·4·6장</b>(반 전체면 여러 쪽 — 미리보기 위 ◀ ▶) · <b>모바일 배경화면</b>' +
@@ -21452,13 +21462,13 @@
 
   // ----- 시간표 만들기 설명서 -----
   const ptTourSteps = [
-    { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만드는 화면이에요.\n\n① 무엇을 만들지 → ② 학교/학기 → ③ 크기 → ④ 색상·디자인 → ⑤ 출력 순서로 하면 돼요.', before: function() { ptSwitchTab('me'); } },
+    { selector: '#pt-page-header', title: '🗓️ 시간표 만들기에 오신 것을 환영해요!', desc: '내 시간표나 학생 시간표를 예쁜 카드로 꾸며서 인쇄·이미지·PDF로 만드는 화면이에요.\n\n① 무엇을 만들지 → ② 학교/학기 → ③ 색상·디자인 → ④ 크기 → ⑤ 출력 순서로 하면 돼요.', before: function() { ptSwitchTab('me'); } },
     { selector: '#pt-next', title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n칸 제목의 ①②③④와 위쪽의 ①⑤가 순서예요. 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.', before: function() { ptSwitchTab('me'); } },
     { selector: '#pt-tab-switch', title: '1단계. 무엇을 만들지 고르기', desc: '⭐ 내 시간표: 로그인한 선생님의 수업 시간표가 저절로 들어와요.\n👨‍🎓 학생 시간표: 학교에 올라간 학생 시간표로 학생마다(또는 반 전체) 카드를 만들어요.\n두 탭의 디자인은 따로 기억돼요.', before: function() { ptSwitchTab('me'); } },
     { selector: '#pt-student-controls', title: '1단계. 학생 고르기 (학생 시간표)', desc: '학생 시간표 탭에서는 학년 → 반 → 학생을 고르고 ◀▶로 학생을 넘겨 보세요. 고른 학년·반은 기억해 둬서 다음에 열면 그대로 나와요.\n👤 이 학생만: 고른 학생 한 명만 출력\n🏫 반 전체: 그 반 학생 모두를 한 번에 출력', before: function() { ptSwitchTab('student'); } },
     { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 작게 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요. 적는 대로 미리보기에 바로 나와요.' },
-    { selector: '#pt-box-size', title: '3단계. 크기 조절', desc: '· 전체 너비·높이: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.\n· 제목·이름·과목명·교사/교실·교시 시간 크기: 칸 안 글씨 — 과목명이 잘리면 줄이세요.\n· 모서리 둥글기: 칸 모서리를 둥글게/각지게.' },
-    { selector: '#pt-box-design', title: '4단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 저절로 정해져요.\n표 스타일 6가지(둥근 버블·노션 실선·컬러 띠·레트로 3D·투명 테두리·포스트잇)와 글꼴(◀ ▶)도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
+    { selector: '#pt-box-design', title: '3단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 저절로 정해져요.\n표 스타일 6가지(둥근 버블·노션 실선·컬러 띠·레트로 3D·투명 테두리·포스트잇)와 글꼴(◀ ▶)도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
+    { selector: '#pt-box-fsize', title: '4단계. 크기 조절', desc: '· 전체 너비·높이: 카드 크기(가로·세로 비율). A4에 여러 장 넣을 땐 칸에 맞춰 저절로 줄어들어요.\n· 제목·이름·과목명·교사/교실·교시 시간 크기: 칸 안 글씨 — 과목명이 잘리면 줄이세요.\n· 모서리 둥글기: 칸 모서리를 둥글게/각지게.' },
     { selector: '#pt-preview', title: '미리보기', desc: '지금 설정대로 만들어질 모습이에요. 반 전체나 A4 여러 장일 때는 위쪽 ◀▶로 쪽을 넘겨 볼 수 있어요.' },
     { selector: '#pt-zoom-group', title: '미리보기 확대/축소', desc: '화면에서 보기만 크게/작게 해요. 인쇄 크기에는 영향이 없어요.' },
     { selector: '#pt-design-save-row', title: '디자인 파일 저장 (선택)', desc: '위쪽 오른쪽 💾 디자인 저장 / 📂 디자인 불러오기 — 꾸민 디자인은 저절로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
