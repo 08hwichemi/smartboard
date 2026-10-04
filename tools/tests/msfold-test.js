@@ -340,6 +340,97 @@ function check(label, cond, detail) {
     const mid = await D.evaluate(() => ({ rows: msDataRows().map(tr => tr.children[1].innerText.trim()).join('|'), ls: localStorage.getItem('ms-data') }));
     check('월간 설명서 중간에 닫아도 원래대로', mid.rows === before.rows && mid.ls === before.now);
   }
+  // 👉 "지금 할 일" 상자: 선생님처럼 상자만 따라 누르며 ①→⑥ 한 단계씩(건너뜀 없음), 단계마다 칸 쓰는 법
+  {
+    const g = await openDevice(browser, 'T2', T2);
+    const G = g.page;
+    await G.setViewportSize({ width: 1600, height: 1000 });
+    await G.click('#rail-monthly-btn'); await wait(800);
+    const box = () => G.evaluate(() => ({ t: document.getElementById('ms-next').innerText, done: !!document.querySelector('#ms-next .pa-next.done'),
+      btns: [...document.querySelectorAll('#ms-next .top-btn')].map(b => b.innerText),
+      glow: [...document.querySelectorAll('#monthly-page .pa-glow')].map(e => e.id || e.className.replace(' pa-glow', '') + (e.closest('tr') ? '@' + e.closest('tr').dataset.month : '')),
+      st: [1, 2, 3, 4].map(i => document.getElementById('ms-st-' + i).textContent),
+      lay: (() => { const R = id => document.getElementById(id).getBoundingClientRect(); const n = R('ms-next'), i = R('ms-section-info'), t = R('ms-section-table'); return { full: n.width > i.width + t.width, above: n.bottom <= i.top && n.bottom <= t.top }; })() }));
+    const seen = [];
+    const step = (b) => (b.t.match(/[①②③④⑤⑥]/) || ['?'])[0];
+    const goNext = async () => { await G.click('#ms-next .top-btn:not(.ms-again)'); await wait(300); const b = await box(); seen.push(step(b)); return b; };
+    let b = await box(); seen.push(step(b));
+    check('상자: 넓은 화면에서 두 줄 위 한 줄 전체', b.lay.full && b.lay.above, b.lay);
+    check('상자 ①: 기본 설정 칸마다 쓰는 법(학교명·부서명·제목·나이스·글꼴)', /①/.test(b.t) && /학교명/.test(b.t) && /부서명/.test(b.t) && /나이스/.test(b.t) && /글꼴/.test(b.t) && b.st[0] === '지금', b);
+    check('상자 ①: 부서명 칸 반짝', b.glow.includes('ms-cfg-grade'), b.glow);
+    await G.fill('#ms-cfg-grade', '3학년부'); await wait(400);
+    b = await box();
+    check('상자 ①: 적은 제목이 바로 보임', /3학년부 월간 일정표/.test(b.t), b.t);
+    b = await goNext();
+    check('상자 ②: D-Day 줄 쓰는 법(기간·시작일·커스텀·비워도 됨)', /②/.test(b.t) && /기간/.test(b.t) && /시작일/.test(b.t) && /커스텀/.test(b.t) && /비워 두고/.test(b.t) && b.st[0] === '✓' && b.st[1] === '지금', b);
+    await G.fill('#ms-dd-name-0', '기말고사'); await wait(400);
+    b = await box();
+    check('상자 ②: 이름만 적은 줄은 달력에 안 나온다고 알림', /⚠️/.test(b.t) && /기말고사/.test(b.t), b.t);
+    await G.evaluate(() => { const el = document.getElementById('ms-dd-date-0'); const t = new Date(msCurYear, msCurMonth - 1, 20); el.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-20'; el.dispatchEvent(new Event('change', { bubbles: true })); });
+    await wait(400);
+    b = await box();
+    check('상자 ②: 날짜까지 적으면 경고 없이 "정기고사 기말고사"', !/⚠️/.test(b.t) && /정기고사 기말고사/.test(b.t), b.t);
+    b = await goNext();
+    check('상자 ③: 분류 더하기·지우기 방법과 지금 분류', /③/.test(b.t) && /\+ 추가/.test(b.t) && /✕/.test(b.t) && /자율·동아리·행사/.test(b.t), b.t);
+    b = await goNext();
+    check('상자 ④: 날짜·내용·분류·붙여 넣기 설명, 일정이 없으면 다음 단추 없음', /④/.test(b.t) && /날짜/.test(b.t) && /Enter/.test(b.t) && /붙여 넣/.test(b.t) && b.btns.length === 0, b);
+    check('상자 ④: 빈 줄 날짜 칸 반짝', b.glow.some(x => /ms-cell-input@0/.test(x)), b.glow);
+    await G.click('#ms-table-body tr[data-month="0"] td:first-child .ms-cell-input');
+    await G.keyboard.type(String(await G.evaluate(() => msCurMonth)) + '/10');
+    await G.click('#ms-table-body tr[data-month="0"] td:nth-child(2) .ms-cell-input');
+    await G.keyboard.type('학급 회의'); await wait(400);
+    b = await box();
+    check('상자 ④: 치는 동안에도 건수가 따라옴(1건·이번 달 1건)·다음 단추', /1건/.test(b.t) && /이번 달 1건/.test(b.t) && b.btns.length === 1, b);
+    await G.evaluate(() => { const tr = msDataRows().filter(r => !r.children[0].innerText.trim())[1]; tr.children[0].querySelector('.ms-cell-input').innerText = '12/3'; msRenderCalendar(); });
+    await wait(400);
+    b = await box();
+    check('상자 ④: 날짜만 적힌 줄은 달력에 안 나온다고 알림', /⚠️/.test(b.t) && /1개/.test(b.t), b.t);
+    b = await goNext();
+    check('상자 ⑤: 위쪽 ◀ ▶·용지·이 달 일정', /⑤/.test(b.t) && /◀ ▶/.test(b.t) && /용지/.test(b.t) && /이 달 일정 1건/.test(b.t) && b.glow.includes('ms-month-nav') && b.st.every(x => x === '✓'), b);
+    b = await goNext();
+    check('상자 ⑥: 완료 모양 + 🖨️ 인쇄 단추 + 처음부터 안내', b.done && /인쇄/.test(b.t) && b.btns.includes('🖨️ 인쇄/PDF') && b.btns.includes('처음부터 안내') && b.glow.includes('ms-print-btn'), b);
+    check('상자: ①→⑥ 건너뜀 없이 한 단계씩', seen.join('') === '①②③④⑤⑥', seen);
+    await wait(1500);
+    check('상자 단계는 계정에 저장(ms-guide)', serverVal(T2, 'ms-guide') === '6', serverVal(T2, 'ms-guide'));
+    // 설명서 동안엔 예시 단계를 보이고, 끝나면 내 단계로(저장 안 바뀜)
+    await G.evaluate(() => msOpenTour()); await wait(300);
+    const tour = [];
+    for (let k = 0; k < 20; k++) {
+      await wait(250);
+      const cur = await G.evaluate(() => ({ open: document.getElementById('tour-overlay').style.display !== 'none', title: document.getElementById('tour-card-title').innerText, t: document.getElementById('ms-next').innerText }));
+      if (!cur.open) break;
+      tour.push(cur);
+      await G.click('#tour-next-btn');
+    }
+    const T = (re) => tour.find(x => re.test(x.title)) || { t: '' };
+    check('설명서: 상자 소개 단계가 있고 예시라 저장 안 된다고 보임', /①/.test(T(/지금 할 일/).t) && /설명서 예시/.test(T(/지금 할 일/).t), T(/지금 할 일/));
+    check('설명서: 단계마다 상자도 그 단계(2단계 ② · 4단계 ④ · 인쇄 ⑥)', /②/.test(T(/^2단계\./).t) && /④/.test(T(/^4단계\./).t) && /⑥/.test(T(/^6단계/).t), tour.map(x => x.title + ' / ' + x.t.slice(0, 12)));
+    await wait(500);
+    b = await box();
+    check('설명서 끝나면 상자는 내 단계(⑥)·저장 그대로', b.done && await ls(g, 'ms-guide') === '6', b.t);
+    // 일정을 다 지우면 ④로 돌아감, 처음부터 안내 → ①
+    await G.evaluate(() => { msDataRows().forEach(tr => { tr.children[0].querySelector('.ms-cell-input').innerText = ''; tr.children[1].querySelector('.ms-cell-input').innerText = ''; }); msRenderCalendar(); });
+    await wait(400);
+    b = await box();
+    check('일정을 다 지우면 ④로 돌아감', /④/.test(b.t) && !b.done, b.t);
+    await G.evaluate(() => { const tr = msDataRows()[0]; tr.children[0].querySelector('.ms-cell-input').innerText = msCurMonth + '/11'; tr.children[1].querySelector('.ms-cell-input').innerText = '상담'; msRenderCalendar(); });
+    await wait(400);
+    b = await box();
+    check('다시 적으면 ⑥으로', b.done, b.t);
+    await G.click('#ms-next .ms-again'); await wait(300);
+    b = await box();
+    check('처음부터 안내 → ①', /①/.test(b.t) && b.st[0] === '지금', b.t);
+    // 접어 둔 칸이면 그 단계로 갈 때 펼침
+    await G.click('#ms-section-dday .ms-section-title'); await wait(200);
+    await goNext();
+    check('접어 둔 ② 칸은 그 단계에서 펼쳐짐', await G.evaluate(() => !document.getElementById('ms-sec-dday').classList.contains('ms-collapsed')));
+    await G.setViewportSize({ width: 1366, height: 768 }); await wait(400);
+    check('1366: 상자가 한 줄 맨 위', await G.evaluate(() => document.getElementById('ms-next').getBoundingClientRect().bottom <= document.getElementById('ms-section-info').getBoundingClientRect().top));
+    await G.locator('#ms-panel').screenshot({ path: 'ms-next-1366.png' });
+    await G.setViewportSize({ width: 1600, height: 1000 }); await wait(400);
+    await G.locator('#ms-panel').screenshot({ path: 'ms-next-1600.png' });
+    check('상자 검사 중 페이지 오류 없음', g.errors.length === 0, g.errors);
+  }
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();
   process.exit(failures ? 1 : 0);

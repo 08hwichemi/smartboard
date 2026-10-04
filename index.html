@@ -1038,10 +1038,26 @@
     .ms-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
     /* 넓은 화면: 좌석배치표·양식처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = 기본 설정·D-Day·분류, 오른쪽 = 세부 일정(길어서 맨 위부터 한 줄 다 씀). 좁으면 예전처럼 위아래 */
     @media (min-width: 1440px) {
-      #ms-panel { width: clamp(700px, calc(100vw - 800px), 840px); flex-direction: row; align-items: flex-start; }
+      #ms-panel { width: clamp(700px, calc(100vw - 800px), 840px); flex-direction: row; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; }
+      #ms-panel > #ms-next { flex: 0 0 100%; }
       #ms-col-1 { flex: 0 0 330px; }
       #ms-col-2 { flex: 1 1 0; }
     }
+    /* 진행 순서 번호(①~⑥)와 "지금 할 일" 상자 — 이름표·시간표 만들기와 같은 모양 */
+    .ms-section-title > span:first-child { margin-right: auto; }
+    .ms-no, .ms-hdr-no { font-weight: 900; color: var(--accent-color); }
+    .ms-hdr-no { font-size: 13px; }
+    .ms-st:empty { display: none; }
+    .ms-st { font-size: 10.5px; font-weight: 800; }
+    .ms-st.ok { color: #1E7B3A; }
+    .ms-st.next { color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 7px; }
+    #ms-next { flex-shrink: 0; }
+    #ms-next:empty { display: none; }
+    #ms-next .pa-next { flex-wrap: wrap; font-size: 12.5px; min-height: 0; padding: 8px 11px; gap: 4px 8px; }
+    #ms-next .pa-next-msg { flex: 1 1 210px; line-height: 1.6; }
+    #ms-next .top-btn { font-size: 12px !important; padding: 5px 12px !important; margin-left: auto; }
+    #ms-next .ms-again { background: none !important; border: none !important; color: var(--text-sub) !important; text-decoration: underline; font-weight: 600; padding: 0 4px !important; }
+    #ms-table-body .ms-cell-input.pa-glow { outline-offset: -3px; border-radius: 6px; }  /* 표 상자가 overflow:hidden이라 안쪽에 그림 */
     .ms-expand-all-label { display: flex; align-items: center; gap: 4px; margin-right: auto; font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; }
     .ms-expand-all-label input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--accent-color); }
 
@@ -2956,6 +2972,7 @@
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="msOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
     </div>
     <div id="ms-month-nav" style="display:flex; align-items:center; gap:12px; background:var(--tt-bg); padding:5px 16px; border-radius:20px; border:1px solid var(--border-color);">
+      <span class="ms-hdr-no" title="⑤ 인쇄할 달 고르기">⑤</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(-1)">◀</button>
       <span id="ms-nav-month-text" style="font-size:13px; font-weight:800; min-width:66px; text-align:center;">2026. 04</span>
       <button class="top-btn" style="padding:2px 8px;" onclick="msChangeMonth(1)">▶</button>
@@ -2974,16 +2991,17 @@
         <option value="1.22">B4 용지</option>
         <option value="1.41">A3 용지</option>
       </select>
-      <button class="top-btn accent" id="ms-print-btn" style="font-size:11px; padding:4px 10px;" onclick="msPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
+      <span class="ms-hdr-no">⑥</span><button class="top-btn accent" id="ms-print-btn" style="font-size:11px; padding:4px 10px;" onclick="msPrintPaper()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
     </div>
   </div>
 
   <div id="ms-body">
     <div id="ms-panel">
+     <div id="ms-next"></div>
      <div class="ms-col" id="ms-col-1">
 
       <div class="ms-section" id="ms-section-info">
-        <div class="ms-section-title" onclick="msToggleSection('ms-sec-info')"><span>⚙️ 기본 설정</span><span id="ms-icon-sec-info">▼</span></div>
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-info')"><span><span class="ms-no">①</span> ⚙️ 기본 설정</span><span class="ms-st" id="ms-st-1"></span><span id="ms-icon-sec-info">▼</span></div>
         <div class="ms-section-body" id="ms-sec-info">
           <div class="ms-row">
             <label style="width:52px;">학교명</label>
@@ -3034,7 +3052,7 @@
       </div>
 
       <div class="ms-section" id="ms-section-dday">
-        <div class="ms-section-title" onclick="msToggleSection('ms-sec-dday')"><span>⏳ 목표 D-Day</span><span id="ms-icon-sec-dday">▼</span></div>
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-dday')"><span><span class="ms-no">②</span> ⏳ 목표 D-Day</span><span class="ms-st" id="ms-st-2"></span><span id="ms-icon-sec-dday">▼</span></div>
         <div class="ms-section-body" id="ms-sec-dday">
           <label style="font-size:10.5px; font-weight:800; color:var(--text-sub);">정기고사 (지나면 다음 고사가 자동 표시됨)</label>
           <div id="ms-exam-dday-container"></div>
@@ -3045,7 +3063,7 @@
       </div>
 
       <div class="ms-section" id="ms-section-cat">
-        <div class="ms-section-title" onclick="msToggleSection('ms-sec-cat')"><span>🎨 일정 분류 및 컬러</span><span id="ms-icon-sec-cat">▼</span></div>
+        <div class="ms-section-title" onclick="msToggleSection('ms-sec-cat')"><span><span class="ms-no">③</span> 🎨 일정 분류 및 컬러</span><span class="ms-st" id="ms-st-3"></span><span id="ms-icon-sec-cat">▼</span></div>
         <div class="ms-section-body" id="ms-sec-cat">
           <div id="ms-category-container" style="margin-bottom: 2px;"></div>
           <div style="display: flex; gap: 6px; background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -3060,7 +3078,8 @@
      <div class="ms-col" id="ms-col-2">
       <div class="ms-section" id="ms-section-table">
         <div class="ms-section-title" onclick="msToggleSection('ms-sec-table')">
-          <span>📋 세부 일정 <span style="font-size:10px; color:var(--alert); font-weight:700;">(※ 최대 4줄 권장)</span></span>
+          <span><span class="ms-no">④</span> 📋 세부 일정 <span style="font-size:10px; color:var(--alert); font-weight:700;">(※ 최대 4줄 권장)</span></span>
+          <span class="ms-st" id="ms-st-4"></span>
           <span id="ms-icon-sec-table">▼</span>
         </div>
         <div class="ms-section-body" id="ms-sec-table">
@@ -11328,6 +11347,8 @@
       msRenderCategories();
       document.getElementById('ms-table-body').addEventListener('paste', msHandlePaste);
       document.getElementById('ms-table-body').addEventListener('focusout', msOnTableFocusOut);
+      // 표 칸은 칸을 벗어날 때만 달력을 다시 그려서, 치는 동안에도 "지금 할 일" 상자의 건수가 따라오게
+      document.getElementById('ms-panel').addEventListener('input', msNextSoon);
 
       // 이 계정으로 전에 저장해둔 내용이 있으면(로그인할 때 서버에서 받아와
       // localStorage에 채워진 것) 자동으로 불러온다.
@@ -11915,6 +11936,7 @@
     }
 
     msAutoSave();
+    msNextSoon();
   }
 
   function msChangeMonth(dir) {
@@ -12066,6 +12088,127 @@
     window.print();
   }
 
+  // ----- 진행 순서 · 지금 할 일(이름표·시간표 만들기처럼) -----
+  // ① 기본 설정 → ② 목표 D-Day → ③ 분류 → ④ 세부 일정 → ⑤ 인쇄할 달·용지 → ⑥ 인쇄. 이미 된 단계도 건너뛰지 않고 한 단계씩,
+  // 확인·선택만 하는 단계는 상자의 "다음 →". 계정 자료(ms-guide)로 기억. ④(일정 한 줄 이상)가 비면 ④로 돌아감.
+  // 설명서 예시 동안은 msDemo.guide를 써서 저장하지 않는다.
+  const MS_GUIDE_KEY = 'ms-guide';
+  const MS_GUIDE_BOX = { 1: 'ms-section-info', 2: 'ms-section-dday', 3: 'ms-section-cat', 4: 'ms-section-table' };
+  function msGuideGo(n) {
+    if (msDemo) msDemo.guide = n;
+    else { try { localStorage.setItem(MS_GUIDE_KEY, String(n)); scheduleBackupWrite(); } catch (e) {} }
+    msRenderNext();
+    // 그 칸이 접혀 있으면 펼치고, 왼쪽 칸 안에서 보이게
+    const sec = document.getElementById(MS_GUIDE_BOX[n]);
+    if (sec) {
+      const body = sec.querySelector('.ms-section-body');
+      if (body && body.classList.contains('ms-collapsed')) msToggleSection(body.id);
+      if (tourMode !== 'page') sec.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  // 세부 일정 표: 달력에 나오는 줄(날짜 + 내용), 반만 적은 줄, 지금 달 줄
+  function msTableStat() {
+    let full = 0, half = 0, thisMonth = 0, noCat = 0;
+    msDataRows().forEach(function(tr) {
+      const d = tr.children[0].querySelector('.ms-cell-input').innerText.trim();
+      const c = msCellText(tr.children[1].querySelector('.ms-cell-input')).trim();
+      if (d && c) {
+        full++;
+        if (msRowMonth(tr) === msCurMonth) thisMonth++;
+        if (!tr.children[2].querySelector('select').value) noCat++;
+      } else if (d || c) half++;
+    });
+    return { full: full, half: half, thisMonth: thisMonth, noCat: noCat };
+  }
+  function msNextInfo() {
+    const st = msTableStat();
+    let cur = msDemo ? (msDemo.guide || 1) : (parseInt(localStorage.getItem(MS_GUIDE_KEY), 10) || 1);
+    if (cur < 1 || cur > 6) cur = 1;
+    if (cur > 4 && !st.full && !msDemo) cur = 4;
+    const go = function(n, label) { return { act: 'msGuideGo(' + n + ')', btn: label }; };
+    const val = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    let n;
+    if (cur === 1) {
+      const head = (val('ms-cfg-grade') ? val('ms-cfg-grade') + ' ' : '') + val('ms-cfg-title');
+      n = Object.assign({ msg: '<b>기본 설정</b> — 종이 머리에 들어갈 글이에요. 칸을 눌러 고치면 오른쪽 종이에 바로 보여요.' +
+        '<br>· <b>학교명</b>: 종이 오른쪽 위.' +
+        '<br>· <b>타이틀 왼쪽 칸</b> = 부서명(예: 2학년부, 교무기획부) — 제목 앞에 붙어요. <b>오른쪽 칸</b> = 제목(예: 월간 일정표).' +
+        '<br>· <b>나이스 학사일정 표시</b>: 체크해 두면 방학·개교기념일 같은 학교 일정이 나이스에서 저절로 달력에 들어와요.' +
+        '<br>· <b>출력 글꼴</b>: ◀ ▶를 누르거나 목록에서 골라 달력 글씨체를 바꿔요.' +
+        (head ? '<br>👉 지금 제목: <b>' + escapeHtmlAttr(head) + '</b> — 맞으면 다음으로.' : '<br>👉 제목이 비어 있어요 — 비워 둬도 되지만 보통은 적어요.'),
+        glow: val('ms-cfg-grade') ? '#ms-section-info' : '#ms-cfg-grade' }, go(2, '다음: ② D-Day →'));
+    } else if (cur === 2) {
+      const exams = [], miss = [];
+      for (let i = 0; i < 5; i++) {
+        const nm = val('ms-dd-name-' + i), dt = val('ms-dd-date-' + i);
+        if (nm && dt) { if (i < 4) exams.push(nm); }
+        else if (nm || dt) miss.push(nm || (i < 4 ? '정기고사 ' + (i + 1) + '번째 줄' : '커스텀 D-Day'));
+      }
+      const custom = val('ms-dd-name-4') && val('ms-dd-date-4') ? val('ms-dd-name-4') : '';
+      n = Object.assign({ msg: '<b>목표 D-Day</b> — 달력 날짜 칸 위에 "D-n"을 붙여 줘요. <b>필요 없으면 비워 두고 다음으로</b> 가도 돼요.' +
+        '<br>· <b>정기고사(위 4줄)</b>: 한 줄에 ☑ 표시 · 색(눌러서 고르기) · 시험 이름 · <b>기간</b>(시험 보는 날 수, 주말 빼고) · <b>시작일</b>(칸을 눌러 달력에서 고르기).' +
+        '<br>&nbsp;&nbsp;시험 전엔 "기말고사 D-5", 시험 날엔 "1일차·2일차…"가 붙고, 시험이 지나면 다음 줄 고사를 저절로 보여 줘요.' +
+        '<br>· <b>커스텀 D-Day(아래 1줄)</b>: 수능·체육대회처럼 늘 세고 싶은 날 — 이름과 날짜만.' +
+        '<br>· ☑를 끄면 적어 둔 채 달력에서만 숨겨요.' +
+        '<br>👉 지금: 정기고사 ' + (exams.length ? '<b>' + exams.map(escapeHtmlAttr).join('·') + '</b>' : '없음') + ' / 커스텀 ' + (custom ? '<b>' + escapeHtmlAttr(custom) + '</b>' : '없음') + '.' +
+        (miss.length ? '<br>⚠️ 이름과 날짜를 둘 다 적어야 달력에 나와요: ' + miss.map(escapeHtmlAttr).join(', ') : ''),
+        glow: '#ms-section-dday' }, go(3, '다음: ③ 분류 →'));
+    } else if (cur === 3) {
+      n = Object.assign({ msg: '<b>일정 분류 및 컬러</b> — ④ 세부 일정마다 붙일 분류와 색이에요. 분류를 고른 일정은 달력에 그 색으로 칠해져요.' +
+        '<br>· <b>더하기</b>: "새 분류명" 칸에 이름(예: 진로) → 옆 색 칸을 눌러 색 고르기 → <b>+ 추가</b>' +
+        '<br>· <b>지우기</b>: 분류 이름 옆 ✕' +
+        '<br>👉 지금 분류: ' + (msCategories.length ? '<b>' + msCategories.map(function(c) { return escapeHtmlAttr(c.name); }).join('·') + '</b>' : '없음(일정은 색 없이 나와요)') + ' — 이대로 써도 되면 다음으로.',
+        glow: val('ms-new-cat-name') ? '#ms-section-cat .top-btn' : '#ms-section-cat' }, go(4, '다음: ④ 세부 일정 →'));
+    } else if (cur === 4) {
+      n = Object.assign({ msg: '<b>세부 일정</b> — 표의 칸을 눌러 바로 적어요. 한 줄에 일정 하나.' +
+        '<br>· <b>날짜</b>: "10/7"처럼 월/일(이번 달이면 "7"만 적어도 돼요).' +
+        '<br>· <b>일정 내용</b>: 칸 안에서 Enter로 줄을 나눠요(달력 칸이 작아서 4줄까지).' +
+        '<br>· <b>분류</b>: ③에서 만든 분류를 고르면 그 색으로 · <b>🗑️</b> 그 줄 지우기.' +
+        '<br>· 엑셀에서 날짜·내용 두 칸을 복사해 표에 붙여 넣으면 여러 줄이 한 번에 들어가요. 적은 일정은 달별(▼ 10월 · n건)로 묶여요.' +
+        (st.full ? '<br>👉 지금 <b>' + st.full + '건</b>(이번 달 ' + st.thisMonth + '건)' + (st.noCat ? ' · 분류 안 고른 일정 ' + st.noCat + '건(색 없이 나와요)' : '') + ' — 다 적었으면 다음으로.' : '<br>👉 먼저 맨 아래 "새 일정 입력" 줄의 날짜 칸부터 한 줄 이상 적어 주세요.') +
+        (st.half ? '<br>⚠️ 날짜와 내용 중 하나만 적힌 줄 <b>' + st.half + '개</b>는 달력에 안 나와요.' : ''),
+        glow: st.full ? '#ms-section-table' : '#ms-table-body tr[data-month="0"] td:first-child .ms-cell-input' }, st.full ? go(5, '다음: ⑤ 달·용지 →') : {});
+    } else if (cur === 5) {
+      const paper = document.getElementById('ms-cfg-print-size');
+      n = Object.assign({ msg: '<b>인쇄할 달 · 용지</b> — 위쪽 <b>⑤ ◀ ▶</b>로 인쇄할 달로 옮겨요. 그 달의 나이스 학사일정과 그 달 날짜로 적은 일정이 오른쪽 종이에 나와요.' +
+        '<br>· 한 해 일정을 표에 다 적어 두고 달만 넘기며 인쇄하면 돼요. 🔍 − / +로 종이를 크게 볼 수 있어요.' +
+        '<br>· <b>용지</b>(위쪽 오른쪽 A4/B4/A3): 인쇄할 종이 크기에 맞춰 골라요.' +
+        '<br>👉 지금 <b>' + msCurYear + '년 ' + msCurMonth + '월</b>, 이 달 일정 <b>' + st.thisMonth + '건</b>' + (paper ? ', ' + escapeHtmlAttr(paper.options[paper.selectedIndex].text) : '') + '.' +
+        (st.thisMonth ? ' 맞으면 다음으로.' : ' 이 달엔 적은 일정이 없어요 — ◀ ▶로 일정이 있는 달로 옮겨 보세요.'),
+        glow: '#ms-month-nav' }, go(6, '다음: ⑥ 인쇄 →'));
+    } else {
+      n = { done: true, msg: '<b>인쇄</b> — 위쪽 오른쪽 <b>⑥ 🖨️ 인쇄/PDF</b>를 눌러요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 파일로 받아요.' +
+        '<br>· 다른 달도 뽑으려면 위쪽 ◀ ▶로 달을 바꾸고 다시 인쇄해요.' +
+        '<br><span class="se-muted">적은 내용은 계정에 저절로 저장돼요. 💾 저장 / 📂 불러오기는 파일로 따로 보관하거나 다른 선생님께 줄 때만 써요.</span>',
+        glow: '#ms-print-btn', act: 'msPrintPaper()', btn: '🖨️ 인쇄/PDF', again: true };
+    }
+    if (msDemo) n.msg += '<br><span class="se-muted">📖 설명서 예시 화면이에요 — 가짜 일정이라 저장되지 않아요.</span>';
+    n.step = cur;
+    return n;
+  }
+  function msNextSoon() {
+    clearTimeout(msNextSoon._t);
+    msNextSoon._t = setTimeout(msRenderNext, 120);
+  }
+  function msRenderNext() {
+    const box = document.getElementById('ms-next'), page = document.getElementById('monthly-page');
+    if (!box || !page || page.style.display === 'none') return;
+    const nx = msNextInfo();
+    msRenderNext.next = nx;
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('ms-st-' + i);
+      if (!el) continue;
+      const ok = i < nx.step, now = i === nx.step;
+      el.className = 'ms-st' + (ok ? ' ok' : now ? ' next' : '');
+      el.textContent = ok ? '✓' : now ? '지금' : '';
+    }
+    const btn = (nx.again ? '<button class="top-btn ms-again" onclick="msGuideGo(1)">처음부터 안내</button>' : '') + (nx.act ? '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>' : '');
+    const html = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-msg"><span class="pa-next-lbl">' + (nx.done ? '⑥ ✅ 마지막' : ['', '①', '②', '③', '④', '⑤'][nx.step] + ' 지금 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
+    if (box.innerHTML !== html) box.innerHTML = html;
+    document.querySelectorAll('#monthly-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    if (nx.glow && tourMode !== 'page') { const el = document.querySelector(nx.glow); if (el && el.offsetParent) el.classList.add('pa-glow'); }
+  }
+
   // ----- 📖 월간일정표 설명서 = 예시 일정(가짜) -----
   // 단계마다 msDemoState(n)이 지금 보고 있는 달에 예시 설정·D-Day·분류·세부 일정을 그 단계까지 채워 실제 달력이 어떻게 나오는지 보여 준다.
   // 예시 동안은 저장 안 함(msAutoSave), 닫거나 완료하면 원래 자료·달로 되돌린다(msTourExit).
@@ -12086,8 +12229,10 @@
     msGroupRows();
     msRenderCalendar();
   }
-  function msDemoState(level) {
+  // guide = 이 단계에서 "지금 할 일" 상자가 보일 단계(①~⑥, 없으면 level)
+  function msDemoState(level, guide) {
     msTourEnter();
+    msDemo.guide = guide || Math.max(1, level);
     const Y = msDemo.y, M = msDemo.m, nextM = M === 12 ? 1 : M + 1;
     msCurYear = Y; msCurMonth = M;
     // 그 달의 d일(주말이면 다음 월요일로)
@@ -12129,6 +12274,7 @@
   }
   const msTourSteps = [
     { selector: '#ms-page-header', before: function() { msDemoState(0); }, title: '🗓️ 월간일정표에 오신 것을 환영해요!', desc: '학교 학사일정과 우리 학년(부서) 일정을 A4 한 장짜리 달력으로 만들어 인쇄하는 화면이에요.\n\n지금부터 지금 보고 있는 달에 예시 일정(가짜)을 단계마다 채워 가며, 왼쪽에 적은 것이 오른쪽 달력에 어떻게 나오는지 보여 드릴게요. 예시는 저장되지 않고, 설명서를 닫으면 원래 화면으로 돌아가요.' },
+    { selector: '#ms-next', before: function() { msDemoState(0, 1); }, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 확인·선택만 하면 되는 단계는 상자의 "다음 →"로 넘어가요(이미 채운 칸도 하나씩 확인하며 지나가요).\n\n순서: ① 기본 설정 → ② 목표 D-Day → ③ 분류 → ④ 세부 일정 → ⑤ 인쇄할 달·용지(위쪽 ◀ ▶) → ⑥ 인쇄(위쪽 오른쪽). 지난 칸 제목엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
     { selector: '#ms-section-info', before: function() { msDemoState(1); }, title: '1단계. 기본 설정', desc: '· 학교명: 종이 오른쪽 위에 나와요.\n· 타이틀 왼쪽 칸(부서명): 예시처럼 "2학년부", "교무기획부" — 제목 앞에 붙어요.\n· 타이틀 오른쪽 칸: 제목(예시: 월간 학년 일정).\n· 나이스 학사일정 표시: 켜 두면 개교기념일·방학 같은 학교 공식 일정이 나이스에서 저절로 들어와요(직접 안 적어도 돼요).\n· 출력 글꼴: ◀ ▶로 넘기며 달력 글씨체를 바꿔요.' },
     { selector: '#ms-a4-paper', before: function() { msDemoState(1); }, title: '1단계 결과 — 종이 머리', desc: '왼쪽 위에 큰 달·연도와 "2학년부 월간 학년 일정", 오른쪽 위에 학교명이 나왔어요. 나이스 학사일정이 있는 날은 달력 칸에 저절로 적혀요.' },
     { selector: '#ms-section-dday', before: function() { msDemoState(2); }, title: '2단계. 목표 D-Day', desc: '정기고사(위 4줄) — 한 줄에: ☑ 표시 · 색 · 시험 이름 · 기간(시험 보는 평일 수) · 시작일.\n예시: 기말고사, 3일, 시작일 20일 무렵.\n→ 시험 전 날짜엔 "D-n", 시험 날엔 "1일차·2일차…"가 저절로 붙어요(주말은 빼고 셈). 시험이 지나면 다음 고사를 저절로 보여 줘요.\n\n커스텀 D-Day(아래 1줄) — 수능·체육대회처럼 늘 세고 싶은 날(예시: 체육대회).\n☑를 끄면 달력에서 숨겨요.' },
@@ -12136,9 +12282,9 @@
     { selector: '#ms-section-cat', before: function() { msDemoState(3); }, title: '3단계. 일정 분류 및 컬러', desc: '세부 일정에 붙일 분류와 색을 정해요. 예시: 자율·동아리·행사에 진로(파랑)·시험(분홍)을 더했어요.\n\n· 더하기: "새 분류명" 칸에 이름 → 옆 색 칸에서 색 고르기 → ＋ 추가\n· 지우기: 분류 옆 ✕\n분류를 고른 일정은 달력에 그 색으로 칠해져 나와요.' },
     { selector: '#ms-section-table', before: function() { msDemoState(4); }, title: '4단계. 세부 일정 입력', desc: '한 줄에 일정 하나 — 표 칸을 눌러 바로 적어요.\n· 날짜: "10/7"처럼 월/일(또는 2026-10-07, 이번 달이면 "7"만)\n· 일정 내용: 칸 안에서 Enter로 줄을 나눠요(한 칸에 4줄까지 권장 — 달력 칸이 작아요)\n· 분류: 3단계에서 만든 분류를 골라요 → 그 색으로 표시\n· 🗑️: 그 줄 지우기\n\n일정은 달별로 묶여요(예: ▼ 10월 · 6건). 달 이름을 눌러 접고 펼치고, "항상 펼치기"를 켜면 모두 펼쳐 둬요. 다른 달 날짜를 적으면 그 달 묶음으로 옮겨져요(예시: 다음 달 현장 체험학습).\n\n엑셀에서 날짜·내용 두 칸을 복사해 표에 붙여 넣으면 여러 줄이 한 번에 들어가요. "날짜 ↕️"를 누르면 날짜순 정렬, "+ 5칸 추가"로 빈 줄을 더해요.' },
     { selector: '#ms-a4-paper', before: function() { msDemoState(4); }, title: '4단계 결과 — 완성된 달력', desc: '적은 일정이 그 날짜 칸에 분류 색으로 들어갔어요. 줄을 나눈 일정은 칸 안에서도 줄이 나뉘어요.\n\n고친 내용은 칸을 벗어나면 바로 달력에 반영되고, 계정에 저절로 저장돼서 다른 컴퓨터에서도 이어서 쓸 수 있어요.' },
-    { selector: '#ms-month-nav', before: function() { msDemoState(4); }, title: '월 이동', desc: '◀ ▶로 달을 옮겨요. 그 달의 나이스 학사일정을 새로 불러오고, 그 달 날짜로 적은 세부 일정이 달력에 나와요(예시: 다음 달로 가면 현장 체험학습).\n\n한 해 일정을 표에 다 적어 두고 달만 넘겨 가며 인쇄하면 돼요.' },
-    { selector: '#ms-header-save-group', before: function() { msDemoState(4); }, title: '6단계. 파일 저장 · 용지', desc: '계정에 저절로 저장되니 보통은 안 눌러도 돼요.\n💾 저장 / 📂 불러오기: 설정·일정 전체를 파일로 — 다른 선생님께 주거나 따로 보관할 때.\n용지(A4/B4/A3): 인쇄할 종이 크기에 맞춰 글씨·칸 비율을 맞춰요.' },
-    { selector: '#ms-print-btn', before: function() { msDemoState(4); }, title: '7단계. 인쇄 또는 PDF로 저장', desc: '용지를 고른 뒤 눌러서 인쇄해요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일이 돼요.\n\n완료를 누르면 예시가 사라지고 원래 화면으로 돌아가요. 이제 1단계부터 직접 해 보세요! 🎉' }
+    { selector: '#ms-month-nav', before: function() { msDemoState(4, 5); }, title: '5단계. 인쇄할 달 고르기', desc: '◀ ▶로 달을 옮겨요. 그 달의 나이스 학사일정을 새로 불러오고, 그 달 날짜로 적은 세부 일정이 달력에 나와요(예시: 다음 달로 가면 현장 체험학습).\n\n한 해 일정을 표에 다 적어 두고 달만 넘겨 가며 인쇄하면 돼요.' },
+    { selector: '#ms-header-save-group', before: function() { msDemoState(4, 5); }, title: '5단계 · 용지와 파일 저장', desc: '계정에 저절로 저장되니 보통은 안 눌러도 돼요.\n💾 저장 / 📂 불러오기: 설정·일정 전체를 파일로 — 다른 선생님께 주거나 따로 보관할 때.\n용지(A4/B4/A3): 인쇄할 종이 크기에 맞춰 글씨·칸 비율을 맞춰요.' },
+    { selector: '#ms-print-btn', before: function() { msDemoState(4, 6); }, title: '6단계. 인쇄 또는 PDF로 저장', desc: '용지를 고른 뒤 눌러서 인쇄해요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일이 돼요.\n\n완료를 누르면 예시가 사라지고 원래 화면으로 돌아가요. 이제 왼쪽 위 "지금 할 일" 상자를 따라 1단계부터 직접 해 보세요! 🎉' }
   ];
   function msOpenTour() { openPageTour(msTourSteps, function() { msTourExit(); }); }
 
