@@ -218,10 +218,27 @@ async function build(P, groups, rows, seats) {
   await P.evaluate(() => scSetTheme('없는테마'));
   check('모르는 테마 이름은 기본으로', await P.evaluate(() => scCurrentPrintTheme === 'classic'));
 
+  const nextBox = () => P.evaluate(() => ({ t: document.getElementById('sc-next').innerText, done: !!document.querySelector('#sc-next .pa-next.done'),
+    glow: [...document.querySelectorAll('#seatchart-page .pa-glow')].map(e => e.id || e.className.split(' ')[0]),
+    st: [1, 2, 3, 4, 5].map(i => document.getElementById('sc-st-' + i).textContent) }));
+  check('칸 제목에 ①~⑤ 번호', await P.evaluate(() => ['sc-roster-section', 'sc-structure-grid', 'sc-special-seat-row', 'sc-arrange-section', 'sc-design-section'].map(id => document.getElementById(id).closest('.sc-section').querySelector('.sc-no').textContent).join('') === '①②③④⑤'));
+  let nb = await nextBox();
+  check('다음 할 일 ①: 학년·반 고르기, 학년 칸 반짝·① "다음"', /① 다음 할 일/.test(nb.t) && /학년과 반/.test(nb.t) && nb.glow.includes('sc-grade-select') && nb.st[0] === '다음', nb);
+  await P.selectOption('#sc-grade-select', '2'); await wait(300);
+  check('학년만 고르면 반 칸 반짝', (await nextBox()).glow.includes('sc-class-select'));
   // 2학년 3반: 배치 → 자동 저장 → 목록
   await pickClass(P, 2, 3);
-  await build(P, 3, 2, 1);
+  nb = await nextBox();
+  check('다음 할 일 ②: 구조 그리기·① ✓·② 다음', /② 다음 할 일/.test(nb.t) && /앉을 학생 6명/.test(nb.t) && nb.st[0] === '✓' && nb.st[1] === '다음', nb);
+  await build(P, 2, 2, 1); await wait(300);
+  nb = await nextBox();
+  check('자리 모자라면 몇 개 모자란지·구조 그리기 반짝', /2개 모자라요/.test(nb.t) && nb.glow.includes('sc-build-btn') && nb.st[1] === '다음', nb);
+  await build(P, 3, 2, 1); await wait(300);
+  nb = await nextBox();
+  check('다음 할 일 ④: 자리 채우기·랜덤 반짝(③은 건너뜀)', /④ 다음 할 일/.test(nb.t) && nb.glow.includes('sc-arr-random') && nb.st[1] === '✓' && nb.st[3] === '다음' && nb.st[2] === '', nb);
   await P.evaluate(() => scArrangeSeats('seq')); await wait(1500);
+  nb = await nextBox();
+  check('다 앉으면 완료·인쇄 단추·④ ✓', nb.done && /완료/.test(nb.t) && /인쇄/.test(nb.t) && nb.st[3] === '✓' && nb.glow.length === 0, nb);
   const d23 = JSON.parse(await ls(pc, 'sc-data-2-3') || 'null');
   check('2-3 자동 저장', d23 && d23.seatData.some(x => x.name === '학생23-1'), d23 && d23.seatData.map(x => x.name));
   check('목록에 2학년 3반·지금 고른 것', JSON.stringify(await savedOpts(P)) === JSON.stringify(['📂 저장한 배치 1개 — 골라서 열기', '2학년 3반']) && await P.evaluate(() => document.getElementById('sc-saved-select').value === 'sc-data-2-3' && getComputedStyle(document.getElementById('sc-saved-row')).display !== 'none'), await savedOpts(P));
@@ -250,6 +267,40 @@ async function build(P, groups, rows, seats) {
   await P.click('#rail-seatchart-btn'); await wait(300);
   await P.click('#rail-seatchart-btn'); await wait(600);
   check('다시 열면 마지막 배치(2-5)', (await deskNames(P)).includes('학생25-1') && await P.evaluate(() => document.getElementById('sc-class-select').value === '5' && document.getElementById('sc-footer-2').value === '2-5 문구'));
+
+  // 📖 설명서 = 예시 반: 단계마다 실제로 채워 보여 주고, 저장 안 하고, 닫으면 원래 화면
+  const lsBefore = await P.evaluate(() => JSON.stringify(Object.keys(localStorage).filter(k => k.startsWith('sc-')).sort().map(k => [k, localStorage.getItem(k)])));
+  await P.evaluate(() => scOpenTour()); await wait(300);
+  const tourSeen = [];
+  for (let i = 0; i < 30; i++) {
+    const cur = await P.evaluate(() => ({ title: document.getElementById('tour-card-title').innerText, open: document.getElementById('tour-overlay').style.display !== 'none',
+      names: [...document.querySelectorAll('.sc-desk .sc-desk-name')].map(d => d.innerText).filter(Boolean).length, next: document.getElementById('sc-next').innerText,
+      mix: scIsMix(), theme: scCurrentPrintTheme, list: document.getElementById('sc-saved-select').options.length }));
+    if (!cur.open) break;
+    tourSeen.push(cur);
+    await P.click('#tour-next-btn'); await wait(250);
+  }
+  const T = (re) => tourSeen.find(x => re.test(x.title)) || {};
+  check('설명서: 단계 모두(건너뛴 것 없음)', tourSeen.length === await P.evaluate(() => scTourSteps.length), tourSeen.map(x => x.title));
+  check('설명서: 예시 표시 + 처음엔 "① 다음 할 일"', /설명서 예시 화면/.test(tourSeen[1].next) && /① 다음 할 일/.test(tourSeen[1].next), tourSeen[1]);
+  check('설명서: 이동반 단계는 이동반 화면', T(/이동반/).mix === true);
+  check('설명서: 저장한 배치 단계에 예시 목록', T(/저장한 배치/).list === 4, T(/저장한 배치/));
+  check('설명서: 구조 그리기 단계는 빈 책상', T(/구조 그리기/).names === 0 && /④ 다음 할 일/.test(T(/구조 그리기/).next), T(/구조 그리기/));
+  check('설명서: 특수 좌석 단계는 고정석 1명', T(/특수 좌석/).names === 1);
+  check('설명서: 자리 채우기 단계는 23명(결석 1명 빼고)·완료', T(/자리 채우기/).names === 23 && /완료/.test(T(/자리 채우기/).next), T(/자리 채우기/));
+  check('설명서: 디자인 단계는 민트', T(/종이 디자인/).theme === 'mint');
+  check('설명서: 제목에 단계 번호', ['①', '②', '③', '④', '⑤', '⑥'].every(n => tourSeen.some(x => x.title.includes(n))));
+  await wait(600);
+  const after = await P.evaluate(() => ({ names: [...document.querySelectorAll('.sc-desk .sc-desk-name')].map(d => d.innerText).filter(Boolean), cls: document.getElementById('sc-class-select').value,
+    theme: scCurrentPrintTheme, next: document.getElementById('sc-next').innerText, key: scShownKey,
+    ls: JSON.stringify(Object.keys(localStorage).filter(k => k.startsWith('sc-')).sort().map(k => [k, localStorage.getItem(k)])) }));
+  check('설명서 끝나면 원래 화면(2-5)·예시 안 남음', after.names.includes('학생25-1') && !after.names.includes('김하늘') && after.cls === '5' && after.key === 'sc-data-2-5' && !/예시/.test(after.next), after);
+  check('설명서 동안 저장 안 됨(sc- 자료 그대로)', after.ls === lsBefore);
+  // 중간에 닫아도(✕/홈) 원래대로
+  await P.evaluate(() => scOpenTour()); await wait(200);
+  for (let k = 0; k < 9; k++) { await P.click('#tour-next-btn'); await wait(150); }
+  await P.evaluate(() => closePageTour()); await wait(600);
+  check('설명서 중간에 닫아도 원래 화면', (await deskNames(P)).includes('학생25-1') && !(await deskNames(P)).includes('김하늘') && await P.evaluate(() => !scDemo));
 
   // 섞기 묶음 두 개
   await P.click('#sc-mode-mix'); await wait(400);
