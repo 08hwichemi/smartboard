@@ -470,7 +470,58 @@ function pdfInfo(buf) {
   check('🔍 이름표 미리보기 확대/축소: 100% = 맞춤, 200%면 두 배·옆으로 스크롤(왼쪽 안 잘림), 숫자 누르면 100%',
     nz0.t === '100%' && nz1.t === '200%' && Math.abs(nz1.w - nz0.w * 2) < 3 && nz1.sw > nz1.cw && nz1.left >= -1 && nz2.t === '100%' && Math.abs(nz2.w - nz0.w) < 1, { nz0, nz1, nz2 });
 
-  const errs = [...pc.errors, ...pc2.errors, ...small.errors, ...hr.errors];
+  let gd;
+  {
+  // 넓은 화면 두 줄 + 지금 할 일 상자(①→⑦ 한 단계씩, 건너뛰지 않음) — 새 계정 화면에서
+  gd = await openDevice(browser, 'G', T2);
+  const G = gd.page;
+  await G.click('#rail-nametag-btn'); await wait(600);
+  await G.evaluate(() => { localStorage.removeItem('nt-guide'); ntSetMode('board'); }); await wait(400);
+  const ntBox = () => G.evaluate(() => ({ t: document.getElementById('nt-next').innerText, done: !!document.querySelector('#nt-next .pa-next.done'),
+    glow: [...document.querySelectorAll('#nametag-page .pa-glow')].map(e => e.id), st: ['nt-st-3', 'nt-st-4', 'nt-st-5', 'nt-st-6'].map(id => document.getElementById(id).textContent),
+    st2: document.querySelector('#nt-board-box .nt-st-2').textContent }));
+  const GR = (id) => G.evaluate((id) => { const r = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; }, id);
+  const bb = await GR('nt-board-box'), sz = await GR('nt-size-box'), cp = await GR('nt-copies-box'), fb = await GR('nt-font-box'), db = await GR('nt-design-box');
+  check('넓은 화면: 왼쪽 = ② 내용·③ 크기·④ 장수, 오른쪽 = ⑤ 글꼴·⑥ 디자인(맨 위 나란히·아래 끝 맞춤)', sz.l === bb.l && sz.t > bb.b && cp.t > sz.b && fb.l > bb.r - 1 && Math.abs(fb.t - bb.t) < 2 && Math.abs(db.b - cp.b) < 2, { bb, sz, cp, fb, db });
+  check('넓은 화면(1600×1000): 왼쪽 칸 스크롤 없음(세 모드 모두)', await G.evaluate(async () => { const out = []; for (const m of ['board', 'locker', 'recycle']) { ntSetMode(m); const p = document.getElementById('nt-left'); out.push(p.scrollHeight <= p.clientHeight); } ntSetMode('board'); return out.every(Boolean); }));
+  check('칸 제목 ②~⑥, 위쪽 ①⑦', await G.evaluate(() => ['nt-board-box', 'nt-size-box', 'nt-copies-box', 'nt-font-box', 'nt-design-box'].map(id => document.querySelector('#' + id + ' .nt-no').textContent).join('') === '②③④⑤⑥' && [...document.querySelectorAll('.nt-hdr-no')].map(e => e.textContent).join('') === '①⑦'));
+  const ntSeen = [];
+  let gb = await ntBox(); ntSeen.push(gb.t.match(/[①②③④⑤⑥⑦]/)[0]);
+  check('① 무엇을: 게시판·사물함·분리수거함 설명·모드 단추 반짝', /① 지금 할 일/.test(gb.t) && /게시판/.test(gb.t) && /사물함/.test(gb.t) && /분리수거함/.test(gb.t) && gb.glow.includes('nt-mode-switch') && /다음: ② 내용/.test(gb.t), gb);
+  const ntGo = async () => { await G.click('#nt-next .top-btn:not(.nt-again)'); await wait(300); gb = await ntBox(); ntSeen.push((gb.t.match(/[①②③④⑤⑥⑦]/) || ['?'])[0]); };
+  await ntGo();
+  check('② 내용(빈 칸): 한 줄에 하나·부제(/) 설명·글 칸 반짝·다음 단추 없음', /② 지금 할 일/.test(gb.t) && /한 줄에 하나씩/.test(gb.t) && /부제/.test(gb.t) && gb.glow.includes('nt-text') && !/다음:/.test(gb.t) && gb.st2 === '지금', gb);
+  await G.fill('#nt-text', '월간 일정표\n시간표 변경 / TIMETABLE'); await wait(400);
+  gb = await ntBox();
+  check('글을 적으면 장수와 "다음: ③ 크기"', /2장/.test(gb.t) && /다음: ③ 크기/.test(gb.t), gb);
+  await ntGo();
+  check('③ 크기: cm·단추·A4 배치 설명·크기 칸 반짝', /③ 지금 할 일/.test(gb.t) && /cm/.test(gb.t) && /A4/.test(gb.t) && gb.glow.includes('nt-size-box') && gb.st2 === '✓' && gb.st[0] === '지금', gb);
+  await ntGo();
+  check('④ 장수·글자 크기 모두 같게 설명', /④ 지금 할 일/.test(gb.t) && /장씩/.test(gb.t) && /모두 같게/.test(gb.t) && gb.glow.includes('nt-copies-box'), gb);
+  await ntGo();
+  check('⑤ 글꼴: 목록·직접 입력·굵기·글자 크기·자간', /⑤ 지금 할 일/.test(gb.t) && /직접 입력/.test(gb.t) && /굵기/.test(gb.t) && /자간/.test(gb.t) && gb.glow.includes('nt-font-box'), gb);
+  await ntGo();
+  check('⑥ 디자인·색: 모양 6가지·모서리·색 고르는 법', /⑥ 지금 할 일/.test(gb.t) && /입체 글씨/.test(gb.t) && /모서리/.test(gb.t) && /한 색으로/.test(gb.t) && gb.glow.includes('nt-design-box'), gb);
+  await ntGo();
+  check('⑦ 출력: 배율 100%·PDF·완료 모양·②~⑥ ✓', gb.done && /⑦/.test(gb.t) && /100%/.test(gb.t) && /PDF/.test(gb.t) && gb.glow.includes('nt-print-btn') && gb.st.every(x => x === '✓') && gb.st2 === '✓', gb);
+  check('단계가 하나도 건너뛰지 않음(①~⑦)', ntSeen.join('') === '①②②③④⑤⑥⑦'.replace('②②', '②'), ntSeen);
+  await G.fill('#nt-text', ''); await wait(400);
+  check('내용을 지우면 ②로 돌아감', /② 지금 할 일/.test((await ntBox()).t));
+  // 사물함·분리수거함은 단계를 따로(처음엔 ①)
+  await G.evaluate(() => ntSetMode('locker')); await wait(400);
+  gb = await ntBox();
+  check('사물함 모드는 따로 ①부터', /① 지금 할 일/.test(gb.t) && /사물함/.test(gb.t), gb);
+  await G.click('#nt-next .top-btn'); await wait(300);
+  gb = await ntBox();
+  check('사물함 ②: 학년·반·표시 설명·고를 칸 반짝', /② 지금 할 일/.test(gb.t) && /학년·반/.test(gb.t) && /번호 이름/.test(gb.t) && ['nt-lk-grade', 'nt-lk-class', 'nt-lk-fmt'].some(id => gb.glow.includes(id)), gb);
+  await G.evaluate(() => ntSetMode('recycle')); await wait(400);
+  await G.click('#nt-next .top-btn'); await wait(300);
+  gb = await ntBox();
+  check('분리수거함 ②: 체크·직접 더하기·영어 이름 설명·다음(기본 5종 체크됨)', /② 지금 할 일/.test(gb.t) && /체크/.test(gb.t) && /직접 적어/.test(gb.t) && /영어/.test(gb.t) && /다음: ③ 크기/.test(gb.t), gb);
+  await G.evaluate(() => ntSetMode('board')); await wait(300);
+
+  }
+  const errs = [...pc.errors, ...pc2.errors, ...small.errors, ...hr.errors, ...gd.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();

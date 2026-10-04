@@ -1233,6 +1233,29 @@
     #nt-text { width: 100%; min-height: 150px; resize: vertical; font-size: 13px; line-height: 1.6; }
     /* 왼쪽 칸들이 패널 높이에 맞춰 눌려 찌그러지지 않게(넘치면 패널이 스크롤) */
     #nt-left > * { flex-shrink: 0; }
+    .nt-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .nt-col > * { flex-shrink: 0; }
+    .nt-no, .nt-hdr-no { font-weight: 900; color: var(--accent-color); }
+    .nt-hdr-no { font-size: 13px; }
+    .nt-title > span:first-child { color: var(--text-main); }
+    .nt-st:empty { display: none; }
+    .nt-st { margin-left: auto; font-size: 10.5px; font-weight: 800; }
+    .nt-st.ok { color: #1E7B3A; }
+    .nt-st.next { color: #fff; background: var(--accent-color); border-radius: 7px; padding: 0 7px; }
+    #nt-next:empty { display: none; }
+    #nt-next .pa-next { flex-wrap: wrap; font-size: 12.5px; min-height: 0; padding: 8px 11px; gap: 4px 8px; }
+    #nt-next .pa-next-msg { flex: 1 1 210px; line-height: 1.6; }
+    #nt-next .top-btn { font-size: 12px !important; padding: 5px 12px !important; margin-left: auto; }
+    #nt-next .nt-again { background: none !important; border: none !important; color: var(--text-sub) !important; text-decoration: underline; font-weight: 600; padding: 0 4px !important; }
+    /* 넓은 화면: 좌석배치표·월간일정표·시간표처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = ② 내용·③ 크기·④ 장수, 오른쪽 = ⑤ 글꼴·⑥ 디자인. 좁으면 위아래(같은 순서) */
+    @media (min-width: 1440px) {
+      #nt-left { width: clamp(700px, calc(100vw - 800px), 820px); flex-direction: row; flex-wrap: wrap; align-items: stretch; align-content: flex-start; }
+      #nt-left > #nt-next { flex: 0 0 100%; }
+      #nt-left > .nt-col { flex: 1 1 0; }
+      .nt-col > .nt-box:last-child { flex-grow: 1; }
+      #nt-left .nt-col { gap: 10px; }
+      #nt-left .nt-rc { padding-top: 4px; padding-bottom: 4px; }
+    }
     /* 글꼴 고르기: 드롭다운. 펼치면 글꼴마다 그 글꼴로 쓴 이름 + 예시 */
     #nt-font-btn { width: 100%; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-color); background: #fff; color: #222; border-radius: 8px; padding: 6px 10px; cursor: pointer; text-align: left; min-height: 40px; box-sizing: border-box; }
     #nt-font-btn:hover, #nt-font-btn.open { border-color: var(--accent-color); }
@@ -3344,6 +3367,7 @@
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
       <div style="font-weight: 800; font-size: 16px;">🏷️ 이름표</div>
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ntOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
+      <span class="nt-hdr-no" title="1단계">①</span>
       <div class="tab-switch" id="nt-mode-switch">
         <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판</button>
         <button class="tab-btn" data-mode="locker" onclick="ntSetMode('locker')">사물함</button>
@@ -3352,35 +3376,29 @@
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="nt-muted">인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 두세요 — 적은 크기(cm) 그대로 나와요.</span>
+      <span class="nt-hdr-no" title="7단계 · 출력">⑦</span>
       <button class="top-btn accent" id="nt-print-btn" style="font-size:12px; padding:5px 14px;" onclick="ntPrint()">🖨️ 출력</button>
     </div>
   </div>
   <div id="nt-body">
     <div id="nt-left">
-      <div class="nt-box" id="nt-size-box">
-        <div class="nt-title">📏 크기 <span class="nt-muted" id="nt-fit-info"></span></div>
-        <div class="nt-row">
-          가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
-          × 세로 <input type="number" id="nt-h" class="lp-input" min="1" max="28.1" step="0.1" oninput="ntOnSize()"> cm
-        </div>
-        <div class="nt-row" id="nt-presets"></div>
-      </div>
-
+     <div id="nt-next"></div>
+     <div class="nt-col" id="nt-col-1">
       <div class="nt-box" id="nt-board-box">
-        <div class="nt-title">✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></div>
+        <div class="nt-title"><span><span class="nt-no">②</span> ✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></span><span class="nt-st nt-st-2"></span></div>
         <textarea id="nt-text" class="lp-input" placeholder="예)&#10;월간 일정표&#10;오늘의 메뉴&#10;수능 D-Day&#10;시간표 변경 / TIMETABLE" oninput="ntOnText()"></textarea>
         <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>/</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
       </div>
 
       <div class="nt-box" id="nt-rc-box" style="display:none;">
-        <div class="nt-title">♻️ 분리수거 종류 <span class="nt-muted">체크한 것만 만들어요</span></div>
+        <div class="nt-title"><span><span class="nt-no">②</span> ♻️ 분리수거 종류 <span class="nt-muted">체크한 것만 만들어요</span></span><span class="nt-st nt-st-2"></span></div>
         <div id="nt-rc-list"></div>
         <textarea id="nt-rc-text" class="lp-input" style="min-height:52px; resize:vertical;" placeholder="직접 더하기 (한 줄에 하나) 예) 건전지" oninput="ntOnRcText()"></textarea>
         <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="nt-rc-eng" onchange="ntSet({ rcEng: this.checked }); ntRender();"> 영어 이름 함께 쓰기 (PLASTIC, PAPER …)</label>
       </div>
 
       <div class="nt-box" id="nt-lk-box" style="display:none;">
-        <div class="nt-title">🔐 사물함 이름표 <span class="nt-muted">명렬표에서 반 학생 전원을 가져와요</span></div>
+        <div class="nt-title"><span><span class="nt-no">②</span> 🔐 사물함 이름표 <span class="nt-muted">명렬표에서 반 학생 전원을 가져와요</span></span><span class="nt-st nt-st-2"></span></div>
         <div class="nt-row">
           <select id="nt-lk-grade" class="mini-select" style="width:74px;" onchange="ntOnLkClass('grade')"></select>
           <select id="nt-lk-class" class="mini-select" style="width:64px;" onchange="ntOnLkClass('class')"></select>
@@ -3389,15 +3407,27 @@
         <div class="nt-row" id="nt-lk-fmt"></div>
       </div>
 
+      <div class="nt-box" id="nt-size-box">
+        <div class="nt-title"><span><span class="nt-no">③</span> 📏 크기</span><span class="nt-muted" id="nt-fit-info"></span><span class="nt-st" id="nt-st-3"></span></div>
+        <div class="nt-row">
+          가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+          × 세로 <input type="number" id="nt-h" class="lp-input" min="1" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+        </div>
+        <div class="nt-row" id="nt-presets"></div>
+      </div>
+
       <div class="nt-box" id="nt-copies-box">
+        <div class="nt-title"><span><span class="nt-no">④</span> 📄 장수 · 글자 크기</span><span class="nt-st" id="nt-st-4"></span></div>
         <div class="nt-row" style="justify-content:space-between;">
           <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
           <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSetM('same', this.checked); ntRender();"> 글자 크기 모두 같게</label>
         </div>
       </div>
 
+     </div>
+     <div class="nt-col" id="nt-col-2">
       <div class="nt-box" id="nt-font-box">
-        <div class="nt-title">🔤 글꼴</div>
+        <div class="nt-title"><span><span class="nt-no">⑤</span> 🔤 글꼴</span><span class="nt-st" id="nt-st-5"></span></div>
         <button type="button" id="nt-font-btn" onclick="ntToggleFontMenu()" title="글꼴 고르기"></button>
         <div id="nt-font-menu" style="display:none;"></div>
         <div id="nt-custom-row" style="display:none; flex-direction:column; gap:6px;">
@@ -3418,7 +3448,7 @@
       </div>
 
       <div class="nt-box" id="nt-design-box">
-        <div class="nt-title">🎨 디자인</div>
+        <div class="nt-title"><span><span class="nt-no">⑥</span> 🎨 디자인 · 색</span><span class="nt-st" id="nt-st-6"></span></div>
         <div id="nt-styles"></div>
         <div class="nt-row">모서리
           <span class="top-btn-cluster" id="nt-radius" style="display:inline-flex;">
@@ -3430,6 +3460,7 @@
         <div class="nt-row" id="nt-color-modes"></div>
         <div id="nt-swatches"></div>
       </div>
+     </div>
     </div>
 
     <div id="nt-right">
@@ -13438,6 +13469,7 @@
   function ntRender(fromFontLoad) {
     const page = document.getElementById('nametag-page');
     if (!page || page.style.display === 'none') return;
+    ntNextSoon();
     const c = ntCfg();
     const sz = ntSize(c), w = sz.w * 10, h = sz.h * 10; // mm
     const items = ntItems(c);
@@ -13695,6 +13727,91 @@
     ntFillForm(); ntRender();
   }
 
+  // ----- 진행 순서 · 지금 할 일(좌석배치표·시간표처럼) -----
+  // ① 무엇을(게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력. 확인·선택 단계는 상자의 "다음 →".
+  // 모드마다 따로, 계정 자료(nt-guide)로 기억. ②(만들 이름표가 하나 이상)가 비면 ②로 돌아감.
+  const NT_GUIDE_KEY = 'nt-guide';
+  function ntGuideAll() { try { const v = JSON.parse(localStorage.getItem(NT_GUIDE_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
+  function ntGuideGo(n) {
+    const all = ntGuideAll();
+    all[ntCfg().mode] = n;
+    try { localStorage.setItem(NT_GUIDE_KEY, JSON.stringify(all)); scheduleBackupWrite(); } catch (e) {}
+    ntRenderNext();
+  }
+  function ntNextInfo() {
+    const c = ntCfg(), mode = c.mode, items = ntItems(c);
+    let cur = +ntGuideAll()[mode] || 1;
+    if (cur > 2 && !items.length) cur = 2;
+    const go = function(n, label) { return { act: 'ntGuideGo(' + n + ')', btn: label }; };
+    const MODE = { board: '게시판', locker: '사물함', recycle: '분리수거함' }[mode];
+    let n;
+    if (cur === 1) {
+      n = Object.assign({ msg: '<b>무엇을 만들지</b> 위쪽에서 골라요. 지금은 <b>' + MODE + '</b>.' +
+        '<br>· <b>게시판</b>: 게시판·교실 문·책상에 붙이는 큰 글씨 이름표(월간 일정표, 오늘의 메뉴 …) — 적은 줄 수만큼 만들어요.' +
+        '<br>· <b>사물함</b>: 반 학생 전원의 사물함 이름표를 명렬표에서 한 번에.' +
+        '<br>· <b>분리수거함</b>: 플라스틱·종이 같은 분리수거함 이름표(아이콘·종류별 색).' +
+        '<br><span class="se-muted">세 가지는 내용·크기·글자 설정을 따로 기억해요.</span>', glow: '#nt-mode-switch' }, go(2, '다음: ② 내용 →'));
+    } else if (cur === 2) {
+      if (mode === 'board') n = Object.assign({ msg: '<b>내용</b> — 이름표에 들어갈 글을 <b>한 줄에 하나씩</b> 적어요. 줄 수만큼 이름표가 생겨요(개수 제한 없음).' +
+          '<br>· <b>/</b> 뒤에 적으면 아래에 작은 부제: 예) <b>시간표 변경 / TIMETABLE</b>' +
+          (items.length ? '<br>👉 지금 <b>' + items.length + '장</b> — 다 적었으면 다음으로.' : '<br>👉 먼저 한 줄 이상 적어 주세요.'), glow: '#nt-text' }, items.length ? go(3, '다음: ③ 크기 →') : {});
+      else if (mode === 'locker') {
+        const g = c.lG, cl = c.lC;
+        n = Object.assign({ msg: '<b>사물함 이름표</b> — <b>학년·반</b>을 고르면 명렬표에서 그 반 학생 전원을 가져와요(담임이면 담임 반이 저절로).' +
+          '<br>· <b>표시</b>: 학번(30101) · 번호 이름(1번 홍길동) · 학번 이름 · 이름만 중에서 골라요.' +
+          (items.length ? '<br>👉 학생 <b>' + items.length + '명</b> — 다음으로.' : (g && cl ? '<br>👉 명렬표를 불러오는 중이거나 이 반에 학생이 없어요.' : '<br>👉 학년과 반을 고르세요.')),
+          glow: !g ? '#nt-lk-grade' : !cl ? '#nt-lk-class' : '#nt-lk-fmt' }, items.length ? go(3, '다음: ③ 크기 →') : {});
+      } else n = Object.assign({ msg: '<b>분리수거 종류</b> — 만들 것만 <b>체크</b>하면 아이콘과 함께, 색은 종류별로 들어가요.' +
+          '<br>· 목록에 없는 건 아래 칸에 <b>직접 적어</b> 더해요(한 줄에 하나). · <b>영어 이름 함께 쓰기</b>: PLASTIC, PAPER …' +
+          (items.length ? '<br>👉 지금 <b>' + items.length + '장</b> — 다음으로.' : '<br>👉 하나 이상 체크해 주세요.'), glow: '#nt-rc-list' }, items.length ? go(3, '다음: ③ 크기 →') : {});
+    } else if (cur === 3) {
+      const fit = (document.getElementById('nt-fit-info').textContent || '').trim();
+      n = Object.assign({ msg: '<b>크기</b> — 이름표 한 장의 <b>가로 × 세로</b>를 cm로 적어요. 아래 단추로 자주 쓰는 크기를 바로 고를 수 있어요.' +
+        '<br>· 적은 크기 그대로 인쇄돼요. 작으면 A4 한 장에 여러 개, 가로로 길면 A4를 가로로 돌려 알아서 놓아요.' +
+        (fit ? '<br>👉 지금: ' + escapeHtmlAttr(fit) + '.' : '') + ' 맞으면 다음으로.', glow: '#nt-size-box' }, go(4, '다음: ④ 장수·글자 크기 →'));
+    } else if (cur === 4) {
+      n = Object.assign({ msg: '<b>장수 · 글자 크기</b>' +
+        '<br>· <b>같은 이름표를 n장씩</b>: 한 가지를 여러 장 뽑을 때(예: 반마다 하나씩 붙일 때).' +
+        '<br>· <b>글자 크기 모두 같게</b>: 켜면 가장 긴 글에 맞춰 모든 이름표 글자 크기가 같아져요(나란히 붙일 때 깔끔). 끄면 이름표마다 칸을 꽉 채워요.' +
+        '<br>👉 그대로 써도 돼요 — 다음으로.', glow: '#nt-copies-box' }, go(5, '다음: ⑤ 글꼴 →'));
+    } else if (cur === 5) {
+      n = Object.assign({ msg: '<b>글꼴</b> — 글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 모양으로 보여요.' +
+        '<br>· 맨 아래 <b>✏️ 직접 입력</b>: 이 PC에 설치된 글꼴 이름을 적어 써요(💻 내 PC 글꼴 목록에서 고르기).' +
+        '<br>· <b>굵기</b> · <b>글자 크기</b>(칸에서 글자가 차지하는 비율) · <b>자간</b>(글자 사이)도 여기서.' +
+        '<br>👉 다음으로.', glow: '#nt-font-box' }, go(6, '다음: ⑥ 디자인·색 →'));
+    } else if (cur === 6) {
+      n = Object.assign({ msg: '<b>디자인 · 색</b> — 눌러 보면서 오른쪽 미리보기를 보세요.' +
+        '<br>· <b>모양</b> 6가지: 입체 글씨(흰 글자 + 검정 테두리·그림자, 기본) · 미니멀 · 파스텔 · 액자 · 컬러 · 밑줄 — 그림을 눌러 바꿔요.' +
+        '<br>· <b>모서리</b>: 각지게 · 살짝 둥글게 · 둥글게' +
+        '<br>· <b>색</b>: ' + (mode === 'recycle' ? '종류별 색 / ' : '') + '여러 색 돌아가며(12색, 옆 이름표끼리 다른 색) / 한 색으로(누르면 색 고르는 칸이 나와요).' +
+        '<br>👉 다음으로.', glow: '#nt-design-box' }, go(7, '다음: ⑦ 출력 →'));
+    } else {
+      n = { done: true, msg: '<b>출력</b> — 위쪽 오른쪽 <b>⑦ 🖨️ 출력</b>을 눌러요.' +
+        '<br>· 인쇄 창에서 <b>배율은 기본값(100%) 그대로</b> — 적은 크기(cm) 그대로 나와요. "PDF로 저장"을 고르면 파일로도 받아요.' +
+        '<br><span class="se-muted">설정은 저절로 기억돼요 — 다음에 열면 그대로예요.</span>', glow: '#nt-print-btn', act: 'ntPrint()', btn: '🖨️ 출력', again: true };
+    }
+    n.step = cur;
+    return n;
+  }
+  function ntNextSoon() {
+    clearTimeout(ntNextSoon._t);
+    ntNextSoon._t = setTimeout(ntRenderNext, 120);
+  }
+  function ntRenderNext() {
+    const box = document.getElementById('nt-next'), page = document.getElementById('nametag-page');
+    if (!box || !page || page.style.display === 'none') return;
+    const nx = ntNextInfo();
+    ntRenderNext.next = nx;
+    const mark = function(el, i) { const ok = i < nx.step, now = i === nx.step; el.className = 'nt-st' + (el.classList.contains('nt-st-2') ? ' nt-st-2' : '') + (ok ? ' ok' : now ? ' next' : ''); el.textContent = ok ? '✓' : now ? '지금' : ''; };
+    document.querySelectorAll('.nt-st-2').forEach(function(el) { mark(el, 2); });
+    [3, 4, 5, 6].forEach(function(i) { const el = document.getElementById('nt-st-' + i); if (el) mark(el, i); });
+    const btn = (nx.again ? '<button class="top-btn nt-again" onclick="ntGuideGo(1)">처음부터 안내</button>' : '') + (nx.act ? '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>' : '');
+    const html = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-msg"><span class="pa-next-lbl">' + (nx.done ? '⑦ ✅ 마지막' : ['', '①', '②', '③', '④', '⑤', '⑥'][nx.step] + ' 지금 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
+    if (box.innerHTML !== html) box.innerHTML = html;
+    document.querySelectorAll('#nametag-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    if (nx.glow && tourMode !== 'page') { const el = document.querySelector(nx.glow); if (el && el.offsetParent) el.classList.add('pa-glow'); }
+  }
+
   // ----- 이름표 설명서 -----
   // 게시판 → 분리수거함 순서로 보여 주고, 끝나면 원래 보던 모드로 돌려놓는다.
   let ntTourMode = null;
@@ -13703,12 +13820,14 @@
   const ntTourLocker = function() { if (ntCfg().mode !== 'locker') ntSetMode('locker'); };
   const ntTourSteps = [
     { selector: '#nt-page-header', before: ntTourBoard, title: '🏷️ 이름표에 오신 것을 환영해요!', desc: '게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄하는 화면이에요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
-    { selector: '#nt-size-box', before: ntTourBoard, title: '1단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
+    { selector: '#nt-next', before: ntTourBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(위쪽 게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
+    { selector: '#nt-mode-switch', before: ntTourBoard, title: '1단계. 무엇을 만들지', desc: '게시판: 게시판·교실 문에 붙이는 큰 글씨 이름표 / 사물함: 반 학생 전원 / 분리수거함: 아이콘·종류별 색. 세 가지는 내용·크기·글자 설정을 따로 기억해요(사물함·분리수거함은 아래에서 따로 보여 드려요).' },
     { selector: '#nt-board-box', before: ntTourBoard, title: '2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). / 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
-    { selector: '#nt-copies-box', before: ntTourBoard, title: '3단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
-    { selector: '#nt-font-box', before: ntTourBoard, title: '4단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기도 고르고, 글자 크기·자간은 바를 밀어서 원하는 만큼 조절해요.' },
-    { selector: '#nt-design-box', before: ntTourBoard, title: '5단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
-    { selector: '#nt-right', before: ntTourBoard, title: '6단계. 미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요.' },
+    { selector: '#nt-size-box', before: ntTourBoard, title: '3단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
+    { selector: '#nt-copies-box', before: ntTourBoard, title: '4단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
+    { selector: '#nt-font-box', before: ntTourBoard, title: '5단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기도 고르고, 글자 크기·자간은 바를 밀어서 원하는 만큼 조절해요.' },
+    { selector: '#nt-design-box', before: ntTourBoard, title: '6단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
+    { selector: '#nt-right', before: ntTourBoard, title: '미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요.' },
     { selector: '#nt-mode-switch', before: ntTourLocker, title: '🔐 사물함 이름표', desc: '위쪽 "사물함"을 누르면 반 학생 전원의 사물함 이름표를 한 번에 만들어요(게시판 내용은 따로 기억돼요). 크기는 기본 6.7 × 2.1cm이고 위 크기 칸에서 바꿀 수 있어요. 사이 간격 없이 붙여 놓아서 칼로 한 줄씩 쭉 자르면 돼요.' },
     { selector: '#nt-lk-box', before: ntTourLocker, title: '학년·반과 표시 모양', desc: '학년·반을 고르면 명렬표에서 학생을 가져와요(담임 선생님은 담임 반이 자동). 표시는 학번(30101), 번호 이름(1번 홍길동), 학번 이름, 이름만 중에서 골라요.' },
     { selector: '#nt-mode-switch', before: ntTourRecycle, title: '♻️ 분리수거함 이름표', desc: '위쪽 "분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요.' },
@@ -13720,6 +13839,7 @@
     openPageTour(ntTourSteps, function() {
       if (ntTourMode && ntCfg().mode !== ntTourMode && document.getElementById('nametag-page').style.display !== 'none') ntSetMode(ntTourMode);
       ntTourMode = null;
+      ntRenderNext();
     });
   }
 
