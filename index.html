@@ -3870,6 +3870,11 @@
       <button class="top-btn" style="padding:2px 8px;" onclick="ptZoomBy(0.1)">+</button>
     </div>
     <div id="pt-header-actions" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <!-- 디자인 저장/불러오기: 왼쪽 칸 맨 아래에 있으면 왼쪽에 스크롤이 생겨서 위쪽으로(좌석배치표·월간일정표처럼) -->
+      <div id="pt-design-save-row" style="display:flex; gap:6px; align-items:center;">
+        <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="ptSaveSettings()" title="지금 꾸민 디자인을 파일로 저장합니다(다른 선생님과 나누기)">💾 디자인 저장</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" onclick="this.nextElementSibling.click()" title="저장해 둔 디자인 파일을 불러옵니다">📂 디자인 불러오기</button><input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
+      </div>
       <select id="pt-print-layout" class="mini-select" onchange="ptRender()">
         <option value="card">🪪 카드 1장</option>
         <option value="1">📄 A4 (1x1)</option>
@@ -3968,10 +3973,6 @@
           <div class="pt-slider-row"><label for="pt-sl-rad">모서리 둥글기</label><input type="range" id="pt-sl-rad" min="0" max="20" value="8" oninput="ptUpdateVars()"></div>
       </div>
 
-      <div id="pt-design-save-row" style="display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
-        <button class="top-btn" style="flex:1; font-size:11px; padding:6px;" onclick="ptSaveSettings()">💾 디자인 저장</button>
-        <button class="top-btn" style="flex:1; font-size:11px; padding:6px; text-align:center; cursor:pointer; margin:0;" onclick="this.nextElementSibling.click()">📂 불러오기</button><input type="file" id="pt-import-input" accept=".json" style="display:none;" onchange="ptLoadSettings(event)">
-      </div>
     </div>
 
     <div id="pt-preview">
@@ -21342,7 +21343,7 @@
     { selector: '#pt-box-school', title: '2단계. 학교 / 학기 표시', desc: '카드 맨 위에 나올 학교 이름과 학기(예: 2026학년도 2학기)를 적어요.' },
     { selector: '#pt-box-design', title: '3단계. 색상·표 스타일·글꼴', desc: '🌈 과목별 색상 테마 4가지 중 하나를 고르면 과목마다 색이 자동으로 정해져요.\n표 스타일 6가지와 글꼴도 바꿔 보면서 마음에 드는 모양을 골라 보세요.' },
     { selector: '#pt-box-size', title: '4단계. 크기 조절', desc: '카드 전체 너비·높이와 제목·이름·과목·교시 시간 글씨 크기, 모서리 둥글기를 슬라이더로 맞춰요.' },
-    { selector: '#pt-design-save-row', title: '5단계. 디자인 저장 (선택)', desc: '꾸민 디자인은 자동으로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
+    { selector: '#pt-design-save-row', title: '5단계. 디자인 저장 (선택)', desc: '위쪽 오른쪽 💾 디자인 저장 / 📂 디자인 불러오기 — 꾸민 디자인은 자동으로 기억되지만, 파일로 저장해 두면 다른 선생님과 나누거나 나중에 다시 불러올 수 있어요.' },
     { selector: '#pt-preview', title: '6단계. 미리보기', desc: '지금 설정대로 만들어질 모습이에요. 반 전체나 A4 여러 장일 때는 위쪽 ◀▶로 쪽을 넘겨 볼 수 있어요.' },
     { selector: '#pt-zoom-group', title: '미리보기 확대/축소', desc: '화면에서 보기만 크게/작게 해요. 인쇄 크기에는 영향이 없어요.' },
     { selector: '#pt-header-actions', title: '7단계. 출력하기', desc: '먼저 모양을 고르세요: 카드 1장, A4에 1·2·4·6장, 모바일 배경화면.\n🖨️ 인쇄: 인쇄 창에서 "PDF로 저장"도 돼요.\n🖼️ 이미지: 그림 파일로 저장(여러 명이면 ZIP)\n📄 PDF: PDF 파일로 바로 저장\n수고하셨습니다! 🎉' }
