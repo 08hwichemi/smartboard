@@ -210,7 +210,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const hr = await openDevice(browser, '박교사PC', T2);
   const P = hr.page;
   await P.click('#rail-forms-btn'); await P.waitForTimeout(600);
-  check('레일 "양식"(이름표 아래) → 양식 만들기 화면', await P.isVisible('#form-page') && await P.evaluate(() => document.getElementById('rail-nametag-btn').nextElementSibling.id === 'rail-forms-btn'));
+  check('레일 "양식"(수행평가 아래, 좌석배치표 위) → 양식 만들기 화면', await P.isVisible('#form-page') && await P.evaluate(() => { const f = document.getElementById('rail-forms-btn'); return f.previousElementSibling.id === 'rail-pa-btn' && f.nextElementSibling.id === 'rail-seatchart-btn'; }));
   let sh = await sheetsOf(P);
   check('담임은 담임 반(3학년 1반)으로 시작 — 5명, 한 장', (await P.inputValue('#fm-grade')) === '3' && sh.length === 1 && sh[0].tables.join() === '6' && sh[0].info === '3학년 1반 (5명)', sh);
   check('기본 칸: 번호·이름·제출·비고, 제목 "제출 확인"', sh[0].head.join('|') === '번호|이름|제출|비고' && sh[0].title === '제출 확인', sh[0]);
