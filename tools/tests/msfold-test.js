@@ -181,6 +181,16 @@ function check(label, cond, detail) {
   const P = pc.page;
   await P.click('#rail-monthly-btn'); await wait(800);
 
+  // 넓은 화면(1600): 왼쪽 칸 넓게 두 줄 — 세부 일정이 맨 위부터 오른쪽 줄 / 1366: 예전처럼 한 줄(세부 일정은 맨 아래)
+  const msLay = () => P.evaluate(() => { const R = id => document.getElementById(id).getBoundingClientRect(); const i = R('ms-section-info'), c = R('ms-section-cat'), t = R('ms-section-table');
+    return { w: document.getElementById('ms-panel').offsetWidth, twoCol: t.left > i.right - 1 && Math.abs(t.top - i.top) < 2 && c.left === i.left, below: t.top > c.bottom, tw: Math.round(t.width) }; });
+  const lay1 = await msLay();
+  check('넓은 화면: 왼쪽 칸 넓게(700+)·세부 일정이 맨 위 오른쪽 줄', lay1.w >= 700 && lay1.twoCol && lay1.tw >= 380, lay1);
+  await P.setViewportSize({ width: 1366, height: 768 }); await wait(400);
+  const lay2 = await msLay();
+  check('1366: 예전처럼 360 한 줄(세부 일정은 분류 아래)', lay2.w === 360 && lay2.below, lay2);
+  await P.setViewportSize({ width: 1600, height: 1000 }); await wait(400);
+
   const state = () => P.evaluate(() => {
     const heads = [...document.querySelectorAll('#ms-table-body tr.ms-month-head')].map(h => h.innerText.replace(/\s+/g, ' ').trim());
     const rows = msDataRows().map(tr => ({ d: tr.children[0].innerText.trim(), c: tr.children[1].innerText.trim(), m: tr.dataset.month, hidden: tr.offsetParent === null }));

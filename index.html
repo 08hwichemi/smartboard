@@ -1024,6 +1024,13 @@
     #ms-table-body tr.ms-row-folded { display: none; }
     /* 줄을 지울 때 패널 길이가 줄어 스크롤이 위로 끌려가지 않게 잠깐 채워 두는 빈 칸(msDeleteRow). */
     #ms-panel-spacer { flex-shrink: 0; height: 0; margin-top: -10px; }
+    .ms-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    /* 넓은 화면: 좌석배치표·양식처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = 기본 설정·D-Day·분류, 오른쪽 = 세부 일정(길어서 맨 위부터 한 줄 다 씀). 좁으면 예전처럼 위아래 */
+    @media (min-width: 1440px) {
+      #ms-panel { width: clamp(700px, calc(100vw - 800px), 840px); flex-direction: row; align-items: flex-start; }
+      #ms-col-1 { flex: 0 0 330px; }
+      #ms-col-2 { flex: 1 1 0; }
+    }
     .ms-expand-all-label { display: flex; align-items: center; gap: 4px; margin-right: auto; font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; }
     .ms-expand-all-label input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--accent-color); }
 
@@ -2960,6 +2967,7 @@
 
   <div id="ms-body">
     <div id="ms-panel">
+     <div class="ms-col" id="ms-col-1">
 
       <div class="ms-section" id="ms-section-info">
         <div class="ms-section-title" onclick="msToggleSection('ms-sec-info')"><span>⚙️ 기본 설정</span><span id="ms-icon-sec-info">▼</span></div>
@@ -3035,6 +3043,8 @@
         </div>
       </div>
 
+     </div>
+     <div class="ms-col" id="ms-col-2">
       <div class="ms-section" id="ms-section-table">
         <div class="ms-section-title" onclick="msToggleSection('ms-sec-table')">
           <span>📋 세부 일정 <span style="font-size:10px; color:var(--alert); font-weight:700;">(※ 최대 4줄 권장)</span></span>
@@ -3069,6 +3079,7 @@
         </div>
       </div>
       <div id="ms-panel-spacer"></div>
+     </div>
 
     </div>
 
