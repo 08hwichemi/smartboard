@@ -303,6 +303,43 @@ function check(label, cond, detail) {
 
   const errs = [...pc.errors, ...pc2.errors];
   check('페이지 오류 없음', errs.length === 0, errs);
+  // 📖 설명서 = 예시 일정: 단계마다 채워 보여 주고, 저장 안 하고, 닫으면 원래대로
+  {
+    const D = pc.page;
+    await D.setViewportSize({ width: 1600, height: 1000 });
+    if (!(await D.evaluate(() => document.getElementById('monthly-page').style.display === 'flex'))) { await D.click('#rail-monthly-btn'); await wait(800); }
+    const before = await D.evaluate(() => ({ now: JSON.stringify(msCollectData()), ls: localStorage.getItem('ms-data'), rows: msDataRows().map(tr => tr.children[1].innerText.trim()).join('|'), grade: document.getElementById('ms-cfg-grade').value, cats: msCategories.length, y: msCurYear, m: msCurMonth }));
+    await D.evaluate(() => msOpenTour()); await wait(400);
+    const seen = [];
+    for (let k = 0; k < 20; k++) {
+      await wait(250);
+      const cur = await D.evaluate(() => ({ title: document.getElementById('tour-card-title').innerText, open: document.getElementById('tour-overlay').style.display !== 'none',
+        grade: document.getElementById('ms-cfg-grade').value, paperHead: document.querySelector('#ms-a4-paper .ms-paper-header').innerText.replace(/\s+/g, ' '),
+        cal: document.getElementById('ms-cal-grid').innerText.replace(/\s+/g, ' '), cats: msCategories.map(c => c.name).join(','),
+        rows: msDataRows().filter(tr => tr.children[1].innerText.trim()).length, colored: document.querySelectorAll('#ms-cal-grid .ms-event-item').length,
+        ls: localStorage.getItem('ms-data') }));
+      if (!cur.open) break;
+      seen.push(cur);
+      await D.click('#tour-next-btn');
+    }
+    const S = (re) => seen.find(x => re.test(x.title)) || {};
+    check('월간 설명서: 모든 단계', seen.length === await D.evaluate(() => msTourSteps.length), seen.map(x => x.title));
+    check('월간 설명서: 처음엔 빈 예시', seen[0].rows === 0 && seen[0].grade === '', seen[0]);
+    check('월간 설명서: 1단계 결과 — 종이 머리에 부서명·제목', /2학년부/.test(S(/1단계 결과/).paperHead) && /월간 학년 일정/.test(S(/1단계 결과/).paperHead), S(/1단계 결과/).paperHead);
+    check('월간 설명서: 2단계 결과 — 달력에 기말고사·체육대회 D-Day', /기말고사/.test(S(/2단계 결과/).cal) && /체육대회 D-/.test(S(/2단계 결과/).cal) && /1일차/.test(S(/2단계 결과/).cal), S(/2단계 결과/).cal.slice(0, 300));
+    check('월간 설명서: 3단계 분류 진로·시험 더함', /진로/.test(S(/3단계/).cats) && /시험/.test(S(/3단계/).cats));
+    check('월간 설명서: 4단계 예시 일정 7줄·달력에 색 칠한 일정', S(/4단계 결과/).rows === 7 && S(/4단계 결과/).colored >= 6 && /진로 특강/.test(S(/4단계 결과/).cal), S(/4단계 결과/));
+    check('월간 설명서: 설명서 동안 저장 안 됨', seen.every(x => x.ls === before.ls));
+    await wait(800);
+    const after = await D.evaluate(() => ({ ls: localStorage.getItem('ms-data'), rows: msDataRows().map(tr => tr.children[1].innerText.trim()).join('|'), grade: document.getElementById('ms-cfg-grade').value, cats: msCategories.length, y: msCurYear, m: msCurMonth, demo: !!msDemo }));
+    check('월간 설명서 끝나면 원래 자료·달로', after.rows === before.rows && after.grade === before.grade && after.cats === before.cats && after.y === before.y && after.m === before.m && !after.demo, { before, after });
+    check('월간 설명서 끝난 뒤 저장 자료 = 설명서 전 화면 그대로', after.ls === before.now, (() => { const a = JSON.parse(after.ls), b = JSON.parse(before.ls); return Object.keys(b).filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k])).map(k => k + ': ' + JSON.stringify(b[k]).slice(0, 200) + ' => ' + JSON.stringify(a[k]).slice(0, 200)); })());
+    await D.evaluate(() => msOpenTour()); await wait(200);
+    for (let k = 0; k < 6; k++) { await D.click('#tour-next-btn'); await wait(200); }
+    await D.evaluate(() => closePageTour()); await wait(800);
+    const mid = await D.evaluate(() => ({ rows: msDataRows().map(tr => tr.children[1].innerText.trim()).join('|'), ls: localStorage.getItem('ms-data') }));
+    check('월간 설명서 중간에 닫아도 원래대로', mid.rows === before.rows && mid.ls === before.now);
+  }
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();
   process.exit(failures ? 1 : 0);
