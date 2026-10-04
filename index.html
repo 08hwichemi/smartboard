@@ -1959,13 +1959,13 @@
     </div>
     <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공통 기능과 구분해 둠 -->
     <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
-    <div class="rail-item" id="rail-leavepass-btn" title="조퇴증" onclick="railToggle('rail-leavepass-btn', openLeavePass)">
-      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><circle cx="16.5" cy="16.5" r="1.6"/></svg></div>
-      <div class="rail-label">조퇴증</div>
-    </div>
     <div class="rail-item" id="rail-absence-btn" title="결석계" onclick="railToggle('rail-absence-btn', openAbsence)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M9.5 13l5 5M14.5 13l-5 5"/></svg></div>
       <div class="rail-label">결석계</div>
+    </div>
+    <div class="rail-item" id="rail-leavepass-btn" title="조퇴증" onclick="railToggle('rail-leavepass-btn', openLeavePass)">
+      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><circle cx="16.5" cy="16.5" r="1.6"/></svg></div>
+      <div class="rail-label">조퇴증</div>
     </div>
     <div style="flex: 1;"></div>
     <div class="rail-item" id="rail-settings-btn" style="display:none;" title="관리자 설정" onclick="railToggle('rail-settings-btn', showSettingsPage)">
@@ -5700,7 +5700,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴의 "공통" 선 아래는 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식, 좌석배치표), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(조퇴증, 결석계)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴의 "공통" 선 아래는 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 시간표 만들기, 월간일정표, 이름표, 양식, 좌석배치표), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(결석계, 조퇴증)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
