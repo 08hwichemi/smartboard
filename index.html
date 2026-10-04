@@ -871,7 +871,7 @@
     .sc-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
     #sc-next:empty { display: none; }
     #sc-next .pa-next { flex-wrap: wrap; font-size: 12.5px; min-height: 0; padding: 8px 11px; gap: 4px 8px; }
-    #sc-next .pa-next-msg { flex: 1 1 210px; }
+    #sc-next .pa-next-msg { flex: 1 1 210px; line-height: 1.6; }
     #sc-next .top-btn { font-size: 12px !important; padding: 5px 12px !important; margin-left: auto; }
     #sc-next .sc-demo-tag { display: block; font-size: 11px; font-weight: 800; color: var(--alert); margin-bottom: 2px; }
     .sc-no { font-weight: 900; color: var(--accent-color); }
@@ -10448,6 +10448,8 @@
     const sVal = document.getElementById('sc-cfg-seats').value;
     if (!rVal || !gVal || !sVal) { await customAlert('줄 수, 분단 수, 분단당 자리를 모두 입력해주세요!'); return; }
     scBuildSeatGrid(parseInt(rVal), parseInt(gVal), parseInt(sVal));
+    if (scGuide <= 2) scGuide = 3;
+    scRenderNext();
   }
 
   function scBuildSeatGrid(rows, groups, seats) {
@@ -10529,20 +10531,20 @@
   // 설명서: 예시 반(가짜 학생 24명)으로 ①→⑤를 실제로 채워 가며 보여 준다(scDemoState). 끝나면 보던 화면으로(scTourExit).
   const scTourSteps = [
     { selector: '#sc-page-header', before: function() { scDemoState(0); }, title: '🪑 좌석배치표에 오신 것을 환영해요!', desc: '반 학생 자리를 번호순·랜덤으로 채우고, 예쁘게 꾸며서 인쇄하는 화면이에요.\n\n지금부터 설명서용 가짜 학생 24명(2학년 3반 예시)으로 ①부터 ⑤까지 실제로 채워 가며 보여 드릴게요. 예시는 저장되지 않고, 설명서를 닫으면 원래 화면으로 돌아가요.' },
-    { selector: '#sc-next', before: function() { scDemoState(0); }, title: '👉 "다음 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 해야 할 일 한 가지를 알려 줘요. 하나를 끝내면 다음 단계로 바뀌고, 눌러야 할 곳이 반짝여요.\n\n칸 제목의 ①②③④⑤가 순서예요. 끝난 칸엔 ✓, 다음 칸엔 "다음" 표시가 붙어요. 설명서를 안 봐도 이 상자만 따라가면 돼요.' },
+    { selector: '#sc-next', before: function() { scDemoState(0); }, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 해야 할 일 한 가지를 알려 줘요. ①부터 ⑥까지 한 단계씩 차례로 안내하고, 눌러야 할 곳이 반짝여요.\n\n하나를 끝내면 다음 단계로 바뀌어요. 확인만 하면 되는 단계(결석 번호, 책상 모양, 특수 좌석, 꾸미기)는 상자의 "다음 →" 단추로 넘어가요.\n\n칸 제목의 ①②③④⑤가 순서예요. 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
     { selector: '#sc-roster-section', before: function() { scDemoState(1); }, title: '① 학생 명단 — 🏫 원반', desc: '먼저 원반 / 이동반 중에 골라요.\n\n🏫 원반: 학년과 반을 고르면 그 반 명렬표(번호·이름)가 저절로 불러와져요. 예시에선 2학년 3반 24명을 불러왔어요.\n담임 선생님은 처음 열 때 이미 본인 반이 골라져 있어요.' },
     { selector: '#sc-roster-section', before: function() { scDemoState('mix'); }, title: '① 학생 명단 — 🔀 이동반', desc: '선택과목·방과후처럼 여러 반 학생이 섞인 수업은 "🔀 이동반"을 눌러요.\n\n이동반 이름(예: 화학Ⅱ A)을 적고, 학생 이름을 한 줄에 한 명씩 붙여 넣은 뒤 "✅ 명단 적용". 엑셀에서 학번·이름을 같이 복사해도 이름만 쓰고, 가나다순으로 1번부터 번호가 매겨져요.\n\n이동반이 여러 개면 "＋ 새 이동반"으로 수업마다 따로 만들어요.' },
     { selector: '#sc-saved-row', before: function() { scDemoState(1); }, title: '📂 저장한 배치 목록', desc: '자리 배치는 반(이동반)마다 저절로 저장돼요. 수업 반이 여러 개인 선생님은 여기서 골라 바로 열고, 고친 것도 그 반에 저장돼요.\n\n다시 들어오면 마지막에 보던 배치로 열려요. 🗑 = 지금 보는 배치를 목록에서 지우기(명렬표는 그대로).' },
-    { selector: '#sc-exclude-row', before: function() { scDemoState(2); }, title: '① 결석/제외 번호 (필요할 때만)', desc: '오늘 결석했거나 이번 배치에서 뺄 학생 번호를 쉼표로 적어요. 예시에선 7번(윤서준)을 뺐어요 — 자리 채울 때 앉히지 않아요.' },
+    { selector: '#sc-exclude-row', before: function() { scDemoState(2); }, title: '① 결석/제외 번호 (필요할 때만)', desc: '명단을 불러오면 상자가 결석/제외 번호를 물어봐요. 오늘 결석했거나 이번 배치에서 뺄 학생 번호를 쉼표로 적어요. 예시에선 7번(윤서준)을 뺐어요 — 자리 채울 때 앉히지 않아요.\n\n없으면 상자의 "다음: ② 반 구조 →"를 누르면 돼요.' },
     { selector: '#sc-structure-grid', before: function() { scDemoState(3); }, title: '② 반 구조 — 숫자 적기', desc: '교실 책상 모양대로 적어요.\n· 분단(열): 세로로 몇 묶음인지\n· 가로(행): 앞에서 뒤로 몇 줄인지\n· 짝꿍 수: 한 묶음에 몇 명이 나란히 앉는지\n\n예시: 분단 3 × 가로 4 × 짝꿍 2 = 24자리.' },
-    { selector: '#sc-build-btn', before: function() { scDemoState(4); }, title: '② 🔄 구조 그리기', desc: '누르면 오른쪽 종이에 빈 책상이 그려져요(예시처럼). 숫자를 바꾸면 이 단추를 다시 누르세요.\n\n학생보다 자리가 모자라면 "다음 할 일" 상자가 몇 개 모자란지 알려 줘요.' },
-    { selector: '#sc-special-seat-row', before: function() { scDemoState(5); }, title: '③ 특수 좌석 (필요할 때만)', desc: '📌 고정석 지정 → 책상 클릭: 그 자리 학생은 랜덤을 돌려도 안 움직여요(예시: 교탁 앞 1번 김하늘).\n🚫 제외석 지정 → 책상 클릭: 책상이 없거나 비워 둘 자리(예시: 맨 뒤 오른쪽).\n다 했으면 단추를 한 번 더 눌러 끝내요. 필요 없으면 건너뛰어도 돼요.' },
-    { selector: '#sc-arrange-section', before: function() { scDemoState(6); }, title: '④ 자리 채우기', desc: '🔢 번호순: 1번부터 차례로 채워요(예시).\n🎲 랜덤배치: 3·2·1 카운트다운 뒤 무작위로 섞어요. 고정석·제외석·결석 번호는 그대로 지켜요.\n🧹 초기화: 앉힌 학생만 지워요(고정·제외 표시는 남음).\n🔄 위치반전: 교탁에서 보는 방향으로 뒤집어요.' },
-    { selector: '#sc-next', before: function() { scDemoState(6); }, title: '✅ 완성되면', desc: '모든 학생이 앉으면 "다음 할 일" 상자가 "완료"로 바뀌고 🖨️ 인쇄/PDF 단추가 나와요. ①②④ 제목에도 ✓가 붙었죠?' },
-    { selector: '#sc-design-section', before: function() { scDemoState(7); }, title: '⑤ 종이 디자인 (꾸미기 · 선택)', desc: '색 테마 12가지(예시: 🌱 민트), 글꼴 30여 종, 제목·이름·번호 크기, 분단·짝꿍 간격, 책상 높이·둥글기까지 바꿀 수 있어요. 흑백 인쇄면 🖤 흑백이 깔끔해요.' },
+    { selector: '#sc-build-btn', before: function() { scDemoState(4); }, title: '② 🔄 구조 그리기', desc: '누르면 오른쪽 종이에 빈 책상이 그려지고(예시처럼) 상자가 ③으로 넘어가요. 숫자를 바꾸면 이 단추를 다시 누르세요.\n\n학생보다 자리가 모자라면 상자가 몇 개 모자란지 알려 줘요. 다른 반에서 그려 둔 책상이 남아 있으면 상자가 "교실 모양과 같은지" 확인하고 넘어가게 해요.' },
+    { selector: '#sc-special-seat-row', before: function() { scDemoState(5); }, title: '③ 특수 좌석 (필요할 때만)', desc: '📌 고정석 지정 → 책상 클릭: 그 자리 학생은 랜덤을 돌려도 안 움직여요(예시: 교탁 앞 1번 김하늘).\n🚫 제외석 지정 → 책상 클릭: 책상이 없거나 비워 둘 자리(예시: 맨 뒤 오른쪽).\n다 했으면 단추를 한 번 더 눌러 끝내요. 필요 없으면 상자의 "건너뛰기: ④ 자리 채우기 →".' },
+    { selector: '#sc-arrange-section', before: function() { scDemoState(6); }, title: '④ 자리 채우기', desc: '🔢 번호순: 1번부터 차례로 채워요(예시).\n🎲 랜덤배치: 3·2·1 카운트다운 뒤 무작위로 섞어요. 고정석·제외석·결석 번호는 그대로 지켜요.\n🧹 초기화: 앉힌 학생만 지워요(고정·제외 표시는 남음).\n🔄 위치반전: 교탁에서 보는 방향으로 뒤집어요.\n\n모두 앉으면 상자가 ⑤ 꾸미기로 넘어가요.' },
+    { selector: '#sc-design-section', before: function() { scDemoState(7); }, title: '⑤ 종이 디자인 (꾸미기 · 선택)', desc: '색 테마 12가지(예시: 🌱 민트), 글꼴 30여 종, 제목·이름·번호 크기, 분단·짝꿍 간격, 책상 높이·둥글기까지 바꿀 수 있어요. 흑백 인쇄면 🖤 흑백이 깔끔해요.\n\n꾸미지 않아도 돼요 — 상자의 "다음: ⑥ 인쇄 →".' },
     { selector: '#sc-a4-paper', before: function() { scDemoState(7); }, title: '종이에서 직접 고치기', desc: '책상을 누르면 학생을 골라 앉히거나 비울 수 있어요. 제목, "창가"/"복도", 맨 아래 문구도 눌러서 바로 고쳐요.' },
     { selector: '#sc-header-save-group', before: function() { scDemoState(7); }, title: '파일로 저장 (필요할 때만)', desc: '배치는 반마다 저절로 저장되니 보통은 안 눌러도 돼요.\n💾 디자인저장/로드: 폰트·색·크기만 파일로 — 다른 반에도 같은 디자인을 쓰고 싶을 때.\n📝 결과저장/로드: 배치 결과 전체를 파일로 — 다른 선생님께 줄 때.' },
-    { selector: '#sc-print-btn', before: function() { scDemoState(7); }, title: '⑥ 인쇄 또는 PDF', desc: '다 됐으면 눌러서 인쇄해요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일이 돼요.\n\n완료를 누르면 예시가 사라지고 원래 화면으로 돌아가요. 이제 ①부터 "다음 할 일" 상자를 따라 해 보세요! 🎉' }
+    { selector: '#sc-next', before: function() { scDemoState(8); }, title: '⑥ ✅ 완성', desc: '⑤에서 "다음: ⑥ 인쇄 →"를 누르면 상자가 초록색 "완료"로 바뀌고 🖨️ 인쇄/PDF 단추가 나와요. ①~⑤ 제목에 모두 ✓가 붙었죠?' },
+    { selector: '#sc-print-btn', before: function() { scDemoState(8); }, title: '⑥ 인쇄 또는 PDF', desc: '위쪽 이 단추(또는 상자의 단추)로 인쇄해요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 PDF 파일이 돼요.\n\n완료를 누르면 예시가 사라지고 원래 화면으로 돌아가요. 이제 ①부터 "다음 할 일" 상자를 따라 해 보세요! 🎉' }
   ];
   function scOpenTour() { openPageTour(scTourSteps, function() { scTourExit(); }); }
 
@@ -10625,6 +10627,8 @@
         targetDesks[i].querySelector('.sc-desk-name').innerText = remainingStudents[i].name;
       }
     }
+    if (scGuide < 5) scGuide = 5;
+    scRenderNext();
   }
 
   async function scToggleTeacherView() {
@@ -10889,37 +10893,89 @@
       special: desks.some(function(d) { return d.classList.contains('sc-fixed') || d.classList.contains('sc-excluded'); })
     };
   }
+  // 안내는 ①→②→③→④→⑤→⑥ 한 단계씩(scGuide). 이미 된 단계라도 건너뛰지 않고 확인시킨 뒤 "다음" 단추로 넘어감 —
+  // 반을 바꿔도 책상 구조는 남아 있어서, "된 것은 건너뛰기"로 하면 ① 다음에 바로 ④가 나왔음(사용자 지적).
+  // 꼭 필요한 것(① 학생 · ② 자리 · ④ 모두 앉음)이 깨지면 그 단계로 되돌아감. 반·이동반을 바꾸면 처음부터(다 앉은 배치면 ⑥).
+  let scGuide = 1, scGuideKey = null;
+  function scGuideGo(n) { scGuide = n; scRenderNext(); }
   function scNextInfo() {
-    const mix = scIsMix(), g = scGridInfo(), st = {};
-    st[1] = scStudents.length > 0;
-    st[2] = st[1] && g.desks > 0 && g.open >= g.want;
-    st[4] = st[2] && g.want > 0 && g.seatedN === g.want;
-    st[3] = st[4] && g.special;
-    st[5] = st[4] && scCurrentPrintTheme !== 'classic';
+    const mix = scIsMix(), g = scGridInfo();
+    const r1 = scStudents.length > 0, r2 = r1 && g.desks > 0 && g.open >= g.want, r4 = r2 && g.want > 0 && g.seatedN === g.want;
+    const key = (scDemo ? 'demo' : scShownKey) + '|' + mix;
+    if (scGuideKey !== key) { scGuideKey = key; scGuide = r4 ? 6 : 1; }
+    if (!r1) scGuide = 1;
+    else if (!r2 && scGuide > 2) scGuide = 2;
+    else if (!r4 && scGuide > 4) scGuide = 4;
+    if (scGuide === 4 && r4) scGuide = 5; // 종이에서 직접 앉혀 다 채운 경우
+    const cur = scGuide, cap = (+document.getElementById('sc-cfg-groups').value || 0) * (+document.getElementById('sc-cfg-rows').value || 0) * (+document.getElementById('sc-cfg-seats').value || 0);
+    const go = function(n, label) { return { act: 'scGuideGo(' + n + ')', btn: label }; };
     let n;
-    if (!st[1]) {
+    const want = '앉을 학생 <b>' + g.want + '명</b>' + (g.want !== scStudents.length ? '(결석·제외 ' + (scStudents.length - g.want) + '명 빼고)' : '');
+    const numsHelp = '<br>· <b>분단(열)</b>: 교탁에서 봤을 때 세로로 나뉜 책상 묶음 수' +
+      '<br>· <b>가로(행)</b>: 맨 앞에서 맨 뒤까지 몇 줄인지' +
+      '<br>· <b>짝꿍 수</b>: 한 묶음 안에서 옆으로 붙어 앉는 사람 수(혼자 앉으면 1, 짝이면 2)' +
+      '<br>분단 × 가로 × 짝꿍 = 자리 수예요.';
+    if (cur === 1 && !r1) {
       if (mix) {
         const typed = document.getElementById('sc-mix-names').value.trim();
-        n = { step: 1, msg: typed ? '붙여 넣은 이름으로 <b>✅ 명단 적용</b>을 누르세요. 가나다순으로 1번부터 번호가 매겨져요.'
-          : '<b>이동반 이름</b>(예: 화학Ⅱ A반)을 적고, 학생 이름을 한 줄에 한 명씩 붙여 넣으세요. <span class="se-muted">엑셀에서 학번·이름 칸을 같이 복사해도 이름만 써요.</span>',
+        n = { msg: typed ? '붙여 넣은 이름으로 <b>✅ 명단 적용</b>을 누르세요.<br>가나다순으로 1번부터 번호가 매겨져요 — 이 번호로 자리를 채우고, 결석 번호도 이 번호로 적어요.'
+          : '<b>🔀 이동반</b> = 선택과목·방과후처럼 여러 반 학생이 섞인 수업.' +
+            '<br>① 위 칸에 <b>이동반 이름</b>(예: 화학Ⅱ A반)을 적고 ② 아래 칸에 학생 이름을 <b>한 줄에 한 명씩</b> 붙여 넣은 뒤 ③ <b>✅ 명단 적용</b>.' +
+            '<br><span class="se-muted">엑셀에서 학번·이름 칸을 같이 복사해 붙여 넣어도 이름만 써요. 가나다순으로 1번부터 번호가 매겨져요.</span>',
           glow: typed ? '#sc-mix-apply-btn' : (document.getElementById('sc-mix-label').value.trim() ? '#sc-mix-names' : '#sc-mix-label') };
       } else {
         const hasList = scSavedList().length > 0, gr = document.getElementById('sc-grade-select').value;
-        n = { step: 1, msg: '<b>🏫 원반</b>이면 학년과 반을 고르세요. 여러 반이 섞인 수업은 <b>🔀 이동반</b>을 누르세요.' + (hasList ? ' <span class="se-muted">만들어 둔 배치는 맨 위 📂 목록에서 바로 열 수 있어요.</span>' : ''),
+        n = { msg: '누구를 앉힐지 먼저 정해요.' +
+            '<br>· <b>🏫 원반</b>: 한 반 학생 그대로(담임 반, 일반 수업 반) — 아래에서 <b>학년과 반</b>을 고르면 그 반 명렬표(번호·이름)를 불러와요.' +
+            '<br>· <b>🔀 이동반</b>: 선택과목·방과후처럼 여러 반이 섞인 수업 — 이동반을 누르고 이름을 붙여 넣어요.' +
+            (hasList ? '<br><span class="se-muted">전에 만든 배치는 맨 위 📂 목록에서 골라 바로 열 수 있어요.</span>' : ''),
           glow: gr ? '#sc-class-select' : '#sc-grade-select' };
       }
-    } else if (!st[2]) {
-      const cap = (+document.getElementById('sc-cfg-groups').value || 0) * (+document.getElementById('sc-cfg-rows').value || 0) * (+document.getElementById('sc-cfg-seats').value || 0);
-      if (g.desks && g.open < g.want) n = { step: 2, msg: '자리가 <b>' + (g.want - g.open) + '개 모자라요</b>(앉을 학생 ' + g.want + '명 · 자리 ' + g.open + '개). ② 숫자를 늘리고 <b>🔄 구조 그리기</b>를 다시 누르세요.', glow: '#sc-build-btn' };
-      else n = { step: 2, msg: '교실 책상 모양대로 <b>분단·가로·짝꿍 수</b>를 적고 <b>🔄 구조 그리기</b>를 누르세요. <span class="se-muted">앉을 학생 ' + g.want + '명' + (cap > 1 ? ' · 지금 숫자로 ' + cap + '자리' : ' · 예: 분단 3 × 가로 5 × 짝꿍 2 = 30자리') + '</span>',
+    } else if (cur === 1) {
+      const ex = document.getElementById('sc-exclude-nums').value.trim();
+      n = Object.assign({ msg: '명단 <b>' + scStudents.length + '명</b>을 불러왔어요. 이제 <b>🚫 결석/제외</b> 칸을 확인해요.' +
+        '<br>오늘 <b>결석</b>했거나 이번 자리 배치에서 <b>뺄 학생의 번호</b>를 쉼표로 적어요(예: 5, 12). 적은 번호는 ④에서 자리를 채울 때 앉히지 않아요.' +
+        '<br><span class="se-muted">명단에서 지워지는 건 아니에요 — 다음에 칸을 비우면 다시 앉아요.</span>' +
+        (ex ? '<br>👉 지금 <b>' + escapeHtmlAttr(ex) + '번</b>을 빼고 앉혀요.' : '<br>👉 뺄 학생이 없으면 그냥 다음으로.'), glow: '#sc-exclude-row' }, go(2, '다음: ② 반 구조 →'));
+    } else if (cur === 2) {
+      if (g.desks && g.open < g.want) n = { msg: '자리가 <b>' + (g.want - g.open) + '개 모자라요</b> — ' + want + ' · 자리 ' + g.open + '개.' +
+        '<br>숫자를 늘리고(예: 가로 한 줄 더) <b>🔄 구조 그리기</b>를 다시 누르세요.' + (g.desks !== g.open ? ' <span class="se-muted">제외석 ' + (g.desks - g.open) + '개는 자리에서 빠져요.</span>' : ''), glow: '#sc-build-btn' };
+      else if (g.desks) n = Object.assign({ msg: '<b>반 구조</b> = 교실 책상 모양. 지금 책상이 <b>' + g.open + '자리</b>로 그려져 있어요(' + want + ').' + numsHelp +
+        '<br>👉 교실과 다르면 숫자를 고치고 <b>🔄 구조 그리기</b>, 맞으면 다음으로.', glow: '#sc-structure-grid' }, go(3, '맞아요: ③ 특수 좌석 →'));
+      else n = { msg: '<b>반 구조</b> = 교실 책상 모양을 숫자 세 개로 적어요.' + numsHelp +
+        '<br>👉 ' + want + (cap > 1 ? ' · 지금 숫자로 ' + cap + '자리' : ' — 예: 분단 3 × 가로 5 × 짝꿍 2 = 30자리') + '. 다 적으면 <b>🔄 구조 그리기</b> → 오른쪽 종이에 빈 책상이 그려져요.',
         glow: cap > 1 ? '#sc-build-btn' : '#sc-structure-grid' };
-    } else if (!st[4]) {
-      n = { step: 4, msg: '<b>🔢 번호순</b>이나 <b>🎲 랜덤배치</b>로 자리를 채우세요.' + (g.seatedN ? ' <span class="se-muted">(' + g.seatedN + '/' + g.want + '명 앉음)</span>' : '') +
-        ' <span class="se-muted">앞자리를 정해 둘 학생이나 비울 책상이 있으면 먼저 ③ 고정석·제외석.</span>', glow: '#sc-arr-random' };
+    } else if (cur === 3) {
+      n = Object.assign({ msg: '<b>특수 좌석</b> — 필요할 때만 써요.' +
+        '<br>· <b>📌 고정석</b>: 정해 둔 학생을 그 자리에 묶어 둬요(시력·키·도움이 필요한 학생 등). ④에서 랜덤을 돌려도 그 학생은 안 움직여요.' +
+        '<br>&nbsp;&nbsp;방법: 오른쪽 종이에서 <b>책상을 눌러 학생을 골라 앉힘</b> → <b>고정석 지정 📌</b> → 그 책상 클릭(빨간 테두리) → <b>✅ 고정 완료하기</b>' +
+        '<br>· <b>🚫 제외석</b>: 책상이 없거나 비워 둘 자리. 아무도 안 앉아요.' +
+        '<br>&nbsp;&nbsp;방법: <b>제외석 지정 🚫</b> → 비울 책상 클릭(점선, 다시 누르면 되돌림) → <b>✅ 제외 완료하기</b>' +
+        (g.special ? '<br>👉 다 했으면 다음으로.' : '<br>👉 필요 없으면 건너뛰세요.'), glow: '#sc-special-seat-row' }, go(4, g.special ? '다음: ④ 자리 채우기 →' : '건너뛰기: ④ 자리 채우기 →'));
+    } else if (cur === 4) {
+      n = { msg: '<b>자리 채우기</b> — 단추 하나로 학생을 앉혀요. 마음에 안 들면 몇 번이고 다시 눌러도 돼요.' +
+        '<br>· <b>🔢 번호순</b>: 1번부터 번호 차례로 앉혀요.' +
+        '<br>· <b>🎲 랜덤배치</b>: 3·2·1 카운트다운 뒤 무작위로 섞어요(학생들 앞에서 띄워 놓고 돌리기 좋아요).' +
+        '<br>· <b>🧹 초기화</b>: 앉힌 학생만 지워요(고정석·제외석 표시는 남아요).  · <b>🔄 위치반전</b>: 교탁 쪽에서 보는 방향으로 종이를 뒤집어요.' +
+        '<br><span class="se-muted">고정석·제외석·결석 번호는 그대로 지켜요.' + (g.seatedN ? ' 지금 ' + g.seatedN + '/' + g.want + '명 앉음.' : '') + '</span>', glow: '#sc-arrange-section .sc-btn-grid' };
+    } else if (cur === 5) {
+      n = Object.assign({ msg: '자리를 다 채웠어요! 이제 <b>종이 디자인</b>은 꾸미기(선택)예요.' +
+        '<br>색 테마 12가지 · 글꼴 · 제목/이름/번호 크기 · 분단/짝꿍/앞뒤 간격 · 책상 높이·둥글기를 바꿀 수 있어요. 흑백 인쇄면 🖤 흑백.' +
+        '<br>종이의 <b>제목, "창가/복도", 맨 아래 문구</b>는 눌러서 바로 고쳐요. <b>책상을 누르면</b> 학생을 한 명씩 바꿀 수 있어요.' +
+        '<br>👉 꾸밀 필요 없으면 다음으로.', glow: '#sc-design-section .sc-theme-grid' }, go(6, '다음: ⑥ 인쇄 →'));
     } else {
-      n = { done: true, msg: '자리 배치 완성! ' + (st[5] ? '' : '<b>⑤</b>에서 색·글꼴을 꾸미고 ') + '<b>🖨️ 인쇄/PDF</b>로 뽑으세요. <span class="se-muted">종이의 자리를 누르면 학생을 직접 바꿀 수 있고, ' + (mix ? '이 이동반' : '이 반') + ' 배치는 저절로 저장돼요.</span>',
-        act: 'scPrintPaper()', btn: '🖨️ 인쇄/PDF' };
+      n = { done: true, msg: '자리 배치 완성! <b>🖨️ 인쇄/PDF</b>로 뽑으세요 — 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 파일이 돼요.' +
+        '<br><span class="se-muted">' + (mix ? '이 이동반' : '이 반') + ' 배치는 저절로 저장돼요 — 다음엔 맨 위 📂 목록에서 다시 열어요. 다시 섞으려면 ④ 🎲 랜덤배치.</span>', act: 'scPrintPaper()', btn: '🖨️ 인쇄/PDF' };
     }
+    // 고정석·제외석을 지정하는 중이면(어느 단계에서든) 그 방법을 먼저
+    if (scCurrentMode === 'fix') n = { msg: '<b>📌 고정석 지정 중</b> — 오른쪽 종이에서 묶어 둘 책상을 클릭하세요(빨간 테두리, 다시 누르면 풀림).' +
+      '<br>학생이 아직 없는 책상이면: 먼저 <b>✅ 고정 완료하기</b>로 끝내고 → 그 책상을 눌러 학생을 골라 앉힌 뒤 → 다시 고정석 지정. <span class="se-muted">(빈 책상을 고정하면 그 자리는 비어 있게 돼요)</span>' +
+      '<br>👉 다 했으면 <b>✅ 고정 완료하기</b>.', glow: '#sc-btn-fix', modeStep: true };
+    else if (scCurrentMode === 'exclude') n = { msg: '<b>🚫 제외석 지정 중</b> — 오른쪽 종이에서 비워 둘 책상을 클릭하세요(점선으로 바뀜, 다시 누르면 되돌림).' +
+      '<br>👉 다 했으면 <b>✅ 제외 완료하기</b>.', glow: '#sc-btn-exclude', modeStep: true };
+    n.step = n.modeStep ? 3 : cur;
+    const st = {};
+    [1, 2, 3, 4, 5].forEach(function(i) { st[i] = i < cur; });
     return { st: st, next: n };
   }
   function scNextSoon() {
@@ -10936,13 +10992,13 @@
     [1, 2, 3, 4, 5].forEach(function(i) {
       const el = document.getElementById('sc-st-' + i);
       if (!el) return;
-      const isNext = !nx.done && nx.step === i;
+      const isNext = nx.step === i;
       el.className = 'sc-st' + (st[i] ? ' ok' : isNext ? ' next' : '');
-      el.textContent = st[i] ? '✓' : isNext ? '다음' : '';
+      el.textContent = st[i] ? '✓' : isNext ? '지금' : '';
     });
     const btn = nx.act ? '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>' : '';
     const html = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-msg">' + (scDemo ? '<span class="sc-demo-tag">📖 설명서 예시 화면 — 가짜 학생이라 저장 안 돼요</span>' : '') +
-      '<span class="pa-next-lbl">' + (nx.done ? '✅ 완료' : (nx.step ? ['', '①', '②', '③', '④', '⑤'][nx.step] + ' ' : '') + '다음 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
+      '<span class="pa-next-lbl">' + (nx.done ? '⑥ ✅ 완료' : ['', '①', '②', '③', '④', '⑤'][nx.step] + ' 지금 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
     if (box.innerHTML !== html) box.innerHTML = html;
     document.querySelectorAll('#seatchart-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
     if (nx.glow && !scDemo) { const el = document.querySelector(nx.glow); if (el && el.offsetParent) el.classList.add('pa-glow'); }
@@ -11003,7 +11059,7 @@
     const $ = function(id) { return document.getElementById(id); };
     scCurrentMode = 'normal';
     scShowMixUI(level === 'mix');
-    scSetTheme(level >= 7 ? 'mint' : 'classic');
+    scSetTheme(level >= 7 && level !== 'mix' ? 'mint' : 'classic');
     $('sc-grade-select').innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(level >= 1 ? 2 : null);
     $('sc-class-select').innerHTML = level >= 1 ? classOptionsHtml(2, 3) : '<option value="">반</option>';
     if (level === 'mix') {
@@ -11034,6 +11090,9 @@
       }
       if (level >= 6) scArrangeSeats('seq');
     }
+    // 안내 상자도 설명하는 단계에 맞춤(8 = 다 꾸미고 인쇄만 남음)
+    scGuideKey = 'demo|' + (level === 'mix');
+    scGuide = { 0: 1, 1: 1, mix: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 5, 7: 5, 8: 6 }[level];
     scRenderSavedList();
     scRenderNext();
   }
