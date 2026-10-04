@@ -481,6 +481,9 @@
     .sgbv-col { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; box-sizing: border-box; }
     .sgbv-title { font-weight: 800; font-size: 14px; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
     .sgbv-title .se-muted { font-size: 11.5px; font-weight: 600; }
+    .sgbf-idle { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--text-sub); font-size: 12.5px; line-height: 1.6; padding: 36px 10px; }
+    .sgbf-idle .top-btn { font-size: 12.5px; padding: 7px 16px; font-weight: 800; }
+    .sgbf-idle .se-muted { font-size: 11px; }
     #sgb-view #sgb-text { min-height: 240px; }
     @media (max-width: 1000px) { #sgb-view { flex-direction: column; overflow-y: auto; } .sgbv-col { flex: 0 0 auto; min-height: 520px; } }
     #se-page-header { display:flex; align-items:center; justify-content:space-between; padding: 12px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px; }
@@ -3863,7 +3866,7 @@
     </div>
     <div id="sgb-pane-find" class="sgbv-col">
       <div class="sgbv-title">🔍 길라잡이 찾기 <span class="se-muted">학교생활기록부 기재요령 찾아보기</span></div>
-      <input type="text" id="sgb-find-q" class="admin-input" placeholder="🔍 궁금한 말 (예: 자율동아리, 영문, 봉사 시간, 전학)" oninput="renderSgbFind()" style="margin-bottom: 8px;">
+      <input type="text" id="sgb-find-q" class="admin-input" placeholder="🔍 궁금한 말 (예: 자율동아리, 영문, 봉사 시간, 전학)" onfocus="sgbFindWant()" oninput="sgbGuideWanted = true; renderSgbFind()" style="margin-bottom: 8px;">
       <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="sgb-find-list"></div>
       <div style="font-size: 10.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
         <b>p.○ 열기</b>를 누르면 길라잡이 PDF가 새 탭에서 그 쪽으로 열려요. · 「주요 변경 사항」(p.8~73)은 2023~2026 4개년 비교표라
@@ -7188,8 +7191,22 @@
     el.querySelector('.sgbf-more').textContent = opening ? '▴ 접기' : '▾ 답 보기';
   }
 
+  // 길라잡이 자료(약 80KB, 사이트 파일 — Supabase 아님)는 처음 쓸 때만 받는다: 검색 칸을 누르거나 적거나 "Q&A 보기"를 누를 때.
+  // 생기부 화면이 문장 점검·길라잡이 반반이 된 뒤로 열기만 해도 받았는데, 문장 점검만 쓰는 선생님은 안 받게(사용자 요청).
+  let sgbGuideWanted = false;
+  function sgbFindWant() {
+    if (sgbGuideWanted) return;
+    sgbGuideWanted = true;
+    renderSgbFind();
+  }
   function renderSgbFind() {
     const list = document.getElementById('sgb-find-list');
+    if (!sgbGuide && !sgbGuideWanted && !document.getElementById('sgb-find-q').value.trim()) {
+      list.innerHTML = '<div class="sgbf-idle">궁금한 말을 위 칸에 적으면 <b>Q&amp;A</b>와 <b>길라잡이 본문</b>에서 찾아요.' +
+        '<button class="top-btn" id="sgb-qa-btn" onclick="sgbFindWant()">📋 자주 묻는 Q&amp;A 모두 보기</button>' +
+        '<span class="se-muted">길라잡이 자료는 처음 찾을 때 한 번만 받아요.</span></div>';
+      return;
+    }
     if (!sgbGuide) {
       list.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:12px; padding:20px;">길라잡이 자료를 불러오는 중…</div>';
       loadSgbGuide().then(renderSgbFind).catch(function() {

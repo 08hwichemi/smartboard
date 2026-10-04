@@ -319,8 +319,10 @@ function check(label, cond, detail) {
   check('가로로 넘치지 않음', !overflow);
 
   // ----- 길라잡이 찾기 -----
-  check('찾기 자료는 생기부를 연 뒤 한 번만 받음', guideFetches.length === 1, guideFetches);
-  await P.click('#sgb-find-q'); await wait(300);
+  check('생기부를 열기만 해서는 길라잡이 자료를 안 받음(문장 점검만 쓰면 0)', guideFetches.length === 0, guideFetches);
+  check('처음엔 안내 + "자주 묻는 Q&A 모두 보기" 단추만', await P.evaluate(() => !!document.querySelector('#sgb-find-list .sgbf-idle #sgb-qa-btn') && !document.querySelector('#sgb-find-list .sgbf-item')));
+  await P.click('#sgb-qa-btn'); await wait(600);
+  check('"Q&A 모두 보기" 누르면 그때 한 번 받음', guideFetches.length === 1, guideFetches);
   const fl = () => P.evaluate(() => ({
     secs: [...document.querySelectorAll('#sgb-find-list .sgbf-sec')].map(e => e.innerText),
     qa: document.querySelectorAll('#sgb-find-list .sgbf-item[data-qa]').length,
@@ -394,6 +396,17 @@ function check(label, cond, detail) {
   await P.click('#rail-home-btn'); await wait(300);
   check('홈 누르면 닫힘', !(await open()));
 
+  // 새 브라우저: 검색 칸을 누르는 순간 받음(문장 점검만 쓰면 안 받음)
+  {
+    const pc3 = await openDevice(browser, 'PC3', T1);
+    const n0 = guideFetches.length;
+    await pc3.page.evaluate(() => setSgbTab('check')); await wait(500);
+    await pc3.page.fill('#sgb-text', '문장만 점검'); await wait(300);
+    check('새 브라우저: 문장 점검만 쓰면 길라잡이 자료 안 받음', guideFetches.length === n0, guideFetches.length - n0);
+    await pc3.page.click('#sgb-find-q'); await wait(700);
+    check('검색 칸을 누르면 그때 받고 Q&A 목록', guideFetches.length === n0 + 1 && await pc3.page.evaluate(() => document.querySelectorAll('#sgb-find-list .sgbf-item[data-qa]').length === 53), guideFetches.length - n0);
+    check('PC3 페이지 오류 없음', pc3.errors.length === 0, pc3.errors);
+  }
   check('페이지 오류 없음', pc.errors.length === 0, pc.errors);
   console.log(failures ? ('실패 ' + failures + '건') : '모든 검사 통과');
   await browser.close();
