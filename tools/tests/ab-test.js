@@ -236,7 +236,7 @@ function check(label, cond, detail) {
   const cell = (c) => P.evaluate((c) => { const td = document.querySelector('#ab-paper [data-c="' + c + '"]'); return td ? td.textContent : null; }, c);
 
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
-  check('레일: "학급" 선 바로 아래 결석계, 그 아래 조퇴증', order[order.indexOf('결석계') + 1] === '조퇴증' && order[order.indexOf('결석계') - 1] === '좌석배치표', order);
+  check('레일: "학급" 선 바로 아래 결석계, 그 아래 조퇴증', order[order.indexOf('결석계') + 1] === '조퇴증' && order[order.indexOf('결석계') - 1] === '이름표', order);
   check('열기 전엔 양식 안 받음', formFetches.length === 0);
 
   await P.click('#rail-absence-btn'); await wait(700);

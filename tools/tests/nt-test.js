@@ -204,9 +204,9 @@ function pdfInfo(buf) {
   const pickFont = async (title) => { await P.click('#nt-font-btn'); await wait(100); await P.click('#nt-font-menu .nt-font-opt[title="' + title + '"]'); await wait(200); };
 
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
-  check('레일 순서: 홈 → "공통" 선 → 명렬표·단축키·생기부·수행평가(모든 선생님)·시간표~이름표·양식·좌석배치표 → "학급" 선 → 결석계·조퇴증', order.join(',') === '홈,명렬표,단축키,생기부 문장 점검,수행평가,시간표,월간일정표,이름표,양식 만들기,좌석배치표,결석계,조퇴증,관리자 설정' && await P.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display !== 'none'), order);
+  check('레일 순서: 홈 → "공통" 선 → 명렬표·단축키·생기부·수행평가(모든 선생님)·양식·좌석배치표·월간일정표·시간표·이름표 → "학급" 선 → 결석계·조퇴증', order.join(',') === '홈,명렬표,단축키,생기부 문장 점검,수행평가,양식 만들기,좌석배치표,월간일정표,시간표,이름표,결석계,조퇴증,관리자 설정' && await P.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display !== 'none'), order);
   const sep = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-sep')].map(s => s.previousElementSibling.id + '|' + s.innerText.trim() + '|' + s.nextElementSibling.id));
-  check('홈 아래 "공통" 선, 좌석배치표와 조퇴증 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-seatchart-btn|학급|rail-absence-btn']), sep);
+  check('홈 아래 "공통" 선, 좌석배치표와 조퇴증 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-nametag-btn|학급|rail-absence-btn']), sep);
 
   await P.click('#rail-nametag-btn'); await wait(300);
   check('누르면 이름표 화면 + 버튼 표시, 홈은 숨김', await shown() && await P.evaluate(() => document.getElementById('rail-nametag-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
