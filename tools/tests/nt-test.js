@@ -1,4 +1,4 @@
-// 레일 "양식" → 🏷️ 이름표 탭(10/5부터 이름표는 양식 만들기의 다섯째 탭 — 레일에 따로 없음): 게시판 이름표(내용 한 줄에 하나, 부제, 장수, 글자 크기 맞춤·모두 같게, A4 세로/가로 자동 배치),
+// 레일 "양식" → 🏷️ 이름표 탭(10/5부터 이름표는 양식 만들기의 둘째 탭(시정표 뒤) — 레일에 따로 없음): 게시판 이름표(내용 한 줄에 하나, 부제, 장수, 글자 크기 맞춤·모두 같게, A4 세로/가로 자동 배치),
 // 분리수거함 이름표(종류 체크·아이콘·종류별 색), 글꼴(웹 글꼴·PC 글꼴 직접 입력), 색(순환·한 색), 인쇄(🖨️ 인쇄/PDF — 한글 파일 단추 없음, PDF 쪽수·방향),
 // 계정 자료 저장·다른 기기 반영(홈 화면은 다시 그리지 않음), 탭 기억·초기화는 이름표만, 화면 닫기, 양식 왼쪽 칸 안에서 두 줄(1366도).
 const { chromium } = require('playwright');
@@ -212,7 +212,7 @@ function pdfInfo(buf) {
   check('홈 아래 "공통" 선, 시간표와 결석계 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-persontt-btn|학급|rail-absence-btn']), sep);
 
   await P.click('#rail-forms-btn'); await wait(300);
-  check('양식 탭 다섯 개: 시정표·명렬표 수합·학습지·수행평가·이름표(맨 뒤), 처음엔 명렬표 수합', (await P.evaluate(() => [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent.trim()).join(','))) === '시정표,명렬표 수합,학습지,수행평가,이름표' && !(await ntTab(P)));
+  check('양식 탭 다섯 개: 시정표·이름표·명렬표 수합·학습지·수행평가(이름표는 시정표 뒤), 처음엔 명렬표 수합', (await P.evaluate(() => [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent.trim()).join(','))) === '시정표,이름표,명렬표 수합,학습지,수행평가' && !(await ntTab(P)));
   await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
   const hdr = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, ws: document.getElementById('ws-grid').style.display,
     hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display, xlsx: getComputedStyle(document.getElementById('fm-xlsx-btn')).display, print: document.getElementById('fm-print-btn').textContent.trim(), no7: getComputedStyle(document.getElementById('fm-print-no')).display,

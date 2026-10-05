@@ -1248,7 +1248,7 @@
       .ab-paper { transform: none !important; box-shadow: none !important; break-after: avoid; break-inside: avoid; }
     }
 
-    /* ===== 🏷️ 이름표 (게시판·사물함·분리수거함) — 10/5부터 📄 양식 만들기의 다섯째 탭: 왼쪽 = #fm-left 안의 #nt-guide(지금 할 일)·#nt-grid, 미리보기 = 공용 #fm-pages ===== */
+    /* ===== 🏷️ 이름표 (게시판·사물함·분리수거함) — 10/5부터 📄 양식 만들기의 둘째 탭(시정표 뒤): 왼쪽 = #fm-left 안의 #nt-guide(지금 할 일)·#nt-grid, 미리보기 = 공용 #fm-pages ===== */
     #nt-grid { display: flex; flex-direction: column; gap: 12px; }
     #nt-grid > * { flex-shrink: 0; min-width: 0; }
     /* 이름표 탭은 미리보기를 조금 좁혀(640px) 왼쪽 칸을 넓게 — 노트북(1366)에서도 두 줄 */
@@ -3349,10 +3349,10 @@
       <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="fmOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
       <div class="tab-switch" id="fm-kind-switch">
         <button class="tab-btn" data-kind="bs" onclick="fmSetKind('bs')">시정표</button>
+        <button class="tab-btn" data-kind="nt" onclick="fmSetKind('nt')">이름표</button>
         <button class="tab-btn active" data-kind="roster" onclick="fmSetKind('roster')">명렬표 수합</button>
         <button class="tab-btn" data-kind="ws" onclick="fmSetKind('ws')">학습지</button>
         <button class="tab-btn" data-kind="pe" onclick="fmSetKind('pe')">수행평가</button>
-        <button class="tab-btn" data-kind="nt" onclick="fmSetKind('nt')">이름표</button>
       </div>
       <button class="top-btn" id="fm-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="fmResetKind()">🗑 초기화</button>
     </div>
@@ -3654,7 +3654,7 @@
       </div>
       </div>
       </div>
-      <!-- 🏷️ 이름표(게시판·사물함·분리수거함): 양식의 다섯째 탭. 위 "지금 할 일" 상자(#nt-guide) + ①~⑥ 상자(#nt-grid, 넓으면 ①은 한 줄 전체·②③④ | ⑤⑥ 두 줄). 미리보기는 공용 #fm-pages -->
+      <!-- 🏷️ 이름표(게시판·사물함·분리수거함): 양식의 둘째 탭(시정표 뒤). 위 "지금 할 일" 상자(#nt-guide) + ①~⑥ 상자(#nt-grid, 넓으면 ①은 한 줄 전체·②③④ | ⑤⑥ 두 줄). 미리보기는 공용 #fm-pages -->
       <div id="nt-guide" style="display:none;"><div id="nt-next"></div></div>
       <div id="nt-grid" style="display:none;">
         <div class="nt-box" id="nt-mode-box">
@@ -4257,7 +4257,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-04.5';
+  var BUILD_ID = '2026-10-05.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13213,7 +13213,7 @@
   // 예전 엑셀 "게시판 이름표" 양식(가로·세로 cm + 이름 목록 → 글씨를 칸에 맞게 크게, A4에 실제 크기로 인쇄)을 옮긴 것.
   // 이름표 한 장 = SVG 하나(단위 mm). 글씨 크기는 캔버스로 재서 칸에 맞추고, A4 여백 8mm 안에 여러 장을 격자로 놓는다
   // (세로·가로 중 한 장에 더 많이 들어가는 쪽). 설정·내용은 개인 자료 nt-cfg 하나(작음 — 학생 정보 없음).
-  // 10/5부터 📄 양식 만들기의 다섯째 탭(kind 'nt'): 왼쪽 칸은 #fm-left 안의 #nt-guide·#nt-grid, 미리보기·🔍 배율·🖨️ 인쇄/PDF·🗑 초기화는 양식 것을 같이 씀.
+  // 10/5부터 📄 양식 만들기의 둘째 탭(시정표 뒤)(kind 'nt'): 왼쪽 칸은 #fm-left 안의 #nt-guide·#nt-grid, 미리보기·🔍 배율·🖨️ 인쇄/PDF·🗑 초기화는 양식 것을 같이 씀.
   // 글꼴은 이미 받아 두는 웹 글꼴 + 이 PC에 설치된 글꼴 이름 직접 입력(인터넷으로 받는 것 없음).
   const NT_CFG_KEY = 'nt-cfg';
   const NT_MARGIN = 8; // mm — A4 여백(엑셀 0.8cm). 이름표 사이 간격은 모드마다(NT_MODE_KEYS의 gap)
@@ -20616,7 +20616,7 @@
   }
   function bsExFontCustom(v) { const name = fmFontClean(v); if (!name) return; bsModeSet(function(m) { m.font = name; m.fontC = true; }); fmFontMsgTo('bs-ex-font-msg', [name]); }
 
-  // 양식 종류(시정표 / 명렬표 수합 / 학습지 / 수행평가 / 이름표) 바꾸기
+  // 양식 종류(시정표 / 이름표 / 명렬표 수합 / 학습지 / 수행평가 — 탭 순서, 사용자 10/5) 바꾸기
   const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표', nt: '이름표' };
   function fmSetKind(k) { ntCloseFontMenu(); fmSet({ kind: FM_KIND_NAME[k] ? k : 'roster' }); fmFillForm(); fmRender(); }
   function fmShowKind(kind) {
@@ -20732,7 +20732,7 @@
     { selector: '#pe-ms-box', before: fmTourPeMs, title: '📝 수행평가 · 원고지', desc: '종류에서 ✍️ 원고지를 고르면 이 칸이 나와요. 글자 수(400~2000자, 직접 적기도 돼요)와 칸 크기·줄 사이 띠·선 색을 고르고, 발문을 적으면 원고지 위에 나와요(글씨만 / 상자). 한 줄은 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 적혀요. 제목·학생 칸·쪽 설정·글꼴은 보고서와 따로 기억돼서(원고지는 처음부터 B4) 종류를 오가도 섞이지 않아요.' },
     { selector: '#pe-word-box', before: fmTourPeWord, title: '📝 수행평가 · 🔤 단어 시험', desc: '엑셀에서 단어·뜻 두 칸을 복사해 단어 칸에 붙여 넣거나 📂 엑셀·CSV 파일을 올리면 바로 시험지가 돼요(번호·품사 칸, 맨 위 머리 줄은 알아서 골라요). 문제 방향(영어 → 뜻 / 뜻 → 영어 / 반반 섞기), 1단·2단, 칸 높이, 몇 개만 무작위로 뽑기, 🔀 순서 섞기를 고르고, 점수 칸·정답지(시험지 뒤에 빨간 답)·A형·B형(순서만 다른 두 판)을 체크로 넣어요. 영어 단어는 첫 글자 힌트(a _ _ _ _)·품사·✏️ 따라 쓰기 연습지도 돼요. 한자·용어는 📋 일반(문제 | 답)을 골라 칸 이름을 바꿔 써요.' },
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 이름표를 볼게요.' },
-    // 🏷️ 이름표(양식의 다섯째 탭 — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
+    // 🏷️ 이름표(양식의 둘째 탭(시정표 뒤) — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
     { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
     { selector: '#nt-next', before: fmTourNtBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
     { selector: '#nt-mode-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 1단계. 무엇을 만들지', desc: '게시판: 게시판·교실 문에 붙이는 큰 글씨 이름표 / 사물함: 반 학생 전원 / 분리수거함: 아이콘·종류별 색. 세 가지는 내용·크기·글자 설정을 따로 기억해요(사물함·분리수거함은 아래에서 따로 보여 드려요).' },

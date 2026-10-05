@@ -587,7 +587,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('명렬표를 못 받으면 안내 + 글을 고쳐도 다시 요청 안 함', /불러오지 못했어요/.test(await P.locator('#fm-pages').innerText()) && studentSelects.length === n0, studentSelects.slice(-3));
   failStudents = false;
 
-  // 🏷️ 이름표 탭(10/5부터 양식의 다섯째 탭 — 자세한 검사는 nt-test.js)
+  // 🏷️ 이름표 탭(10/5부터 양식의 둘째 탭(시정표 뒤) — 자세한 검사는 nt-test.js)
   await P.click('#fm-kind-switch [data-kind="nt"]'); await P.waitForTimeout(300);
   check('이름표 탭: 이름표 칸만 보이고 명렬표 수합 칸 숨김, 한글 파일·엑셀 단추 숨김', await P.evaluate(() => document.getElementById('nt-grid').style.display !== 'none' && document.getElementById('fm-grid').style.display === 'none' && getComputedStyle(document.getElementById('fm-hwpx-btn')).display === 'none' && getComputedStyle(document.getElementById('fm-xlsx-btn')).display === 'none' && JSON.parse(localStorage.getItem('fm-cfg')).kind === 'nt'));
   await P.click('#fm-kind-switch [data-kind="roster"]'); await P.waitForTimeout(300);
