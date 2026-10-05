@@ -178,7 +178,7 @@ function check(label, cond, detail) {
 async function walk(P, openExpr) {
   await P.evaluate(openExpr); await wait(400);
   const seen = [];
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < 80; k++) { // 양식 설명서는 50단계 넘음(이름표 묶음까지)
     const st = await P.evaluate(() => {
       const ov = document.getElementById('tour-overlay');
       if (ov.style.display === 'none') return null;
