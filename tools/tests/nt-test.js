@@ -216,8 +216,8 @@ function pdfInfo(buf) {
   await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
   const hdr = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, ws: document.getElementById('ws-grid').style.display,
     hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display, xlsx: getComputedStyle(document.getElementById('fm-xlsx-btn')).display, print: document.getElementById('fm-print-btn').textContent.trim(), no7: getComputedStyle(document.getElementById('fm-print-no')).display,
-    note: document.getElementById('fm-out-note').textContent, cls: document.getElementById('form-page').classList.contains('fm-kind-nt'), tab: document.querySelector('#fm-kind-switch .tab-btn.active').dataset.kind }));
-  check('이름표 탭: 이름표 칸·지금 할 일만 보이고 다른 양식 칸 숨김, ⬇️ 한글 파일·📊 엑셀 단추 숨김, ⑦ 🖨️ 인쇄/PDF만, 배율 100% 안내', await shown() && hdr.grid === '' && hdr.guide === '' && hdr.fm === 'none' && hdr.ws === 'none' && hdr.hwpx === 'none' && hdr.xlsx === 'none' && hdr.print === '🖨️ 인쇄/PDF' && hdr.no7 !== 'none' && /100%/.test(hdr.note) && hdr.cls && hdr.tab === 'nt', hdr);
+    note: document.getElementById('fm-out-note').textContent, tab: document.querySelector('#fm-kind-switch .tab-btn.active').dataset.kind }));
+  check('이름표 탭: 이름표 칸·지금 할 일만 보이고 다른 양식 칸 숨김, ⬇️ 한글 파일·📊 엑셀 단추 숨김, ⑦ 🖨️ 인쇄/PDF만, 배율 100% 안내', await shown() && hdr.grid === '' && hdr.guide === '' && hdr.fm === 'none' && hdr.ws === 'none' && hdr.hwpx === 'none' && hdr.xlsx === 'none' && hdr.print === '🖨️ 인쇄/PDF' && hdr.no7 !== 'none' && /100%/.test(hdr.note) && hdr.tab === 'nt', hdr);
   check('양식 버튼 표시, 홈은 숨김', await P.evaluate(() => document.getElementById('rail-forms-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
   check('① 무엇을 만들지 칸(게시판·사물함·분리수거함 탭)이 왼쪽 맨 위 상자', await P.evaluate(() => { const b = document.getElementById('nt-mode-box'); return b.querySelector('.nt-no').textContent === '①' && !!b.querySelector('#nt-mode-switch') && b.parentElement.id === 'nt-grid' && b === document.querySelector('#nt-grid > *'); }));
   check('처음엔 입체 글씨 디자인·주아 글꼴(엑셀 양식처럼)', await P.evaluate(() => document.querySelector('#nt-styles .nt-style.on').innerText.includes('입체 글씨') && document.getElementById('nt-font-btn').innerText.includes('주아') && document.querySelector('#nt-font-menu .nt-font-opt.on').title === '주아'));
@@ -449,8 +449,8 @@ function pdfInfo(buf) {
   await P.click('#nt-font-btn'); await wait(150);
   await P.click('#fm-kind-switch [data-kind="roster"]'); await wait(300);
   const back = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display,
-    no7: getComputedStyle(document.getElementById('fm-print-no')).display, menu: document.getElementById('nt-font-menu').style.display, cls: document.getElementById('form-page').classList.contains('fm-kind-nt'), note: document.getElementById('fm-out-note').textContent, sheets: document.querySelectorAll('#fm-pages .nt-sheet').length }));
-  check('명렬표 수합 탭으로: 이름표 칸·⑦ 숨김, 한글 파일 단추·안내 다시, 글꼴 메뉴 닫힘, 미리보기에 이름표 없음', back.grid === 'none' && back.guide === 'none' && back.fm === '' && back.hwpx !== 'none' && back.no7 === 'none' && back.menu === 'none' && !back.cls && /한글/.test(back.note) && back.sheets === 0, back);
+    no7: getComputedStyle(document.getElementById('fm-print-no')).display, menu: document.getElementById('nt-font-menu').style.display, note: document.getElementById('fm-out-note').textContent, sheets: document.querySelectorAll('#fm-pages .nt-sheet').length }));
+  check('명렬표 수합 탭으로: 이름표 칸·⑦ 숨김, 한글 파일 단추·안내 다시, 글꼴 메뉴 닫힘, 미리보기에 이름표 없음', back.grid === 'none' && back.guide === 'none' && back.fm === '' && back.hwpx !== 'none' && back.no7 === 'none' && back.menu === 'none' && /한글/.test(back.note) && back.sheets === 0, back);
   await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
   check('이름표 탭으로 돌아오면 그대로(사물함 3학년 1반 5명)', await shown() && (await texts(P)).length === 5);
   // 🗑 초기화: 이름표 설정만(다른 양식 설정은 그대로)
@@ -476,7 +476,7 @@ function pdfInfo(buf) {
   const small = await openDevice(browser, 'S', T1, { viewport: { width: 1366, height: 768 } });
   await openNt(small.page);
   check('1366×768: 양식 버튼 보이고 이름표 탭 열림', await small.page.evaluate(() => { const r = document.getElementById('rail-forms-btn').getBoundingClientRect(); return r.bottom <= innerHeight; }) && await ntTab(small.page));
-  check('1366×768: 양식 왼쪽 칸이 600px 넘어 이름표 상자가 두 줄(② 내용 | ⑤ 글꼴 나란히)', await small.page.evaluate(() => { const l = document.getElementById('fm-left').clientWidth, a = document.getElementById('nt-board-box').getBoundingClientRect(), f = document.getElementById('nt-font-box').getBoundingClientRect(); return l >= 600 && f.left > a.right - 1 && Math.abs(f.top - a.top) < 2; }), await small.page.evaluate(() => document.getElementById('fm-left').clientWidth));
+  check('1366×768: 양식 왼쪽 칸이 600px 넘어 이름표 상자가 두 줄(② 내용 | ⑤ 글꼴 나란히 — 모든 탭이 같은 너비)', await small.page.evaluate(() => { const l = document.getElementById('fm-left').clientWidth, a = document.getElementById('nt-board-box').getBoundingClientRect(), f = document.getElementById('nt-font-box').getBoundingClientRect(); return l >= 600 && f.left > a.right - 1 && Math.abs(f.top - a.top) < 2; }), await small.page.evaluate(() => document.getElementById('fm-left').clientWidth));
   if (!(await small.page.evaluate(() => !!document.querySelector('#fm-pages .nt-sheet')))) { await small.page.fill('#nt-text', '월간 일정표\n오늘의 메뉴'); await wait(300); } // 위 🗑 초기화로 내용이 비어 있음
   const zoomOk = await small.page.evaluate(() => { const z = parseFloat(document.getElementById('fm-pages').style.zoom || '1'); const sh = document.querySelector('.nt-sheet'); const sc = document.getElementById('fm-prev-scroll'); return sh.offsetHeight * z <= sc.clientHeight && sh.offsetWidth * z <= sc.clientWidth; });
   check('미리보기: 종이 한 장이 칸 안에 다 보임', zoomOk);

@@ -244,9 +244,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const at1600 = await colsAt(1600, 1000), at1536 = await colsAt(1536, 730), at1366 = await colsAt(1366, 657);
   console.log('    1600px', JSON.stringify(at1600), '1536px', JSON.stringify(at1536), '1366px', JSON.stringify(at1366));
   check('머리 줄(설명서·양식 탭·초기화·인쇄·내려받기)이 노트북(1366px)에서도 한 줄', at1366.head === at1600.head && at1366.head < 70, [at1366.head, at1600.head]);
-  check('넓은 화면은 설정 상자를 두 열로(1600·1536px), 노트북(1366px)은 한 열 — 미리보기 A4는 거의 제 크기(700px 넘게)', at1600.cols === 2 && at1536.cols === 2 && at1366.cols === 1 &&
-    [at1600, at1536, at1366].every(x => x.over <= 0 && x.sheet >= 700), [at1600, at1536, at1366]);
-  check('두 열일 때 옆 상자끼리 위·아래 선이 맞음(명단↔배치, 제목·안내↔칸 너비, 체크 칸↔정렬)', at1600.even && at1536.even, [at1600, at1536]);
+  // 10/5: 왼쪽 칸 = 100% − 640px(최대 820) — 이름표 탭과 같은 너비로 통일, 노트북(1366)도 두 열. 미리보기 A4는 0.73~0.85배(🔍로 키움)
+  check('설정 상자 두 열(1600·1536·1366px 모두 — 왼쪽 칸 600px 넘음), 미리보기 A4 560px 넘게·왼쪽 칸 안 넘침', at1600.cols === 2 && at1536.cols === 2 && at1366.cols === 2 && at1366.left >= 600 &&
+    [at1600, at1536, at1366].every(x => x.over <= 0 && x.sheet >= 560), [at1600, at1536, at1366]);
+  check('두 열일 때 옆 상자끼리 위·아래 선이 맞음(명단↔배치, 제목·안내↔칸 너비, 체크 칸↔정렬)', at1600.even && at1536.even && at1366.even, [at1600, at1536, at1366]);
   const at1920 = await colsAt(1920, 950);
   await P.screenshot({ path: 'fm-1920.png' });
   await P.evaluate(() => document.getElementById('fm-left').scrollTop = 9999); await P.screenshot({ path: 'fm-1920b.png', clip: { x: 60, y: 400, width: 740, height: 550 } });
