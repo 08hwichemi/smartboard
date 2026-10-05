@@ -587,9 +587,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('명렬표를 못 받으면 안내 + 글을 고쳐도 다시 요청 안 함', /불러오지 못했어요/.test(await P.locator('#fm-pages').innerText()) && studentSelects.length === n0, studentSelects.slice(-3));
   failStudents = false;
 
+  // 🏷️ 이름표 탭(10/5부터 양식의 다섯째 탭 — 자세한 검사는 nt-test.js)
+  await P.click('#fm-kind-switch [data-kind="nt"]'); await P.waitForTimeout(300);
+  check('이름표 탭: 이름표 칸만 보이고 명렬표 수합 칸 숨김, 한글 파일·엑셀 단추 숨김', await P.evaluate(() => document.getElementById('nt-grid').style.display !== 'none' && document.getElementById('fm-grid').style.display === 'none' && getComputedStyle(document.getElementById('fm-hwpx-btn')).display === 'none' && getComputedStyle(document.getElementById('fm-xlsx-btn')).display === 'none' && JSON.parse(localStorage.getItem('fm-cfg')).kind === 'nt'));
+  await P.click('#fm-kind-switch [data-kind="roster"]'); await P.waitForTimeout(300);
+  check('명렬표 수합 탭으로 돌아오면 칸·단추 다시', await P.evaluate(() => document.getElementById('nt-grid').style.display === 'none' && document.getElementById('fm-grid').style.display !== 'none' && getComputedStyle(document.getElementById('fm-hwpx-btn')).display !== 'none'));
   // 다른 화면으로 가면 닫힘
-  await P.click('#rail-nametag-btn'); await P.waitForTimeout(300);
-  check('이름표를 누르면 양식 화면이 닫힘', !(await P.isVisible('#form-page')) && await P.isVisible('#nametag-page') && !(await P.evaluate(() => document.getElementById('rail-forms-btn').classList.contains('active'))));
+  await P.click('#rail-monthly-btn'); await P.waitForTimeout(300);
+  check('월간일정표를 누르면 양식 화면이 닫힘', !(await P.isVisible('#form-page')) && await P.isVisible('#monthly-page') && !(await P.evaluate(() => document.getElementById('rail-forms-btn').classList.contains('active'))));
   await P.click('#rail-forms-btn'); await P.waitForTimeout(300);
   await P.click('#rail-forms-btn'); await P.waitForTimeout(300);
   check('양식 버튼을 한 번 더 누르면 홈', !(await P.isVisible('#form-page')) && await P.isVisible('#main-dashboard'));

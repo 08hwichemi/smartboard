@@ -1248,12 +1248,11 @@
       .ab-paper { transform: none !important; box-shadow: none !important; break-after: avoid; break-inside: avoid; }
     }
 
-    /* ===== 🏷️ 이름표 (게시판·분리수거함) ===== */
-    #nt-body { display: flex; flex: 1; min-height: 0; }
-    #nt-left { width: 380px; flex: 0 0 auto; overflow-y: auto; padding: 14px; box-sizing: border-box; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; }
-    #nt-right { flex: 1; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg-color); min-height: 0; }
-    #nt-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
-    #nt-pages { display: flex; flex-direction: column; align-items: safe center; gap: 18px; padding: 6px 0 20px; transform-origin: top center; }
+    /* ===== 🏷️ 이름표 (게시판·사물함·분리수거함) — 10/5부터 📄 양식 만들기의 다섯째 탭: 왼쪽 = #fm-left 안의 #nt-guide(지금 할 일)·#nt-grid, 미리보기 = 공용 #fm-pages ===== */
+    #nt-grid { display: flex; flex-direction: column; gap: 12px; }
+    #nt-grid > * { flex-shrink: 0; min-width: 0; }
+    /* 이름표 탭은 미리보기를 조금 좁혀(640px) 왼쪽 칸을 넓게 — 노트북(1366)에서도 두 줄 */
+    #form-page.fm-kind-nt #fm-left { width: clamp(320px, calc(100% - 640px), 820px); }
     .nt-sheet { position: relative; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.12); overflow: hidden; flex: 0 0 auto; }
     .nt-sheet svg { position: absolute; display: block; overflow: visible; }
     .nt-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -1266,8 +1265,6 @@
     .nt-chip.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
     #nt-text::placeholder, #nt-rc-text::placeholder, #nt-custom::placeholder { color: #BCC1CA; opacity: 1; }
     #nt-text { width: 100%; min-height: 150px; resize: vertical; font-size: 13px; line-height: 1.6; }
-    /* 왼쪽 칸들이 패널 높이에 맞춰 눌려 찌그러지지 않게(넘치면 패널이 스크롤) */
-    #nt-left > * { flex-shrink: 0; }
     .nt-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .nt-col > * { flex-shrink: 0; }
     .nt-no, .nt-hdr-no { font-weight: 900; color: var(--accent-color); }
@@ -1282,14 +1279,13 @@
     #nt-next .pa-next-msg { flex: 1 1 210px; line-height: 1.6; }
     #nt-next .top-btn { font-size: 12px !important; padding: 5px 12px !important; margin-left: auto; }
     #nt-next .nt-again { background: none !important; border: none !important; color: var(--text-sub) !important; text-decoration: underline; font-weight: 600; padding: 0 4px !important; }
-    /* 넓은 화면: 좌석배치표·월간일정표·시간표처럼 왼쪽 칸을 넓혀 두 줄 — 왼쪽 = ② 내용·③ 크기·④ 장수, 오른쪽 = ⑤ 글꼴·⑥ 디자인. 좁으면 위아래(같은 순서) */
-    @media (min-width: 1440px) {
-      #nt-left { width: clamp(700px, calc(100vw - 800px), 820px); flex-direction: row; flex-wrap: wrap; align-items: stretch; align-content: flex-start; }
-      #nt-left > #nt-next { flex: 0 0 100%; }
-      #nt-left > .nt-col { flex: 1 1 0; }
+    /* 양식 왼쪽 칸이 넓으면(학습지·수행평가와 같은 600px) 두 줄 — ① 무엇을 만들지는 한 줄 전체, 왼쪽 = ② 내용·③ 크기·④ 장수, 오른쪽 = ⑤ 글꼴·⑥ 디자인. 좁으면 위아래(같은 순서) */
+    @container (min-width: 600px) {
+      #nt-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+      #nt-grid > #nt-mode-box { grid-column: 1 / -1; }
       .nt-col > .nt-box:last-child { flex-grow: 1; }
-      #nt-left .nt-col { gap: 10px; }
-      #nt-left .nt-rc { padding-top: 4px; padding-bottom: 4px; }
+      #nt-grid .nt-col { gap: 10px; }
+      #nt-grid .nt-rc { padding-top: 4px; padding-bottom: 4px; }
     }
     /* 글꼴 고르기: 드롭다운. 펼치면 글꼴마다 그 글꼴로 쓴 이름 + 예시 */
     #nt-font-btn { width: 100%; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-color); background: #fff; color: #222; border-radius: 8px; padding: 6px 10px; cursor: pointer; text-align: left; min-height: 40px; box-sizing: border-box; }
@@ -1318,11 +1314,7 @@
     .nt-rc svg { flex: 0 0 auto; }
     .nt-rc.on { border-color: var(--accent-color); background: var(--accent-soft); }
     .nt-empty { text-align: center; color: var(--text-sub); font-size: 13px; padding: 60px 10px; line-height: 1.8; }
-    @media (max-width: 1100px) { #nt-left { width: 320px; } }
-    @media print {
-      #nt-page-header, #nt-left, #nt-right-head { display: none !important; }
-      body[data-print-target="nametag"] #nametag-page, body[data-print-target="nametag"] #nt-body, body[data-print-target="nametag"] #nt-right, body[data-print-target="nametag"] #nt-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
-      #nt-pages { zoom: 1 !important; display: block !important; padding: 0 !important; }
+    @media print { /* 양식 화면 인쇄(#fm-pages) 안에서 이름표 종이 한 장 = 한 쪽 */
       .nt-sheet { box-shadow: none !important; margin: 0 !important; break-after: page; break-inside: avoid; }
       .nt-sheet:last-child { break-after: auto; }
     }
@@ -1918,7 +1910,7 @@
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></div>
       <div class="rail-label">홈</div>
     </div>
-    <!-- 홈 아래 ~ 이름표 = 모든 선생님이 쓰는 공통 기능. 자주 쓰는 순서(양식 → 매달 쓰는 좌석배치표·월간일정표 → 학기에 한 번쯤인 시간표·이름표) -->
+    <!-- 홈 아래 ~ 시간표 = 모든 선생님이 쓰는 공통 기능. 자주 쓰는 순서(양식(이름표도 양식의 탭) → 매달 쓰는 좌석배치표·월간일정표 → 학기에 한 번쯤인 시간표) -->
     <div class="rail-sep" aria-hidden="true"><span>공통</span></div>
     <div class="rail-item" id="rail-roster-btn" title="명렬표" onclick="openStudentRoster()">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20"/></svg></div>
@@ -1952,10 +1944,6 @@
     <div class="rail-item" id="rail-persontt-btn" title="시간표" onclick="railToggle('rail-persontt-btn', openPersonTT)">
       <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg></div>
       <div class="rail-label">시간표</div>
-    </div>
-    <div class="rail-item" id="rail-nametag-btn" title="이름표" onclick="railToggle('rail-nametag-btn', openNametag)">
-      <div class="rail-ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.2V4.5A1.5 1.5 0 0 1 4.5 3h7.7l8.9 8.9a1.5 1.5 0 0 1 0 2.1l-7.1 7.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg></div>
-      <div class="rail-label">이름표</div>
     </div>
     <!-- 아래는 학급(담임) 쪽 기능 — 누구나 쓸 수 있지만 공통 기능과 구분해 둠 -->
     <div class="rail-sep" aria-hidden="true"><span>학급</span></div>
@@ -3353,126 +3341,6 @@
   </div>
 </div>
 
-<div id="nametag-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
-  <div id="nt-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="goHome()">← 홈으로</button>
-      <div style="font-weight: 800; font-size: 16px;">🏷️ 이름표</div>
-      <button class="top-btn tour-btn" style="font-size:11px; padding:4px 10px;" onclick="ntOpenTour()" title="처음 사용하시나요? 눌러서 순서대로 안내받으세요">📖 설명서</button>
-      <span class="nt-hdr-no" title="1단계">①</span>
-      <div class="tab-switch" id="nt-mode-switch">
-        <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판</button>
-        <button class="tab-btn" data-mode="locker" onclick="ntSetMode('locker')">사물함</button>
-        <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">분리수거함</button>
-      </div>
-    </div>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <span class="nt-muted">인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 두세요 — 적은 크기(cm) 그대로 나와요.</span>
-      <span class="nt-hdr-no" title="7단계 · 출력">⑦</span>
-      <button class="top-btn accent" id="nt-print-btn" style="font-size:12px; padding:5px 14px;" onclick="ntPrint()">🖨️ 출력</button>
-    </div>
-  </div>
-  <div id="nt-body">
-    <div id="nt-left">
-     <div id="nt-next"></div>
-     <div class="nt-col" id="nt-col-1">
-      <div class="nt-box" id="nt-board-box">
-        <div class="nt-title"><span><span class="nt-no">②</span> ✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></span><span class="nt-st nt-st-2"></span></div>
-        <textarea id="nt-text" class="lp-input" placeholder="예)&#10;월간 일정표&#10;오늘의 메뉴&#10;수능 D-Day&#10;시간표 변경 / TIMETABLE" oninput="ntOnText()"></textarea>
-        <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>/</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
-      </div>
-
-      <div class="nt-box" id="nt-rc-box" style="display:none;">
-        <div class="nt-title"><span><span class="nt-no">②</span> ♻️ 분리수거 종류 <span class="nt-muted">체크한 것만 만들어요</span></span><span class="nt-st nt-st-2"></span></div>
-        <div id="nt-rc-list"></div>
-        <textarea id="nt-rc-text" class="lp-input" style="min-height:52px; resize:vertical;" placeholder="직접 더하기 (한 줄에 하나) 예) 건전지" oninput="ntOnRcText()"></textarea>
-        <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="nt-rc-eng" onchange="ntSet({ rcEng: this.checked }); ntRender();"> 영어 이름 함께 쓰기 (PLASTIC, PAPER …)</label>
-      </div>
-
-      <div class="nt-box" id="nt-lk-box" style="display:none;">
-        <div class="nt-title"><span><span class="nt-no">②</span> 🔐 사물함 이름표 <span class="nt-muted">명렬표에서 반 학생 전원을 가져와요</span></span><span class="nt-st nt-st-2"></span></div>
-        <div class="nt-row">
-          <select id="nt-lk-grade" class="mini-select" style="width:74px;" onchange="ntOnLkClass('grade')"></select>
-          <select id="nt-lk-class" class="mini-select" style="width:64px;" onchange="ntOnLkClass('class')"></select>
-          <span class="nt-muted" id="nt-lk-count"></span>
-        </div>
-        <div class="nt-row" id="nt-lk-fmt"></div>
-      </div>
-
-      <div class="nt-box" id="nt-size-box">
-        <div class="nt-title"><span><span class="nt-no">③</span> 📏 크기</span><span class="nt-muted" id="nt-fit-info"></span><span class="nt-st" id="nt-st-3"></span></div>
-        <div class="nt-row">
-          가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
-          × 세로 <input type="number" id="nt-h" class="lp-input" min="1" max="28.1" step="0.1" oninput="ntOnSize()"> cm
-        </div>
-        <div class="nt-row" id="nt-presets"></div>
-      </div>
-
-      <div class="nt-box" id="nt-copies-box">
-        <div class="nt-title"><span><span class="nt-no">④</span> 📄 장수 · 글자 크기</span><span class="nt-st" id="nt-st-4"></span></div>
-        <div class="nt-row" style="justify-content:space-between;">
-          <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
-          <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSetM('same', this.checked); ntRender();"> 글자 크기 모두 같게</label>
-        </div>
-      </div>
-
-     </div>
-     <div class="nt-col" id="nt-col-2">
-      <div class="nt-box" id="nt-font-box">
-        <div class="nt-title"><span><span class="nt-no">⑤</span> 🔤 글꼴</span><span class="nt-st" id="nt-st-5"></span></div>
-        <button type="button" id="nt-font-btn" onclick="ntToggleFontMenu()" title="글꼴 고르기"></button>
-        <div id="nt-font-menu" style="display:none;"></div>
-        <div id="nt-custom-row" style="display:none; flex-direction:column; gap:6px;">
-          <div class="nt-row">
-            <input type="text" id="nt-custom" class="lp-input" style="flex:1; min-width:150px;" list="nt-local-fonts" placeholder="PC에 설치된 글꼴 이름 (예: 맑은 고딕)" oninput="ntOnCustomFont()">
-            <button class="top-btn" style="font-size:11px; padding:5px 8px;" onclick="ntLoadLocalFonts()" title="이 PC에 설치된 글꼴 목록을 불러와 고를 수 있게 합니다">💻 내 PC 글꼴 목록</button>
-            <datalist id="nt-local-fonts"></datalist>
-          </div>
-          <div class="nt-muted" id="nt-custom-msg">이 PC에 설치된 글꼴을 그대로 써요(인터넷으로 받는 것 없음). 다른 PC에 그 글꼴이 없으면 기본 글꼴로 나와요.</div>
-        </div>
-        <div class="nt-row">
-          굵기 <select id="nt-weight" class="mini-select" onchange="ntSet({ weight: parseInt(this.value) }); ntRender();">
-            <option value="400">보통</option><option value="600">조금 굵게</option><option value="700">굵게</option><option value="900">아주 굵게</option>
-          </select>
-        </div>
-        <div class="nt-row" title="이름표 칸에서 글자가 차지하는 크기">글자 크기 <input type="range" id="nt-fillr" min="30" max="100" step="2" style="flex:1;" oninput="ntSetM('fillPct', parseInt(this.value)); ntRender();"> <span id="nt-fill-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
-        <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSetM('ls', parseInt(this.value)); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
-      </div>
-
-      <div class="nt-box" id="nt-design-box">
-        <div class="nt-title"><span><span class="nt-no">⑥</span> 🎨 디자인 · 색</span><span class="nt-st" id="nt-st-6"></span></div>
-        <div id="nt-styles"></div>
-        <div class="nt-row">모서리
-          <span class="top-btn-cluster" id="nt-radius" style="display:inline-flex;">
-            <button class="top-btn" data-v="0" onclick="ntSet({ radius: 0 }); ntFillForm(); ntRender();">각지게</button>
-            <button class="top-btn" data-v="2" onclick="ntSet({ radius: 2 }); ntFillForm(); ntRender();">살짝 둥글게</button>
-            <button class="top-btn" data-v="5" onclick="ntSet({ radius: 5 }); ntFillForm(); ntRender();">둥글게</button>
-          </span>
-        </div>
-        <div class="nt-row" id="nt-color-modes"></div>
-        <div id="nt-swatches"></div>
-      </div>
-     </div>
-    </div>
-
-    <div id="nt-right">
-      <div id="nt-right-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:10px; flex:none;">
-          <div style="font-weight:800; font-size:13px;">🖨️ 출력 미리보기</div>
-          <div id="nt-zoom-group" style="display:flex; align-items:center; gap:6px; background:var(--tt-bg); padding:3px 10px; border-radius:20px; border:1px solid var(--border-color);" title="미리보기 확대/축소 — 화면에서 보기만 바뀌고 인쇄 크기는 그대로예요">
-            <span style="font-size:12px;">🔍</span>
-            <button class="top-btn" style="padding:2px 8px;" onclick="ntZoomBy(-1)" title="작게">-</button>
-            <span id="nt-zoom-text" style="font-size:12px; font-weight:800; min-width:38px; text-align:center; cursor:pointer;" onclick="ntZoomBy(0)" title="눌러서 한 장에 맞춤(100%)">100%</span>
-            <button class="top-btn" style="padding:2px 8px;" onclick="ntZoomBy(1)" title="크게">+</button>
-          </div>
-        </div>
-        <div id="nt-prev-label" class="nt-muted" style="text-align:right;"></div>
-      </div>
-      <div id="nt-prev-scroll"><div id="nt-pages"></div></div>
-    </div>
-  </div>
-</div>
-
 <div id="form-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
   <div id="fm-page-header" style="display:flex; align-items:center; justify-content:space-between; padding: 14px 22px; border-bottom: 1px solid var(--border-color); flex: 0 0 auto; flex-wrap:wrap; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -3484,12 +3352,14 @@
         <button class="tab-btn active" data-kind="roster" onclick="fmSetKind('roster')">명렬표 수합</button>
         <button class="tab-btn" data-kind="ws" onclick="fmSetKind('ws')">학습지</button>
         <button class="tab-btn" data-kind="pe" onclick="fmSetKind('pe')">수행평가</button>
+        <button class="tab-btn" data-kind="nt" onclick="fmSetKind('nt')">이름표</button>
       </div>
       <button class="top-btn" id="fm-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="fmResetKind()">🗑 초기화</button>
     </div>
     <div id="fm-out-btns" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span class="nt-muted" id="fm-out-note">한글 파일은 한글에서 그대로 고칠 수 있어요.</span>
-      <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()">🖨️ 인쇄</button>
+      <span class="nt-hdr-no" id="fm-print-no" title="7단계 · 출력" style="display:none;">⑦</span>
+      <button class="top-btn" id="fm-print-btn" style="font-size:12px; padding:5px 12px;" onclick="fmPrint()" title="인쇄하거나 PDF로 저장합니다">🖨️ 인쇄/PDF</button>
       <button class="top-btn" id="fm-xlsx-btn" style="font-size:12px; padding:5px 12px;" onclick="fmDownloadXlsx()" title="엑셀(.xlsx)로 내려받기 — 반마다 한 시트, 1단">📊 엑셀</button>
       <button class="top-btn accent" id="fm-hwpx-btn" style="font-size:12px; padding:5px 14px;" onclick="fmDownloadHwpx()" title="한글 파일은 진짜 표·글자로 만들어져서 한글에서 그대로 고칠 수 있어요">⬇️ 한글 파일(.hwpx)</button>
     </div>
@@ -3783,6 +3653,97 @@
         </details>
       </div>
       </div>
+      </div>
+      <!-- 🏷️ 이름표(게시판·사물함·분리수거함): 양식의 다섯째 탭. 위 "지금 할 일" 상자(#nt-guide) + ①~⑥ 상자(#nt-grid, 넓으면 ①은 한 줄 전체·②③④ | ⑤⑥ 두 줄). 미리보기는 공용 #fm-pages -->
+      <div id="nt-guide" style="display:none;"><div id="nt-next"></div></div>
+      <div id="nt-grid" style="display:none;">
+        <div class="nt-box" id="nt-mode-box">
+          <div class="nt-title"><span><span class="nt-no">①</span> 🏷️ 무엇을 만들지</span><span class="nt-st" id="nt-st-1"></span></div>
+          <div class="tab-switch" id="nt-mode-switch" style="align-self:flex-start;">
+            <button class="tab-btn active" data-mode="board" onclick="ntSetMode('board')">게시판</button>
+            <button class="tab-btn" data-mode="locker" onclick="ntSetMode('locker')">사물함</button>
+            <button class="tab-btn" data-mode="recycle" onclick="ntSetMode('recycle')">분리수거함</button>
+          </div>
+          <div class="nt-muted">게시판·교실 문에 붙이는 큰 글씨 이름표 / 반 학생 전원의 사물함 이름표 / 분리수거함 이름표 — 세 가지는 내용·크기·글자 설정을 따로 기억해요.</div>
+        </div>
+        <div class="nt-col" id="nt-col-1">
+         <div class="nt-box" id="nt-board-box">
+           <div class="nt-title"><span><span class="nt-no">②</span> ✏️ 내용 <span class="nt-muted">한 줄에 하나 · 개수 제한 없음</span></span><span class="nt-st nt-st-2"></span></div>
+           <textarea id="nt-text" class="lp-input" placeholder="예)&#10;월간 일정표&#10;오늘의 메뉴&#10;수능 D-Day&#10;시간표 변경 / TIMETABLE" oninput="ntOnText()"></textarea>
+           <div class="nt-muted">작은 글씨(부제)를 붙이려면 <b>/</b> 뒤에 적으세요. 예) <b>월간 일정표 / MONTHLY PLAN</b></div>
+         </div>
+
+         <div class="nt-box" id="nt-rc-box" style="display:none;">
+           <div class="nt-title"><span><span class="nt-no">②</span> ♻️ 분리수거 종류 <span class="nt-muted">체크한 것만 만들어요</span></span><span class="nt-st nt-st-2"></span></div>
+           <div id="nt-rc-list"></div>
+           <textarea id="nt-rc-text" class="lp-input" style="min-height:52px; resize:vertical;" placeholder="직접 더하기 (한 줄에 하나) 예) 건전지" oninput="ntOnRcText()"></textarea>
+           <label class="nt-row" style="cursor:pointer;"><input type="checkbox" id="nt-rc-eng" onchange="ntSet({ rcEng: this.checked }); ntRender();"> 영어 이름 함께 쓰기 (PLASTIC, PAPER …)</label>
+         </div>
+
+         <div class="nt-box" id="nt-lk-box" style="display:none;">
+           <div class="nt-title"><span><span class="nt-no">②</span> 🔐 사물함 이름표 <span class="nt-muted">명렬표에서 반 학생 전원을 가져와요</span></span><span class="nt-st nt-st-2"></span></div>
+           <div class="nt-row">
+             <select id="nt-lk-grade" class="mini-select" style="width:74px;" onchange="ntOnLkClass('grade')"></select>
+             <select id="nt-lk-class" class="mini-select" style="width:64px;" onchange="ntOnLkClass('class')"></select>
+             <span class="nt-muted" id="nt-lk-count"></span>
+           </div>
+           <div class="nt-row" id="nt-lk-fmt"></div>
+         </div>
+
+         <div class="nt-box" id="nt-size-box">
+           <div class="nt-title"><span><span class="nt-no">③</span> 📏 크기</span><span class="nt-muted" id="nt-fit-info"></span><span class="nt-st" id="nt-st-3"></span></div>
+           <div class="nt-row">
+             가로 <input type="number" id="nt-w" class="lp-input" min="2" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+             × 세로 <input type="number" id="nt-h" class="lp-input" min="1" max="28.1" step="0.1" oninput="ntOnSize()"> cm
+           </div>
+           <div class="nt-row" id="nt-presets"></div>
+         </div>
+
+         <div class="nt-box" id="nt-copies-box">
+           <div class="nt-title"><span><span class="nt-no">④</span> 📄 장수 · 글자 크기</span><span class="nt-st" id="nt-st-4"></span></div>
+           <div class="nt-row" style="justify-content:space-between;">
+             <span>같은 이름표를 <input type="number" id="nt-copies" class="lp-input" min="1" max="50" step="1" style="width:56px;" oninput="ntOnCopies()"> 장씩</span>
+             <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="nt-same" onchange="ntSetM('same', this.checked); ntRender();"> 글자 크기 모두 같게</label>
+           </div>
+         </div>
+
+        </div>
+        <div class="nt-col" id="nt-col-2">
+         <div class="nt-box" id="nt-font-box">
+           <div class="nt-title"><span><span class="nt-no">⑤</span> 🔤 글꼴</span><span class="nt-st" id="nt-st-5"></span></div>
+           <button type="button" id="nt-font-btn" onclick="ntToggleFontMenu()" title="글꼴 고르기"></button>
+           <div id="nt-font-menu" style="display:none;"></div>
+           <div id="nt-custom-row" style="display:none; flex-direction:column; gap:6px;">
+             <div class="nt-row">
+               <input type="text" id="nt-custom" class="lp-input" style="flex:1; min-width:150px;" list="nt-local-fonts" placeholder="PC에 설치된 글꼴 이름 (예: 맑은 고딕)" oninput="ntOnCustomFont()">
+               <button class="top-btn" style="font-size:11px; padding:5px 8px;" onclick="ntLoadLocalFonts()" title="이 PC에 설치된 글꼴 목록을 불러와 고를 수 있게 합니다">💻 내 PC 글꼴 목록</button>
+               <datalist id="nt-local-fonts"></datalist>
+             </div>
+             <div class="nt-muted" id="nt-custom-msg">이 PC에 설치된 글꼴을 그대로 써요(인터넷으로 받는 것 없음). 다른 PC에 그 글꼴이 없으면 기본 글꼴로 나와요.</div>
+           </div>
+           <div class="nt-row">
+             굵기 <select id="nt-weight" class="mini-select" onchange="ntSet({ weight: parseInt(this.value) }); ntRender();">
+               <option value="400">보통</option><option value="600">조금 굵게</option><option value="700">굵게</option><option value="900">아주 굵게</option>
+             </select>
+           </div>
+           <div class="nt-row" title="이름표 칸에서 글자가 차지하는 크기">글자 크기 <input type="range" id="nt-fillr" min="30" max="100" step="2" style="flex:1;" oninput="ntSetM('fillPct', parseInt(this.value)); ntRender();"> <span id="nt-fill-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
+           <div class="nt-row">자간 <input type="range" id="nt-ls" min="0" max="60" step="2" style="flex:1;" oninput="ntSetM('ls', parseInt(this.value)); ntRender();"> <span id="nt-ls-val" class="nt-muted" style="width:34px; text-align:right;"></span></div>
+         </div>
+
+         <div class="nt-box" id="nt-design-box">
+           <div class="nt-title"><span><span class="nt-no">⑥</span> 🎨 디자인 · 색</span><span class="nt-st" id="nt-st-6"></span></div>
+           <div id="nt-styles"></div>
+           <div class="nt-row">모서리
+             <span class="top-btn-cluster" id="nt-radius" style="display:inline-flex;">
+               <button class="top-btn" data-v="0" onclick="ntSet({ radius: 0 }); ntFillForm(); ntRender();">각지게</button>
+               <button class="top-btn" data-v="2" onclick="ntSet({ radius: 2 }); ntFillForm(); ntRender();">살짝 둥글게</button>
+               <button class="top-btn" data-v="5" onclick="ntSet({ radius: 5 }); ntFillForm(); ntRender();">둥글게</button>
+             </span>
+           </div>
+           <div class="nt-row" id="nt-color-modes"></div>
+           <div id="nt-swatches"></div>
+         </div>
+        </div>
       </div>
     </div>
     <div id="fm-right">
@@ -4938,7 +4899,6 @@
 
   async function showSettingsPage(startTab) {
     closeAbsencePage();
-    closeNametagPage();
     closeFormPage();
     closeSePage();
     closePaPage();
@@ -4966,7 +4926,6 @@
 
   function goHome() {
     closeAbsencePage();
-    closeNametagPage();
     closeFormPage();
     closeSePage();
     closePaPage();
@@ -5700,7 +5659,7 @@
   // 이미지/스크린샷을 따로 준비할 필요 없이 실제 화면을 그대로 가리키므로, 나중에 레이아웃이 바뀌어도 자동으로 따라간다.
   // 화면에서 읽는 순서대로: 왼쪽 메뉴 → 맨 윗줄(왼쪽→오른쪽) → 둘째 줄 → 아래 칸들을 왼쪽 열부터 위→아래.
   const tourSteps = [
-    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴의 "공통" 선 아래는 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 양식, 좌석배치표, 월간일정표, 시간표 만들기, 이름표), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(결석계, 조퇴증)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '맨 왼쪽 메뉴의 "공통" 선 아래는 모든 선생님이 쓰는 기능(명렬표, 단축키, 생기부(문장 점검·길라잡이·자율·진로·행발 편집기), 수행평가, 양식(시정표·명렬표 수합·학습지·수행평가·이름표), 좌석배치표, 월간일정표, 시간표 만들기), "학급" 선 아래는 담임 선생님이 주로 쓰는 기능(결석계, 조퇴증)이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요. 각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법도 볼 수 있어요.' },
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
@@ -13254,6 +13213,7 @@
   // 예전 엑셀 "게시판 이름표" 양식(가로·세로 cm + 이름 목록 → 글씨를 칸에 맞게 크게, A4에 실제 크기로 인쇄)을 옮긴 것.
   // 이름표 한 장 = SVG 하나(단위 mm). 글씨 크기는 캔버스로 재서 칸에 맞추고, A4 여백 8mm 안에 여러 장을 격자로 놓는다
   // (세로·가로 중 한 장에 더 많이 들어가는 쪽). 설정·내용은 개인 자료 nt-cfg 하나(작음 — 학생 정보 없음).
+  // 10/5부터 📄 양식 만들기의 다섯째 탭(kind 'nt'): 왼쪽 칸은 #fm-left 안의 #nt-guide·#nt-grid, 미리보기·🔍 배율·🖨️ 인쇄/PDF·🗑 초기화는 양식 것을 같이 씀.
   // 글꼴은 이미 받아 두는 웹 글꼴 + 이 PC에 설치된 글꼴 이름 직접 입력(인터넷으로 받는 것 없음).
   const NT_CFG_KEY = 'nt-cfg';
   const NT_MARGIN = 8; // mm — A4 여백(엑셀 0.8cm). 이름표 사이 간격은 모드마다(NT_MODE_KEYS의 gap)
@@ -13660,16 +13620,16 @@
     return { w: ntNum(c[k.w], 1, 300, k.dw), h: ntNum(c[k.h], 1, 300, k.dh) };
   }
 
+  function ntIsOpen() { return fmIsOpen() && fmCfg().kind === 'nt'; }
   function ntRender(fromFontLoad) {
-    const page = document.getElementById('nametag-page');
-    if (!page || page.style.display === 'none') return;
+    if (!ntIsOpen()) return;
     ntNextSoon();
     const c = ntCfg();
     const sz = ntSize(c), w = sz.w * 10, h = sz.h * 10; // mm
     const items = ntItems(c);
     const lay = ntLayout(w, h, ntMK(c).gap);
-    const box = document.getElementById('nt-pages');
-    const label = document.getElementById('nt-prev-label');
+    const box = document.getElementById('fm-pages');
+    const label = document.getElementById('fm-prev-label');
     const info = document.getElementById('nt-fit-info');
     info.textContent = lay ? ('A4 ' + (lay.land ? '가로' : '세로') + ' 한 장에 ' + lay.per + '개') : '';
     document.getElementById('nt-ls-val').textContent = (c.ls / 100).toFixed(2).replace(/0$/, '') + 'em';
@@ -13713,7 +13673,7 @@
     box.innerHTML = sheets.join('');
     box.dataset.land = lay.land ? '1' : '';
     label.textContent = 'A4 ' + (lay.land ? '가로' : '세로') + ' · 이름표 ' + all.length + '개 · 종이 ' + sheets.length + '장';
-    ntFitPreview();
+    fmFitPreview();
   }
   function ntEmptyMsg(c) {
     if (c.mode === 'recycle') return '왼쪽에서 분리수거 종류를 체크해 주세요.';
@@ -13726,27 +13686,6 @@
     return '왼쪽 <b>내용</b>에 이름을 한 줄에 하나씩 적어 주세요.<br>적는 대로 여기에 바로 만들어져요.';
   }
   // 미리보기 확대/축소(양식 만들기와 같음): 100% = 한 장에 맞춤, 거기에 배율을 곱한다. 인쇄는 zoom 1.
-  const NT_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
-  let ntZoomLevel = 1;
-  function ntZoomBy(dir) {
-    const i = NT_ZOOMS.indexOf(ntZoomLevel);
-    ntZoomLevel = dir === 0 ? 1 : NT_ZOOMS[Math.max(0, Math.min(NT_ZOOMS.length - 1, (i < 0 ? 2 : i) + dir))];
-    const sc = document.getElementById('nt-prev-scroll'), before = sc.scrollHeight ? sc.scrollTop / sc.scrollHeight : 0;
-    ntFitPreview();
-    sc.scrollTop = before * sc.scrollHeight;
-  }
-  function ntFitPreview() {
-    const box = document.getElementById('nt-pages'), sc = document.getElementById('nt-prev-scroll');
-    const t = document.getElementById('nt-zoom-text');
-    if (t) t.textContent = Math.round(ntZoomLevel * 100) + '%';
-    const sheet = box.querySelector('.nt-sheet');
-    if (!sheet) return;
-    box.style.zoom = '';
-    const pw = sheet.offsetWidth;
-    // 폭에 맞추되, 종이 한 장이 위아래로 한눈에 들어오게
-    const z = Math.min(1, (sc.clientWidth - 24) / pw, (sc.clientHeight - 16) / sheet.offsetHeight) * ntZoomLevel;
-    box.style.zoom = z > 0 ? String(z) : '';
-  }
   function ntRenderStylePicker(c) {
     const col = c[ntMK(c).color] === 'one' ? c.color : '#1C7ED6';
     const fake = Object.assign({}, c);
@@ -13863,7 +13802,7 @@
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { const m = document.getElementById('nt-font-menu'); if (m && m.style.display !== 'none') ntToggleFontMenu(false); } });
   window.addEventListener('resize', function() { const m = document.getElementById('nt-font-menu'); if (m && m.style.display !== 'none') ntToggleFontMenu(false); });
   document.addEventListener('DOMContentLoaded', function() {
-    const left = document.getElementById('nt-left');
+    const left = document.getElementById('fm-left');
     if (left) left.addEventListener('scroll', function() { const m = document.getElementById('nt-font-menu'); if (m.style.display !== 'none') ntToggleFontMenu(false); });
   });
   function ntSetMode(m) { ntSet({ mode: m }); ntFillForm(); ntRender(); }
@@ -13916,8 +13855,7 @@
     ntRender();
   }
   function ntOnRemote() {
-    const page = document.getElementById('nametag-page');
-    if (!page || page.style.display === 'none') return;
+    if (!ntIsOpen()) return;
     ntFillForm(); ntRender();
   }
 
@@ -13940,7 +13878,7 @@
     const MODE = { board: '게시판', locker: '사물함', recycle: '분리수거함' }[mode];
     let n;
     if (cur === 1) {
-      n = Object.assign({ msg: '<b>무엇을 만들지</b> 위쪽에서 골라요. 지금은 <b>' + MODE + '</b>.' +
+      n = Object.assign({ msg: '<b>무엇을 만들지</b> ① 칸에서 골라요. 지금은 <b>' + MODE + '</b>.' +
         '<br>· <b>게시판</b>: 게시판·교실 문·책상에 붙이는 큰 글씨 이름표(월간 일정표, 오늘의 메뉴 …) — 적은 줄 수만큼 만들어요.' +
         '<br>· <b>사물함</b>: 반 학생 전원의 사물함 이름표를 명렬표에서 한 번에.' +
         '<br>· <b>분리수거함</b>: 플라스틱·종이 같은 분리수거함 이름표(아이콘·종류별 색).' +
@@ -13980,9 +13918,9 @@
         '<br>· <b>색</b>: ' + (mode === 'recycle' ? '종류별 색 / ' : '') + '여러 색 돌아가며(12색, 옆 이름표끼리 다른 색) / 한 색으로(누르면 색 고르는 칸이 나와요).' +
         '<br>👉 다음으로.', glow: '#nt-design-box' }, go(7, '다음: ⑦ 출력 →'));
     } else {
-      n = { done: true, msg: '<b>출력</b> — 위쪽 오른쪽 <b>⑦ 🖨️ 출력</b>을 눌러요.' +
-        '<br>· 인쇄 창에서 <b>배율은 기본값(100%) 그대로</b> — 적은 크기(cm) 그대로 나와요. "PDF로 저장"을 고르면 파일로도 받아요.' +
-        '<br><span class="se-muted">설정은 저절로 기억돼요 — 다음에 열면 그대로예요.</span>', glow: '#nt-print-btn', act: 'ntPrint()', btn: '🖨️ 출력', again: true };
+      n = { done: true, msg: '<b>출력</b> — 위쪽 오른쪽 <b>⑦ 🖨️ 인쇄/PDF</b>를 눌러요.' +
+        '<br>· 인쇄 창에서 <b>배율은 기본값(100%) 그대로</b> — 적은 크기(cm) 그대로 나와요. 프린터 대신 <b>"PDF로 저장"</b>을 고르면 PDF 파일이 돼요.' +
+        '<br><span class="se-muted">설정은 저절로 기억돼요 — 다음에 열면 그대로예요.</span>', glow: '#fm-print-btn', act: 'ntPrint()', btn: '🖨️ 인쇄/PDF', again: true };
     }
     n.step = cur;
     return n;
@@ -13992,86 +13930,22 @@
     ntNextSoon._t = setTimeout(ntRenderNext, 120);
   }
   function ntRenderNext() {
-    const box = document.getElementById('nt-next'), page = document.getElementById('nametag-page');
-    if (!box || !page || page.style.display === 'none') return;
+    const box = document.getElementById('nt-next');
+    if (!box || !ntIsOpen()) return;
     const nx = ntNextInfo();
     ntRenderNext.next = nx;
     const mark = function(el, i) { const ok = i < nx.step, now = i === nx.step; el.className = 'nt-st' + (el.classList.contains('nt-st-2') ? ' nt-st-2' : '') + (ok ? ' ok' : now ? ' next' : ''); el.textContent = ok ? '✓' : now ? '지금' : ''; };
     document.querySelectorAll('.nt-st-2').forEach(function(el) { mark(el, 2); });
-    [3, 4, 5, 6].forEach(function(i) { const el = document.getElementById('nt-st-' + i); if (el) mark(el, i); });
+    [1, 3, 4, 5, 6].forEach(function(i) { const el = document.getElementById('nt-st-' + i); if (el) mark(el, i); });
     const btn = (nx.again ? '<button class="top-btn nt-again" onclick="ntGuideGo(1)">처음부터 안내</button>' : '') + (nx.act ? '<button class="top-btn" onclick="' + nx.act + '">' + nx.btn + '</button>' : '');
     const html = '<div class="pa-next' + (nx.done ? ' done' : '') + '"><span class="pa-next-msg"><span class="pa-next-lbl">' + (nx.done ? '⑦ ✅ 마지막' : ['', '①', '②', '③', '④', '⑤', '⑥'][nx.step] + ' 지금 할 일') + '</span> ' + nx.msg + '</span>' + btn + '</div>';
     if (box.innerHTML !== html) box.innerHTML = html;
-    document.querySelectorAll('#nametag-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
+    document.querySelectorAll('#form-page .pa-glow').forEach(function(e) { e.classList.remove('pa-glow'); });
     if (nx.glow && tourMode !== 'page') { const el = document.querySelector(nx.glow); if (el && el.offsetParent) el.classList.add('pa-glow'); }
   }
 
-  // ----- 이름표 설명서 -----
-  // 게시판 → 분리수거함 순서로 보여 주고, 끝나면 원래 보던 모드로 돌려놓는다.
-  let ntTourMode = null;
-  const ntTourBoard = function() { if (ntCfg().mode !== 'board') ntSetMode('board'); };
-  const ntTourRecycle = function() { if (ntCfg().mode !== 'recycle') ntSetMode('recycle'); };
-  const ntTourLocker = function() { if (ntCfg().mode !== 'locker') ntSetMode('locker'); };
-  const ntTourSteps = [
-    { selector: '#nt-page-header', before: ntTourBoard, title: '🏷️ 이름표에 오신 것을 환영해요!', desc: '게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄하는 화면이에요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
-    { selector: '#nt-next', before: ntTourBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(위쪽 게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
-    { selector: '#nt-mode-switch', before: ntTourBoard, title: '1단계. 무엇을 만들지', desc: '게시판: 게시판·교실 문에 붙이는 큰 글씨 이름표 / 사물함: 반 학생 전원 / 분리수거함: 아이콘·종류별 색. 세 가지는 내용·크기·글자 설정을 따로 기억해요(사물함·분리수거함은 아래에서 따로 보여 드려요).' },
-    { selector: '#nt-board-box', before: ntTourBoard, title: '2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). / 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
-    { selector: '#nt-size-box', before: ntTourBoard, title: '3단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
-    { selector: '#nt-copies-box', before: ntTourBoard, title: '4단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
-    { selector: '#nt-font-box', before: ntTourBoard, title: '5단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기도 고르고, 글자 크기·자간은 바를 밀어서 원하는 만큼 조절해요.' },
-    { selector: '#nt-design-box', before: ntTourBoard, title: '6단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
-    { selector: '#nt-right', before: ntTourBoard, title: '미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요.' },
-    { selector: '#nt-mode-switch', before: ntTourLocker, title: '🔐 사물함 이름표', desc: '위쪽 "사물함"을 누르면 반 학생 전원의 사물함 이름표를 한 번에 만들어요(게시판 내용은 따로 기억돼요). 크기는 기본 6.7 × 2.1cm이고 위 크기 칸에서 바꿀 수 있어요. 사이 간격 없이 붙여 놓아서 칼로 한 줄씩 쭉 자르면 돼요.' },
-    { selector: '#nt-lk-box', before: ntTourLocker, title: '학년·반과 표시 모양', desc: '학년·반을 고르면 명렬표에서 학생을 가져와요(담임 선생님은 담임 반이 자동). 표시는 학번(30101), 번호 이름(1번 홍길동), 학번 이름, 이름만 중에서 골라요.' },
-    { selector: '#nt-mode-switch', before: ntTourRecycle, title: '♻️ 분리수거함 이름표', desc: '위쪽 "분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요.' },
-    { selector: '#nt-rc-box', before: ntTourRecycle, title: '분리수거 종류 고르기', desc: '만들 종류를 체크하면 아이콘과 함께 만들어지고, 색은 종류별로 들어가요. 목록에 없는 건 아래 칸에 직접 적어 더하고, 영어 이름(PLASTIC 등)은 켜고 끌 수 있어요.' },
-    { selector: '#nt-print-btn', title: '7단계. 출력', desc: '🖨️ 출력을 누르고, 인쇄 창에서 배율은 "기본값(100%)" 그대로 두세요 — 적은 크기(cm) 그대로 나와요. "PDF로 저장"을 고르면 파일로도 받을 수 있어요. 수고하셨습니다! 🎉' },
-  ];
-  function ntOpenTour() {
-    ntTourMode = ntCfg().mode;
-    openPageTour(ntTourSteps, function() {
-      if (ntTourMode && ntCfg().mode !== ntTourMode && document.getElementById('nametag-page').style.display !== 'none') ntSetMode(ntTourMode);
-      ntTourMode = null;
-      ntRenderNext();
-    });
-  }
-
-  // ----- 화면 열기·닫기·인쇄 -----
-  function closeNametagPage() {
-    const fm = document.getElementById('nt-font-menu');
-    if (fm && fm.style.display !== 'none') ntToggleFontMenu(false);
-    const pg = document.getElementById('nametag-page');
-    if (pg) pg.style.display = 'none';
-    const btn = document.getElementById('rail-nametag-btn');
-    if (btn) btn.classList.remove('active');
-  }
-  function openNametag() {
-    closeAbsencePage();
-    document.querySelector('.top-bar-row').style.display = 'none';
-    document.querySelector('.quick-row').style.display = 'none';
-    document.getElementById('main-dashboard').style.display = 'none';
-    ['settings-page', 'seatchart-page', 'monthly-page', 'leavepass-page', 'persontt-page'].forEach(function(id) {
-      const el = document.getElementById(id); if (el) el.style.display = 'none';
-    });
-    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn', 'rail-absence-btn'].forEach(function(id) {
-      const el = document.getElementById(id); if (el) el.classList.remove('active');
-    });
-    closeHwpKeys(); closeSgb();
-    const ro = document.getElementById('roster-overlay'); if (ro) ro.style.display = 'none';
-    const um = document.getElementById('user-menu-dropdown'); if (um) um.style.display = 'none';
-    document.getElementById('nametag-page').style.display = 'flex';
-    document.getElementById('rail-nametag-btn').classList.add('active');
-    document.body.setAttribute('data-print-target', 'nametag');
-    if (!window.__ntInited) {
-      window.__ntInited = true;
-      window.addEventListener('resize', function() { if (document.getElementById('nametag-page').style.display !== 'none') ntFitPreview(); });
-    }
-    ntFillForm();
-    ntRender();
-    // 사물함 반 목록은 관리자 "학급 구성"으로 만든다 — 아직 안 받았으면 받고 다시 채움
-    if (!window.classStructure) ensureClassStructureLoaded().then(function() { if (ntCfg().mode === 'locker') ntFillForm(); });
-  }
+  // ----- 인쇄(양식 머리의 🖨️ 인쇄/PDF → fmPrint → 여기) · 설명서는 양식 설명서(fmTourSteps)의 마지막 묶음 -----
+  function ntCloseFontMenu() { const m = document.getElementById('nt-font-menu'); if (m && m.style.display !== 'none') ntToggleFontMenu(false); }
   async function ntPrint() {
     const c = ntCfg();
     if (!ntItems(c).length) return customAlert(c.mode === 'recycle' ? '분리수거 종류를 먼저 체크해 주세요.' : c.mode === 'locker' ? '학년·반을 먼저 골라 주세요(명렬표에 학생이 있어야 해요).' : '내용에 이름을 먼저 적어 주세요.');
@@ -14083,7 +13957,7 @@
     }
     ntRender(true);
     // 가로로 놓는 게 더 많이 들어가면 그때만 인쇄 방향을 가로로(다른 화면 인쇄에 남지 않게 끝나면 지움)
-    const land = document.getElementById('nt-pages').dataset.land === '1';
+    const land = document.getElementById('fm-pages').dataset.land === '1';
     let st = document.getElementById('nt-page-style');
     if (!st) { st = document.createElement('style'); st.id = 'nt-page-style'; document.head.appendChild(st); }
     st.textContent = '@media print { @page { size: A4 ' + (land ? 'landscape' : 'portrait') + '; margin: 0; } }';
@@ -14091,15 +13965,6 @@
     window.addEventListener('afterprint', done);
     window.print();
   }
-
-  // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다.
-  document.addEventListener('DOMContentLoaded', function() {
-    const rail = document.getElementById('app-rail');
-    if (rail) rail.addEventListener('click', function(e) {
-      const item = e.target.closest('.rail-item');
-      if (item && item.id !== 'rail-nametag-btn' && !railOpensOverlay(item)) closeNametagPage();
-    }, true);
-  });
 
   // ===== 🗂 생기부 자율·진로 편집기 =====
   // 자율·진로 활동은 여러 부서가 문장을 보내 주고 담임이 바이트에 맞게 골라 합쳐 정리해야 한다. 사용자가 쓰던 엑셀
@@ -14341,7 +14206,7 @@
   }
   // 생기부 화면(문장 점검·길라잡이 / 편집기 두 탭이 같이 씀)을 띄우기만 — 다른 화면은 닫음
   function seShowPage() {
-    closeAbsencePage(); closeNametagPage(); closeFormPage(); closePaPage();
+    closeAbsencePage(); closeFormPage(); closePaPage();
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
     document.getElementById('main-dashboard').style.display = 'none';
@@ -15807,7 +15672,7 @@
   }
   async function openPa() {
     if (!paAllowed()) return;
-    closeAbsencePage(); closeNametagPage(); closeFormPage(); closeSePage();
+    closeAbsencePage(); closeFormPage(); closeSePage();
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
     document.getElementById('main-dashboard').style.display = 'none';
@@ -17466,7 +17331,7 @@
     c.colsN = Math.min(3, Math.max(1, parseInt(c.colsN) || 1));
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
     if (c.src !== 'manual') c.src = 'class';
-    if (c.kind !== 'ws' && c.kind !== 'pe' && c.kind !== 'bs') c.kind = 'roster';
+    if (!FM_KIND_NAME[c.kind]) c.kind = 'roster';
     if (!c.colW || typeof c.colW !== 'object') c.colW = {};
     if (!v.aBd && v.aNm) c.aBd = v.aNm; // 예전 "이름 칸" 정렬을 "표 내용"으로
     FM_ALIGNS.forEach(function(a) { if (['L', 'C', 'R'].indexOf(c[a[0]]) < 0) c[a[0]] = FM_DEFAULT[a[0]]; });
@@ -17696,6 +17561,7 @@
     if (fmCfg().kind === 'ws') { wsRender(); return; }
     if (fmCfg().kind === 'pe') { peRender(); return; }
     if (fmCfg().kind === 'bs') { bsRender(); return; }
+    if (fmCfg().kind === 'nt') { ntRender(); return; }
     const c = fmCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     const info = document.getElementById('fm-fit-info');
     const msg = fmEmptyMsg(c);
@@ -17756,10 +17622,11 @@
     const box = document.getElementById('fm-pages'), sc = document.getElementById('fm-prev-scroll');
     const zl = fmZoomGet(), t = document.getElementById('fm-zoom-text');
     if (t) t.textContent = Math.round(zl * 100) + '%';
-    const sheet = box.querySelector('.fm-sheet');
+    const sheet = box.querySelector('.fm-sheet, .nt-sheet');
     if (!sheet) return;
     box.style.zoom = '';
-    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth) * zl;
+    // 이름표는 폭에 맞추되 종이 한 장이 위아래로도 한눈에 들어오게(예전 이름표 화면 그대로)
+    const z = Math.min(1, (sc.clientWidth - 24) / sheet.offsetWidth, fmCfg().kind === 'nt' ? (sc.clientHeight - 16) / sheet.offsetHeight : 1) * zl;
     box.style.zoom = z > 0 ? String(z) : '';
     box.style.setProperty('--fmz', z > 0 ? String(z) : '1');
   }
@@ -17894,6 +17761,7 @@
     if (c.kind === 'ws') { wsFillForm(); return; }
     if (c.kind === 'pe') { peFillForm(); return; }
     if (c.kind === 'bs') { bsFillForm(); return; }
+    if (c.kind === 'nt') { ntFillForm(); return; }
     // 처음엔 담임 반으로
     const t = window.currentTeacher;
     if (!c.rG && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) { fmSet({ rG: t.homeroom_grade, rCs: [t.homeroom_class] }); c = fmCfg(); }
@@ -18225,6 +18093,7 @@
     if (fmCfg().kind === 'ws') return wsDownloadHwpx();
     if (fmCfg().kind === 'pe') return peDownloadHwpx();
     if (fmCfg().kind === 'bs') return bsDownloadHwpx();
+    if (fmCfg().kind === 'nt') return; // 이름표는 한글 파일 없음(단추 숨김)
     const btn = document.getElementById('fm-hwpx-btn');
     let timer = null;
     try {
@@ -18312,6 +18181,7 @@
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
   function fmPrint() {
+    if (fmCfg().kind === 'nt') return ntPrint();
     const c = fmCfg(), msg = c.kind === 'roster' ? fmEmptyMsg(c) : c.kind === 'pe' && !PE_READY[peCfg().type] ? '이 종류는 다음 단계에서 만들어요. 지금은 📄 보고서를 쓸 수 있어요.'
       : c.kind === 'bs' && bsCfg().mode === 'exam' && !bsExLayout(bsCfg()).pages.length ? '④ 글씨·종이에서 넣을 쪽(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.' : '';
     if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
@@ -20746,22 +20616,30 @@
   }
   function bsExFontCustom(v) { const name = fmFontClean(v); if (!name) return; bsModeSet(function(m) { m.font = name; m.fontC = true; }); fmFontMsgTo('bs-ex-font-msg', [name]); }
 
-  // 양식 종류(명렬표 수합 / 학습지 / 수행평가 / 시정표) 바꾸기
-  const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표' };
-  function fmSetKind(k) { fmSet({ kind: FM_KIND_NAME[k] ? k : 'roster' }); fmFillForm(); fmRender(); }
+  // 양식 종류(시정표 / 명렬표 수합 / 학습지 / 수행평가 / 이름표) 바꾸기
+  const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표', nt: '이름표' };
+  function fmSetKind(k) { ntCloseFontMenu(); fmSet({ kind: FM_KIND_NAME[k] ? k : 'roster' }); fmFillForm(); fmRender(); }
   function fmShowKind(kind) {
+    const nt = kind === 'nt';
     document.querySelectorAll('#fm-kind-switch .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.kind === kind); });
-    [['fm', 'roster'], ['ws', 'ws'], ['pe', 'pe'], ['bs', 'bs']].forEach(function(x) {
+    [['fm', 'roster'], ['ws', 'ws'], ['pe', 'pe'], ['bs', 'bs'], ['nt', 'nt']].forEach(function(x) {
       document.getElementById(x[0] + '-guide').style.display = kind === x[1] ? '' : 'none';
       document.getElementById(x[0] + '-grid').style.display = kind === x[1] ? '' : 'none';
     });
     document.getElementById('fm-xlsx-btn').style.display = kind === 'roster' ? '' : 'none';
+    // 이름표는 화면에서 바로 인쇄(한글 파일 없음 — 둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) → ⑦ 🖨️ 인쇄/PDF만
+    document.getElementById('fm-hwpx-btn').style.display = nt ? 'none' : '';
+    document.getElementById('fm-print-no').style.display = nt ? '' : 'none';
+    document.getElementById('fm-out-note').innerHTML = nt ? '인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 — 적은 크기(cm) 그대로 나와요.' : '한글 파일은 한글에서 그대로 고칠 수 있어요.';
+    document.getElementById('form-page').classList.toggle('fm-kind-nt', nt);
     document.getElementById('fm-reset-btn').title = FM_KIND_NAME[kind] + ' 설정만 처음 상태로 되돌려요(다른 양식은 그대로)';
   }
   // 🗑 초기화: 지금 보고 있는 양식의 설정만 처음 상태로(양식마다 따로 — 다른 양식 설정은 그대로)
   async function fmResetKind() {
     const kind = fmCfg().kind, ws = kind === 'ws';
-    const msg = kind === 'bs'
+    const msg = kind === 'nt'
+      ? '이름표 설정을 모두 처음 상태로 되돌릴까요?\n(게시판 내용·사물함 반·분리수거 종류·크기·장수·글꼴·디자인·색이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
+      : kind === 'bs'
       ? '시정표 설정을 모두 처음 상태로 되돌릴까요?\n(평상시·단축 수업 줄과 시간, 시험 기간 시간·일차별 과목, 제목, 디자인·글씨·쪽 설정이 기본값으로 돌아가요. 관리자 일과 시간과 다른 양식 설정은 그대로예요)'
       : kind === 'pe'
       ? '수행평가 설정을 모두 처음 상태로 되돌릴까요?\n(종류·머리 표·항목·쪽 설정·글꼴이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
@@ -20769,7 +20647,7 @@
       ? '학습지 설정을 모두 처음 상태로 되돌릴까요?\n(단원·과목·본문 제목 뼈대·쪽 설정·배치·글꼴이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
       : '명렬표 수합 설정을 모두 처음 상태로 되돌릴까요?\n(고른 반·직접 입력한 명단·제목·안내·체크 칸·쪽 설정·배치·칸 너비·정렬·표 선·글꼴이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)';
     if (!(await customConfirm(msg))) return;
-    try { localStorage.setItem(kind === 'bs' ? BS_CFG_KEY : kind === 'pe' ? PE_CFG_KEY : ws ? WS_CFG_KEY : FM_CFG_KEY, JSON.stringify(kind === 'roster' ? { kind: 'roster' } : {})); } catch (e) {}
+    try { localStorage.setItem(kind === 'nt' ? NT_CFG_KEY : kind === 'bs' ? BS_CFG_KEY : kind === 'pe' ? PE_CFG_KEY : ws ? WS_CFG_KEY : FM_CFG_KEY, JSON.stringify(kind === 'roster' ? { kind: 'roster' } : {})); } catch (e) {}
     scheduleBackupWrite();
     if (ws) { const fp = document.getElementById('ws-fparts'); if (fp) fp.open = false; } else fmLnSel = ['o'];
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -20813,8 +20691,11 @@
   // 시정표: 평상시 단계는 선생님 설정 그대로(바꾸지 않음 — 지금 보던 게 시험 기간이어도 평상시로 보여 줌), 시험 기간 단계는 사용자 양식 예시(BS_EX_DEMO)
   const fmTourBsAs = function(mode) { return function() { fmDemoSet(true); fmDemo.bsMode = mode; if (fmCfg().kind !== 'bs') fmSetKind('bs'); else { fmFillForm(); fmRender(); } }; };
   const fmTourBs = fmTourBsAs('normal'), fmTourBsExam = fmTourBsAs('exam');
+  // 이름표: 양식 탭을 이름표로, 모드(게시판·사물함·분리수거함)만 바꿔 보여 줌(예시 데이터 없음 — 선생님 설정 그대로)
+  const fmTourNtAs = function(mode) { return function() { fmDemoSet(false); if (fmCfg().kind !== 'nt') fmSetKind('nt'); if (ntCfg().mode !== mode) ntSetMode(mode); }; };
+  const fmTourNtBoard = fmTourNtAs('board'), fmTourNtLocker = fmTourNtAs('locker'), fmTourNtRecycle = fmTourNtAs('recycle');
   const fmTourSteps = [
-    { selector: '#fm-page-header', before: fmTourRoster, title: '📄 양식 만들기에 오신 것을 환영해요!', desc: '선생님들이 한글로 매번 새로 만드는 양식을 몇 칸만 채워서 바로 만드는 화면이에요. 지금은 네 가지 — 🔔 시정표(평상시·단축 수업·시험 기간), 📋 명렬표 수합(반 명단 체크표), 📚 학습지(학습지 틀), 📝 수행평가(보고서·원고지·단어 시험)를 만들 수 있어요. 설명서 동안은 예시 내용으로 채워서 보여 드려요(저장되지 않아요).' },
+    { selector: '#fm-page-header', before: fmTourRoster, title: '📄 양식 만들기에 오신 것을 환영해요!', desc: '선생님들이 한글로 매번 새로 만드는 양식을 몇 칸만 채워서 바로 만드는 화면이에요. 지금은 다섯 가지 — 🔔 시정표(평상시·단축 수업·시험 기간), 📋 명렬표 수합(반 명단 체크표), 📚 학습지(학습지 틀), 📝 수행평가(보고서·원고지·단어 시험), 🏷️ 이름표(게시판·사물함·분리수거함)를 만들 수 있어요. 설명서 동안은 예시 내용으로 채워서 보여 드려요(저장되지 않아요).' },
     { selector: '#fm-kind-switch', before: fmTourRoster, title: '양식 고르기', desc: '위쪽에서 만들 양식을 골라요. 양식마다 적은 내용과 설정이 따로 기억돼서, 다음에 열면 그대로 이어서 쓸 수 있어요.' },
     { selector: '#fm-reset-btn', before: fmTourRoster, title: '🗑 초기화', desc: '지금 보고 있는 양식의 설정만 처음 상태로 되돌려요. 명렬표 수합에서 누르면 명렬표 수합만, 학습지에서 누르면 학습지만 지워지고 다른 양식은 그대로예요.' },
     { selector: '#bs-mode-box', before: fmTourBs, title: '🔔 시정표 · 1단계. 평상시·단축 수업', desc: '위쪽 "시정표" 탭에서 교실·복도에 붙이는 시정표(구분 | 시간 | 분)를 만들어요. 🏫 평상시는 교시 시간을 관리자 설정의 일과 시간에서 그대로 가져오고, ⏱️ 단축 수업은 교시마다 시간을 직접 적어요. 둘은 따로 기억돼요. 제목과 부제(예: 2026학년도 2학기)도 여기서 적어요.' },
@@ -20850,12 +20731,29 @@
     { selector: '#pe-items-box', before: fmTourPe, title: '📝 수행평가 · 3단계. 항목', desc: '항목을 칸마다 하나씩 적고, 옆 숫자로 그 아래 학생이 쓸 빈 줄 수를 정해요. 번호는 저절로 붙고(0부터/1부터), Enter는 아래에 새 항목이에요. 한글 문서에서 항목 여러 줄을 복사해 붙여 넣으면 줄마다 항목이 돼요.' },
     { selector: '#pe-ms-box', before: fmTourPeMs, title: '📝 수행평가 · 원고지', desc: '종류에서 ✍️ 원고지를 고르면 이 칸이 나와요. 글자 수(400~2000자, 직접 적기도 돼요)와 칸 크기·줄 사이 띠·선 색을 고르고, 발문을 적으면 원고지 위에 나와요(글씨만 / 상자). 한 줄은 20칸이고, 오른쪽 바깥에 100자마다 "여기까지 몇 자"가 적혀요. 제목·학생 칸·쪽 설정·글꼴은 보고서와 따로 기억돼서(원고지는 처음부터 B4) 종류를 오가도 섞이지 않아요.' },
     { selector: '#pe-word-box', before: fmTourPeWord, title: '📝 수행평가 · 🔤 단어 시험', desc: '엑셀에서 단어·뜻 두 칸을 복사해 단어 칸에 붙여 넣거나 📂 엑셀·CSV 파일을 올리면 바로 시험지가 돼요(번호·품사 칸, 맨 위 머리 줄은 알아서 골라요). 문제 방향(영어 → 뜻 / 뜻 → 영어 / 반반 섞기), 1단·2단, 칸 높이, 몇 개만 무작위로 뽑기, 🔀 순서 섞기를 고르고, 점수 칸·정답지(시험지 뒤에 빨간 답)·A형·B형(순서만 다른 두 판)을 체크로 넣어요. 영어 단어는 첫 글자 힌트(a _ _ _ _)·품사·✏️ 따라 쓰기 연습지도 돼요. 한자·용어는 📋 일반(문제 | 답)을 골라 칸 이름을 바꿔 써요.' },
-    { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 설명서를 닫으면 예시는 사라지고 선생님 설정과 원래 보던 양식으로 돌아가요. 수고하셨습니다! 🎉' },
+    { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 이름표를 볼게요.' },
+    // 🏷️ 이름표(양식의 다섯째 탭 — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
+    { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
+    { selector: '#nt-next', before: fmTourNtBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
+    { selector: '#nt-mode-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 1단계. 무엇을 만들지', desc: '게시판: 게시판·교실 문에 붙이는 큰 글씨 이름표 / 사물함: 반 학생 전원 / 분리수거함: 아이콘·종류별 색. 세 가지는 내용·크기·글자 설정을 따로 기억해요(사물함·분리수거함은 아래에서 따로 보여 드려요).' },
+    { selector: '#nt-board-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 2단계. 내용', desc: '한 줄에 하나씩 적으면 그 수만큼 이름표가 생겨요(개수 제한 없음). / 뒤에 적으면 아래에 작은 부제가 들어가요. 예) 월간 일정표 / MONTHLY PLAN' },
+    { selector: '#nt-size-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 3단계. 크기', desc: '이름표의 가로·세로를 cm로 적어요. 아래 버튼으로 자주 쓰는 크기를 바로 고를 수 있고, 오른쪽 위에 A4 한 장에 몇 개 들어가는지 나와요.' },
+    { selector: '#nt-copies-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 4단계. 장수·글자 크기', desc: '같은 이름표를 여러 장 뽑을 땐 장수를 바꿔요. "글자 크기 모두 같게"를 켜 두면 긴 이름에 맞춰 모든 이름표의 글자 크기가 똑같아져요(끄면 이름표마다 칸에 꽉 차게).' },
+    { selector: '#nt-font-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 5단계. 글꼴', desc: '글꼴 칸을 누르면 목록이 펼쳐지고, 글꼴마다 그 글꼴 모양으로 보여요. 목록 맨 아래 "✏️ 직접 입력"에 PC에 설치된 글꼴 이름을 적으면 그 글꼴로도 만들 수 있어요. 굵기도 고르고, 글자 크기·자간은 바를 밀어서 원하는 만큼 조절해요.' },
+    { selector: '#nt-design-box', before: fmTourNtBoard, title: '🏷️ 이름표 · 6단계. 디자인·색', desc: '"입체 글씨"(예전 엑셀 양식처럼 흰 글자 + 검정 테두리·그림자)가 기본이에요. 모서리 모양을 바꾸고, 색은 12색이 돌아가며 들어가거나 한 색으로 고를 수 있어요.' },
+    { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 · 미리보기', desc: '실제로 인쇄될 모습이에요. 이름표가 작으면 한 장에 여러 개를 놓고, 가로로 길면 A4를 가로로 돌려서 알아서 배치해요. 🔍로 크게 볼 수 있어요(인쇄 크기는 그대로).' },
+    { selector: '#nt-mode-box', before: fmTourNtLocker, title: '🔐 사물함 이름표', desc: '"사물함"을 누르면 반 학생 전원의 사물함 이름표를 한 번에 만들어요(게시판 내용은 따로 기억돼요). 크기는 기본 6.7 × 2.1cm이고 크기 칸에서 바꿀 수 있어요. 사이 간격 없이 붙여 놓아서 칼로 한 줄씩 쭉 자르면 돼요.' },
+    { selector: '#nt-lk-box', before: fmTourNtLocker, title: '학년·반과 표시 모양', desc: '학년·반을 고르면 명렬표에서 학생을 가져와요(담임 선생님은 담임 반이 자동). 표시는 학번(30101), 번호 이름(1번 홍길동), 학번 이름, 이름만 중에서 골라요.' },
+    { selector: '#nt-mode-box', before: fmTourNtRecycle, title: '♻️ 분리수거함 이름표', desc: '"분리수거함"을 누르면 분리수거함에 붙일 이름표를 만들어요.' },
+    { selector: '#nt-rc-box', before: fmTourNtRecycle, title: '분리수거 종류 고르기', desc: '만들 종류를 체크하면 아이콘과 함께 만들어지고, 색은 종류별로 들어가요. 목록에 없는 건 아래 칸에 직접 적어 더하고, 영어 이름(PLASTIC 등)은 켜고 끌 수 있어요.' },
+    { selector: '#fm-print-btn', before: fmTourNtBoard, title: '🏷️ 이름표 · 7단계. 출력', desc: '🖨️ 인쇄/PDF를 누르고, 인쇄 창에서 배율은 "기본값(100%)" 그대로 두세요 — 적은 크기(cm) 그대로 나와요. 프린터 대신 "PDF로 저장"을 고르면 PDF 파일이 돼요. 설명서를 닫으면 예시는 사라지고 선생님 설정과 원래 보던 양식으로 돌아가요. 수고하셨습니다! 🎉' },
   ];
   function fmOpenTour() {
     fmTourKind = fmCfg().kind;
+    const ntMode = ntCfg().mode; // 이름표 묶음이 모드를 바꾸므로 끝나면 원래 모드로
     openPageTour(fmTourSteps, function() {
       fmDemo = null; // 예시 지우고 원래 설정으로(아래 탭 되돌리기·다시 그리기에서 반영)
+      if (ntCfg().mode !== ntMode) ntSet({ mode: ntMode });
       if (fmTourKind && fmCfg().kind !== fmTourKind && fmIsOpen()) fmSetKind(fmTourKind);
       else if (fmIsOpen()) { fmFillForm(); fmRender(); }
       fmTourKind = null;
@@ -20864,20 +20762,21 @@
 
   // ----- 화면 열기·닫기 -----
   function closeFormPage() {
+    ntCloseFontMenu();
     const pg = document.getElementById('form-page');
     if (pg) pg.style.display = 'none';
     const btn = document.getElementById('rail-forms-btn');
     if (btn) btn.classList.remove('active');
   }
   function openForms() {
-    closeAbsencePage(); closeNametagPage();
+    closeAbsencePage();
     document.querySelector('.top-bar-row').style.display = 'none';
     document.querySelector('.quick-row').style.display = 'none';
     document.getElementById('main-dashboard').style.display = 'none';
     ['settings-page', 'seatchart-page', 'monthly-page', 'leavepass-page', 'persontt-page'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.style.display = 'none';
     });
-    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn', 'rail-absence-btn', 'rail-nametag-btn'].forEach(function(id) {
+    ['rail-home-btn', 'rail-settings-btn', 'rail-seatchart-btn', 'rail-monthly-btn', 'rail-leavepass-btn', 'rail-persontt-btn', 'rail-absence-btn'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.classList.remove('active');
     });
     closeHwpKeys(); closeSgb();

@@ -1,5 +1,5 @@
 // 왼쪽 레일에서 "창처럼 위에 뜨는" 명렬표·단축키·생기부 패널을 홈이 아닌 화면(시간표·월간일정표·이름표·양식·좌석배치표·조퇴증·결석계·자율·진로 편집기)
-// 위에서 열었다 닫아도 원래 화면이 그대로 남는지(예전엔 결석계·이름표·양식·편집기가 닫혀 빈 화면이 됨), 세 패널은 한 번에 하나만 뜨는지,
+// 위에서 열었다 닫아도 원래 화면이 그대로 남는지(예전엔 결석계·이름표·양식·편집기가 닫혀 빈 화면이 됨 — 이름표는 10/5부터 양식의 탭), 세 패널은 한 번에 하나만 뜨는지,
 // 다른 화면 버튼을 누르면 패널이 닫히는지.
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -221,8 +221,8 @@ function check(label, cond, detail) {
 
 
 const PAGES = [
-  ['rail-persontt-btn', 'persontt-page', '시간표'], ['rail-monthly-btn', 'monthly-page', '월간일정표'], ['rail-nametag-btn', 'nametag-page', '이름표'],
-  ['rail-forms-btn', 'form-page', '양식'], ['rail-seatchart-btn', 'seatchart-page', '좌석배치표'], ['rail-leavepass-btn', 'leavepass-page', '조퇴증'],
+  ['rail-persontt-btn', 'persontt-page', '시간표'], ['rail-monthly-btn', 'monthly-page', '월간일정표'],
+  ['rail-forms-btn', 'form-page', '양식(이름표 탭 포함)'], ['rail-seatchart-btn', 'seatchart-page', '좌석배치표'], ['rail-leavepass-btn', 'leavepass-page', '조퇴증'],
   ['rail-absence-btn', 'absence-page', '결석계'], ['rail-sgb-btn', 'se-page', '생기부(문장 점검·길라잡이)'], [null, 'se-page', '생기부(편집기)'], ['rail-home-btn', 'main-dashboard', '홈'],
 ];
 // 생기부는 10/4부터 창이 아니라 화면(위 PAGES) — 창처럼 뜨는 패널은 명렬표·단축키 둘
@@ -271,8 +271,8 @@ const OVERLAYS = [['rail-roster-btn', 'roster-overlay', '명렬표', 'closeStude
   await P.click('#rail-monthly-btn'); await wait(500);
   check('명렬표 펴 둔 채 월간일정표 → 명렬표 닫히고 월간일정표', !(await ovShown('roster-overlay')) && (await shownPages()).join() === 'monthly-page');
   await P.click('#rail-sgb-btn'); await wait(400);
-  await P.click('#rail-nametag-btn'); await wait(500);
-  check('생기부 화면에서 이름표 → 생기부 닫히고 이름표', (await shownPages()).join() === 'nametag-page');
+  await P.click('#rail-forms-btn'); await wait(500);
+  check('생기부 화면에서 양식 → 생기부 닫히고 양식', (await shownPages()).join() === 'form-page');
   check('페이지 오류 없음', pc.errors.length === 0, pc.errors);
   await browser.close();
   console.log(failures ? '실패 ' + failures + '건' : '모든 검사 통과');

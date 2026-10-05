@@ -1,6 +1,6 @@
-// 레일 "이름표": 게시판 이름표(내용 한 줄에 하나, 부제, 장수, 글자 크기 맞춤·모두 같게, A4 세로/가로 자동 배치),
-// 분리수거함 이름표(종류 체크·아이콘·종류별 색), 글꼴(웹 글꼴·PC 글꼴 직접 입력), 색(순환·한 색), 인쇄(PDF 쪽수·방향),
-// 계정 자료 저장·다른 기기 반영(홈 화면은 다시 그리지 않음), 화면 닫기.
+// 레일 "양식" → 🏷️ 이름표 탭(10/5부터 이름표는 양식 만들기의 다섯째 탭 — 레일에 따로 없음): 게시판 이름표(내용 한 줄에 하나, 부제, 장수, 글자 크기 맞춤·모두 같게, A4 세로/가로 자동 배치),
+// 분리수거함 이름표(종류 체크·아이콘·종류별 색), 글꼴(웹 글꼴·PC 글꼴 직접 입력), 색(순환·한 색), 인쇄(🖨️ 인쇄/PDF — 한글 파일 단추 없음, PDF 쪽수·방향),
+// 계정 자료 저장·다른 기기 반영(홈 화면은 다시 그리지 않음), 탭 기억·초기화는 이름표만, 화면 닫기, 양식 왼쪽 칸 안에서 두 줄(1366도).
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -186,9 +186,9 @@ function check(label, cond, detail) {
   if (!cond) failures++;
 }
 const cfgOf = async (d) => JSON.parse(await ls(d, 'nt-cfg') || '{}');
-const labels = (P) => P.evaluate(() => document.querySelectorAll('#nt-pages .nt-sheet > svg').length);
-const sheets = (P) => P.evaluate(() => document.querySelectorAll('#nt-pages .nt-sheet').length);
-const mainSizes = (P) => P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => +s.querySelector('text:not(.nt-sh)').getAttribute('font-size')));
+const labels = (P) => P.evaluate(() => document.querySelectorAll('#fm-pages .nt-sheet > svg').length);
+const sheets = (P) => P.evaluate(() => document.querySelectorAll('#fm-pages .nt-sheet').length);
+const mainSizes = (P) => P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => +s.querySelector('text:not(.nt-sh)').getAttribute('font-size')));
 function pdfInfo(buf) {
   const s = buf.toString('latin1');
   const pages = (s.match(/\/Type\s*\/Page[^s]/g) || []).length;
@@ -200,18 +200,28 @@ function pdfInfo(buf) {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());
   const pc = await openDevice(browser, 'PC', T1);
   const P = pc.page;
-  const shown = () => P.evaluate(() => document.getElementById('nametag-page').style.display === 'flex');
+  const ntTab = (pg) => pg.evaluate(() => document.getElementById('form-page').style.display === 'flex' && JSON.parse(localStorage.getItem('fm-cfg') || '{}').kind === 'nt' && document.getElementById('nt-grid').style.display !== 'none');
+  const shown = () => ntTab(P);
+  // 이름표 열기 = 레일 "양식" → 위쪽 "이름표" 탭(이미 이름표 탭이 기억돼 있으면 바로 열림)
+  const openNt = async (pg) => { await pg.click('#rail-forms-btn'); await wait(300); if (!(await ntTab(pg))) { await pg.click('#fm-kind-switch [data-kind="nt"]'); await wait(300); } };
   const pickFont = async (title) => { await P.click('#nt-font-btn'); await wait(100); await P.click('#nt-font-menu .nt-font-opt[title="' + title + '"]'); await wait(200); };
 
   const order = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-item')].map(e => e.title));
-  check('레일 순서: 홈 → "공통" 선 → 명렬표·단축키·생기부·수행평가(모든 선생님)·양식·좌석배치표·월간일정표·시간표·이름표 → "학급" 선 → 결석계·조퇴증', order.join(',') === '홈,명렬표,단축키,생기부 문장 점검,수행평가,양식 만들기,좌석배치표,월간일정표,시간표,이름표,결석계,조퇴증,관리자 설정' && await P.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display !== 'none'), order);
+  check('레일 순서: 홈 → "공통" 선 → 명렬표·단축키·생기부·수행평가(모든 선생님)·양식·좌석배치표·월간일정표·시간표 → "학급" 선 → 결석계·조퇴증 (이름표는 레일에 없음 — 양식 탭)', order.join(',') === '홈,명렬표,단축키,생기부 문장 점검,수행평가,양식 만들기,좌석배치표,월간일정표,시간표,결석계,조퇴증,관리자 설정' && await P.evaluate(() => getComputedStyle(document.getElementById('rail-pa-btn')).display !== 'none' && !document.getElementById('rail-nametag-btn') && !document.getElementById('nametag-page')), order);
   const sep = await P.evaluate(() => [...document.querySelectorAll('#app-rail .rail-sep')].map(s => s.previousElementSibling.id + '|' + s.innerText.trim() + '|' + s.nextElementSibling.id));
-  check('홈 아래 "공통" 선, 좌석배치표와 조퇴증 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-nametag-btn|학급|rail-absence-btn']), sep);
+  check('홈 아래 "공통" 선, 시간표와 결석계 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-persontt-btn|학급|rail-absence-btn']), sep);
 
-  await P.click('#rail-nametag-btn'); await wait(300);
-  check('누르면 이름표 화면 + 버튼 표시, 홈은 숨김', await shown() && await P.evaluate(() => document.getElementById('rail-nametag-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
+  await P.click('#rail-forms-btn'); await wait(300);
+  check('양식 탭 다섯 개: 시정표·명렬표 수합·학습지·수행평가·이름표(맨 뒤), 처음엔 명렬표 수합', (await P.evaluate(() => [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent.trim()).join(','))) === '시정표,명렬표 수합,학습지,수행평가,이름표' && !(await ntTab(P)));
+  await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
+  const hdr = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, ws: document.getElementById('ws-grid').style.display,
+    hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display, xlsx: getComputedStyle(document.getElementById('fm-xlsx-btn')).display, print: document.getElementById('fm-print-btn').textContent.trim(), no7: getComputedStyle(document.getElementById('fm-print-no')).display,
+    note: document.getElementById('fm-out-note').textContent, cls: document.getElementById('form-page').classList.contains('fm-kind-nt'), tab: document.querySelector('#fm-kind-switch .tab-btn.active').dataset.kind }));
+  check('이름표 탭: 이름표 칸·지금 할 일만 보이고 다른 양식 칸 숨김, ⬇️ 한글 파일·📊 엑셀 단추 숨김, ⑦ 🖨️ 인쇄/PDF만, 배율 100% 안내', await shown() && hdr.grid === '' && hdr.guide === '' && hdr.fm === 'none' && hdr.ws === 'none' && hdr.hwpx === 'none' && hdr.xlsx === 'none' && hdr.print === '🖨️ 인쇄/PDF' && hdr.no7 !== 'none' && /100%/.test(hdr.note) && hdr.cls && hdr.tab === 'nt', hdr);
+  check('양식 버튼 표시, 홈은 숨김', await P.evaluate(() => document.getElementById('rail-forms-btn').classList.contains('active') && document.getElementById('main-dashboard').style.display === 'none'));
+  check('① 무엇을 만들지 칸(게시판·사물함·분리수거함 탭)이 왼쪽 맨 위 상자', await P.evaluate(() => { const b = document.getElementById('nt-mode-box'); return b.querySelector('.nt-no').textContent === '①' && !!b.querySelector('#nt-mode-switch') && b.parentElement.id === 'nt-grid' && b === document.querySelector('#nt-grid > *'); }));
   check('처음엔 입체 글씨 디자인·주아 글꼴(엑셀 양식처럼)', await P.evaluate(() => document.querySelector('#nt-styles .nt-style.on').innerText.includes('입체 글씨') && document.getElementById('nt-font-btn').innerText.includes('주아') && document.querySelector('#nt-font-menu .nt-font-opt.on').title === '주아'));
-  check('처음엔 게시판 모드·14.8×4.4cm(기본)·안내 문구', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '4.4' && /한 줄에 하나씩/.test(await P.locator('#nt-pages').innerText()));
+  check('처음엔 게시판 모드·14.8×4.4cm(기본)·안내 문구', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '4.4' && /한 줄에 하나씩/.test(await P.locator('#fm-pages').innerText()));
   check('글꼴은 드롭다운(닫혀 있음) + 디자인 6가지', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none' && document.querySelectorAll('#nt-styles .nt-style').length === 6));
   await P.click('#nt-font-btn'); await wait(200);
   const menu = await P.evaluate(() => { const m = document.getElementById('nt-font-menu'); const opts = [...m.querySelectorAll('.nt-font-opt')]; const r = m.getBoundingClientRect();
@@ -227,10 +237,10 @@ function pdfInfo(buf) {
   // 내용 입력 → 바로 그려짐, 계정 자료에 저장
   await P.fill('#nt-text', '월간 일정표\n오늘의 메뉴\n\n  수능 D-Day  \n날씨&미세먼지\n일반 게시물\n시간표 변경 / TIMETABLE'); await wait(300);
   check('빈 줄 빼고 6개, A4 세로 한 장에 5개 → 2장', await labels(P) === 6 && await sheets(P) === 2, [await labels(P), await sheets(P)]);
-  check('미리보기 안내: "A4 세로 · 이름표 6개 · 종이 2장"', (await P.textContent('#nt-prev-label')) === 'A4 세로 · 이름표 6개 · 종이 2장', await P.textContent('#nt-prev-label'));
+  check('미리보기 안내: "A4 세로 · 이름표 6개 · 종이 2장"', (await P.textContent('#fm-prev-label')) === 'A4 세로 · 이름표 6개 · 종이 2장', await P.textContent('#fm-prev-label'));
   check('크기 칸 옆 "A4 세로 한 장에 5개"(기본 14.8×4.4cm)', /세로 한 장에 5개/.test(await P.textContent('#nt-fit-info')));
   check('내용이 nt-cfg에 저장', (await cfgOf(pc)).text.split('\n').length === 7);
-  const sub = await P.evaluate(() => { const s = [...document.querySelectorAll('#nt-pages .nt-sheet > svg')][5]; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => t.textContent); });
+  const sub = await P.evaluate(() => { const s = [...document.querySelectorAll('#fm-pages .nt-sheet > svg')][5]; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => t.textContent); });
   check('" / " 뒤는 작은 부제로', sub.join('|') === '시간표 변경|TIMETABLE', sub);
   // 띄어쓰기 없이 "/"만 써도 부제
   const sub2 = await P.evaluate(() => ['월간 일정표/MONTHLY', '급식 /MENU', '/앞이 빈 줄'].map(s => ntItems({ mode: 'board', text: s, colorMode: 'cycle' })[0]).map(it => it.text + '|' + it.sub));
@@ -239,9 +249,9 @@ function pdfInfo(buf) {
   const geo = await P.evaluate(() => { const sh = document.querySelector('.nt-sheet'); const s = sh.querySelector('svg'); return { sw: sh.style.width, w: s.getAttribute('width'), h: s.getAttribute('height'), left: s.style.left, top: s.style.top, top2: sh.querySelectorAll('svg')[1].style.top }; });
   check('이름표 148×44mm, 가운데 정렬, 위 여백 8mm·사이 4mm', geo.sw === '210mm' && geo.w === '148mm' && geo.h === '44mm' && geo.left === '31mm' && geo.top === '8mm' && geo.top2 === '56mm', geo);
   // 글자가 칸 밖으로 안 나감
-  const overflow = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }).every(Boolean); }));
+  const overflow = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text:not(.nt-sh)')].map(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }).every(Boolean); }));
   check('모든 글자가 이름표 안에 들어감', overflow.every(Boolean), overflow);
-  const pop = await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); const sh = s.querySelector('text.nt-sh'), m = s.querySelector('text:not(.nt-sh)'); return { sh: !!sh && sh.getAttribute('fill') === '#141414' && +sh.getAttribute('x') > +m.getAttribute('x'), m: m.getAttribute('fill') === '#fff' && m.getAttribute('stroke') === '#141414' && m.getAttribute('paint-order') === 'stroke' }; });
+  const pop = await P.evaluate(() => { const s = document.querySelector('#fm-pages svg'); const sh = s.querySelector('text.nt-sh'), m = s.querySelector('text:not(.nt-sh)'); return { sh: !!sh && sh.getAttribute('fill') === '#141414' && +sh.getAttribute('x') > +m.getAttribute('x'), m: m.getAttribute('fill') === '#fff' && m.getAttribute('stroke') === '#141414' && m.getAttribute('paint-order') === 'stroke' }; });
   check('입체 글씨: 흰 글자 + 검정 테두리 + 오른쪽 아래 그림자', pop.sh && pop.m, pop);
   let sz = await mainSizes(P);
   check('글자 크기 모두 같게(기본)', new Set(sz).size === 1, sz);
@@ -267,16 +277,16 @@ function pdfInfo(buf) {
 
   // 크기: 가로가 길면 A4 가로로
   await P.fill('#nt-w', '25'); await P.fill('#nt-h', '8'); await wait(300);
-  check('25×8cm → A4 가로(세로 종이엔 안 들어감)', /^A4 가로/.test(await P.textContent('#nt-prev-label')) && await P.evaluate(() => document.querySelector('.nt-sheet').style.width === '297mm'), await P.textContent('#nt-prev-label'));
+  check('25×8cm → A4 가로(세로 종이엔 안 들어감)', /^A4 가로/.test(await P.textContent('#fm-prev-label')) && await P.evaluate(() => document.querySelector('.nt-sheet').style.width === '297mm'), await P.textContent('#fm-prev-label'));
   await P.fill('#nt-w', '30'); await P.fill('#nt-h', '30'); await wait(300);
-  check('A4보다 크면 안내', /A4 종이보다 커요/.test(await P.locator('#nt-pages').innerText()));
+  check('A4보다 크면 안내', /A4 종이보다 커요/.test(await P.locator('#fm-pages').innerText()));
   await P.click('#nt-presets .nt-chip:first-child'); await wait(300);
   check('크기 버튼(14.8×4.4 기본)', await P.inputValue('#nt-w') === '14.8' && await P.inputValue('#nt-h') === '4.4' && (await cfgOf(pc)).w === 14.8);
   await P.fill('#nt-w', '9'); await P.fill('#nt-h', '5'); await wait(300);
   check('9×5cm → 한 장에 2열×5줄 = 10개', /한 장에 10개/.test(await P.textContent('#nt-fit-info')) && await sheets(P) === 1, await P.textContent('#nt-fit-info'));
 
   // 디자인·색
-  const fills = () => P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelector('g[clip-path] rect').getAttribute('fill')));
+  const fills = () => P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => s.querySelector('g[clip-path] rect').getAttribute('fill')));
   let f = await fills();
   check('여러 색 돌아가며(12색) — 6개 모두 다른 색', new Set(f).size === 6, f);
   await P.click('#nt-color-modes .nt-chip:has-text("한 색으로")'); await wait(200);
@@ -284,29 +294,29 @@ function pdfInfo(buf) {
   f = await fills();
   check('한 색으로 → 고른 색 하나(입체 글씨는 그 색의 파스텔)', new Set(f).size === 1 && f[0].toLowerCase() !== '#ffffff', f);
   await P.click('#nt-styles .nt-style:nth-child(5)'); await wait(200);
-  check('디자인 "컬러" → 색 바탕 + 흰 글씨', await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); return s.querySelector('g[clip-path] rect').getAttribute('fill').toLowerCase() === ntForWhite(NT_COLORS[2]).toLowerCase() && s.querySelector('text:not(.nt-sh)').getAttribute('fill') === '#fff'; }) && (await cfgOf(pc)).style === 'solid');
+  check('디자인 "컬러" → 색 바탕 + 흰 글씨', await P.evaluate(() => { const s = document.querySelector('#fm-pages svg'); return s.querySelector('g[clip-path] rect').getAttribute('fill').toLowerCase() === ntForWhite(NT_COLORS[2]).toLowerCase() && s.querySelector('text:not(.nt-sh)').getAttribute('fill') === '#fff'; }) && (await cfgOf(pc)).style === 'solid');
   await P.click('#nt-styles .nt-style:nth-child(6)'); await wait(200);
-  const ul = await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); const t = s.querySelector('text:not(.nt-sh)').getBBox(); const r = [...s.querySelectorAll('rect')].pop().getBBox(); return { tw: t.width, rw: r.width, tx: t.x, rx: r.x }; });
+  const ul = await P.evaluate(() => { const s = document.querySelector('#fm-pages svg'); const t = s.querySelector('text:not(.nt-sh)').getBBox(); const r = [...s.querySelectorAll('rect')].pop().getBBox(); return { tw: t.width, rw: r.width, tx: t.x, rx: r.x }; });
   check('밑줄: 글자 전체 폭', Math.abs(ul.rw - ul.tw) < ul.tw * 0.08 && Math.abs(ul.rx - ul.tx) < ul.tw * 0.06, ul);
   await P.click('#nt-styles .nt-style:nth-child(5)'); await wait(200);
   await P.click('#nt-radius [data-v="0"]'); await wait(200);
-  check('모서리 각지게', await P.evaluate(() => document.querySelector('#nt-pages svg clipPath rect').getAttribute('rx') === '0'));
+  check('모서리 각지게', await P.evaluate(() => document.querySelector('#fm-pages svg clipPath rect').getAttribute('rx') === '0'));
   await P.click('#nt-styles .nt-style:nth-child(2)'); await P.click('#nt-color-modes .nt-chip:has-text("여러 색")'); await P.click('#nt-radius [data-v="2"]'); await wait(200);
 
   // 글꼴
   await pickFont('검은고딕');
   check('고르면 닫히고 버튼에 그 글꼴 이름(그 글꼴로)', await P.evaluate(() => document.getElementById('nt-font-menu').style.display === 'none' && document.querySelector('#nt-font-btn .nt-fname').innerText === '검은고딕' && document.querySelector('#nt-font-btn .nt-fname').style.fontFamily.includes('Black Han Sans')));
-  check('글꼴 고르면 이름표 글꼴 바뀜·굵기 칸 잠김(한 가지 굵기)', await P.evaluate(() => document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'Black Han Sans'") && document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-weight') === '400' && document.getElementById('nt-weight').disabled) && (await cfgOf(pc)).font === 'Black Han Sans');
+  check('글꼴 고르면 이름표 글꼴 바뀜·굵기 칸 잠김(한 가지 굵기)', await P.evaluate(() => document.querySelector('#fm-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'Black Han Sans'") && document.querySelector('#fm-pages text:not(.nt-sh)').getAttribute('font-weight') === '400' && document.getElementById('nt-weight').disabled) && (await cfgOf(pc)).font === 'Black Han Sans');
   await pickFont('직접 입력');
   check('직접 입력 → 이름 칸 보임', await P.isVisible('#nt-custom'));
   await P.fill('#nt-custom', '없는글꼴이름123'); await wait(200);
   check('PC에 없는 글꼴이면 경고', /찾지 못했어요/.test(await P.textContent('#nt-custom-msg')));
   await P.fill('#nt-custom', 'DejaVu Sans'); await wait(200);
-  check('PC에 있는 글꼴이면 확인 + 이름표에 적용', /이 PC에 있는 글꼴/.test(await P.textContent('#nt-custom-msg')) && await P.evaluate(() => document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'DejaVu Sans'")) && (await cfgOf(pc)).custom === 'DejaVu Sans');
+  check('PC에 있는 글꼴이면 확인 + 이름표에 적용', /이 PC에 있는 글꼴/.test(await P.textContent('#nt-custom-msg')) && await P.evaluate(() => document.querySelector('#fm-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'DejaVu Sans'")) && (await cfgOf(pc)).custom === 'DejaVu Sans');
   await P.fill('#nt-custom', 'a"b<script>'); await wait(200);
-  check('글꼴 이름의 따옴표·꺾쇠는 빼고 씀', await P.evaluate(() => !document.querySelector('#nt-pages script') && document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'abscript'")));
+  check('글꼴 이름의 따옴표·꺾쇠는 빼고 씀', await P.evaluate(() => !document.querySelector('#fm-pages script') && document.querySelector('#fm-pages text:not(.nt-sh)').getAttribute('font-family').startsWith("'abscript'")));
   await pickFont('프리텐다드');
-  check('자간 조절', await P.evaluate(() => { const r = document.getElementById('nt-ls'); r.value = 20; r.dispatchEvent(new Event('input')); return document.querySelector('#nt-pages text:not(.nt-sh)').getAttribute('letter-spacing') > 0 && document.getElementById('nt-ls-val').textContent === '0.2em'; }));
+  check('자간 조절', await P.evaluate(() => { const r = document.getElementById('nt-ls'); r.value = 20; r.dispatchEvent(new Event('input')); return document.querySelector('#fm-pages text:not(.nt-sh)').getAttribute('letter-spacing') > 0 && document.getElementById('nt-ls-val').textContent === '0.2em'; }));
 
   // 인쇄: 쪽수·방향
   await P.evaluate(() => { window.print = function() { window.__printed = (window.__printed || 0) + 1; }; });
@@ -326,27 +336,28 @@ function pdfInfo(buf) {
   // 분리수거함
   await P.click('#nt-mode-switch [data-mode="recycle"]'); await wait(300);
   check('분리수거함: 기본 5종(일반쓰레기·플라스틱·비닐·종이·캔/유리), 18×5cm', await labels(P) === 5 && await P.inputValue('#nt-w') === '18' && await P.inputValue('#nt-h') === '5' && await P.isVisible('#nt-rc-box') && !(await P.isVisible('#nt-board-box')));
-  const rc = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => ({ t: [...s.querySelectorAll('text:not(.nt-sh)')].map(x => x.textContent).join('|'), icon: !!s.querySelector('circle + g path'), fill: s.querySelector('g[clip-path] rect:nth-child(2)').getAttribute('fill') })));
+  const rc = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => ({ t: [...s.querySelectorAll('text:not(.nt-sh)')].map(x => x.textContent).join('|'), icon: !!s.querySelector('circle + g path'), fill: s.querySelector('g[clip-path] rect:nth-child(2)').getAttribute('fill') })));
   check('아이콘 + 한글 + 영어', rc.map(r => r.t).join(',') === '일반쓰레기|GENERAL WASTE,플라스틱|PLASTIC,비닐|VINYL,종이|PAPER,캔/유리|CAN & GLASS' && rc.every(r => r.icon), rc);
   check('종류별 색(플라스틱 파랑)', rc[1].fill.toLowerCase() === '#3b6fd4' && new Set(rc.map(r => r.fill)).size === 5, rc.map(r => r.fill));
   await P.click('.nt-rc:has-text("스티로폼") input'); await P.click('.nt-rc:has-text("비닐") input'); await wait(200);
-  const rc2 = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
+  const rc2 = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
   check('체크 바꾸면 목록 순서대로', rc2.join(',') === '일반쓰레기,플라스틱,종이,캔/유리,스티로폼', rc2);
   await P.fill('#nt-rc-text', '건전지'); await P.uncheck('#nt-rc-eng'); await wait(200);
-  const rc3 = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelectorAll('text:not(.nt-sh)').length));
+  const rc3 = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => s.querySelectorAll('text:not(.nt-sh)').length));
   check('직접 더하기 + 영어 끄기', rc3.length === 6 && rc3.every(n => n === 1), rc3);
   const both = await P.evaluate(() => ntCfg());
   check('게시판 크기·내용은 따로 기억', both.w === 25 && both.rw === 18 && /월간 일정표/.test(both.text), both);
   await P.fill('#nt-w', '19'); await P.fill('#nt-h', '27'); await wait(300);
-  check('세로로 긴 이름표(19×27) → 아이콘 위·글자 아래', await P.evaluate(() => { const s = document.querySelector('#nt-pages svg'); return +s.querySelector('circle').getAttribute('cy') < +s.querySelector('text:not(.nt-sh)').getAttribute('y'); }));
+  check('세로로 긴 이름표(19×27) → 아이콘 위·글자 아래', await P.evaluate(() => { const s = document.querySelector('#fm-pages svg'); return +s.querySelector('circle').getAttribute('cy') < +s.querySelector('text:not(.nt-sh)').getAttribute('y'); }));
   await P.screenshot({ path: 'nt-recycle.png' });
 
   // 서버 저장 + 다른 기기
   await wait(2500);
   check('서버(개인 자료)에 nt-cfg 저장', JSON.parse(serverVal(T1, 'nt-cfg') || '{}').rcText === '건전지');
   const pc2 = await openDevice(browser, 'PC2', T1);
-  await pc2.page.click('#rail-nametag-btn'); await wait(300);
-  check('다른 기기에서 열면 같은 설정(분리수거함·건전지)', await pc2.page.evaluate(() => document.querySelectorAll('#nt-pages .nt-sheet > svg').length === 6 && document.getElementById('nt-rc-text').value === '건전지'));
+  await openNt(pc2.page);
+  check('다른 기기: 양식을 열면 마지막 탭(이름표)으로 바로 열림(fm-cfg.kind 계정 자료)', await ntTab(pc2.page) && await pc2.page.evaluate(() => document.querySelector('#fm-kind-switch .tab-btn.active').dataset.kind === 'nt'));
+  check('다른 기기에서 열면 같은 설정(분리수거함·건전지)', await pc2.page.evaluate(() => document.querySelectorAll('#fm-pages .nt-sheet > svg').length === 6 && document.getElementById('nt-rc-text').value === '건전지'));
   await P.evaluate(() => { window.__homeRedraw = 0; const o = window.refreshDashboardFromLocalStorage; window.refreshDashboardFromLocalStorage = function() { window.__homeRedraw++; return o.apply(this, arguments); }; });
   await P.evaluate(() => document.activeElement && document.activeElement.blur()); // 입력칸에 커서가 있으면 벗어날 때까지 미룸(정상)
   await pc2.page.click('.nt-rc:has-text("음식물") input'); await wait(3000);
@@ -354,19 +365,19 @@ function pdfInfo(buf) {
   check('이름표 설정만 바뀌면 홈 화면은 다시 안 그림', await P.evaluate(() => window.__homeRedraw === 0));
 
   // 🔐 사물함 이름표
-  const texts = (pg) => pg.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
+  const texts = (pg) => pg.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => s.querySelector('text:not(.nt-sh)').textContent));
   check('탭 이름·순서: 게시판 / 사물함 / 분리수거함(아이콘 없음)', (await P.evaluate(() => [...document.querySelectorAll('#nt-mode-switch .tab-btn')].map(b => b.textContent.trim()).join('/'))) === '게시판/사물함/분리수거함');
   await P.click('#nt-mode-switch [data-mode="locker"]'); await wait(300);
-  check('사물함: 기본 6.7×2.1cm, 담임 아니면 학년·반 고르라는 안내(명렬표 안 받음)', await P.inputValue('#nt-w') === '6.7' && await P.inputValue('#nt-h') === '2.1' && await P.isVisible('#nt-lk-box') && !(await P.isVisible('#nt-rc-box')) && !(await P.isVisible('#nt-board-box')) && /학년·반/.test(await P.locator('#nt-pages').innerText()) && studentSelects.length === 0);
+  check('사물함: 기본 6.7×2.1cm, 담임 아니면 학년·반 고르라는 안내(명렬표 안 받음)', await P.inputValue('#nt-w') === '6.7' && await P.inputValue('#nt-h') === '2.1' && await P.isVisible('#nt-lk-box') && !(await P.isVisible('#nt-rc-box')) && !(await P.isVisible('#nt-board-box')) && /학년·반/.test(await P.locator('#fm-pages').innerText()) && studentSelects.length === 0);
   check('반 목록은 학급 구성대로(3학년 10반)', await P.evaluate(() => document.querySelectorAll('#nt-lk-grade option').length === 4));
   await P.selectOption('#nt-lk-grade', '3'); await wait(150);
   check('학급 구성대로 3학년 반 10개', await P.evaluate(() => document.querySelectorAll('#nt-lk-class option').length) === 11);
   await P.selectOption('#nt-lk-class', '1'); await wait(400);
   check('3학년 1반 → 명렬표 5명, 기본 "번호 이름"', JSON.stringify(await texts(P)) === JSON.stringify(['1번 가나다', '2번 라마바', '3번 사아자', '4번 차카타', '5번 파하가']) && /5명/.test(await P.textContent('#nt-lk-count')), await texts(P));
-  check('6.7×2.1cm → 사이 간격 없이 A4 가로 한 장에 36개(4×9)', /가로 한 장에 36개/.test(await P.textContent('#nt-fit-info')) && await P.evaluate(() => { const s = document.querySelector('#nt-pages .nt-sheet > svg'); return s.getAttribute('width') === '67mm' && s.getAttribute('height') === '21mm'; }), await P.textContent('#nt-fit-info'));
-  const lkPos = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].map(s => [parseFloat(s.style.left), parseFloat(s.style.top)]));
+  check('6.7×2.1cm → 사이 간격 없이 A4 가로 한 장에 36개(4×9)', /가로 한 장에 36개/.test(await P.textContent('#nt-fit-info')) && await P.evaluate(() => { const s = document.querySelector('#fm-pages .nt-sheet > svg'); return s.getAttribute('width') === '67mm' && s.getAttribute('height') === '21mm'; }), await P.textContent('#nt-fit-info'));
+  const lkPos = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].map(s => [parseFloat(s.style.left), parseFloat(s.style.top)]));
   check('사물함은 이름표끼리 딱 붙음(옆 67mm·아래 21mm 간격), 모서리는 각지게·모서리 고르기 숨김', Math.abs(lkPos[1][0] - lkPos[0][0] - 67) < 0.01 && Math.abs(lkPos[4][1] - lkPos[0][1] - 21) < 0.01 &&
-    await P.evaluate(() => document.querySelector('#nt-pages svg rect[clip-path], #nt-pages svg clipPath rect').getAttribute('rx') === '0' && document.getElementById('nt-radius').parentElement.style.display === 'none'), lkPos.slice(0, 5));
+    await P.evaluate(() => document.querySelector('#fm-pages svg rect[clip-path], #fm-pages svg clipPath rect').getAttribute('rx') === '0' && document.getElementById('nt-radius').parentElement.style.display === 'none'), lkPos.slice(0, 5));
   const fmtBtns = await P.evaluate(() => [...document.querySelectorAll('#nt-lk-fmt .nt-chip')].map(b => b.textContent));
   check('표시 버튼 4개, 이 반 첫 학생으로 예시', JSON.stringify(fmtBtns) === JSON.stringify(['30101', '1번 가나다', '30101 가나다', '가나다']), fmtBtns);
   await P.click('#nt-lk-fmt [data-v="id"]'); await wait(200);
@@ -374,7 +385,7 @@ function pdfInfo(buf) {
   await P.click('#nt-lk-fmt [data-v="idname"]'); await wait(200);
   check('"학번 이름" → 30101 가나다', (await texts(P))[0] === '30101 가나다');
   await P.click('#nt-lk-fmt [data-v="numname"]'); await wait(200);
-  const lkIn = await P.evaluate(() => [...document.querySelectorAll('#nt-pages .nt-sheet > svg')].every(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text')].every(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }); }));
+  const lkIn = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .nt-sheet > svg')].every(s => { const vb = s.viewBox.baseVal; return [...s.querySelectorAll('text')].every(t => { const b = t.getBBox(); return b.x >= 0 && b.y >= 0 && b.x + b.width <= vb.width && b.y + b.height <= vb.height; }); }));
   check('작은 이름표에서도 글자가 칸 안에', lkIn);
   const lkMid = (await mainSizes(P))[0];
   await setFill(P, 50); await wait(200);
@@ -423,50 +434,67 @@ function pdfInfo(buf) {
   const nSel = studentSelects.length;
   await P.selectOption('#nt-lk-class', '3'); await wait(400);
   for (let k = 0; k < 4; k++) { await setFill(P, 70 + k * 2); await wait(100); }
-  check('명렬표를 못 받으면 안내 + 다시 그려도 요청이 되풀이되지 않음', /불러오지 못했어요/.test(await P.locator('#nt-pages').innerText()) && studentSelects.length === nSel + 1, studentSelects.slice(nSel));
+  check('명렬표를 못 받으면 안내 + 다시 그려도 요청이 되풀이되지 않음', /불러오지 못했어요/.test(await P.locator('#fm-pages').innerText()) && studentSelects.length === nSel + 1, studentSelects.slice(nSel));
   await setFill(P, 74);
   await P.selectOption('#nt-lk-class', '1'); await wait(400);
   check('반을 고를 때만 명렬표를 받음(표시·크기·글자 크기를 바꿔 다시 그려도 안 받음)', studentSelects.join(',') === '3-1,3-2,3-3,3-1' && (await texts(P)).length === 5, studentSelects);
   // 담임 선생님: 담임 반으로 시작
   const hr = await openDevice(browser, 'HR', T2);
-  await hr.page.click('#rail-nametag-btn'); await wait(300);
+  await openNt(hr.page);
   await hr.page.click('#nt-mode-switch [data-mode="locker"]'); await wait(500);
   check('담임은 사물함을 열면 담임 반(3학년 1반) 학생으로 바로', await hr.page.inputValue('#nt-lk-grade') === '3' && await hr.page.inputValue('#nt-lk-class') === '1' && (await texts(hr.page)).length === 5, await texts(hr.page));
-  await hr.page.locator('#nt-right').screenshot({ path: 'nt-locker-pop.png' }); // 기본 디자인(입체 글씨·주아)
+  await hr.page.locator('#fm-right').screenshot({ path: 'nt-locker-pop.png' }); // 기본 디자인(입체 글씨·주아)
+
+  // 다른 탭으로 가면 이름표 칸·⑦이 숨고 한글 파일 단추가 돌아옴, 글꼴 메뉴도 닫힘
+  await P.click('#nt-font-btn'); await wait(150);
+  await P.click('#fm-kind-switch [data-kind="roster"]'); await wait(300);
+  const back = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display,
+    no7: getComputedStyle(document.getElementById('fm-print-no')).display, menu: document.getElementById('nt-font-menu').style.display, cls: document.getElementById('form-page').classList.contains('fm-kind-nt'), note: document.getElementById('fm-out-note').textContent, sheets: document.querySelectorAll('#fm-pages .nt-sheet').length }));
+  check('명렬표 수합 탭으로: 이름표 칸·⑦ 숨김, 한글 파일 단추·안내 다시, 글꼴 메뉴 닫힘, 미리보기에 이름표 없음', back.grid === 'none' && back.guide === 'none' && back.fm === '' && back.hwpx !== 'none' && back.no7 === 'none' && back.menu === 'none' && !back.cls && /한글/.test(back.note) && back.sheets === 0, back);
+  await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
+  check('이름표 탭으로 돌아오면 그대로(사물함 3학년 1반 5명)', await shown() && (await texts(P)).length === 5);
+  // 🗑 초기화: 이름표 설정만(다른 양식 설정은 그대로)
+  await P.evaluate(() => { window.customConfirm = async () => true; });
+  await P.click('#fm-reset-btn'); await wait(400);
+  const rs = await P.evaluate(() => ({ nt: localStorage.getItem('nt-cfg'), kind: JSON.parse(localStorage.getItem('fm-cfg') || '{}').kind, mode: ntCfg().mode, w: document.getElementById('nt-w').value, text: document.getElementById('nt-text').value, title: document.getElementById('fm-reset-btn').title }));
+  check('🗑 초기화: 이름표 설정만 처음으로(게시판·14.8cm·내용 비움), 양식 탭은 이름표 그대로', rs.nt === '{}' && rs.kind === 'nt' && rs.mode === 'board' && rs.w === '14.8' && rs.text === '' && /이름표 설정만/.test(rs.title), rs);
 
   // 닫기
-  await P.click('#rail-nametag-btn'); await wait(300);
-  check('같은 버튼 한 번 더 → 홈', !(await shown()) && await P.evaluate(() => document.getElementById('main-dashboard').style.display === 'grid'));
-  await P.click('#rail-nametag-btn'); await wait(300);
+  await P.click('#rail-forms-btn'); await wait(300);
+  check('양식 버튼 한 번 더 → 홈', !(await shown()) && await P.evaluate(() => document.getElementById('main-dashboard').style.display === 'grid'));
+  await P.click('#rail-forms-btn'); await wait(300);
+  check('다시 열면 이름표 탭 그대로', await shown());
   await P.click('#rail-absence-btn'); await wait(600);
-  check('결석계 누르면 이름표 닫히고 결석계', !(await shown()) && await P.evaluate(() => document.getElementById('absence-page').style.display === 'flex' && !document.getElementById('rail-nametag-btn').classList.contains('active')));
-  await P.click('#rail-nametag-btn'); await wait(300);
-  check('이름표 누르면 결석계 닫힘', await shown() && await P.evaluate(() => document.getElementById('absence-page').style.display === 'none'));
+  check('결석계 누르면 양식(이름표) 닫히고 결석계', !(await shown()) && await P.evaluate(() => document.getElementById('absence-page').style.display === 'flex' && !document.getElementById('rail-forms-btn').classList.contains('active')));
+  await P.click('#rail-forms-btn'); await wait(300);
+  check('양식 누르면 결석계 닫힘', await shown() && await P.evaluate(() => document.getElementById('absence-page').style.display === 'none'));
   await P.click('#rail-monthly-btn'); await wait(600);
-  check('월간일정표 누르면 이름표 닫힘', !(await shown()) && await P.evaluate(() => document.getElementById('monthly-page').style.display === 'flex'));
+  check('월간일정표 누르면 양식 닫힘', !(await shown()) && await P.evaluate(() => document.getElementById('monthly-page').style.display === 'flex'));
   await P.click('#rail-home-btn'); await wait(300);
 
   // 1366×768 화면에서도 레일·입력칸이 잘리지 않음
   const small = await openDevice(browser, 'S', T1, { viewport: { width: 1366, height: 768 } });
-  await small.page.click('#rail-nametag-btn'); await wait(400);
-  check('1366×768: 이름표 버튼 보이고 화면 열림', await small.page.evaluate(() => { const r = document.getElementById('rail-nametag-btn').getBoundingClientRect(); return r.bottom <= innerHeight && document.getElementById('nametag-page').style.display === 'flex'; }));
-  const zoomOk = await small.page.evaluate(() => { const z = parseFloat(document.getElementById('nt-pages').style.zoom || '1'); const sh = document.querySelector('.nt-sheet'); const sc = document.getElementById('nt-prev-scroll'); return sh.offsetHeight * z <= sc.clientHeight && sh.offsetWidth * z <= sc.clientWidth; });
+  await openNt(small.page);
+  check('1366×768: 양식 버튼 보이고 이름표 탭 열림', await small.page.evaluate(() => { const r = document.getElementById('rail-forms-btn').getBoundingClientRect(); return r.bottom <= innerHeight; }) && await ntTab(small.page));
+  check('1366×768: 양식 왼쪽 칸이 600px 넘어 이름표 상자가 두 줄(② 내용 | ⑤ 글꼴 나란히)', await small.page.evaluate(() => { const l = document.getElementById('fm-left').clientWidth, a = document.getElementById('nt-board-box').getBoundingClientRect(), f = document.getElementById('nt-font-box').getBoundingClientRect(); return l >= 600 && f.left > a.right - 1 && Math.abs(f.top - a.top) < 2; }), await small.page.evaluate(() => document.getElementById('fm-left').clientWidth));
+  if (!(await small.page.evaluate(() => !!document.querySelector('#fm-pages .nt-sheet')))) { await small.page.fill('#nt-text', '월간 일정표\n오늘의 메뉴'); await wait(300); } // 위 🗑 초기화로 내용이 비어 있음
+  const zoomOk = await small.page.evaluate(() => { const z = parseFloat(document.getElementById('fm-pages').style.zoom || '1'); const sh = document.querySelector('.nt-sheet'); const sc = document.getElementById('fm-prev-scroll'); return sh.offsetHeight * z <= sc.clientHeight && sh.offsetWidth * z <= sc.clientWidth; });
   check('미리보기: 종이 한 장이 칸 안에 다 보임', zoomOk);
-  const boxes = await small.page.evaluate(() => [...document.querySelectorAll('#nt-left > .nt-box')].map(b => b.scrollHeight <= b.clientHeight + 1));
+  const boxes = await small.page.evaluate(() => [...document.querySelectorAll('#nt-grid .nt-box')].map(b => b.scrollHeight <= b.clientHeight + 1));
   check('1366×768: 왼쪽 칸들이 눌려 잘리지 않음(패널이 스크롤)', boxes.every(Boolean) && await small.page.evaluate(() => document.getElementById('nt-font-btn').getBoundingClientRect().height >= 38), boxes);
-  await small.page.evaluate(() => { document.getElementById('nt-left').scrollTop = 99999; }); await wait(200);
+  await small.page.evaluate(() => { document.getElementById('fm-left').scrollTop = 99999; }); await wait(200);
   await small.page.click('#nt-font-btn'); await wait(200);
   check('1366×768: 아래쪽에서 펼쳐도 목록이 화면 안', await small.page.evaluate(() => { const r = document.getElementById('nt-font-menu').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.height > 200; }));
   await small.page.screenshot({ path: 'nt-1366.png' });
   // 🔍 미리보기 확대/축소(양식 만들기와 같음): 100% = 한 장에 맞춤, 200%면 두 배·옆으로 스크롤, 숫자 누르면 100%
   const SP = small.page;
-  if (!(await SP.evaluate(() => !!document.querySelector('#nt-pages .nt-sheet')))) { await SP.fill('#nt-text', '월간 일정표\n오늘의 메뉴'); await wait(300); }
-  const nz = () => SP.evaluate(() => { const sc = document.getElementById('nt-prev-scroll'), r = document.querySelector('#nt-pages .nt-sheet').getBoundingClientRect(), sr = sc.getBoundingClientRect();
-    return { t: document.getElementById('nt-zoom-text').textContent, w: r.width, left: r.left - sr.left, sw: sc.scrollWidth, cw: sc.clientWidth }; });
+  if (!(await SP.evaluate(() => !!document.querySelector('#fm-pages .nt-sheet')))) { await SP.fill('#nt-text', '월간 일정표\n오늘의 메뉴'); await wait(300); }
+  const nz = () => SP.evaluate(() => { const sc = document.getElementById('fm-prev-scroll'), r = document.querySelector('#fm-pages .nt-sheet').getBoundingClientRect(), sr = sc.getBoundingClientRect();
+    return { t: document.getElementById('fm-zoom-text').textContent, w: r.width, left: r.left - sr.left, sw: sc.scrollWidth, cw: sc.clientWidth }; });
   const nz0 = await nz();
-  for (let i = 0; i < 3; i++) await SP.click('#nt-zoom-group button:last-of-type');
+  for (let i = 0; i < 3; i++) await SP.click('#fm-zoom-group button:last-of-type');
   const nz1 = await nz();
-  await SP.click('#nt-zoom-text'); const nz2 = await nz();
+  await SP.click('#fm-zoom-text'); const nz2 = await nz();
   check('🔍 이름표 미리보기 확대/축소: 100% = 맞춤, 200%면 두 배·옆으로 스크롤(왼쪽 안 잘림), 숫자 누르면 100%',
     nz0.t === '100%' && nz1.t === '200%' && Math.abs(nz1.w - nz0.w * 2) < 3 && nz1.sw > nz1.cw && nz1.left >= -1 && nz2.t === '100%' && Math.abs(nz2.w - nz0.w) < 1, { nz0, nz1, nz2 });
 
@@ -475,19 +503,19 @@ function pdfInfo(buf) {
   // 넓은 화면 두 줄 + 지금 할 일 상자(①→⑦ 한 단계씩, 건너뛰지 않음) — 새 계정 화면에서
   gd = await openDevice(browser, 'G', T2);
   const G = gd.page;
-  await G.click('#rail-nametag-btn'); await wait(600);
+  await openNt(G); await wait(300);
   await G.evaluate(() => { localStorage.removeItem('nt-guide'); ntSetMode('board'); }); await wait(400);
   const ntBox = () => G.evaluate(() => ({ t: document.getElementById('nt-next').innerText, done: !!document.querySelector('#nt-next .pa-next.done'),
-    glow: [...document.querySelectorAll('#nametag-page .pa-glow')].map(e => e.id), st: ['nt-st-3', 'nt-st-4', 'nt-st-5', 'nt-st-6'].map(id => document.getElementById(id).textContent),
+    glow: [...document.querySelectorAll('#form-page .pa-glow')].map(e => e.id), st: ['nt-st-3', 'nt-st-4', 'nt-st-5', 'nt-st-6'].map(id => document.getElementById(id).textContent),
     st2: document.querySelector('#nt-board-box .nt-st-2').textContent }));
   const GR = (id) => G.evaluate((id) => { const r = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; }, id);
   const bb = await GR('nt-board-box'), sz = await GR('nt-size-box'), cp = await GR('nt-copies-box'), fb = await GR('nt-font-box'), db = await GR('nt-design-box');
   check('넓은 화면: 왼쪽 = ② 내용·③ 크기·④ 장수, 오른쪽 = ⑤ 글꼴·⑥ 디자인(맨 위 나란히·아래 끝 맞춤)', sz.l === bb.l && sz.t > bb.b && cp.t > sz.b && fb.l > bb.r - 1 && Math.abs(fb.t - bb.t) < 2 && Math.abs(db.b - cp.b) < 2, { bb, sz, cp, fb, db });
-  check('넓은 화면(1600×1000): 왼쪽 칸 스크롤 없음(세 모드 모두)', await G.evaluate(async () => { const out = []; for (const m of ['board', 'locker', 'recycle']) { ntSetMode(m); const p = document.getElementById('nt-left'); out.push(p.scrollHeight <= p.clientHeight); } ntSetMode('board'); return out.every(Boolean); }));
-  check('칸 제목 ②~⑥, 위쪽 ①⑦', await G.evaluate(() => ['nt-board-box', 'nt-size-box', 'nt-copies-box', 'nt-font-box', 'nt-design-box'].map(id => document.querySelector('#' + id + ' .nt-no').textContent).join('') === '②③④⑤⑥' && [...document.querySelectorAll('.nt-hdr-no')].map(e => e.textContent).join('') === '①⑦'));
+  check('넓은 화면(1600×1000): 왼쪽 칸 스크롤 없음(세 모드 모두)', await G.evaluate(async () => { const out = []; for (const m of ['board', 'locker', 'recycle']) { ntSetMode(m); const p = document.getElementById('fm-left'); out.push([m, p.scrollHeight - p.clientHeight]); } ntSetMode('board'); window.__ov = out; return out.every(x => x[1] <= 0); }), await G.evaluate(() => window.__ov));
+  check('칸 제목 ①~⑥, 위쪽 오른쪽 ⑦(🖨️ 인쇄/PDF 앞)', await G.evaluate(() => ['nt-mode-box', 'nt-board-box', 'nt-size-box', 'nt-copies-box', 'nt-font-box', 'nt-design-box'].map(id => document.querySelector('#' + id + ' .nt-no').textContent).join('') === '①②③④⑤⑥' && document.getElementById('fm-print-no').textContent === '⑦' && document.getElementById('fm-print-no').nextElementSibling.id === 'fm-print-btn'));
   const ntSeen = [];
   let gb = await ntBox(); ntSeen.push(gb.t.match(/[①②③④⑤⑥⑦]/)[0]);
-  check('① 무엇을: 게시판·사물함·분리수거함 설명·모드 단추 반짝', /① 지금 할 일/.test(gb.t) && /게시판/.test(gb.t) && /사물함/.test(gb.t) && /분리수거함/.test(gb.t) && gb.glow.includes('nt-mode-switch') && /다음: ② 내용/.test(gb.t), gb);
+  check('① 무엇을: 게시판·사물함·분리수거함 설명·모드 단추 반짝·① 칸에 "지금"', /① 지금 할 일/.test(gb.t) && /① 칸/.test(gb.t) && /게시판/.test(gb.t) && /사물함/.test(gb.t) && /분리수거함/.test(gb.t) && gb.glow.includes('nt-mode-switch') && /다음: ② 내용/.test(gb.t) && await G.evaluate(() => document.getElementById('nt-st-1').textContent === '지금'), gb);
   const ntGo = async () => { await G.click('#nt-next .top-btn:not(.nt-again)'); await wait(300); gb = await ntBox(); ntSeen.push((gb.t.match(/[①②③④⑤⑥⑦]/) || ['?'])[0]); };
   await ntGo();
   check('② 내용(빈 칸): 한 줄에 하나·부제(/) 설명·글 칸 반짝·다음 단추 없음', /② 지금 할 일/.test(gb.t) && /한 줄에 하나씩/.test(gb.t) && /부제/.test(gb.t) && gb.glow.includes('nt-text') && !/다음:/.test(gb.t) && gb.st2 === '지금', gb);
@@ -503,7 +531,7 @@ function pdfInfo(buf) {
   await ntGo();
   check('⑥ 디자인·색: 모양 6가지·모서리·색 고르는 법', /⑥ 지금 할 일/.test(gb.t) && /입체 글씨/.test(gb.t) && /모서리/.test(gb.t) && /한 색으로/.test(gb.t) && gb.glow.includes('nt-design-box'), gb);
   await ntGo();
-  check('⑦ 출력: 배율 100%·PDF·완료 모양·②~⑥ ✓', gb.done && /⑦/.test(gb.t) && /100%/.test(gb.t) && /PDF/.test(gb.t) && gb.glow.includes('nt-print-btn') && gb.st.every(x => x === '✓') && gb.st2 === '✓', gb);
+  check('⑦ 출력: 🖨️ 인쇄/PDF·배율 100%·완료 모양·①~⑥ ✓', gb.done && /⑦/.test(gb.t) && /인쇄\/PDF/.test(gb.t) && /100%/.test(gb.t) && gb.glow.includes('fm-print-btn') && gb.st.every(x => x === '✓') && gb.st2 === '✓' && await G.evaluate(() => document.getElementById('nt-st-1').textContent === '✓'), gb);
   check('단계가 하나도 건너뛰지 않음(①~⑦)', ntSeen.join('') === '①②②③④⑤⑥⑦'.replace('②②', '②'), ntSeen);
   await G.fill('#nt-text', ''); await wait(400);
   check('내용을 지우면 ②로 돌아감', /② 지금 할 일/.test((await ntBox()).t));

@@ -222,7 +222,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#fm-kind-switch [data-kind="pe"]'); await P.waitForTimeout(400);
   const vis = await P.evaluate(() => ({ pe: getComputedStyle(document.getElementById('pe-grid')).display !== 'none', ws: document.getElementById('ws-grid').style.display, fm: document.getElementById('fm-grid').style.display,
     xlsx: document.getElementById('fm-xlsx-btn').style.display, kind: JSON.parse(localStorage.getItem('fm-cfg')).kind, tabs: [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent).join() }));
-  check('수행평가 탭: 수행평가 칸만 보이고 엑셀 버튼 숨김, 탭 네 개(시정표가 맨 앞)', vis.pe && vis.ws === 'none' && vis.fm === 'none' && vis.xlsx === 'none' && vis.kind === 'pe' && vis.tabs === '시정표,명렬표 수합,학습지,수행평가', vis);
+  check('수행평가 탭: 수행평가 칸만 보이고 엑셀 버튼 숨김, 탭 다섯 개(시정표가 맨 앞·이름표 맨 뒤)', vis.pe && vis.ws === 'none' && vis.fm === 'none' && vis.xlsx === 'none' && vis.kind === 'pe' && vis.tabs === '시정표,명렬표 수합,학습지,수행평가,이름표', vis);
   const prev = () => P.evaluate(() => { const sh = [...document.querySelectorAll('#fm-pages .pe-sheet')];
     return { n: sh.length, head: sh.map(s => { const t = s.querySelector('.pe-head'); return t ? [...t.rows].map(r => [...r.cells].map(c => c.textContent)) : null; }),
       paras: sh.map(s => [...s.querySelectorAll('.pe-p')].map(d => d.textContent.replace(/ /g, ''))), w: sh[0] && sh[0].style.width,

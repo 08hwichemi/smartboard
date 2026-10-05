@@ -222,7 +222,6 @@ function show(name, seen) {
     ['월간일정표', '#rail-monthly-btn', () => msOpenTour(), () => msTourSteps.length],
     ['시간표 만들기', '#rail-persontt-btn', () => ptOpenTour(), () => ptTourSteps.length],
     ['조퇴증', '#rail-leavepass-btn', () => lpOpenTour(), () => lpTourSteps.length],
-    ['이름표', '#rail-nametag-btn', () => ntOpenTour(), () => ntTourSteps.length],
     ['양식 만들기', '#rail-forms-btn', () => fmOpenTour(), () => fmTourSteps.length],
   ];
   for (const [name, btn, open, len] of pages) {
@@ -235,13 +234,10 @@ function show(name, seen) {
       check('시간표 만들기: 제목 바뀜', (await P.evaluate(() => document.getElementById('pt-page-header').innerText)).includes('시간표 만들기'));
       check('시간표 만들기: 설명서 끝나면 원래 탭(내 시간표)으로', await P.evaluate(() => ptCurrentTab === 'me'));
     }
-    if (name === '이름표') {
-      check('이름표: 분리수거함 단계도 나옴', seen.some(s => s.title.includes('분리수거 종류')));
-      check('이름표: 설명서 끝나면 원래 모드(게시판)로', await P.evaluate(() => ntCfg().mode === 'board' && document.getElementById('nt-board-box').style.display !== 'none'));
-    }
     if (name === '양식 만들기') {
       check('양식 만들기: 학습지 단계도 나옴', seen.some(s => s.title.includes('학습지')) && seen.some(s => s.title.includes('초기화')));
-      check('양식 만들기: 설명서 끝나면 원래 양식(명렬표 수합)으로', await P.evaluate(() => fmCfg().kind === 'roster' && document.getElementById('fm-grid').style.display !== 'none'));
+      check('양식 만들기: 이름표 단계(① 무엇을·분리수거 종류·사물함·⑦ 출력)도 맨 뒤에 나옴', seen.some(s => s.title.includes('분리수거 종류')) && seen.some(s => s.title.includes('사물함')) && seen[seen.length - 1].title.includes('이름표') && seen[seen.length - 1].title.includes('출력'));
+      check('양식 만들기: 설명서 끝나면 원래 양식(명렬표 수합)·이름표는 원래 모드(게시판)로', await P.evaluate(() => fmCfg().kind === 'roster' && document.getElementById('fm-grid').style.display !== 'none' && document.getElementById('nt-grid').style.display === 'none' && ntCfg().mode === 'board'));
     }
     await P.click(btn); await wait(400); // 홈으로
   }
