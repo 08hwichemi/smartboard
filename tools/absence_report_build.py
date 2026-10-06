@@ -68,7 +68,8 @@ def main(hwpx, out):
         (3, 1): {'whole': 'name'},
         (3, 4): {'para': {0: ('', 'cls', '')}},
         (4, 3): {'para': {0: ('', 'period', ''), 1: ('* 현재까지 교외체험학습(가정학습 제외) 총 사용일수: ( ', 'total', ' )일 ')}},
-        (24, 0): {'para': {1: ('', 'date', ''), 3: ('학생 :     ', 'student', '     (인)')}},
+        # 보호자·학생 줄: 손으로 쓰는 칸이라 이름 자리를 넓게(34mm), 두 줄의 "이름 자리·(인)"이 같은 세로선에 오게 — 라벨은 18mm 오른쪽 맞춤
+        (24, 0): {'para': {1: ('', 'date', ''), 2: ('sig', '보호자 :', 'guardian'), 3: ('sig', '학생 :', 'student')}},
     }
 
     tbl = re.search(r'<hp:tbl (.*?)>(.*?)</hp:tbl>', sec, re.S)
@@ -107,7 +108,12 @@ def main(hwpx, out):
 
     def para_html(p, dyn=None):
         inner = ''
-        if dyn:
+        if dyn and dyn[0] == 'sig':
+            _, label, key = dyn
+            cp = p['runs'][0][0] if p['runs'] else '7'
+            inner = ('<span style="%s"><span style="display:inline-block;width:18mm;text-align:right;">%s</span>'
+                     '<span data-c="%s" style="display:inline-block;width:34mm;text-align:center;"></span><span>(인)</span></span>') % (font_css(cp), html.escape(label), key)
+        elif dyn:
             pre, key, post = dyn
             cp = p['runs'][0][0] if p['runs'] else '7'
             inner = '<span style="%s">%s<span data-c="%s"></span>%s</span>' % (font_css(cp), html.escape(pre), key, html.escape(post))
@@ -163,7 +169,7 @@ def main(hwpx, out):
         'html': html_out, 'scale': 100, 'hcenter': True, 'hwpx': True,
         # 한글: 본문은 위 여백 + 머리말 아래부터, 좌우는 용지 여백 그대로(엑셀 양식처럼 5mm를 더하지 않음)
         'margin_in': [round((top + header) / 25.4, 4), round(right / 25.4, 4), round((bottom + footer) / 25.4, 4), round(left / 25.4, 4)],
-        'dyn': ['name', 'cls', 'period', 'total', 'date', 'student'],
+        'dyn': ['name', 'cls', 'period', 'total', 'date', 'guardian', 'student'],
         'src': '학교장허가 교외체험학습 결과보고서(.hwpx) — tools/absence_report_build.py',
     }
     data = json.load(open(out, encoding='utf-8'))

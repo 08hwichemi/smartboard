@@ -4283,7 +4283,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-06.1';
+  var BUILD_ID = '2026-10-06.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13206,7 +13206,7 @@
         E7: abKDate(r.from), I7: abKDate(r.to), L7: '(' + days + ' 일간)', L8: before,
         F24: '(' + abDotDate(r.from), I24: abDotDate(r.to) + ')', E28: abKDate(r.written), L30: r.name || '' },
         form2: 'report', v2: { name: r.name || '', cls: '제 ' + r.g + ' 학년 ' + r.c + ' 반 ' + r.num + ' 번', period: period, total: before + days,
-          date: (tp ? tp[0] : new Date().getFullYear()) + '.      .      .', student: r.name || '' } };
+          date: (tp ? tp[0] : new Date().getFullYear()) + '.      .      .', guardian: '', student: r.name || '' } };
     }
     return { form: 'confirm', v: {
       B2: r.reason + ' 확인서', I8: r.g + '학년', J8: r.c + '반', K8: r.num + '번', J10: r.name || '',
