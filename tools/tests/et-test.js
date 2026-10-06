@@ -7,6 +7,13 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+// 엑셀 파일 가져오기 검사용 SheetJS(index.html이 CDN에서 받는 것과 같은 0.18.5). 없으면 npm에서 한 번 받아 둠(ab-test와 같음)
+const XLSXLIB = (() => {
+  const dir = path.join(require('os').tmpdir(), 'sb-test-xlsx');
+  const f = path.join(dir, 'package', 'dist', 'xlsx.full.min.js');
+  if (!fs.existsSync(f)) { try { fs.mkdirSync(dir, { recursive: true }); require('child_process').execSync('npm pack xlsx@0.18.5 --silent && tar xzf xlsx-0.18.5.tgz', { cwd: dir, stdio: 'ignore' }); } catch (e) {} }
+  return fs.existsSync(f) ? f : null;
+})();
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 // ---------- 가짜 서버 ----------
@@ -163,6 +170,7 @@ async function openDevice(browser, name, uid, opts = {}) {
       return route.fulfill({ status: 404, body: '' });
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
+    if (url.includes('xlsx.full.min.js') && XLSXLIB) return route.fulfill({ body: fs.readFileSync(XLSXLIB), contentType: 'application/javascript' });
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -223,7 +231,7 @@ function pdfInfo(buf) {
     document.getElementById('fm-hwpx-btn').style.display === 'none' && document.getElementById('fm-xlsx-btn').style.display === 'none' && /양면/.test(document.getElementById('fm-out-note').textContent) && document.querySelector('#fm-kind-switch .tab-btn.active').dataset.kind === 'et'));
   const cfg0 = await P.evaluate(() => etCfg().cfg);
   check('기본 시험 정보: 7월 전국연합학력평가 · 부광고 · 14115 · 3학년 1반 · 시간표 5줄 · 올해 학년도', cfg0.exam === '7월 전국연합학력평가' && cfg0.school === '부광고등학교' && cfg0.schoolNo === '14115' && cfg0.grade === 3 && cfg0.cls === 1 && cfg0.times.split('\n').length === 5 && /^20\d\d$/.test(cfg0.year), cfg0);
-  check('입력칸에 기본값이 채워짐', await P.evaluate(() => document.querySelector('#et-grid [data-k="exam"]').value === '7월 전국연합학력평가' && document.getElementById('et-grade').value === '3' && document.getElementById('et-cls').value === '1' && document.getElementById('et-times').value.indexOf('08:40~10:00') > 0));
+  check('입력칸에 기본값이 채워짐', await P.evaluate(() => document.querySelector('#et-grid [data-k="exam"]').value === '7월 전국연합학력평가' && document.getElementById('et-grade').value === '3' && document.getElementById('et-cls').value === '1' && document.querySelectorAll('#et-times tbody tr').length === 5 && document.querySelector('#et-times input[data-r="0"][data-f="time"]').value === '08:40~10:00' && document.querySelector('#et-time-presets .nt-chip.on').dataset.preset === 'now'));
   check('빈 명단이면 안내 글', await P.evaluate(() => /학생 명단/.test(document.querySelector('#fm-pages .fm-empty').textContent)));
   await P.evaluate(() => { window.customAlert = async (m) => { window.__alert = m; }; });
   await P.click('#fm-print-btn'); await wait(200);
@@ -340,9 +348,41 @@ function pdfInfo(buf) {
   check('시험명·시험장소를 고치면 앞뒤 종이에 바로', /9월 모의평가/.test(await cardText(0, 0)) && /시험장소 : 제3고사장/.test(await cardText(0, 0)) && /9월 모의평가 가채점표/.test(await cardText(1, 0)));
   await P.selectOption('#et-cls', '2'); await wait(400);
   check('반을 2반으로 → 학번 30201·뒷면 "3학년 2반"', /30201/.test(await cardText(0, 0)) && /3학년 2반 1번/.test(await cardText(1, 0)) && (await P.evaluate(() => etCfg().cfg.cls)) === 2);
-  await P.fill('#et-times', '1 | 09:00~10:20 | 국어 | 80분\n2 | 10:50~12:30 | 수학 | 100분\n3 | 13:30~14:40 | 영어 | 70분'); await wait(400);
+  await P.click('#et-times tbody tr:nth-child(5) .et-x'); await wait(200); await P.click('#et-times tbody tr:nth-child(4) .et-x'); await wait(200);
+  await P.fill('#et-times input[data-r="0"][data-f="time"]', '09:00~10:20'); await wait(400);
+  check('시간표 표: ✕로 두 줄 지우고 시간 칸을 고치면 cfg.times 3줄·기본값 단추 꺼짐·＋ 줄 보임', await P.evaluate(() => etCfg().cfg.times === '1 | 09:00~10:20 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분' && !document.querySelector('#et-time-presets .nt-chip.on') && document.getElementById('et-time-add').style.display === ''));
   check('시간표 3줄로 → 교시 셋·시간 바뀜·오른쪽 안내도 3교시까지, 표는 그대로 15줄', await P.evaluate(() => { const c = document.querySelectorAll('#fm-pages .et-front .et-card')[0]; const t = c.innerText.replace(/\s+/g, ' '); return /09:00~10:20/.test(t) && !/한국사/.test(t) && /3교시 : 영어/.test(t) && c.querySelector('.et-tbl').rows.length === 15 && [...c.querySelectorAll('td.et-tt')].filter(x => x.textContent).length === 6; }));
-  await P.fill('#et-times', await P.evaluate(() => ET_TIMES_DEFAULT)); await wait(300);
+  await P.click('#et-time-add'); await wait(200);
+  check('＋ 줄 더하기 → 4줄, 교시 칸에 커서, 종이는 15줄 그대로', await P.evaluate(() => document.querySelectorAll('#et-times tbody tr').length === 4 && document.activeElement === document.querySelector('#et-times input[data-r="3"][data-f="p"]') && document.querySelector('#fm-pages .et-front .et-tbl').rows.length === 15));
+  await P.click('#et-time-presets [data-preset="2028"]'); await wait(400);
+  check('2028학년도 수능(통합형) 단추 → 5줄·탐구 15:35~16:15 40분·단추 켜짐·종이에도', await P.evaluate(() => etCfg().cfg.times === ET_TIMES_2028 && document.querySelectorAll('#et-times tbody tr').length === 5 && document.querySelector('#et-time-presets .nt-chip.on').dataset.preset === '2028') && /15:35~16:15/.test(await cardText(0, 0)) && /\(40분\)/.test(await cardText(0, 0)));
+  await P.click('#et-time-presets [data-preset="now"]'); await wait(300);
+  check('수능(~2027학년도) 단추 → 원래대로', await P.evaluate(() => etCfg().cfg.times === ET_TIMES_DEFAULT && document.querySelector('#et-time-presets .nt-chip.on').dataset.preset === 'now'));
+
+  console.log('\n[9b] 표 칸에 붙여 넣기 · 📂 엑셀 파일');
+  await P.evaluate(() => { etMutate(d => { d.students = [Object.assign(etNewStu(1), { name: '고다윤', kor: '화법과작문' }), Object.assign(etNewStu(2), { name: '김민건' })]; }); etFillForm(); fmRender(); });
+  const pasteAt = (sel, text) => P.evaluate(([sel, text]) => { const el = document.querySelector(sel); el.focus(); const dt = new DataTransfer(); dt.setData('text/plain', text); el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }, [sel, text]);
+  await pasteAt('#et-table tbody tr:nth-child(1) input.et-birth', '080710\t화법과작문\t미적분\n080819\t언어와매체\t확률과통계\n080329\t화법과작문\t기하'); await wait(400);
+  st = await stus();
+  check('생년월일 칸에 3줄×3칸 붙여 넣기 → 그 칸부터 오른쪽·아래로, 모자란 셋째 줄은 새로 생김(번호 없음)', st.length === 3 && st[0].birth === '080710' && st[0].math === '미적분' && st[0].name === '고다윤' && st[1].birth === '080819' && st[1].kor === '언어와매체' && st[1].math === '확률과통계' && st[2].birth === '080329' && st[2].math === '기하' && st[2].no === '' && st[2].name === '', st);
+  await pasteAt('#et-table tbody tr:nth-child(3) input.et-no', '번호\t이름\t생년월일\t국어\t수학\t탐구1\t탐구2\n3\t김민찬\t080329\t언어와매체\t확률과통계\t생활과윤리\t사회문화\n30104\t김서진\t080130\t언어와매체\t미적분\t물리학1\t지구과학1'); await wait(400);
+  st = await stus();
+  check('번호 칸에 머리 줄 포함 붙여 넣기 → 머리 줄 빼고 똑똑하게(학번도) 셋째 줄부터', st.length === 4 && st[2].no === '3' && st[2].name === '김민찬' && st[2].inq2 === '사회문화' && st[3].no === '4' && st[3].name === '김서진' && st[3].inq1 === '물리학1' && /2줄을 3번째 줄부터/.test(await P.evaluate(() => document.getElementById('et-list-msg').textContent)), st);
+  check('한 칸짜리 붙여 넣기는 그대로(막지 않음)', await P.evaluate(() => { const el = document.querySelector('#et-table tbody tr:nth-child(1) input.et-inq1'); el.focus(); const dt = new DataTransfer(); dt.setData('text/plain', '세계지리'); const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }); el.dispatchEvent(ev); return !ev.defaultPrevented; }));
+  if (XLSXLIB) {
+    const X = require(XLSXLIB);
+    const wbx = X.utils.book_new();
+    const data = [['', '', '', '', '', '학년도', '2027학년도', '학교', '테스트고등학교', '', '시험명', '6월 모의평가'], ['', '', '', '', '', '학교번호', '77777', '학생수', '3'], [], ['반', '번호', '학번', '이름', '생년월일', '국어', '수학', '탐구1', '탐구2'],
+      [2, 1, 20301, '엑셀일', '090101', '화법과작문', '미적분', '생활과윤리', '사회문화'], [2, 2, 20302, '엑셀이', '090202', '언어와매체', '기하', '물리학1', '화학1'], [2, 5, 20305, '엑셀오', '090505', '화법과작문', '확률과통계', '세계지리', '경제'], [2, 6, 20306]];
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet([['메모만 있는 시트']]), '안내');
+    X.utils.book_append_sheet(wbx, X.utils.aoa_to_sheet(data), '데이터');
+    await P.evaluate(() => { etMutate(d => { d.students = [Object.assign(etNewStu(1), { name: '고다윤', photo: 'data:image/jpeg;base64,/9j/' })]; }); etFillForm(); fmRender(); });
+    await P.setInputFiles('#et-file-input', { name: '수험표.xlsm', mimeType: 'application/vnd.ms-excel.sheet.macroEnabled.12', buffer: Buffer.from(X.write(wbx, { type: 'buffer', bookType: 'xlsx' })) }); await wait(800);
+    st = await stus(); const cf = await P.evaluate(() => etCfg().cfg);
+    check('📂 엑셀 파일: 머리 줄 있는 "데이터" 시트에서 3명(이름 없는 줄 빼고), 1번은 명렬표 이름으로 고치고 사진 유지, 학년도·학교·시험명·학교번호·학년·반까지', st.length === 3 && st[0].no === '1' && st[0].name === '엑셀일' && st[0].photo > 0 && st[0].birth === '090101' && st[1].name === '엑셀이' && st[1].math === '기하' && st[2].no === '5' && st[2].inq2 === '경제' && cf.year === '2027' && cf.school === '테스트고등학교' && cf.exam === '6월 모의평가' && cf.schoolNo === '77777' && cf.grade === 2 && cf.cls === 3 && /3명을 읽었어요/.test(await P.evaluate(() => document.getElementById('et-list-msg').textContent)), [st, cf]);
+    check('시트에서 읽은 시험 정보가 입력칸·종이에', await P.evaluate(() => document.querySelector('#et-grid [data-k="exam"]').value === '6월 모의평가' && document.getElementById('et-cls').value === '3') && /2027학년도 6월 모의평가/.test(await cardText(0, 0)) && /20301/.test(await cardText(0, 0)) && /학교번호 77777/.test(await cardText(1, 0)));
+    await P.evaluate(() => { etMutate(d => { d.cfg = Object.assign(d.cfg, { year: '2026', school: '부광고등학교', exam: '7월 전국연합학력평가', schoolNo: '14115', grade: 3, cls: 2 }); }); etFillForm(); fmRender(); });
+  } else console.log('  (xlsx 라이브러리를 못 찾아 엑셀 파일 검사는 건너뜀)');
 
   console.log('\n[10] 화면 배치');
   check('1600: ① 시험 정보 | ② 시간표 두 열, ③ 명단은 한 줄 전체', await P.evaluate(() => { const a = document.getElementById('et-exam-box').getBoundingClientRect(), b = document.getElementById('et-time-box').getBoundingClientRect(), l = document.getElementById('et-list-box').getBoundingClientRect(); return Math.abs(a.top - b.top) < 2 && b.left > a.right && l.width > a.width * 1.8; }));

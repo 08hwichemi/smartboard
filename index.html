@@ -1608,7 +1608,9 @@
     .et-frow { display: flex; align-items: center; gap: 6px; font-size: 12px; flex-wrap: wrap; }
     .et-frow .ws-lb { width: 48px; }
     #et-grid .nt-chip { padding: 3px 8px; }
-    #et-times, #et-note, #et-paste { font-family: inherit; font-size: 12px; line-height: 1.5; resize: vertical; }
+    #et-note, #et-paste { font-family: inherit; font-size: 12px; line-height: 1.5; resize: vertical; }
+    .et-table.et-times { min-width: 0; }
+    .et-times .et-c-p { width: 44px; } .et-times .et-c-time { width: 104px; } .et-times .et-c-min { width: 58px; }
     #et-table-wrap { overflow-x: auto; }
     .et-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px; }
     .et-table th { font-weight: 700; color: var(--text-sub); font-size: 11px; padding: 2px 3px; text-align: left; white-space: nowrap; }
@@ -3859,8 +3861,9 @@
         </div>
         <div class="nt-box" id="et-time-box">
           <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">2</b>⏰ 시험 시간표</span> <span class="nt-muted">수능과 같으면 그대로</span></div>
-          <textarea id="et-times" class="lp-input et-cfg" data-k="times" rows="5" spellcheck="false" title="한 줄에 한 교시: 교시 | 시간 | 영역 | 분 — 같은 교시를 두 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 최대 5줄"></textarea>
-          <div class="nt-muted">한 줄에 한 교시 — <b>교시 | 시간 | 영역 | 분</b>. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문). 최대 5줄.</div>
+          <div class="nt-row" id="et-time-presets"></div>
+          <table class="et-table et-times" id="et-times"></table>
+          <div class="nt-row"><button class="nt-chip" id="et-time-add" onclick="etTimeAdd()" title="줄 더하기(최대 5줄)">＋ 줄 더하기</button><span class="nt-muted">같은 교시를 두 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문).</span></div>
           <textarea id="et-note" class="lp-input et-cfg" data-k="note" rows="2" spellcheck="false" title="시간표 아래 안내 글(두 줄)"></textarea>
         </div>
         <div class="nt-box" id="et-list-box">
@@ -3869,9 +3872,11 @@
             <button class="nt-chip" id="et-roster-btn" onclick="etImportRoster()" title="관리자 명렬표에서 이 반의 번호·이름을 가져와요(이미 적은 생년월일·과목·사진은 그대로)">🏫 명렬표에서 번호·이름 가져오기</button>
             <button class="nt-chip" id="et-add-btn" onclick="etAddStudent()" title="빈 줄 하나 더하기">＋ 줄 더하기</button>
             <button class="nt-chip" id="et-sort-btn" onclick="etSortStudents()" title="번호 순으로 다시 늘어놓기">↕ 번호순</button>
+            <button class="nt-chip" id="et-file-btn" onclick="document.getElementById('et-file-input').click()" title="엑셀(.xlsx·.xlsm)·CSV 파일에서 명단을 읽어요 — 예전 수험표 엑셀의 '데이터' 시트도 그대로(학년도·시험명·학교번호까지)">📂 엑셀 파일에서</button>
+            <input type="file" id="et-file-input" accept=".xlsx,.xlsm,.xls,.csv" style="display:none;" onchange="etImportFile(this.files[0]); this.value='';">
           </div>
           <details id="et-paste-box">
-            <summary>📋 엑셀에서 붙여 넣기 — 번호 · 이름 · 생년월일 · 국어 · 수학 · 탐구1 · 탐구2</summary>
+            <summary>📋 엑셀에서 붙여 넣기 — 번호 · 이름 · 생년월일 · 국어 · 수학 · 탐구1 · 탐구2 <span class="nt-muted">(아래 표의 칸에 바로 붙여 넣어도 돼요)</span></summary>
             <div class="bs-more-in">
               <textarea id="et-paste" class="lp-input" rows="5" spellcheck="false" placeholder="엑셀 표를 그대로 복사해 붙여 넣어요(머리 줄은 있어도 돼요). 예)&#10;1&#9;고다윤&#9;080710&#9;화법과작문&#9;미적분&#9;생활과윤리&#9;사회문화&#10;2&#9;김민건&#9;080819&#9;화법과작문&#9;미적분&#9;생활과윤리&#9;사회문화"></textarea>
               <div class="nt-row"><button class="nt-chip" id="et-paste-btn" onclick="etApplyPaste()">명단에 넣기</button><span class="nt-muted">같은 번호가 있으면 그 줄을 고치고(사진은 그대로), 없으면 더해요. 학번(30101)·반 숫자가 있어도 알아서 읽어요.</span></div>
@@ -20848,6 +20853,9 @@
   // 서버에 올리므로 안 씀(홈의 💾 백업에도 안 들어감). 대신 ⑤ 💾 백업 파일(JSON, 사진 포함)을 원하는 곳(USB 등)에 저장하고 📂 불러온다.
   const ET_DB_NAME = 'smartboard-local', ET_DB_STORE = 'kv', ET_DB_KEY = 'et-data';
   const ET_TIMES_DEFAULT = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:37 | 사회/과학탐구 | 62분';
+  // 2028학년도 수능(2009년생부터, 통합형): 국어·수학 선택 과목 없음, 탐구 = 통합사회·통합과학 각 25문항 40분(사용자 10/6 화면 캡처)
+  const ET_TIMES_2028 = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:15 | 사회/과학탐구 | 40분';
+  const ET_TIME_PRESETS = [['now', '수능(~2027학년도)', ET_TIMES_DEFAULT, '지금 고3까지 — 탐구 62분(사회/과학 2과목)'], ['2028', '2028학년도 수능(통합형)', ET_TIMES_2028, '내년 고3부터 — 국어·수학 선택 없음, 탐구 통합사회·통합과학 40분']];
   const ET_NOTE_DEFAULT = '* 수험생은 08:10(2~5교시는 시험시작 10분전)까지\n시험실 입실을 완료해야 합니다.';
   function etYearDefault() { const d = new Date(); return String(d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1); } // 학년도(3월부터 새 학년도)
   const ET_CFG_DEFAULT = { year: '', exam: '7월 전국연합학력평가', school: '부광고등학교', schoolNo: '14115', place: '부광고등학교', grade: 3, cls: 1, times: ET_TIMES_DEFAULT, note: ET_NOTE_DEFAULT };
@@ -20949,7 +20957,7 @@
       });
       if (!s.no && small.length) s.no = String(parseInt(small[small.length - 1], 10));
       if (words.length) { s.name = words[0]; s.kor = words[1] || ''; s.math = words[2] || ''; s.inq1 = words[3] || ''; s.inq2 = words[4] || ''; }
-      if (s.no || s.name) out.push(s);
+      if (s.name) out.push(s); // 번호만 있고 이름이 없는 줄(엑셀 데이터 시트의 빈 번호 줄)은 버림
     });
     return out;
   }
@@ -21113,6 +21121,8 @@
         const el = e.target.closest('input[data-i]'); if (!el) return;
         etStuEdit(+el.dataset.i, el.dataset.k, el.value);
       });
+      document.getElementById('et-table').addEventListener('paste', etTablePaste);
+      document.getElementById('et-times').addEventListener('input', function(e) { if (e.target.closest('input[data-r]')) etTimesChanged(); });
     }
     grid.querySelectorAll('.et-cfg').forEach(function(el) {
       el.disabled = !loaded;
@@ -21123,8 +21133,114 @@
     let ch = ''; for (let k = 1; k <= cnt; k++) ch += '<option value="' + k + '">' + k + '반</option>';
     const sel = document.getElementById('et-cls'); sel.innerHTML = ch; sel.value = String(c.cls);
     ['kor', 'math', 'inq'].forEach(function(k) { document.getElementById('et-dl-' + k).innerHTML = ET_SUBJ[k].map(function(s) { return '<option value="' + s + '">'; }).join(''); });
-    ['et-roster-btn', 'et-add-btn', 'et-sort-btn', 'et-paste-btn', 'et-photos-btn', 'et-photos-clear', 'et-backup-btn', 'et-restore-btn'].forEach(function(id) { document.getElementById(id).disabled = !loaded; });
-    etFillTable(); etCount();
+    ['et-roster-btn', 'et-add-btn', 'et-sort-btn', 'et-file-btn', 'et-paste-btn', 'et-photos-btn', 'et-photos-clear', 'et-backup-btn', 'et-restore-btn', 'et-time-add'].forEach(function(id) { document.getElementById(id).disabled = !loaded; });
+    etFillTimes(c); etFillTable(); etCount();
+  }
+  // ② 시험 시간표: 줄마다 교시 | 시간 | 영역 | 분 입력칸(자료는 cfg.times 글 그대로 — 종이 그리기 etParseTimes와 같은 형식), 위에 수능 기본값 단추
+  function etFillTimes(c) {
+    const rows = etParseTimes(c.times), tbl = document.getElementById('et-times');
+    const cur = ET_TIME_PRESETS.find(function(p) { return p[2] === c.times; });
+    document.getElementById('et-time-presets').innerHTML = '기본값 ' + ET_TIME_PRESETS.map(function(p) {
+      return '<button class="nt-chip' + (cur && cur[0] === p[0] ? ' on' : '') + '" data-preset="' + p[0] + '" title="' + ntEsc(p[3]) + '" onclick="etTimePreset(\'' + p[0] + '\')">' + ntEsc(p[1]) + '</button>';
+    }).join('');
+    const inp = function(r, f, v, cls, extra) { return '<input type="text" class="lp-input" data-r="' + r + '" data-f="' + f + '" value="' + ntEsc(v) + '"' + (extra || '') + '>'; };
+    let h = '<thead><tr><th class="et-c-p">교시</th><th class="et-c-time">시간</th><th>영역</th><th class="et-c-min">분</th><th class="et-c-x"></th></tr></thead><tbody>';
+    rows.forEach(function(t, r) {
+      h += '<tr data-r="' + r + '"><td>' + inp(r, 'p', t.p, '', ' inputmode="numeric"') + '</td><td>' + inp(r, 'time', t.time, '', ' placeholder="08:40~10:00"') + '</td><td>' + inp(r, 'area', t.area) + '</td><td>' + inp(r, 'min', t.min, '', ' placeholder="80분"') + '</td>' +
+        '<td class="et-c-x"><button class="et-x" title="이 줄 지우기" onclick="etTimeRemove(' + r + ')">✕</button></td></tr>';
+    });
+    tbl.innerHTML = h + '</tbody>';
+    document.getElementById('et-time-add').style.display = rows.length >= 5 ? 'none' : '';
+  }
+  function etTimesText() { // 입력칸 → cfg.times 글
+    return [...document.querySelectorAll('#et-times tbody tr')].map(function(tr) {
+      return ['p', 'time', 'area', 'min'].map(function(f) { return (tr.querySelector('input[data-f="' + f + '"]').value || '').replace(/\|/g, '/').trim(); }).join(' | ');
+    }).join('\n');
+  }
+  function etTimesChanged() { if (etMutate(function(d) { d.cfg.times = etTimesText(); })) { etRenderSoon(); document.querySelectorAll('#et-time-presets .nt-chip').forEach(function(b) { b.classList.remove('on'); }); } }
+  function etTimeAdd() {
+    if (etParseTimes(etCfg().cfg.times).length >= 5) return;
+    if (!etMutate(function(d) { d.cfg.times = (d.cfg.times ? d.cfg.times + '\n' : '') + ' |  |  | '; })) return;
+    etFillTimes(etCfg().cfg); fmRender();
+    const inp = document.querySelector('#et-times tbody tr:last-child input[data-f="p"]'); if (inp) inp.focus();
+  }
+  function etTimeRemove(r) {
+    const lines = etCfg().cfg.times.split(/\r?\n/).filter(function(l) { return l.trim(); });
+    if (!etMutate(function(d) { lines.splice(r, 1); d.cfg.times = lines.join('\n'); })) return;
+    etFillTimes(etCfg().cfg); fmRender();
+  }
+  function etTimePreset(key) {
+    const p = ET_TIME_PRESETS.find(function(x) { return x[0] === key; }); if (!p) return;
+    if (etMutate(function(d) { d.cfg.times = p[2]; })) { etFillTimes(etCfg().cfg); fmRender(); }
+  }
+  // 표 칸에 엑셀을 바로 붙여 넣기: 탭·줄바꿈이 있으면 그 칸부터 오른쪽·아래로 채우고(모자라면 줄을 더함) — 번호 칸에서 시작하면 줄마다 똑똑하게 읽음(etParsePaste: 반·학번·머리 줄도)
+  const ET_COLS = ['no', 'name', 'birth', 'kor', 'math', 'inq1', 'inq2'];
+  function etTablePaste(e) {
+    const el = e.target.closest('input[data-i]'); if (!el || !etState.loaded) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+    if (!/[\t\r\n]/.test(text.trim())) return; // 한 칸짜리는 그냥 붙음
+    e.preventDefault();
+    const i0 = +el.dataset.i, k0 = ET_COLS.indexOf(el.dataset.k);
+    const lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+    let n = 0;
+    etMutate(function(d) {
+      const ensure = function(i) { while (d.students.length <= i) d.students.push(etNewStu('')); return d.students[i]; };
+      if (el.dataset.k === 'no') {
+        etParsePaste(text).forEach(function(s, j) { const o = ensure(i0 + j); ET_COLS.forEach(function(k) { if (s[k]) o[k] = s[k]; }); n++; });
+      } else {
+        lines.forEach(function(line) {
+          const cells = line.split('\t');
+          if (cells.every(function(t) { return !t.trim() || ET_HEAD.test(t.trim()); })) return; // 머리 줄
+          const o = ensure(i0 + n);
+          cells.forEach(function(t, c) { const k = ET_COLS[k0 + c]; if (k) o[k] = t.trim(); });
+          n++;
+        });
+      }
+    });
+    etFillForm(); fmRender();
+    etListMsg('✅ ' + n + '줄을 ' + (i0 + 1) + '번째 줄부터 채웠어요.');
+    const nx = document.querySelector('#et-table tbody tr:nth-child(' + (i0 + n) + ') input[data-k="' + el.dataset.k + '"]'); if (nx) nx.focus();
+  }
+  // 📂 엑셀·CSV 파일: 이름·번호(학번) 머리 줄이 있는 시트를 찾아 그 아래 줄을 명단으로. 예전 수험표 엑셀의 "데이터" 시트면 학년도·학교·시험명·학교번호·학년·반까지 읽음
+  async function etImportFile(file) {
+    if (!file || !etState.loaded) return;
+    if (typeof XLSX === 'undefined') return customAlert('엑셀을 읽는 도구를 못 불러왔어요. 인터넷 연결을 확인하고 새로고침해 주세요.');
+    let grid = null, sheet = '', head = -1;
+    try {
+      const buf = await file.arrayBuffer();
+      let wb;
+      if (/\.(csv|tsv|txt)$/i.test(file.name)) {
+        let txt; try { txt = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { txt = new TextDecoder('euc-kr').decode(buf); }
+        wb = XLSX.read(txt.replace(/^﻿/, ''), { type: 'string', FS: /\t/.test(txt) && !/\.csv$/i.test(file.name) ? '\t' : undefined });
+      } else wb = XLSX.read(buf, { type: 'array' });
+      const isHead = function(r) { return r.some(function(t) { return /^(이름|성명)$/.test(t); }) && r.some(function(t) { return /^(번호|학번)$/.test(t); }); };
+      let first = null;
+      for (const name of wb.SheetNames) {
+        const g = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '' })
+          .map(function(r) { return r.map(function(x) { return String(x == null ? '' : x).replace(/[\t\r\n]+/g, ' ').trim(); }); });
+        if (!g.some(function(r) { return r.some(Boolean); })) continue;
+        if (!first) first = [g, name];
+        const h = g.findIndex(isHead);
+        if (h >= 0) { grid = g; sheet = name; head = h; break; }
+      }
+      if (!grid && first) { grid = first[0]; sheet = first[1]; }
+    } catch (e) { return customAlert('파일을 읽지 못했어요: ' + (e && e.message ? e.message : e)); }
+    if (!grid) return etListMsg('⚠️ 파일에 내용이 없어요.');
+    const list = etParsePaste(grid.slice(head + 1).map(function(r) { return r.join('\t'); }).join('\n'));
+    if (!list.length) return etListMsg('⚠️ "' + sheet + '" 시트에서 학생 줄을 못 찾았어요 — 번호·이름(·생년월일·과목) 칸이 있어야 해요.');
+    // 시트 안의 "학년도 | 2026학년도", "학교 | 부광고등학교", "시험명 | …", "학교번호 | 14115" 짝(오른쪽 칸)
+    const found = [];
+    const label = { '학년도': 'year', '학교': 'school', '시험명': 'exam', '학교번호': 'schoolNo' };
+    etMutate(function(d) {
+      grid.slice(0, head < 0 ? grid.length : head).forEach(function(r) {
+        r.forEach(function(t, c) { const k = label[t]; const v = (r[c + 1] || '').trim(); if (!k || !v) return; d.cfg[k] = k === 'year' ? (v.match(/\d{4}/) || [v])[0] : v; found.push(t); });
+      });
+      const hid = head >= 0 ? grid[head].indexOf('학번') : -1, id = hid >= 0 ? String((grid[head + 1] || [])[hid] || '') : '';
+      if (/^\d{5}$/.test(id)) { d.cfg.grade = +id[0] || d.cfg.grade; d.cfg.cls = +id.slice(1, 3) || d.cfg.cls; found.push('학년·반'); }
+    });
+    etMerge(list); etSortStudents(true);
+    etFillForm(); fmRender();
+    etListMsg('✅ ' + file.name + ' "' + sheet + '" 시트에서 ' + list.length + '명을 읽었어요(지금 ' + etList().length + '명)' + (found.length ? ' — ' + found.join('·') + '도 채움' : '') + '.');
   }
   function etFillTable() {
     const rows = etCfg().students, tbl = document.getElementById('et-table');
