@@ -1649,6 +1649,7 @@
     .et-front td.et-tt { font-size: 8.8pt; border: 0.15mm solid #000; border-left: 0.4mm solid #000; border-right: 0.4mm solid #000; }
     .et-front td.et-th.et-tc, .et-front td.et-tt { border-left: 0.4mm solid #000; border-right: 0.4mm solid #000; }
     .et-front td.et-tn { font-size: 6.9pt; white-space: pre-line; line-height: 1.25; border-top: 0.15mm solid #000; }
+    .et-front td.et-tn2 { font-size: 6.5pt; white-space: pre-wrap; line-height: 1.3; text-align: left; vertical-align: top; padding: 1mm 1mm 0; } /* 6줄 시간표일 때 안내 글(오른쪽 아래) */
     .et-front td.et-info { background: #E2EFDA; font-size: 6.9pt; text-align: left; }
     .et-front td.et-il { text-align: justify; text-align-last: justify; padding: 0 1mm; }
     .et-front td.et-il.et-ind { text-align: left; text-align-last: left; padding-left: 2mm; }
@@ -3863,7 +3864,7 @@
           <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">2</b>⏰ 시험 시간표</span> <span class="nt-muted">수능과 같으면 그대로</span></div>
           <div class="nt-row" id="et-time-presets"></div>
           <table class="et-table et-times" id="et-times"></table>
-          <div class="nt-row"><button class="nt-chip" id="et-time-add" onclick="etTimeAdd()" title="줄 더하기(최대 5줄)">＋ 줄 더하기</button><span class="nt-muted">같은 교시를 두 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문).</span></div>
+          <div class="nt-row"><button class="nt-chip" id="et-time-add" onclick="etTimeAdd()" title="줄 더하기(최대 6줄 — 6줄이면 입실 안내 글은 오른쪽 아래로)">＋ 줄 더하기</button><span class="nt-muted">같은 교시를 여러 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 최대 6줄. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문).</span></div>
           <textarea id="et-note" class="lp-input et-cfg" data-k="note" rows="2" spellcheck="false" title="시간표 아래 안내 글(두 줄)"></textarea>
         </div>
         <div class="nt-box" id="et-list-box">
@@ -20853,9 +20854,9 @@
   // 서버에 올리므로 안 씀(홈의 💾 백업에도 안 들어감). 대신 ⑤ 💾 백업 파일(JSON, 사진 포함)을 원하는 곳(USB 등)에 저장하고 📂 불러온다.
   const ET_DB_NAME = 'smartboard-local', ET_DB_STORE = 'kv', ET_DB_KEY = 'et-data';
   const ET_TIMES_DEFAULT = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:37 | 사회/과학탐구 | 62분';
-  // 2028학년도 수능(2009년생부터, 통합형): 국어·수학 선택 과목 없음, 탐구 = 통합사회·통합과학 각 25문항 40분(사용자 10/6 화면 캡처)
-  const ET_TIMES_2028 = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:15 | 사회/과학탐구 | 40분';
-  const ET_TIME_PRESETS = [['now', '수능(~2027학년도)', ET_TIMES_DEFAULT, '지금 고3까지 — 탐구 62분(사회/과학 2과목)'], ['2028', '2028학년도 수능(통합형)', ET_TIMES_2028, '내년 고3부터 — 국어·수학 선택 없음, 탐구 통합사회·통합과학 40분']];
+  // 2028학년도 수능(2009년생부터, 통합형): 국어·수학 선택 과목 없음, 4교시 = 한국사 → 사회·직업탐구(25문항 40분) → 과학탐구(25문항 40분, ~17:10) — 사용자 10/6 시간표 캡처. 6줄
+  const ET_TIMES_2028 = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:15 | 사회·직업탐구 | 40분\n4 | 16:30~17:10 | 과학탐구 | 40분';
+  const ET_TIME_PRESETS = [['now', '수능(~2027학년도)', ET_TIMES_DEFAULT, '지금 고3까지 — 탐구 62분(사회/과학 2과목)'], ['2028', '2028학년도 수능(통합형)', ET_TIMES_2028, '내년 고3부터 — 국어·수학 선택 없음, 탐구 = 사회·직업탐구 40분 → 과학탐구 40분(~17:10)']];
   const ET_NOTE_DEFAULT = '* 수험생은 08:10(2~5교시는 시험시작 10분전)까지\n시험실 입실을 완료해야 합니다.';
   function etYearDefault() { const d = new Date(); return String(d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1); } // 학년도(3월부터 새 학년도)
   const ET_CFG_DEFAULT = { year: '', exam: '7월 전국연합학력평가', school: '부광고등학교', schoolNo: '14115', place: '부광고등학교', grade: 3, cls: 1, times: ET_TIMES_DEFAULT, note: ET_NOTE_DEFAULT };
@@ -21150,7 +21151,7 @@
         '<td class="et-c-x"><button class="et-x" title="이 줄 지우기" onclick="etTimeRemove(' + r + ')">✕</button></td></tr>';
     });
     tbl.innerHTML = h + '</tbody>';
-    document.getElementById('et-time-add').style.display = rows.length >= 5 ? 'none' : '';
+    document.getElementById('et-time-add').style.display = rows.length >= ET_TIMES_MAX ? 'none' : '';
   }
   function etTimesText() { // 입력칸 → cfg.times 글
     return [...document.querySelectorAll('#et-times tbody tr')].map(function(tr) {
@@ -21159,7 +21160,7 @@
   }
   function etTimesChanged() { if (etMutate(function(d) { d.cfg.times = etTimesText(); })) { etRenderSoon(); document.querySelectorAll('#et-time-presets .nt-chip').forEach(function(b) { b.classList.remove('on'); }); } }
   function etTimeAdd() {
-    if (etParseTimes(etCfg().cfg.times).length >= 5) return;
+    if (etParseTimes(etCfg().cfg.times).length >= ET_TIMES_MAX) return;
     if (!etMutate(function(d) { d.cfg.times = (d.cfg.times ? d.cfg.times + '\n' : '') + ' |  |  | '; })) return;
     etFillTimes(etCfg().cfg); fmRender();
     const inp = document.querySelector('#et-times tbody tr:last-child input[data-f="p"]'); if (inp) inp.focus();
@@ -21259,8 +21260,9 @@
   }
 
   // ----- 종이 그리기 -----
-  function etParseTimes(text) { // 한 줄 = 교시 | 시간 | 영역 | 분 (최대 5줄)
-    return String(text || '').split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean).slice(0, 5).map(function(l) {
+  const ET_TIMES_MAX = 6; // 5줄까지는 엑셀 그대로(안내 글이 시간표 아래), 6줄이면 안내 글을 오른쪽 안내 칸 아래 빈 자리로
+  function etParseTimes(text) { // 한 줄 = 교시 | 시간 | 영역 | 분
+    return String(text || '').split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean).slice(0, ET_TIMES_MAX).map(function(l) {
       const c = l.split(/\s*[|\t]\s*/); return { p: (c[0] || '').replace(/교시$/, ''), time: c[1] || '', area: c[2] || '', min: (c[3] || '').replace(/^\(|\)$/g, '') };
     });
   }
@@ -21270,7 +21272,7 @@
     etParseTimes(c.times).forEach(function(t) {
       let a = t.area;
       if (/국어/.test(a)) a = '국어' + (s.kor ? '-' + s.kor : ''); else if (/수학/.test(a)) a = '수학' + (s.math ? '-' + s.math : ''); else if (/탐구/.test(a)) a = '탐구';
-      const e = per.find(function(x) { return x.p === t.p; }); if (e) e.a.push(a); else per.push({ p: t.p, a: [a] });
+      const e = per.find(function(x) { return x.p === t.p; }); if (e) { if (e.a.indexOf(a) < 0) e.a.push(a); } else per.push({ p: t.p, a: [a] }); // 같은 교시의 "탐구"는 한 번만
     });
     per.forEach(function(x) { rows.push([x.p + '교시', x.a.join(', ')]); });
     rows.push(['제1선택', s.inq1 || '', 1], ['제2선택', s.inq2 || '', 1], ['시험장소', c.place || '']);
@@ -21300,10 +21302,17 @@
       M[r] += td('et-tp', ntEsc(t.time), 5) + td('et-ta et-tt', ntEsc(t.area), 5, 2);
       M[r + 1] += td('et-tp', t.min ? '(' + ntEsc(t.min) + ')' : '', 5);
     });
+    const six = times.length > 5; // 6줄(2028학년도: 4교시 한국사·사회탐구·과학탐구)이면 교시가 15줄까지 차서 안내 글은 오른쪽 안내 칸 아래(12~15줄)로
     for (let i = times.length; i < 5; i++) { const r = 4 + i * 2; M[r] += td('et-tt et-mid-l', '', 2, 2) + td('et-tp', '', 5) + td('et-ta et-tt', '', 5, 2); M[r + 1] += td('et-tp', '', 5); }
-    M[14] = td('et-tn et-mid-l', ntEsc(c.note || ''), 12, 2);
+    if (!six) M[14] = td('et-tn et-mid-l', ntEsc(c.note || ''), 12, 2);
     R[1] = td('et-mid-l', '', 7); // 오른쪽 안내는 7칸(Z~AF): 이름표 2 | : 1 | 값 4
-    for (let r = 2; r <= 15; r++) { const x = info[r - 2]; R[r] = x ? td('et-info et-il et-mid-l' + (x[2] ? ' et-ind' : ''), ntEsc(x[0]), 2) + td('et-info', ':', 1) + td('et-info', ntEsc(x[1]), 4) : td('et-mid-l', '', 7); }
+    const noteRow = six ? Math.max(12, 2 + info.length) : 99;
+    for (let r = 2; r <= 15; r++) {
+      const x = info[r - 2];
+      if (r === noteRow) { R[r] = td('et-tn2 et-mid-l', ntEsc(c.note || ''), 7, 16 - r); continue; }
+      if (r > noteRow) { R[r] = ''; continue; }
+      R[r] = x ? td('et-info et-il et-mid-l' + (x[2] ? ' et-ind' : ''), ntEsc(x[0]), 2) + td('et-info', ':', 1) + td('et-info', ntEsc(x[1]), 4) : td('et-mid-l', '', 7);
+    }
     let h = '<table class="et-tbl">' + etColgroup(ET_COLS_F);
     for (let r = 1; r <= 15; r++) h += '<tr' + (r === 15 ? ' class="et-last"' : '') + '>' + L[r] + M[r] + R[r] + '</tr>';
     return '<div class="et-card">' + h + '</table></div>';
