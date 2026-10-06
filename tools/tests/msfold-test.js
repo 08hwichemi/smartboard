@@ -231,18 +231,41 @@ function check(label, cond, detail) {
   check('달력 칸에 두 줄로 그려짐', calTxt.split('\n').length === 2, calTxt);
   // 🔠 달력 일정 글자 크기(① 기본 설정 A− / A+): 일정 글씨·분류 점만 70~150%, 날짜·D-Day 그대로, ms-data.evPct로 저장
   const evSz = () => P.evaluate(() => { const it = document.querySelector('#ms-cal-grid .ms-event-item'); const cs = (el, k) => el ? parseFloat(getComputedStyle(el)[k]) : null;
-    return { fs: cs(it, 'fontSize'), dot: cs(it && it.querySelector('.ms-ev-dot'), 'width'), date: cs(document.querySelector('#ms-cal-grid .ms-date-num'), 'fontSize'), label: document.getElementById('ms-ev-size-val').textContent, saved: JSON.parse(localStorage.getItem('ms-data')).evPct }; });
+    return { fs: cs(it, 'fontSize'), dot: cs(it && it.querySelector('.ms-ev-dot'), 'width'), date: cs(document.querySelector('#ms-cal-grid .ms-date-num'), 'fontSize'), dd: cs(document.querySelector('#ms-cal-grid .ms-dday-mini'), 'fontSize'), label: document.getElementById('ms-ev-size-val').textContent, saved: JSON.parse(localStorage.getItem('ms-data')).evPct }; });
   let ev = await evSz();
   check('처음엔 일정 글자 10px·점 6px·100%', ev.fs === 10 && ev.dot === 6 && ev.label === '100%' && ev.saved === 100, ev);
-  await P.click('#ms-section-info button[title="크게"]'); await P.click('#ms-section-info button[title="크게"]'); await wait(200);
+  await P.click('#ms-section-info button[title="일정 글자 크게"]'); await P.click('#ms-section-info button[title="일정 글자 크게"]'); await wait(200);
   ev = await evSz();
-  check('A+ 두 번 → 120%: 일정 12px·점 7.2px, 날짜 숫자는 18px 그대로, 저장 120', Math.abs(ev.fs - 12) < 0.01 && Math.abs(ev.dot - 7.2) < 0.3 && ev.date === 18 && ev.label === '120%' && ev.saved === 120, ev);
-  for (let k = 0; k < 7; k++) await P.click('#ms-section-info button[title="작게"]');
+  check('A+ 두 번 → 120%: 일정 12px·점 7.2px, D-Day 띠(따로)·날짜 숫자 18px는 그대로, 저장 120', Math.abs(ev.fs - 12) < 0.01 && Math.abs(ev.dot - 7.2) < 0.3 && (ev.dd === null || Math.abs(ev.dd - 8.5) < 0.3) && ev.date === 18 && ev.label === '120%' && ev.saved === 120, ev);
+  // ⏳ D-Day 글자는 따로(--ms-dd, ms-data.ddPct)
+  await P.click('#ms-section-info button[title="D-Day 글자 크게"]'); await P.click('#ms-section-info button[title="D-Day 글자 크게"]'); await P.click('#ms-section-info button[title="D-Day 글자 크게"]'); await wait(200);
+  const dd = await P.evaluate(() => ({ v: getComputedStyle(document.getElementById('ms-a4-paper')).getPropertyValue('--ms-dd').trim(), ev: getComputedStyle(document.getElementById('ms-a4-paper')).getPropertyValue('--ms-ev').trim(), label: document.getElementById('ms-dd-size-val').textContent, saved: JSON.parse(localStorage.getItem('ms-data')).ddPct, evSaved: JSON.parse(localStorage.getItem('ms-data')).evPct }));
+  check('D-Day A+ 세 번 → 130%(--ms-dd 1.3), 일정 글자는 120% 그대로, ddPct 130 저장', dd.v === '1.3' && dd.ev === '1.2' && dd.label === '130%' && dd.saved === 130 && dd.evSaved === 120, dd);
+  await P.click('#ms-dd-size-val'); await wait(200);
+  check('D-Day 숫자 누르면 100%', await P.evaluate(() => document.getElementById('ms-dd-size-val').textContent === '100%' && JSON.parse(localStorage.getItem('ms-data')).ddPct === 100));
+  for (let k = 0; k < 7; k++) await P.click('#ms-section-info button[title="일정 글자 작게"]');
   await wait(200); ev = await evSz();
   check('A− 계속 눌러도 70%에서 멈춤(7px)', ev.fs === 7 && ev.label === '70%' && ev.saved === 70, ev);
   await P.click('#ms-ev-size-val'); await wait(200); ev = await evSz();
   check('숫자를 누르면 100%로', ev.fs === 10 && ev.label === '100%' && ev.saved === 100, ev);
-  await P.click('#ms-section-info button[title="크게"]'); await P.click('#ms-section-info button[title="크게"]'); await wait(200); // 120%로 두고 아래 다른 기기에서 확인
+  // 넘침 경고: 한 날에 8줄짜리 일정을 넣고 150%로 키우면 그 칸이 넘침 → ① 아래·미리보기 위에 경고, 70%면 사라짐, 줄을 지우면 사라짐
+  const warn = () => P.evaluate(() => ({ top: document.getElementById('ms-overflow-warn').textContent, box: document.getElementById('ms-ev-warn').textContent, shown: getComputedStyle(document.getElementById('ms-overflow-warn')).display !== 'none', days: msOverflowDays.slice() }));
+  check('넘친 칸이 없으면 경고 없음', !(await warn()).top && !(await warn()).shown, await warn());
+  await P.evaluate(() => { document.getElementById('ms-table-body').appendChild(msCreateRow(msCurMonth + '/15', ['진로 특강', '3·4교시', '시청각실', '준비물 지참', '학부모 참관', '사진 촬영', '설문 조사', '정리 정돈'].join('<br>'))); msUpdateSelectOptions(); msGroupRows(); return msRenderCalendar(); }); await wait(300);
+  for (let k = 0; k < 5; k++) await P.click('#ms-section-info button[title="일정 글자 크게"]');
+  await wait(200); let wn = await warn();
+  check('150%에서 15일 칸이 넘치면 경고(①·미리보기 위, 날짜·지금 배율)', wn.shown && /15일/.test(wn.top) && /150%/.test(wn.top) && wn.box === wn.top && wn.days.includes(15), wn);
+  await P.evaluate(() => msGuideGo(5)); await wait(300);
+  check('"지금 할 일" ⑤에도 넘침 경고 + 일정 글자 숫자 반짝', await P.evaluate(() => /15일/.test(document.getElementById('ms-next').innerText) && document.getElementById('ms-ev-size-val').classList.contains('pa-glow')));
+  for (let k = 0; k < 8; k++) await P.click('#ms-section-info button[title="일정 글자 작게"]');
+  await wait(200); wn = await warn();
+  check('70%로 줄이면 들어가서 경고 사라짐', !wn.shown && !wn.top && !wn.box, wn);
+  await P.click('#ms-ev-size-val'); await wait(200);
+  await P.evaluate(() => { msDataRows().find(r => /정리 정돈/.test(r.textContent)).remove(); msGroupRows(); return msRenderCalendar(); }); await wait(300);
+  wn = await warn();
+  check('그 줄을 지우고 100%여도 경고 없음', !wn.shown && !wn.top, wn);
+  await P.evaluate(() => msGuideGo(4)); await wait(200);
+  await P.click('#ms-section-info button[title="일정 글자 크게"]'); await P.click('#ms-section-info button[title="일정 글자 크게"]'); await wait(200); // 120%로 두고 아래 다른 기기에서 확인
   await P.evaluate(() => {
     msDataRows().find(r => /수능대비/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '어린이날';
     msDataRows().find(r => /우천/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '체육대회';
