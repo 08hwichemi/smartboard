@@ -19584,9 +19584,10 @@
     }).join('') + sep + '칸 높이 ' + PE_W_ROWH.map(function(x) { return chip(c.wRowH === x[0], 'data-wrowh="' + x[0] + '" onclick="peSet({ wRowH: ' + x[0] + ' }, true)"', x[1], '한 줄 ' + x[0] + 'mm(글이 길면 저절로 늘어나요)'); }).join('');
     document.getElementById('pe-w-order').innerHTML = '순서 ' + chip(c.wOrder === 'orig', 'id="pe-w-orig" onclick="peSet({ wOrder: \'orig\' }, true)"', '↺ 적은 대로', '단어를 적은 순서 그대로') +
       chip(c.wOrder === 'rand', 'id="pe-w-shuffle" onclick="peWordShuffle()"', c.wOrder === 'rand' ? '🔀 무작위 (다시 섞기)' : '🔀 무작위', '문제 순서를 무작위로 — 누를 때마다 새로 섞여요(같은 시험지는 늘 같은 순서)') +
-      chip(c.wOrder === 'abc', 'id="pe-w-abc" onclick="peSet({ wOrder: \'abc\' }, true)"', '🔤 알파벳순', '단어의 알파벳(A→Z) 순서로 — 뜻 → 영어여도 영어 단어 기준, B형은 Z→A');
+      chip(c.wOrder === 'abc', 'id="pe-w-abc" onclick="peSet({ wOrder: \'abc\' }, true)"', '🔤 알파벳순', '단어의 알파벳(A→Z) 순서로 — 뜻 → 영어여도 영어 단어 기준, B형은 Z→A') +
+      '<span class="nt-muted">N개만 뽑을 때도 뽑힌 단어가 이 순서로 나와요</span>';
     document.getElementById('pe-w-pick').innerHTML = '출제 ' + chip(!c.wPick, 'data-wpick="0" onclick="peSet({ wPick: 0 }, true)"', '전부') +
-      '<input type="number" id="pe-w-pick-in" class="lp-input" min="0" max="999" step="1" placeholder="개수" title="이만큼만 무작위로 뽑아 내요(0 = 전부)" onchange="peSet({ wPick: this.value }, true)">개만 무작위로';
+      '<input type="number" id="pe-w-pick-in" class="lp-input" min="0" max="999" step="1" placeholder="개수" title="이만큼만 무작위로 뽑아 내요(0 = 전부)" onchange="peSet({ wPick: this.value }, true)">개만 무작위로' + (c.wPick ? '<span class="nt-muted">뽑힌 단어는 위 순서대로(' + (c.wOrder === 'abc' ? '🔤 알파벳순' : c.wOrder === 'rand' ? '🔀 무작위' : '↺ 적은 대로 — 알파벳순·무작위로 바꿀 수 있어요') + ')</span>' : '');
     setVal('pe-w-pick-in', c.wPick || '');
     const tr0 = c.wDir === 'trace', trNote = '따라 쓰기(연습지)엔 없어요';
     document.getElementById('pe-w-opts').innerHTML = chk('pe-w-score', c.wScore, '점수 칸', 'wScore', tr0 ? trNote : '머리 표 오른쪽에 "점수 | / 40"', tr0) +

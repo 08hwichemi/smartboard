@@ -445,6 +445,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('알파벳순 + A형·B형: B형은 Z→A', await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg())); return S.length === 2 && S[1].items.map(w => w.i).join() === S[0].items.map(w => w.i).reverse().join(); }));
   await P.click('#pe-w-ab'); await P.click('#pe-w-orig'); await P.waitForTimeout(200);
   check('↺ 적은 대로 → 원래 순서', await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'));
+  // N개만 무작위로 뽑을 때도 뽑힌 단어의 순서는 순서 칩대로(선생님 요청 10/7: 뽑힌 결과가 알파벳순이나 랜덤이면)
+  await P.fill('#pe-w-pick-in', '4'); await P.dispatchEvent('#pe-w-pick-in', 'change'); await P.click('#pe-w-abc'); await P.waitForTimeout(200);
+  const pk1 = await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg()))[0].items; return { n: S.length, qs: S.map(w => w.q), note: document.querySelector('#pe-w-pick .nt-muted').textContent }; });
+  check('4개만 뽑기 + 🔤 알파벳순: 뽑힌 4개가 A→Z, 출제 줄에 "뽑힌 단어는 위 순서대로(🔤 알파벳순)"', pk1.n === 4 && pk1.qs.join() === pk1.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && /알파벳순/.test(pk1.note), pk1);
+  await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
+  const pk2 = await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg()))[0].items; return { n: S.length, is: S.map(w => w.i), note: document.querySelector('#pe-w-pick .nt-muted').textContent }; });
+  check('4개만 뽑기 + 🔀 무작위: 같은 4개(뽑기 씨앗은 그대로가 아니어도 4개)인데 원래 순서가 아님', pk2.n === 4 && pk2.is.join() !== pk2.is.slice().sort((a, b) => a - b).join() && /무작위/.test(pk2.note), pk2);
+  await P.click('#pe-w-pick [data-wpick="0"]'); await P.click('#pe-w-orig'); await P.waitForTimeout(200);
   // A형·B형
   await P.click('#pe-w-ab'); await P.waitForTimeout(200);
   const w6 = await wPrev();
