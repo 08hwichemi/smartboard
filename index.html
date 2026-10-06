@@ -11936,13 +11936,23 @@
     msCheckOverflow();
     msNextSoon();
   }
-  // 넘친 칸: 일정이 칸 아래로 잘리는 날짜(글자를 키우거나 일정이 많을 때). ① 상자 아래와 미리보기 위에 경고, "지금 할 일"에도.
-  let msOverflowDays = [];
+  // 넘친 칸: 일정이 칸 아래로 잘리는 날짜(글자를 키우거나 일정이 많을 때)와 D-Day 띠가 칸보다 넓어 잘리는 날짜 수. ① 상자 아래와 미리보기 위에 경고, "지금 할 일"에도.
+  let msOverflowDays = [], msDdOverflow = 0;
   function msCheckOverflow() {
     msOverflowDays = [...document.querySelectorAll('#ms-cal-grid .ms-cell-body')].filter(function(b) { return b.scrollHeight > b.clientHeight + 1; }).map(function(b) { return +b.dataset.d; });
+    // D-Day 띠는 칸 오른쪽 끝에 붙어 있어서 칸보다 넓으면 오른쪽이 잘림(칸은 overflow hidden) → 띠의 오른쪽 끝이 칸 밖이거나 날짜 숫자를 덮으면
+    msDdOverflow = [...document.querySelectorAll('#ms-cal-grid .ms-cal-cell')].filter(function(cell) {
+      const num = cell.querySelector('.ms-date-num');
+      if (!num) return false;
+      const cr = cell.getBoundingClientRect(), nr = num.getBoundingClientRect();
+      return [...cell.querySelectorAll('.ms-dday-mini')].some(function(b) { const r = b.getBoundingClientRect(); return r.right > cr.right + 0.5 || r.left < nr.right - 0.5; });
+    }).length;
     const days = msOverflowDays.map(function(d) { return d + '일'; }).join('·');
     const w1 = document.getElementById('ms-overflow-warn'), w2 = document.getElementById('ms-ev-warn');
-    const msg = msOverflowDays.length ? '⚠️ ' + msCurMonth + '월 ' + days + ' 칸이 넘쳐 아래 줄이 잘려요 — 🔠 일정 글자를 A−로 줄이거나(지금 ' + msSizePct.ev + '%) 그 날 일정을 줄여 주세요.' : '';
+    const parts = [];
+    if (msOverflowDays.length) parts.push('⚠️ ' + msCurMonth + '월 ' + days + ' 칸이 넘쳐 아래 줄이 잘려요 — 🔠 일정 글자를 A−로 줄이거나(지금 ' + msSizePct.ev + '%) 그 날 일정을 줄여 주세요.');
+    if (msDdOverflow) parts.push('⚠️ D-Day 띠가 칸보다 넓어 잘려요(' + msDdOverflow + '칸) — ⏳ D-Day 글자를 A−로 줄이거나(지금 ' + msSizePct.dd + '%) D-Day 이름을 짧게 해 주세요.');
+    const msg = parts.join(' ');
     if (w1) w1.textContent = msg;
     if (w2) w2.textContent = msg;
   }
@@ -12166,6 +12176,7 @@
         '<br>· <b>출력 글꼴</b>: ◀ ▶를 누르거나 목록에서 골라 달력 글씨체를 바꿔요.' +
         '<br>· <b>일정 글자</b> / <b>D-Day 글자</b>: A− / A+로 달력 칸 안 일정 글씨와 D-Day 띠 글씨를 따로 줄이거나 키워요(70~150%, 날짜 숫자·제목은 그대로). 칸을 넘치면 경고가 떠요 — 그땐 줄이세요.' +
         (msOverflowDays.length ? '<br>⚠️ 지금 <b>' + msCurMonth + '월 ' + msOverflowDays.map(function(d) { return d + '일'; }).join('·') + '</b> 칸이 넘쳐요(일정 글자 ' + msSizePct.ev + '%).' : '') +
+        (msDdOverflow ? '<br>⚠️ D-Day 띠가 칸보다 넓어 잘려요(' + msDdOverflow + '칸, D-Day 글자 ' + msSizePct.dd + '%) — A−로 줄이거나 이름을 짧게.' : '') +
         (head ? '<br>👉 지금 제목: <b>' + escapeHtmlAttr(head) + '</b> — 맞으면 다음으로.' : '<br>👉 제목이 비어 있어요 — 비워 둬도 되지만 보통은 적어요.'),
         glow: val('ms-cfg-grade') ? '#ms-section-info' : '#ms-cfg-grade' }, go(2, '다음: ② D-Day →'));
     } else if (cur === 2) {
@@ -12206,8 +12217,9 @@
         '<br>· <b>용지</b>(위쪽 오른쪽 A4/B4/A3): 인쇄할 종이 크기에 맞춰 골라요.' +
         '<br>👉 지금 <b>' + msCurYear + '년 ' + msCurMonth + '월</b>, 이 달 일정 <b>' + st.thisMonth + '건</b>' + (paper ? ', ' + escapeHtmlAttr(paper.options[paper.selectedIndex].text) : '') + '.' +
         (st.thisMonth ? ' 맞으면 다음으로.' : ' 이 달엔 적은 일정이 없어요 — ◀ ▶로 일정이 있는 달로 옮겨 보세요.') +
-        (msOverflowDays.length ? '<br>⚠️ <b>' + msOverflowDays.map(function(d) { return d + '일'; }).join('·') + '</b> 칸이 넘쳐 아래 줄이 잘려요 — ① 🔠 일정 글자를 A−로 줄이거나(지금 ' + msSizePct.ev + '%) 그 날 일정을 줄이세요.' : ''),
-        glow: msOverflowDays.length ? '#ms-ev-size-val' : '#ms-month-nav' }, go(6, '다음: ⑥ 인쇄 →'));
+        (msOverflowDays.length ? '<br>⚠️ <b>' + msOverflowDays.map(function(d) { return d + '일'; }).join('·') + '</b> 칸이 넘쳐 아래 줄이 잘려요 — ① 🔠 일정 글자를 A−로 줄이거나(지금 ' + msSizePct.ev + '%) 그 날 일정을 줄이세요.' : '') +
+        (msDdOverflow ? '<br>⚠️ D-Day 띠가 칸보다 넓어 잘려요(' + msDdOverflow + '칸) — ① ⏳ D-Day 글자를 A−로 줄이거나(지금 ' + msSizePct.dd + '%) 이름을 짧게.' : ''),
+        glow: msOverflowDays.length ? '#ms-ev-size-val' : msDdOverflow ? '#ms-dd-size-val' : '#ms-month-nav' }, go(6, '다음: ⑥ 인쇄 →'));
     } else {
       n = { done: true, msg: '<b>인쇄</b> — 위쪽 오른쪽 <b>⑥ 🖨️ 인쇄/PDF</b>를 눌러요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 파일로 받아요.' +
         '<br>· 다른 달도 뽑으려면 위쪽 ◀ ▶로 달을 바꾸고 다시 인쇄해요.' +

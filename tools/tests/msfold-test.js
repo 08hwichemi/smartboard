@@ -264,6 +264,14 @@ function check(label, cond, detail) {
   await P.evaluate(() => { msDataRows().find(r => /정리 정돈/.test(r.textContent)).remove(); msGroupRows(); return msRenderCalendar(); }); await wait(300);
   wn = await warn();
   check('그 줄을 지우고 100%여도 경고 없음', !wn.shown && !wn.top, wn);
+  // D-Day 띠가 칸보다 넓으면(긴 이름 + 150%) 따로 경고
+  await P.evaluate(() => { document.getElementById('ms-dd-name-4').value = '아주아주 긴 이름의 커스텀 디데이'; document.getElementById('ms-dd-show-4').checked = true; const t = new Date(msCurYear, msCurMonth, 0); document.getElementById('ms-dd-date-4').value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); return msRenderCalendar(); }); await wait(300);
+  for (let k = 0; k < 5; k++) await P.click('#ms-section-info button[title="D-Day 글자 크게"]');
+  await wait(200); wn = await warn();
+  check('D-Day 글자 150% + 긴 이름 → "D-Day 띠가 칸보다 넓어" 경고(칸 수·150%), 일정 넘침 경고는 없음', wn.shown && /D-Day 띠가 칸보다 넓어/.test(wn.top) && /150%/.test(wn.top) && !/아래 줄이 잘려요/.test(wn.top), wn);
+  await P.evaluate(() => { document.getElementById('ms-dd-name-4').value = ''; document.getElementById('ms-dd-show-4').checked = false; msSizeSet('dd', 100); return msRenderCalendar(); }); await wait(300);
+  wn = await warn();
+  check('D-Day를 지우고 100%면 경고 없음', !wn.shown && !wn.top, wn);
   await P.evaluate(() => msGuideGo(4)); await wait(200);
   await P.click('#ms-section-info button[title="일정 글자 크게"]'); await P.click('#ms-section-info button[title="일정 글자 크게"]'); await wait(200); // 120%로 두고 아래 다른 기기에서 확인
   await P.evaluate(() => {
