@@ -436,8 +436,15 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const sh1 = await P.evaluate(() => [peCfg().wSeed, peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join()]);
   const sh1b = await P.evaluate(() => peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join());
   await P.click('#pe-w-orig'); await P.waitForTimeout(200);
-  check('🔀 순서 섞기: 순서가 바뀌고(같은 씨앗이면 늘 같은 순서), ↺ 원래 순서로 되돌림', sh1[0] > 0 && sh1[1] !== '0,1,2,3,4,5,6,7,8,9' && sh1[1] === sh1b && sh1[1].split(',').sort().join() === '0,1,2,3,4,5,6,7,8,9' &&
-    await P.evaluate(() => peCfg().wSeed === 0 && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'), sh1);
+  check('🔀 무작위: 순서가 바뀌고(같은 씨앗이면 늘 같은 순서), ↺ 적은 대로 되돌림', sh1[0] > 0 && sh1[1] !== '0,1,2,3,4,5,6,7,8,9' && sh1[1] === sh1b && sh1[1].split(',').sort().join() === '0,1,2,3,4,5,6,7,8,9' &&
+    await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'), sh1);
+  await P.click('#pe-w-abc'); await P.waitForTimeout(200);
+  const abc = await P.evaluate(() => { const P = peWordParse(peCfg()), S = peWordSets(peCfg(), P); return { order: peCfg().wOrder, qs: S[0].items.map(w => w.q), on: document.querySelector('#pe-w-order .nt-chip.on').id, first: document.querySelector('#fm-pages .pe-w-tbl td, #fm-pages table td') && true }; });
+  check('🔤 알파벳순: 단어 A→Z(대소문자 무시), 칩 켜짐', abc.order === 'abc' && abc.on === 'pe-w-abc' && abc.qs.join() === abc.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && abc.qs[0].toLowerCase() < abc.qs[abc.qs.length - 1].toLowerCase(), abc);
+  await P.click('#pe-w-ab'); await P.waitForTimeout(200);
+  check('알파벳순 + A형·B형: B형은 Z→A', await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg())); return S.length === 2 && S[1].items.map(w => w.i).join() === S[0].items.map(w => w.i).reverse().join(); }));
+  await P.click('#pe-w-ab'); await P.click('#pe-w-orig'); await P.waitForTimeout(200);
+  check('↺ 적은 대로 → 원래 순서', await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'));
   // A형·B형
   await P.click('#pe-w-ab'); await P.waitForTimeout(200);
   const w6 = await wPrev();
