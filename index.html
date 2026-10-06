@@ -4283,7 +4283,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-05.2';
+  var BUILD_ID = '2026-10-06.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13182,7 +13182,8 @@
   function abLoadForms() {
     if (abForms) return Promise.resolve(abForms);
     if (!abFormsLoading) {
-      abFormsLoading = fetch('absence/forms.json', { cache: 'no-cache' })
+      // 판 번호를 붙여 받는다 — 미리 보기 CDN(raw.githack)·브라우저가 옛 forms.json을 그대로 주던 일이 있었음(10/6 결과보고서를 넣었는데 한 장만 나옴)
+      abFormsLoading = fetch('absence/forms.json?v=' + encodeURIComponent(typeof BUILD_ID === 'string' ? BUILD_ID : ''), { cache: 'no-cache' })
         .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(function(d) { abForms = d; return d; })
         .catch(function(e) { abFormsLoading = null; throw e; });
