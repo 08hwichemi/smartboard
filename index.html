@@ -1610,6 +1610,8 @@
     #et-grid .nt-chip { padding: 3px 8px; }
     #et-note, #et-paste { font-family: inherit; font-size: 12px; line-height: 1.5; resize: vertical; }
     .et-table.et-times { min-width: 0; }
+    .et-table.et-no-sel .et-c-sel { display: none; } /* 통합형(2028~)은 국어·수학·탐구 선택 칸 없음 */
+    .et-table.et-no-sel { min-width: 0; }
     .et-times .et-c-p { width: 44px; } .et-times .et-c-time { width: 104px; } .et-times .et-c-min { width: 58px; }
     #et-table-wrap { overflow-x: auto; }
     .et-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px; }
@@ -1624,12 +1626,13 @@
     .et-x:hover { color: #e55; }
     /* 종이: 사용자 엑셀(출력 시트, 63% 축소)을 mm로 옮김 — A4 세로, 한 명 174.2 × 68.72mm, 4명이 한 장. 앞면(수험표)과 뒷면(가채점표)이 같은 자리에 와야 양면 인쇄 때 맞는다 */
     .et-sheet { padding: 11mm 17.9mm !important; display: flex; flex-direction: column; font-family: 'Malgun Gothic', '맑은 고딕', 'Pretendard', sans-serif; line-height: 1.15; color: #000; }
-    .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; overflow: hidden; }
+    .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; } /* overflow hidden 금지 — 합쳐진 테두리의 바깥 절반(0.2mm)이 잘려 아래·오른쪽 선이 얇아짐 */
     .et-card + .et-card::before { content: ''; position: absolute; left: -6mm; right: -6mm; top: -0.05mm; border-top: 0.1mm dashed #b0b0b0; } /* 자르는 선(앞뒤 같은 자리) */
     .et-tbl { border-collapse: collapse; table-layout: fixed; width: 174.2mm; height: 68.72mm; }
     .et-tbl td { padding: 0 0.4mm; text-align: center; vertical-align: middle; overflow: hidden; white-space: nowrap; box-sizing: border-box; font-size: 6.9pt; }
     .et-front .et-tbl tr { height: 6.519%; } /* 4.48mm/68.72 × 14줄 + 마지막 6mm — %라야 테두리 두께까지 합쳐 카드 높이에 딱 맞음 */
     .et-front .et-tbl tr.et-last { height: 8.731%; }
+    .et-front .et-tbl.et-even tr, .et-front .et-tbl.et-even tr.et-last { height: 6.6667%; } /* 시간표 6줄: 15줄 모두 4.58mm */
     .et-back .et-tbl tr { height: 8.104%; } /* 4.48mm/55.28 × 11줄 + 마지막 6mm */
     .et-back .et-tbl tr.et-last { height: 10.854%; }
     /* 앞면 */
@@ -1660,12 +1663,12 @@
     .et-back .et-hd-r { width: 32.84mm; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; text-align: right; }
     .et-back .et-hd-r .et-sn { font-size: 11.3pt; line-height: 1.2; }
     .et-back .et-hd-r .et-sc { font-size: 6.9pt; line-height: 1.2; }
-    .et-back .et-tbl { height: 55.28mm; }
+    .et-back .et-tbl { height: 55.28mm; border: 0.4mm solid #000; } /* 엑셀은 아래가 열려 있었지만 표 전체를 굵은 선으로 닫음(사용자 10/6: 테두리 다 완성) */
     .et-back td.et-sh { background: #FBE5D6; border-top: 0.4mm solid #000; border-bottom: 0.4mm solid #000; }
     .et-back td.et-lb { background: #FEFCE6; border-right: 0.15mm solid #000; border-top: 0.15mm solid #000; white-space: pre-line; line-height: 1.1; }
     .et-back td.et-rg { background: #FEFCE6; border: 0.15mm solid #000; }
     .et-back td.et-ans { border: 0.15mm solid #000; }
-    .et-back td.et-dot { border-left: 0.12mm dotted #000; }
+    .et-back td.et-dot { border-left: 0.18mm dotted #000; }
     .et-back td.et-blank { border-top: 0.15mm solid #000; border-bottom: 0.15mm solid #000; }
     .et-back td.et-bl { border-left: 0.4mm solid #000; }
     .et-back td.et-br { border-right: 0.4mm solid #000; }
@@ -3863,6 +3866,7 @@
         <div class="nt-box" id="et-time-box">
           <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">2</b>⏰ 시험 시간표</span> <span class="nt-muted">수능과 같으면 그대로</span></div>
           <div class="nt-row" id="et-time-presets"></div>
+          <div class="nt-row" id="et-back-row" title="뒷면 가채점표의 문항 칸 — 기본값 단추를 누르면 같이 바뀌고, 따로 고를 수도 있어요"></div>
           <table class="et-table et-times" id="et-times"></table>
           <div class="nt-row"><button class="nt-chip" id="et-time-add" onclick="etTimeAdd()" title="줄 더하기(최대 6줄 — 6줄이면 입실 안내 글은 오른쪽 아래로)">＋ 줄 더하기</button><span class="nt-muted">같은 교시를 여러 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 최대 6줄. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문).</span></div>
           <textarea id="et-note" class="lp-input et-cfg" data-k="note" rows="2" spellcheck="false" title="시간표 아래 안내 글(두 줄)"></textarea>
@@ -20859,18 +20863,27 @@
   const ET_TIME_PRESETS = [['now', '수능(~2027학년도)', ET_TIMES_DEFAULT, '지금 고3까지 — 탐구 62분(사회/과학 2과목)'], ['2028', '2028학년도 수능(통합형)', ET_TIMES_2028, '내년 고3부터 — 국어·수학 선택 없음, 탐구 = 사회·직업탐구 40분 → 과학탐구 40분(~17:10)']];
   const ET_NOTE_DEFAULT = '* 수험생은 08:10(2~5교시는 시험시작 10분전)까지\n시험실 입실을 완료해야 합니다.';
   function etYearDefault() { const d = new Date(); return String(d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1); } // 학년도(3월부터 새 학년도)
-  const ET_CFG_DEFAULT = { year: '', exam: '7월 전국연합학력평가', school: '부광고등학교', schoolNo: '14115', place: '부광고등학교', grade: 3, cls: 1, times: ET_TIMES_DEFAULT, note: ET_NOTE_DEFAULT };
+  const ET_CFG_DEFAULT = { year: '', exam: '7월 전국연합학력평가', school: '부광고등학교', schoolNo: '14115', place: '부광고등학교', grade: 3, cls: 1, times: ET_TIMES_DEFAULT, note: ET_NOTE_DEFAULT, back: 'now' }; // back = 가채점표 칸: now(선택과목형 ~2027학년도) / 2028(통합형)
   const ET_SUBJ = { kor: ['화법과작문', '언어와매체'], math: ['확률과통계', '미적분', '기하'],
     inq: ['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와법', '사회문화', '물리학1', '화학1', '생명과학1', '지구과학1', '물리학2', '화학2', '생명과학2', '지구과학2'] };
   // 가채점표 줄(위에서 11줄 = 4.48mm × 10 + 6mm): "1-5"는 범위(답 칸 = 문항 수, 나머지는 빈칸), {n, m}은 단답형 두 문항(번호 | 답 | 번호 | 답), {n, w}는 단답형 한 문항(답 칸 w개 폭),
   // {h}는 블록 안 머리 줄(제2외국어·탐구2), null은 빈 줄. 국어·수학은 왼쪽에 공통(7줄)·선택(3줄) 세로 칸, 마지막 줄은 두 블록에 걸친 ★ 안내
-  const ET_BACK = {
-    kor: { label: ['공\n통', '선\n택'], rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-34', '35-39', '40-44', '45'] },
-    math: { label: ['공\n통', '선\n택'], rows: ['1-5', '6-10', '11-15', { n: '16', m: '17' }, { n: '18', m: '19' }, { n: '20', m: '21' }, { n: '22', w: 2 }, '23-27', { n: '28', w: 1 }, { n: '29', m: '30' }] },
+  const ET_BACK = { // ~2027학년도(선택과목형): 국어 공통 34 + 선택 11, 수학 공통 22(단답형 16~22) + 선택 8(단답형 29~30), 탐구1·탐구2 각 20
+    kor: { label: [['공\n통', 7], ['선\n택', 3]], rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-34', '35-39', '40-44', '45'] },
+    math: { label: [['공\n통', 7], ['선\n택', 3]], rows: ['1-5', '6-10', '11-15', { n: '16', m: '17' }, { n: '18', m: '19' }, { n: '20', m: '21' }, { n: '22', w: 2 }, '23-27', { n: '28', w: 1 }, { n: '29', m: '30' }] },
     eng: { rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40', '41-45', null, null] },
     hist: { rows: ['1-5', '6-10', '11-15', '16-20', { h: '제2외국어' }, '1-5', '6-10', '11-15', '16-20', '21-25', '26-30'] },
     inq: { rows: ['1-5', '6-10', '11-15', '16-20', { h: 'inq2' }, '1-5', '6-10', '11-15', '16-20', null, null] },
   };
+  // 2028학년도~(통합형, 사용자 10/6 확인 + 평가원 예시문항): 국어 45(공통·선택 없음), 수학 30(단답형 9 = 22~30번), 영어 45, 한국사 20, 통합사회 25 · 통합과학 25(각 40분)
+  const ET_BACK_2028 = {
+    kor: { label: null, rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40', '41-45', null] },
+    math: { label: [['객\n관', 5], ['단\n답', 5]], rows: ['1-5', '6-10', '11-15', '16-20', '21', { n: '22', m: '23' }, { n: '24', m: '25' }, { n: '26', m: '27' }, { n: '28', m: '29' }, { n: '30', w: 2 }] },
+    eng: ET_BACK.eng, hist: ET_BACK.hist,
+    inq: { rows: ['1-5', '6-10', '11-15', '16-20', '21-25', { h: '과학탐구' }, '1-5', '6-10', '11-15', '16-20', '21-25'] },
+  };
+  const ET_BACK_KINDS = [['now', '선택과목형(~2027학년도)', '국어·수학 공통/선택, 탐구1·탐구2 각 20문항'], ['2028', '통합형(2028학년도~)', '국어 45·수학 30(단답형 22~30번), 사회탐구 25·과학탐구 25']];
+  function etBackIs2028(c) { return c.back === '2028'; }
   const etState = { loaded: false, loading: false, noDb: false, data: null, saveTimer: null, renderTimer: null, wired: false };
   function etAllowed() { return !!(window.currentTeacher && window.currentTeacher.is_admin); }
   function etDefault() { return { cfg: Object.assign({}, ET_CFG_DEFAULT, { year: etYearDefault() }), students: [] }; }
@@ -20888,6 +20901,7 @@
     }
     ['year', 'exam', 'school', 'schoolNo', 'place', 'times', 'note'].forEach(function(k) { out.cfg[k] = String(out.cfg[k] == null ? '' : out.cfg[k]); });
     out.cfg.grade = Math.min(6, Math.max(1, parseInt(out.cfg.grade) || 3)); out.cfg.cls = Math.min(99, Math.max(1, parseInt(out.cfg.cls) || 1));
+    out.cfg.back = out.cfg.back === '2028' ? '2028' : 'now';
     return out;
   }
   // 이 컴퓨터(브라우저)의 IndexedDB — 동기화 가로채기와 무관한 저장소
@@ -21144,6 +21158,9 @@
     document.getElementById('et-time-presets').innerHTML = '기본값 ' + ET_TIME_PRESETS.map(function(p) {
       return '<button class="nt-chip' + (cur && cur[0] === p[0] ? ' on' : '') + '" data-preset="' + p[0] + '" title="' + ntEsc(p[3]) + '" onclick="etTimePreset(\'' + p[0] + '\')">' + ntEsc(p[1]) + '</button>';
     }).join('');
+    document.getElementById('et-back-row').innerHTML = '가채점표 칸 ' + ET_BACK_KINDS.map(function(k) {
+      return '<button class="nt-chip' + ((c.back === '2028' ? '2028' : 'now') === k[0] ? ' on' : '') + '" data-back="' + k[0] + '" title="' + ntEsc(k[2]) + '" onclick="etBackSet(\'' + k[0] + '\')">' + ntEsc(k[1]) + '</button>';
+    }).join('');
     const inp = function(r, f, v, cls, extra) { return '<input type="text" class="lp-input" data-r="' + r + '" data-f="' + f + '" value="' + ntEsc(v) + '"' + (extra || '') + '>'; };
     let h = '<thead><tr><th class="et-c-p">교시</th><th class="et-c-time">시간</th><th>영역</th><th class="et-c-min">분</th><th class="et-c-x"></th></tr></thead><tbody>';
     rows.forEach(function(t, r) {
@@ -21170,10 +21187,11 @@
     if (!etMutate(function(d) { lines.splice(r, 1); d.cfg.times = lines.join('\n'); })) return;
     etFillTimes(etCfg().cfg); fmRender();
   }
-  function etTimePreset(key) {
+  function etTimePreset(key) { // 시간표 기본값 단추는 가채점표 칸(선택과목형/통합형)도 같이 바꿈
     const p = ET_TIME_PRESETS.find(function(x) { return x[0] === key; }); if (!p) return;
-    if (etMutate(function(d) { d.cfg.times = p[2]; })) { etFillTimes(etCfg().cfg); fmRender(); }
+    if (etMutate(function(d) { d.cfg.times = p[2]; d.cfg.back = key === '2028' ? '2028' : 'now'; })) { etFillForm(); fmRender(); }
   }
+  function etBackSet(v) { if (etMutate(function(d) { d.cfg.back = v === '2028' ? '2028' : 'now'; })) { etFillForm(); fmRender(); } }
   // 표 칸에 엑셀을 바로 붙여 넣기: 탭·줄바꿈이 있으면 그 칸부터 오른쪽·아래로 채우고(모자라면 줄을 더함) — 번호 칸에서 시작하면 줄마다 똑똑하게 읽음(etParsePaste: 반·학번·머리 줄도)
   const ET_COLS = ['no', 'name', 'birth', 'kor', 'math', 'inq1', 'inq2'];
   function etTablePaste(e) {
@@ -21245,11 +21263,12 @@
   }
   function etFillTable() {
     const rows = etCfg().students, tbl = document.getElementById('et-table');
-    let h = '<thead><tr><th class="et-c-no">번호</th><th class="et-c-name">이름</th><th class="et-c-birth">생년월일</th><th>국어</th><th>수학</th><th>탐구1</th><th>탐구2</th><th class="et-c-ph">사진</th><th class="et-c-x"></th></tr></thead><tbody>';
+    tbl.classList.toggle('et-no-sel', etBackIs2028(etCfg().cfg)); // 통합형(2028~)은 선택 과목 칸을 숨김(자료는 그대로)
+    let h = '<thead><tr><th class="et-c-no">번호</th><th class="et-c-name">이름</th><th class="et-c-birth">생년월일</th><th class="et-c-sel">국어</th><th class="et-c-sel">수학</th><th class="et-c-sel">탐구1</th><th class="et-c-sel">탐구2</th><th class="et-c-ph">사진</th><th class="et-c-x"></th></tr></thead><tbody>';
     rows.forEach(function(s, i) {
       const inp = function(k, extra) { return '<input type="text" class="lp-input et-' + k + '" data-i="' + i + '" data-k="' + k + '" value="' + ntEsc(s[k]) + '"' + (extra || '') + '>'; };
       h += '<tr data-i="' + i + '"><td>' + inp('no', ' inputmode="numeric"') + '</td><td>' + inp('name') + '</td><td>' + inp('birth', ' placeholder="080710" inputmode="numeric"') + '</td>' +
-        '<td>' + inp('kor', ' list="et-dl-kor"') + '</td><td>' + inp('math', ' list="et-dl-math"') + '</td><td>' + inp('inq1', ' list="et-dl-inq"') + '</td><td>' + inp('inq2', ' list="et-dl-inq"') + '</td>' +
+        '<td class="et-c-sel">' + inp('kor', ' list="et-dl-kor"') + '</td><td class="et-c-sel">' + inp('math', ' list="et-dl-math"') + '</td><td class="et-c-sel">' + inp('inq1', ' list="et-dl-inq"') + '</td><td class="et-c-sel">' + inp('inq2', ' list="et-dl-inq"') + '</td>' +
         '<td class="et-c-ph">' + (s.photo ? '<img class="et-thumb" src="' + s.photo + '" alt="" title="눌러서 다른 사진으로" onclick="this.nextElementSibling.click()">' : '<button class="et-ph-btn" title="이 학생 사진 올리기" onclick="this.nextElementSibling.click()">📷</button>') +
         '<input type="file" accept="image/*" style="display:none;" onchange="etPhotosPicked(this.files, ' + i + '); this.value=\'\';"></td>' +
         '<td class="et-c-x"><button class="et-x" title="이 줄 지우기" onclick="etRemoveStudent(' + i + ')">✕</button></td></tr>';
@@ -21275,7 +21294,8 @@
       const e = per.find(function(x) { return x.p === t.p; }); if (e) { if (e.a.indexOf(a) < 0) e.a.push(a); } else per.push({ p: t.p, a: [a] }); // 같은 교시의 "탐구"는 한 번만
     });
     per.forEach(function(x) { rows.push([x.p + '교시', x.a.join(', ')]); });
-    rows.push(['제1선택', s.inq1 || '', 1], ['제2선택', s.inq2 || '', 1], ['시험장소', c.place || '']);
+    if (!etBackIs2028(c)) rows.push(['제1선택', s.inq1 || '', 1], ['제2선택', s.inq2 || '', 1]); // 통합형은 선택 과목이 없음
+    rows.push(['시험장소', c.place || '']);
     return rows.slice(0, 13);
   }
   function etTd(cls, t, cs, rs) { return '<td' + (cls ? ' class="' + cls + '"' : '') + (cs > 1 ? ' colspan="' + cs + '"' : '') + (rs > 1 ? ' rowspan="' + rs + '"' : '') + '>' + (t == null ? '' : t) + '</td>'; }
@@ -21313,30 +21333,31 @@
       if (r > noteRow) { R[r] = ''; continue; }
       R[r] = x ? td('et-info et-il et-mid-l' + (x[2] ? ' et-ind' : ''), ntEsc(x[0]), 2) + td('et-info', ':', 1) + td('et-info', ntEsc(x[1]), 4) : td('et-mid-l', '', 7);
     }
-    let h = '<table class="et-tbl">' + etColgroup(ET_COLS_F);
+    // 6줄이면 맨 아랫줄(엑셀에선 안내 글 자리라 6mm)도 다른 줄과 같은 높이로 → 1~4교시 줄과 왼쪽 성명·생년월일 쌍이 모두 같은 높이(사용자 10/6: 4교시 마지막이 높다)
+    let h = '<table class="et-tbl' + (six ? ' et-even' : '') + '">' + etColgroup(ET_COLS_F);
     for (let r = 1; r <= 15; r++) h += '<tr' + (r === 15 ? ' class="et-last"' : '') + '>' + L[r] + M[r] + R[r] + '</tr>';
     return '<div class="et-card">' + h + '</table></div>';
   }
   // 뒷면(가채점표): 머리(제목 | 학년 반 번 이름 | 학교번호·학교) 3줄 + 국어 7칸 | 수학 7칸 | 영어 6칸 | 한국사 6칸 | 탐구 6칸 표(머리 줄 + 11줄)
   function etBackHtml(c, s) {
-    const td = etTd, subj = function(n, v) { return n + (v ? '(' + v + ')' : ''); };
-    const heads = [[subj('국어', s.kor), 7], [subj('수학', s.math), 7], ['영어', 6], ['한국사', 6], [subj('탐구1', s.inq1), 6]];
-    // 블록 한 줄(범위 칸 + 답 칸 5개 폭): first = 블록 첫 칸(굵은 왼쪽 선), last = 블록 끝 칸(굵은 오른쪽 선), bottom = 블록 마지막 줄(굵은 아래 선)
-    const rowCells = function(spec, first, last, bottom) {
-      const fl = first ? ' et-bl' : '', lr = last ? ' et-br' : '', b = bottom ? ' et-bb' : '';
-      if (spec == null) return td('et-nb' + fl + lr, '', 6);
-      if (spec.h) return td('et-sh' + fl + lr, ntEsc(spec.h === 'inq2' ? subj('탐구2', s.inq2) : spec.h), 6);
+    const td = etTd, subj = function(n, v) { return n + (v ? '(' + v + ')' : ''); }, k28 = etBackIs2028(c), B = k28 ? ET_BACK_2028 : ET_BACK;
+    const heads = k28 ? [['국어', 7], ['수학', 7], ['영어', 6], ['한국사', 6], ['사회탐구', 6]] : [[subj('국어', s.kor), 7], [subj('수학', s.math), 7], ['영어', 6], ['한국사', 6], [subj('탐구1', s.inq1), 6]];
+    // 블록 한 줄(범위 칸 + 답 칸 5개 폭): first = 블록 첫 칸(굵은 왼쪽 선), last = 블록 끝 칸(굵은 오른쪽 선), bottom = 블록 마지막 줄(굵은 아래 선), wide = 공통/선택 세로 칸이 없는 블록(범위 칸이 2칸 폭)
+    const rowCells = function(spec, first, last, bottom, wide) {
+      const fl = first ? ' et-bl' : '', lr = last ? ' et-br' : '', b = bottom ? ' et-bb' : '', rc = wide ? 2 : 1, full = wide ? 7 : 6;
+      if (spec == null) return td('et-nb' + fl + lr, '', full);
+      if (spec.h) return td('et-sh' + fl + lr, ntEsc(spec.h === 'inq2' ? subj('탐구2', s.inq2) : spec.h), full);
       let h = '';
       if (typeof spec === 'string') {
         const m = spec.match(/^(\d+)-(\d+)$/), n = m ? Math.min(5, +m[2] - +m[1] + 1) : 1;
-        h += td('et-rg' + fl + b, spec);
+        h += td('et-rg' + fl + b, spec, rc);
         for (let k = 0; k < 5; k++) {
           if (k < n) h += td('et-ans' + (k ? ' et-dot' : '') + (k === 4 ? lr : '') + b, '');
           else { h += td('et-blank' + lr + b, '', 5 - k); break; }
         }
         return h;
       }
-      h += td('et-rg' + fl + b, spec.n); // 단답형: 번호 | 답(2칸) | 번호 | 답(2칸) 또는 번호 | 답(w칸) | 빈칸
+      h += td('et-rg' + fl + b, spec.n, rc); // 단답형: 번호 | 답(2칸) | 번호 | 답(2칸) 또는 번호 | 답(w칸) | 빈칸
       if (spec.m) h += td('et-ans' + b, '', 2) + td('et-rg' + b, spec.m) + td('et-ans' + lr + b, '', 2);
       else h += td('et-ans' + b, '', spec.w) + td('et-blank' + lr + b, '', 5 - spec.w);
       return h;
@@ -21345,13 +21366,15 @@
       '<div class="et-hd-s">' + ntEsc(c.grade + '학년 ' + c.cls + '반 ' + (s.no ? s.no + '번 ' : '') + (s.name || '')) + '</div>' +
       '<div class="et-hd-r"><div class="et-sn">' + ntEsc(c.schoolNo ? '학교번호 ' + c.schoolNo : '') + '</div><div class="et-sc">' + ntEsc(c.school || '') + '</div></div></div>';
     h += '<table class="et-tbl">' + etColgroup(ET_COLS_B) + '<tr>' + heads.map(function(x, i) { return td('et-sh' + (i === 0 ? ' et-bl' : '') + (i === 4 ? ' et-br' : ''), ntEsc(x[0]), x[1]); }).join('') + '</tr>';
-    const B = ET_BACK;
     for (let r = 0; r < 11; r++) {
       let row = '';
-      if (r === 10) row += td('et-note', '★ 정확한 채점을 위해 칸 중앙에 맞춰 기입해 주세요!&nbsp;&nbsp;선택과목 과목코드 확인!!', 14);
+      if (r === 10) row += td('et-note', '★ 정확한 채점을 위해 칸 중앙에 맞춰 기입해 주세요!&nbsp;&nbsp;' + (k28 ? '답안지 과목코드 확인!!' : '선택과목 과목코드 확인!!'), 14);
       else [B.kor, B.math].forEach(function(blk) {
-        if (r === 0) row += td('et-lb et-bl', ntEsc(blk.label[0]), 1, 7); else if (r === 7) row += td('et-lb et-bl et-bb', ntEsc(blk.label[1]), 1, 3);
-        row += rowCells(blk.rows[r], false, true, r === 9);
+        if (blk.label) { // 세로 칸(공통/선택, 객관/단답): 구간이 시작하는 줄에 rowspan으로, 마지막 구간은 아래 굵은 선
+          let at = 0;
+          blk.label.forEach(function(seg, si) { if (r === at) row += td('et-lb et-bl' + (si === blk.label.length - 1 ? ' et-bb' : ''), ntEsc(seg[0]), 1, seg[1]); at += seg[1]; });
+        }
+        row += rowCells(blk.rows[r], !blk.label, true, r === 9, !blk.label);
       });
       row += rowCells(B.eng.rows[r], true, true, r === 8) + rowCells(B.hist.rows[r], true, true, r === 10) + rowCells(B.inq.rows[r], true, true, r === 8);
       h += '<tr' + (r === 10 ? ' class="et-last"' : '') + '>' + row + '</tr>';
