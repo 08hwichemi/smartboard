@@ -438,18 +438,28 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#pe-w-orig'); await P.waitForTimeout(200);
   check('🔀 무작위: 순서가 바뀌고(같은 씨앗이면 늘 같은 순서), ↺ 적은 대로 되돌림', sh1[0] > 0 && sh1[1] !== '0,1,2,3,4,5,6,7,8,9' && sh1[1] === sh1b && sh1[1].split(',').sort().join() === '0,1,2,3,4,5,6,7,8,9' &&
     await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'), sh1);
+  check('↺ 적은 대로일 땐 "나오는 순서" 칩이 없음', await P.evaluate(() => !document.getElementById('pe-w-rand') && !document.getElementById('pe-w-abc')));
+  await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
+  const sub = await P.evaluate(() => ({ order: peCfg().wOrder, rand: !!document.getElementById('pe-w-rand'), abc: !!document.getElementById('pe-w-abc'), randOn: document.getElementById('pe-w-rand') && document.getElementById('pe-w-rand').classList.contains('on'), seed: peCfg().wSeed }));
+  check('🔀 무작위를 누르면 아래에 나오는 순서 칩(🎲 랜덤 · 🔤 알파벳순)이 생기고 랜덤이 켜짐', sub.order === 'rand' && sub.rand && sub.abc && sub.randOn && sub.seed > 0, sub);
   await P.click('#pe-w-abc'); await P.waitForTimeout(200);
-  const abc = await P.evaluate(() => { const P = peWordParse(peCfg()), S = peWordSets(peCfg(), P); return { order: peCfg().wOrder, qs: S[0].items.map(w => w.q), on: document.querySelector('#pe-w-order .nt-chip.on').id, first: document.querySelector('#fm-pages .pe-w-tbl td, #fm-pages table td') && true }; });
-  check('🔤 알파벳순: 단어 A→Z(대소문자 무시), 칩 켜짐', abc.order === 'abc' && abc.on === 'pe-w-abc' && abc.qs.join() === abc.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && abc.qs[0].toLowerCase() < abc.qs[abc.qs.length - 1].toLowerCase(), abc);
+  const abc = await P.evaluate(() => { const P = peWordParse(peCfg()), S = peWordSets(peCfg(), P); return { order: peCfg().wOrder, qs: S[0].items.map(w => w.q), on: [...document.querySelectorAll('#pe-w-order .nt-chip.on')].map(b => b.id).join() }; });
+  check('🔤 알파벳순: 단어 A→Z(대소문자 무시), 무작위·알파벳순 칩 켜짐', abc.order === 'abc' && abc.on === 'pe-w-shuffle,pe-w-abc' && abc.qs.join() === abc.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && abc.qs[0].toLowerCase() < abc.qs[abc.qs.length - 1].toLowerCase(), abc);
+  await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
+  check('이미 무작위(알파벳순)일 때 🔀 무작위를 또 눌러도 알파벳순 그대로', await P.evaluate(() => peCfg().wOrder === 'abc'));
+  await P.click('#pe-w-rand'); await P.waitForTimeout(200);
+  const r1 = await P.evaluate(() => peCfg().wSeed); await P.click('#pe-w-rand'); await P.waitForTimeout(200);
+  check('🎲 랜덤 → 랜덤으로, 또 누르면 다시 섞기(새 씨앗)', await P.evaluate((r1) => peCfg().wOrder === 'rand' && peCfg().wSeed > 0 && peCfg().wSeed !== r1, r1));
+  await P.click('#pe-w-abc'); await P.waitForTimeout(200);
   await P.click('#pe-w-ab'); await P.waitForTimeout(200);
   check('알파벳순 + A형·B형: B형은 Z→A', await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg())); return S.length === 2 && S[1].items.map(w => w.i).join() === S[0].items.map(w => w.i).reverse().join(); }));
   await P.click('#pe-w-ab'); await P.click('#pe-w-orig'); await P.waitForTimeout(200);
   check('↺ 적은 대로 → 원래 순서', await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'));
   // N개만 무작위로 뽑을 때도 뽑힌 단어의 순서는 순서 칩대로(선생님 요청 10/7: 뽑힌 결과가 알파벳순이나 랜덤이면)
-  await P.fill('#pe-w-pick-in', '4'); await P.dispatchEvent('#pe-w-pick-in', 'change'); await P.click('#pe-w-abc'); await P.waitForTimeout(200);
+  await P.fill('#pe-w-pick-in', '4'); await P.dispatchEvent('#pe-w-pick-in', 'change'); await P.click('#pe-w-shuffle'); await P.click('#pe-w-abc'); await P.waitForTimeout(200);
   const pk1 = await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg()))[0].items; return { n: S.length, qs: S.map(w => w.q), note: document.querySelector('#pe-w-pick .nt-muted').textContent }; });
   check('4개만 뽑기 + 🔤 알파벳순: 뽑힌 4개가 A→Z, 출제 줄에 "뽑힌 단어는 위 순서대로(🔤 알파벳순)"', pk1.n === 4 && pk1.qs.join() === pk1.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && /알파벳순/.test(pk1.note), pk1);
-  await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
+  await P.click('#pe-w-rand'); await P.waitForTimeout(200);
   const pk2 = await P.evaluate(() => { const S = peWordSets(peCfg(), peWordParse(peCfg()))[0].items; return { n: S.length, is: S.map(w => w.i), note: document.querySelector('#pe-w-pick .nt-muted').textContent }; });
   check('4개만 뽑기 + 🔀 무작위: 같은 4개(뽑기 씨앗은 그대로가 아니어도 4개)인데 원래 순서가 아님', pk2.n === 4 && pk2.is.join() !== pk2.is.slice().sort((a, b) => a - b).join() && /무작위/.test(pk2.note), pk2);
   await P.click('#pe-w-pick [data-wpick="0"]'); await P.click('#pe-w-orig'); await P.waitForTimeout(200);
