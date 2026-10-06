@@ -1597,6 +1597,80 @@
       .fm-sheet:last-child { break-after: auto; }
     }
 
+    /* ===== 🎫 양식: 수험표·가채점표 ===== */
+    /* 왼쪽 입력 칸: 넓으면(600px+) ① 시험 정보 | ② 시간표, ③ 명단은 한 줄 전체(표가 넓음), ④ 사진 | ⑤ 보관 */
+    #et-grid { display: flex; flex-direction: column; gap: 12px; }
+    #et-grid > * { flex-shrink: 0; min-width: 0; }
+    @container (min-width: 600px) {
+      #et-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+      #et-grid > #et-list-box { grid-column: 1 / -1; }
+    }
+    .et-frow { display: flex; align-items: center; gap: 6px; font-size: 12px; flex-wrap: wrap; }
+    .et-frow .ws-lb { width: 48px; }
+    #et-grid .nt-chip { padding: 3px 8px; }
+    #et-times, #et-note, #et-paste { font-family: inherit; font-size: 12px; line-height: 1.5; resize: vertical; }
+    #et-table-wrap { overflow-x: auto; }
+    .et-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px; }
+    .et-table th { font-weight: 700; color: var(--text-sub); font-size: 11px; padding: 2px 3px; text-align: left; white-space: nowrap; }
+    .et-table td { padding: 2px 3px; vertical-align: middle; }
+    .et-table input.lp-input { width: 100%; box-sizing: border-box; padding: 3px 5px; font-size: 12px; min-width: 0; }
+    .et-table .et-c-no { width: 42px; } .et-table .et-c-name { width: 68px; } .et-table .et-c-birth { width: 72px; } .et-table .et-c-ph { width: 44px; text-align: center; } .et-table .et-c-x { width: 26px; }
+    .et-table tr.et-dup input.et-no { border-color: #e55; }
+    .et-thumb { width: 27px; height: 36px; object-fit: cover; border-radius: 3px; border: 1px solid var(--border-color); display: block; margin: 0 auto; cursor: pointer; background: #fff; }
+    .et-ph-btn { width: 27px; height: 36px; border: 1px dashed var(--border-color); border-radius: 3px; background: none; cursor: pointer; font-size: 13px; padding: 0; color: var(--text-sub); display: block; margin: 0 auto; }
+    .et-x { border: none; background: none; cursor: pointer; color: var(--text-sub); font-size: 13px; padding: 2px 4px; }
+    .et-x:hover { color: #e55; }
+    /* 종이: 사용자 엑셀(출력 시트, 63% 축소)을 mm로 옮김 — A4 세로, 한 명 174.2 × 68.72mm, 4명이 한 장. 앞면(수험표)과 뒷면(가채점표)이 같은 자리에 와야 양면 인쇄 때 맞는다 */
+    .et-sheet { padding: 11mm 17.9mm !important; display: flex; flex-direction: column; font-family: 'Malgun Gothic', '맑은 고딕', 'Pretendard', sans-serif; line-height: 1.15; color: #000; }
+    .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; overflow: hidden; }
+    .et-card + .et-card::before { content: ''; position: absolute; left: -6mm; right: -6mm; top: -0.05mm; border-top: 0.1mm dashed #b0b0b0; } /* 자르는 선(앞뒤 같은 자리) */
+    .et-tbl { border-collapse: collapse; table-layout: fixed; width: 174.2mm; height: 68.72mm; }
+    .et-tbl td { padding: 0 0.4mm; text-align: center; vertical-align: middle; overflow: hidden; white-space: nowrap; box-sizing: border-box; font-size: 6.9pt; }
+    .et-front .et-tbl tr { height: 6.519%; } /* 4.48mm/68.72 × 14줄 + 마지막 6mm — %라야 테두리 두께까지 합쳐 카드 높이에 딱 맞음 */
+    .et-front .et-tbl tr.et-last { height: 8.731%; }
+    .et-back .et-tbl tr { height: 8.104%; } /* 4.48mm/55.28 × 11줄 + 마지막 6mm */
+    .et-back .et-tbl tr.et-last { height: 10.854%; }
+    /* 앞면 */
+    .et-front .et-tbl { border: 0.4mm solid #000; }
+    .et-front td.et-mid-l { border-left: 0.4mm solid #000; } /* 왼쪽 ↔ 시간표 ↔ 오른쪽 사이 굵은 세로선 */
+    .et-front td.et-t1 { font-size: 8.2pt; }
+    .et-front td.et-t3 { font-size: 15.1pt; font-weight: 700; letter-spacing: 0.3em; vertical-align: top; padding-top: 0.5mm; border-bottom: 0.15mm solid #000; }
+    .et-front td.et-t2 { font-size: 10.1pt; font-weight: 700; border-bottom: 0.15mm solid #000; }
+    .et-front td.et-photo-cell { border-right: 0.15mm solid #000; vertical-align: middle; padding: 0; }
+    .et-photo { width: 27mm; height: 36mm; margin: 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .et-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .et-photo.empty { border: 0.1mm dashed #c8c8c8; color: #bbb; font-size: 6pt; }
+    .et-front td.et-lh { font-size: 7.6pt; border: 0.15mm solid #000; } /* 반·번호·성명·생년월일 제목칸 */
+    .et-front td.et-lv { font-size: 10.1pt; border: 0.15mm solid #000; } /* 그 값 */
+    .et-front td.et-th { font-size: 8.8pt; border-top: 0.15mm solid #000; border-bottom: 0.15mm solid #000; }
+    .et-front td.et-tp, .et-front td.et-ta { font-size: 8.8pt; border-top: 0.15mm solid #000; border-bottom: 0.15mm solid #000; }
+    .et-front td.et-tt { font-size: 8.8pt; border: 0.15mm solid #000; border-left: 0.4mm solid #000; border-right: 0.4mm solid #000; }
+    .et-front td.et-th.et-tc, .et-front td.et-tt { border-left: 0.4mm solid #000; border-right: 0.4mm solid #000; }
+    .et-front td.et-tn { font-size: 6.9pt; white-space: pre-line; line-height: 1.25; border-top: 0.15mm solid #000; }
+    .et-front td.et-info { background: #E2EFDA; font-size: 6.9pt; text-align: left; }
+    .et-front td.et-il { text-align: justify; text-align-last: justify; padding: 0 1mm; }
+    .et-front td.et-il.et-ind { text-align: left; text-align-last: left; padding-left: 2mm; }
+    /* 뒷면 */
+    .et-back .et-hd { height: 13.44mm; display: flex; align-items: stretch; width: 174.2mm; }
+    .et-back .et-hd-t { width: 83.52mm; display: flex; align-items: center; justify-content: center; font-size: 10.7pt; white-space: nowrap; }
+    .et-back .et-hd-s { width: 57.84mm; display: flex; align-items: center; justify-content: center; font-size: 8.8pt; white-space: nowrap; }
+    .et-back .et-hd-r { width: 32.84mm; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; text-align: right; }
+    .et-back .et-hd-r .et-sn { font-size: 11.3pt; line-height: 1.2; }
+    .et-back .et-hd-r .et-sc { font-size: 6.9pt; line-height: 1.2; }
+    .et-back .et-tbl { height: 55.28mm; }
+    .et-back td.et-sh { background: #FBE5D6; border-top: 0.4mm solid #000; border-bottom: 0.4mm solid #000; }
+    .et-back td.et-lb { background: #FEFCE6; border-right: 0.15mm solid #000; border-top: 0.15mm solid #000; white-space: pre-line; line-height: 1.1; }
+    .et-back td.et-rg { background: #FEFCE6; border: 0.15mm solid #000; }
+    .et-back td.et-ans { border: 0.15mm solid #000; }
+    .et-back td.et-dot { border-left: 0.12mm dotted #000; }
+    .et-back td.et-blank { border-top: 0.15mm solid #000; border-bottom: 0.15mm solid #000; }
+    .et-back td.et-bl { border-left: 0.4mm solid #000; }
+    .et-back td.et-br { border-right: 0.4mm solid #000; }
+    .et-back td.et-bb { border-bottom: 0.4mm solid #000; }
+    .et-back td.et-nb { border-top: 0; border-bottom: 0; } /* 빈 줄 — 블록 양옆 굵은 세로선만 이어짐 */
+    .et-back td.et-note { font-size: 5.5pt; border: 0; text-align: left; padding-left: 1mm; }
+    @media print { .et-photo.empty { border: 0 !important; color: transparent !important; } }
+
     /* ===== 🗓️ 시간표 만들기 (학생/교사 카드형 시간표 생성기) ===== */
     :root {
       --pt-base-w: 360px; --pt-base-h: 520px; --pt-sz-title: 18px; --pt-sz-name: 16px;
@@ -3379,6 +3453,7 @@
         <button class="tab-btn active" data-kind="roster" onclick="fmSetKind('roster')">명렬표 수합</button>
         <button class="tab-btn" data-kind="ws" onclick="fmSetKind('ws')">학습지</button>
         <button class="tab-btn" data-kind="pe" onclick="fmSetKind('pe')">수행평가</button>
+        <button class="tab-btn" data-kind="et" id="fm-tab-et" style="display:none;" onclick="fmSetKind('et')" title="모의고사 수험표(앞면)·가채점표(뒷면) — 지금은 관리자만">수험표</button>
       </div>
       <button class="top-btn" id="fm-reset-btn" style="font-size:11px; padding:4px 10px;" onclick="fmResetKind()">🗑 초기화</button>
     </div>
@@ -3769,6 +3844,62 @@
            <div class="nt-row" id="nt-color-modes"></div>
            <div id="nt-swatches"></div>
          </div>
+        </div>
+      </div>
+      <!-- 🎫 수험표·가채점표(관리자만, 10/6): 모의고사 때 학생에게 주는 수험표(앞면) + 가채점표(뒷면), A4 한 장에 4명, 양면 인쇄.
+           명단·사진은 서버에 안 올리고 이 컴퓨터(브라우저 IndexedDB)에만 — ⑤ 백업 파일(JSON, 사진 포함)로 USB 등에 보관. 미리보기는 공용 #fm-pages -->
+      <div class="fm-guide" id="et-guide" style="display:none;" title="①③④ 차례로 채우면 끝. ②는 수능과 같으면 그대로 — 다 되면 🖨️ 인쇄/PDF를 양면(긴 쪽 넘김)으로"><b class="fm-step">1</b><b class="fm-step">3</b><b class="fm-step">4</b> 차례로 채우면 끝. <b class="fm-step opt">2</b>는 수능과 같으면 그대로 — 다 되면 <b>🖨️ 인쇄/PDF</b>를 양면(긴 쪽 넘김)으로</div>
+      <div id="et-grid" style="display:none;">
+        <div class="nt-box" id="et-exam-box">
+          <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📝 시험 정보</span> <span class="nt-muted">수험표·가채점표 머리에 들어가요</span></div>
+          <div class="et-frow"><span class="ws-lb">학년도</span><input type="text" class="lp-input et-cfg" data-k="year" style="width:64px;" placeholder="2026" inputmode="numeric"><span class="ws-lb" style="width:auto;">시험명</span><input type="text" class="lp-input et-cfg" data-k="exam" placeholder="7월 전국연합학력평가" style="flex:1; min-width:120px;"></div>
+          <div class="et-frow"><span class="ws-lb">학교</span><input type="text" class="lp-input et-cfg" data-k="school" placeholder="부광고등학교" style="flex:1; min-width:100px;"><span class="ws-lb" style="width:auto;">학교번호</span><input type="text" class="lp-input et-cfg" data-k="schoolNo" style="width:70px;" placeholder="14115" inputmode="numeric"></div>
+          <div class="et-frow"><span class="ws-lb">시험장소</span><input type="text" class="lp-input et-cfg" data-k="place" placeholder="부광고등학교" style="flex:1; min-width:100px;" title="수험표 오른쪽 '시험장소' 칸"></div>
+          <div class="et-frow"><span class="ws-lb">학년·반</span><select id="et-grade" class="mini-select et-cfg" data-k="grade" style="width:70px;"></select><select id="et-cls" class="mini-select et-cfg" data-k="cls" style="width:64px;"></select><span class="nt-muted">학번은 학년·반·번호로 만들어요(3학년 1반 4번 → 30104)</span></div>
+        </div>
+        <div class="nt-box" id="et-time-box">
+          <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">2</b>⏰ 시험 시간표</span> <span class="nt-muted">수능과 같으면 그대로</span></div>
+          <textarea id="et-times" class="lp-input et-cfg" data-k="times" rows="5" spellcheck="false" title="한 줄에 한 교시: 교시 | 시간 | 영역 | 분 — 같은 교시를 두 줄 적으면(4교시 한국사·탐구) 교시 칸이 합쳐져요. 최대 5줄"></textarea>
+          <div class="nt-muted">한 줄에 한 교시 — <b>교시 | 시간 | 영역 | 분</b>. 국어·수학 영역엔 학생의 선택 과목이 붙어요(국어-화법과작문). 최대 5줄.</div>
+          <textarea id="et-note" class="lp-input et-cfg" data-k="note" rows="2" spellcheck="false" title="시간표 아래 안내 글(두 줄)"></textarea>
+        </div>
+        <div class="nt-box" id="et-list-box">
+          <div class="nt-title"><span class="fm-tt"><b class="fm-step">3</b>👥 학생 명단</span> <span class="nt-muted" id="et-count"></span></div>
+          <div class="nt-row">
+            <button class="nt-chip" id="et-roster-btn" onclick="etImportRoster()" title="관리자 명렬표에서 이 반의 번호·이름을 가져와요(이미 적은 생년월일·과목·사진은 그대로)">🏫 명렬표에서 번호·이름 가져오기</button>
+            <button class="nt-chip" id="et-add-btn" onclick="etAddStudent()" title="빈 줄 하나 더하기">＋ 줄 더하기</button>
+            <button class="nt-chip" id="et-sort-btn" onclick="etSortStudents()" title="번호 순으로 다시 늘어놓기">↕ 번호순</button>
+          </div>
+          <details id="et-paste-box">
+            <summary>📋 엑셀에서 붙여 넣기 — 번호 · 이름 · 생년월일 · 국어 · 수학 · 탐구1 · 탐구2</summary>
+            <div class="bs-more-in">
+              <textarea id="et-paste" class="lp-input" rows="5" spellcheck="false" placeholder="엑셀 표를 그대로 복사해 붙여 넣어요(머리 줄은 있어도 돼요). 예)&#10;1&#9;고다윤&#9;080710&#9;화법과작문&#9;미적분&#9;생활과윤리&#9;사회문화&#10;2&#9;김민건&#9;080819&#9;화법과작문&#9;미적분&#9;생활과윤리&#9;사회문화"></textarea>
+              <div class="nt-row"><button class="nt-chip" id="et-paste-btn" onclick="etApplyPaste()">명단에 넣기</button><span class="nt-muted">같은 번호가 있으면 그 줄을 고치고(사진은 그대로), 없으면 더해요. 학번(30101)·반 숫자가 있어도 알아서 읽어요.</span></div>
+            </div>
+          </details>
+          <datalist id="et-dl-kor"></datalist><datalist id="et-dl-math"></datalist><datalist id="et-dl-inq"></datalist>
+          <div id="et-table-wrap"><table class="et-table" id="et-table"></table></div>
+          <div class="nt-muted" id="et-list-msg"></div>
+        </div>
+        <div class="nt-box" id="et-photo-box">
+          <div class="nt-title"><span class="fm-tt"><b class="fm-step">4</b>📷 사진</span> <span class="nt-muted" id="et-photo-count"></span></div>
+          <div class="nt-row">
+            <button class="nt-chip" id="et-photos-btn" onclick="document.getElementById('et-photos-input').click()" title="나이스 사진명렬표에서 일괄 내려받은 사진(jpg·png)을 한 번에 골라요">📷 사진 여러 장 올리기</button>
+            <input type="file" id="et-photos-input" accept="image/*" multiple style="display:none;" onchange="etPhotosPicked(this.files); this.value='';">
+            <button class="nt-chip" id="et-photos-clear" onclick="etClearPhotos()" title="명단은 두고 사진만 모두 지워요">🗑 사진 모두 지우기</button>
+          </div>
+          <div class="nt-muted">파일 이름으로 학생을 찾아요 — <b>이름(번호).jpg</b>(고다윤(1).jpg), <b>학번</b>(30101.jpg), <b>번호</b>(1.jpg), <b>이름</b>(고다윤.jpg). 표의 📷로 한 명씩 올려도 돼요. 사진은 작게 줄여(가로 360px) 이 컴퓨터에만 저장돼요.</div>
+          <div class="nt-muted" id="et-photo-msg"></div>
+        </div>
+        <div class="nt-box" id="et-store-box">
+          <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>💾 보관</span> <span class="nt-muted">서버에 올라가지 않아요</span></div>
+          <div class="nt-row">
+            <button class="nt-chip" id="et-backup-btn" onclick="etBackupSave()" title="명단·사진·시험 정보를 파일 하나(JSON)로 — 저장할 곳(USB 등)을 고를 수 있어요">💾 백업 파일 저장</button>
+            <button class="nt-chip" id="et-restore-btn" onclick="document.getElementById('et-restore-input').click()" title="백업 파일을 불러와 지금 명단·사진을 그 내용으로 바꿔요">📂 백업 파일 불러오기</button>
+            <input type="file" id="et-restore-input" accept=".json,application/json" style="display:none;" onchange="etBackupRestore(this.files[0]); this.value='';">
+          </div>
+          <div class="nt-muted">이 양식의 명단·사진은 개인정보라 <b>서버(계정)에 올리지 않고 이 컴퓨터의 브라우저에만</b> 저장돼요(홈의 💾 백업에도 안 들어가요). 다른 컴퓨터에서 쓰거나 브라우저 자료가 지워질 때를 대비해 백업 파일을 USB 등에 저장해 두세요.</div>
+          <div class="nt-muted" id="et-store-msg"></div>
         </div>
       </div>
     </div>
@@ -17422,7 +17553,7 @@
     c.colsN = Math.min(3, Math.max(1, parseInt(c.colsN) || 1));
     c.tSize = ntNum(c.tSize, 10, 40, 20); c.bSize = ntNum(c.bSize, 8, 16, 11);
     if (c.src !== 'manual') c.src = 'class';
-    if (!FM_KIND_NAME[c.kind]) c.kind = 'roster';
+    if (!FM_KIND_NAME[c.kind] || (c.kind === 'et' && !etAllowed())) c.kind = 'roster'; // 수험표 탭은 관리자만
     if (!c.colW || typeof c.colW !== 'object') c.colW = {};
     if (!v.aBd && v.aNm) c.aBd = v.aNm; // 예전 "이름 칸" 정렬을 "표 내용"으로
     FM_ALIGNS.forEach(function(a) { if (['L', 'C', 'R'].indexOf(c[a[0]]) < 0) c[a[0]] = FM_DEFAULT[a[0]]; });
@@ -17653,6 +17784,7 @@
     if (fmCfg().kind === 'pe') { peRender(); return; }
     if (fmCfg().kind === 'bs') { bsRender(); return; }
     if (fmCfg().kind === 'nt') { ntRender(); return; }
+    if (fmCfg().kind === 'et') { etRender(); return; }
     const c = fmCfg(), box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     const info = document.getElementById('fm-fit-info');
     const msg = fmEmptyMsg(c);
@@ -17853,6 +17985,7 @@
     if (c.kind === 'pe') { peFillForm(); return; }
     if (c.kind === 'bs') { bsFillForm(); return; }
     if (c.kind === 'nt') { ntFillForm(); return; }
+    if (c.kind === 'et') { etFillForm(); return; }
     // 처음엔 담임 반으로
     const t = window.currentTeacher;
     if (!c.rG && t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) { fmSet({ rG: t.homeroom_grade, rCs: [t.homeroom_class] }); c = fmCfg(); }
@@ -18274,12 +18407,13 @@
   function fmPrint() {
     if (fmCfg().kind === 'nt') return ntPrint();
     const c = fmCfg(), msg = c.kind === 'roster' ? fmEmptyMsg(c) : c.kind === 'pe' && !PE_READY[peCfg().type] ? '이 종류는 다음 단계에서 만들어요. 지금은 📄 보고서를 쓸 수 있어요.'
-      : c.kind === 'bs' && bsCfg().mode === 'exam' && !bsExLayout(bsCfg()).pages.length ? '④ 글씨·종이에서 넣을 쪽(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.' : '';
+      : c.kind === 'bs' && bsCfg().mode === 'exam' && !bsExLayout(bsCfg()).pages.length ? '④ 글씨·종이에서 넣을 쪽(정기고사 시정표·일차별 시간표)을 하나 이상 골라 주세요.'
+      : c.kind === 'et' ? (!etState.loaded ? '이 컴퓨터에 저장된 명단을 불러오는 중이에요. 잠시 뒤 다시 눌러 주세요.' : !etList().length ? '③ 학생 명단에 학생을 넣어 주세요.' : '') : '';
     if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
     fmRender();
     let st = document.getElementById('fm-page-style');
     if (!st) { st = document.createElement('style'); st.id = 'fm-page-style'; document.head.appendChild(st); }
-    const pg = c.kind === 'ws' ? wsLayout(wsCfg()) : c.kind === 'pe' ? peLayout(peCfg()) : c.kind === 'bs' ? (bsCfg().mode === 'exam' ? bsExLayout(bsCfg()) : bsLayout(bsCfg())) : fmPage(c);
+    const pg = c.kind === 'ws' ? wsLayout(wsCfg()) : c.kind === 'pe' ? peLayout(peCfg()) : c.kind === 'bs' ? (bsCfg().mode === 'exam' ? bsExLayout(bsCfg()) : bsLayout(bsCfg())) : c.kind === 'et' ? { w: 210, h: 297 } : fmPage(c);
     st.textContent = '@media print { @page { size: ' + pg.w + 'mm ' + pg.h + 'mm; margin: 0; } }';
     const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
@@ -20707,26 +20841,443 @@
   }
   function bsExFontCustom(v) { const name = fmFontClean(v); if (!name) return; bsModeSet(function(m) { m.font = name; m.fontC = true; }); fmFontMsgTo('bs-ex-font-msg', [name]); }
 
-  // 양식 종류(시정표 / 이름표 / 명렬표 수합 / 학습지 / 수행평가 — 탭 순서, 사용자 10/5) 바꾸기
-  const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표', nt: '이름표' };
+  // ===== 🎫 양식: 수험표·가채점표 (관리자만 — 사용자 10/6 "일단 나만 쓸 거야") =====
+  // 모의고사(전국연합학력평가 등) 때 학생에게 주는 수험표(앞면)와 가채점표(뒷면). 사용자가 쓰던 엑셀(출력 시트, 63% 축소 인쇄)의 칸 크기를 mm로 옮김:
+  // A4 세로 한 장에 4명(한 명 = 174.2 × 68.72mm), 쪽 순서 = 앞면(4명 수험표) → 뒷면(같은 4명 가채점표) → 다음 4명… 이라 양면 인쇄(긴 쪽 넘김)하면 앞뒤가 맞는다.
+  // 명단(이름·생년월일·선택 과목)과 사진은 개인정보라 서버(Supabase)에 올리지 않고 이 컴퓨터의 브라우저(IndexedDB)에만 둔다 — localStorage는 가로채기가
+  // 서버에 올리므로 안 씀(홈의 💾 백업에도 안 들어감). 대신 ⑤ 💾 백업 파일(JSON, 사진 포함)을 원하는 곳(USB 등)에 저장하고 📂 불러온다.
+  const ET_DB_NAME = 'smartboard-local', ET_DB_STORE = 'kv', ET_DB_KEY = 'et-data';
+  const ET_TIMES_DEFAULT = '1 | 08:40~10:00 | 국어 | 80분\n2 | 10:30~12:10 | 수학 | 100분\n3 | 13:10~14:20 | 영어 | 70분\n4 | 14:50~15:20 | 한국사 | 30분\n4 | 15:35~16:37 | 사회/과학탐구 | 62분';
+  const ET_NOTE_DEFAULT = '* 수험생은 08:10(2~5교시는 시험시작 10분전)까지\n시험실 입실을 완료해야 합니다.';
+  function etYearDefault() { const d = new Date(); return String(d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1); } // 학년도(3월부터 새 학년도)
+  const ET_CFG_DEFAULT = { year: '', exam: '7월 전국연합학력평가', school: '부광고등학교', schoolNo: '14115', place: '부광고등학교', grade: 3, cls: 1, times: ET_TIMES_DEFAULT, note: ET_NOTE_DEFAULT };
+  const ET_SUBJ = { kor: ['화법과작문', '언어와매체'], math: ['확률과통계', '미적분', '기하'],
+    inq: ['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와법', '사회문화', '물리학1', '화학1', '생명과학1', '지구과학1', '물리학2', '화학2', '생명과학2', '지구과학2'] };
+  // 가채점표 줄(위에서 11줄 = 4.48mm × 10 + 6mm): "1-5"는 범위(답 칸 = 문항 수, 나머지는 빈칸), {n, m}은 단답형 두 문항(번호 | 답 | 번호 | 답), {n, w}는 단답형 한 문항(답 칸 w개 폭),
+  // {h}는 블록 안 머리 줄(제2외국어·탐구2), null은 빈 줄. 국어·수학은 왼쪽에 공통(7줄)·선택(3줄) 세로 칸, 마지막 줄은 두 블록에 걸친 ★ 안내
+  const ET_BACK = {
+    kor: { label: ['공\n통', '선\n택'], rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-34', '35-39', '40-44', '45'] },
+    math: { label: ['공\n통', '선\n택'], rows: ['1-5', '6-10', '11-15', { n: '16', m: '17' }, { n: '18', m: '19' }, { n: '20', m: '21' }, { n: '22', w: 2 }, '23-27', { n: '28', w: 1 }, { n: '29', m: '30' }] },
+    eng: { rows: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40', '41-45', null, null] },
+    hist: { rows: ['1-5', '6-10', '11-15', '16-20', { h: '제2외국어' }, '1-5', '6-10', '11-15', '16-20', '21-25', '26-30'] },
+    inq: { rows: ['1-5', '6-10', '11-15', '16-20', { h: 'inq2' }, '1-5', '6-10', '11-15', '16-20', null, null] },
+  };
+  const etState = { loaded: false, loading: false, noDb: false, data: null, saveTimer: null, renderTimer: null, wired: false };
+  function etAllowed() { return !!(window.currentTeacher && window.currentTeacher.is_admin); }
+  function etDefault() { return { cfg: Object.assign({}, ET_CFG_DEFAULT, { year: etYearDefault() }), students: [] }; }
+  function etNewStu(no) { return { no: no == null ? '' : String(no), name: '', birth: '', kor: '', math: '', inq1: '', inq2: '', photo: '' }; }
+  function etNorm(d) { // 저장된 것·백업 파일에서 읽은 것을 늘 같은 모양으로
+    const out = etDefault();
+    if (d && typeof d === 'object') {
+      if (d.cfg && typeof d.cfg === 'object') Object.keys(ET_CFG_DEFAULT).forEach(function(k) { if (d.cfg[k] != null) out.cfg[k] = d.cfg[k]; });
+      if (Array.isArray(d.students)) out.students = d.students.filter(function(s) { return s && typeof s === 'object'; }).map(function(s) {
+        const o = etNewStu(s.no);
+        ['name', 'birth', 'kor', 'math', 'inq1', 'inq2'].forEach(function(k) { o[k] = s[k] == null ? '' : String(s[k]); });
+        o.photo = typeof s.photo === 'string' && s.photo.indexOf('data:image/') === 0 ? s.photo : '';
+        return o;
+      });
+    }
+    ['year', 'exam', 'school', 'schoolNo', 'place', 'times', 'note'].forEach(function(k) { out.cfg[k] = String(out.cfg[k] == null ? '' : out.cfg[k]); });
+    out.cfg.grade = Math.min(6, Math.max(1, parseInt(out.cfg.grade) || 3)); out.cfg.cls = Math.min(99, Math.max(1, parseInt(out.cfg.cls) || 1));
+    return out;
+  }
+  // 이 컴퓨터(브라우저)의 IndexedDB — 동기화 가로채기와 무관한 저장소
+  function etDb() {
+    return new Promise(function(res, rej) {
+      if (!window.indexedDB) return rej(new Error('no indexedDB'));
+      let r;
+      try { r = indexedDB.open(ET_DB_NAME, 1); } catch (e) { return rej(e); }
+      r.onupgradeneeded = function() { r.result.createObjectStore(ET_DB_STORE); };
+      r.onsuccess = function() { res(r.result); };
+      r.onerror = function() { rej(r.error); };
+    });
+  }
+  function etDbGet() {
+    return etDb().then(function(db) { return new Promise(function(res, rej) {
+      const q = db.transaction(ET_DB_STORE, 'readonly').objectStore(ET_DB_STORE).get(ET_DB_KEY);
+      q.onsuccess = function() { db.close(); res(q.result); }; q.onerror = function() { db.close(); rej(q.error); };
+    }); });
+  }
+  function etDbSet(val) {
+    return etDb().then(function(db) { return new Promise(function(res, rej) {
+      const tx = db.transaction(ET_DB_STORE, 'readwrite'); tx.objectStore(ET_DB_STORE).put(val, ET_DB_KEY);
+      tx.oncomplete = function() { db.close(); res(); }; tx.onerror = function() { db.close(); rej(tx.error); }; tx.onabort = function() { db.close(); rej(tx.error); };
+    }); });
+  }
+  function etCfg() { return etState.data || etDefault(); }
+  function etLoad() {
+    if (etState.loaded || etState.loading) return;
+    etState.loading = true;
+    etDbGet().then(function(v) { etState.data = etNorm(v); }, function() { etState.data = etDefault(); etState.noDb = true; }).then(function() {
+      etState.loaded = true; etState.loading = false;
+      if (etState.noDb) etStoreMsg('⚠️ 이 브라우저에는 저장할 수 없어요(시크릿 창 등) — 적은 내용은 창을 닫으면 사라지니 💾 백업 파일로 보관해 주세요.');
+      if (fmIsOpen() && fmCfg().kind === 'et') { etFillForm(); fmRender(); }
+    });
+  }
+  function etSave() { // 바뀔 때마다 모아서 한 번에 이 컴퓨터에만 — 서버엔 안 올림
+    if (etState.saveTimer) clearTimeout(etState.saveTimer);
+    etState.saveTimer = setTimeout(function() {
+      etState.saveTimer = null;
+      etDbSet(etState.data).catch(function() { etState.noDb = true; etStoreMsg('⚠️ 이 브라우저에 저장하지 못했어요 — 💾 백업 파일로 보관해 주세요.'); });
+    }, 400);
+  }
+  function etRenderSoon() { if (etState.renderTimer) clearTimeout(etState.renderTimer); etState.renderTimer = setTimeout(function() { etState.renderTimer = null; if (fmIsOpen() && fmCfg().kind === 'et') fmRender(); }, 150); }
+  function etMutate(fn) { if (!etState.loaded) return false; const d = etCfg(); etState.data = d; fn(d); etSave(); return true; }
+  function etList() { return etCfg().students.filter(function(s) { return String(s.name || '').trim(); }); } // 이름 없는 줄(＋로 더한 빈 줄)은 종이에 안 나옴
+  function etStuId(c, s) { const n = parseInt(s.no); return isFinite(n) && n > 0 ? String(c.grade) + String(c.cls).padStart(2, '0') + String(n).padStart(2, '0') : ''; }
+  function etMsgTo(id, t) { const el = document.getElementById(id); if (el) el.textContent = t || ''; }
+  function etStoreMsg(t) { etMsgTo('et-store-msg', t); }
+  function etListMsg(t) { etMsgTo('et-list-msg', t); }
+  function etPhotoMsg(t) { etMsgTo('et-photo-msg', t); }
+
+  // ----- 명단 넣기: 엑셀 붙여 넣기 / 명렬표 / 한 줄씩 -----
+  // 칸은 탭·쉼표(없으면 띄어쓰기). 숫자 다섯 자리 = 학번(끝 두 자리 번호), 여섯·여덟 자리 = 생년월일, 두 자리 이하 = 번호(둘이면 반·번호), 글자 = 이름 → 국어 → 수학 → 탐구1 → 탐구2 순서
+  const ET_HEAD = /^(반|번호|학번|이름|성명|생년월일|국어|수학|탐구1|탐구2|탐구|영어|한국사|선택1|선택2)$/;
+  function etParsePaste(text) {
+    const out = [];
+    String(text || '').split(/\r?\n/).forEach(function(line) {
+      let cells = line.split(/\t|,/).map(function(t) { return t.trim(); }).filter(Boolean);
+      if (cells.length === 1) cells = cells[0].split(/\s+/).filter(Boolean);
+      if (!cells.length || cells.some(function(t) { return /^(이름|성명|생년월일|학번)$/.test(t); }) || cells.every(function(t) { return ET_HEAD.test(t); })) return; // 머리 줄
+      const s = etNewStu(''), small = [], words = [];
+      cells.forEach(function(t) {
+        if (/^\d{5}$/.test(t)) s.no = String(parseInt(t.slice(3), 10));
+        else if (/^\d{6}$|^\d{8}$/.test(t)) s.birth = t.length === 8 ? t.slice(2) : t;
+        else if (/^\d{1,2}$/.test(t)) small.push(t);
+        else if (/^\d{4}[-./]\d{1,2}[-./]\d{1,2}$/.test(t)) { const p = t.split(/[-./]/); s.birth = p[0].slice(2) + p[1].padStart(2, '0') + p[2].padStart(2, '0'); }
+        else words.push(t);
+      });
+      if (!s.no && small.length) s.no = String(parseInt(small[small.length - 1], 10));
+      if (words.length) { s.name = words[0]; s.kor = words[1] || ''; s.math = words[2] || ''; s.inq1 = words[3] || ''; s.inq2 = words[4] || ''; }
+      if (s.no || s.name) out.push(s);
+    });
+    return out;
+  }
+  // 같은 번호가 있으면 그 줄의 적힌 칸만 고치고(사진은 그대로), 없으면 더한다
+  function etMerge(list) {
+    return etMutate(function(d) {
+      list.forEach(function(s) {
+        const i = s.no ? d.students.findIndex(function(x) { return x.no === s.no; }) : -1;
+        if (i >= 0) ['name', 'birth', 'kor', 'math', 'inq1', 'inq2'].forEach(function(k) { if (s[k]) d.students[i][k] = s[k]; });
+        else d.students.push(Object.assign(etNewStu(s.no), s));
+      });
+    });
+  }
+  function etApplyPaste() {
+    const ta = document.getElementById('et-paste'), list = etParsePaste(ta.value);
+    if (!list.length) return etListMsg('⚠️ 읽을 수 있는 줄이 없어요 — 한 줄에 한 명(번호 이름 생년월일 국어 수학 탐구1 탐구2).');
+    if (!etMerge(list)) return;
+    etSortStudents(true); ta.value = '';
+    etFillForm(); fmRender();
+    etListMsg('✅ ' + list.length + '명을 읽어 명단에 넣었어요(지금 ' + etList().length + '명).');
+  }
+  async function etImportRoster() {
+    if (!etState.loaded) return;
+    const c = etCfg().cfg, btn = document.getElementById('et-roster-btn');
+    btn.disabled = true; etListMsg('명렬표를 받는 중…');
+    try {
+      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.grade).eq('class_no', c.cls).order('number');
+      if (error) throw error;
+      const list = (data || []).map(function(st) { const s = etNewStu(Number(st.number)); s.name = st.name || ''; return s; });
+      if (!list.length) { etListMsg('⚠️ ' + c.grade + '학년 ' + c.cls + '반 명렬표가 비어 있어요(관리자 설정 → 명렬표).'); return; }
+      etMerge(list); etSortStudents(true);
+      etFillForm(); fmRender();
+      etListMsg('✅ ' + c.grade + '학년 ' + c.cls + '반 ' + list.length + '명의 번호·이름을 가져왔어요. 생년월일·선택 과목은 표에 적거나 📋 붙여 넣기로.');
+    } catch (e) { etListMsg('⚠️ 명렬표를 받지 못했어요. 인터넷 연결을 확인해 주세요.'); }
+    finally { btn.disabled = false; }
+  }
+  function etAddStudent() {
+    if (!etMutate(function(d) { d.students.push(etNewStu(d.students.reduce(function(m, s) { return Math.max(m, parseInt(s.no) || 0); }, 0) + 1)); })) return;
+    etFillForm(); fmRender();
+    const inp = document.querySelector('#et-table tbody tr:last-child input.et-name'); if (inp) inp.focus();
+  }
+  function etRemoveStudent(i) { if (etMutate(function(d) { d.students.splice(i, 1); })) { etFillForm(); fmRender(); } }
+  function etSortStudents(quiet) {
+    if (!etMutate(function(d) { d.students.sort(function(a, b) { return (parseInt(a.no) || 999) - (parseInt(b.no) || 999); }); })) return;
+    if (!quiet) { etFillForm(); fmRender(); }
+  }
+  function etStuEdit(i, k, v) { if (!etMutate(function(d) { if (d.students[i]) d.students[i][k] = v; })) return; if (k === 'no') etMarkDup(); etCount(); etRenderSoon(); }
+  function etMarkDup() { // 같은 번호가 둘이면 번호 칸을 빨갛게
+    const seen = {}; etCfg().students.forEach(function(s) { if (s.no) seen[s.no] = (seen[s.no] || 0) + 1; });
+    document.querySelectorAll('#et-table tbody tr').forEach(function(tr, i) { const s = etCfg().students[i]; tr.classList.toggle('et-dup', !!(s && s.no && seen[s.no] > 1)); });
+  }
+
+  // ----- 사진 -----
+  function etShrink(file) { // 가로 360px(세로 480) 안으로 줄여 JPEG — 한 반 사진을 모아도 1MB 안
+    return new Promise(function(res, rej) {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = function() {
+        try {
+          const r = Math.min(1, 360 / img.naturalWidth, 480 / img.naturalHeight), w = Math.max(1, Math.round(img.naturalWidth * r)), h = Math.max(1, Math.round(img.naturalHeight * r));
+          const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+          res(cv.toDataURL('image/jpeg', 0.85));
+        } catch (e) { rej(e); } finally { URL.revokeObjectURL(url); }
+      };
+      img.onerror = function() { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  // 파일 이름으로 학생 찾기: 학번(30101) → 이름(번호)의 번호 → 이름 → 앞·뒤의 숫자. 못 찾으면 -1
+  function etMatchPhoto(fname, students) {
+    const base = String(fname || '').replace(/\.[^.]+$/, '').trim();
+    const byNo = function(no) { return students.findIndex(function(s) { return s.no === String(parseInt(no, 10)); }); };
+    let m = base.match(/(?:^|\D)(\d{5})(?!\d)/), i;
+    if (m && (i = byNo(m[1].slice(3))) >= 0) return i;
+    m = base.match(/[(\[（]\s*(\d{1,2})\s*[)\]）]/);
+    if (m && (i = byNo(m[1])) >= 0) return i;
+    const hits = students.map(function(s, k) { return { i: k, n: s.name }; }).filter(function(x) { return x.n && x.n.length >= 2 && base.indexOf(x.n) >= 0; }).sort(function(a, b) { return b.n.length - a.n.length; });
+    if (hits.length === 1 || (hits.length > 1 && hits[0].n.length > hits[1].n.length)) return hits[0].i;
+    m = base.match(/^(\d{1,2})(?!\d)/) || base.match(/(?:^|\D)(\d{1,2})$/);
+    if (m && (i = byNo(m[1])) >= 0) return i;
+    return -1;
+  }
+  async function etPhotosPicked(files, idx) {
+    if (!etState.loaded || !files || !files.length) return;
+    const list = Array.prototype.slice.call(files), miss = [];
+    let ok = 0;
+    etPhotoMsg('사진 ' + list.length + '장을 줄이는 중…');
+    for (const f of list) {
+      const i = idx != null ? idx : etMatchPhoto(f.name, etCfg().students);
+      if (i < 0) { miss.push(f.name); continue; }
+      try { const url = await etShrink(f); etMutate(function(d) { if (d.students[i]) d.students[i].photo = url; }); ok++; } catch (e) { miss.push(f.name + '(읽기 실패)'); }
+    }
+    etFillForm(); fmRender();
+    etPhotoMsg((ok ? '✅ ' + ok + '장을 명단에 넣었어요.' : '') + (miss.length ? ' ⚠️ 연결 안 됨 ' + miss.length + '장: ' + miss.slice(0, 8).join(', ') + (miss.length > 8 ? ' …' : '') + ' — 파일 이름에 번호나 이름이 있어야 해요.' : ''));
+  }
+  async function etClearPhotos() {
+    const n = etCfg().students.filter(function(s) { return s.photo; }).length;
+    if (!n) return etPhotoMsg('지울 사진이 없어요.');
+    if (!(await customConfirm('사진 ' + n + '장을 모두 지울까요? (명단은 그대로)'))) return;
+    if (etMutate(function(d) { d.students.forEach(function(s) { s.photo = ''; }); })) { etFillForm(); fmRender(); etPhotoMsg('사진을 모두 지웠어요.'); }
+  }
+
+  // ----- 💾 백업 파일(JSON, 사진 포함) — 저장할 곳(USB 등)을 고를 수 있으면(크롬·엣지) 고르고, 아니면 다운로드 폴더 -----
+  function etStamp() { const n = new Date(); return n.getFullYear() + String(n.getMonth() + 1).padStart(2, '0') + String(n.getDate()).padStart(2, '0'); }
+  async function etBackupSave() {
+    if (!etState.loaded) return;
+    const d = etCfg(), name = '수험표_' + d.cfg.grade + '-' + d.cfg.cls + '_' + String(d.cfg.exam || '').replace(/[\\/:*?"<>|\s]+/g, '') + '_' + etStamp() + '.json';
+    const json = JSON.stringify({ app: 'smartboard', type: 'exam-ticket', ver: 1, savedAt: new Date().toISOString(), data: d });
+    const kb = Math.max(1, Math.round(json.length / 1024));
+    if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: '수험표 백업(JSON)', accept: { 'application/json': ['.json'] } }] });
+        const w = await h.createWritable(); await w.write(json); await w.close();
+        etStoreMsg('✅ 저장했어요: ' + h.name + ' (' + kb + 'KB) — 명단 ' + d.students.length + '명, 사진 ' + d.students.filter(function(s) { return s.photo; }).length + '장');
+        return;
+      } catch (e) { if (e && e.name === 'AbortError') return; } // 취소면 그만, 다른 오류면 아래 내려받기로
+    }
+    const blob = new Blob([json], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    etStoreMsg('✅ 다운로드 폴더에 저장했어요: ' + name + ' (' + kb + 'KB) — 필요하면 USB로 옮겨 두세요.');
+  }
+  function etBackupRestore(file) {
+    if (!file || !etState.loaded) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      let obj = null;
+      try { obj = JSON.parse(e.target.result); } catch (err) {}
+      const data = obj && obj.type === 'exam-ticket' && obj.data ? obj.data : obj && Array.isArray(obj.students) ? obj : null;
+      if (!data) return customAlert('수험표 백업 파일이 아니에요. 💾 백업 파일 저장으로 만든 .json 파일을 골라 주세요.');
+      const n = etNorm(data), cur = etList().length;
+      if (cur && !(await customConfirm('지금 명단 ' + cur + '명과 사진을 지우고 백업 파일의 ' + n.students.length + '명(' + n.cfg.grade + '학년 ' + n.cfg.cls + '반 · ' + n.cfg.exam + ')으로 바꿀까요?'))) return;
+      etState.data = n; etSave(); etFillForm(); fmRender();
+      etStoreMsg('✅ 불러왔어요: ' + file.name + ' — ' + n.students.length + '명, 사진 ' + n.students.filter(function(s) { return s.photo; }).length + '장');
+    };
+    reader.readAsText(file);
+  }
+
+  // ----- 왼쪽 입력칸 -----
+  function etCount() {
+    const all = etCfg().students, n = etList().length, p = all.filter(function(s) { return s.photo; }).length;
+    etMsgTo('et-count', n ? n + '명 · 사진 ' + p + '장' : '');
+    etMsgTo('et-photo-count', n ? '사진 ' + p + ' / ' + n + '명' : '');
+  }
+  function etFillForm() {
+    const c = etCfg().cfg, loaded = etState.loaded;
+    if (!loaded) etLoad();
+    const grid = document.getElementById('et-grid');
+    if (!etState.wired) { // 입력칸은 한 번만 연결(표를 다시 그려도 그대로)
+      etState.wired = true;
+      grid.addEventListener('input', function(e) {
+        const el = e.target.closest('.et-cfg'); if (!el || el.tagName === 'SELECT') return;
+        etMutate(function(d) { d.cfg[el.dataset.k] = el.value; }); etRenderSoon();
+      });
+      grid.addEventListener('change', function(e) {
+        const el = e.target.closest('select.et-cfg'); if (!el) return;
+        if (!etMutate(function(d) { d.cfg[el.dataset.k] = Math.max(1, parseInt(el.value) || 1); })) return;
+        etFillForm(); fmRender();
+      });
+      document.getElementById('et-table').addEventListener('input', function(e) {
+        const el = e.target.closest('input[data-i]'); if (!el) return;
+        etStuEdit(+el.dataset.i, el.dataset.k, el.value);
+      });
+    }
+    grid.querySelectorAll('.et-cfg').forEach(function(el) {
+      el.disabled = !loaded;
+      if (el.tagName !== 'SELECT' && document.activeElement !== el) el.value = c[el.dataset.k] == null ? '' : c[el.dataset.k];
+    });
+    const gs = document.getElementById('et-grade'); gs.innerHTML = gradeOptionsHtml(c.grade); gs.value = String(c.grade);
+    const cs = window.classStructure || { classCounts: [] }, cnt = Math.max((cs.classCounts && cs.classCounts[c.grade - 1]) || 0, c.cls, 1);
+    let ch = ''; for (let k = 1; k <= cnt; k++) ch += '<option value="' + k + '">' + k + '반</option>';
+    const sel = document.getElementById('et-cls'); sel.innerHTML = ch; sel.value = String(c.cls);
+    ['kor', 'math', 'inq'].forEach(function(k) { document.getElementById('et-dl-' + k).innerHTML = ET_SUBJ[k].map(function(s) { return '<option value="' + s + '">'; }).join(''); });
+    ['et-roster-btn', 'et-add-btn', 'et-sort-btn', 'et-paste-btn', 'et-photos-btn', 'et-photos-clear', 'et-backup-btn', 'et-restore-btn'].forEach(function(id) { document.getElementById(id).disabled = !loaded; });
+    etFillTable(); etCount();
+  }
+  function etFillTable() {
+    const rows = etCfg().students, tbl = document.getElementById('et-table');
+    let h = '<thead><tr><th class="et-c-no">번호</th><th class="et-c-name">이름</th><th class="et-c-birth">생년월일</th><th>국어</th><th>수학</th><th>탐구1</th><th>탐구2</th><th class="et-c-ph">사진</th><th class="et-c-x"></th></tr></thead><tbody>';
+    rows.forEach(function(s, i) {
+      const inp = function(k, extra) { return '<input type="text" class="lp-input et-' + k + '" data-i="' + i + '" data-k="' + k + '" value="' + ntEsc(s[k]) + '"' + (extra || '') + '>'; };
+      h += '<tr data-i="' + i + '"><td>' + inp('no', ' inputmode="numeric"') + '</td><td>' + inp('name') + '</td><td>' + inp('birth', ' placeholder="080710" inputmode="numeric"') + '</td>' +
+        '<td>' + inp('kor', ' list="et-dl-kor"') + '</td><td>' + inp('math', ' list="et-dl-math"') + '</td><td>' + inp('inq1', ' list="et-dl-inq"') + '</td><td>' + inp('inq2', ' list="et-dl-inq"') + '</td>' +
+        '<td class="et-c-ph">' + (s.photo ? '<img class="et-thumb" src="' + s.photo + '" alt="" title="눌러서 다른 사진으로" onclick="this.nextElementSibling.click()">' : '<button class="et-ph-btn" title="이 학생 사진 올리기" onclick="this.nextElementSibling.click()">📷</button>') +
+        '<input type="file" accept="image/*" style="display:none;" onchange="etPhotosPicked(this.files, ' + i + '); this.value=\'\';"></td>' +
+        '<td class="et-c-x"><button class="et-x" title="이 줄 지우기" onclick="etRemoveStudent(' + i + ')">✕</button></td></tr>';
+    });
+    tbl.innerHTML = h + '</tbody>';
+    if (!rows.length && etState.loaded) etListMsg('아직 학생이 없어요 — 🏫 명렬표에서 가져오거나 📋 엑셀에서 붙여 넣어요.');
+    etMarkDup();
+  }
+
+  // ----- 종이 그리기 -----
+  function etParseTimes(text) { // 한 줄 = 교시 | 시간 | 영역 | 분 (최대 5줄)
+    return String(text || '').split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean).slice(0, 5).map(function(l) {
+      const c = l.split(/\s*[|\t]\s*/); return { p: (c[0] || '').replace(/교시$/, ''), time: c[1] || '', area: c[2] || '', min: (c[3] || '').replace(/^\(|\)$/g, '') };
+    });
+  }
+  // 수험표 오른쪽 안내 칸: 학번·성명 → 교시마다 영역(국어·수학은 학생의 선택 과목까지, 탐구는 "탐구") → 제1·제2선택 → 시험장소
+  function etInfoRows(c, s) {
+    const rows = [['학번', etStuId(c, s)], ['성명', s.name]], per = [];
+    etParseTimes(c.times).forEach(function(t) {
+      let a = t.area;
+      if (/국어/.test(a)) a = '국어' + (s.kor ? '-' + s.kor : ''); else if (/수학/.test(a)) a = '수학' + (s.math ? '-' + s.math : ''); else if (/탐구/.test(a)) a = '탐구';
+      const e = per.find(function(x) { return x.p === t.p; }); if (e) e.a.push(a); else per.push({ p: t.p, a: [a] });
+    });
+    per.forEach(function(x) { rows.push([x.p + '교시', x.a.join(', ')]); });
+    rows.push(['제1선택', s.inq1 || '', 1], ['제2선택', s.inq2 || '', 1], ['시험장소', c.place || '']);
+    return rows.slice(0, 13);
+  }
+  function etTd(cls, t, cs, rs) { return '<td' + (cls ? ' class="' + cls + '"' : '') + (cs > 1 ? ' colspan="' + cs + '"' : '') + (rs > 1 ? ' rowspan="' + rs + '"' : '') + '>' + (t == null ? '' : t) + '</td>'; }
+  // 엑셀 A~AF 열 너비(mm, 63%). 오른쪽 안내 칸(Z~AF 37.85mm)만 엑셀(12.84 | 3.84 | 21.17)보다 값 칸을 넓힘(11 | 2.8 | 24.05) — "수학-확률과통계"가 잘리지 않게
+  const ET_COLS_F = [5, 7.84, 5, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 4.5, 6.5, 2.8, 9.05, 5, 5, 5]; // 32칸 = 174.2mm
+  const ET_COLS_B = [5, 7.84, 5, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 5, 7.84, 5, 5, 5, 5, 5]; // AG~BL
+  // 칸 너비는 표 너비(174.2mm)에 대한 %로 — mm로 적으면 크롬이 합쳐진 테두리 두께(32칸 × 0.15mm ≈ 5mm)를 더해 표가 카드보다 넓어진다. 줄 높이도 같은 이유로 %(CSS)
+  function etColgroup(ws) { const sum = ws.reduce(function(a, b) { return a + b; }, 0); return '<colgroup>' + ws.map(function(w) { return '<col style="width:' + (w / sum * 100).toFixed(3) + '%">'; }).join('') + '</colgroup>'; }
+  // 앞면(수험표): 왼쪽 13칸(제목·사진·반·번호·성명·생년월일) | 시간표 12칸 | 안내 6칸 — 15줄(마지막 줄 6mm). 줄마다 세 덩이의 칸을 이어 붙인다
+  function etFrontHtml(c, s) {
+    const td = etTd, info = etInfoRows(c, s), times = etParseTimes(c.times), L = [], M = [], R = [];
+    for (let r = 1; r <= 15; r++) { L[r] = ''; M[r] = ''; R[r] = ''; }
+    L[1] = td('et-t1', ntEsc((c.year ? c.year + '학년도 ' : '') + (c.exam || '')), 13);
+    L[2] = td('et-t3', '수&nbsp;&nbsp;&nbsp;험&nbsp;&nbsp;&nbsp;표', 13, 2);
+    L[4] = td('et-photo-cell', '<div class="et-photo' + (s.photo ? '' : ' empty') + '">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : '사진') + '</div>', 6, 12) + td('et-lh', '반', 3, 2) + td('et-lh', '번호', 4, 2);
+    L[6] = td('et-lv', ntEsc(String(c.cls)), 3, 2) + td('et-lv', ntEsc(s.no), 4, 2);
+    L[8] = td('et-lh', '성명', 7, 2); L[10] = td('et-lv', ntEsc(s.name), 7, 2);
+    L[12] = td('et-lh', '생년월일', 7, 2); L[14] = td('et-lv', ntEsc(s.birth), 7, 2);
+    M[1] = td('et-t2 et-mid-l', '시&nbsp;&nbsp;험&nbsp;&nbsp;시&nbsp;&nbsp;간&nbsp;&nbsp;표', 12, 2);
+    M[3] = td('et-th et-tc et-mid-l', '교시', 2) + td('et-th', '시간', 5) + td('et-th et-tc', '영역', 5);
+    times.forEach(function(t, i) {
+      const r = 4 + i * 2;
+      if (!(i > 0 && times[i - 1].p === t.p)) { let k = 1; while (times[i + k] && times[i + k].p === t.p) k++; M[r] += td('et-tt et-mid-l', ntEsc(t.p), 2, 2 * k); } // 같은 교시가 이어지면(4교시 한국사·탐구) 교시 칸을 합친다
+      M[r] += td('et-tp', ntEsc(t.time), 5) + td('et-ta et-tt', ntEsc(t.area), 5, 2);
+      M[r + 1] += td('et-tp', t.min ? '(' + ntEsc(t.min) + ')' : '', 5);
+    });
+    for (let i = times.length; i < 5; i++) { const r = 4 + i * 2; M[r] += td('et-tt et-mid-l', '', 2, 2) + td('et-tp', '', 5) + td('et-ta et-tt', '', 5, 2); M[r + 1] += td('et-tp', '', 5); }
+    M[14] = td('et-tn et-mid-l', ntEsc(c.note || ''), 12, 2);
+    R[1] = td('et-mid-l', '', 7); // 오른쪽 안내는 7칸(Z~AF): 이름표 2 | : 1 | 값 4
+    for (let r = 2; r <= 15; r++) { const x = info[r - 2]; R[r] = x ? td('et-info et-il et-mid-l' + (x[2] ? ' et-ind' : ''), ntEsc(x[0]), 2) + td('et-info', ':', 1) + td('et-info', ntEsc(x[1]), 4) : td('et-mid-l', '', 7); }
+    let h = '<table class="et-tbl">' + etColgroup(ET_COLS_F);
+    for (let r = 1; r <= 15; r++) h += '<tr' + (r === 15 ? ' class="et-last"' : '') + '>' + L[r] + M[r] + R[r] + '</tr>';
+    return '<div class="et-card">' + h + '</table></div>';
+  }
+  // 뒷면(가채점표): 머리(제목 | 학년 반 번 이름 | 학교번호·학교) 3줄 + 국어 7칸 | 수학 7칸 | 영어 6칸 | 한국사 6칸 | 탐구 6칸 표(머리 줄 + 11줄)
+  function etBackHtml(c, s) {
+    const td = etTd, subj = function(n, v) { return n + (v ? '(' + v + ')' : ''); };
+    const heads = [[subj('국어', s.kor), 7], [subj('수학', s.math), 7], ['영어', 6], ['한국사', 6], [subj('탐구1', s.inq1), 6]];
+    // 블록 한 줄(범위 칸 + 답 칸 5개 폭): first = 블록 첫 칸(굵은 왼쪽 선), last = 블록 끝 칸(굵은 오른쪽 선), bottom = 블록 마지막 줄(굵은 아래 선)
+    const rowCells = function(spec, first, last, bottom) {
+      const fl = first ? ' et-bl' : '', lr = last ? ' et-br' : '', b = bottom ? ' et-bb' : '';
+      if (spec == null) return td('et-nb' + fl + lr, '', 6);
+      if (spec.h) return td('et-sh' + fl + lr, ntEsc(spec.h === 'inq2' ? subj('탐구2', s.inq2) : spec.h), 6);
+      let h = '';
+      if (typeof spec === 'string') {
+        const m = spec.match(/^(\d+)-(\d+)$/), n = m ? Math.min(5, +m[2] - +m[1] + 1) : 1;
+        h += td('et-rg' + fl + b, spec);
+        for (let k = 0; k < 5; k++) {
+          if (k < n) h += td('et-ans' + (k ? ' et-dot' : '') + (k === 4 ? lr : '') + b, '');
+          else { h += td('et-blank' + lr + b, '', 5 - k); break; }
+        }
+        return h;
+      }
+      h += td('et-rg' + fl + b, spec.n); // 단답형: 번호 | 답(2칸) | 번호 | 답(2칸) 또는 번호 | 답(w칸) | 빈칸
+      if (spec.m) h += td('et-ans' + b, '', 2) + td('et-rg' + b, spec.m) + td('et-ans' + lr + b, '', 2);
+      else h += td('et-ans' + b, '', spec.w) + td('et-blank' + lr + b, '', 5 - spec.w);
+      return h;
+    };
+    let h = '<div class="et-hd"><div class="et-hd-t">' + ntEsc((c.year ? c.year + '학년도 ' : '') + (c.exam || '') + ' 가채점표') + '</div>' +
+      '<div class="et-hd-s">' + ntEsc(c.grade + '학년 ' + c.cls + '반 ' + (s.no ? s.no + '번 ' : '') + (s.name || '')) + '</div>' +
+      '<div class="et-hd-r"><div class="et-sn">' + ntEsc(c.schoolNo ? '학교번호 ' + c.schoolNo : '') + '</div><div class="et-sc">' + ntEsc(c.school || '') + '</div></div></div>';
+    h += '<table class="et-tbl">' + etColgroup(ET_COLS_B) + '<tr>' + heads.map(function(x, i) { return td('et-sh' + (i === 0 ? ' et-bl' : '') + (i === 4 ? ' et-br' : ''), ntEsc(x[0]), x[1]); }).join('') + '</tr>';
+    const B = ET_BACK;
+    for (let r = 0; r < 11; r++) {
+      let row = '';
+      if (r === 10) row += td('et-note', '★ 정확한 채점을 위해 칸 중앙에 맞춰 기입해 주세요!&nbsp;&nbsp;선택과목 과목코드 확인!!', 14);
+      else [B.kor, B.math].forEach(function(blk) {
+        if (r === 0) row += td('et-lb et-bl', ntEsc(blk.label[0]), 1, 7); else if (r === 7) row += td('et-lb et-bl et-bb', ntEsc(blk.label[1]), 1, 3);
+        row += rowCells(blk.rows[r], false, true, r === 9);
+      });
+      row += rowCells(B.eng.rows[r], true, true, r === 8) + rowCells(B.hist.rows[r], true, true, r === 10) + rowCells(B.inq.rows[r], true, true, r === 8);
+      h += '<tr' + (r === 10 ? ' class="et-last"' : '') + '>' + row + '</tr>';
+    }
+    return '<div class="et-card">' + h + '</table></div>';
+  }
+  function etRender() {
+    const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
+    document.getElementById('fm-fit-info').textContent = '';
+    if (!etState.loaded) { etLoad(); box.innerHTML = '<div class="fm-empty">이 컴퓨터에 저장된 명단을 불러오는 중…</div>'; label.textContent = ''; return; }
+    const d = etCfg(), list = etList();
+    if (!list.length) { box.innerHTML = '<div class="fm-empty">왼쪽 <b>③ 학생 명단</b>에 학생을 넣어 주세요.<br>🏫 명렬표에서 가져오기 또는 📋 엑셀에서 붙여 넣기</div>'; label.textContent = ''; return; }
+    const sheets = [];
+    for (let i = 0; i < list.length; i += 4) { // 4명씩: 앞면 한 장 → 같은 4명의 뒷면 한 장
+      const ch = list.slice(i, i + 4);
+      sheets.push('<div class="fm-sheet et-sheet et-front">' + ch.map(function(s) { return etFrontHtml(d.cfg, s); }).join('') + '</div>');
+      sheets.push('<div class="fm-sheet et-sheet et-back">' + ch.map(function(s) { return etBackHtml(d.cfg, s); }).join('') + '</div>');
+    }
+    box.innerHTML = sheets.join('');
+    label.textContent = 'A4 세로 · 학생 ' + list.length + '명 · 종이 ' + (sheets.length / 2) + '장(앞면 수험표 · 뒷면 가채점표 = ' + sheets.length + '쪽)';
+    fmFitPreview();
+  }
+
+  // 양식 종류(시정표 / 이름표 / 명렬표 수합 / 학습지 / 수행평가 / 수험표(관리자만) — 탭 순서, 사용자 10/5) 바꾸기
+  const FM_KIND_NAME = { roster: '명렬표 수합', ws: '학습지', pe: '수행평가', bs: '시정표', nt: '이름표', et: '수험표' };
   function fmSetKind(k) { ntCloseFontMenu(); fmSet({ kind: FM_KIND_NAME[k] ? k : 'roster' }); fmFillForm(); fmRender(); }
   function fmShowKind(kind) {
-    const nt = kind === 'nt';
+    const nt = kind === 'nt', et = kind === 'et';
+    document.getElementById('fm-tab-et').style.display = etAllowed() ? '' : 'none'; // 수험표 탭은 관리자만(사용자 10/6 "일단 나만")
     document.querySelectorAll('#fm-kind-switch .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.kind === kind); });
-    [['fm', 'roster'], ['ws', 'ws'], ['pe', 'pe'], ['bs', 'bs'], ['nt', 'nt']].forEach(function(x) {
+    [['fm', 'roster'], ['ws', 'ws'], ['pe', 'pe'], ['bs', 'bs'], ['nt', 'nt'], ['et', 'et']].forEach(function(x) {
       document.getElementById(x[0] + '-guide').style.display = kind === x[1] ? '' : 'none';
       document.getElementById(x[0] + '-grid').style.display = kind === x[1] ? '' : 'none';
     });
     document.getElementById('fm-xlsx-btn').style.display = kind === 'roster' ? '' : 'none';
-    // 이름표는 화면에서 바로 인쇄(한글 파일 없음 — 둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) → ⑦ 🖨️ 인쇄/PDF만
-    document.getElementById('fm-hwpx-btn').style.display = nt ? 'none' : '';
+    // 이름표·수험표는 화면에서 바로 인쇄(한글 파일 없음 — 이름표는 둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서, 수험표는 사진·양면) → 🖨️ 인쇄/PDF만
+    document.getElementById('fm-hwpx-btn').style.display = nt || et ? 'none' : '';
     document.getElementById('fm-print-no').style.display = nt ? '' : 'none';
-    document.getElementById('fm-out-note').innerHTML = nt ? '인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 — 적은 크기(cm) 그대로 나와요.' : '한글 파일은 한글에서 그대로 고칠 수 있어요.';
-    document.getElementById('fm-reset-btn').title = FM_KIND_NAME[kind] + ' 설정만 처음 상태로 되돌려요(다른 양식은 그대로)';
+    document.getElementById('fm-out-note').innerHTML = nt ? '인쇄 창에서 배율은 <b>기본값(100%)</b> 그대로 — 적은 크기(cm) 그대로 나와요.'
+      : et ? '<b>양면 인쇄(긴 쪽 넘김)</b>로 — 앞면 수험표, 뒷면 가채점표. 배율은 <b>기본값(100%)</b> 그대로.' : '한글 파일은 한글에서 그대로 고칠 수 있어요.';
+    document.getElementById('fm-reset-btn').title = et ? '수험표의 명단·사진·시험 정보를 모두 지워요(이 컴퓨터에만 있는 자료)' : FM_KIND_NAME[kind] + ' 설정만 처음 상태로 되돌려요(다른 양식은 그대로)';
   }
   // 🗑 초기화: 지금 보고 있는 양식의 설정만 처음 상태로(양식마다 따로 — 다른 양식 설정은 그대로)
   async function fmResetKind() {
     const kind = fmCfg().kind, ws = kind === 'ws';
+    if (kind === 'et') { // 수험표는 이 컴퓨터의 명단·사진까지(서버에 없음 — 되돌릴 길이 없으니 백업 먼저)
+      if (!etState.loaded) return;
+      if (!(await customConfirm('수험표의 학생 명단·사진·시험 정보를 모두 지울까요?\n(이 컴퓨터에만 저장된 자료라 지우면 되돌릴 수 없어요 — 필요하면 먼저 ⑤ 💾 백업 파일로 저장해 두세요)'))) return;
+      etState.data = etDefault(); etSave(); etFillForm(); fmRender(); etStoreMsg('모두 지웠어요.');
+      return;
+    }
     const msg = kind === 'nt'
       ? '이름표 설정을 모두 처음 상태로 되돌릴까요?\n(게시판 내용·사물함 반·분리수거 종류·크기·장수·글꼴·디자인·색이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
       : kind === 'bs'

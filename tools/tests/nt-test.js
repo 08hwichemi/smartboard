@@ -212,7 +212,7 @@ function pdfInfo(buf) {
   check('홈 아래 "공통" 선, 시간표와 결석계 사이 "학급" 선', JSON.stringify(sep) === JSON.stringify(['rail-home-btn|공통|rail-roster-btn', 'rail-persontt-btn|학급|rail-absence-btn']), sep);
 
   await P.click('#rail-forms-btn'); await wait(300);
-  check('양식 탭 다섯 개: 시정표·이름표·명렬표 수합·학습지·수행평가(이름표는 시정표 뒤), 처음엔 명렬표 수합', (await P.evaluate(() => [...document.querySelectorAll('#fm-kind-switch .tab-btn')].map(b => b.textContent.trim()).join(','))) === '시정표,이름표,명렬표 수합,학습지,수행평가' && !(await ntTab(P)));
+  check('양식 탭 다섯 개: 시정표·이름표·명렬표 수합·학습지·수행평가(이름표는 시정표 뒤), 처음엔 명렬표 수합', (await P.evaluate(() => [...document.querySelectorAll('#fm-kind-switch .tab-btn')].filter(b => b.style.display !== 'none').map(b => b.textContent.trim()).join(','))) === '시정표,이름표,명렬표 수합,학습지,수행평가' && !(await ntTab(P)));
   await P.click('#fm-kind-switch [data-kind="nt"]'); await wait(300);
   const hdr = await P.evaluate(() => ({ grid: document.getElementById('nt-grid').style.display, guide: document.getElementById('nt-guide').style.display, fm: document.getElementById('fm-grid').style.display, ws: document.getElementById('ws-grid').style.display,
     hwpx: getComputedStyle(document.getElementById('fm-hwpx-btn')).display, xlsx: getComputedStyle(document.getElementById('fm-xlsx-btn')).display, print: document.getElementById('fm-print-btn').textContent.trim(), no7: getComputedStyle(document.getElementById('fm-print-no')).display,
