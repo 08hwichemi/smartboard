@@ -275,7 +275,7 @@ function check(label, cond, detail) {
   check('추가됨: 이름 자동, 일수 2', R.length === 1 && R[0].name === '라마바' && R[0].g === 3 && R[0].c === 1 && !R[0].dm && await P.evaluate(() => abDays(abClassRecords()[0])) === 2, R);
   check('추가 후 새 줄 비우고 번호 칸에 커서', await P.inputValue('#ab-n-detail') === '' && await P.inputValue('#ab-n-num') === '' && await P.evaluate(() => document.activeElement.id === 'ab-n-num'));
   check('방금 추가한 건 미리보기로 선택', await P.evaluate(() => document.querySelector('#ab-list tr.ab-sel') !== null));
-  check('확인서 양식 한 장', await P.evaluate(() => document.querySelectorAll('#ab-paper table.xf').length === 1 && document.querySelector('#ab-paper table.xf').dataset.form === 'confirm'));
+  check('확인서 양식 한 장(둘째 장 없음)', await P.evaluate(() => document.querySelectorAll('#ab-paper table.xf').length === 1 && document.querySelector('#ab-paper table.xf').dataset.form === 'confirm' && document.getElementById('ab-paper2').style.display === 'none' && !document.getElementById('ab-paper-box').classList.contains('ab-two')));
   check('확인서 값(엑셀 수식과 같음)',
     await cell('B2') === '질병결석 확인서' && await cell('I8') === '3학년' && await cell('J8') === '1반' && await cell('K8') === '2번' && await cell('J10') === '라마바' &&
     await cell('B12') === '본인은 다음과 같이 [질병결석]하였기에 보호자 연서로 신고합니다.' && await cell('C13') === '2026년 3월 3일' && await cell('G13') === '2026년 3월 4일' &&
@@ -288,7 +288,12 @@ function check(label, cond, detail) {
   R = await recs();
   check('교외체험학습은 증빙 "신청서" 자동', R.find(r => r.reason === '교외체험학습').proof === '교외체험학습 신청서', R);
   await add({ num: 4, reason: '교외체험학습', detail: '친척 방문', from: '2026-05-04', to: '2026-05-06', written: '2026-04-28' });
-  check('체험학습 → 신청서 양식만', await P.evaluate(() => document.querySelectorAll('#ab-paper table.xf').length === 1 && document.querySelector('#ab-paper table.xf').dataset.form === 'trip'));
+  check('체험학습 → 첫 장 신청서 + 둘째 장 결과보고서(한글 양식)', await P.evaluate(() => document.querySelectorAll('#ab-paper table.xf').length === 1 && document.querySelector('#ab-paper table.xf').dataset.form === 'trip' &&
+    document.getElementById('ab-paper2').style.display !== 'none' && document.querySelector('#ab-paper2 table.xf').dataset.form === 'report' && document.getElementById('ab-paper-box').classList.contains('ab-two') && /결과보고서/.test(document.getElementById('ab-prev-label').textContent)));
+  const rp = (c) => P.evaluate((c) => { const el = document.querySelector('#ab-paper2 [data-c="' + c + '"]'); return el ? el.textContent : null; }, c);
+  check('결과보고서 값: 성명·학년 반 번·기간(5/4~5/6 2일간)·총 사용일수 5(이번 것까지)·학생 이름, 날짜는 연도만', await rp('name') === '차카타' && await rp('cls') === '제 3 학년 1 반 4 번' && await rp('period') === '2026년 5월 4일  ~  5월 6일  ( 2 ) 일간' && await rp('total') === '5' && await rp('student') === '차카타' && await rp('date') === '2026.      .      .',
+    await P.evaluate(() => [...document.querySelectorAll('#ab-paper2 [data-c]')].map(t => t.dataset.c + '=' + t.textContent)));
+  check('결과보고서 고정 글자(제목·장소·학습 형태·보호자·학교장 귀하·제출 기한) 그대로, 장소·제목은 빈칸', await P.evaluate(() => { const t = document.getElementById('ab-paper2').innerText; return /학교장허가 교외체험학습 결과보고서/.test(t) && /교외체험학습 장소/.test(t) && /현장체험학습/.test(t) && /보호자 :/.test(t) && /부광고등학교장\s+귀하/.test(t) && /제출 기한/.test(t); }));
   check('신청서 값: 이전 누적 3, 담임확인 5일, 기간·일수',
     await cell('L8') === '3' && await cell('I4') === '5일' && await cell('C6') === '차카타' && await cell('H6') === '4' && await cell('F6') === '3학년' &&
     await cell('E7') === '2026년 5월 4일' && await cell('L7') === '(2 일간)' && await cell('F24') === '(2026.5.4.' && await cell('I24') === '2026.5.6.)' && await cell('L30') === '차카타',
@@ -400,6 +405,10 @@ function check(label, cond, detail) {
   const pagesN = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   check('인쇄하면 딱 한 장', pagesN === 1, pagesN);
   await P.evaluate(() => abSelect(abClassRecords().find(r => r.reason === '교외체험학습').id)); await wait(200);
+  const pdf2 = await P.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+  check('교외체험학습은 인쇄하면 두 장(신청서 + 결과보고서)', (pdf2.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length === 2);
+  const p2 = await P.evaluate(() => { const paper = document.getElementById('ab-paper2').getBoundingClientRect(), t = document.querySelector('#ab-paper2 table').getBoundingClientRect(); return { top: Math.round(t.top - paper.top), l: Math.round(t.left - paper.left), r: Math.round(paper.right - t.right), b: Math.round(paper.bottom - t.bottom), w: Math.round(t.width) }; });
+  check('결과보고서: 한글 여백 그대로(위 25mm≈94px, 좌우 20mm≈76px, 표 170mm≈642px, 아래 남는 자리 그대로)', Math.abs(p2.top - 94) <= 3 && Math.abs(p2.l - 76) <= 3 && Math.abs(p2.r - 76) <= 3 && Math.abs(p2.w - 642) <= 3 && p2.b > 40, p2);
   const pt = await P.evaluate(() => { const paper = document.getElementById('ab-paper').getBoundingClientRect(), t = document.querySelector('#ab-paper table').getBoundingClientRect(); return { top: Math.round(t.top - paper.top), bottom: Math.round(paper.bottom - t.bottom), l: Math.round(t.left - paper.left), r: Math.round(paper.right - t.right) }; });
   check('신청서도 아래 여백 = 위 여백, 좌우 여백 11mm 이상', Math.abs(pt.top - pt.bottom) <= 6 && pt.l >= 41 && pt.r >= 41, pt);
   // 신청서 바깥 큰 상자: 양옆 선이 내려오는 마지막 줄에 아래 선이 있어야 상자가 닫힘(예전엔 아래가 열려 있었음)

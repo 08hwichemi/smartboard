@@ -1204,6 +1204,7 @@
     #ab-prev-scroll { flex: 1; min-height: 0; overflow: auto; }
     #ab-paper-box { position: relative; overflow: hidden; }
     .ab-paper { width: 210mm; height: 296.5mm; background: #fff; color: #000; position: relative; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.14); transform-origin: 0 0; }
+    #ab-paper2 { margin-top: 14px; } /* 교외체험학습: 신청서(#ab-paper) 뒤 둘째 장 = 결과보고서(한글 양식 → absence/forms.json "report") */
     .ab-paper .xf { table-layout: fixed; border-collapse: collapse; font-size: 11pt; color: #000; }
     .ab-paper .xf td { padding: 0 2px; overflow: visible; white-space: pre; line-height: 1.15; font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; }
     .ab-paper .xf td[style*="바탕"] { font-family: '함초롬바탕', 'HCR Batang', '바탕', Batang, serif; }
@@ -1254,6 +1255,8 @@
       body[data-print-target="absence"] #absence-page, body[data-print-target="absence"] #ab-body, body[data-print-target="absence"] #ab-right, body[data-print-target="absence"] #ab-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
       #ab-paper-box { width: auto !important; height: auto !important; overflow: visible !important; }
       .ab-paper { transform: none !important; box-shadow: none !important; break-after: avoid; break-inside: avoid; }
+      #ab-paper-box.ab-two #ab-paper { break-after: page; }
+      #ab-paper2 { margin-top: 0 !important; break-before: page; }
     }
 
     /* ===== 🏷️ 이름표 (게시판·사물함·분리수거함) — 10/5부터 📄 양식 만들기의 둘째 탭(시정표 뒤): 왼쪽 = #fm-left 안의 #nt-guide(지금 할 일)·#nt-grid, 미리보기 = 공용 #fm-pages ===== */
@@ -3299,7 +3302,7 @@
   </div>
 </div>
 
-<!-- 📋 결석계 — 결석 기록(학생별 현황·입력)과 확인서/교외체험학습 신청서 출력. 출력 양식은 부광고 엑셀 결석계 파일의
+<!-- 📋 결석계 — 결석 기록(학생별 현황·입력)과 확인서/교외체험학습 신청서(+ 둘째 장 결과보고서 — 학교 한글 양식, tools/absence_report_build.py) 출력. 출력 양식은 부광고 엑셀 결석계 파일의
      인쇄 시트를 그대로 옮긴 absence/forms.json(tools/absence_forms_build.py로 만듦)을 이 화면을 처음 열 때만 받는다.
      결석 기록은 학생 건강 사유가 들어가므로 개인 자료(ab-r-*)로만 저장 → 본인 계정에서만 보임(user_data_items RLS). -->
 <div id="absence-page" style="display:none; flex:1; min-height:0; flex-direction:column;">
@@ -3358,7 +3361,7 @@
         <div id="ab-prev-label" class="ab-muted" style="text-align:right;"></div>
       </div>
       <div id="ab-prev-scroll">
-        <div id="ab-paper-box"><div id="ab-paper" class="ab-paper"></div></div>
+        <div id="ab-paper-box"><div id="ab-paper" class="ab-paper"></div><div id="ab-paper2" class="ab-paper" style="display:none;"></div></div>
       </div>
     </div>
   </div>
@@ -13194,10 +13197,15 @@
       const recs = abClassRecords(), me = recs.findIndex(function(x) { return x.id === r.id; });
       const before = recs.slice(0, me).filter(function(x) { return x.num === r.num && x.reason === '교외체험학습'; })
         .reduce(function(a, x) { return a + abDays(x); }, 0);
+      // 둘째 장 = 결과보고서(한글 양식): 성명·학년 반 번·기간·총 사용일수(이번 것까지)·학생 이름만 채우고, 장소·학습 형태·제목·날짜·보호자는 학생이 손으로 씀.
+      const fp = r.from ? r.from.split('-').map(Number) : null, tp = r.to ? r.to.split('-').map(Number) : null;
+      const period = fp && tp ? fp[0] + '년 ' + fp[1] + '월 ' + fp[2] + '일  ~  ' + (tp[0] !== fp[0] ? tp[0] + '년 ' : '') + tp[1] + '월 ' + tp[2] + '일  ( ' + days + ' ) 일간' : '';
       return { form: 'trip', v: {
         I4: (before + days) + '일', C6: r.name || '', F6: r.g + '학년', G6: r.c + '반', H6: r.num,
         E7: abKDate(r.from), I7: abKDate(r.to), L7: '(' + days + ' 일간)', L8: before,
-        F24: '(' + abDotDate(r.from), I24: abDotDate(r.to) + ')', E28: abKDate(r.written), L30: r.name || '' } };
+        F24: '(' + abDotDate(r.from), I24: abDotDate(r.to) + ')', E28: abKDate(r.written), L30: r.name || '' },
+        form2: 'report', v2: { name: r.name || '', cls: '제 ' + r.g + ' 학년 ' + r.c + ' 반 ' + r.num + ' 번', period: period, total: before + days,
+          date: (tp ? tp[0] : new Date().getFullYear()) + '.      .      .', student: r.name || '' } };
     }
     return { form: 'confirm', v: {
       B2: r.reason + ' 확인서', I8: r.g + '학년', J8: r.c + '반', K8: r.num + '번', J10: r.name || '',
@@ -13221,10 +13229,23 @@
       });
       abFitPaper(); return;
     }
-    const fv = abFormValues(r), f = abForms[fv.form];
+    const fv = abFormValues(r);
+    abFillPaper(paper, abForms[fv.form], fv.v);
+    // 교외체험학습은 둘째 장(결과보고서)까지 — 한 번에 두 장 인쇄
+    const paper2 = document.getElementById('ab-paper2'), two = !!(fv.form2 && abForms[fv.form2]);
+    paper2.style.display = two ? '' : 'none';
+    document.getElementById('ab-paper-box').classList.toggle('ab-two', two);
+    if (two) abFillPaper(paper2, abForms[fv.form2], fv.v2); else paper2.innerHTML = '';
+    const n = recs.indexOf(r) + 1;
+    label.innerHTML = '연번 ' + n + ' · ' + r.num + '번 ' + escapeHtmlAttr(r.name || '') + ' · ' + (fv.form === 'trip' ? '교외체험학습 신청서' + (two ? ' + 결과보고서(2장)' : '') : escapeHtmlAttr(r.reason) + ' 확인서') +
+      (fv.form === 'confirm' && !r.proof ? '<br><span style="color:var(--alert);">⚠️ 증빙서류가 비어 있어요</span>' : '');
+    abFitPaper();
+  }
+  // 종이 한 장에 양식(absence/forms.json의 html)을 놓고 값을 채운다.
+  function abFillPaper(paper, f, vals) {
     paper.innerHTML = f.html;
     paper.querySelectorAll('[data-c]').forEach(function(td) {
-      const x = fv.v[td.dataset.c];
+      const x = vals[td.dataset.c];
       td.textContent = x == null ? '' : String(x);
       if (typeof x === 'number' && td.classList.contains('g')) td.style.textAlign = 'right'; // 엑셀 일반 서식의 숫자는 오른쪽 정렬
     });
@@ -13232,7 +13253,7 @@
     // transform 대신 zoom — transform은 차지하는 자리(원래 크기)가 그대로라 인쇄 때 표가 두 쪽으로 쪼개졌다.
     const t = paper.querySelector('table'), IN = 96, pw = 210 / 25.4 * IN;
     const m = f.margin_in.map(function(x) { return x * IN; });
-    const extra = 5 / 25.4 * IN; m[1] += extra; m[3] += extra; // 좌우 여백 5mm씩 더(사용자 요청 — 엑셀 여백은 너무 좁음)
+    if (!f.hwpx) { const extra = 5 / 25.4 * IN; m[1] += extra; m[3] += extra; } // 엑셀 양식은 좌우 여백 5mm씩 더(사용자 요청 — 엑셀 여백은 너무 좁음), 한글 양식은 그대로
     const w0 = t.offsetWidth;
     let s = (f.scale || 100) / 100;
     if (w0 * s > pw - m[1] - m[3]) s = (pw - m[1] - m[3]) / w0;
@@ -13241,6 +13262,7 @@
     paper.insertBefore(pos, t); pos.appendChild(t);
     t.style.position = 'static';
     t.style.zoom = s;
+    if (f.hwpx) return; // 한글 양식은 줄 높이도 원래대로(아래 남는 자리는 한글 문서와 같음)
     // 아래 여백이 위 여백과 같아지도록 줄 높이를 같은 비율로 늘린다(표 폭·글씨 크기는 그대로). 엑셀 원래 줄 높이(pt)를 기준으로 계산.
     const rowsPx = Array.prototype.map.call(t.rows, function(tr) { return (parseFloat(tr.style.height) || 0) * 96 / 72; });
     const h0 = rowsPx.reduce(function(a, b) { return a + b; }, 0);
@@ -13249,19 +13271,17 @@
       const k = want / h0;
       Array.prototype.forEach.call(t.rows, function(tr, i) { if (rowsPx[i] > 0) tr.style.height = (rowsPx[i] * k) + 'px'; });
     }
-    const n = recs.indexOf(r) + 1;
-    label.innerHTML = '연번 ' + n + ' · ' + r.num + '번 ' + escapeHtmlAttr(r.name || '') + ' · ' + (fv.form === 'trip' ? '교외체험학습 신청서' : escapeHtmlAttr(r.reason) + ' 확인서') +
-      (fv.form === 'confirm' && !r.proof ? '<br><span style="color:var(--alert);">⚠️ 증빙서류가 비어 있어요</span>' : '');
-    abFitPaper();
   }
   // 미리보기 칸 폭에 맞게 A4를 줄여 보여 줌(인쇄 때는 원래 크기).
   function abFitPaper() {
-    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper'), sc = document.getElementById('ab-prev-scroll');
+    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper'), paper2 = document.getElementById('ab-paper2'), sc = document.getElementById('ab-prev-scroll');
     if (!box || !sc.clientWidth) return;
     const pw = 210 / 25.4 * 96, ph = 296.5 / 25.4 * 96;
     const k = Math.min(1, (sc.clientWidth - 4) / pw);
     paper.style.transform = 'scale(' + k + ')';
-    box.style.width = Math.ceil(pw * k) + 'px'; box.style.height = Math.ceil(ph * k) + 'px';
+    const two = paper2 && paper2.style.display !== 'none';
+    if (two) { paper2.style.transform = 'scale(' + k + ')'; paper2.style.marginTop = (14 - ph * (1 - k)) + 'px'; } // 줄인 만큼 첫 장이 차지하는 빈 자리를 당김
+    box.style.width = Math.ceil(pw * k) + 'px'; box.style.height = Math.ceil(ph * k * (two ? 2 : 1) + (two ? 14 : 0)) + 'px';
   }
   async function abPrint() {
     const r = abClassRecords().find(function(x) { return x.id === abSelId; });
