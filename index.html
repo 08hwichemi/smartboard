@@ -1980,6 +1980,7 @@
     <input type="password" id="login-pw-input" placeholder="비밀번호" autocomplete="current-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
     <div id="login-error" style="color:#E5484D; font-size:12px; min-height:16px; margin-bottom:8px;"></div>
     <button class="top-btn accent" id="login-submit-btn" style="width:100%; padding:10px;" onclick="submitLogin()">로그인</button>
+    <button class="top-btn" id="login-retry-btn" style="display:none; width:100%; padding:10px; margin-top:8px;" onclick="retryBoot()">↻ 다시 시도</button>
     <a href="guide.html" target="_blank" rel="noopener" style="display:block; text-align:center; margin-top:12px; font-size:13px; font-weight:700; color:var(--accent-color); text-decoration:none;">📘 처음 오셨나요? 사용 안내 보기</a>
   </div>
 </div>
@@ -4553,10 +4554,11 @@
     }
   }
 
-  function showLoginGate(message) {
+  function showLoginGate(message, retry) {
     document.getElementById('login-gate-overlay').style.display = 'flex';
     document.getElementById('force-password-overlay').style.display = 'none';
     document.getElementById('login-error').innerText = message || '';
+    document.getElementById('login-retry-btn').style.display = retry ? '' : 'none'; // 세션은 살아 있는데 계정 정보만 못 받았을 때
     document.getElementById('login-submit-btn').disabled = false;
     setTimeout(function() { document.getElementById('login-name-input').focus(); }, 50);
   }
@@ -4565,6 +4567,13 @@
     document.getElementById('login-gate-overlay').style.display = 'none';
   }
 
+  async function retryBoot() { // ↻ 다시 시도: 살아 있는 세션으로 계정 정보를 다시 받는다
+    const btn = document.getElementById('login-retry-btn'); btn.disabled = true;
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data && data.session) await handleAuthedSession(data.session); else showLoginGate('로그인이 풀렸어요. 다시 로그인해 주세요.');
+    } finally { btn.disabled = false; }
+  }
   async function submitLogin() {
     const name = document.getElementById('login-name-input').value.trim();
     const pw = document.getElementById('login-pw-input').value;
@@ -4596,9 +4605,11 @@
     // 모바일 네트워크가 불안정하면 signOut() 요청이 응답 없이 걸려서(hang) 화면이
     // 아무 반응 없이 멈춘 것처럼 보일 수 있다 — 3초 넘게 응답이 없으면 포기하고
     // 아래에서 로컬 세션 토큰을 직접 지운 뒤 새로고침으로 넘어간다.
+    // scope: 'local' — supabase-js의 기본값은 'global'이라 한 기기에서 로그아웃하면 같은 계정의 다른 기기(PC·휴대폰)까지 모두 풀렸다(사용자 10/7: PC·휴대폰 동시에 로그인 풀림).
+    // 이 기기의 토큰만 지우고 다른 기기는 그대로 둔다.
     try {
       await Promise.race([
-        sb.auth.signOut(),
+        sb.auth.signOut({ scope: 'local' }),
         new Promise(function(resolve) { setTimeout(resolve, 3000); })
       ]);
     } catch (e) {
@@ -4615,10 +4626,23 @@
   }
 
   async function handleAuthedSession(session) {
-    const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager').eq('id', session.user.id).single();
+    // 계정 정보 읽기가 잠깐 실패(인터넷·서버 순간 장애)해도 바로 로그아웃하지 않고 세 번 다시 시도한다. 예전엔 한 번만 실패해도 signOut()(기본 scope 'global')을 불러서
+    // 이 기기뿐 아니라 같은 계정의 다른 기기까지 로그인이 풀렸다. 계정 줄이 정말 없을 때(지워진 계정, PGRST116)만 이 기기 토큰을 지운다.
+    let data = null, error = null;
+    for (let n = 0; n < 3; n++) {
+      const r = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager').eq('id', session.user.id).single();
+      data = r.data; error = r.error;
+      if (!error && data) break;
+      if (error && error.code === 'PGRST116') break;
+      await new Promise(function(resolve) { setTimeout(resolve, 700 * (n + 1)); });
+    }
     if (error || !data) {
-      await sb.auth.signOut();
-      showLoginGate('계정 정보를 불러오지 못했습니다. 다시 로그인해주세요.');
+      if (error && error.code === 'PGRST116') {
+        try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+        showLoginGate('이 계정을 찾을 수 없어요. 관리자에게 계정을 확인해 주세요.');
+      } else {
+        showLoginGate('서버에서 계정 정보를 받지 못했어요(인터넷 연결을 확인해 주세요). 로그인은 그대로예요 — ↻ 다시 시도를 눌러 주세요.', true);
+      }
       return;
     }
     window.currentTeacher = data;
