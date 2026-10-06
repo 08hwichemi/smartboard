@@ -438,13 +438,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#pe-w-orig'); await P.waitForTimeout(200);
   check('🔀 무작위: 순서가 바뀌고(같은 씨앗이면 늘 같은 순서), ↺ 적은 대로 되돌림', sh1[0] > 0 && sh1[1] !== '0,1,2,3,4,5,6,7,8,9' && sh1[1] === sh1b && sh1[1].split(',').sort().join() === '0,1,2,3,4,5,6,7,8,9' &&
     await P.evaluate(() => peCfg().wOrder === 'orig' && peWordSets(peCfg(), peWordParse(peCfg()))[0].items.map(w => w.i).join() === '0,1,2,3,4,5,6,7,8,9'), sh1);
-  check('↺ 적은 대로일 땐 "나오는 순서" 칩이 없음', await P.evaluate(() => !document.getElementById('pe-w-rand') && !document.getElementById('pe-w-abc')));
+  check('↺ 적은 대로일 땐 "나오는 순서" 줄이 숨음', await P.evaluate(() => !document.getElementById('pe-w-rand') && !document.getElementById('pe-w-abc') && document.getElementById('pe-w-order2').style.display === 'none'));
   await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
   const sub = await P.evaluate(() => ({ order: peCfg().wOrder, rand: !!document.getElementById('pe-w-rand'), abc: !!document.getElementById('pe-w-abc'), randOn: document.getElementById('pe-w-rand') && document.getElementById('pe-w-rand').classList.contains('on'), seed: peCfg().wSeed }));
   check('🔀 무작위를 누르면 아래에 나오는 순서 칩(🎲 랜덤 · 🔤 알파벳순)이 생기고 랜덤이 켜짐', sub.order === 'rand' && sub.rand && sub.abc && sub.randOn && sub.seed > 0, sub);
   await P.click('#pe-w-abc'); await P.waitForTimeout(200);
-  const abc = await P.evaluate(() => { const P = peWordParse(peCfg()), S = peWordSets(peCfg(), P); return { order: peCfg().wOrder, qs: S[0].items.map(w => w.q), on: [...document.querySelectorAll('#pe-w-order .nt-chip.on')].map(b => b.id).join() }; });
-  check('🔤 알파벳순: 단어 A→Z(대소문자 무시), 무작위·알파벳순 칩 켜짐', abc.order === 'abc' && abc.on === 'pe-w-shuffle,pe-w-abc' && abc.qs.join() === abc.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && abc.qs[0].toLowerCase() < abc.qs[abc.qs.length - 1].toLowerCase(), abc);
+  const abc = await P.evaluate(() => { const P = peWordParse(peCfg()), S = peWordSets(peCfg(), P); return { order: peCfg().wOrder, qs: S[0].items.map(w => w.q), on: [...document.querySelectorAll('#pe-w-order .nt-chip.on, #pe-w-order2 .nt-chip.on')].map(b => b.id).join(), row2: document.getElementById('pe-w-order2').style.display === '' && document.getElementById('pe-w-order2').getBoundingClientRect().top > document.getElementById('pe-w-order').getBoundingClientRect().bottom - 1, rows: document.getElementById('pe-w-text').rows }; });
+  check('🔤 알파벳순: 단어 A→Z(대소문자 무시), 무작위·알파벳순 칩 켜짐, 나오는 순서는 둘째 줄, 단어 칸은 4줄', abc.order === 'abc' && abc.on === 'pe-w-shuffle,pe-w-abc' && abc.row2 && abc.rows === 4 && abc.qs.join() === abc.qs.slice().sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' })).join() && abc.qs[0].toLowerCase() < abc.qs[abc.qs.length - 1].toLowerCase(), abc);
   await P.click('#pe-w-shuffle'); await P.waitForTimeout(200);
   check('이미 무작위(알파벳순)일 때 🔀 무작위를 또 눌러도 알파벳순 그대로', await P.evaluate(() => peCfg().wOrder === 'abc'));
   await P.click('#pe-w-rand'); await P.waitForTimeout(200);

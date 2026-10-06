@@ -1457,7 +1457,7 @@
     .bs-sub { margin: 0 auto; text-align: center; color: #000; }
     /* 단어 시험 */
     #pe-w-kind, #pe-w-tools, #pe-w-dir, #pe-w-trace, #pe-w-en, #pe-w-cols, #pe-w-pick, #pe-w-opts { gap: 4px; flex-wrap: wrap; }
-    #pe-w-text { resize: vertical; min-height: 120px; font-family: inherit; line-height: 1.5; tab-size: 12; white-space: pre; overflow-x: auto; }
+    #pe-w-text { resize: vertical; min-height: 64px; font-family: inherit; line-height: 1.5; tab-size: 12; white-space: pre; overflow-x: auto; } /* 처음엔 4줄(사용자 10/7: 너무 스크롤됨) — 모서리를 끌어 늘릴 수 있음 */
     #pe-w-note { resize: vertical; min-height: 44px; font-family: inherit; line-height: 1.5; }
     #pe-w-names input { min-width: 0; flex: 1; }
     #pe-w-pick-in { width: 58px; flex: none; padding-left: 5px; }
@@ -3652,7 +3652,7 @@
           <label class="nt-chip" id="pe-w-file-btn" title="엑셀(.xlsx·.xls)·CSV 파일의 첫 칸 = 단어(문제), 둘째 칸 = 뜻(답). 번호·품사 칸이 있어도 알아서 골라요.">📂 엑셀·CSV 파일<input type="file" id="pe-w-file" accept=".xlsx,.xls,.csv,.tsv,.txt" style="display:none;" onchange="peWordFile(this.files[0]); this.value='';"></label>
           <button class="nt-chip" id="pe-w-dedupe" style="display:none;" onclick="peWordDedupe()" title="같은 단어는 처음 것만 남겨요">중복 지우기</button>
         </div>
-        <textarea id="pe-w-text" class="lp-input" rows="8" spellcheck="false" oninput="peWordInput(this.value)" onkeydown="peWordTab(event)"></textarea>
+        <textarea id="pe-w-text" class="lp-input" rows="4" spellcheck="false" oninput="peWordInput(this.value)" onkeydown="peWordTab(event)"></textarea>
         <div class="nt-muted" id="pe-w-info"></div>
         <div class="ws-row" id="pe-w-names"><span class="ws-lb">칸 이름</span><input type="text" id="pe-w-qname" class="lp-input" oninput="peSet({ wQName: this.value }, true)" title="표 머리 줄의 문제 칸 이름"><input type="text" id="pe-w-aname" class="lp-input" oninput="peSet({ wAName: this.value }, true)" title="표 머리 줄의 답 칸 이름"></div>
         <div class="nt-row" id="pe-w-dir"></div>
@@ -3660,6 +3660,7 @@
         <div class="nt-row" id="pe-w-en"></div>
         <div class="nt-row" id="pe-w-cols"></div>
         <div class="nt-row" id="pe-w-order"></div>
+        <div class="nt-row" id="pe-w-order2" style="display:none;"></div>
         <div class="nt-row" id="pe-w-pick"></div>
         <div class="nt-row" id="pe-w-opts"></div>
         <textarea id="pe-w-note" class="lp-input" rows="2" oninput="peSet({ wNote: this.value })"></textarea>
@@ -19585,10 +19586,12 @@
     // 순서: ↺ 적은 대로 / 🔀 무작위 — 무작위를 누르면 그 아래 "나오는 순서" 칩(🎲 랜덤 · 🔤 알파벳순)이 나타남(선생님 요청 10/7: 무작위를 눌렀을 때 알파벳순인지 랜덤인지 고르게)
     const rnd = c.wOrder !== 'orig';
     document.getElementById('pe-w-order').innerHTML = '순서 ' + chip(!rnd, 'id="pe-w-orig" onclick="peSet({ wOrder: \'orig\' }, true)"', '↺ 적은 대로', '단어를 적은 순서 그대로') +
-      chip(rnd, 'id="pe-w-shuffle" onclick="peWordShuffle()"', '🔀 무작위', '적은 순서와 다르게 — 아래에서 🎲 랜덤 / 🔤 알파벳순을 골라요') +
-      (rnd ? '<span class="pe-sep"></span>나오는 순서 ' + chip(c.wOrder === 'rand', 'id="pe-w-rand" onclick="peWordReseed()"', c.wOrder === 'rand' ? '🎲 랜덤 (다시 섞기)' : '🎲 랜덤', '무작위 순서 — 누를 때마다 새로 섞여요(같은 시험지는 늘 같은 순서)') +
-        chip(c.wOrder === 'abc', 'id="pe-w-abc" onclick="peSet({ wOrder: \'abc\' }, true)"', '🔤 알파벳순', '단어의 알파벳(A→Z) 순서 — 뜻 → 영어여도 영어 단어 기준, B형은 Z→A') +
-        '<span class="nt-muted">N개만 뽑을 때도 뽑힌 단어가 이 순서로</span>' : '');
+      chip(rnd, 'id="pe-w-shuffle" onclick="peWordShuffle()"', '🔀 무작위', '적은 순서와 다르게 — 아래에서 🎲 랜덤 / 🔤 알파벳순을 골라요');
+    const o2 = document.getElementById('pe-w-order2'); // 무작위일 때만 둘째 줄(한 줄에 이어 두면 좁은 칸에서 어중간하게 꺾임 — 사용자 10/7)
+    o2.style.display = rnd ? '' : 'none';
+    o2.innerHTML = rnd ? '<span style="padding-left:28px;">↳ 나오는 순서</span> ' + chip(c.wOrder === 'rand', 'id="pe-w-rand" onclick="peWordReseed()"', c.wOrder === 'rand' ? '🎲 랜덤 (다시 섞기)' : '🎲 랜덤', '무작위 순서 — 누를 때마다 새로 섞여요(같은 시험지는 늘 같은 순서)') +
+      chip(c.wOrder === 'abc', 'id="pe-w-abc" onclick="peSet({ wOrder: \'abc\' }, true)"', '🔤 알파벳순', '단어의 알파벳(A→Z) 순서 — 뜻 → 영어여도 영어 단어 기준, B형은 Z→A') +
+      '<span class="nt-muted">N개만 뽑을 때도 이 순서로</span>' : '';
     document.getElementById('pe-w-pick').innerHTML = '출제 ' + chip(!c.wPick, 'data-wpick="0" onclick="peSet({ wPick: 0 }, true)"', '전부') +
       '<input type="number" id="pe-w-pick-in" class="lp-input" min="0" max="999" step="1" placeholder="개수" title="이만큼만 무작위로 뽑아 내요(0 = 전부)" onchange="peSet({ wPick: this.value }, true)">개만 무작위로' + (c.wPick ? '<span class="nt-muted">뽑힌 단어는 위 순서대로(' + (c.wOrder === 'abc' ? '🔀 무작위 · 🔤 알파벳순' : c.wOrder === 'rand' ? '🔀 무작위 · 🎲 랜덤' : '↺ 적은 대로 — 🔀 무작위를 누르면 랜덤·알파벳순을 고를 수 있어요') + ')</span>' : '');
     setVal('pe-w-pick-in', c.wPick || '');
