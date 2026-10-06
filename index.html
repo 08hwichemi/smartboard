@@ -3887,6 +3887,7 @@
               <div class="nt-row"><button class="nt-chip" id="et-paste-btn" onclick="etApplyPaste()">명단에 넣기</button><span class="nt-muted">같은 번호가 있으면 그 줄을 고치고(사진은 그대로), 없으면 더해요. 학번(30101)·반 숫자가 있어도 알아서 읽어요.</span></div>
             </div>
           </details>
+          <div class="nt-muted" id="et-sel-note" style="display:none;">ℹ️ <b>통합형(2028학년도~)</b>은 국어·수학에 선택 과목이 없고 탐구도 모두 통합사회·통합과학이라 <b>국어·수학·탐구1·탐구2 칸을 숨겼어요</b>(수험표·가채점표에도 안 나와요). 적어 둔 내용은 지워지지 않아서 ② 가채점표 칸을 선택과목형으로 돌리면 다시 보여요.</div>
           <datalist id="et-dl-kor"></datalist><datalist id="et-dl-math"></datalist><datalist id="et-dl-inq"></datalist>
           <div id="et-table-wrap"><table class="et-table" id="et-table"></table></div>
           <div class="nt-muted" id="et-list-msg"></div>
@@ -21263,7 +21264,9 @@
   }
   function etFillTable() {
     const rows = etCfg().students, tbl = document.getElementById('et-table');
-    tbl.classList.toggle('et-no-sel', etBackIs2028(etCfg().cfg)); // 통합형(2028~)은 선택 과목 칸을 숨김(자료는 그대로)
+    const k28 = etBackIs2028(etCfg().cfg);
+    tbl.classList.toggle('et-no-sel', k28); // 통합형(2028~)은 선택 과목 칸을 숨김(자료는 그대로)
+    document.getElementById('et-sel-note').style.display = k28 ? '' : 'none';
     let h = '<thead><tr><th class="et-c-no">번호</th><th class="et-c-name">이름</th><th class="et-c-birth">생년월일</th><th class="et-c-sel">국어</th><th class="et-c-sel">수학</th><th class="et-c-sel">탐구1</th><th class="et-c-sel">탐구2</th><th class="et-c-ph">사진</th><th class="et-c-x"></th></tr></thead><tbody>';
     rows.forEach(function(s, i) {
       const inp = function(k, extra) { return '<input type="text" class="lp-input et-' + k + '" data-i="' + i + '" data-k="' + k + '" value="' + ntEsc(s[k]) + '"' + (extra || '') + '>'; };
@@ -21287,10 +21290,10 @@
   }
   // 수험표 오른쪽 안내 칸: 학번·성명 → 교시마다 영역(국어·수학은 학생의 선택 과목까지, 탐구는 "탐구") → 제1·제2선택 → 시험장소
   function etInfoRows(c, s) {
-    const rows = [['학번', etStuId(c, s)], ['성명', s.name]], per = [];
+    const rows = [['학번', etStuId(c, s)], ['성명', s.name]], per = [], k28 = etBackIs2028(c);
     etParseTimes(c.times).forEach(function(t) {
-      let a = t.area;
-      if (/국어/.test(a)) a = '국어' + (s.kor ? '-' + s.kor : ''); else if (/수학/.test(a)) a = '수학' + (s.math ? '-' + s.math : ''); else if (/탐구/.test(a)) a = '탐구';
+      let a = t.area; // 통합형(2028~)은 국어·수학 선택 과목이 없으니 예전에 적어 둔 과목을 붙이지 않음
+      if (/국어/.test(a)) a = '국어' + (s.kor && !k28 ? '-' + s.kor : ''); else if (/수학/.test(a)) a = '수학' + (s.math && !k28 ? '-' + s.math : ''); else if (/탐구/.test(a)) a = '탐구';
       const e = per.find(function(x) { return x.p === t.p; }); if (e) { if (e.a.indexOf(a) < 0) e.a.push(a); } else per.push({ p: t.p, a: [a] }); // 같은 교시의 "탐구"는 한 번만
     });
     per.forEach(function(x) { rows.push([x.p + '교시', x.a.join(', ')]); });
