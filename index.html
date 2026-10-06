@@ -1099,8 +1099,10 @@
     .ms-date-num { font-size: 18px; font-weight: 900; margin-left: -2px; letter-spacing: -0.5px; }
     .ms-dday-list { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
     .ms-dday-mini { font-size: 8.5px; font-weight: 800; padding: 2px 5px; border-radius: 4px; color: #1E293B; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); line-height: 1.1; }
-    .ms-event-item { font-size: 10px; font-weight: 800; padding: 3px 5px; border-radius: 6px; margin-bottom: 3px; line-height: 1.25; word-break: break-all; display: flex; align-items: flex-start; gap: 4px; white-space: pre-wrap; }
-    .ms-event-neis { color: #E74C3C; font-weight: 900; font-size: 10px; margin-bottom: 4px; padding-left: 2px; }
+    /* 일정 글자 크기: ① 기본 설정의 A− / A+(--ms-ev = 0.7~1.5, 10/6 선생님 의견) — 내가 적은 일정·나이스 일정만, 날짜·D-Day·제목은 그대로 */
+    .ms-event-item { font-size: calc(10px * var(--ms-ev, 1)); font-weight: 800; padding: 3px 5px; border-radius: 6px; margin-bottom: 3px; line-height: 1.25; word-break: break-all; display: flex; align-items: flex-start; gap: 4px; white-space: pre-wrap; }
+    .ms-event-item .ms-ev-dot { width: calc(6px * var(--ms-ev, 1)); height: calc(6px * var(--ms-ev, 1)); border-radius: 50%; flex-shrink: 0; margin-top: calc(4px * var(--ms-ev, 1)); }
+    .ms-event-neis { color: #E74C3C; font-weight: 900; font-size: calc(10px * var(--ms-ev, 1)); margin-bottom: 4px; padding-left: 2px; }
 
     @media print {
       #ms-panel, #ms-page-header { display: none !important; }
@@ -3046,6 +3048,13 @@
               </select>
               <button type="button" class="ms-font-nav" onclick="msNextFont()">▶</button>
             </div>
+          </div>
+          <div class="ms-row" style="align-items:center; gap:6px;" title="달력 칸 안의 일정 글씨(내가 적은 일정·나이스 학사일정)만 커지거나 작아져요 — 날짜·D-Day·제목은 그대로">
+            <span style="font-size:11.5px; font-weight:800; color:var(--text-main); white-space:nowrap;">🔠 일정 글자</span>
+            <button type="button" class="ms-font-nav" onclick="msEvSizeBy(-1)" title="작게">A−</button>
+            <span id="ms-ev-size-val" style="font-size:12px; font-weight:800; min-width:38px; text-align:center; cursor:pointer;" onclick="msEvSizeBy(0)" title="눌러서 처음(100%)으로">100%</span>
+            <button type="button" class="ms-font-nav" onclick="msEvSizeBy(1)" title="크게">A+</button>
+            <span class="nt-muted" style="font-size:10.5px; white-space:nowrap;">달력 칸 안 일정만</span>
           </div>
         </div>
       </div>
@@ -11856,7 +11865,7 @@
             let bgCol = 'transparent', fontCol = '#2C3E50', border = '1px solid #E2E8F0';
             const catObj = msCategories.find(function(c) { return c.id === item.catId; });
             if (catObj) { bgCol = catObj.color + '40'; border = '1px solid ' + catObj.color; fontCol = '#2C3E50'; }
-            eventsHtml += '<div class="ms-event-item" style="background:' + bgCol + '; border:' + border + '; color:' + fontCol + ';"><div style="width:6px; height:6px; border-radius:50%; background:' + (catObj ? catObj.color : '#CBD5E1') + '; flex-shrink:0; margin-top:4px;"></div>' + item.text + '</div>';
+            eventsHtml += '<div class="ms-event-item" style="background:' + bgCol + '; border:' + border + '; color:' + fontCol + ';"><div class="ms-ev-dot" style="background:' + (catObj ? catObj.color : '#CBD5E1') + ';"></div>' + item.text + '</div>';
           });
         }
 
@@ -11931,6 +11940,7 @@
       title: document.getElementById('ms-cfg-title').value,
       showNeis: document.getElementById('ms-cfg-show-neis').checked,
       font: document.getElementById('ms-cfg-font').value,
+      evPct: msEvPct,
       ddays: [],
       categories: msCategories,
       table: []
@@ -11965,6 +11975,7 @@
     if (data.title !== undefined) document.getElementById('ms-cfg-title').value = data.title;
     if (data.showNeis !== undefined) document.getElementById('ms-cfg-show-neis').checked = data.showNeis;
     if (data.font) { document.getElementById('ms-cfg-font').value = data.font; msChangeGlobalFont(); }
+    msEvSet(data.evPct || 100);
 
     if (data.ddays && data.ddays.length === 5) {
       for (let i = 0; i < 5; i++) {
@@ -12052,6 +12063,19 @@
   function msChangeGlobalFont() {
     document.documentElement.style.setProperty('--ms-main-font', document.getElementById('ms-cfg-font').value);
   }
+  // 달력 일정 글자 크기(A− / A+): 70~150%, 10%씩. 일정 자료(ms-data.evPct)와 같이 저장돼 다른 기기에서도 같다.
+  const MS_EV_PCTS = [70, 80, 90, 100, 110, 120, 130, 140, 150];
+  let msEvPct = 100;
+  function msEvSet(pct) {
+    msEvPct = MS_EV_PCTS.indexOf(pct) >= 0 ? pct : 100;
+    document.getElementById('ms-a4-paper').style.setProperty('--ms-ev', String(msEvPct / 100));
+    const el = document.getElementById('ms-ev-size-val'); if (el) el.textContent = msEvPct + '%';
+  }
+  function msEvSizeBy(dir) {
+    const i = MS_EV_PCTS.indexOf(msEvPct);
+    msEvSet(dir === 0 ? 100 : MS_EV_PCTS[Math.max(0, Math.min(MS_EV_PCTS.length - 1, i + dir))]);
+    msAutoSave();
+  }
 
   function msUpdatePrintScale() {
     const scale = document.getElementById('ms-cfg-print-size').value;
@@ -12110,6 +12134,7 @@
         '<br>· <b>타이틀 왼쪽 칸</b> = 부서명(예: 2학년부, 교무기획부) — 제목 앞에 붙어요. <b>오른쪽 칸</b> = 제목(예: 월간 일정표).' +
         '<br>· <b>나이스 학사일정 표시</b>: 체크해 두면 방학·개교기념일 같은 학교 일정이 나이스에서 저절로 달력에 들어와요.' +
         '<br>· <b>출력 글꼴</b>: ◀ ▶를 누르거나 목록에서 골라 달력 글씨체를 바꿔요.' +
+        '<br>· <b>달력 일정 글자</b>: A− / A+로 달력 칸 안 일정 글씨만 줄이거나 키워요(70~150%, 날짜·D-Day는 그대로). 일정이 많아 칸을 넘치면 줄이세요.' +
         (head ? '<br>👉 지금 제목: <b>' + escapeHtmlAttr(head) + '</b> — 맞으면 다음으로.' : '<br>👉 제목이 비어 있어요 — 비워 둬도 되지만 보통은 적어요.'),
         glow: val('ms-cfg-grade') ? '#ms-section-info' : '#ms-cfg-grade' }, go(2, '다음: ② D-Day →'));
     } else if (cur === 2) {
@@ -12250,7 +12275,7 @@
   const msTourSteps = [
     { selector: '#ms-page-header', before: function() { msDemoState(0); }, title: '🗓️ 월간일정표에 오신 것을 환영해요!', desc: '학교 학사일정과 우리 학년(부서) 일정을 A4 한 장짜리 달력으로 만들어 인쇄하는 화면이에요.\n\n지금부터 지금 보고 있는 달에 예시 일정(가짜)을 단계마다 채워 가며, 왼쪽에 적은 것이 오른쪽 달력에 어떻게 나오는지 보여 드릴게요. 예시는 저장되지 않고, 설명서를 닫으면 원래 화면으로 돌아가요.' },
     { selector: '#ms-next', before: function() { msDemoState(0, 1); }, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 확인·선택만 하면 되는 단계는 상자의 "다음 →"로 넘어가요(이미 채운 칸도 하나씩 확인하며 지나가요).\n\n순서: ① 기본 설정 → ② 목표 D-Day → ③ 분류 → ④ 세부 일정 → ⑤ 인쇄할 달·용지(위쪽 ◀ ▶) → ⑥ 인쇄(위쪽 오른쪽). 지난 칸 제목엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },
-    { selector: '#ms-section-info', before: function() { msDemoState(1); }, title: '1단계. 기본 설정', desc: '· 학교명: 종이 오른쪽 위에 나와요.\n· 타이틀 왼쪽 칸(부서명): 예시처럼 "2학년부", "교무기획부" — 제목 앞에 붙어요.\n· 타이틀 오른쪽 칸: 제목(예시: 월간 학년 일정).\n· 나이스 학사일정 표시: 켜 두면 개교기념일·방학 같은 학교 공식 일정이 나이스에서 저절로 들어와요(직접 안 적어도 돼요).\n· 출력 글꼴: ◀ ▶로 넘기며 달력 글씨체를 바꿔요.' },
+    { selector: '#ms-section-info', before: function() { msDemoState(1); }, title: '1단계. 기본 설정', desc: '· 학교명: 종이 오른쪽 위에 나와요.\n· 타이틀 왼쪽 칸(부서명): 예시처럼 "2학년부", "교무기획부" — 제목 앞에 붙어요.\n· 타이틀 오른쪽 칸: 제목(예시: 월간 학년 일정).\n· 나이스 학사일정 표시: 켜 두면 개교기념일·방학 같은 학교 공식 일정이 나이스에서 저절로 들어와요(직접 안 적어도 돼요).\n· 출력 글꼴: ◀ ▶로 넘기며 달력 글씨체를 바꿔요.\n· 달력 일정 글자: A− / A+로 달력 칸 안 일정 글씨만 줄이거나 키워요(70~150%). 일정이 많아 칸을 넘치면 줄이고, 멀리서 봐야 하면 키우세요.' },
     { selector: '#ms-a4-paper', before: function() { msDemoState(1); }, title: '1단계 결과 — 종이 머리', desc: '왼쪽 위에 큰 달·연도와 "2학년부 월간 학년 일정", 오른쪽 위에 학교명이 나왔어요. 나이스 학사일정이 있는 날은 달력 칸에 저절로 적혀요.' },
     { selector: '#ms-section-dday', before: function() { msDemoState(2); }, title: '2단계. 목표 D-Day', desc: '정기고사(위 4줄) — 한 줄에: ☑ 표시 · 색 · 시험 이름 · 기간(시험 보는 평일 수) · 시작일.\n예시: 기말고사, 3일, 시작일 20일 무렵.\n→ 시험 전 날짜엔 "D-n", 시험 날엔 "1일차·2일차…"가 저절로 붙어요(주말은 빼고 셈). 시험이 지나면 다음 고사를 저절로 보여 줘요.\n\n커스텀 D-Day(아래 1줄) — 수능·체육대회처럼 늘 세고 싶은 날(예시: 체육대회).\n☑를 끄면 달력에서 숨겨요.' },
     { selector: '#ms-a4-paper', before: function() { msDemoState(2); }, title: '2단계 결과 — 달력의 D-Day', desc: '달력 칸 위쪽에 "기말고사 D-n", 시험 날엔 "기말고사 1일차…", 그리고 "체육대회 D-n"이 정한 색으로 표시돼요. 날짜를 바꾸면 바로 다시 계산돼요.' },

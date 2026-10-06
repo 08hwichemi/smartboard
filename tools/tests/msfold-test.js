@@ -229,6 +229,20 @@ function check(label, cond, detail) {
   await wait(300);
   const calTxt = await P.evaluate(() => [...document.querySelectorAll('#ms-cal-grid .ms-event-item')].map(e => e.innerText).filter(t => /수능대비/.test(t))[0] || '');
   check('달력 칸에 두 줄로 그려짐', calTxt.split('\n').length === 2, calTxt);
+  // 🔠 달력 일정 글자 크기(① 기본 설정 A− / A+): 일정 글씨·분류 점만 70~150%, 날짜·D-Day 그대로, ms-data.evPct로 저장
+  const evSz = () => P.evaluate(() => { const it = document.querySelector('#ms-cal-grid .ms-event-item'); const cs = (el, k) => el ? parseFloat(getComputedStyle(el)[k]) : null;
+    return { fs: cs(it, 'fontSize'), dot: cs(it && it.querySelector('.ms-ev-dot'), 'width'), date: cs(document.querySelector('#ms-cal-grid .ms-date-num'), 'fontSize'), label: document.getElementById('ms-ev-size-val').textContent, saved: JSON.parse(localStorage.getItem('ms-data')).evPct }; });
+  let ev = await evSz();
+  check('처음엔 일정 글자 10px·점 6px·100%', ev.fs === 10 && ev.dot === 6 && ev.label === '100%' && ev.saved === 100, ev);
+  await P.click('#ms-section-info button[title="크게"]'); await P.click('#ms-section-info button[title="크게"]'); await wait(200);
+  ev = await evSz();
+  check('A+ 두 번 → 120%: 일정 12px·점 7.2px, 날짜 숫자는 18px 그대로, 저장 120', Math.abs(ev.fs - 12) < 0.01 && Math.abs(ev.dot - 7.2) < 0.3 && ev.date === 18 && ev.label === '120%' && ev.saved === 120, ev);
+  for (let k = 0; k < 7; k++) await P.click('#ms-section-info button[title="작게"]');
+  await wait(200); ev = await evSz();
+  check('A− 계속 눌러도 70%에서 멈춤(7px)', ev.fs === 7 && ev.label === '70%' && ev.saved === 70, ev);
+  await P.click('#ms-ev-size-val'); await wait(200); ev = await evSz();
+  check('숫자를 누르면 100%로', ev.fs === 10 && ev.label === '100%' && ev.saved === 100, ev);
+  await P.click('#ms-section-info button[title="크게"]'); await P.click('#ms-section-info button[title="크게"]'); await wait(200); // 120%로 두고 아래 다른 기기에서 확인
   await P.evaluate(() => {
     msDataRows().find(r => /수능대비/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '어린이날';
     msDataRows().find(r => /우천/.test(r.textContent)).children[1].querySelector('.ms-cell-input').innerHTML = '체육대회';
@@ -291,6 +305,7 @@ function check(label, cond, detail) {
   await Q.click('#rail-monthly-btn'); await wait(800);
   const s2 = await Q.evaluate(() => ({ expandAll: document.getElementById('ms-expand-all').checked, heads: [...document.querySelectorAll('#ms-table-body tr.ms-month-head')].map(h => h.innerText.replace(/\s+/g, ' ').trim()), hidden: msDataRows().filter(tr => tr.offsetParent === null).length }));
   check('다른 기기: 항상 펼치기 켜진 채로, 전부 펼쳐져 있음', s2.expandAll && s2.hidden === 0 && s2.heads.length === 4, s2);
+  check('다른 기기: 달력 일정 글자 120%도 그대로(ms-data에 같이 저장)', await Q.evaluate(() => document.getElementById('ms-ev-size-val').textContent === '120%' && getComputedStyle(document.getElementById('ms-a4-paper')).getPropertyValue('--ms-ev').trim() === '1.2'));
 
   // 끄면 다시 접히고, 끈 것도 기억
   await Q.click('#ms-expand-all'); await wait(300);
