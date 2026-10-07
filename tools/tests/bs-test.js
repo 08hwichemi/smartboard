@@ -1,5 +1,6 @@
 // 레일 "양식" → 🔔 시정표: 탭 전환, 평상시(관리자 일과 시간에서 교시 시간 + 조회·중식·청소·자기주도학습 줄, 고친 칸만 따로), 단축 수업(교시마다 직접, 평상시와 따로),
-// 시험 기간(정기고사 시정표 + 일차별 시간표 — 예비·준비 저절로, 같은 교시 두 과목, 일차 더하기, 넣을 쪽·글씨·용지, 한글 파일), 시간 순 정렬·분 계산, 디자인(완성 세트 8개 — 작은 그림), 세부 설정(시간 표기·머리 줄·칸 너비·표 폭·글씨 크기·줄 높이), 한글 파일.
+// 시험 기간(정기고사 시정표 + 일차별 시간표 — 예비·준비 저절로, 같은 교시 두 과목, 일차 더하기, 넣을 쪽·글씨·용지, 한글 파일), 🎯 학력평가(올해·내년 기본값, 학년도 따라가기, 과목 묶음, B4 가로, 한글 파일),
+// 📚 정시반 모의고사(준비 저절로, 점심시간 줄, 시작 시각 순, 표 아래 안내 글, 한글 파일), 시간 순 정렬·분 계산, 디자인(완성 세트 8개 — 작은 그림), 세부 설정(시간 표기·머리 줄·칸 너비·표 폭·글씨 크기·줄 높이), 한글 파일.
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -537,11 +538,169 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.screenshot({ path: 'bs-exam.png' });
   const prE = await P.evaluate(() => { let got = ''; const op = window.print; window.print = () => { got = document.getElementById('fm-page-style').textContent; }; fmPrint(); window.print = op; return got; });
   check('시험 기간 인쇄: A4 세로 쪽 크기', /size: 210mm 297mm/.test(prE), prE);
+  // 🎯 학력평가(전국연합학력평가 시정표) · 📚 정시반 모의고사 — 10/7 사용자 한글 양식 두 개(B4 가로 / A4 세로), 시험 기간 엔진 공용
+  const bigv = () => P.evaluate(() => [...document.querySelectorAll('#fm-pages .bs-ex-sheet')].map(sh => {
+    const t = sh.querySelector('table'), r = sh.getBoundingClientRect(), k = r.width / sh.offsetWidth, tr = t.getBoundingClientRect(), notes = [...sh.querySelectorAll('.bs-ex-note')];
+    return { kind: sh.dataset.kind, w: sh.style.width, h: sh.style.height, rows: [...t.rows].map(row => [...row.cells].map(c => c.innerText.trim().replace(/\n+/g, '/')).join('|')), cols: t.querySelectorAll('col').length,
+      red: [...t.querySelectorAll('td span')].map(x => x.textContent), bg: [...t.rows].map(row => getComputedStyle(row.cells[0]).backgroundColor),
+      fs: [...t.querySelectorAll('td')].map(td => parseFloat(td.style.fontSize)), top: Math.round((tr.top - r.top) / k / 3.78 * 10) / 10, bottom: Math.round((r.bottom - tr.bottom) / k / 3.78 * 10) / 10,
+      notes: notes.map(n => [n.textContent, getComputedStyle(n).color, parseFloat(n.style.fontSize)]), nBottom: notes.length ? Math.round((r.bottom - notes[notes.length - 1].getBoundingClientRect().bottom) / k / 3.78 * 10) / 10 : null,
+      over: [...t.querySelectorAll('.bs-ex-ln')].concat(notes).filter(d => d.scrollWidth > d.clientWidth + 1).map(d => d.textContent) };
+  }));
+  const bigForm = () => P.evaluate(() => { const cols = document.querySelectorAll('#bs-grid .bs-col'), opt = document.getElementById('bs-ex-opt-box');
+    return { shown: [...document.querySelectorAll('#bs-grid .nt-box, #bs-title-row, #bs-sub-row, #bs-mc-head')].filter(b => b.style.display !== 'none').map(b => b.id).join(), optRight: opt.parentNode === cols[1], step: document.getElementById('bs-ex-opt-step').textContent,
+      guide: document.getElementById('bs-guide').textContent, pages: document.getElementById('bs-ex-pages').style.display, modes: [...document.querySelectorAll('#bs-modes .nt-chip')].map(b => b.textContent.trim()) }; });
+  await P.click('#bs-ex-paper [data-paper="A3"]'); await P.fill('#bs-ex-margin', '10'); await P.dispatchEvent('#bs-ex-margin', 'input'); await P.waitForTimeout(200); // 시험 기간은 사용자 기본값(A3·10)으로 되돌려 둠
+  await P.click('#bs-modes [data-mode="mock"]'); await P.waitForTimeout(300);
+  const mf = await bigForm();
+  check('🎯 학력평가: 모드 다섯 개, 입력칸은 ①(학년도·시험명·학교 번호 — 제목·부제 칸 대신) ② 시험 시간 ③ 글씨·종이(오른쪽 칸, 넣을 쪽 없음)만',
+    mf.modes.join() === '🏫 평상시,⏱️ 단축 수업,📝 시험 기간,🎯 학력평가,📚 정시반 모의고사' && mf.shown === 'bs-mode-box,bs-mc-head,bs-mc-box,bs-ex-opt-box' && mf.optRight && mf.step === '3' && mf.pages === 'none' && /올해·내년/.test(mf.guide), mf);
+  const m0 = await bigv(), mc0 = await P.evaluate(() => ({ yearPh: document.getElementById('bs-mc-year').placeholder, year: document.getElementById('bs-mc-year').value, no: document.getElementById('bs-mc-no').placeholder, show: document.getElementById('bs-mc-showno').checked,
+    preset: (document.querySelector('#bs-mc-presets .on') || {}).dataset, np: document.querySelector('#bs-mc-pre .on').textContent, pre: document.getElementById('bs-mc-pre-in').value,
+    rows: [...document.querySelectorAll('#bs-mc-rows .bs-mc-row')].map(r => [...r.querySelectorAll('input')].map(i => i.value).join('|')), feet: [...document.querySelectorAll('#bs-mc-rows .bs-mc-foot .bs-mc-p')].map(b => b.value + '/' + b.placeholder), paper: document.querySelector('#bs-ex-paper [data-paper].on').dataset.paper, land: document.querySelector('#bs-ex-paper [data-land].on').textContent }));
+  const MOCK0 = ['2026학년도 전국연합학력평가|학교/번호|14115', '', '교시|과목명|시험시간', '예비령|본령|총시간', '1|국어|08:35|08:40∼10:00|80분', '2|수학|10:25|10:30∼12:10|100분', '3|영어|13:00|13:10∼14:20|70분', '4|한국사|14:45|14:50∼15:20|30분', '탐구|1선택|15:35∼16:05|30분', '2선택|16:07∼16:37|30분']; // 영어 예비령은 듣기라 10분 전(13:00, 직접 적은 값)
+  check('처음(2026학년도 = 올해 기본값): 원본 양식 그대로 — 제목 "2026학년도 전국연합학력평가" | 학교번호 | 14115(수험표 기본), 교시 | 과목명 | 예비령(5분 전) | 본령 | 총시간, 4교시 = 한국사 · 탐구(1선택 · 2선택), B4 가로 여백 5mm에 꽉 차게',
+    m0.length === 1 && m0[0].kind === 'mock' && JSON.stringify(m0[0].rows) === JSON.stringify(MOCK0) && m0[0].cols === 8 && m0[0].w === '364mm' && m0[0].h === '257mm' && m0[0].top === 5 && m0[0].bottom >= 6 && m0[0].bottom <= 9 && !m0[0].over.length &&
+    mc0.yearPh === '2026' && mc0.year === '' && mc0.no === '14115' && mc0.show && mc0.preset.preset === 'now' && mc0.np === '4' && mc0.pre === '5' && mc0.rows[0] === '국어|08:40|10:00' && mc0.rows[5] === '탐구/2선택|16:07|16:37' && mc0.feet.join() === '/08:35,/10:25,13:00/13:05,/14:45' && mc0.paper === 'B4' && mc0.land === '가로', [m0[0] && m0[0].rows, mc0]);
+  check('학력평가 색·빨강: 예비령 머리 글과 예비 시각 빨강(5개), 교시마다 바탕 살구·연두·크림·하늘, 머리 줄 회색, 큰 글씨(본령 50pt 넘게)',
+    m0[0].red.join() === '예비령,08:35,10:25,13:00,14:45' && m0[0].bg[2] === 'rgb(242, 242, 242)' && m0[0].bg[4] === 'rgb(255, 234, 224)' && m0[0].bg[5] === 'rgb(238, 249, 238)' && m0[0].bg[6] === 'rgb(254, 246, 213)' && m0[0].bg[7] === 'rgb(225, 245, 247)' && Math.max(...m0[0].fs) >= 50, [m0[0].red, m0[0].bg, Math.max(...m0[0].fs)]);
+  await P.screenshot({ path: 'bs-mock.png' });
+  await P.click('#bs-mc-presets [data-preset="2028"]'); await P.waitForTimeout(250);
+  const m1 = await bigv();
+  check('기본값 "2028학년도 수능(통합형)": 4교시 = 한국사 · 탐구(사회·직업 40분 15:35∼16:15 · 과학 40분 16:30∼17:10), 1~3교시 그대로, 넘침 없음',
+    m1[0].rows.length === 10 && m1[0].rows[7] === '4|한국사|14:45|14:50∼15:20|30분' && /^탐구\|사회·\/?직업\|15:35∼16:15\|40분$/.test(m1[0].rows[8]) && m1[0].rows[9] === '과학|16:30∼17:10|40분' && m1[0].rows[4] === MOCK0[4] && !m1[0].over.length &&
+    await P.evaluate(() => document.querySelector('#bs-mc-presets .on').dataset.preset === '2028'), m1[0].rows);
+  // 학년도: 2027부터 내년 기본값, 시간이 기본값 그대로면 학년도를 따라 바뀜(고친 뒤엔 그대로)
+  await P.fill('#bs-mc-year', '2026'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
+  const m2 = await bigv();
+  check('학년도 2026 → 시간이 기본값(2028) 그대로였으니 2026의 기본값(올해, 2선택 16:07∼16:37)으로 따라감', m2[0].rows[9] === '2선택|16:07∼16:37|30분' && m2[0].rows[0].startsWith('2026학년도') && await P.evaluate(() => bsCfg().mock.periods === null), m2[0].rows);
+  await P.fill('#bs-mc-year', '2027'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
+  const m3 = await bigv();
+  check('학년도 2027 → 제목 "2027학년도 …", 2028학년도 수능(통합형) 시간(과학 ~17:10)', m3[0].rows[0] === '2027학년도 전국연합학력평가|학교/번호|14115' && m3[0].rows[9] === '과학|16:30∼17:10|40분' && await P.evaluate(() => document.querySelector('#bs-mc-presets .on').dataset.preset === '2028'), m3[0].rows);
+  const min = (i, k, f) => '#bs-mc-rows .bs-mc-period[data-p="' + i + '"] .bs-mc-row[data-k="' + k + '"] input[data-f="' + f + '"]';
+  await P.click(min(0, 0, 's')); await P.fill(min(0, 0, 's'), '850'); await P.dispatchEvent(min(0, 0, 's'), 'input'); await P.dispatchEvent(min(0, 0, 's'), 'change'); await P.waitForTimeout(250);
+  await P.fill('#bs-mc-year', '2026'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
+  const m4 = await bigv();
+  check('1교시 시작 850 → 08:50∼10:10(시험 시간 80분 그대로 따라감), 예비 08:45 / 고친 뒤엔 학년도를 2026으로 바꿔도 시간 그대로(기본값 단추는 모두 꺼짐)', m4[0].rows[4] === '1|국어|08:45|08:50∼10:10|80분' && m4[0].rows[9] === '과학|16:30∼17:10|40분' && m4[0].rows[0].startsWith('2026학년도') &&
+    await P.evaluate(() => !document.querySelector('#bs-mc-presets .on') && document.querySelector('#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-foot .bs-mc-p').placeholder === '08:45'), m4[0].rows);
+  await P.fill('#bs-mc-pre-in', '10'); await P.dispatchEvent('#bs-mc-pre-in', 'input'); await P.waitForTimeout(250);
+  const pin0 = '#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-foot .bs-mc-p';
+  check('예비령 10분 전 → 08:40, 영어는 직접 적은 13:00 그대로', (await bigv())[0].rows[4] === '1|국어|08:40|08:50∼10:10|80분' && (await bigv())[0].rows[6] === '3|영어|13:00|13:10∼14:20|70분');
+  await P.click(pin0); await P.fill(pin0, '0830'); await P.press(pin0, 'Tab'); await P.waitForTimeout(250);
+  check('1교시 예비령을 직접 0830 → 08:30(다른 교시는 10분 전 그대로)', (await bigv())[0].rows[4] === '1|국어|08:30|08:50∼10:10|80분' && (await bigv())[0].rows[5] === '2|수학|10:20|10:30∼12:10|100분' && await P.evaluate(() => bsCfg().mock.periods[0][0].p === '08:30'));
+  await P.click(pin0); await P.fill(pin0, ''); await P.press(pin0, 'Tab'); await P.waitForTimeout(250);
+  check('예비령 칸을 비우면 다시 저절로(08:40)', (await bigv())[0].rows[4] === '1|국어|08:40|08:50∼10:10|80분' && await P.evaluate(() => !('p' in bsCfg().mock.periods[0][0])));
+  await P.click('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-plus'); await P.waitForTimeout(250);
+  const m5 = await P.evaluate(() => ({ focus: document.activeElement.className, n: document.querySelectorAll('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row').length, s: document.querySelector('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] input[data-f="s"]').value }));
+  await setText(P, '#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] .bs-mc-n', '탐구/직업'); await P.fill(min(3, 3, 'e'), '17:50'); await P.dispatchEvent(min(3, 3, 'e'), 'input'); await P.dispatchEvent(min(3, 3, 'e'), 'change'); await P.waitForTimeout(250);
+  const m6 = await bigv();
+  check('＋ 과목(4교시): 새 줄에 바로 커서, 시작은 앞 과목 끝 + 2분(17:12), "탐구/직업"이라 적으면 탐구 묶음에 셋째 줄로(표 11줄)', /bs-mc-n/.test(m5.focus) && m5.n === 4 && m5.s === '17:12' && m6[0].rows.length === 11 && m6[0].rows[10] === '직업|17:12∼17:50|38분' && !m6[0].over.length, [m5, m6[0].rows]);
+  await P.click('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] .ws-ol-x'); await P.waitForTimeout(250);
+  await P.click('#bs-mc-pre [data-np="5"]'); await P.waitForTimeout(250);
+  const m7 = await bigv();
+  check('✕로 지우고 교시 수 5 → 5교시가 앞 교시 끝 + 20분부터 60분(17:30∼18:30), 바탕은 다시 살구', m7[0].rows.length === 11 && m7[0].rows[10] === '5||17:20|17:30∼18:30|60분' && m7[0].bg[10] === 'rgb(255, 234, 224)' && !m7[0].over.length, [m7[0].rows, m7[0].bg[10]]);
+  await P.click('#bs-mc-pre [data-np="4"]'); await P.click('#bs-mc-presets [data-preset="now"]'); await P.fill('#bs-mc-pre-in', '5'); await P.dispatchEvent('#bs-mc-pre-in', 'input'); await P.waitForTimeout(250);
+  await P.click('#bs-mc-showno'); await setText(P, '#bs-mc-no', '14147'); await setText(P, '#bs-mc-name', '3월 전국연합학력평가'); await P.waitForTimeout(250);
+  const m8 = await bigv();
+  check('학교 번호 표시 끄기 → 제목이 한 칸, 시험명 바꾸면 제목에', m8[0].rows[0] === '2026학년도 3월 전국연합학력평가' && m8[0].rows[4] === MOCK0[4], m8[0].rows.slice(0, 1));
+  await P.click('#bs-mc-showno'); await P.waitForTimeout(250);
+  check('다시 켜면 학교 번호 14147', (await bigv())[0].rows[0] === '2026학년도 3월 전국연합학력평가|학교/번호|14147');
+  await P.click('#bs-ex-paper [data-land="0"]'); await P.waitForTimeout(250);
+  const m9 = await bigv();
+  check('세로로 바꾸면 B4 세로(257×364), 표가 폭에 맞고 글씨가 작아짐, 넘침 없음', m9[0].w === '257mm' && m9[0].h === '364mm' && Math.max(...m9[0].fs) < Math.max(...m8[0].fs) && !m9[0].over.length && m9[0].bottom >= 6 && m9[0].bottom <= 9, [m9[0].w, m9[0].h, m9[0].bottom, m9[0].over]);
+  const prM = await P.evaluate(() => { let got = ''; const op = window.print; window.print = () => { got = document.getElementById('fm-page-style').textContent; }; fmPrint(); window.print = op; return got; });
+  await P.click('#bs-ex-paper [data-land="1"]'); await P.waitForTimeout(250);
+  const prM2 = await P.evaluate(() => { let got = ''; const op = window.print; window.print = () => { got = document.getElementById('fm-page-style').textContent; }; fmPrint(); window.print = op; return got; });
+  check('학력평가 인쇄: 세로면 257×364, 가로면 364×257 쪽 크기', /size: 257mm 364mm/.test(prM) && /size: 364mm 257mm/.test(prM2), [prM, prM2]);
+  if (JSZIP_JS) {
+    const hz = await P.evaluate(async () => { const c = bsCfg(), zip = await JSZip.loadAsync(await bsExBuildHwpx(c)), names = Object.keys(zip.files);
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string'), hpf = await zip.file('Contents/content.hpf').async('string');
+      let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length || new DOMParser().parseFromString(head, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
+      const tbls = sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g) || [];
+      const shape = tbls.map(t => { const rc = t.match(/rowCnt="(\d+)" colCnt="(\d+)"/).slice(1).map(Number), W = +t.match(/<hp:sz width="(\d+)"/)[1], Ht = +t.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/)[1];
+        const grid = Array.from({ length: rc[0] }, () => Array(rc[1]).fill(0)); let wSum = 0, hSum = 0;
+        [...t.matchAll(/<hp:cellAddr colAddr="(\d+)" rowAddr="(\d+)"\/><hp:cellSpan colSpan="(\d+)" rowSpan="(\d+)"\/><hp:cellSz width="(\d+)" height="(\d+)"/g)].forEach(m => {
+          const [c, r, cs, rs, w, h] = m.slice(1).map(Number);
+          for (let i = r; i < r + rs; i++) for (let j = c; j < c + cs; j++) if (grid[i]) grid[i][j]++;
+          if (r === 0) wSum += w; if (c === 0) hSum += h; });
+        return { rc: rc.join('x'), full: grid.every(row => row.every(v => v === 1)), w: wSum === W, h: hSum === Ht }; });
+      return { first: names[0], xml: ok, n: tbls.length, shape, page: (sec.match(/<hp:pagePr [^>]*>/) || [''])[0], title: (hpf.match(/<opf:title>([^<]*)</) || [])[1],
+        texts: ['2026학년도 3월 전국연합학력평가', '학교', '번호', '14147', '교시', '과목명', '시험시간', '예비령', '본령', '총시간', '08:35', '08:40∼10:00', '80분', '탐구', '1선택', '2선택', '16:07∼16:37'].filter(t => !sec.includes('<hp:t>' + fmX(t) + '</hp:t>')),
+        red: /textColor="#FF0000"/.test(head), fills: ['#FFEAE0', '#EEF9EE', '#FEF6D5', '#E1F5F7', '#F2F2F2'].filter(f => !head.includes('faceColor="' + f + '"')), font: /face="경기천년제목 Bold"/.test(head), squeeze: /lineWrap="SQUEEZE"/.test(head) }; });
+    check('학력평가 한글 파일: mimetype 맨 앞·XML 올바름, 표 하나 10줄×8칸(합친 칸 포함 빈틈·겹침 없음, 폭·높이 합 = 표 크기), B4 가로(NARROWLY 257×364)·여백 5mm, 글·빨강·바탕 4색·회색·경기천년제목 Bold·"한 줄로 입력", 파일 제목',
+      hz.first === 'mimetype' && hz.xml && hz.n === 1 && hz.shape[0].rc === '10x8' && hz.shape[0].full && hz.shape[0].w && hz.shape[0].h && /landscape="NARROWLY" width="7285\d" height="10318\d"/.test(hz.page) && !hz.texts.length && hz.red && !hz.fills.length && hz.font && hz.squeeze && hz.title === '2026학년도 3월 전국연합학력평가 시정표', hz);
+    if (process.env.BS_MC_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await bsExBuildHwpx(bsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.BS_MC_OUT, Buffer.from(b64, 'base64')); }
+  }
+  // 📚 정시반 모의고사
+  await P.click('#bs-modes [data-mode="jungsi"]'); await P.waitForTimeout(300);
+  const jf = await bigForm();
+  check('📚 정시반 모의고사: 입력칸은 ① 제목 ② 시간 ③ 표 아래 안내 글(오른쪽) ④ 글씨·종이(오른쪽)', jf.shown === 'bs-mode-box,bs-title-row,bs-js-box,bs-js-note-box,bs-ex-opt-box' && jf.optRight && jf.step === '4' && /안내 글/.test(jf.guide) && await P.evaluate(() => document.getElementById('bs-title').value === '면학실 모의고사 시정표'), jf);
+  const j0 = await bigv(), jc0 = await P.evaluate(() => ({ ready: document.getElementById('bs-js-ready-in').value, head: document.getElementById('bs-js-head').value, rows: [...document.querySelectorAll('#bs-js-rows .bs-js-row')].map(r => r.dataset.k + ':' + r.querySelector('.bs-ex-pn').textContent + ':' + [...r.querySelectorAll('input')].map(i => i.value).join('|') + ':' + r.querySelector('.bs-js-calc').textContent),
+    notes: [...document.querySelectorAll('#bs-js-notes .bs-js-note')].map(n => n.querySelector('input[type=text]').value + (n.querySelector('input[type=checkbox]').checked ? '(빨강)' : '')), paper: document.querySelector('#bs-ex-paper [data-paper].on').dataset.paper, land: document.querySelector('#bs-ex-paper [data-land].on').textContent }));
+  const JS0 = ['면학실 모의고사 시정표', '', '교/시|타종 및 시간', '1|국어|준비|08:55', '본령|09:00∼10:20', '2|수학|준비|10:35', '본령|10:40∼12:20', '점심시간|12:40∼13:40', '3|영어|준비|13:35', '본령|13:40∼14:50', '4|탐구|준비|15:05', '본령|15:10∼16:10'];
+  check('처음: 원본 양식 그대로 — 교/시 | 타종 및 시간, 교시마다 준비(5분 전)·본령(빨강), 점심시간 줄(분홍·빨강 시간), 아래 안내 두 줄(둘째 빨강), A4 세로 여백 5mm, 안내 글이 쪽 아래 여유 안',
+    j0.length === 1 && j0[0].kind === 'jungsi' && JSON.stringify(j0[0].rows) === JSON.stringify(JS0) && j0[0].cols === 4 && j0[0].w === '210mm' && j0[0].h === '297mm' && j0[0].top === 5 && j0[0].nBottom >= 5 && j0[0].nBottom <= 9 && !j0[0].over.length &&
+    j0[0].red.join() === '09:00∼10:20,10:40∼12:20,12:40∼13:40,13:40∼14:50,15:10∼16:10' && j0[0].bg[7] === 'rgb(255, 228, 228)' && j0[0].bg[5] === 'rgb(230, 241, 211)' && j0[0].bg[8] === 'rgb(236, 237, 254)' && j0[0].bg[10] === 'rgb(255, 245, 204)' && j0[0].bg[3] === 'rgba(0, 0, 0, 0)' &&
+    j0[0].notes.length === 2 && j0[0].notes[0][0] === '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함' && j0[0].notes[0][1] === 'rgb(0, 0, 0)' && j0[0].notes[1][1] === 'rgb(255, 0, 0)' && j0[0].notes[0][2] >= 18 && Math.max(...j0[0].fs) >= 55 &&
+    jc0.ready === '5' && jc0.head === '타종 및 시간' && jc0.rows[0] === 'p:1교시:국어|09:00|10:20:준비 08:55' && jc0.rows[2] === 'brk::점심시간|12:40|13:40:' && jc0.notes.join() === '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함,시험이 끝난 본령 외 시간에는 이동하지 않고 교실에서 자습!(빨강)' && jc0.paper === 'A4' && jc0.land === '세로', [j0[0], jc0]);
+  await P.screenshot({ path: 'bs-jungsi.png' });
+  const jin = (j, f) => '#bs-js-rows .bs-js-row[data-j="' + j + '"] input[data-f="' + f + '"]';
+  await P.click(jin(0, 's')); await P.fill(jin(0, 's'), '905'); await P.dispatchEvent(jin(0, 's'), 'input'); await P.dispatchEvent(jin(0, 's'), 'change'); await P.waitForTimeout(250);
+  await P.fill('#bs-js-ready-in', '10'); await P.dispatchEvent('#bs-js-ready-in', 'input'); await P.waitForTimeout(250);
+  const j1 = await bigv();
+  check('1교시 시작 905 → 09:05∼10:25(80분 그대로 따라감), 준비는 10분 전으로 바꾸면 08:55(모든 교시 10분 전), 입력칸 계산 글도', j1[0].rows[3] === '1|국어|준비|08:55' && j1[0].rows[4] === '본령|09:05∼10:25' && j1[0].rows[5] === '2|수학|준비|10:30' && await P.evaluate(() => document.querySelector('#bs-js-rows .bs-js-row[data-j="0"] .bs-js-calc').textContent === '준비 08:55'), j1[0].rows);
+  await P.click('#bs-js-add [data-add="p"]'); await P.waitForTimeout(250);
+  const j2 = await bigv(), j2f = await P.evaluate(() => ({ focus: document.activeElement.className, n: document.querySelectorAll('#bs-js-rows .bs-js-row').length }));
+  await setText(P, '#bs-js-rows .bs-js-row[data-j="5"] .bs-js-n', '제2외국어'); await P.waitForTimeout(250);
+  check('＋ 교시: 마지막 줄 끝 + 20분부터 70분(16:30∼17:40) 5교시, 새 줄 이름 칸에 커서 → "제2외국어"', /bs-js-n/.test(j2f.focus) && j2f.n === 6 && j2.length === 1 && j2[0].rows.length === 14 && j2[0].rows[12] === '5||준비|16:20' && j2[0].rows[13] === '본령|16:30∼17:40' && (await bigv())[0].rows[12].replace('/', '') === '5|제2외국어|준비|16:20' && !(await bigv())[0].over.length, [j2f, j2[0].rows.slice(12)]); // 좁은 과목 칸이라 두 줄(제2외/국어)
+  await P.click(jin(5, 's')); await P.fill(jin(5, 's'), '0800'); await P.evaluate(() => document.activeElement.blur()); await P.dispatchEvent(jin(5, 's'), 'change'); await P.waitForTimeout(300); // 시간 칸 밖으로 나가면 목록도 다시 정렬(칸 사이를 오가는 동안은 그대로)
+  const j3 = await bigv(), j3r = await P.evaluate(() => [...document.querySelectorAll('#bs-js-rows .bs-js-row')].map(r => r.dataset.j + ':' + r.querySelector('.bs-ex-pn').textContent));
+  check('시작을 08:00으로 바꾸면 끝도 70분 따라가고(08:00∼09:10) 그 줄이 맨 위 1교시로(국어는 2교시), 입력 목록도 시작 시각 순', j3[0].rows[3].replace('/', '') === '1|제2외국어|준비|07:50' && j3[0].rows[4] === '본령|08:00∼09:10' && j3[0].rows[5] === '2|국어|준비|08:55' && j3r.join() === '5:1교시,0:2교시,1:3교시,2:,3:4교시,4:5교시', [j3[0].rows.slice(3, 6), j3r]);
+  await P.click('#bs-js-rows .bs-js-row[data-j="5"] .ws-ol-x'); await P.waitForTimeout(250);
+  await P.click('#bs-js-add [data-add="lunch"]'); await P.waitForTimeout(250);
+  const j4 = await bigv();
+  check('✕로 지우고 ＋ 점심시간 → 마지막 줄 뒤 한 줄(16:10∼17:10, 분홍)', j4[0].rows.length === 13 && j4[0].rows[12] === '점심시간|16:10∼17:10' && j4[0].bg[12] === 'rgb(255, 228, 228)' && j4[0].red.slice(-1)[0] === '16:10∼17:10', j4[0].rows.slice(-2));
+  await P.click('#bs-js-rows .bs-js-row[data-j="5"] .ws-ol-x'); await P.waitForTimeout(250);
+  // 안내 글: 고치기·빨강·지우기·더하기·빈 줄은 안 나옴, 모두 비우면 표가 커짐
+  await setText(P, '#bs-js-notes .bs-js-note[data-i="0"] .bs-js-nt', '정시반은 위 시간표로 운영합니다'); await P.click('#bs-js-notes .bs-js-note[data-i="0"] input[type=checkbox]'); await P.waitForTimeout(250);
+  const j5 = await bigv();
+  await P.click('#bs-js-notes .bs-js-note[data-i="1"] .ws-ol-x'); await P.waitForTimeout(250);
+  await P.click('#bs-js-note-add'); await P.waitForTimeout(250);
+  const j6 = await bigv(), j6f = await P.evaluate(() => ({ focus: document.activeElement.className, n: document.querySelectorAll('#bs-js-notes .bs-js-note').length }));
+  check('안내 글 고치기·빨강 → 미리보기에, 둘째 줄 ✕ → 한 줄, ＋ 줄 더하기 → 빈 줄(커서, 미리보기엔 안 나옴)', j5[0].notes[0][0] === '정시반은 위 시간표로 운영합니다' && j5[0].notes[0][1] === 'rgb(255, 0, 0)' && j6[0].notes.length === 1 && j6f.n === 2 && /bs-js-nt/.test(j6f.focus), [j5[0].notes, j6[0].notes, j6f]);
+  const tblBottom0 = j6[0].bottom;
+  await P.click('#bs-js-notes .bs-js-note[data-i="1"] .ws-ol-x'); await P.click('#bs-js-notes .bs-js-note[data-i="0"] .ws-ol-x'); await P.waitForTimeout(250);
+  const j7 = await bigv();
+  check('안내 글을 모두 지우면 표가 그 자리까지(쪽 아래 여유 안)', j7[0].notes.length === 0 && j7[0].bottom < tblBottom0 && j7[0].bottom >= 6 && j7[0].bottom <= 9 && await P.evaluate(() => bsCfg().jungsi.notes.length === 0), [tblBottom0, j7[0].bottom]);
+  await P.click('#bs-js-note-add'); await setText(P, '#bs-js-notes .bs-js-note[data-i="0"] .bs-js-nt', '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함'); await P.click('#bs-js-note-add'); await setText(P, '#bs-js-notes .bs-js-note[data-i="1"] .bs-js-nt', '시험이 끝난 본령 외 시간에는 이동하지 않고 교실에서 자습!'); await P.click('#bs-js-notes .bs-js-note[data-i="1"] input[type=checkbox]'); await P.waitForTimeout(250);
+  await setText(P, '#bs-js-head', '타종 시간'); await setText(P, '#bs-title', '정시반 모의고사 시정표'); await P.waitForTimeout(250);
+  const j8 = await bigv();
+  check('머리 글·제목 바꾸기', j8[0].rows[0] === '정시반 모의고사 시정표' && j8[0].rows[2] === '교/시|타종 시간' && j8[0].notes.length === 2, j8[0].rows.slice(0, 3));
+  if (JSZIP_JS) {
+    const hj = await P.evaluate(async () => { const c = bsCfg(), zip = await JSZip.loadAsync(await bsExBuildHwpx(c));
+      const sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string'), hpf = await zip.file('Contents/content.hpf').async('string');
+      let ok = true; try { if (new DOMParser().parseFromString(sec, 'application/xml').getElementsByTagName('parsererror').length) ok = false; } catch (e) { ok = false; }
+      const t = (sec.match(/<hp:tbl [\s\S]*?<\/hp:tbl>/g) || [])[0] || '', rc = (t.match(/rowCnt="(\d+)" colCnt="(\d+)"/) || []).slice(1).map(Number), W = +(t.match(/<hp:sz width="(\d+)"/) || [])[1], Ht = +(t.match(/<hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/) || [])[1];
+      const grid = Array.from({ length: rc[0] || 0 }, () => Array(rc[1] || 0).fill(0)); let wSum = 0, hSum = 0;
+      [...t.matchAll(/<hp:cellAddr colAddr="(\d+)" rowAddr="(\d+)"\/><hp:cellSpan colSpan="(\d+)" rowSpan="(\d+)"\/><hp:cellSz width="(\d+)" height="(\d+)"/g)].forEach(m => { const [c, r, cs, rs, w, h] = m.slice(1).map(Number); for (let i = r; i < r + rs; i++) for (let j = c; j < c + cs; j++) if (grid[i]) grid[i][j]++; if (r === 0) wSum += w; if (c === 0) hSum += h; });
+      const after = sec.slice(sec.indexOf('</hp:tbl>')), notes = (after.match(/<hp:t>([^<]*)<\/hp:t>/g) || []).map(x => x.replace(/<[^>]+>/g, ''));
+      return { xml: ok, rc: rc.join('x'), full: grid.every(row => row.every(v => v === 1)), w: wSum === W, h: hSum === Ht, page: (sec.match(/<hp:pagePr [^>]*>/) || [''])[0], notes, title: (hpf.match(/<opf:title>([^<]*)</) || [])[1],
+        texts: ['정시반 모의고사 시정표', '교', '시', '타종 시간', '준비', '08:55', '본령', '09:05∼10:25', '점심시간', '12:40∼13:40', '탐구'].filter(x => !sec.includes('<hp:t>' + fmX(x) + '</hp:t>')),
+        fills: ['#E6F1D3', '#ECEDFE', '#FFF5CC', '#FFE4E4', '#E7E7E7', '#F2F2F2'].filter(f => !head.includes('faceColor="' + f + '"')), red: /textColor="#FF0000"/.test(head), thick: /width="1.0 mm"/.test(head) && /width="0.7 mm"/.test(head) }; });
+    check('정시반 한글 파일: 표 하나 12줄×4칸(빈틈·겹침 없음, 폭·높이 합 = 표 크기), A4 세로(WIDELY)·여백 5mm, 표 뒤에 안내 글 문단 두 개(둘째 빨강 글자 모양), 글·바탕색·선 굵기(1.0·0.7mm), 파일 제목',
+      hj.xml && hj.rc === '12x4' && hj.full && hj.w && hj.h && /landscape="WIDELY" width="59528" height="84189"/.test(hj.page) && hj.notes.join('|') === '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함|시험이 끝난 본령 외 시간에는 이동하지 않고 교실에서 자습!' && !hj.texts.length && !hj.fills.length && hj.red && hj.thick && hj.title === '정시반 모의고사 시정표', hj);
+    if (process.env.BS_JS_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await bsExBuildHwpx(bsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.BS_JS_OUT, Buffer.from(b64, 'base64')); }
+  }
+  const prJ = await P.evaluate(() => { let got = ''; const op = window.print; window.print = () => { got = document.getElementById('fm-page-style').textContent; }; fmPrint(); window.print = op; return got; });
+  check('정시반 인쇄: A4 세로 쪽 크기', /size: 210mm 297mm/.test(prJ), prJ);
+  await P.click('#bs-modes [data-mode="exam"]'); await P.waitForTimeout(250);
+  const exBack = await bigForm();
+  check('시험 기간으로 돌아오면 ④ 글씨·종이는 다시 왼쪽 칸, 넣을 쪽 단추 보임, 학력평가·정시반 칸 숨김', !exBack.optRight && exBack.pages !== 'none' && exBack.shown === 'bs-mode-box,bs-title-row,bs-ex-bell-box,bs-ex-opt-box,bs-ex-days-box' && exBack.step === '4', exBack);
   await P.click('#bs-modes [data-mode="normal"]'); await P.waitForTimeout(200);
   // 서버 저장
   await P.waitForTimeout(2500);
   const sv = JSON.parse(serverVal(T2, 'fm-bs') || '{}');
-  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축·시험 기간 따로', sv.normal && sv.short && sv.short.periods[0].e === '09:30' && sv.short.calc !== false && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic' && sv.exam && sv.exam.name === '1학기 1차 지필평가' && sv.exam.days[0].sj[2].join() === '통합수학,미적분', { n: !!sv.normal, s: !!sv.short, e: sv.exam && sv.exam.days });
+  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축·시험 기간·학력평가·정시반 따로', sv.normal && sv.short && sv.mock && sv.mock.schoolNo === '14147' && sv.mock.periods.length === 4 && sv.mock.periods[2][0].p === '13:00' && sv.jungsi && sv.jungsi.ready === 10 && sv.jungsi.rows.length === 5 && sv.jungsi.notes.length === 2 && sv.short.periods[0].e === '09:30' && sv.short.calc !== false && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic' && sv.exam && sv.exam.name === '1학기 1차 지필평가' && sv.exam.days[0].sj[2].join() === '통합수학,미적분', { n: !!sv.normal, s: !!sv.short, e: sv.exam && sv.exam.days, mock: sv.mock, js: sv.jungsi });
   // 한글 파일
   if (JSZIP_JS) {
     for (const [dz, ts] of [['classic', 'box'], ['navy', 'band'], ['mono', 'line']]) {
@@ -582,6 +741,13 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const overE = await P.evaluate(() => { const l = document.getElementById('fm-left'); return [...document.querySelectorAll('#bs-grid .nt-box, .bs-ex-row, .bs-ex-p, .bs-ex-dh, .bs-ex-calc')].filter(b => b.offsetParent && (b.getBoundingClientRect().right > l.getBoundingClientRect().right + 1 || b.scrollWidth > b.clientWidth + 1)).map(b => b.id || b.className); });
   check('1366×768에서 시험 기간 칸도 왼쪽 칸 밖으로 안 넘침(예비·준비 시각 안 잘림)', overE.length === 0, overE);
   await P.screenshot({ path: 'bs-exam-1366.png' });
+  for (const md of [['mock', '학력평가'], ['jungsi', '정시반']]) {
+    await P.click('#bs-modes [data-mode="' + md[0] + '"]'); await P.waitForTimeout(300);
+    const ov = await P.evaluate(() => { const l = document.getElementById('fm-left'); return [...document.querySelectorAll('#bs-grid .nt-box, .bs-mc-row, .bs-mc-foot, .bs-js-row, .bs-js-note, #bs-mc-head .ws-row')].filter(b => b.offsetParent && (b.getBoundingClientRect().right > l.getBoundingClientRect().right + 1 || b.scrollWidth > b.clientWidth + 1)).map(b => b.id || b.className); });
+    const foot = await P.evaluate(() => { const s = document.querySelector('.bs-mc-pre'); return s ? [s.getBoundingClientRect().height, s.querySelector('input').getBoundingClientRect().width] : [0, 56]; });
+    check('1366×768에서 ' + md[1] + ' 칸도 왼쪽 칸 밖으로 안 넘침(예비령 글은 한 줄, 칸은 56px)', ov.length === 0 && foot[0] < 34 && foot[1] <= 60, [ov, foot]);
+    await P.screenshot({ path: 'bs-' + md[0] + '-1366.png' });
+  }
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
   console.log(failures === 0 ? '\n모든 검사 통과' : '\n실패 ' + failures + '건');
