@@ -76,7 +76,7 @@ async function handleDb(pageInfo, req) {
   }
   if (table === 'schedule_changes') {
     if (op === 'insert') { const r = Array.isArray(rows) ? rows : [rows]; r.forEach(x => changes.push(Object.assign({ id: changes.length + 1, created_by: teachers[pageInfo.uid].name }, x))); return { data: null, error: null }; }
-    if (op === 'select') return { data: changes.slice(), error: null };
+    if (op === 'select') { let l = changes.slice().sort((x, y) => x.id - y.id); const r0 = range ? range[0] : 0, r1 = range ? range[1] + 1 : l.length; l = l.slice(r0, Math.min(r1, r0 + 1000)); return { data: l, error: null }; } // 진짜 서버처럼 한 번에 최대 1000줄(max_rows)
     return { data: null, error: null };
   }
   if (table === 'timetable' && op === 'select') {
@@ -274,6 +274,16 @@ function check(label, cond, detail) {
   changes.pop(); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
   check('둘째 교환을 지우면(가짜 서버에서) 첫 교환만 남아 김교사 화1 빔·수1 국어', changes.length === 2 && await cell('김교사', 1, 2) === '' && await cell('김교사', 1, 3) === '국어');
 
+  // ---- 창을 연 뒤 다른 기기에서 같은 칸을 바꾸면: 저장 직전에 다시 받아 확인하고 등록하지 않음(연속 교환은 "지금 그 칸의 수업"을 옮기므로) ----
+  await pick('a', wk[2], 1); await P.selectOption('#scc-partner', '이교사'); await wait(100); await pick('b', wk[1], 1); await wait(150);
+  check('(다른 기기 변경 전) 미리보기: 김교사 수1 "국어"', /\(수\) 1교시 "국어/.test(await preview()), await preview());
+  changes.push({ id: 50, change_date: wk[2], change_date_b: wk[2], type: 'makeup', teacher_a: '김교사', period_a: 1, teacher_b: '정교사', period_b: 1, created_by: '이교사' }); // 다른 기기에서 방금 등록
+  await P.click('#scc-save-btn'); await wait(500);
+  const staleMsg = await P.evaluate(() => document.getElementById('custom-alert-msg') ? document.getElementById('custom-alert-msg').innerText : document.body.innerText);
+  await P.click('#custom-alert-ok-btn'); await wait(300);
+  check('다른 기기가 같은 칸을 먼저 바꿨으면 등록하지 않고 알림, 고른 칸 풀림, 바뀐 시간표(김교사 수1 보강 표시)', changes.length === 3 && /방금 다른 분이/.test(staleMsg) && await P.evaluate(() => !scc.pickA && !scc.pickB) && /chg/.test(await cls('a', wk[2], 1)), { n: changes.length, staleMsg: staleMsg.slice(0, 80) });
+  changes.pop(); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
+
   // ---- 📋 일자·교시 고르기(10/7 사용자: 나이스 "수업 교체"처럼 목록이 편한 분 — 계정에 기억) ----
   await P.click('#scc-view-list'); await wait(200);
   check('📋 일자·교시 고르기: 시간표 대신 일자·교시·과목정보 칸, 주 이동 숨김, 계정 자료 scc-view=list', await P.evaluate(() => document.getElementById('scc-grid-a').classList.contains('scc-listpick') && !!document.getElementById('scc-ld-a') && !!document.getElementById('scc-lp-a') && getComputedStyle(document.querySelector('#scc-side-a .scc-week')).display === 'none' && localStorage.getItem('scc-view') === 'list' && document.getElementById('scc-view-list').classList.contains('active')));
@@ -424,6 +434,18 @@ function check(label, cond, detail) {
       String(x.sub).startsWith('기간: ' + si.start + ' ~ ' + si.end + ' · 총 5건') && x.sheet === '수업 변경 내역' && x.frozen &&
       /^A3:P8$/.test(typeof x.filter === 'string' ? x.filter : '') && x.head.startsWith('날짜,요일,교시,구분,원래 선생님,과목') && x.rows === 5 &&
       x.headFill === 'FF1F3A5F' && x.d1 === wk[0] && x.fmt === 'yyyy-mm-dd' && x.landscape === 'landscape' && x.fitW === 1 && x.border, x);
+    // 연속 교환 기록의 과목·반 칸 = 그 기록이 실제로 옮긴 수업(정규 시간표 칸이 아니라)
+    const xc = await P.evaluate(async (wk) => {
+      const keep = window.scheduleChangesAll;
+      window.scheduleChangesAll = [
+        { id: 1, change_date: wk[0], change_date_b: wk[2], type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '박교사', period_b: 1, created_by: 'x' },
+        { id: 3, change_date: wk[2], change_date_b: wk[1], type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '이교사', period_b: 1, created_by: 'x' }];
+      const wb = await sccBuildWorkbook(window.scheduleChangesAll.slice(1));
+      window.scheduleChangesAll = keep;
+      const r = wb.worksheets[0].getRow(4);
+      return [6, 7, 12, 13].map(n => String(r.getCell(n).value || ''));
+    }, wk);
+    check('엑셀 연속 교환: 둘째 교환의 과목·반 = 옮겨 온 "국어 200", 상대 = "수학 207"', xc.join('|') === '국어|200|수학|207', xc);
   }
   await P.selectOption('#scc-type-filter', 'all'); await P.click('#scc-range-btns [data-range="all"]');
   await P.click('#scc-tab-new-btn'); await wait(100);
@@ -463,6 +485,12 @@ function check(label, cond, detail) {
   await t.page.evaluate(() => sccShowTab('new')); await wait(100); // 휴대폰 폭에선 테스트용 새로고침 띠가 버튼을 가림
   const mob = await t.page.evaluate(() => { const a = document.getElementById('scc-grid-a').getBoundingClientRect(), b = document.getElementById('scc-grid-b').getBoundingClientRect(); return { stacked: b.top > a.bottom, fits: a.width <= 390 && b.width <= 390, h: a.height }; });
   check('휴대폰: 두 시간표 위아래, 화면 폭 안', mob.stacked && mob.fits && mob.h > 300, mob);
+  // 서버가 한 번에 1000줄만 주어도 끝까지 받는지(연속 교환은 기록이 하나라도 빠지면 틀림)
+  const nBefore = changes.length;
+  for (let i = 0; i < 1500; i++) changes.push({ id: 1000 + i, change_date: wk[4], change_date_b: wk[4], type: 'makeup', teacher_a: '더미' + i, period_a: 7, teacher_b: '더미선생', period_b: 7, created_by: 'x' });
+  const got = await t.page.evaluate(async () => { await fetchScheduleChanges(); return window.scheduleChangesAll.length; });
+  check('기록이 1000건을 넘어도 끝까지 받음(1000줄씩 나눠서)', got === nBefore + 1500, { got, want: nBefore + 1500 });
+  changes.splice(nBefore);
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
   check('전체 페이지 오류 없음', allErrors.length === 0, allErrors);
   console.log(failures === 0 ? '\n모든 검사 통과' : '\n실패 ' + failures + '건');

@@ -9448,11 +9448,18 @@
       const range = sccDateRange();
       const pr = sccPickRange();
       const from = new Date(pr.min < range.min ? pr.min : range.min); from.setDate(from.getDate() - 200);
-      const { data, error } = await sb.from('schedule_changes').select('*')
-        .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max);
-      if (error) throw error;
+      // 서버는 한 번에 1000줄까지만 준다 — 연속 교환은 기록이 하나라도 빠지면 틀리게 그려지므로 1000줄씩 끝까지 받는다
+      const data = [];
+      for (let off = 0; ; off += 1000) {
+        const res = await sb.from('schedule_changes').select('*')
+          .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max)
+          .order('id', { ascending: true }).range(off, off + 999);
+        if (res.error) throw res.error;
+        (res.data || []).forEach(function(c) { data.push(c); });
+        if (!res.data || res.data.length < 1000) break;
+      }
       // 변경 창(지난 내역·다른 주 보기·엑셀)은 받아 온 전부를, 홈 시간표는 이번 주 ~ 학기 끝만 쓴다.
-      window.scheduleChangesAll = data || [];
+      window.scheduleChangesAll = data;
       window.scheduleChangesRaw = window.scheduleChangesAll.filter(function(c) {
         const inRange = function(d) { return d >= range.min && d <= range.max; };
         return inRange(c.change_date) || inRange(sccDateB(c));
@@ -9467,7 +9474,7 @@
   // 홈 시간표(이번 주)·수업 변경 창(아무 주)·겹침 경고·변경 내역 글이 모두 이것 하나를 쓴다.
   //   교환(다른 시간): A의 (날짜A,교시A) 수업이 A의 (날짜B,교시B) 자리로, B의 (날짜B,교시B) 수업이 B의 (날짜A,교시A) 자리로 — 각자 자기 수업을 들고 시간만 옮김
   //   교환(같은 시간): 그 시간에 서로 상대방 수업으로 / 보강: A의 수업이 B의 (날짜B,교시B)에, A 칸은 빔
-  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역·엑셀), deps(이 기록이 옮겨 놓은 것을 이어받은 뒤 기록 수 — 지울 때 경고) }
+  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역), a, b([과목, 반] — 엑셀 칸), deps(이 기록이 옮겨 놓은 것을 이어받은 뒤 기록 수 — 지울 때 경고) }
   let sccEffCache = null;
   function sccEffectiveMap(list) {
     list = list || [];
@@ -9494,7 +9501,7 @@
         if (dateB === dateA && pA === pB) { put(c.teacher_a, dateA, pA, B); put(c.teacher_b, dateB, pB, A); }
         else { put(c.teacher_a, dateA, pA, null); put(c.teacher_a, dateB, pB, A); put(c.teacher_b, dateB, pB, null); put(c.teacher_b, dateA, pA, B); }
       } else { put(c.teacher_a, dateA, pA, null); put(c.teacher_b, dateB, pB, A); }
-      info[c.id] = { classA: text(A), classB: c.type === 'exchange' ? text(B) : '', deps: 0 };
+      info[c.id] = { classA: text(A), classB: c.type === 'exchange' ? text(B) : '', a: [A.s, A.r], b: c.type === 'exchange' ? [B.s, B.r] : ['', ''], deps: 0 };
     });
     const map = { get: get, info: info };
     sccEffCache = { list: list, n: list.length, sched: window.allSchedules, map: map };
@@ -9917,6 +9924,18 @@
     const btn = document.getElementById('scc-save-btn');
     btn.disabled = true;
     try {
+      // 창을 연 뒤 다른 분이 같은 칸을 바꿨을 수 있다(연속 교환은 "지금 그 칸의 수업"을 옮김) — 저장 직전에 다시 받아
+      // 미리보기에서 본 수업과 같은지 확인하고, 달라졌으면 등록하지 않고 새 내용을 보여 준다.
+      const seen = [sccClassAt(a, record.change_date, record.period_a), sccClassAt(b, record.change_date_b, record.period_b)];
+      await fetchScheduleChanges();
+      const now = [sccClassAt(a, record.change_date, record.period_a), sccClassAt(b, record.change_date_b, record.period_b)];
+      if (seen[0] !== now[0] || seen[1] !== now[1]) {
+        loadMyTimetable();
+        renderSearchTimetable(true);
+        scc.pickA = null; scc.pickB = null;
+        sccRenderNew();
+        return customAlert('방금 다른 분이 이 시간의 수업을 바꿔서 등록하지 않았어요.\n바뀐 시간표를 확인하고 다시 골라 주세요.');
+      }
       const { error } = await sb.from('schedule_changes').insert(record);
       if (error) throw error;
       await fetchScheduleChanges();
@@ -10143,8 +10162,10 @@
     list.forEach(function(c) {
       const d = sccDescribe(c);
       const ex = c.type === 'exchange';
-      const bRoom = ex ? sccRegularCell(c.teacher_b, d.wdB, c.period_b) : ['', ''];
-      const aCell = sccRegularCell(c.teacher_a, d.wdA, c.period_a);
+      // 과목·반은 그 기록이 실제로 옮긴 수업(연속 교환이면 앞 기록이 옮겨 놓은 수업) — 정규 시간표 칸이 아니라
+      const inf = sccEffectiveMap(sccAllChanges()).info[c.id];
+      const bRoom = !ex ? ['', ''] : inf ? inf.b : sccRegularCell(c.teacher_b, d.wdB, c.period_b);
+      const aCell = inf ? inf.a : sccRegularCell(c.teacher_a, d.wdA, c.period_a);
       const row = ws.addRow([
         sccExcelDate(c.change_date), SCC_DAYS[d.wdA], c.period_a, ex ? '교환' : '보강',
         c.teacher_a, aCell[0], aCell[1],
