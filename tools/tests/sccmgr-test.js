@@ -439,6 +439,7 @@ function check(label, cond, detail) {
 
   // ---- 변경 내역 ----
   await P.click('#scc-tab-list-btn'); await wait(200);
+  check('내역 기간 탭 순서: 전체 · 오늘부터 · 이번 주 · 다음 주 · 이번 달 · 지난 내역(10/7 사용자)', await P.evaluate(() => [...document.querySelectorAll('#scc-range-btns .tab-btn')].map(b => b.innerText).join(',')) === '전체,오늘부터,이번 주,다음 주,이번 달,지난 내역');
   await P.click('#scc-range-btns [data-range="all"]'); await wait(100);
   const lst = await P.evaluate(() => ({ text: document.getElementById('scc-list').innerText, sum: document.getElementById('scc-list-summary').innerText, del: document.querySelectorAll('#scc-list button').length, days: [...document.querySelectorAll('#scc-list tr.scc-day')].map(t => t.innerText) }));
   check('내역(전체): 남이 등록한 것도, 두 날짜 표시, 날짜별 묶음, 담당은 전부 삭제 가능', lst.text.includes('이교사') && lst.text.includes('정교사') && /↔ 박교사 \d+\/\d+\(수\) 1교시/.test(lst.text) && /이교사가 대신 \(\d+\/\d+\(목\) 1교시에\)/.test(lst.text) && lst.del === changes.length && /전체 5건 \(교환 3 · 보강 2\)/.test(lst.sum) && lst.days.length >= 3, lst);

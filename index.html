@@ -2365,12 +2365,12 @@
     <div class="scc-pane" id="scc-pane-list" style="display:none;">
       <div class="scc-filters">
         <div class="tab-switch" id="scc-range-btns">
+          <button class="tab-btn" data-range="all" onclick="sccSetListRange('all')">전체</button>
           <button class="tab-btn active" data-range="upcoming" onclick="sccSetListRange('upcoming')">오늘부터</button>
           <button class="tab-btn" data-range="thisweek" onclick="sccSetListRange('thisweek')">이번 주</button>
           <button class="tab-btn" data-range="nextweek" onclick="sccSetListRange('nextweek')">다음 주</button>
           <button class="tab-btn" data-range="month" onclick="sccSetListRange('month')">이번 달</button>
           <button class="tab-btn" data-range="past" onclick="sccSetListRange('past')">지난 내역</button>
-          <button class="tab-btn" data-range="all" onclick="sccSetListRange('all')">전체</button>
         </div>
         <select id="scc-type-filter" class="mini-select" onchange="sccRenderList()">
           <option value="all">구분: 전체</option><option value="exchange">교환만</option><option value="makeup">보강만</option>
@@ -4460,7 +4460,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-07.3';
+  var BUILD_ID = '2026-10-07.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
