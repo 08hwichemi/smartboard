@@ -227,6 +227,28 @@ function check(label, cond, detail) {
   });
   check('큰 창: 담당은 왼쪽 선생님 고르기, 두 시간표가 좌우로, 칸 고르기 전엔 등록 버튼 꺼짐', m.open && m.aSel && m.aOpts === 12 && m.big && m.sideBySide && m.saveOff, m);
   await P.selectOption('#scc-teacher-a', '김교사'); await wait(100);
+  // ---- 선생님 이름을 글자로 찾기(10/7 사용자: 드롭다운 + 치면 맞는 이름이 뜨게) ----
+  const tcIn = '#scc-partner + .tc-input';
+  const pop = () => P.evaluate(() => { const p = document.getElementById('tc-pop'); return p && p.style.display !== 'none' ? [...p.querySelectorAll('.tc-item')].map(e => e.innerText) : null; });
+  const tc0 = await P.evaluate(() => { const i = document.querySelector('#scc-partner + .tc-input'), s = document.getElementById('scc-partner'); const a = i.getBoundingClientRect(), b = s.getBoundingClientRect(); return { ph: i.placeholder, over: a.left >= b.left - 1 && a.right < b.right - 10 && Math.abs(a.top - b.top) < 3, arrow: b.right - a.right }; });
+  check('② 선생님 칸: 드롭다운 위에 글자 칸(오른쪽 ▾는 드롭다운 그대로), 비었을 땐 "선생님 선택"', tc0.ph === '선생님 선택' && tc0.over && tc0.arrow >= 15, tc0);
+  await P.click(tcIn); await wait(100);
+  const all = await pop();
+  check('글자 칸을 누르면 전체 이름 목록(왼쪽 선생님 김교사는 빠짐)', all && all.length === 10 && !all.includes('김교사'), all);
+  await P.fill(tcIn, '경'); await wait(100);
+  check('"경"을 치면 백경미만', JSON.stringify(await pop()) === '["백경미"]', await pop());
+  await P.fill(tcIn, 'ㅎㅇㅇ'); await wait(100);
+  check('초성 "ㅎㅇㅇ"로 하영우', JSON.stringify(await pop()) === '["하영우"]', await pop());
+  await P.fill(tcIn, '없는이름'); await wait(100);
+  check('맞는 이름이 없으면 안내', /맞는 이름이 없어요/.test(await P.evaluate(() => document.getElementById('tc-pop').innerText)));
+  await P.fill(tcIn, '영'); await wait(100); await P.keyboard.press('Enter'); await wait(200);
+  const ent = await P.evaluate(() => ({ v: document.getElementById('scc-partner').value, t: document.querySelector('#scc-partner + .tc-input').value, cells: document.querySelectorAll('#scc-grid-b .scc-cell.has').length }));
+  check('"영" + Enter → 드롭다운 값·글자 칸 하영우, onchange로 오른쪽 시간표가 하영우 수업으로, 목록 닫힘', ent.v === '하영우' && ent.t === '하영우' && ent.cells > 0 && (await pop()) === null, ent);
+  await P.selectOption('#scc-partner', '박교사'); await wait(100);
+  check('드롭다운으로 고르면 글자 칸도 따라감(박교사)', await P.evaluate(() => document.querySelector('#scc-partner + .tc-input').value) === '박교사');
+  await P.evaluate(() => { document.getElementById('scc-partner').value = ''; }); await wait(50);
+  check('코드가 값을 비우면 글자 칸도 비고 "선생님 선택"', await P.evaluate(() => { const i = document.querySelector('#scc-partner + .tc-input'); return i.value === '' && i.placeholder === '선생님 선택'; }));
+  await P.evaluate(() => sccOnPartnerChange()); await wait(100);
   check('오른쪽 목록에서 왼쪽 선생님은 빠짐', await P.evaluate(() => ![...document.getElementById('scc-partner').options].some(o => o.value === '김교사')));
   const wk = await P.evaluate(() => getCurrentWeekDates());
   await setWeek('a', wk[0]);
