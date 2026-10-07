@@ -82,6 +82,11 @@ async function handleDb(pageInfo, req) {
   if (table === 'timetable' && op === 'select') {
     const subj = ['국어','수학','영어','과학','사회','체육','음악','미술'];
     const rows = ['김교사','박교사','이교사','정교사','한교사','오교사','윤교사','장교사'].map((nm, t) => ({ teacher_name: nm, cells: Array.from({length:35}, (_, j) => (j + t) % 3 === 0 ? subj[(j + t) % 8] + '\n' + (200 + j) : '') }));
+    // 10/7 담당 선생님이 검증한 실제 시간표(화·목만): 백경미 화1 독서 302·목1 독서 307 / 하영우 화2 물리 302 / 김용남 화1 심화영어 307·화4 302
+    const real = (m) => { const c = Array(35).fill(''); for (const k in m) c[k] = m[k]; return c; };
+    rows.push({ teacher_name: '백경미', cells: real({ 7: '독서\n302', 10: '독서\n306', 21: '독서\n307', 22: '독서\n303' }) });
+    rows.push({ teacher_name: '하영우', cells: real({ 8: '물리학Ⅱ\n302', 9: '물리학Ⅱ\n303', 11: '물리학Ⅱ\n301', 22: '물리학Ⅱ\n301' }) });
+    rows.push({ teacher_name: '김용남', cells: real({ 7: '심화영어Ⅰ\n307', 10: '심화영어Ⅰ\n302', 22: '심화영어Ⅰ\n307' }) });
     return { data: rows, error: null };
   }
   if (table === 'student_timetable_card' && op === 'select') {
@@ -220,7 +225,7 @@ function check(label, cond, detail) {
       saveOff: document.getElementById('scc-save-btn').disabled,
     };
   });
-  check('큰 창: 담당은 왼쪽 선생님 고르기, 두 시간표가 좌우로, 칸 고르기 전엔 등록 버튼 꺼짐', m.open && m.aSel && m.aOpts === 9 && m.big && m.sideBySide && m.saveOff, m);
+  check('큰 창: 담당은 왼쪽 선생님 고르기, 두 시간표가 좌우로, 칸 고르기 전엔 등록 버튼 꺼짐', m.open && m.aSel && m.aOpts === 12 && m.big && m.sideBySide && m.saveOff, m);
   await P.selectOption('#scc-teacher-a', '김교사'); await wait(100);
   check('오른쪽 목록에서 왼쪽 선생님은 빠짐', await P.evaluate(() => ![...document.getElementById('scc-partner').options].some(o => o.value === '김교사')));
   const wk = await P.evaluate(() => getCurrentWeekDates());
@@ -283,6 +288,37 @@ function check(label, cond, detail) {
   await P.click('#custom-alert-ok-btn'); await wait(300);
   check('다른 기기가 같은 칸을 먼저 바꿨으면 등록하지 않고 알림, 고른 칸 풀림, 바뀐 시간표(김교사 수1 보강 표시)', changes.length === 3 && /방금 다른 분이/.test(staleMsg) && await P.evaluate(() => !scc.pickA && !scc.pickB) && /chg/.test(await cls('a', wk[2], 1)), { n: changes.length, staleMsg: staleMsg.slice(0, 80) });
   changes.pop(); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
+
+  // ---- 넣는 순서와 상관없이(10/7 담당 선생님 검증: 나이스 순서 ①②③은 되고 ③①②는 안 됨) ----
+  // ③ 김용남 화1(307) ↔ 백경미 목1(307)을 먼저 넣으면 백경미 화1에 302·307 두 수업이 잠시 겹친다 — 예전엔 307이 302를 덮어써서
+  // 다음 ① 백경미 화1 ↔ 하영우 화2에서 302가 아니라 307이 옮겨지고 302반 독서가 사라졌다.
+  const nOrd = changes.length, tue2 = await P.evaluate((d) => sccAddDays(d, 14), wk[1]);
+  await P.selectOption('#scc-teacher-a', '김용남'); await wait(100); await setWeek('a', wk[0]);
+  await pick('a', wk[1], 1); await P.selectOption('#scc-partner', '백경미'); await wait(100); await setWeek('b', wk[0]); await pick('b', wk[3], 1); await wait(150);
+  check('③ 먼저: 미리보기에 "백경미쌤은 화 1교시에 이미 독서 302 수업이 있어서 겹쳐요"', /백경미쌤은 .*\(화\) 1교시에 이미 "독서 302"/.test(await preview()), await preview());
+  await save();
+  await P.selectOption('#scc-teacher-a', '백경미'); await wait(100); await setWeek('a', wk[0]);
+  const dbl = await P.evaluate((q) => { const e = document.querySelector(q); return { cls: e.className, txt: e.innerText.replace(/\s+/g, ' ') }; }, cellSel('a', wk[1], 1));
+  check('백경미 화1 칸에 두 수업(독서 302·독서 307)이 같이 보이고 "겹침" 표시(빨간 테두리), 누를 수 있음', /\bdbl\b/.test(dbl.cls) && /pick/.test(dbl.cls) && /302/.test(dbl.txt) && /307/.test(dbl.txt) && /겹침/.test(dbl.txt), dbl);
+  await pick('a', wk[1], 1); await P.selectOption('#scc-partner', '하영우'); await wait(100); await setWeek('b', wk[0]); await pick('b', wk[1], 2); await wait(150);
+  const pvO = await preview();
+  check('① 백경미 화1 ↔ 하영우 화2: 상대 수업과 같은 반(302)이 저절로 골라짐 + 옮길 수업 고르기 단추 두 개', /"독서 302" → .*\(화\) 2교시/.test(pvO) && /수업이 2개 겹쳐 있어요/.test(pvO) && await P.evaluate(() => [...document.querySelectorAll('#scc-preview .scc-room-btn')].map(b => b.innerText + (b.classList.contains('active') ? '*' : '')).join(',')) === '독서 302*,독서 307', pvO);
+  await P.click('#scc-preview .scc-room-btn:not(.active)'); await wait(100);
+  check('단추로 307을 고르면 미리보기도 307로', /"독서 307" → /.test(await preview()), await preview());
+  await P.click('#scc-preview .scc-room-btn:not(.active)'); await wait(100);
+  await save();
+  const ro = changes[changes.length - 1];
+  check('① 저장: 옮긴 수업의 반도 같이 저장(room_a 302 · room_b 302)', ro.teacher_a === '백경미' && ro.room_a === '302' && ro.room_b === '302', ro);
+  await P.selectOption('#scc-teacher-a', '김용남'); await wait(100); await setWeek('a', wk[0]);
+  await pick('a', wk[1], 4); await P.selectOption('#scc-partner', '하영우'); await wait(100); await setWeek('b', tue2); await pick('b', tue2, 2); await wait(150);
+  await save();
+  const fin = await P.evaluate(([w, t2]) => { const g = (t, d, p) => sccClassAt(t, d, p) || '·'; return [g('백경미', w[1], 1), g('백경미', w[1], 2), g('하영우', w[1], 1), g('하영우', w[1], 2), g('하영우', w[1], 4), g('김용남', w[1], 1), g('김용남', w[1], 4), g('김용남', w[3], 1), g('김용남', t2, 2), g('백경미', w[3], 1), g('하영우', t2, 2)].join('|'); }, [wk, tue2]);
+  check('③①② 순서로 넣어도 나이스 순서(①②③)와 같은 결과: 화 302반 1교시 물리·2교시 독서·4교시 물리, 307반 1교시 독서(백경미)',
+    changes.length === nOrd + 3 && fin === '독서 307|독서 302|물리학Ⅱ 302|·|물리학Ⅱ 302|·|·|심화영어Ⅰ 307|심화영어Ⅰ 302|·|·', fin);
+  const homeR = await P.evaluate(() => { document.getElementById('search-select').value = '백경미'; renderSearchTimetable(true); return [1, 2].map(p => document.getElementById('search-tt-' + p + '-2-s').innerText.trim() + ' ' + document.getElementById('search-tt-' + p + '-2-r').innerText.trim()); });
+  check('홈 시간표(선생님 찾기) 백경미 화1 독서 307 · 화2 독서 302', homeR.join(',') === '독서 307,독서 302', homeR);
+  changes.splice(nOrd); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
+  await P.selectOption('#scc-teacher-a', '김교사'); await wait(100); await setWeek('a', wk[0]);
 
   // ---- 📋 일자·교시 고르기(10/7 사용자: 나이스 "수업 교체"처럼 목록이 편한 분 — 계정에 기억) ----
   await P.click('#scc-view-list'); await wait(200);
@@ -458,7 +494,7 @@ function check(label, cond, detail) {
   // 예전 기록(change_date_b 없음)은 예전처럼 같은 날로
   await P.evaluate((d) => { window.scheduleChangesAll = window.scheduleChangesRaw = [{ id: 99, change_date: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '박교사', period_b: 4, created_by: 'x' }]; }, wk[0]);
   const o1 = await cell('김교사', 4, 1);
-  check('예전 기록(날짜 하나)도 그대로: 김교사 월1 국어가 월4로', o1 === '국어', o1);
+  check('예전 기록(날짜 하나)도 그대로: 김교사 월1 국어가 월4로(월4엔 원래 과학이 있어서 두 수업이 겹쳐 같이 보임 — 예전엔 과학이 덮여 사라졌음)', o1 === '과학 / 국어' && await cell('김교사', 1, 1) === '', o1);
   await P.evaluate(async () => { await fetchScheduleChanges(); });
   // 역할 "교사" + 담당 + 본인 시간표 없음: 내 시간표 자리에서 선생님 골라 보기 + 수업변경 버튼 둘 다
   const g = await openDevice(browser, '수업계교사PC', '66666666-6666-6666-6666-666666666666');

@@ -311,6 +311,10 @@
     .scc-cell.no { opacity: 0.28; cursor: not-allowed; }
     .scc-cell.chg { opacity: 0.6; border-style: dashed; border-color: var(--text-sub); cursor: not-allowed; }
     .scc-cell.chg.pick { opacity: 0.9; cursor: pointer; } /* 바뀐 칸도 다시 바꿀 수 있음(연속 교환) */
+    .scc-cell.dbl { opacity: 1; border: 2px solid var(--alert); } /* 수업이 겹친 칸 — 다음 변경으로 하나를 비켜 놓으면 풀림 */
+    .scc-cell.dbl .s { font-size: 11.5px; } .scc-cell.dbl .r { font-size: 10px; }
+    #scc-preview .scc-room-btn { padding: 1px 8px; font-size: 12px; margin-left: 4px; }
+    #scc-preview .scc-room-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
     /* 📋 일자·교시 고르기(나이스 수업 교체 화면처럼): 시간표 자리에 일자(− +) · 교시 목록 · 과목정보 */
     .scc-listmode .scc-week { display: none; }
     .scc-grid.scc-listpick { display: grid; grid-template-columns: 76px 1fr; grid-template-rows: none; gap: 0; align-content: start; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; font-size: 13px; }
@@ -9468,13 +9472,21 @@
   }
 
   // 변경 기록을 등록한 순서(created_at → id)대로 차례로 적용해 "실제" 시간표를 만든다(10/7 사용자: 연속 교환이 많다).
-  // 예전엔 기록마다 정규 시간표의 그 칸을 옮겨서, 이미 바뀐 칸을 다시 바꾸면 "지금 그 칸에 와 있는 수업"이 아니라 원래 수업이 옮겨져 틀리게 그려졌고
-  // 그래서 바뀐 칸은 못 누르게 막아 두었다. 이제는 앞 기록이 옮겨 놓은 수업을 뒤 기록이 그대로 이어받는다.
-  // get(teacher, date, period) → { s, r, change } (change = 그 칸을 마지막으로 바꾼 기록, 없으면 null)
-  // 홈 시간표(이번 주)·수업 변경 창(아무 주)·겹침 경고·변경 내역 글이 모두 이것 하나를 쓴다.
+  // 앞 기록이 옮겨 놓은 수업을 뒤 기록이 그대로 이어받는다(바뀐 칸을 다시 바꾸면 "지금 그 칸에 와 있는 수업"이 옮겨감).
+  // 한 칸에 수업이 여러 개 있을 수 있다(10/7 담당 선생님 검증): 교환으로 이미 수업이 있는 시간에 수업이 오면 잠시 두 수업이 겹치고,
+  // 다음 기록으로 하나를 비켜 놓아 푸는 식으로 넣는 경우가 많다. 예전엔 한 칸에 하나만 담아 덮어써서 넣는 순서에 따라 수업이 사라졌다.
+  // 겹친 칸에서 어느 수업을 옮기는지: 기록의 room_a / room_b(그 수업의 반) → 없으면(옛 기록) 상대 수업과 같은 반 → 그래도 모르면 나중에 온 수업.
+  // get(teacher, date, period) → { list: [{ s, r, by }], s, r(첫 수업 — 한 개일 때 그대로 쓰기 편하게), text(겹치면 " / "로), change(그 칸을 마지막으로 바꾼 기록) }
+  //   by = 그 수업을 그 칸으로 옮겨 놓은 기록 id(정규 시간표 수업이면 null)
+  // 홈 시간표(이번 주)·수업 변경 창(아무 주)·겹침 경고·변경 내역 글·엑셀이 모두 이것 하나를 쓴다.
   //   교환(다른 시간): A의 (날짜A,교시A) 수업이 A의 (날짜B,교시B) 자리로, B의 (날짜B,교시B) 수업이 B의 (날짜A,교시A) 자리로 — 각자 자기 수업을 들고 시간만 옮김
-  //   교환(같은 시간): 그 시간에 서로 상대방 수업으로 / 보강: A의 수업이 B의 (날짜B,교시B)에, A 칸은 빔
-  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역), a, b([과목, 반] — 엑셀 칸), deps(이 기록이 옮겨 놓은 것을 이어받은 뒤 기록 수 — 지울 때 경고) }
+  //   교환(같은 시간): 그 시간에 서로 상대방 수업으로 / 보강: A의 수업이 B의 (날짜B,교시B)에, A 칸에서는 빠짐
+  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역), a, b([과목, 반] — 엑셀 칸), deps(이 기록이 옮겨 놓은 수업을 다시 옮긴 뒤 기록 수 — 지울 때 경고) }
+  // choose(record) = 그 기록을 지금 등록하면 옮겨질 수업 { a, b } — 미리보기·등록(room_a/room_b 저장)에 쓴다.
+  function sccClassTextOf(x) { return x && x.s ? x.s + (x.r ? ' ' + x.r : '') : ''; }
+  function sccCellOf(list, change) {
+    return { list: list, s: list.length ? list[0].s : '', r: list.length ? list[0].r : '', text: list.map(sccClassTextOf).join(' / '), change: change };
+  }
   let sccEffCache = null;
   function sccEffectiveMap(list) {
     list = list || [];
@@ -9485,31 +9497,60 @@
       const k = key(t, date, p);
       if (cells[k]) return cells[k];
       const c = sccRegularCell(t, sccWeekdayOf(date), p);
-      return { s: c[0], r: c[1], change: null };
+      return sccCellOf(c[0] ? [{ s: c[0], r: c[1], by: null }] : [], null);
     };
-    const text = function(c) { return c.s ? c.s + (c.r ? ' ' + c.r : '') : ''; };
+    // 칸에서 옮길 수업 하나 고르기: 정한 반(room) → 상대 수업들과 같은 반(하나뿐일 때) → 나중에 온 수업
+    const pickFrom = function(cell, room, others) {
+      const l = cell.list;
+      if (!l.length) return null;
+      if (room) { const f = l.filter(function(x) { return x.r === room; }); if (f.length) return f[f.length - 1]; }
+      if (l.length === 1) return l[0];
+      const rooms = (others || []).map(function(x) { return x.r; });
+      const m = l.filter(function(x) { return x.r && rooms.indexOf(x.r) >= 0; });
+      return m.length === 1 ? m[0] : l[l.length - 1];
+    };
+    const choose = function(c) {
+      const A = get(c.teacher_a, c.change_date, c.period_a);
+      if (c.type !== 'exchange') return { a: pickFrom(A, c.room_a, null), b: null, A: A, B: null };
+      const B = get(c.teacher_b, sccDateB(c), c.period_b);
+      const a = pickFrom(A, c.room_a, c.room_b ? [{ r: c.room_b }] : B.list);
+      const b = pickFrom(B, c.room_b, a ? [a] : A.list);
+      return { a: a, b: b, A: A, B: B };
+    };
     const sorted = list.slice().sort(function(x, y) {
       return String(x.created_at || '').localeCompare(String(y.created_at || '')) || ((Number(x.id) || 0) - (Number(y.id) || 0)) || String(x.id).localeCompare(String(y.id));
     });
     sorted.forEach(function(c) {
       const dateA = c.change_date, dateB = sccDateB(c), pA = c.period_a, pB = c.period_b;
-      const A = get(c.teacher_a, dateA, pA), B = get(c.teacher_b, dateB, pB);
-      // 이어받기: 읽은 칸이 앞 기록이 바꿔 놓은 칸이면 그 기록에 "뒤에 이어진 변경" 하나를 더한다
-      [A, B].forEach(function(x) { if (x.change && info[x.change.id]) info[x.change.id].deps++; });
-      const put = function(t, date, p, src) { cells[key(t, date, p)] = { s: src ? src.s : '', r: src ? src.r : '', change: c }; };
+      const ch = choose(c), a = ch.a, b = ch.b;
+      // 이어받기: 옮기는 수업을 앞 기록이 옮겨 놓았으면 그 기록에 "뒤에 이어진 변경" 하나를 더한다
+      [a, b].forEach(function(x) { if (x && x.by != null && info[x.by]) info[x.by].deps++; });
+      const without = function(cell, x) { return cell.list.filter(function(y) { return y !== x; }); };
+      const set = function(t, date, p, l) { cells[key(t, date, p)] = sccCellOf(l, c); };
+      const moved = function(x) { return x ? [{ s: x.s, r: x.r, by: c.id }] : []; };
       if (c.type === 'exchange') {
-        if (dateB === dateA && pA === pB) { put(c.teacher_a, dateA, pA, B); put(c.teacher_b, dateB, pB, A); }
-        else { put(c.teacher_a, dateA, pA, null); put(c.teacher_a, dateB, pB, A); put(c.teacher_b, dateB, pB, null); put(c.teacher_b, dateA, pA, B); }
-      } else { put(c.teacher_a, dateA, pA, null); put(c.teacher_b, dateB, pB, A); }
-      info[c.id] = { classA: text(A), classB: c.type === 'exchange' ? text(B) : '', a: [A.s, A.r], b: c.type === 'exchange' ? [B.s, B.r] : ['', ''], deps: 0 };
+        if (dateB === dateA && pA === pB) {
+          set(c.teacher_a, dateA, pA, without(ch.A, a).concat(moved(b)));
+          set(c.teacher_b, dateB, pB, without(ch.B, b).concat(moved(a)));
+        } else {
+          set(c.teacher_a, dateA, pA, without(ch.A, a));
+          set(c.teacher_a, dateB, pB, get(c.teacher_a, dateB, pB).list.concat(moved(a)));
+          set(c.teacher_b, dateB, pB, without(ch.B, b));
+          set(c.teacher_b, dateA, pA, get(c.teacher_b, dateA, pA).list.concat(moved(b)));
+        }
+      } else {
+        set(c.teacher_a, dateA, pA, without(ch.A, a));
+        set(c.teacher_b, dateB, pB, get(c.teacher_b, dateB, pB).list.concat(moved(a)));
+      }
+      info[c.id] = { classA: sccClassTextOf(a), classB: c.type === 'exchange' ? sccClassTextOf(b) : '', a: a ? [a.s, a.r] : ['', ''], b: b && c.type === 'exchange' ? [b.s, b.r] : ['', ''], deps: 0 };
     });
-    const map = { get: get, info: info };
+    const map = { get: get, info: info, choose: function(c) { const x = choose(c); return { a: x.a, b: x.b }; } };
     sccEffCache = { list: list, n: list.length, sched: window.allSchedules, map: map };
     return map;
   }
   function sccAllChanges() { return window.scheduleChangesAll || window.scheduleChangesRaw || []; }
   // 그 날짜·교시에 그 선생님이 실제로 하는 수업("국어 2-3") — 변경까지 반영
-  function sccClassAt(teacher, date, period) { const c = sccEffectiveMap(sccAllChanges()).get(teacher, date, period); return c.s ? c.s + (c.r ? ' ' + c.r : '') : ''; }
+  function sccClassAt(teacher, date, period) { return sccEffectiveMap(sccAllChanges()).get(teacher, date, period).text; }
   // 이 기록이 옮겨 놓은 수업을 이어받은 뒤 기록 수(지울 때 경고)
   function sccChainDependents(id) { const i = sccEffectiveMap(sccAllChanges()).info[id]; return i ? i.deps : 0; }
 
@@ -9532,8 +9573,10 @@
       if (!cell.change) continue;
       const subjEl = document.getElementById(prefix + '-' + p + '-' + d + '-s');
       const roomEl = document.getElementById(prefix + '-' + p + '-' + d + '-r');
-      if (subjEl) subjEl.innerHTML = subjDisplayHtml(cell.s);
-      if (roomEl) roomEl.innerText = cell.r;
+      // 수업이 겹친 칸(잠시 두 수업 — 다음 변경으로 풀 것)은 과목·반을 " / "로 같이 보여 준다
+      const subjs = cell.list.map(function(x) { return x.s; }).filter(function(x, i, l) { return l.indexOf(x) === i; });
+      if (subjEl) subjEl.innerHTML = subjs.map(subjDisplayHtml).join(' / ');
+      if (roomEl) roomEl.innerText = cell.list.map(function(x) { return x.r; }).join(' / ');
     }
   }
 
@@ -9608,8 +9651,7 @@
   function sccBusyAt(teacher, date, period) {
     const wd = sccWeekdayOf(date);
     if (wd < 1 || wd > 5) return '';
-    const cell = sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)))[period][wd];
-    return cell.s ? (cell.s + (cell.r ? ' ' + cell.r : '')) : '';
+    return sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)))[period][wd].text;
   }
 
   // 칸을 누를 수 있는지. 못 누르면 이유(마우스를 올리면 보임)를 돌려준다.
@@ -9652,15 +9694,16 @@
         // 왼쪽의 빈 시간은 흐리게 하지 않고 그냥 못 누르게만(시간표가 읽기 쉽게).
         let cls = 'scc-cell' + (cell.s ? ' has' : ' empty');
         if (cell.change) cls += ' chg'; // 바뀐 칸 표시(점선) — 누를 수 있으면 pick도 같이
+        if (cell.list.length > 1) cls += ' dbl'; // 수업이 겹친 칸(빨간 테두리)
         if (sel) cls += ' sel';
         else if (!block) cls += ' pick';
         else if (sccDateProblem(date) || side === 'b') cls += ' no';
         const bg = cell.s ? ' style="background:' + getSubjectColor(cell.s + cell.r) + ';"' : '';
-        const badge = sel ? (side === 'a' ? '①' : '②') : cell.change ? (cell.change.type === 'exchange' ? '교환' : '보강') : '';
+        const badge = sel ? (side === 'a' ? '①' : '②') : cell.list.length > 1 ? '겹침' : cell.change ? (cell.change.type === 'exchange' ? '교환' : '보강') : '';
         html += '<div class="' + cls + '"' + bg + ' data-date="' + date + '" data-p="' + p + '"' +
           (block && !sel ? ' title="' + escapeHtmlAttr(block) + '"' : '') +
           (!block || sel ? ' onclick="sccPick(\'' + side + '\', \'' + date + '\', ' + p + ')"' : '') + '>' +
-          (cell.s ? '<span class="s">' + subjDisplayHtml(cell.s) + '</span><span class="r">' + escapeHtmlText(cell.r) + '</span>' : '') +
+          cell.list.map(function(x) { return '<span class="s">' + subjDisplayHtml(x.s) + '</span><span class="r">' + escapeHtmlText(x.r) + '</span>'; }).join('') +
           (badge ? '<span class="badge">' + badge + '</span>' : '') + '</div>';
       }
     }
@@ -9717,7 +9760,7 @@
       h += '<div class="scc-lp-l">교시</div><div><select id="scc-lp-' + side + '" onchange="sccListPeriod(\'' + side + '\', this.value)"><option value="">선택</option>';
       for (let p = 1; p <= 7; p++) {
         const cell = cells[p][wd], block = sccCellBlock(side, date, cell), t = currentTimes[p - 1] || { s: '' };
-        const text = p + '교시' + (t.s ? ' (' + t.s + ')' : '') + ' — ' + (cell.s ? cell.s + (cell.r ? ' ' + cell.r : '') : '빈 시간') + (cell.change ? ' [' + (cell.change.type === 'exchange' ? '교환됨' : '보강됨') + ']' : '');
+        const text = p + '교시' + (t.s ? ' (' + t.s + ')' : '') + ' — ' + (cell.text || '빈 시간') + (cell.list.length > 1 ? ' [겹침]' : cell.change ? ' [' + (cell.change.type === 'exchange' ? '교환됨' : '보강됨') + ']' : '');
         h += '<option value="' + p + '"' + (pick && pick.period === p ? ' selected' : '') + (block ? ' disabled' : '') + ' title="' + escapeHtmlAttr(block) + '">' + escapeHtmlText(text) + '</option>';
       }
       h += '</select></div>';
@@ -9877,11 +9920,13 @@
     const problem = sccDateProblem(A.date) || sccDateProblem(B.date);
     if (problem) { previewEl.innerText = problem; return; }
     const slotA = sccSlotText(A.date, A.period), slotB = sccSlotText(B.date, B.period);
-    const classA = sccClassAt(a, A.date, A.period); // 변경까지 반영한 지금 그 칸의 수업(연속 교환)
+    // 변경까지 반영한 지금 그 칸의 수업(연속 교환) — 수업이 겹친 칸이면 옮길 수업을 고른 것(또는 저절로 고른 것)
+    const ch = sccEffectiveMap(sccAllChanges()).choose(sccDraftRecord());
+    const classA = sccClassTextOf(ch.a);
     let html;
     const warns = [];
     if (ex) {
-      const classB = sccClassAt(b, B.date, B.period);
+      const classB = sccClassTextOf(ch.b);
       if (A.date === B.date && A.period === B.period) {
         html = '<b>' + escapeHtmlText(slotA) + '</b> 같은 시간에 서로 반을 맞바꿔 들어감\n' +
           escapeHtmlText(aName) + ' → "' + escapeHtmlText(classB) + '" 수업으로 · ' + escapeHtmlText(b) + '쌤 → "' + escapeHtmlText(classA) + '" 수업으로';
@@ -9899,8 +9944,32 @@
         escapeHtmlText(b) + '쌤 시간표 ' + escapeHtmlText(slotB) + '에 이 수업이 추가로 표시돼요.';
     }
     if (warns.length) html += '\n<span class="warn">⚠️ ' + warns.map(escapeHtmlText).join(' ') + '</span>';
+    html += sccRoomChoiceHtml('a', a, A, ch.a) + (ex ? sccRoomChoiceHtml('b', b, B, ch.b) : '');
     previewEl.innerHTML = html;
     saveBtn.disabled = false;
+  }
+
+  // 지금 고른 두 칸으로 만들 기록(room_a / room_b = 겹친 칸에서 직접 고른 반, 없으면 null — 저절로 고름)
+  function sccDraftRecord() {
+    return {
+      change_date: scc.pickA.date, change_date_b: scc.pickB.date, type: scc.type,
+      teacher_a: sccTeacherA(), period_a: scc.pickA.period, teacher_b: sccPartner(), period_b: scc.pickB.period,
+      room_a: scc.pickA.room || null, room_b: scc.type === 'exchange' ? (scc.pickB.room || null) : null
+    };
+  }
+  // 고른 칸에 수업이 겹쳐 있으면(잠시 두 수업) 옮길 수업을 고르는 단추 줄
+  function sccRoomChoiceHtml(side, teacher, pick, chosen) {
+    const cell = sccEffectiveMap(sccAllChanges()).get(teacher, pick.date, pick.period);
+    if (cell.list.length < 2) return '';
+    return '\n<span class="warn">' + (side === 'a' ? '①' : '②') + ' ' + escapeHtmlText(teacher) + '쌤 ' + escapeHtmlText(sccSlotText(pick.date, pick.period)) + '엔 수업이 ' + cell.list.length + '개 겹쳐 있어요 — 옮길 수업:</span>' +
+      cell.list.map(function(x) {
+        return '<button type="button" class="top-btn scc-room-btn' + (x === chosen ? ' active' : '') + '" onclick="sccChooseRoom(\'' + side + '\', \'' + escapeHtmlAttr(String(x.r).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">' + escapeHtmlText(sccClassTextOf(x)) + '</button>';
+      }).join('');
+  }
+  function sccChooseRoom(side, room) {
+    const pick = side === 'a' ? scc.pickA : scc.pickB;
+    if (pick) pick.room = room;
+    sccUpdatePreview();
   }
 
   async function sccSave() {
@@ -9911,15 +9980,7 @@
     const problem = sccDateProblem(scc.pickA.date) || sccDateProblem(scc.pickB.date);
     if (problem) return customAlert(problem);
 
-    const record = {
-      change_date: scc.pickA.date,
-      change_date_b: scc.pickB.date,
-      type: scc.type,
-      teacher_a: a,
-      period_a: scc.pickA.period,
-      teacher_b: b,
-      period_b: scc.pickB.period
-    };
+    const record = sccDraftRecord();
 
     const btn = document.getElementById('scc-save-btn');
     btn.disabled = true;
@@ -9936,6 +9997,10 @@
         sccRenderNew();
         return customAlert('방금 다른 분이 이 시간의 수업을 바꿔서 등록하지 않았어요.\n바뀐 시간표를 확인하고 다시 골라 주세요.');
       }
+      // 옮기는 수업의 반을 같이 저장 — 나중에 그 칸에 수업이 겹쳐도(넣는 순서와 상관없이) 어느 수업인지 정해진다
+      const ch = sccEffectiveMap(sccAllChanges()).choose(record);
+      record.room_a = ch.a && ch.a.r ? ch.a.r : null;
+      record.room_b = record.type === 'exchange' && ch.b && ch.b.r ? ch.b.r : null;
       const { error } = await sb.from('schedule_changes').insert(record);
       if (error) throw error;
       await fetchScheduleChanges();
