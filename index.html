@@ -1654,8 +1654,10 @@
     .et-x { border: none; background: none; cursor: pointer; color: var(--text-sub); font-size: 13px; padding: 2px 4px; }
     .et-x:hover { color: #e55; }
     /* 종이: 사용자 엑셀(출력 시트, 63% 축소)을 mm로 옮김 — A4 세로, 한 명 174.2 × 68.72mm, 4명이 한 장. 앞면(수험표)과 뒷면(가채점표)이 같은 자리에 와야 양면 인쇄 때 맞는다 */
+    .et-shift-val { font-size: 12.5px; font-weight: 800; margin-left: 6px; font-variant-numeric: tabular-nums; }
     .et-sheet { padding: 11mm 17.9mm !important; display: flex; flex-direction: column; font-family: 'Malgun Gothic', '맑은 고딕', 'Pretendard', sans-serif; line-height: 1.15; color: #000; }
-    .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; } /* overflow hidden 금지 — 합쳐진 테두리의 바깥 절반(0.2mm)이 잘려 아래·오른쪽 선이 얇아짐 */
+    .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; }
+    .et-back .et-card { transform: translate(var(--et-bx, 0mm), var(--et-by, 0mm)); } /* 🖨️ 뒷면 위치 맞추기 */ /* overflow hidden 금지 — 합쳐진 테두리의 바깥 절반(0.2mm)이 잘려 아래·오른쪽 선이 얇아짐 */
     .et-card + .et-card::before { content: ''; position: absolute; left: -6mm; right: -6mm; top: -0.05mm; border-top: 0.1mm dashed #b0b0b0; } /* 자르는 선(앞뒤 같은 자리) */
     .et-tbl { border-collapse: collapse; table-layout: fixed; width: 174.2mm; height: 68.72mm; }
     .et-tbl td { padding: 0 0.4mm; text-align: center; vertical-align: middle; overflow: hidden; white-space: nowrap; box-sizing: border-box; font-size: 6.9pt; }
@@ -3947,6 +3949,19 @@
           <div class="nt-muted">이 양식의 명단·사진은 개인정보라 <b>서버(계정)에 올리지 않고 이 컴퓨터의 브라우저에만</b> 저장돼요(홈의 💾 백업에도 안 들어가요). 다른 컴퓨터에서 쓰거나 브라우저 자료가 지워질 때를 대비해 백업 파일을 USB 등에 저장해 두세요.</div>
           <div class="nt-muted" id="et-store-msg"></div>
         </div>
+        <div class="nt-box" id="et-shift-box">
+          <div class="nt-title"><span class="fm-tt">🖨️ 뒷면 위치 맞추기</span> <span class="nt-muted">이 컴퓨터(프린터)에만 기억 · 0.1mm씩</span></div>
+          <div class="et-frow"><span class="ws-lb">위·아래</span>
+            <button class="nt-chip" onclick="etShiftBy(0, -0.1)" title="뒷면을 0.1mm 위로">▲ 올리기</button>
+            <button class="nt-chip" onclick="etShiftBy(0, 0.1)" title="뒷면을 0.1mm 아래로">▼ 내리기</button>
+            <span class="et-shift-val" id="et-shift-y"></span></div>
+          <div class="et-frow"><span class="ws-lb">좌·우</span>
+            <button class="nt-chip" onclick="etShiftBy(-0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 왼쪽으로">◀ 왼쪽으로</button>
+            <button class="nt-chip" onclick="etShiftBy(0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 오른쪽으로">▶ 오른쪽으로</button>
+            <span class="et-shift-val" id="et-shift-x"></span></div>
+          <div class="nt-row"><button class="nt-chip" id="et-shift-reset" onclick="etShiftReset()">↺ 처음대로(0)</button></div>
+          <div class="nt-muted">양면으로 한 장 뽑아 <b>앞면에서 빛에 비춰 보고</b>, 뒷면 테두리가 앞면보다 <b>아래로 보이면 ▲ 올리기</b>, 오른쪽으로 보이면 ◀ 왼쪽으로 — 보이는 대로 누르면 돼요(좌우는 종이를 뒤집는 것까지 계산해 둠). 앞면은 그대로이고 뒷면만 옮겨져요. 프린터는 장마다 0.1mm쯤 흔들릴 수 있어요.</div>
+        </div>
       </div>
     </div>
     <div id="fm-right">
@@ -6100,7 +6115,8 @@
     if (!key) return true;
     return isAuthSessionKey(key) || key.indexOf('sb-') === 0 || key.indexOf('statsig.') === 0 ||
       key.indexOf('backup-') === 0 || key.indexOf('sync-') === 0 || key.indexOf('practiceFboxOpen') === 0 || key.indexOf('search-tt-') === 0 ||
-      key === 'main-tab' || key === 'news-tab' || key === 'last-search' || key === 'last-auto-backup-date';
+      key === 'main-tab' || key === 'news-tab' || key === 'last-search' || key === 'last-auto-backup-date' ||
+      key.indexOf('device-') === 0; // 이 컴퓨터에만 맞는 값(프린터 보정 등) — 다른 기기로 안 보냄
   }
 
   function collectBackupData() {
@@ -21470,6 +21486,7 @@
     etMsgTo('et-photo-count', n ? '사진 ' + p + ' / ' + n + '명' : '');
   }
   function etFillForm() {
+    etShiftFill();
     const c = etCfg().cfg, loaded = etState.loaded;
     if (!loaded) etLoad();
     const grid = document.getElementById('et-grid');
@@ -21735,6 +21752,33 @@
     }
     return '<div class="et-card">' + h + '</table></div>';
   }
+  // ----- 🖨️ 뒷면 위치 맞추기(10/7 사용자: 양면 인쇄하면 뒷면이 0.1~0.2mm 내려가 보임 — 프린터 오차라 양식에서 맞춤) -----
+  // 이 컴퓨터(연결된 프린터)에만 맞는 값이라 localStorage 'device-et-back-shift'(device- = 서버로 안 올림)에 { x, y }(mm, 앞에서 비춰 본 방향).
+  // y: + = 아래로. x: + = 앞에서 볼 때 오른쪽으로 — 긴 쪽 넘김이면 뒷면은 좌우가 뒤집혀 보이므로 뒷면 종이 위에서는 왼쪽으로 옮긴다.
+  const ET_SHIFT_KEY = 'device-et-back-shift', ET_SHIFT_MAX = 3;
+  function etShift() {
+    let v = null; try { v = JSON.parse(localStorage.getItem(ET_SHIFT_KEY) || 'null'); } catch (e) {}
+    const n = function(x) { x = Math.round((Number(x) || 0) * 10) / 10; return Math.max(-ET_SHIFT_MAX, Math.min(ET_SHIFT_MAX, x)); };
+    return { x: n(v && v.x), y: n(v && v.y) };
+  }
+  function etShiftSave(v) {
+    try { if (v.x || v.y) localStorage.setItem(ET_SHIFT_KEY, JSON.stringify(v)); else localStorage.removeItem(ET_SHIFT_KEY); } catch (e) {}
+    etShiftFill(); fmRender();
+  }
+  function etShiftBy(dx, dy) { const v = etShift(); v.x = Math.round((v.x + dx) * 10) / 10; v.y = Math.round((v.y + dy) * 10) / 10; v.x = Math.max(-ET_SHIFT_MAX, Math.min(ET_SHIFT_MAX, v.x)); v.y = Math.max(-ET_SHIFT_MAX, Math.min(ET_SHIFT_MAX, v.y)); etShiftSave(v); }
+  function etShiftReset() { etShiftSave({ x: 0, y: 0 }); }
+  function etShiftFill() {
+    const v = etShift(), ey = document.getElementById('et-shift-y'), ex = document.getElementById('et-shift-x');
+    if (ey) ey.textContent = v.y ? (v.y < 0 ? '뒷면 ' + (-v.y).toFixed(1) + 'mm 위로' : '뒷면 ' + v.y.toFixed(1) + 'mm 아래로') : '0 (그대로)';
+    if (ex) ex.textContent = v.x ? (v.x < 0 ? '뒷면 ' + (-v.x).toFixed(1) + 'mm 왼쪽으로' : '뒷면 ' + v.x.toFixed(1) + 'mm 오른쪽으로') : '0 (그대로)';
+  }
+  // 뒷면 카드들을 transform으로 민다(10/7 실측: 여백으로 옮기면 크롬이 PDF에서 테두리를 0.26mm(화면 1px) 칸에 맞춰 그려
+  // 0.1mm 단위가 안 맞음 — transform은 쪽 나눔·크기에 영향이 없고 PDF에도 소수 mm 그대로 들어감)
+  function etBackPadStyle() {
+    const v = etShift(); if (!v.x && !v.y) return '';
+    return ' style="--et-bx: ' + (-v.x).toFixed(2) + 'mm; --et-by: ' + v.y.toFixed(2) + 'mm;"'; // 좌우는 뒷면 종이 위에서 반대(앞에서 비춰 볼 때 기준)
+  }
+
   function etRender() {
     const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     document.getElementById('fm-fit-info').textContent = '';
@@ -21745,7 +21789,7 @@
     for (let i = 0; i < list.length; i += 4) { // 4명씩: 앞면 한 장 → 같은 4명의 뒷면 한 장
       const ch = list.slice(i, i + 4);
       sheets.push('<div class="fm-sheet et-sheet et-front">' + ch.map(function(s) { return etFrontHtml(d.cfg, s); }).join('') + '</div>');
-      sheets.push('<div class="fm-sheet et-sheet et-back">' + ch.map(function(s) { return etBackHtml(d.cfg, s); }).join('') + '</div>');
+      sheets.push('<div class="fm-sheet et-sheet et-back"' + etBackPadStyle() + '>' + ch.map(function(s) { return etBackHtml(d.cfg, s); }).join('') + '</div>');
     }
     box.innerHTML = sheets.join('');
     label.textContent = 'A4 세로 · 학생 ' + list.length + '명 · 종이 ' + (sheets.length / 2) + '장(앞면 수험표 · 뒷면 가채점표 = ' + sheets.length + '쪽)';

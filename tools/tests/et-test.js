@@ -339,6 +339,28 @@ function pdfInfo(buf) {
   const pdf = pdfInfo(await P.pdf({ preferCSSPageSize: true, printBackground: true }));
   check('PDF: A4 세로 4쪽(앞·뒤·앞·뒤)', pdf.pages === 4 && pdf.w === 595 && pdf.h === 842, pdf);
   await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+
+  console.log('\n[8-1] 🖨️ 뒷면 위치 맞추기(10/7 사용자: 양면 인쇄하면 뒷면이 0.1~0.2mm 내려가 보임)');
+  // 카드 위치(mm, 그 쪽 종이 왼쪽 위에서) — 앞면 첫 장·뒷면 첫 장의 첫 카드
+  const cardPos = () => P.evaluate(() => { const mm = 96 / 25.4; return [...document.querySelectorAll('.et-sheet')].slice(0, 2).map(sh => { const a = sh.getBoundingClientRect(), b = sh.querySelector('.et-card').getBoundingClientRect(), z = a.width / (210 * mm); return [+((b.left - a.left) / z / mm).toFixed(2), +((b.top - a.top) / z / mm).toFixed(2), +((a.bottom - sh.querySelectorAll('.et-card')[sh.querySelectorAll('.et-card').length - 1].getBoundingClientRect().bottom) / z / mm).toFixed(2)]; }); });
+  const p0 = await cardPos();
+  check('처음엔 앞뒤 같은 자리(왼쪽 17.9 · 위 11mm), "0 (그대로)"', p0[0][0] === 17.9 && p0[0][1] === 11 && p0[1][0] === 17.9 && p0[1][1] === 11 && await P.evaluate(() => document.getElementById('et-shift-y').textContent === '0 (그대로)'), p0);
+  await P.click('#et-shift-box button[onclick="etShiftBy(0, -0.1)"]'); await P.click('#et-shift-box button[onclick="etShiftBy(0, -0.1)"]'); await wait(200);
+  await P.click('#et-shift-box button[onclick="etShiftBy(0.1, 0)"]'); await wait(200);
+  const p1 = await cardPos();
+  const sh1 = await P.evaluate(() => ({ y: document.getElementById('et-shift-y').textContent, x: document.getElementById('et-shift-x').textContent, ls: localStorage.getItem('device-et-back-shift'), dirty: localStorage.getItem('sync-dirty-keys') || '' }));
+  check('▲ 두 번 → 뒷면만 0.2mm 위로(앞면은 그대로), 글 "뒷면 0.2mm 위로"', p1[0][1] === 11 && p1[1][1] === 10.8 && sh1.y === '뒷면 0.2mm 위로', [p1, sh1]);
+  check('▶ 오른쪽으로(앞에서 비춰 볼 때) → 뒷면 종이 위에서는 0.1mm 왼쪽(긴 쪽 넘김이라 좌우가 뒤집혀 보임)', p1[0][0] === 17.9 && p1[1][0] === 17.8 && sh1.x === '뒷면 0.1mm 오른쪽으로', [p1, sh1]);
+  check('카드만 옮겨지고 쪽 크기는 그대로(카드 아래 ~ 종이 끝: 앞 11 · 뒤 11.2mm)', Math.abs(p1[0][2] - p1[1][2] + 0.2) < 0.02, p1);
+  check('이 컴퓨터에만 기억(device-et-back-shift) — 서버로 올릴 목록(sync-dirty-keys)엔 안 들어감', sh1.ls === '{"x":0.1,"y":-0.2}' && sh1.dirty.indexOf('device-') < 0, sh1);
+  const pdf2 = pdfInfo(await P.pdf({ preferCSSPageSize: true, printBackground: true }));
+  check('옮겨도 PDF는 그대로 A4 4쪽(넘쳐서 쪽이 늘지 않음)', pdf2.pages === 4, pdf2);
+  await P.reload(); await wait(1500);
+  await P.click('#rail-forms-btn'); await wait(800); // 고른 양식(수험표)은 계정에 기억돼 그대로 열림
+  check('새로 열어도 기억(뒷면 0.2mm 위로)', await P.evaluate(() => document.getElementById('et-shift-y').textContent) === '뒷면 0.2mm 위로' && (await cardPos())[1][1] === 10.8, await cardPos());
+  await P.click('#et-shift-reset'); await wait(200);
+  const p2 = await cardPos();
+  check('↺ 처음대로 → 뒷면도 17.9 · 11mm, 기억 지움', p2[1][0] === 17.9 && p2[1][1] === 11 && await P.evaluate(() => localStorage.getItem('device-et-back-shift') === null), p2);
   await P.evaluate(() => { etState.data.students = etState.data.students.concat(Array.from({ length: 19 }, (_, i) => Object.assign(etNewStu(7 + i), { name: '학생' + (7 + i) }))); etSave(); etFillForm(); fmRender(); });
   await wait(300);
   check('25명 → 종이 7장 = 14쪽, 마지막 앞·뒤에 1명', (await sheetKinds()).length === 14 && JSON.stringify((await sheetKinds()).slice(-2)) === '["F1","B1"]' && await P.evaluate(() => /학생 25명 · 종이 7장/.test(document.getElementById('fm-prev-label').textContent)));
