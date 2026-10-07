@@ -1654,6 +1654,7 @@
     .et-x { border: none; background: none; cursor: pointer; color: var(--text-sub); font-size: 13px; padding: 2px 4px; }
     .et-x:hover { color: #e55; }
     /* 종이: 사용자 엑셀(출력 시트, 63% 축소)을 mm로 옮김 — A4 세로, 한 명 174.2 × 68.72mm, 4명이 한 장. 앞면(수험표)과 뒷면(가채점표)이 같은 자리에 와야 양면 인쇄 때 맞는다 */
+    .et-shift-sec { margin-top: auto; border-top: 1px dashed var(--border-color); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; } /* ① 시험 정보 칸 아래 빈 자리 */
     .et-shift-val { font-size: 12.5px; font-weight: 800; margin-left: 6px; font-variant-numeric: tabular-nums; }
     .et-sheet { padding: 11mm 17.9mm !important; display: flex; flex-direction: column; font-family: 'Malgun Gothic', '맑은 고딕', 'Pretendard', sans-serif; line-height: 1.15; color: #000; }
     .et-card { width: 174.2mm; height: 68.72mm; box-sizing: border-box; position: relative; flex: 0 0 auto; }
@@ -3899,6 +3900,19 @@
           <div class="et-frow"><span class="ws-lb">학교</span><input type="text" class="lp-input et-cfg" data-k="school" placeholder="부광고등학교" style="flex:1; min-width:100px;"><span class="ws-lb" style="width:auto;">학교번호</span><input type="text" class="lp-input et-cfg" data-k="schoolNo" style="width:70px;" placeholder="14115" inputmode="numeric"></div>
           <div class="et-frow"><span class="ws-lb">시험장소</span><input type="text" class="lp-input et-cfg" data-k="place" placeholder="부광고등학교" style="flex:1; min-width:100px;" title="수험표 오른쪽 '시험장소' 칸"></div>
           <div class="et-frow"><span class="ws-lb">학년·반</span><select id="et-grade" class="mini-select et-cfg" data-k="grade" style="width:70px;"></select><select id="et-cls" class="mini-select et-cfg" data-k="cls" style="width:64px;"></select><span class="nt-muted">학번은 학년·반·번호로 만들어요(3학년 1반 4번 → 30104)</span></div>
+          <div id="et-shift-box" class="et-shift-sec"> <!-- ① 칸 아래 빈 자리에(사용자 10/7 — 따로 칸을 두면 세로 스크롤만 늘어서) -->
+            <div class="nt-title"><span class="fm-tt">🖨️ 뒷면 위치 맞추기</span> <span class="nt-muted">이 컴퓨터(프린터)에만 기억 · 0.1mm씩</span></div>
+            <div class="et-frow"><span class="ws-lb">위·아래</span>
+              <button class="nt-chip" onclick="etShiftBy(0, -0.1)" title="뒷면을 0.1mm 위로">▲ 올리기</button>
+              <button class="nt-chip" onclick="etShiftBy(0, 0.1)" title="뒷면을 0.1mm 아래로">▼ 내리기</button>
+              <span class="et-shift-val" id="et-shift-y"></span></div>
+            <div class="et-frow"><span class="ws-lb">좌·우</span>
+              <button class="nt-chip" onclick="etShiftBy(-0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 왼쪽으로">◀ 왼쪽으로</button>
+              <button class="nt-chip" onclick="etShiftBy(0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 오른쪽으로">▶ 오른쪽으로</button>
+              <span class="et-shift-val" id="et-shift-x"></span></div>
+            <div class="nt-row"><button class="nt-chip" id="et-shift-reset" onclick="etShiftReset()">↺ 처음대로(0)</button></div>
+            <div class="nt-muted">양면으로 한 장 뽑아 <b>앞면에서 빛에 비춰 보고</b>, 뒷면 테두리가 앞면보다 <b>아래로 보이면 ▲ 올리기</b>, 오른쪽으로 보이면 ◀ 왼쪽으로 — 보이는 대로 누르면 돼요(좌우는 종이를 뒤집는 것까지 계산해 둠). 앞면은 그대로이고 뒷면만 옮겨져요. 프린터는 장마다 0.1mm쯤 흔들릴 수 있어요.</div>
+          </div>
         </div>
         <div class="nt-box" id="et-time-box">
           <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">2</b>⏰ 시험 시간표</span> <span class="nt-muted">수능과 같으면 그대로</span></div>
@@ -3948,19 +3962,6 @@
           </div>
           <div class="nt-muted">이 양식의 명단·사진은 개인정보라 <b>서버(계정)에 올리지 않고 이 컴퓨터의 브라우저에만</b> 저장돼요(홈의 💾 백업에도 안 들어가요). 다른 컴퓨터에서 쓰거나 브라우저 자료가 지워질 때를 대비해 백업 파일을 USB 등에 저장해 두세요.</div>
           <div class="nt-muted" id="et-store-msg"></div>
-        </div>
-        <div class="nt-box" id="et-shift-box">
-          <div class="nt-title"><span class="fm-tt">🖨️ 뒷면 위치 맞추기</span> <span class="nt-muted">이 컴퓨터(프린터)에만 기억 · 0.1mm씩</span></div>
-          <div class="et-frow"><span class="ws-lb">위·아래</span>
-            <button class="nt-chip" onclick="etShiftBy(0, -0.1)" title="뒷면을 0.1mm 위로">▲ 올리기</button>
-            <button class="nt-chip" onclick="etShiftBy(0, 0.1)" title="뒷면을 0.1mm 아래로">▼ 내리기</button>
-            <span class="et-shift-val" id="et-shift-y"></span></div>
-          <div class="et-frow"><span class="ws-lb">좌·우</span>
-            <button class="nt-chip" onclick="etShiftBy(-0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 왼쪽으로">◀ 왼쪽으로</button>
-            <button class="nt-chip" onclick="etShiftBy(0.1, 0)" title="앞에서 비춰 볼 때 뒷면을 0.1mm 오른쪽으로">▶ 오른쪽으로</button>
-            <span class="et-shift-val" id="et-shift-x"></span></div>
-          <div class="nt-row"><button class="nt-chip" id="et-shift-reset" onclick="etShiftReset()">↺ 처음대로(0)</button></div>
-          <div class="nt-muted">양면으로 한 장 뽑아 <b>앞면에서 빛에 비춰 보고</b>, 뒷면 테두리가 앞면보다 <b>아래로 보이면 ▲ 올리기</b>, 오른쪽으로 보이면 ◀ 왼쪽으로 — 보이는 대로 누르면 돼요(좌우는 종이를 뒤집는 것까지 계산해 둠). 앞면은 그대로이고 뒷면만 옮겨져요. 프린터는 장마다 0.1mm쯤 흔들릴 수 있어요.</div>
         </div>
       </div>
     </div>
