@@ -554,52 +554,58 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#bs-modes [data-mode="mock"]'); await P.waitForTimeout(300);
   const mf = await bigForm();
   check('🎯 학력평가: 모드 다섯 개, 입력칸은 ①(학년도·시험명·학교 번호 — 제목·부제 칸 대신) ② 시험 시간 ③ 글씨·종이(오른쪽 칸, 넣을 쪽 없음)만',
-    mf.modes.join() === '🏫 평상시,⏱️ 단축 수업,📝 시험 기간,🎯 학력평가,📚 정시반 모의고사' && mf.shown === 'bs-mode-box,bs-mc-head,bs-mc-box,bs-ex-opt-box' && mf.optRight && mf.step === '3' && mf.pages === 'none' && /올해·내년/.test(mf.guide), mf);
+    mf.modes.join() === '🏫 평상시,⏱️ 단축 수업,📝 시험 기간,🎯 학력평가,📚 정시반' && mf.shown === 'bs-mode-box,bs-mc-head,bs-mc-box,bs-ex-opt-box' && mf.optRight && mf.step === '3' && mf.pages === 'none' && /올해·내년/.test(mf.guide), mf);
   const m0 = await bigv(), mc0 = await P.evaluate(() => ({ yearPh: document.getElementById('bs-mc-year').placeholder, year: document.getElementById('bs-mc-year').value, no: document.getElementById('bs-mc-no').placeholder, show: document.getElementById('bs-mc-showno').checked,
     preset: (document.querySelector('#bs-mc-presets .on') || {}).dataset, np: document.querySelector('#bs-mc-pre .on').textContent, pre: document.getElementById('bs-mc-pre-in').value,
-    rows: [...document.querySelectorAll('#bs-mc-rows .bs-mc-row')].map(r => [...r.querySelectorAll('input')].map(i => i.value).join('|')), feet: [...document.querySelectorAll('#bs-mc-rows .bs-mc-foot .bs-mc-p')].map(b => b.value + '/' + b.placeholder), paper: document.querySelector('#bs-ex-paper [data-paper].on').dataset.paper, land: document.querySelector('#bs-ex-paper [data-land].on').textContent }));
+    rows: [...document.querySelectorAll('#bs-mc-rows .bs-mc-period .bs-mc-row')].map(r => [...r.querySelectorAll('input:not(.bs-mc-p)')].map(i => i.value).join('|')), feet: [...document.querySelectorAll('#bs-mc-rows .bs-mc-p')].map(b => b.value + '/' + b.placeholder), head: document.querySelector('#bs-mc-rows .bs-mc-chead').textContent, yw: [document.getElementById('bs-mc-year').offsetWidth, document.getElementById('bs-mc-no').offsetWidth], paper: document.querySelector('#bs-ex-paper [data-paper].on').dataset.paper, land: document.querySelector('#bs-ex-paper [data-land].on').textContent }));
   const MOCK0 = ['2026학년도 전국연합학력평가|학교/번호|14115', '', '교시|과목명|시험시간', '예비령|본령|총시간', '1|국어|08:35|08:40∼10:00|80분', '2|수학|10:25|10:30∼12:10|100분', '3|영어|13:00|13:10∼14:20|70분', '4|한국사|14:45|14:50∼15:20|30분', '탐구|1선택|15:35∼16:05|30분', '2선택|16:07∼16:37|30분']; // 영어 예비령은 듣기라 10분 전(13:00, 직접 적은 값)
   check('처음(2026학년도 = 올해 기본값): 원본 양식 그대로 — 제목 "2026학년도 전국연합학력평가" | 학교번호 | 14115(수험표 기본), 교시 | 과목명 | 예비령(5분 전) | 본령 | 총시간, 4교시 = 한국사 · 탐구(1선택 · 2선택), B4 가로 여백 5mm에 꽉 차게',
     m0.length === 1 && m0[0].kind === 'mock' && JSON.stringify(m0[0].rows) === JSON.stringify(MOCK0) && m0[0].cols === 8 && m0[0].w === '364mm' && m0[0].h === '257mm' && m0[0].top === 5 && m0[0].bottom >= 6 && m0[0].bottom <= 9 && !m0[0].over.length &&
-    mc0.yearPh === '2026' && mc0.year === '' && mc0.no === '14115' && mc0.show && mc0.preset.preset === 'now' && mc0.np === '4' && mc0.pre === '5' && mc0.rows[0] === '국어|08:40|10:00' && mc0.rows[5] === '탐구/2선택|16:07|16:37' && mc0.feet.join() === '/08:35,/10:25,13:00/13:05,/14:45' && mc0.paper === 'B4' && mc0.land === '가로', [m0[0] && m0[0].rows, mc0]);
+    mc0.yearPh === '2026' && mc0.year === '' && mc0.no === '14115' && mc0.show && mc0.preset.preset === 'now' && mc0.np === '4' && mc0.pre === '5' && mc0.rows[0] === '국어|08:40|10:00' && mc0.rows[5] === '탐구/2선택|16:07|16:37' && mc0.feet.join() === '/08:35,/10:25,13:00/13:05,/14:45' && mc0.head === '교시과목시작끝분예비령' && mc0.yw[0] === mc0.yw[1] && mc0.paper === 'B4' && mc0.land === '가로', [m0[0] && m0[0].rows, mc0]);
   check('학력평가 색·빨강: 예비령 머리 글과 예비 시각 빨강(5개), 교시마다 바탕 살구·연두·크림·하늘, 머리 줄 회색, 큰 글씨(본령 50pt 넘게)',
     m0[0].red.join() === '예비령,08:35,10:25,13:00,14:45' && m0[0].bg[2] === 'rgb(242, 242, 242)' && m0[0].bg[4] === 'rgb(255, 234, 224)' && m0[0].bg[5] === 'rgb(238, 249, 238)' && m0[0].bg[6] === 'rgb(254, 246, 213)' && m0[0].bg[7] === 'rgb(225, 245, 247)' && Math.max(...m0[0].fs) >= 50, [m0[0].red, m0[0].bg, Math.max(...m0[0].fs)]);
   await P.screenshot({ path: 'bs-mock.png' });
   await P.click('#bs-mc-presets [data-preset="2028"]'); await P.waitForTimeout(250);
   const m1 = await bigv();
-  check('기본값 "2028학년도 수능(통합형)": 4교시 = 한국사 · 탐구(사회·직업 40분 15:35∼16:15 · 과학 40분 16:30∼17:10), 1~3교시 그대로, 넘침 없음',
-    m1[0].rows.length === 10 && m1[0].rows[7] === '4|한국사|14:45|14:50∼15:20|30분' && /^탐구\|사회·\/?직업\|15:35∼16:15\|40분$/.test(m1[0].rows[8]) && m1[0].rows[9] === '과학|16:30∼17:10|40분' && m1[0].rows[4] === MOCK0[4] && !m1[0].over.length &&
+  check('기본값 "2028학년도 수능(통합형)": 4교시 = 한국사 · 탐구(사회 40분 15:35∼16:15 · 과학 40분 16:30∼17:10 — 인문계라 직업탐구 없음), 1~3교시 그대로, 과목 글씨 크기는 올해 기본값과 같음, 넘침 없음',
+    m1[0].rows.length === 10 && m1[0].rows[7] === '4|한국사|14:45|14:50∼15:20|30분' && m1[0].rows[8] === '탐구|사회|15:35∼16:15|40분' && m1[0].rows[9] === '과학|16:30∼17:10|40분' && m1[0].rows[4] === MOCK0[4] && JSON.stringify(m1[0].fs) === JSON.stringify(m0[0].fs) && !m1[0].over.length &&
     await P.evaluate(() => document.querySelector('#bs-mc-presets .on').dataset.preset === '2028'), m1[0].rows);
   // 학년도: 2027부터 내년 기본값, 시간이 기본값 그대로면 학년도를 따라 바뀜(고친 뒤엔 그대로)
   await P.fill('#bs-mc-year', '2026'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
   const m2 = await bigv();
-  check('학년도 2026 → 시간이 기본값(2028) 그대로였으니 2026의 기본값(올해, 2선택 16:07∼16:37)으로 따라감', m2[0].rows[9] === '2선택|16:07∼16:37|30분' && m2[0].rows[0].startsWith('2026학년도') && await P.evaluate(() => bsCfg().mock.periods === null), m2[0].rows);
+  check('학년도 2026 → 다시 학년도를 따라가 올해 기본값(2선택 16:07∼16:37)', m2[0].rows[9] === '2선택|16:07∼16:37|30분' && m2[0].rows[0].startsWith('2026학년도') && await P.evaluate(() => bsCfg().mock.preset === ''), m2[0].rows);
   await P.fill('#bs-mc-year', '2027'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
   const m3 = await bigv();
   check('학년도 2027 → 제목 "2027학년도 …", 2028학년도 수능(통합형) 시간(과학 ~17:10)', m3[0].rows[0] === '2027학년도 전국연합학력평가|학교/번호|14115' && m3[0].rows[9] === '과학|16:30∼17:10|40분' && await P.evaluate(() => document.querySelector('#bs-mc-presets .on').dataset.preset === '2028'), m3[0].rows);
   const min = (i, k, f) => '#bs-mc-rows .bs-mc-period[data-p="' + i + '"] .bs-mc-row[data-k="' + k + '"] input[data-f="' + f + '"]';
   await P.click(min(0, 0, 's')); await P.fill(min(0, 0, 's'), '850'); await P.dispatchEvent(min(0, 0, 's'), 'input'); await P.dispatchEvent(min(0, 0, 's'), 'change'); await P.waitForTimeout(250);
   await P.fill('#bs-mc-year', '2026'); await P.dispatchEvent('#bs-mc-year', 'input'); await P.waitForTimeout(250);
+  const m4a = await bigv(), m4s = await P.evaluate(() => ({ on: document.querySelector('#bs-mc-presets .on').dataset.preset, ed: [...document.querySelectorAll('#bs-mc-presets .nt-chip')].map(b => !!b.querySelector('.bs-mc-ed')), reset: !!document.getElementById('bs-mc-reset') }));
+  check('2028에서 1교시 시작 850 → 08:50∼10:10(80분 따라감), 학년도 2026으로 바꾸면 올해 기본값(08:40 그대로)로 — 고친 2028 쪽엔 ✎ 표시, ↺ 단추는 안 보임', m4a[0].rows[4] === '1|국어|08:35|08:40∼10:00|80분' && m4a[0].rows[9] === '2선택|16:07∼16:37|30분' && m4s.on === 'now' && m4s.ed.join() === 'false,true' && !m4s.reset, [m4a[0].rows[4], m4s]);
+  await P.click('#bs-mc-presets [data-preset="2028"]'); await P.waitForTimeout(250);
   const m4 = await bigv();
-  check('1교시 시작 850 → 08:50∼10:10(시험 시간 80분 그대로 따라감), 예비 08:45 / 고친 뒤엔 학년도를 2026으로 바꿔도 시간 그대로(기본값 단추는 모두 꺼짐)', m4[0].rows[4] === '1|국어|08:45|08:50∼10:10|80분' && m4[0].rows[9] === '과학|16:30∼17:10|40분' && m4[0].rows[0].startsWith('2026학년도') &&
-    await P.evaluate(() => !document.querySelector('#bs-mc-presets .on') && document.querySelector('#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-foot .bs-mc-p').placeholder === '08:45'), m4[0].rows);
+  check('2028학년도 단추를 누르면 고친 시간(08:50∼10:10, 예비 08:45)이 그대로 남아 있음(기본값마다 따로 기억) + ↺ 기본값대로 단추', m4[0].rows[4] === '1|국어|08:45|08:50∼10:10|80분' && m4[0].rows[9] === '과학|16:30∼17:10|40분' &&
+    await P.evaluate(() => document.querySelector('#bs-mc-presets .on').dataset.preset === '2028' && !!document.getElementById('bs-mc-reset') && bsCfg().mock.preset === '2028' && document.querySelector('#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-p').placeholder === '08:45'), m4[0].rows);
   await P.fill('#bs-mc-pre-in', '10'); await P.dispatchEvent('#bs-mc-pre-in', 'input'); await P.waitForTimeout(250);
-  const pin0 = '#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-foot .bs-mc-p';
+  const pin0 = '#bs-mc-rows .bs-mc-period[data-p="0"] .bs-mc-p';
   check('예비령 10분 전 → 08:40, 영어는 직접 적은 13:00 그대로', (await bigv())[0].rows[4] === '1|국어|08:40|08:50∼10:10|80분' && (await bigv())[0].rows[6] === '3|영어|13:00|13:10∼14:20|70분');
   await P.click(pin0); await P.fill(pin0, '0830'); await P.press(pin0, 'Tab'); await P.waitForTimeout(250);
-  check('1교시 예비령을 직접 0830 → 08:30(다른 교시는 10분 전 그대로)', (await bigv())[0].rows[4] === '1|국어|08:30|08:50∼10:10|80분' && (await bigv())[0].rows[5] === '2|수학|10:20|10:30∼12:10|100분' && await P.evaluate(() => bsCfg().mock.periods[0][0].p === '08:30'));
+  check('1교시 예비령을 직접 0830 → 08:30(다른 교시는 10분 전 그대로)', (await bigv())[0].rows[4] === '1|국어|08:30|08:50∼10:10|80분' && (await bigv())[0].rows[5] === '2|수학|10:20|10:30∼12:10|100분' && await P.evaluate(() => bsCfg().mock.edits['2028'][0][0].p === '08:30'));
   await P.click(pin0); await P.fill(pin0, ''); await P.press(pin0, 'Tab'); await P.waitForTimeout(250);
-  check('예비령 칸을 비우면 다시 저절로(08:40)', (await bigv())[0].rows[4] === '1|국어|08:40|08:50∼10:10|80분' && await P.evaluate(() => !('p' in bsCfg().mock.periods[0][0])));
+  check('예비령 칸을 비우면 다시 저절로(08:40)', (await bigv())[0].rows[4] === '1|국어|08:40|08:50∼10:10|80분' && await P.evaluate(() => !('p' in bsCfg().mock.edits['2028'][0][0])));
   await P.click('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-plus'); await P.waitForTimeout(250);
   const m5 = await P.evaluate(() => ({ focus: document.activeElement.className, n: document.querySelectorAll('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row').length, s: document.querySelector('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] input[data-f="s"]').value }));
   await setText(P, '#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] .bs-mc-n', '탐구/직업'); await P.fill(min(3, 3, 'e'), '17:50'); await P.dispatchEvent(min(3, 3, 'e'), 'input'); await P.dispatchEvent(min(3, 3, 'e'), 'change'); await P.waitForTimeout(250);
   const m6 = await bigv();
   check('＋ 과목(4교시): 새 줄에 바로 커서, 시작은 앞 과목 끝 + 2분(17:12), "탐구/직업"이라 적으면 탐구 묶음에 셋째 줄로(표 11줄)', /bs-mc-n/.test(m5.focus) && m5.n === 4 && m5.s === '17:12' && m6[0].rows.length === 11 && m6[0].rows[10] === '직업|17:12∼17:50|38분' && !m6[0].over.length, [m5, m6[0].rows]);
-  await P.click('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] .ws-ol-x'); await P.waitForTimeout(250);
+  await P.click('#bs-mc-rows .bs-mc-period[data-p="3"] .bs-mc-row[data-k="3"] .ws-ol-x:not(.bs-mc-plus)'); await P.waitForTimeout(250);
   await P.click('#bs-mc-pre [data-np="5"]'); await P.waitForTimeout(250);
   const m7 = await bigv();
   check('✕로 지우고 교시 수 5 → 5교시가 앞 교시 끝 + 20분부터 60분(17:30∼18:30), 바탕은 다시 살구', m7[0].rows.length === 11 && m7[0].rows[10] === '5||17:20|17:30∼18:30|60분' && m7[0].bg[10] === 'rgb(255, 234, 224)' && !m7[0].over.length, [m7[0].rows, m7[0].bg[10]]);
-  await P.click('#bs-mc-pre [data-np="4"]'); await P.click('#bs-mc-presets [data-preset="now"]'); await P.fill('#bs-mc-pre-in', '5'); await P.dispatchEvent('#bs-mc-pre-in', 'input'); await P.waitForTimeout(250);
+  await P.click('#bs-mc-pre [data-np="4"]'); await P.click('#bs-mc-reset'); await P.waitForTimeout(250);
+  const mR = await bigv();
+  check('↺ 기본값대로: 2028 기본값으로 되돌아감(08:40∼10:00, 사회·과학), ✎·↺ 사라짐', mR[0].rows[4] === '1|국어|08:30|08:40∼10:00|80분' && mR[0].rows[8] === '탐구|사회|15:35∼16:15|40분' && await P.evaluate(() => !document.querySelector('#bs-mc-presets .bs-mc-ed') && !document.getElementById('bs-mc-reset') && JSON.stringify(bsCfg().mock.edits) === '{}'), mR[0].rows);
+  await P.click('#bs-mc-presets [data-preset="now"]'); await P.fill('#bs-mc-pre-in', '5'); await P.dispatchEvent('#bs-mc-pre-in', 'input'); await P.waitForTimeout(250);
   await P.click('#bs-mc-showno'); await setText(P, '#bs-mc-no', '14147'); await setText(P, '#bs-mc-name', '3월 전국연합학력평가'); await P.waitForTimeout(250);
   const m8 = await bigv();
   check('학교 번호 표시 끄기 → 제목이 한 칸, 시험명 바꾸면 제목에', m8[0].rows[0] === '2026학년도 3월 전국연합학력평가' && m8[0].rows[4] === MOCK0[4], m8[0].rows.slice(0, 1));
@@ -632,7 +638,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     if (process.env.BS_MC_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await bsExBuildHwpx(bsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.BS_MC_OUT, Buffer.from(b64, 'base64')); }
   }
   // 📚 정시반 모의고사
+  await P.click('#fm-zoom-group button:last-of-type'); await P.waitForTimeout(200); // 학력평가에서 🔍 +
+  const zMock = await P.textContent('#fm-zoom-text');
   await P.click('#bs-modes [data-mode="jungsi"]'); await P.waitForTimeout(300);
+  const zJs = await P.textContent('#fm-zoom-text');
+  await P.click('#bs-modes [data-mode="mock"]'); await P.waitForTimeout(300); const zMock2 = await P.textContent('#fm-zoom-text');
+  await P.click('#fm-zoom-text'); await P.waitForTimeout(200); // 100%로
+  await P.click('#bs-modes [data-mode="jungsi"]'); await P.waitForTimeout(300);
+  check('🔍 배율은 학력평가·정시반 따로(학력평가 125% → 정시반은 100%, 돌아오면 125%, fm-zoom 열쇠 bs:mock)', zMock === '125%' && zJs === '100%' && zMock2 === '125%' && await P.evaluate(() => JSON.parse(localStorage.getItem('fm-zoom') || '{}')['bs:mock'] === undefined), [zMock, zJs, zMock2]);
   const jf = await bigForm();
   check('📚 정시반 모의고사: 입력칸은 ① 제목 ② 시간 ③ 표 아래 안내 글(오른쪽) ④ 글씨·종이(오른쪽)', jf.shown === 'bs-mode-box,bs-title-row,bs-js-box,bs-js-note-box,bs-ex-opt-box' && jf.optRight && jf.step === '4' && /안내 글/.test(jf.guide) && await P.evaluate(() => document.getElementById('bs-title').value === '면학실 모의고사 시정표'), jf);
   const j0 = await bigv(), jc0 = await P.evaluate(() => ({ ready: document.getElementById('bs-js-ready-in').value, head: document.getElementById('bs-js-head').value, rows: [...document.querySelectorAll('#bs-js-rows .bs-js-row')].map(r => r.dataset.k + ':' + r.querySelector('.bs-ex-pn').textContent + ':' + [...r.querySelectorAll('input')].map(i => i.value).join('|') + ':' + r.querySelector('.bs-js-calc').textContent),
@@ -686,9 +699,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const after = sec.slice(sec.indexOf('</hp:tbl>')), notes = (after.match(/<hp:t>([^<]*)<\/hp:t>/g) || []).map(x => x.replace(/<[^>]+>/g, ''));
       return { xml: ok, rc: rc.join('x'), full: grid.every(row => row.every(v => v === 1)), w: wSum === W, h: hSum === Ht, page: (sec.match(/<hp:pagePr [^>]*>/) || [''])[0], notes, title: (hpf.match(/<opf:title>([^<]*)</) || [])[1],
         texts: ['정시반 모의고사 시정표', '교', '시', '타종 시간', '준비', '08:55', '본령', '09:05∼10:25', '점심시간', '12:40∼13:40', '탐구'].filter(x => !sec.includes('<hp:t>' + fmX(x) + '</hp:t>')),
-        fills: ['#E6F1D3', '#ECEDFE', '#FFF5CC', '#FFE4E4', '#E7E7E7', '#F2F2F2'].filter(f => !head.includes('faceColor="' + f + '"')), red: /textColor="#FF0000"/.test(head), thick: /width="1.0 mm"/.test(head) && /width="0.7 mm"/.test(head) }; });
-    check('정시반 한글 파일: 표 하나 12줄×4칸(빈틈·겹침 없음, 폭·높이 합 = 표 크기), A4 세로(WIDELY)·여백 5mm, 표 뒤에 안내 글 문단 두 개(둘째 빨강 글자 모양), 글·바탕색·선 굵기(1.0·0.7mm), 파일 제목',
-      hj.xml && hj.rc === '12x4' && hj.full && hj.w && hj.h && /landscape="WIDELY" width="59528" height="84189"/.test(hj.page) && hj.notes.join('|') === '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함|시험이 끝난 본령 외 시간에는 이동하지 않고 교실에서 자습!' && !hj.texts.length && !hj.fills.length && hj.red && hj.thick && hj.title === '정시반 모의고사 시정표', hj);
+        fills: ['#E6F1D3', '#ECEDFE', '#FFF5CC', '#FFE4E4', '#E7E7E7', '#F2F2F2'].filter(f => !head.includes('faceColor="' + f + '"')), red: /textColor="#FF0000"/.test(head), thick: /width="1.0 mm"/.test(head) && /width="0.7 mm"/.test(head), gap: /<hc:prev value="850"/.test(head) && (after.match(/paraPrIDRef="(\d+)"/g) || []).length === 2 && new Set((after.match(/paraPrIDRef="(\d+)"/g) || [])).size === 2 }; });
+    check('정시반 한글 파일: 표 하나 12줄×4칸(빈틈·겹침 없음, 폭·높이 합 = 표 크기), A4 세로(WIDELY)·여백 5mm, 표 뒤에 안내 글 문단 두 개(첫 문단 위 간격 3mm, 둘째 빨강 글자 모양), 글·바탕색·선 굵기(1.0·0.7mm), 파일 제목',
+      hj.xml && hj.rc === '12x4' && hj.full && hj.w && hj.h && /landscape="WIDELY" width="59528" height="84189"/.test(hj.page) && hj.notes.join('|') === '학교 타종과 별도로 정시반 학생들은 위 시간표로 운영함|시험이 끝난 본령 외 시간에는 이동하지 않고 교실에서 자습!' && !hj.texts.length && !hj.fills.length && hj.red && hj.thick && hj.gap && hj.title === '정시반 모의고사 시정표', hj);
     if (process.env.BS_JS_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await bsExBuildHwpx(bsCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.BS_JS_OUT, Buffer.from(b64, 'base64')); }
   }
   const prJ = await P.evaluate(() => { let got = ''; const op = window.print; window.print = () => { got = document.getElementById('fm-page-style').textContent; }; fmPrint(); window.print = op; return got; });
@@ -700,7 +713,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 서버 저장
   await P.waitForTimeout(2500);
   const sv = JSON.parse(serverVal(T2, 'fm-bs') || '{}');
-  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축·시험 기간·학력평가·정시반 따로', sv.normal && sv.short && sv.mock && sv.mock.schoolNo === '14147' && sv.mock.periods.length === 4 && sv.mock.periods[2][0].p === '13:00' && sv.jungsi && sv.jungsi.ready === 10 && sv.jungsi.rows.length === 5 && sv.jungsi.notes.length === 2 && sv.short.periods[0].e === '09:30' && sv.short.calc !== false && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic' && sv.exam && sv.exam.name === '1학기 1차 지필평가' && sv.exam.days[0].sj[2].join() === '통합수학,미적분', { n: !!sv.normal, s: !!sv.short, e: sv.exam && sv.exam.days, mock: sv.mock, js: sv.jungsi });
+  check('시정표 설정은 내 계정(fm-bs)에 저장 — 평상시·단축·시험 기간·학력평가·정시반 따로', sv.normal && sv.short && sv.mock && sv.mock.schoolNo === '14147' && sv.mock.preset === 'now' && JSON.stringify(sv.mock.edits) === '{}' && sv.jungsi && sv.jungsi.ready === 10 && sv.jungsi.rows.length === 5 && sv.jungsi.notes.length === 2 && sv.short.periods[0].e === '09:30' && sv.short.calc !== false && sv.normal.title === '부광고등학교 시정표(2학기)' && sv.design === 'classic' && sv.exam && sv.exam.name === '1학기 1차 지필평가' && sv.exam.days[0].sj[2].join() === '통합수학,미적분', { n: !!sv.normal, s: !!sv.short, e: sv.exam && sv.exam.days, mock: sv.mock, js: sv.jungsi });
   // 한글 파일
   if (JSZIP_JS) {
     for (const [dz, ts] of [['classic', 'box'], ['navy', 'band'], ['mono', 'line']]) {
@@ -744,8 +757,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   for (const md of [['mock', '학력평가'], ['jungsi', '정시반']]) {
     await P.click('#bs-modes [data-mode="' + md[0] + '"]'); await P.waitForTimeout(300);
     const ov = await P.evaluate(() => { const l = document.getElementById('fm-left'); return [...document.querySelectorAll('#bs-grid .nt-box, .bs-mc-row, .bs-mc-foot, .bs-js-row, .bs-js-note, #bs-mc-head .ws-row')].filter(b => b.offsetParent && (b.getBoundingClientRect().right > l.getBoundingClientRect().right + 1 || b.scrollWidth > b.clientWidth + 1)).map(b => b.id || b.className); });
-    const foot = await P.evaluate(() => { const s = document.querySelector('.bs-mc-pre'); return s ? [s.getBoundingClientRect().height, s.querySelector('input').getBoundingClientRect().width] : [0, 56]; });
-    check('1366×768에서 ' + md[1] + ' 칸도 왼쪽 칸 밖으로 안 넘침(예비령 글은 한 줄, 칸은 56px)', ov.length === 0 && foot[0] < 34 && foot[1] <= 60, [ov, foot]);
+    const foot = await P.evaluate(() => { const s = document.querySelector('.bs-mc-period .bs-mc-pre'); return s ? [s.getBoundingClientRect().height, s.querySelector('input').getBoundingClientRect().width] : [0, 56]; });
+    check('1366×768에서 ' + md[1] + ' 칸도 왼쪽 칸 밖으로 안 넘침(예비령 글은 한 줄, 칸은 58px)', ov.length === 0 && foot[0] < 34 && foot[1] <= 62, [ov, foot]);
     await P.screenshot({ path: 'bs-' + md[0] + '-1366.png' });
   }
   const allErrors = pages.flatMap(p => (p.errors || []).map(e => p.name + ': ' + e));
