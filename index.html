@@ -311,6 +311,18 @@
     .scc-cell.no { opacity: 0.28; cursor: not-allowed; }
     .scc-cell.chg { opacity: 0.6; border-style: dashed; border-color: var(--text-sub); cursor: not-allowed; }
     .scc-cell.chg.pick { opacity: 0.9; cursor: pointer; } /* 바뀐 칸도 다시 바꿀 수 있음(연속 교환) */
+    /* 📋 일자·교시 고르기(나이스 수업 교체 화면처럼): 시간표 자리에 일자(− +) · 교시 목록 · 과목정보 */
+    .scc-listmode .scc-week { display: none; }
+    .scc-grid.scc-listpick { display: grid; grid-template-columns: 64px 1fr; grid-template-rows: none; gap: 0; align-content: start; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; font-size: 13px; }
+    .scc-listpick > div { padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; min-height: 40px; box-sizing: border-box; }
+    .scc-listpick > div:nth-last-child(-n+2) { border-bottom: 0; }
+    .scc-listpick .scc-lp-l { background: var(--tt-bg); font-weight: 800; color: var(--text-sub); justify-content: center; }
+    .scc-listpick input[type=date], .scc-listpick select { font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); font-family: inherit; }
+    .scc-listpick select { flex: 1; min-width: 0; }
+    .scc-listpick .scc-lp-day { width: 26px; height: 26px; border-radius: 50%; padding: 0; font-weight: 800; }
+    .scc-listpick .scc-lp-info { min-height: 72px; align-items: flex-start; line-height: 1.5; }
+    .scc-listpick .scc-lp-info.empty { color: var(--text-sub); }
+    .scc-listpick .scc-empty-msg { grid-column: 1 / -1; }
     .scc-cell .badge { position: absolute; top: 2px; right: 3px; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #fff; }
     .scc-cell.sel { outline: 3px solid var(--accent-color); outline-offset: -2px; opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
     #scc-grid-b .scc-cell.sel { outline-color: #D9822B; box-shadow: 0 0 0 3px rgba(217,130,43,0.25); }
@@ -2291,6 +2303,11 @@
         <div class="tab-switch">
           <button class="tab-btn active" id="scc-type-exchange-btn" onclick="sccSetType('exchange')">🔄 교환</button>
           <button class="tab-btn" id="scc-type-makeup-btn" onclick="sccSetType('makeup')">🩹 보강</button>
+        </div>
+        <!-- 고르는 방식(10/7 사용자: 시간표 칸보다 나이스처럼 일자·교시 목록이 편한 분이 있음) — 계정에 기억(scc-view) -->
+        <div class="tab-switch" id="scc-view-switch" title="수업을 고르는 방식 — 고른 것은 내 계정에 기억돼요">
+          <button class="tab-btn active" id="scc-view-grid" onclick="sccSetView('grid')">🗓 시간표에서 누르기</button>
+          <button class="tab-btn" id="scc-view-list" onclick="sccSetView('list')">📋 일자·교시 고르기</button>
         </div>
         <div id="scc-hint"></div>
       </div>
@@ -9517,7 +9534,7 @@
   // 왼쪽 = 바꿀 수업(담당이면 아무 선생님, 아니면 나), 오른쪽 = 교환 상대 / 보강해 줄 선생님.
   // 두 쪽이 날짜(주)를 따로 고른다 — 오른쪽은 직접 옮기기 전까지 왼쪽 주를 따라간다.
   // 칸을 누르면 날짜·교시가 한 번에 정해진다(pickA / pickB = { date, period }).
-  const scc = { type: 'exchange', weekA: '', weekB: '', bTouched: false, pickA: null, pickB: null, tab: 'new', listRange: 'upcoming' };
+  const scc = { type: 'exchange', weekA: '', weekB: '', bTouched: false, pickA: null, pickB: null, tab: 'new', listRange: 'upcoming', listDate: { a: '', b: '' } };
   const SCC_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
   function sccYmd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -9601,6 +9618,8 @@
     const teacher = side === 'a' ? sccTeacherA() : sccPartner();
     const monday = side === 'a' ? scc.weekA : scc.weekB;
     const grid = document.getElementById('scc-grid-' + side);
+    if (sccView() === 'list') return sccRenderListPick(side, teacher, grid);
+    grid.classList.remove('scc-listpick');
     const weekDates = sccWeekDates(monday);
     const today = todayYmdDash();
     let html = '<div></div>';
@@ -9639,6 +9658,66 @@
       }
     }
     grid.innerHTML = html;
+  }
+
+  // ----- 📋 일자·교시 고르기(나이스 "수업 교체" 화면과 같은 꼴: 일자(− +) · 교시 · 과목정보) -----
+  // 시간표 칸을 누르는 대신 날짜와 교시 목록으로 고른다(같은 pickA/pickB를 채우므로 미리보기·등록은 그대로). 방식은 계정 자료 'scc-view'에 기억.
+  function sccView() { let v = ''; try { v = localStorage.getItem('scc-view') || ''; } catch (e) {} return v === 'list' ? 'list' : 'grid'; }
+  function sccSetView(v) {
+    try { if (v === 'list') localStorage.setItem('scc-view', 'list'); else localStorage.removeItem('scc-view'); } catch (e) {}
+    scheduleBackupWrite();
+    sccRenderNew();
+  }
+  function sccListDate(side, v) {
+    if (!v) return;
+    scc.listDate[side] = v;
+    scc[side === 'a' ? 'pickA' : 'pickB'] = null; // 날짜가 바뀌면 교시는 다시 고른다
+    sccSetWeek(side, sccMondayOf(v)); // 시간표 방식으로 돌아가도 그 주가 보이게
+    sccRenderNew();
+  }
+  // − / +: 앞·뒤 평일로(주말은 건너뜀), 고를 수 있는 기간 안에서
+  function sccListDay(side, dir) {
+    let d = scc.listDate[side]; if (!d) return;
+    const range = sccPickRange();
+    for (let i = 0; i < 4; i++) { d = sccAddDays(d, dir); const wd = sccWeekdayOf(d); if (wd >= 1 && wd <= 5) break; }
+    if (d < range.min || d > range.max) return;
+    sccListDate(side, d);
+  }
+  function sccListPeriod(side, v) {
+    const p = parseInt(v, 10), date = scc.listDate[side];
+    scc[side === 'a' ? 'pickA' : 'pickB'] = p && date ? { date: date, period: p } : null;
+    sccRenderNew();
+  }
+  function sccRenderListPick(side, teacher, grid) {
+    grid.classList.add('scc-listpick'); grid.style.display = '';
+    const pick = side === 'a' ? scc.pickA : scc.pickB;
+    const monday = side === 'a' ? scc.weekA : scc.weekB, today = todayYmdDash();
+    if (pick) scc.listDate[side] = pick.date;
+    if (!scc.listDate[side]) scc.listDate[side] = (sccMondayOf(today) === monday && sccWeekdayOf(today) >= 1 && sccWeekdayOf(today) <= 5) ? today : monday;
+    const date = scc.listDate[side], range = sccPickRange();
+    if (!teacher || !window.allSchedules[teacher]) {
+      grid.innerHTML = '<div class="scc-empty-msg">' + (side === 'a' ? '위에서 선생님을 고르세요.' : '위에서 ' + (scc.type === 'exchange' ? '교환할' : '보강해 줄') + ' 선생님을 고르세요.') + '</div>';
+      return;
+    }
+    const problem = sccDateProblem(date), wd = sccWeekdayOf(date);
+    let h = '<div class="scc-lp-l">일자</div><div><input type="date" id="scc-ld-' + side + '" value="' + date + '" min="' + range.min + '" max="' + range.max + '" onchange="sccListDate(\'' + side + '\', this.value)" onclick="sccShowPicker(this)">' +
+      (wd >= 1 && wd <= 5 ? '<span class="scc-this" style="font-weight:800;">' + SCC_DAYS[wd] + '</span>' : '') +
+      '<button class="top-btn scc-lp-day" onclick="sccListDay(\'' + side + '\', -1)" title="하루 전(평일)">−</button><button class="top-btn scc-lp-day" onclick="sccListDay(\'' + side + '\', 1)" title="하루 뒤(평일)">+</button></div>';
+    if (problem) {
+      h += '<div class="scc-lp-l">교시</div><div class="scc-lp-info empty">' + escapeHtmlText(problem) + '</div>';
+    } else {
+      const cells = sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)));
+      h += '<div class="scc-lp-l">교시</div><div><select id="scc-lp-' + side + '" onchange="sccListPeriod(\'' + side + '\', this.value)"><option value="">선택</option>';
+      for (let p = 1; p <= 7; p++) {
+        const cell = cells[p][wd], block = sccCellBlock(side, date, cell), t = currentTimes[p - 1] || { s: '' };
+        const text = p + '교시' + (t.s ? ' (' + t.s + ')' : '') + ' — ' + (cell.s ? cell.s + (cell.r ? ' ' + cell.r : '') : '빈 시간') + (cell.change ? ' [' + (cell.change.type === 'exchange' ? '교환됨' : '보강됨') + ']' : '');
+        h += '<option value="' + p + '"' + (pick && pick.period === p ? ' selected' : '') + (block ? ' disabled' : '') + ' title="' + escapeHtmlAttr(block) + '">' + escapeHtmlText(text) + '</option>';
+      }
+      h += '</select></div>';
+      const info = pick ? sccClassAt(teacher, pick.date, pick.period) : '';
+      h += '<div class="scc-lp-l">과목정보</div><div class="scc-lp-info' + (pick && info ? '' : ' empty') + '">' + (pick ? (info ? '<b>' + escapeHtmlText(info) + '</b>&nbsp;' + escapeHtmlText(sccSlotText(pick.date, pick.period)) + (cells[pick.period][wd].change ? ' <span class="sub">(변경으로 지금 이 수업)</span>' : '') : '빈 시간 — ' + escapeHtmlText(sccSlotText(pick.date, pick.period))) : '교시를 고르면 그 수업이 여기 보여요. 고를 수 없는 줄은 흐리게(이유는 마우스를 올리면).') + '</div>';
+    }
+    grid.innerHTML = h;
   }
 
   function sccPick(side, date, period) {
@@ -9685,10 +9764,16 @@
   function sccRenderNew() {
     const ex = scc.type === 'exchange';
     document.getElementById('scc-type-exchange-btn').classList.toggle('active', ex);
+    const list = sccView() === 'list';
+    document.getElementById('scc-view-grid').classList.toggle('active', !list);
+    document.getElementById('scc-view-list').classList.toggle('active', list);
+    document.getElementById('scc-pane-new').classList.toggle('scc-listmode', list);
     document.getElementById('scc-type-makeup-btn').classList.toggle('active', !ex);
     document.getElementById('scc-side-a-label').innerText = ex ? '① 바꿀 수업' : '① 보강이 필요한 수업';
     document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : '② 보강해 줄 빈 시간';
-    document.getElementById('scc-hint').innerText = ex
+    document.getElementById('scc-hint').innerText = list
+      ? (ex ? '①과 ②에서 일자를 고르고 교시 목록에서 수업을 고르세요(그 날 수업이 글로 보여요). 지난 날짜도 이번 학기 안이면 돼요.' : '①에서 보강이 필요한 수업의 일자·교시, ②에서 보강해 줄 선생님의 일자·빈 교시를 고르세요.')
+      : ex
       ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 📅 주(누르면 달력)로 그쪽 주를 옮기세요. 지난 날짜도 이번 학기 안이면 고를 수 있어요.'
       : '①에서 보강이 필요한 수업, ②에서 보강해 줄 선생님의 빈 시간을 누르세요.';
     const range = sccPickRange(), thisMon = sccMondayOf(todayYmdDash());
@@ -9735,7 +9820,7 @@
     document.getElementById('scc-partner').value = '';
     sccFillPartnerOptions();
 
-    scc.type = 'exchange'; scc.pickA = null; scc.pickB = null; scc.bTouched = false;
+    scc.type = 'exchange'; scc.pickA = null; scc.pickB = null; scc.bTouched = false; scc.listDate = { a: '', b: '' };
     sccSetWeek('a', sccMondayOf(todayYmdDash())); // 주말이면 다음 주, 학기 밖이면 기간 안으로 맞춰진다
     document.getElementById('scc-search').value = '';
     document.getElementById('scc-type-filter').value = 'all';

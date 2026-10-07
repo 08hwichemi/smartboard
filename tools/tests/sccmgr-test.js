@@ -274,6 +274,26 @@ function check(label, cond, detail) {
   changes.pop(); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
   check('둘째 교환을 지우면(가짜 서버에서) 첫 교환만 남아 김교사 화1 빔·수1 국어', changes.length === 2 && await cell('김교사', 1, 2) === '' && await cell('김교사', 1, 3) === '국어');
 
+  // ---- 📋 일자·교시 고르기(10/7 사용자: 나이스 "수업 교체"처럼 목록이 편한 분 — 계정에 기억) ----
+  await P.click('#scc-view-list'); await wait(200);
+  check('📋 일자·교시 고르기: 시간표 대신 일자·교시·과목정보 칸, 주 이동 숨김, 계정 자료 scc-view=list', await P.evaluate(() => document.getElementById('scc-grid-a').classList.contains('scc-listpick') && !!document.getElementById('scc-ld-a') && !!document.getElementById('scc-lp-a') && getComputedStyle(document.querySelector('#scc-side-a .scc-week')).display === 'none' && localStorage.getItem('scc-view') === 'list' && document.getElementById('scc-view-list').classList.contains('active')));
+  await P.fill('#scc-ld-a', wk[1]); await P.dispatchEvent('#scc-ld-a', 'change'); await wait(150);
+  const opts = await P.evaluate(() => [...document.getElementById('scc-lp-a').options].map(o => o.text + (o.disabled ? '|x' : '')));
+  check('교시 목록에 그 날(화) 수업이 글로: 3교시 수학 209·6교시 사회, 빈 시간은 고를 수 없음', /3교시.*수학 209/.test(opts[3]) && /6교시.*사회/.test(opts[6]) && /빈 시간\|x$/.test(opts[1]), opts);
+  await P.selectOption('#scc-lp-a', '3'); await wait(150);
+  check('교시를 고르면 과목정보에 수업, 미리보기 ①에 (화) 3교시 수학', await P.evaluate(() => scc.pickA && scc.pickA.period === 3 && /수학 209/.test(document.querySelector('#scc-grid-a .scc-lp-info').innerText)) && /✅ ① \d+\/\d+\(화\) 3교시 수학/.test(await preview()), await preview());
+  await P.selectOption('#scc-partner', '박교사'); await wait(100);
+  await P.fill('#scc-ld-b', wk[1]); await P.dispatchEvent('#scc-ld-b', 'change'); await wait(150);
+  await P.selectOption('#scc-lp-b', '2'); await wait(150);
+  check('② 박교사 화2 수학 → 미리보기 둘 다 · 등록 가능', /\(화\) 2교시 "수학 208"/.test(await preview()) && !(await P.evaluate(() => document.getElementById('scc-save-btn').disabled)), await preview());
+  await P.click('#scc-side-a .scc-lp-day:last-child'); await wait(150);
+  check('일자 + → 수요일로, 교시는 다시 고름', await P.evaluate((d) => document.getElementById('scc-ld-a').value === d && !scc.pickA && scc.weekA === sccMondayOf(d), wk[2]));
+  await P.evaluate(() => closeScheduleChangeModal()); await P.evaluate(() => openScheduleChangeModal()); await wait(400);
+  check('다시 열어도 📋 방식 기억', await P.evaluate(() => document.getElementById('scc-grid-a').classList.contains('scc-listpick') && document.getElementById('scc-view-list').classList.contains('active')));
+  await P.click('#scc-view-grid'); await wait(200);
+  check('🗓 시간표 방식으로 돌아감(칸 35개), 기억 지움', await P.evaluate(() => !document.getElementById('scc-grid-a').classList.contains('scc-listpick') && !localStorage.getItem('scc-view')) && await P.evaluate(() => { document.getElementById('scc-teacher-a').value = '김교사'; sccOnTeacherAChange(); return document.querySelectorAll('#scc-grid-a .scc-cell').length === 35; }));
+  await setWeek('a', wk[0]); await P.selectOption('#scc-partner', '박교사'); await wait(100);
+
   // ---- 주 옮기기: 날짜 칸·◀ ▶, 오른쪽을 직접 옮기면 그 뒤론 따로 ----
   const dr = await P.evaluate(() => {
     const r = sccDateRange();
