@@ -310,6 +310,7 @@
     .scc-cell.pick.empty:hover::after { content: '＋ 여기로'; color: #D9822B; }
     .scc-cell.no { opacity: 0.28; cursor: not-allowed; }
     .scc-cell.chg { opacity: 0.6; border-style: dashed; border-color: var(--text-sub); cursor: not-allowed; }
+    .scc-cell.chg.pick { opacity: 0.9; cursor: pointer; } /* 바뀐 칸도 다시 바꿀 수 있음(연속 교환) */
     .scc-cell .badge { position: absolute; top: 2px; right: 3px; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #fff; }
     .scc-cell.sel { outline: 3px solid var(--accent-color); outline-offset: -2px; opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
     #scc-grid-b .scc-cell.sel { outline-color: #D9822B; box-shadow: 0 0 0 3px rgba(217,130,43,0.25); }
@@ -9442,48 +9443,51 @@
     } catch (e) { window.scheduleChangesRaw = []; window.scheduleChangesAll = []; }
   }
 
-  // 한 선생님의 어느 한 주(weekDates = 그 주 월~금 날짜)에 변경 기록이 어떻게 겹치는지를 칸마다 돌려준다.
-  // { period, d(1=월…5=금), action: 'clear'(빈 시간으로) | 'fill'(src 수업을 넣음), src: {teacher, period, wd}, change }
-  // 홈 시간표(이번 주)와 수업 변경 창(아무 주)이 같은 규칙을 쓰도록 한곳에 둔다.
-  function sccWeekEffects(teacherName, weekDates, list) {
-    const out = [];
-    (list || []).filter(function(c) { return c.teacher_a === teacherName || c.teacher_b === teacherName; }).forEach(function(c) {
-      // dA/dB: 그 주 시간표에서 몇 번째 요일 칸인지(그 주가 아니면 0 — 그쪽은 그리지 않음).
-      // wdA/wdB: 원래 수업을 꺼내 올 요일(날짜가 그 주가 아니어도 정규 시간표의 그 요일).
-      const dateB = sccDateB(c);
-      const dA = weekDates.indexOf(c.change_date) + 1;
-      const dB = weekDates.indexOf(dateB) + 1;
-      const wdA = sccWeekdayOf(c.change_date);
-      const wdB = sccWeekdayOf(dateB);
-      const clear = function(period, d) { out.push({ period: period, d: d, action: 'clear', change: c }); };
-      const fill = function(period, d, teacher, srcPeriod, wd) { out.push({ period: period, d: d, action: 'fill', src: { teacher: teacher, period: srcPeriod, wd: wd }, change: c }); };
-
-      // 같은 날짜·같은 교시 교환 — 그 시간에 서로 상대방 반에 들어간다.
-      if (c.type === 'exchange' && dateB === c.change_date && c.period_a === c.period_b) {
-        if (!dA) return;
-        if (teacherName === c.teacher_a) fill(c.period_a, dA, c.teacher_b, c.period_b, wdB);
-        if (teacherName === c.teacher_b) fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-        return;
-      }
-
-      if (teacherName === c.teacher_a) {
-        // 원래 이 교시의 주인 — 그날은 여기서 안 가르치므로 빈 시간으로 표시
-        if (dA) clear(c.period_a, dA);
-        // 교환이면 내 원래 수업을 상대방 자리(날짜B, 교시B)로 옮겨서 보여준다
-        if (c.type === 'exchange' && dB) fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-      }
-      if (teacherName === c.teacher_b) {
-        if (c.type === 'exchange') {
-          if (dB) clear(c.period_b, dB);
-          if (dA) fill(c.period_a, dA, c.teacher_b, c.period_b, wdB);
-        } else if (dB) {
-          // 보강 — 상대방의 원래 수업을 내 시간표 (날짜B, 교시B)에 추가
-          fill(c.period_b, dB, c.teacher_a, c.period_a, wdA);
-        }
-      }
+  // 변경 기록을 등록한 순서(created_at → id)대로 차례로 적용해 "실제" 시간표를 만든다(10/7 사용자: 연속 교환이 많다).
+  // 예전엔 기록마다 정규 시간표의 그 칸을 옮겨서, 이미 바뀐 칸을 다시 바꾸면 "지금 그 칸에 와 있는 수업"이 아니라 원래 수업이 옮겨져 틀리게 그려졌고
+  // 그래서 바뀐 칸은 못 누르게 막아 두었다. 이제는 앞 기록이 옮겨 놓은 수업을 뒤 기록이 그대로 이어받는다.
+  // get(teacher, date, period) → { s, r, change } (change = 그 칸을 마지막으로 바꾼 기록, 없으면 null)
+  // 홈 시간표(이번 주)·수업 변경 창(아무 주)·겹침 경고·변경 내역 글이 모두 이것 하나를 쓴다.
+  //   교환(다른 시간): A의 (날짜A,교시A) 수업이 A의 (날짜B,교시B) 자리로, B의 (날짜B,교시B) 수업이 B의 (날짜A,교시A) 자리로 — 각자 자기 수업을 들고 시간만 옮김
+  //   교환(같은 시간): 그 시간에 서로 상대방 수업으로 / 보강: A의 수업이 B의 (날짜B,교시B)에, A 칸은 빔
+  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역·엑셀), deps(이 기록이 옮겨 놓은 것을 이어받은 뒤 기록 수 — 지울 때 경고) }
+  let sccEffCache = null;
+  function sccEffectiveMap(list) {
+    list = list || [];
+    if (sccEffCache && sccEffCache.list === list && sccEffCache.n === list.length && sccEffCache.sched === window.allSchedules) return sccEffCache.map;
+    const cells = {}, info = {};
+    const key = function(t, date, p) { return t + '|' + date + '|' + p; };
+    const get = function(t, date, p) {
+      const k = key(t, date, p);
+      if (cells[k]) return cells[k];
+      const c = sccRegularCell(t, sccWeekdayOf(date), p);
+      return { s: c[0], r: c[1], change: null };
+    };
+    const text = function(c) { return c.s ? c.s + (c.r ? ' ' + c.r : '') : ''; };
+    const sorted = list.slice().sort(function(x, y) {
+      return String(x.created_at || '').localeCompare(String(y.created_at || '')) || ((Number(x.id) || 0) - (Number(y.id) || 0)) || String(x.id).localeCompare(String(y.id));
     });
-    return out;
+    sorted.forEach(function(c) {
+      const dateA = c.change_date, dateB = sccDateB(c), pA = c.period_a, pB = c.period_b;
+      const A = get(c.teacher_a, dateA, pA), B = get(c.teacher_b, dateB, pB);
+      // 이어받기: 읽은 칸이 앞 기록이 바꿔 놓은 칸이면 그 기록에 "뒤에 이어진 변경" 하나를 더한다
+      [A, B].forEach(function(x) { if (x.change && info[x.change.id]) info[x.change.id].deps++; });
+      const put = function(t, date, p, src) { cells[key(t, date, p)] = { s: src ? src.s : '', r: src ? src.r : '', change: c }; };
+      if (c.type === 'exchange') {
+        if (dateB === dateA && pA === pB) { put(c.teacher_a, dateA, pA, B); put(c.teacher_b, dateB, pB, A); }
+        else { put(c.teacher_a, dateA, pA, null); put(c.teacher_a, dateB, pB, A); put(c.teacher_b, dateB, pB, null); put(c.teacher_b, dateA, pA, B); }
+      } else { put(c.teacher_a, dateA, pA, null); put(c.teacher_b, dateB, pB, A); }
+      info[c.id] = { classA: text(A), classB: c.type === 'exchange' ? text(B) : '', deps: 0 };
+    });
+    const map = { get: get, info: info };
+    sccEffCache = { list: list, n: list.length, sched: window.allSchedules, map: map };
+    return map;
   }
+  function sccAllChanges() { return window.scheduleChangesAll || window.scheduleChangesRaw || []; }
+  // 그 날짜·교시에 그 선생님이 실제로 하는 수업("국어 2-3") — 변경까지 반영
+  function sccClassAt(teacher, date, period) { const c = sccEffectiveMap(sccAllChanges()).get(teacher, date, period); return c.s ? c.s + (c.r ? ' ' + c.r : '') : ''; }
+  // 이 기록이 옮겨 놓은 수업을 이어받은 뒤 기록 수(지울 때 경고)
+  function sccChainDependents(id) { const i = sccEffectiveMap(sccAllChanges()).info[id]; return i ? i.deps : 0; }
 
   // 정규 시간표 한 칸(요일 wd 1~5, 교시 1~7)의 [과목, 교실]
   function sccRegularCell(teacher, wd, period) {
@@ -9498,14 +9502,15 @@
   // 가르치는(또는 가르칠) 사람의 칸에 그 수업 내용을 평범한 시간표 칸처럼 그대로 넣는다.
   function applyChangeOverlayToGrid(prefix, teacherName) {
     if (!teacherName || !window.scheduleChangesRaw) return;
-    sccWeekEffects(teacherName, getCurrentWeekDates(), window.scheduleChangesRaw).forEach(function(e) {
-      const subjEl = document.getElementById(prefix + '-' + e.period + '-' + e.d + '-s');
-      const roomEl = document.getElementById(prefix + '-' + e.period + '-' + e.d + '-r');
-      if (e.action === 'fill' && !window.allSchedules[e.src.teacher]) return;
-      const cell = e.action === 'fill' ? sccRegularCell(e.src.teacher, e.src.wd, e.src.period) : ['', ''];
-      if (subjEl) subjEl.innerHTML = subjDisplayHtml(cell[0]);
-      if (roomEl) roomEl.innerText = cell[1];
-    });
+    const map = sccEffectiveMap(sccAllChanges()), weekDates = getCurrentWeekDates();
+    for (let p = 1; p <= 7; p++) for (let d = 1; d <= 5; d++) {
+      const cell = map.get(teacherName, weekDates[d - 1], p);
+      if (!cell.change) continue;
+      const subjEl = document.getElementById(prefix + '-' + p + '-' + d + '-s');
+      const roomEl = document.getElementById(prefix + '-' + p + '-' + d + '-r');
+      if (subjEl) subjEl.innerHTML = subjDisplayHtml(cell.s);
+      if (roomEl) roomEl.innerText = cell.r;
+    }
   }
 
   // ----- 수업 변경 큰 창 -----
@@ -9567,17 +9572,11 @@
 
   // 그 선생님의 그 주 실제 시간표(등록된 변경까지 반영): cells[period][d] = { s, r, change }
   function sccCellsForWeek(teacher, weekDates) {
-    const cells = {};
+    const map = sccEffectiveMap(sccAllChanges()), cells = {};
     for (let p = 1; p <= 7; p++) {
       cells[p] = {};
-      for (let d = 1; d <= 5; d++) { const c = sccRegularCell(teacher, d, p); cells[p][d] = { s: c[0], r: c[1], change: null }; }
+      for (let d = 1; d <= 5; d++) cells[p][d] = map.get(teacher, weekDates[d - 1], p);
     }
-    sccWeekEffects(teacher, weekDates, window.scheduleChangesAll || window.scheduleChangesRaw || []).forEach(function(e) {
-      const cell = cells[e.period] && cells[e.period][e.d];
-      if (!cell) return;
-      const src = e.action === 'fill' ? sccRegularCell(e.src.teacher, e.src.wd, e.src.period) : ['', ''];
-      cell.s = src[0]; cell.r = src[1]; cell.change = e.change;
-    });
     return cells;
   }
 
@@ -9592,7 +9591,7 @@
   // 칸을 누를 수 있는지. 못 누르면 이유(마우스를 올리면 보임)를 돌려준다.
   function sccCellBlock(side, date, cell) {
     if (sccDateProblem(date)) return sccDateProblem(date);
-    if (cell.change) return '이미 변경된 시간이에요 — 바꾸려면 "변경 내역"에서 지우고 다시 등록하세요.';
+    // 이미 바뀐 칸도 다시 바꿀 수 있다(연속 교환 — 지금 그 칸에 와 있는 수업이 옮겨감). 예전엔 여기서 막았음.
     if (side === 'a') return cell.s ? '' : '빈 시간이에요 — 수업이 있는 칸을 눌러 주세요.';
     if (scc.type === 'exchange') return cell.s ? '' : '교환은 수업이 있는 칸끼리 바꿔요.';
     return cell.s ? '이 시간엔 이미 수업이 있어요 — 보강은 빈 시간을 눌러 주세요.' : '';
@@ -9626,8 +9625,8 @@
         // sel = 고른 칸, chg = 이미 변경된 칸, pick = 누를 수 있음, no = 흐리게(기간 밖·고를 수 없는 종류).
         // 왼쪽의 빈 시간은 흐리게 하지 않고 그냥 못 누르게만(시간표가 읽기 쉽게).
         let cls = 'scc-cell' + (cell.s ? ' has' : ' empty');
+        if (cell.change) cls += ' chg'; // 바뀐 칸 표시(점선) — 누를 수 있으면 pick도 같이
         if (sel) cls += ' sel';
-        else if (cell.change) cls += ' chg';
         else if (!block) cls += ' pick';
         else if (sccDateProblem(date) || side === 'b') cls += ' no';
         const bg = cell.s ? ' style="background:' + getSubjectColor(cell.s + cell.r) + ';"' : '';
@@ -9778,19 +9777,19 @@
     const aName = isScheduleManager() ? (a + '쌤') : ('나(' + a + ')');
     if (!scc.pickA || !scc.pickB || !a || !b) {
       const step = function(done, text) { return (done ? '✅ ' : '⬜ ') + text; };
-      previewEl.innerText = step(!!scc.pickA, '① ' + (scc.pickA ? sccSlotText(scc.pickA.date, scc.pickA.period) + ' ' + sccClassText(a, sccWeekdayOf(scc.pickA.date), scc.pickA.period) : (ex ? '바꿀 수업 칸을 누르세요' : '보강이 필요한 수업 칸을 누르세요'))) + '\n' +
-        step(!!scc.pickB, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassText(b, sccWeekdayOf(scc.pickB.date), scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
+      previewEl.innerText = step(!!scc.pickA, '① ' + (scc.pickA ? sccSlotText(scc.pickA.date, scc.pickA.period) + ' ' + sccClassAt(a, scc.pickA.date, scc.pickA.period) : (ex ? '바꿀 수업 칸을 누르세요' : '보강이 필요한 수업 칸을 누르세요'))) + '\n' +
+        step(!!scc.pickB, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassAt(b, scc.pickB.date, scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
       return;
     }
     const A = scc.pickA, B = scc.pickB;
     const problem = sccDateProblem(A.date) || sccDateProblem(B.date);
     if (problem) { previewEl.innerText = problem; return; }
     const slotA = sccSlotText(A.date, A.period), slotB = sccSlotText(B.date, B.period);
-    const classA = sccClassText(a, sccWeekdayOf(A.date), A.period);
+    const classA = sccClassAt(a, A.date, A.period); // 변경까지 반영한 지금 그 칸의 수업(연속 교환)
     let html;
     const warns = [];
     if (ex) {
-      const classB = sccClassText(b, sccWeekdayOf(B.date), B.period);
+      const classB = sccClassAt(b, B.date, B.period);
       if (A.date === B.date && A.period === B.period) {
         html = '<b>' + escapeHtmlText(slotA) + '</b> 같은 시간에 서로 반을 맞바꿔 들어감\n' +
           escapeHtmlText(aName) + ' → "' + escapeHtmlText(classB) + '" 수업으로 · ' + escapeHtmlText(b) + '쌤 → "' + escapeHtmlText(classA) + '" 수업으로';
@@ -9891,8 +9890,9 @@
     const dateB = sccDateB(c);
     const wdA = sccWeekdayOf(c.change_date), wdB = sccWeekdayOf(dateB);
     const same = dateB === c.change_date && c.period_a === c.period_b;
-    const classA = sccClassText(c.teacher_a, wdA, c.period_a);
-    const classB = c.type === 'exchange' ? sccClassText(c.teacher_b, wdB, c.period_b) : '';
+    const inf = sccEffectiveMap(sccAllChanges()).info[c.id]; // 그 기록이 실제로 옮긴 수업(앞 기록을 이어받은 것까지)
+    const classA = inf ? inf.classA : sccClassText(c.teacher_a, wdA, c.period_a);
+    const classB = inf ? inf.classB : c.type === 'exchange' ? sccClassText(c.teacher_b, wdB, c.period_b) : '';
     let note;
     if (c.type === 'exchange') note = same ? '같은 시간에 서로 반 맞바꿈' : (dateB === c.change_date ? '같은 날 교시 교환' : '다른 날끼리 교환');
     else note = same ? '같은 시간 보강' : '다른 시간에 보강';
@@ -9946,7 +9946,8 @@
   }
 
   async function sccDelete(id) {
-    const ok = await customConfirm('이 변경 내역을 삭제할까요?');
+    const deps = sccChainDependents(id); // 이 기록이 옮겨 놓은 수업을 뒤 기록이 이어받았으면(연속 교환) 알려 준다
+    const ok = await customConfirm(deps ? '이 변경 뒤에 이어진 변경이 ' + deps + '건 있어요(이 변경으로 옮겨진 수업을 다시 바꾼 기록).\n지우면 그 뒤 변경은 원래 수업을 옮기는 것으로 바뀌어 시간표가 달라질 수 있어요.\n그래도 삭제할까요?' : '이 변경 내역을 삭제할까요?');
     if (!ok) return;
     try {
       const { error } = await sb.from('schedule_changes').delete().eq('id', id);

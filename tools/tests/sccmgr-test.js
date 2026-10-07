@@ -1,4 +1,4 @@
-// 수업 변경 큰 창: 왼쪽·오른쪽 시간표에서 칸을 눌러 교환·보강 등록(두 쪽 주를 따로), 겹침 경고, 이미 바뀐 칸 막기,
+// 수업 변경 큰 창: 왼쪽·오른쪽 시간표에서 칸을 눌러 교환·보강 등록(두 쪽 주를 따로), 겹침 경고, 연속 교환(바뀐 칸을 다시 바꾸면 지금 그 칸의 수업이 옮겨감·지울 때 이어진 변경 경고),
 // 변경 내역(기간·구분·이름 거르기, 날짜별 묶음), 엑셀 내려받기(틀 고정·필터·색 — exceljs가 있을 때).
 // 수업변경 담당(계정 관리 체크)은 아무 선생님 수업을, 일반 교사는 본인 수업만. 가짜 서버는 staff-test.js와 같다.
 const { chromium } = require('playwright');
@@ -240,8 +240,8 @@ function check(label, cond, detail) {
   await save();
   const ex = changes[changes.length - 1];
   check('다른 날짜 교환 저장: 김교사 월1 ↔ 박교사 수1', changes.length === 1 && ex.type === 'exchange' && ex.teacher_a === '김교사' && ex.teacher_b === '박교사' && ex.change_date === wk[0] && ex.change_date_b === wk[2] && ex.period_a === 1 && ex.period_b === 1, ex);
-  check('등록하면 고른 칸이 풀리고, 방금 바꾼 칸은 "교환" 표시·못 누름', await P.evaluate(() => !scc.pickA && !scc.pickB) && /chg/.test(await cls('a', wk[0], 1)) && await P.evaluate((q) => { const e = document.querySelector(q); return !e.getAttribute('onclick') && e.querySelector('.badge').innerText === '교환'; }, cellSel('a', wk[0], 1)));
-  check('왼쪽 김교사 수1 칸에 옮겨 온 국어(교환 표시)', await P.evaluate((q) => { const e = document.querySelector(q); return e.querySelector('.s').innerText === '국어' && /chg/.test(e.className); }, cellSel('a', wk[2], 1)));
+  check('등록하면 고른 칸이 풀리고, 방금 바꾼 칸은 "교환" 표시(빈 칸이라 왼쪽에선 못 누름)', await P.evaluate(() => !scc.pickA && !scc.pickB) && /chg/.test(await cls('a', wk[0], 1)) && await P.evaluate((q) => { const e = document.querySelector(q); return !e.getAttribute('onclick') && e.querySelector('.badge').innerText === '교환'; }, cellSel('a', wk[0], 1)));
+  check('왼쪽 김교사 수1 칸에 옮겨 온 국어(교환 표시) — 바뀐 칸도 다시 누를 수 있음(연속 교환)', await P.evaluate((q) => { const e = document.querySelector(q); return e.querySelector('.s').innerText === '국어' && /chg/.test(e.className) && /pick/.test(e.className) && !!e.getAttribute('onclick'); }, cellSel('a', wk[2], 1)));
 
   // 시간표에 반영: 김교사 월1(국어)은 비고 수1로, 박교사 수1(미술)은 비고 월1로
   const cell = (tn, period, d) => P.evaluate(([tn, period, d]) => {
@@ -253,6 +253,26 @@ function check(label, cond, detail) {
   check('교환 반영(홈 시간표): 김교사 월1 빔·수1 국어 / 박교사 수1 빔·월1 미술', k1 === '' && k3 === '국어' && b3 === '' && b1 === '미술', { k1, k3, b3, b1 });
 
   changes.push({ id: 2, change_date: wk[0], type: 'makeup', teacher_a: '이교사', period_a: 2, teacher_b: '정교사', period_b: 2, created_by: '이교사' });
+
+  // ---- 연속 교환(10/7 사용자: 많다): 첫 교환으로 김교사 수1에 와 있는 국어를 다시 이교사 화1(수학)과 교환 → 옮겨 가는 건 "지금 그 칸의 수업"(국어) ----
+  await P.evaluate(() => fetchScheduleChanges()); await wait(200);
+  await pick('a', wk[2], 1); await P.selectOption('#scc-partner', '이교사'); await wait(100); await pick('b', wk[1], 1); await wait(150);
+  const pvC = await preview();
+  check('연속 교환 미리보기: 김교사 수1 "국어"(교환으로 와 있는 수업) ↔ 이교사 화1 "수학"', /\(수\) 1교시 "국어/.test(pvC) && /이교사쌤 .*\(화\) 1교시 "수학/.test(pvC), pvC);
+  await save();
+  const ex2 = changes[changes.length - 1];
+  check('연속 교환 저장: 김교사 수1 ↔ 이교사 화1', changes.length === 3 && ex2.teacher_a === '김교사' && ex2.change_date === wk[2] && ex2.period_a === 1 && ex2.teacher_b === '이교사' && ex2.change_date_b === wk[1] && ex2.period_b === 1, ex2);
+  const c2 = { k3: await cell('김교사', 1, 3), k2: await cell('김교사', 1, 2), k1: await cell('김교사', 1, 1), i2: await cell('이교사', 1, 2), i3: await cell('이교사', 1, 3), b1: await cell('박교사', 1, 1) };
+  check('연속 교환 반영(홈 시간표): 김교사 월1 빔·수1 빔·화1 국어 / 이교사 화1 빔·수1 수학 / 박교사 월1 미술 그대로', c2.k1 === '' && c2.k3 === '' && c2.k2 === '국어' && c2.i2 === '' && c2.i3 === '수학' && c2.b1 === '미술', c2);
+  check('변경 창에도 같게: 김교사 화1 국어(교환 표시), 수1 빈 칸(교환 표시)', await P.evaluate((q) => { const e = document.querySelector(q); return e.querySelector('.s').innerText === '국어' && /chg/.test(e.className); }, cellSel('a', wk[1], 1)) && await P.evaluate((q) => { const e = document.querySelector(q); return !e.querySelector('.s') && /chg/.test(e.className); }, cellSel('a', wk[2], 1)));
+  check('변경 내역 글: 둘째 교환의 원래 수업은 "국어"(정규 시간표의 수1이 아니라 옮겨 온 수업), 첫 교환엔 이어진 변경 1건', await P.evaluate(() => { const d = sccDescribe(scheduleChangesAll.find(c => c.id === 3)); return d.classA === '국어 200' && d.classB === '수학 207' && sccChainDependents(1) === 1 && sccChainDependents(3) === 0; }));
+  await P.evaluate(() => { window.__confirmMsg = ''; window.customConfirm = async (m) => { window.__confirmMsg = m; return false; }; });
+  await P.evaluate(() => sccDelete(1)); await wait(200);
+  check('첫 교환을 지우려 하면 "뒤에 이어진 변경이 1건" 경고(취소하면 그대로)', /이어진 변경이 1건/.test(await P.evaluate(() => window.__confirmMsg)) && changes.length === 3);
+  await P.evaluate(() => sccDelete(3)); await wait(200);
+  check('이어진 것이 없는 둘째 교환은 그냥 "삭제할까요?"', await P.evaluate(() => window.__confirmMsg === '이 변경 내역을 삭제할까요?'));
+  changes.pop(); await P.evaluate(() => fetchScheduleChanges().then(() => { loadMyTimetable(); renderSearchTimetable(true); sccRenderNew(); })); await wait(300);
+  check('둘째 교환을 지우면(가짜 서버에서) 첫 교환만 남아 김교사 화1 빔·수1 국어', changes.length === 2 && await cell('김교사', 1, 2) === '' && await cell('김교사', 1, 3) === '국어');
 
   // ---- 주 옮기기: 날짜 칸·◀ ▶, 오른쪽을 직접 옮기면 그 뒤론 따로 ----
   const dr = await P.evaluate(() => {
@@ -389,12 +409,12 @@ function check(label, cond, detail) {
   await P.click('#scc-tab-new-btn'); await wait(100);
 
   // 같은 시간 교환 반영: 김교사 월1 국어 ↔ 정교사 월1 과학 → 김교사 칸에 과학, 정교사 칸에 국어
-  await P.evaluate((d) => { window.scheduleChangesRaw = [{ id: 98, change_date: d, change_date_b: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '정교사', period_b: 1, created_by: 'x' }]; }, wk[0]);
+  await P.evaluate((d) => { window.scheduleChangesAll = window.scheduleChangesRaw = [{ id: 98, change_date: d, change_date_b: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '정교사', period_b: 1, created_by: 'x' }]; }, wk[0]); // 기록 전부를 바꿔 넣음(연속 교환 계산은 전체 기록을 씀)
   const sk = await cell('김교사', 1, 1), sj = await cell('정교사', 1, 1);
   check('같은 시간 교환 반영: 김교사 월1 과학 / 정교사 월1 국어', sk === '과학' && sj === '국어', { sk, sj });
 
   // 예전 기록(change_date_b 없음)은 예전처럼 같은 날로
-  await P.evaluate((d) => { window.scheduleChangesRaw = [{ id: 99, change_date: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '박교사', period_b: 4, created_by: 'x' }]; }, wk[0]);
+  await P.evaluate((d) => { window.scheduleChangesAll = window.scheduleChangesRaw = [{ id: 99, change_date: d, type: 'exchange', teacher_a: '김교사', period_a: 1, teacher_b: '박교사', period_b: 4, created_by: 'x' }]; }, wk[0]);
   const o1 = await cell('김교사', 4, 1);
   check('예전 기록(날짜 하나)도 그대로: 김교사 월1 국어가 월4로', o1 === '국어', o1);
   await P.evaluate(async () => { await fetchScheduleChanges(); });
