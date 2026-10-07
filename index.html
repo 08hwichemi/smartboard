@@ -1665,8 +1665,7 @@
     .et-front .et-tbl tr { height: 6.519%; } /* 4.48mm/68.72 × 14줄 + 마지막 6mm — %라야 테두리 두께까지 합쳐 카드 높이에 딱 맞음 */
     .et-front .et-tbl tr.et-last { height: 8.731%; }
     .et-front .et-tbl.et-even tr, .et-front .et-tbl.et-even tr.et-last { height: 6.6667%; } /* 시간표 6줄: 15줄 모두 4.58mm */
-    .et-back .et-tbl tr { height: 8.104%; } /* 4.48mm/55.28 × 11줄 + 마지막 6mm */
-    .et-back .et-tbl tr.et-last { height: 10.854%; }
+    .et-back .et-tbl tr { height: 8.3333%; } /* 머리 줄 + 11줄 모두 같은 높이(55.28mm ÷ 12 = 4.61mm) — 예전 엑셀은 마지막 안내 줄만 6mm라 한국사·탐구 마지막 칸이 높았음(사용자 10/7) */
     /* 앞면 */
     .et-front .et-tbl { border: 0.4mm solid #000; }
     .et-front td.et-mid-l { border-left: 0.4mm solid #000; } /* 왼쪽 ↔ 시간표 ↔ 오른쪽 사이 굵은 세로선 */
@@ -1706,7 +1705,7 @@
     .et-back td.et-br { border-right: 0.4mm solid #000; }
     .et-back td.et-bb { border-bottom: 0.4mm solid #000; }
     .et-back td.et-nb { border-top: 0; border-bottom: 0; } /* 빈 줄 — 블록 양옆 굵은 세로선만 이어짐 */
-    .et-back td.et-note { font-size: 5.5pt; border: 0; text-align: left; padding-left: 1mm; }
+    .et-back td.et-fill { vertical-align: middle; text-align: left; padding: 0 1mm; font-size: 5.5pt; line-height: 1.15; white-space: normal; word-break: keep-all; border-top: 0.15mm solid #000; } /* 문항이 적은 과목의 남는 줄 — 닫힌 칸 하나(안내 글) */
     @media print { .et-photo.empty { border: 0 !important; color: transparent !important; } }
 
     /* ===== 🗓️ 시간표 만들기 (학생/교사 카드형 시간표 생성기) ===== */
@@ -21738,18 +21737,24 @@
       '<div class="et-hd-s">' + ntEsc(c.grade + '학년 ' + c.cls + '반 ' + (s.no ? s.no + '번 ' : '') + (s.name || '')) + '</div>' +
       '<div class="et-hd-r"><div class="et-sn">' + ntEsc(c.schoolNo ? '학교번호 ' + c.schoolNo : '') + '</div><div class="et-sc">' + ntEsc(c.school || '') + '</div></div></div>';
     h += '<table class="et-tbl">' + etColgroup(ET_COLS_B) + '<tr>' + heads.map(function(x, i) { return td('et-sh' + (i === 0 ? ' et-bl' : '') + (i === 4 ? ' et-br' : ''), ntEsc(x[0]), x[1]); }).join('') + '</tr>';
-    for (let r = 0; r < 11; r++) {
+    // 다섯 과목이 모두 11줄 아래 끝선에서 같이 끝나게(사용자 10/7: 들쑥날쑥) — 문항이 적은 과목은 남는 줄을 닫힌 칸 하나로 묶고
+    // 국어·수학 칸에 안내 글을 넣는다(예전엔 마지막 줄 전체가 안내 줄이었음).
+    const ROWS = 11, notes = { kor: '★ 정확한 채점을 위해 칸 중앙에 맞춰 기입해 주세요!', math: '★ ' + (k28 ? '답안지' : '선택과목') + ' 과목코드 확인!!' };
+    const used = function(blk) { let n = blk.rows.length; while (n && blk.rows[n - 1] == null) n--; return n; }; // 문항 줄 수(끝의 빈 줄 빼고)
+    const blocks = [['kor', B.kor, 7], ['math', B.math, 7], ['eng', B.eng, 6], ['hist', B.hist, 6], ['inq', B.inq, 6]].map(function(x) { return { key: x[0], blk: x[1], cols: x[2], end: used(x[1]) }; });
+    for (let r = 0; r < ROWS; r++) {
       let row = '';
-      if (r === 10) row += td('et-note', '★ 정확한 채점을 위해 칸 중앙에 맞춰 기입해 주세요!&nbsp;&nbsp;' + (k28 ? '답안지 과목코드 확인!!' : '선택과목 과목코드 확인!!'), 14);
-      else [B.kor, B.math].forEach(function(blk) {
-        if (blk.label) { // 세로 칸(공통/선택, 객관/단답): 구간이 시작하는 줄에 rowspan으로, 마지막 구간은 아래 굵은 선
+      blocks.forEach(function(b) {
+        const blk = b.blk, full = b.end >= ROWS;
+        if (r > b.end) return; // 닫힌 칸(rowspan)에 들어감
+        if (r === b.end) { row += td('et-fill et-bl et-br et-bb', ntEsc(notes[b.key] || ''), b.cols, ROWS - b.end); return; }
+        if (blk.label) { // 세로 칸(공통/선택, 객관/단답): 구간이 시작하는 줄에 rowspan으로, 블록이 끝까지 차면 마지막 구간에 아래 굵은 선
           let at = 0;
-          blk.label.forEach(function(seg, si) { if (r === at) row += td('et-lb et-bl' + (si === blk.label.length - 1 ? ' et-bb' : ''), ntEsc(seg[0]), 1, seg[1]); at += seg[1]; });
+          blk.label.forEach(function(seg, si) { if (r === at) row += td('et-lb et-bl' + (full && si === blk.label.length - 1 ? ' et-bb' : ''), ntEsc(seg[0]), 1, seg[1]); at += seg[1]; });
         }
-        row += rowCells(blk.rows[r], !blk.label, true, r === 9, !blk.label);
+        row += rowCells(blk.rows[r], !blk.label, true, full && r === ROWS - 1, b.cols === 7 && !blk.label);
       });
-      row += rowCells(B.eng.rows[r], true, true, r === 8) + rowCells(B.hist.rows[r], true, true, r === 10) + rowCells(B.inq.rows[r], true, true, r === 8);
-      h += '<tr' + (r === 10 ? ' class="et-last"' : '') + '>' + row + '</tr>';
+      h += '<tr>' + row + '</tr>';
     }
     return '<div class="et-card">' + h + '</table></div>';
   }
