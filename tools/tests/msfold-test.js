@@ -210,7 +210,7 @@ function check(label, cond, detail) {
   });
   await wait(400);
   s = await state();
-  check('달 머리줄이 학기 순서(3월→5월→1월) + 새 일정 입력', s.heads.length === 4 && /^▶ 3월 2건/.test(s.heads[0]) && /^▶ 5월 2건/.test(s.heads[1]) && /^▶ 1월 1건/.test(s.heads[2]) && /새 일정 입력/.test(s.heads[3]), s.heads);
+  check('새 일정 입력(예시 줄 바로 아래) + 달 머리줄이 학기 순서(3월→5월→1월)', s.heads.length === 4 && /새 일정 입력/.test(s.heads[0]) && /^▶ 3월 2건/.test(s.heads[1]) && /^▶ 5월 2건/.test(s.heads[2]) && /^▶ 1월 1건/.test(s.heads[3]), s.heads);
   check('항상 펼치기 꺼짐 → 달 일정은 접혀 있음', s.rows.filter(r => r.c).every(r => r.hidden), s.rows);
   check('빈 줄은 계속 보임', s.rows.filter(r => !r.c).every(r => !r.hidden) && s.rows.filter(r => !r.c).length === 10, s.rows);
   check('달력 데이터는 그대로(3월 2일 입학식)', await P.evaluate(() => { msCurMonth = 3; const d = msGetUserData(); return !!(d[msCurYear + '-3-2'] && d[msCurYear + '-3-2'][0].text === '입학식'); }));
@@ -282,7 +282,7 @@ function check(label, cond, detail) {
   // 머리줄 눌러 한 달만 펼치기
   await P.click('#ms-table-body tr.ms-month-head[data-month="5"]'); await wait(200);
   s = await state();
-  check('5월만 펼쳐짐', s.rows.filter(r => r.m === '5').every(r => !r.hidden) && s.rows.filter(r => r.m === '3').every(r => r.hidden) && /^▼ 5월/.test(s.heads[1]), s);
+  check('5월만 펼쳐짐', s.rows.filter(r => r.m === '5').every(r => !r.hidden) && s.rows.filter(r => r.m === '3').every(r => r.hidden) && /^▼ 5월/.test(s.heads[2]), s);
   await P.click('#ms-table-body tr.ms-month-head[data-month="5"]'); await wait(200);
   s = await state();
   check('다시 누르면 접힘', s.rows.filter(r => r.m === '5').every(r => r.hidden), s);
@@ -296,14 +296,14 @@ function check(label, cond, detail) {
   await P.keyboard.type('진단평가');
   await P.click('#ms-cfg-title'); await wait(300);
   s = await state();
-  check('줄을 벗어나면 3월 묶음으로 옮겨지고 3월이 펼쳐짐', /^▼ 3월 3건/.test(s.heads[0]) && s.rows.filter(r => r.m === '3').every(r => !r.hidden) && s.rows.filter(r => r.m === '5').every(r => r.hidden), s);
+  check('줄을 벗어나면 3월 묶음으로 옮겨지고 3월이 펼쳐짐', /^▼ 3월 3건/.test(s.heads[1]) && s.rows.filter(r => r.m === '3').every(r => !r.hidden) && s.rows.filter(r => r.m === '5').every(r => r.hidden), s);
   const saved = JSON.parse(await ls(pc, 'ms-data'));
   check('저장 데이터에 머리줄이 섞이지 않음', saved.table.length === 15 && saved.table.some(r => r.d === '3/10' && r.c === '진단평가'), saved.table);
 
   // 항상 펼치기 켜기 → 전부 펼침, 기억
   await P.click('#ms-expand-all'); await wait(300);
   s = await state();
-  check('항상 펼치기 켜면 모든 달 펼침', s.rows.every(r => !r.hidden) && s.heads.slice(0, 3).every(h => h.startsWith('▼')), s);
+  check('항상 펼치기 켜면 모든 달 펼침', s.rows.every(r => !r.hidden) && s.heads.slice(1, 4).every(h => h.startsWith('▼')), s);
   check('설정 기억(localStorage)', await ls(pc, 'ms-expand-all') === '1');
   await wait(1500);
   check('서버(계정)에 저장됨', serverVal(T1, 'ms-expand-all') === '1', serverVal(T1, 'ms-expand-all'));
@@ -318,6 +318,8 @@ function check(label, cond, detail) {
   await P.evaluate(() => { const p = document.getElementById('ms-panel'); p.scrollTop = document.getElementById('ms-section-table').offsetTop - 10; });
   await wait(200);
   { const b = await P.locator('text=+ 5칸 추가').boundingBox(); await P.mouse.click(b.x + b.width / 2, b.y + b.height / 2); await wait(300); }
+  s = await state();
+  check('+ 5칸 추가한 빈 줄도 예시 줄 바로 아래(새 일정 입력)에', /새 일정 입력/.test(s.heads[0]) && s.rows.findIndex(r => r.m !== '0') === s.rows.filter(r => r.m === '0').length, s);
   await P.evaluate(() => { const p = document.getElementById('ms-panel'); p.scrollTop = p.scrollHeight; }); await wait(200);
   const lastBtn = P.locator('#ms-table-body .ms-del-row-btn').last();
   const box = await lastBtn.boundingBox();
@@ -331,11 +333,14 @@ function check(label, cond, detail) {
   check('위로 스크롤하면 채워 둔 빈 칸은 사라짐', await P.evaluate(() => document.getElementById('ms-panel-spacer').style.height === ''));
 
   // 같은 계정 다른 기기: 켜진 채로 복원, 일정도 달별로 묶임
+  // (빈 줄이 맨 위로 가서 위 🗑️ 검사가 맨 아래 날짜 있는 줄을 지움 — 지운 것이 서버에 올라간 뒤 열고, 머리줄 수는 PC와 견줌)
+  await wait(2000);
+  const pcHeads = (await state()).heads.length;
   const pc2 = await openDevice(browser, 'PC2', T1);
   const Q = pc2.page;
   await Q.click('#rail-monthly-btn'); await wait(800);
   const s2 = await Q.evaluate(() => ({ expandAll: document.getElementById('ms-expand-all').checked, heads: [...document.querySelectorAll('#ms-table-body tr.ms-month-head')].map(h => h.innerText.replace(/\s+/g, ' ').trim()), hidden: msDataRows().filter(tr => tr.offsetParent === null).length }));
-  check('다른 기기: 항상 펼치기 켜진 채로, 전부 펼쳐져 있음', s2.expandAll && s2.hidden === 0 && s2.heads.length === 4, s2);
+  check('다른 기기: 항상 펼치기 켜진 채로, 전부 펼쳐져 있음', s2.expandAll && s2.hidden === 0 && s2.heads.length === pcHeads && pcHeads >= 2, { s2, pcHeads });
   check('다른 기기: 달력 일정 글자 120%도 그대로(ms-data에 같이 저장)', await Q.evaluate(() => document.getElementById('ms-ev-size-val').textContent === '120%' && getComputedStyle(document.getElementById('ms-a4-paper')).getPropertyValue('--ms-ev').trim() === '1.2'));
 
   // 끄면 다시 접히고, 끈 것도 기억

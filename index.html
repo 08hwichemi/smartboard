@@ -12179,8 +12179,8 @@
 
   /* --- 세부 일정 월별 접기(아코디언) ---
      일정이 1년치로 길어지면 찾기 힘들어서 달마다 머리줄("▶ 5월 · 3건")을 두고 접었다 펼친다.
-     학기 순서(3월 → 2월)로 묶고, 날짜를 아직 안 적은 빈 줄은 맨 아래 "새 일정 입력" 묶음에
-     늘 펼쳐 둔다. "항상 펼치기"(ms-expand-all) 체크는 계정별 개인 자료로 기억한다. */
+     학기 순서(3월 → 2월)로 묶고, 날짜를 아직 안 적은 빈 줄은 회색 예시 줄 바로 아래 "새 일정 입력" 묶음에
+     늘 펼쳐 둔다(예전엔 맨 아래라 일정이 길면 한참 내려가야 적을 수 있었음 — 10/8 사용자 요청). "항상 펼치기"(ms-expand-all) 체크는 계정별 개인 자료로 기억한다. */
   const MS_MONTH_ORDER = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2];
   const MS_EXPAND_ALL_KEY = 'ms-expand-all';
   let msMonthOpen = {};   // 머리줄을 눌러 직접 열고 닫은 달 — 없으면 "항상 펼치기" 설정을 따른다
@@ -12261,16 +12261,16 @@
       usedHeads.add(h);
       want.push(h);
     }
+    if (undated.length) {
+      addHead(0, undated.length, true);
+      undated.forEach(function(tr) { tr.classList.remove('ms-row-folded'); want.push(tr); });
+    }
     MS_MONTH_ORDER.forEach(function(m) {
       if (!groups[m]) return;
       const open = msMonthOpen[m] !== undefined ? msMonthOpen[m] : expandAll;
       addHead(m, groups[m].length, open);
       groups[m].forEach(function(tr) { tr.classList.toggle('ms-row-folded', !open); want.push(tr); });
     });
-    if (undated.length) {
-      addHead(0, undated.length, true);
-      undated.forEach(function(tr) { tr.classList.remove('ms-row-folded'); want.push(tr); });
-    }
     Object.keys(oldHeads).forEach(function(k) { if (!usedHeads.has(oldHeads[k])) oldHeads[k].remove(); });
 
     const example = tbody.querySelector('tr.ms-example-row');
@@ -12860,7 +12860,7 @@
         '<br>· <b>일정 내용</b>: 칸 안에서 Enter로 줄을 나눠요(달력 칸이 작아서 4줄까지).' +
         '<br>· <b>분류</b>: ③에서 만든 분류를 고르면 그 색으로 · <b>🗑️</b> 그 줄 지우기.' +
         '<br>· 엑셀에서 날짜·내용 두 칸을 복사해 표에 붙여 넣으면 여러 줄이 한 번에 들어가요. 적은 일정은 달별(▼ 10월 · n건)로 묶여요.' +
-        (st.full ? '<br>👉 지금 <b>' + st.full + '건</b>(이번 달 ' + st.thisMonth + '건)' + (st.noCat ? ' · 분류 안 고른 일정 ' + st.noCat + '건(색 없이 나와요)' : '') + ' — 다 적었으면 다음으로.' : '<br>👉 먼저 맨 아래 "새 일정 입력" 줄의 날짜 칸부터 한 줄 이상 적어 주세요.') +
+        (st.full ? '<br>👉 지금 <b>' + st.full + '건</b>(이번 달 ' + st.thisMonth + '건)' + (st.noCat ? ' · 분류 안 고른 일정 ' + st.noCat + '건(색 없이 나와요)' : '') + ' — 다 적었으면 다음으로.' : '<br>👉 먼저 회색 예시 줄 바로 아래 "새 일정 입력" 줄의 날짜 칸부터 한 줄 이상 적어 주세요.') +
         (st.half ? '<br>⚠️ 날짜와 내용 중 하나만 적힌 줄 <b>' + st.half + '개</b>는 달력에 안 나와요.' : ''),
         glow: st.full ? '#ms-section-table' : '#ms-table-body tr[data-month="0"] td:first-child .ms-cell-input' }, st.full ? go(5, '다음: ⑤ 달·용지 →') : {});
     } else if (cur === 5) {
