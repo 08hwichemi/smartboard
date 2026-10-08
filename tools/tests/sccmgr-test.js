@@ -354,6 +354,30 @@ function check(label, cond, detail) {
   await P.fill('#scc-ld-b', wk[1]); await P.dispatchEvent('#scc-ld-b', 'change'); await wait(150);
   await P.selectOption('#scc-lp-b', '2'); await wait(150);
   check('② 박교사 화2 수학 → 미리보기 둘 다 · 등록 가능', /\(화\) 2교시 "수학 208"/.test(await preview()) && !(await P.evaluate(() => document.getElementById('scc-save-btn').disabled)), await preview());
+  // 🩹 보강 + 📋: ②는 선생님만 고름 — ①과 같은 일자·교시(10/8 사용자 요청)
+  await P.click('#scc-type-makeup-btn'); await wait(150);
+  const mkL = await P.evaluate(() => ({
+    label: document.getElementById('scc-side-b-label').innerText, noDate: !document.getElementById('scc-ld-b') && !document.getElementById('scc-lp-b'),
+    when: document.querySelector('#scc-grid-b .scc-lp-info, #scc-grid-b > div:nth-child(2)').innerText, pickB: scc.pickB, pickA: scc.pickA,
+    free: [...document.querySelectorAll('#scc-grid-b .scc-free-btn')].map(b => b.innerText.trim()),
+  }));
+  check('📋 보강: ② 이름 "보강해 줄 선생님", 일자·교시 칸 없음, 보강 시간 = ① (화) 3교시', mkL.label === '② 보강해 줄 선생님' && mkL.noDate && /\(화\) 3교시/.test(mkL.when) && mkL.pickB && mkL.pickB.date === mkL.pickA.date && mkL.pickB.period === 3, mkL);
+  const freeOk = await P.evaluate((free) => free.length > 0 && !free.includes('김교사') && free.every(n => !sccBusyAt(n, scc.pickA.date, 3)) && sccTeacherNames().filter(n => n !== '김교사' && window.allSchedules[n] && !sccBusyAt(n, scc.pickA.date, 3)).length === free.length, mkL.free);
+  check('빈 선생님 단추 = 그 시간 수업 없는 선생님 전부(김교사 빼고)', freeOk, mkL.free);
+  const busyT = await P.evaluate(() => sccTeacherNames().find(n => n !== '김교사' && window.allSchedules[n] && sccBusyAt(n, scc.pickA.date, 3)));
+  if (busyT) {
+    await P.evaluate((n) => { document.getElementById('scc-partner').value = n; sccOnPartnerChange(); }, busyT); await wait(150);
+    check('그 시간에 수업 있는 선생님을 고르면 경고 + 등록 못 함', /수업이 있어서 보강할 수 없어요/.test(await preview()) && await P.evaluate(() => document.getElementById('scc-save-btn').disabled && /⚠️/.test(document.querySelector('#scc-grid-b .scc-lp-info.busy').innerText)), [busyT, await preview()]);
+  }
+  await P.click('#scc-grid-b .scc-free-btn'); await wait(150);
+  const mkR = await P.evaluate(() => ({ partner: sccPartner(), rec: sccDraftRecord(), on: document.querySelector('#scc-grid-b .scc-free-btn.active') && document.querySelector('#scc-grid-b .scc-free-btn.active').innerText.trim(), dis: document.getElementById('scc-save-btn').disabled }));
+  check('빈 선생님 단추 → 그 선생님으로, 같은 시간에 대신 가르쳐 줌, 등록 가능(기록 ②일자·교시 = ①)', mkR.partner === mkL.free[0] && mkR.on === mkL.free[0] && !mkR.dis && mkR.rec.change_date_b === mkR.rec.change_date && mkR.rec.period_b === mkR.rec.period_a && /대신 가르쳐 줌/.test(await preview()), [mkR, await preview()]);
+  await P.selectOption('#scc-lp-a', '6'); await wait(150);
+  check('①의 교시를 바꾸면 ②도 따라감', await P.evaluate(() => scc.pickB && scc.pickB.period === 6 && scc.pickB.date === scc.pickA.date));
+  await P.click('#scc-view-grid'); await wait(150);
+  check('🗓 방식의 보강은 예전처럼 ② 빈 시간 칸을 누름(이름 "보강해 줄 빈 시간")', await P.evaluate(() => document.getElementById('scc-side-b-label').innerText === '② 보강해 줄 빈 시간' && document.querySelectorAll('#scc-grid-b .scc-cell').length === 35));
+  await P.click('#scc-view-list'); await wait(150);
+  await P.click('#scc-type-exchange-btn'); await wait(150);
   await P.click('#scc-side-a .scc-lp-day:last-child'); await wait(150);
   check('일자 + → 수요일로, 교시는 다시 고름', await P.evaluate((d) => document.getElementById('scc-ld-a').value === d && !scc.pickA && scc.weekA === sccMondayOf(d), wk[2]));
   await P.evaluate(() => closeScheduleChangeModal()); await P.evaluate(() => openScheduleChangeModal()); await wait(400);

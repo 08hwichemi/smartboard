@@ -339,6 +339,12 @@
     .scc-listpick .scc-lp-info { min-height: 72px; align-items: flex-start; line-height: 1.5; }
     .scc-listpick .scc-lp-info.empty { color: var(--text-sub); }
     .scc-listpick .scc-empty-msg { grid-column: 1 / -1; }
+    .scc-listpick .scc-lp-l small { display: block; font-weight: 600; font-size: 11px; }
+    .scc-listpick .scc-lp-l { flex-direction: column; gap: 0; text-align: center; }
+    .scc-listpick .scc-lp-info.busy { color: #c0392b; font-weight: 700; }
+    .scc-listpick .scc-lp-free { flex-wrap: wrap; gap: 5px; align-content: flex-start; min-height: 0; max-height: 220px; overflow-y: auto; }
+    .scc-listpick .scc-free-btn { padding: 3px 9px; font-size: 12.5px; font-weight: 700; border-radius: 999px; }
+    .scc-listpick .scc-free-btn.active { background: #D9822B; color: #fff; border-color: #D9822B; }
     .scc-cell .badge { position: absolute; top: 2px; right: 3px; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #fff; }
     .scc-cell.sel { outline: 3px solid var(--accent-color); outline-offset: -2px; opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
     #scc-grid-b .scc-cell.sel { outline-color: #D9822B; box-shadow: 0 0 0 3px rgba(217,130,43,0.25); }
@@ -9957,8 +9963,46 @@
     scc[side === 'a' ? 'pickA' : 'pickB'] = p && date ? { date: date, period: p } : null;
     sccRenderNew();
   }
+  // 🩹 보강 + 📋 일자·교시 고르기: ②는 선생님만 고른다 — ①과 같은 일자·교시에 대신 들어감(10/8 사용자 요청)
+  function sccMakeupSameTime() { return scc.type === 'makeup' && sccView() === 'list'; }
+  function sccSyncMakeupB() {
+    if (!sccMakeupSameTime()) return;
+    scc.pickB = scc.pickA ? { date: scc.pickA.date, period: scc.pickA.period } : null;
+  }
+  // 그 시간에 수업이 없는 선생님(①의 선생님 빼고) — 변경까지 반영
+  function sccFreeTeachersAt(date, period, except) {
+    const map = sccEffectiveMap(sccAllChanges());
+    return sccTeacherNames().filter(function(n) { return n !== except && window.allSchedules[n] && !map.get(n, date, period).text; });
+  }
+  function sccSetPartner(name) {
+    document.getElementById('scc-partner').value = name;
+    sccOnPartnerChange();
+  }
+  function sccRenderMakeupB(teacher, grid) {
+    const A = scc.pickA, a = sccTeacherA();
+    let h = '';
+    if (!A) {
+      h = '<div class="scc-lp-l">보강 시간</div><div class="scc-lp-info empty">①에서 보강이 필요한 수업의 일자·교시를 고르면, 그 시간에 들어갈 선생님만 고르면 돼요.</div>';
+      grid.innerHTML = h;
+      return;
+    }
+    const t = currentTimes[A.period - 1] || { s: '' };
+    h += '<div class="scc-lp-l">보강 시간</div><div><b>' + escapeHtmlText(sccSlotText(A.date, A.period)) + (t.s ? ' (' + escapeHtmlText(t.s) + ')' : '') + '</b><span class="sub" style="color:var(--text-sub);">①과 같은 시간</span></div>';
+    if (teacher && window.allSchedules[teacher]) {
+      const busy = sccBusyAt(teacher, A.date, A.period);
+      h += '<div class="scc-lp-l">' + escapeHtmlText(teacher) + '</div><div class="scc-lp-info' + (busy ? ' busy' : '') + '">' +
+        (busy ? '⚠️ 이 시간엔 "' + escapeHtmlText(busy) + '" 수업이 있어요 — 아래에서 빈 선생님을 고르세요.' : '✅ 이 시간이 비어 있어요 — 보강할 수 있어요.') + '</div>';
+    }
+    const free = sccFreeTeachersAt(A.date, A.period, a);
+    h += '<div class="scc-lp-l">빈 선생님<small>' + free.length + '명</small></div><div class="scc-lp-info scc-lp-free">' +
+      (free.length ? free.map(function(n) {
+        return '<button type="button" class="top-btn scc-free-btn' + (n === teacher ? ' active' : '') + '" onclick="sccSetPartner(\'' + escapeHtmlAttr(n.replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">' + escapeHtmlText(n) + '</button>';
+      }).join('') : '이 시간에 비어 있는 선생님이 없어요.') + '</div>';
+    grid.innerHTML = h;
+  }
   function sccRenderListPick(side, teacher, grid) {
     grid.classList.add('scc-listpick'); grid.style.display = '';
+    if (side === 'b' && sccMakeupSameTime()) return sccRenderMakeupB(teacher, grid);
     const pick = side === 'a' ? scc.pickA : scc.pickB;
     const monday = side === 'a' ? scc.weekA : scc.weekB, today = todayYmdDash();
     if (pick) scc.listDate[side] = pick.date;
@@ -10031,6 +10075,7 @@
   }
 
   function sccRenderNew() {
+    sccSyncMakeupB();
     const ex = scc.type === 'exchange';
     document.getElementById('scc-type-exchange-btn').classList.toggle('active', ex);
     const list = sccView() === 'list';
@@ -10039,9 +10084,9 @@
     document.getElementById('scc-pane-new').classList.toggle('scc-listmode', list);
     document.getElementById('scc-type-makeup-btn').classList.toggle('active', !ex);
     document.getElementById('scc-side-a-label').innerText = ex ? '① 바꿀 수업' : '① 보강이 필요한 수업';
-    document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : '② 보강해 줄 빈 시간';
+    document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : list ? '② 보강해 줄 선생님' : '② 보강해 줄 빈 시간';
     document.getElementById('scc-hint').innerText = list
-      ? (ex ? '①과 ②에서 일자를 고르고 교시 목록에서 수업을 고르세요(그 날 수업이 글로 보여요). 지난 날짜도 이번 학기 안이면 돼요.' : '①에서 보강이 필요한 수업의 일자·교시, ②에서 보강해 줄 선생님의 일자·빈 교시를 고르세요.')
+      ? (ex ? '①과 ②에서 일자를 고르고 교시 목록에서 수업을 고르세요(그 날 수업이 글로 보여요). 지난 날짜도 이번 학기 안이면 돼요.' : '①에서 보강이 필요한 수업의 일자·교시를 고르고, ②에서 그 시간에 들어갈 선생님만 고르세요(빈 선생님은 눌러서 바로 골라요).')
       : ex
       ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 📅 주(누르면 달력)로 그쪽 주를 옮기세요. 지난 날짜도 이번 학기 안이면 고를 수 있어요.'
       : '①에서 보강이 필요한 수업, ②에서 보강해 줄 선생님의 빈 시간을 누르세요.';
@@ -10132,7 +10177,7 @@
     if (!scc.pickA || !scc.pickB || !a || !b) {
       const step = function(done, text) { return (done ? '✅ ' : '⬜ ') + text; };
       previewEl.innerText = step(!!scc.pickA, '① ' + (scc.pickA ? sccSlotText(scc.pickA.date, scc.pickA.period) + ' ' + sccClassAt(a, scc.pickA.date, scc.pickA.period) : (ex ? '바꿀 수업 칸을 누르세요' : '보강이 필요한 수업 칸을 누르세요'))) + '\n' +
-        step(!!scc.pickB, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassAt(b, scc.pickB.date, scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
+        step(!!scc.pickB && !!b, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : sccMakeupSameTime() ? b + '쌤 — ①과 같은 시간' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassAt(b, scc.pickB.date, scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
       return;
     }
     const A = scc.pickA, B = scc.pickB;
@@ -10158,6 +10203,9 @@
         if (busyB) warns.push(b + '쌤은 ' + slotA + '에 이미 "' + busyB + '" 수업이 있어서 겹쳐요.');
       }
     } else {
+      // 보강해 줄 선생님은 그 시간이 비어 있어야(시간표에서 누르기는 빈 칸만 눌림 — 선생님만 고르는 방식도 같은 규칙)
+      const busyB = sccBusyAt(b, B.date, B.period);
+      if (busyB) { previewEl.innerHTML = '<span class="warn">⚠️ ' + escapeHtmlText(b) + '쌤은 ' + escapeHtmlText(slotB) + '에 "' + escapeHtmlText(busyB) + '" 수업이 있어서 보강할 수 없어요. 그 시간에 빈 선생님을 골라 주세요.</span>'; return; }
       const same = A.date === B.date && A.period === B.period;
       html = escapeHtmlText(aName) + ' <b>' + escapeHtmlText(slotA) + '</b> "' + escapeHtmlText(classA) + '"를 ' + escapeHtmlText(b) + '쌤이 ' + (same ? '대신 가르쳐 줌' : '<b>' + escapeHtmlText(slotB) + '</b>에 대신 가르쳐 줌') + '\n' +
         escapeHtmlText(b) + '쌤 시간표 ' + escapeHtmlText(slotB) + '에 이 수업이 추가로 표시돼요.';
@@ -10198,6 +10246,7 @@
     if (!scc.pickA || !scc.pickB) return customAlert('①과 ② 시간표에서 칸을 하나씩 눌러 주세요.');
     const problem = sccDateProblem(scc.pickA.date) || sccDateProblem(scc.pickB.date);
     if (problem) return customAlert(problem);
+    if (scc.type === 'makeup' && sccBusyAt(b, scc.pickB.date, scc.pickB.period)) return customAlert(b + '쌤은 그 시간에 수업이 있어서 보강할 수 없어요.');
 
     const record = sccDraftRecord();
 
