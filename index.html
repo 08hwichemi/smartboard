@@ -1414,6 +1414,9 @@
     .an-chips .nt-chip, #an-tpls .nt-chip, #an-add .nt-chip { min-width: 0; padding: 3px 4px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
     /* 틀 4개·＋ 단추 9개: 칸 수를 #fm-left 폭에 맞춰 고르게(하나만 다음 줄로 떨어지지 않게) */
     #an-title-box .nt-title { flex-wrap: wrap; }
+    #an-school-row { flex-wrap: wrap; }
+    #an-school-row .ws-lb { width: auto; }
+    #an-school-row input[type="text"].lp-input { flex: 1 1 110px; width: auto; }
     #an-saved-row { align-items: flex-start; }
     #an-saved-row .ws-lb { padding-top: 4px; width: auto; white-space: nowrap; }
     #an-saved { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -1480,6 +1483,7 @@
     #fm-left .an-tbl-grid textarea.lp-input { resize: none; min-height: 0; }
     .an-p { white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
     .an-sheet { position: relative; }
+    .an-hbox { position: absolute; display: flex; align-items: center; justify-content: center; padding: 1mm; box-sizing: border-box; white-space: nowrap; overflow: hidden; } /* 학교 머리 위 부서·발행일 글상자(종이 기준) */
     .an-ghost { display: block; margin: 0 auto; width: 70%; text-align: center; color: #8a94a6; background: transparent; border: 1px dashed #b7c0d0; border-radius: 2mm; padding: 2mm 3mm; font-size: 10.5pt; cursor: pointer; font-family: inherit; } /* 끝맺음을 안 넣었을 때 마지막 글 바로 아래(끝맺음이 들어갈 자리) 흐린 안내(누르면 넣기) — 인쇄·한글 파일엔 없음 */
     .an-ghost:hover { color: var(--accent-color); border-color: var(--accent-color); }
     @media print { .an-ghost { display: none !important; } }
@@ -3855,6 +3859,9 @@
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📢 제목</span> <span id="an-tpls" title="틀: 마우스를 올리면 미리보기에 예시가 보이고, 누르면 그 예시 제목·내용으로 바뀌어요"></span></div>
         <div class="ws-row"><span class="ws-lb">제목</span><input type="text" id="an-title" class="lp-input" placeholder="2학기 화학Ⅱ 수행평가 안내" oninput="anSet({ title: this.value })"></div>
         <div class="ws-row"><span class="ws-lb">부제목</span><input type="text" id="an-sub" class="lp-input" placeholder="없어도 돼요 — 예) 2학년 화학Ⅱ 수강생 대상" oninput="anSet({ sub: this.value })"></div>
+        <!-- 🏫 학교 머리(부광고 가정통신문 양식): 켜면 머리 그림·부서·발행일 + 맨 아래 학교장 고정 -->
+        <div class="ws-row" id="an-school-row"><label class="pe-chk" title="우리 학교 가정통신문 양식: 맨 위에 학교 머리 그림(인천광역시교육청 · 가정통신문 · 주소)이 들어가고, 그 위 칸에 부서와 발행일이 적혀요. 맨 아래는 발행일 날짜와 부광고등학교장으로 고정돼요"><input type="checkbox" id="an-school" onchange="anSet({ school: this.checked }, true)">🏫 학교 머리</label>
+          <span class="ws-lb">부서</span><input type="text" id="an-dept" class="lp-input" placeholder="교육과정부" oninput="anSet({ dept: this.value })"><span class="ws-lb">발행일</span><input type="text" id="an-issue" class="lp-input" oninput="anSet({ issue: this.value })"></div>
         <!-- 내가 만든 안내문 보관함(서버에 같이 저장): 다 만든 글을 이름 붙여 두고, 다음에 불러와 고쳐 씀. 틀 단추처럼 올리면 미리보기, 누르면 불러오기 -->
         <div class="ws-row" id="an-saved-row"><span class="ws-lb" title="내가 보관해 둔 안내문 — 올리면 미리보기에 보이고, 누르면 불러와 고쳐 쓸 수 있어요(제목·내용·끝맺음·모양·글꼴·쪽 설정이 함께)">내 안내문</span><span id="an-saved"></span><button class="nt-chip" id="an-save-btn" onclick="anSaveDoc()" title="지금 글(제목·내용·끝맺음·모양·글꼴·쪽 설정)을 이름 붙여 보관해요. 다음에 불러와 고쳐 쓸 수 있어요">💾 지금 글 보관</button></div>
       </div>
@@ -3866,6 +3873,7 @@
         <div class="nt-muted" id="an-help" title="줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄(기호만 있는 빈 줄에서 Enter = 빈 줄), Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 &quot;1.&quot; &quot;-&quot; &quot;•&quot; 같은 앞 기호를 보고 알아서 나눠요.">줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄(기호만 있는 빈 줄에서 Enter = 빈 줄), Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
         <div id="an-end-box">
           <div class="nt-title"><span class="fm-tt">✍️ 끝맺음</span> <span class="nt-muted">종이 맨 아래 날짜·보내는 사람</span></div>
+          <div class="nt-muted" id="an-end-fixed" style="display:none;">🏫 학교 머리를 켰으니 맨 아래는 발행일 날짜 + "부 광 고 등 학 교 장"으로 고정돼요(① 발행일 칸).</div>
           <div class="ws-row an-end-row"><label class="pe-chk"><input type="checkbox" id="an-end" onchange="anSet({ end: this.checked }, true)">넣기</label><span class="nt-row" id="an-end-align" style="gap:4px;"></span>
             <span class="ws-lb">날짜</span><input type="text" id="an-end-date" class="lp-input" oninput="anSet({ endDate: this.value })">
             <span class="ws-lb">보낸 이</span><input type="text" id="an-end-from" class="lp-input" placeholder="○○고등학교장 · 2학년 담임 ○○○" oninput="anSet({ endFrom: this.value })"></div>
@@ -20544,27 +20552,38 @@
   const AN_TBL_PAD = 1.2, AN_CELL_PAD = 1.8, AN_BOX_PAD = 2.5, AN_BOX_SIDE = 3.5, AN_AFTER = 2; // 표 칸 위아래·좌우 안쪽, 상자 안쪽 위아래·좌우, 표·상자 아래 띄움(mm)
   const AN_TBL_MAXC = 8, AN_TBL_MAXR = 40;
   const AN_TPLS = [
-    { k: 'pe', n: '📋 수행평가', d: { title: '2학기 화학Ⅱ 수행평가 안내', sub: '2학년 화학Ⅱ 수강생', end: false, endFrom: '', rows: [
+    { k: 'pe', n: '📋 수행평가', d: { title: '2학기 화학Ⅱ 수행평가 안내', sub: '2학년 화학Ⅱ 수강생', school: false, end: false, endFrom: '', rows: [
       { lv: 'h1', t: '평가 개요' }, { lv: 'b', t: '평가 기간: 10월 20일(월) ~ 10월 24일(금), 수업 시간' }, { lv: 'b', t: '평가 영역: 탐구 보고서 작성 및 발표' },
       { lv: 'h1', t: '평가 기준' },
       { lv: 'tbl', head: true, cells: [['영역', '배점', '평가 내용'], ['보고서', '20점', '탐구 과정과 결과를 논리적으로 정리했는가'], ['발표', '10점', '핵심 내용을 3분 안에 정확하게 전달했는가']] },
       { lv: 'h1', t: '유의 사항' }, { lv: 'b', t: '보고서는 A4 2쪽 이내로 작성합니다.' }, { lv: 'd', t: '인터넷 자료를 인용할 때는 출처를 꼭 밝힙니다.' },
       { lv: 'b', t: '결시자는 학업성적관리규정에 따라 처리합니다.' }, { lv: 'p', t: '' }, { lv: 'n', t: '문의: 과학과 ○○○ 선생님' }] } },
-    { k: 'home', n: '🏫 가정통신문', d: { title: '현장체험학습 안내', sub: '', end: true, endAlign: 'C', endFrom: '○○고등학교장', rows: [
-      { lv: 'p', t: '학부모님 가정에 건강과 행복이 가득하시기를 바랍니다. 본교에서는 학생들의 견문을 넓히고 공동체 의식을 기르기 위하여 아래와 같이 현장체험학습을 실시하고자 하오니, 많은 관심과 협조 부탁드립니다.' },
-      { lv: 'p', t: '' }, { lv: 'c', t: '- 아　래 -' }, { lv: 'p', t: '' },
-      { lv: 'h1', t: '일시: 2026년 10월 24일(금) 08:30 ~ 16:00' }, { lv: 'h1', t: '장소: ○○ 과학관' }, { lv: 'h1', t: '대상: 1학년 학생 전체' },
-      { lv: 'h1', t: '준비물: 도시락, 필기도구, 편한 복장' }, { lv: 'h1', t: '유의 사항' }, { lv: 'b', t: '집합 시각(08:30)을 꼭 지켜 주세요.' },
-      { lv: 'b', t: '건강 문제로 참가가 어려운 학생은 10월 17일(금)까지 담임 선생님께 알려 주세요.' }] } },
-    { k: 'event', n: '📢 행사·일정', d: { title: '2학기 주요 학교 행사 안내', sub: '', end: false, endFrom: '', rows: [
+    // 🏫 가정통신문 = 우리 학교(부광고) 양식: 머리 그림(forms/가정통신문-머리.jpg) + 그 위 부서·발행일 글상자, 경기천년 글꼴, 원본 쪽 여백, 맨 아래 발행일 날짜 + "부 광 고 등 학 교 장" 고정(school: true)
+    { k: 'home', n: '🏫 가정통신문', d: { title: '2026학년도 3학년 ‘수업량 유연화’ 강좌신청 안내', sub: '', school: true, dept: '교육과정부', issue: '', end: true, endAlign: 'C', endFrom: '부 광 고 등 학 교 장',
+      deco: 'none', tAlign: 'C', bul: '☑', tFont: '경기천년제목 Medium', tFontC: false, tSize: 18, tBold: false, bFont: '경기천년바탕 Regular', bFontC: false, bSize: 11, line: 160, paper: 'A4', land: false, mT: 15, mB: 14, mL: 16, mR: 18, rows: [
+      { lv: 'p', t: '안녕하십니까?' },
+      { lv: 'p', t: '본교에서는 7월 13~14일 학교 자율적 교육과정의 날을 맞아 학교생활기록부와 연계하여 학생들의 진로에 맞는 다양한 교육경험을 제공하고자 융합, 심화, 진로 수업을 운영합니다. 이에 따라 아래와 같이 선착순으로 강좌신청을 받습니다.' },
+      { lv: 'h1', t: '내용: 2026학년도 3학년 1학기 수업량 유연화 강좌 신청' },
+      { lv: 'b', t: '수업량 유연화에 따른 학교자율교육과정: 17회 수업량 중 1회를 학교가 자율적으로 운영하는 과정' },
+      { lv: 'b', t: '학교자율교육과정 일정(26년 7월 13일 월요일 ~ 7월 14일 화요일)' },
+      { lv: 'h1', t: '신청방법' },
+      { lv: 'b', t: '프로그램 신청은 리로스쿨을 통해 받으며, 선착순 마감됩니다.' },
+      { lv: 'b', t: '프로그램은 1개를 선택하며, 수강신청 기간 동안 수강 신청 및 정정이 가능합니다.' },
+      { lv: 'tbl', head: true, cells: [['연번', '학년', '주제 또는 제목', '융합교과', '수업장소', '인원'], ['1', '3', '다름으로 하나되는 우리(다양한 문화 존중 콘텐츠 제작)', '국어+영어+영상제작', '3-3, 3-5, 교내', '45'], ['2', '3', '바이브코딩을 활용한 반응형 디지털 랩노트 설계 및 제작', '과학+정보', '물리지학실, 생명화학실', '30']] },
+      { lv: 'h1', t: '접속방법' },
+      { lv: 'box', t: '[리로스쿨] 홈화면 ☞ [로그인] 아이디: 본인 학번 ☞ [자율적교육과정] 클릭 ☞ 2026학년도 3학년 수업량 유연화 클릭\n[수강신청기간] 7/6(월) 17:00 ~ 7/7(화) 13:40' }] } },
+    { k: 'event', n: '📢 행사·일정', d: { title: '2학기 주요 학교 행사 안내', sub: '', school: false, end: false, endFrom: '', rows: [
       { lv: 'h1', t: '주요 일정' },
       { lv: 'tbl', head: true, cells: [['날짜', '행사', '대상', '장소'], ['10. 15.(수)', '체육대회', '전교생', '운동장'], ['10. 28.(화)', '진로 특강', '2학년', '강당'], ['11. 19.(목)', '대학수학능력시험', '3학년', '-']] },
       { lv: 'h1', t: '안내 사항' }, { lv: 'b', t: '일정은 학교 사정에 따라 바뀔 수 있습니다.' }, { lv: 'b', t: '자세한 내용은 담임 선생님께 문의해 주세요.' },
       { lv: 'box', t: '※ 체육대회 날은 체육복을 입고 등교합니다.\n※ 비가 오면 10월 16일(목)로 미룹니다.' }] } },
-    { k: 'blank', n: '📄 빈 안내문', d: { title: '', sub: '', end: false, endFrom: '', rows: [{ lv: 'h1', t: '' }, { lv: 'b', t: '' }, { lv: 'b', t: '' }] } },
+    { k: 'blank', n: '📄 빈 안내문', d: { title: '', sub: '', school: false, end: false, endFrom: '', rows: [{ lv: 'h1', t: '' }, { lv: 'b', t: '' }, { lv: 'b', t: '' }] } },
   ];
+  // 학교 머리(🏫 가정통신문 양식): 원본 hwpx의 수치 그대로(mm, HWPUNIT). 그림은 글 뒤(BEHIND_TEXT) 문단 위치에, 부서·발행일은 종이 기준 글상자(IN_FRONT_OF_TEXT)
+  const AN_SCHOOL = { img: 'forms/가정통신문-머리.jpg', w: 177.3, h: 34.5, huW: 50269, huH: 9777, gap: 4, from: '부 광 고 등 학 교 장', fromSize: 22, dateSize: 12, boxSize: 11, boxH: 7,
+    dept: { x: 17.3, y: 41.4, w: 35.2, huW: 9969, huX: 4893, huY: 11744 }, issue: { x: 163.9, y: 41.4, w: 25.8, huW: 7320, huX: 46473, huY: 11744 }, huBoxH: 1984 };
   const AN_DEFAULT = Object.assign({
-    title: '', sub: '', rows: [], end: false, endDate: '', endFrom: '', endAlign: 'C',
+    title: '', sub: '', rows: [], end: false, endDate: '', endFrom: '', endAlign: 'C', school: false, dept: '교육과정부', issue: '',
     deco: 'line', tAlign: 'C', n1: '1.', n2: '가.', bul: '•', dash: '-', line: 160, gap: 4, step: 'auto', hang: true,
     paper: 'A4', land: false, mT: 20, mB: 20, mL: 20, mR: 20,
     tFont: 'HY헤드라인M', tSize: 22, bFont: '함초롬바탕', bSize: 12, tBold: false, h1Bold: true, tFontC: false, bFontC: false,
@@ -20593,7 +20612,8 @@
     try { v = JSON.parse(localStorage.getItem(AN_CFG_KEY) || '{}') || {}; } catch (e) {}
     if (!v || typeof v !== 'object') v = {};
     const c = Object.assign({}, AN_DEFAULT, v, fmDemo && fmDemo.an ? fmDemo.an : null); // 설명서 동안은 완성 예시(저장 안 함)
-    ['title', 'sub', 'endDate', 'endFrom'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
+    ['title', 'sub', 'endDate', 'endFrom', 'dept', 'issue'].forEach(function(k) { c[k] = String(c[k] == null ? '' : c[k]); });
+    c.school = c.school === true;
     c.rows = (Array.isArray(c.rows) ? c.rows : []).filter(function(r) { return r && typeof r === 'object' && AN_LV_NAME[r.lv]; }).map(anCleanRow);
     c.end = c.end === true; c.endAlign = c.endAlign === 'R' ? 'R' : 'C';
     if (!AN_DECO.some(function(d) { return d[0] === c.deco; })) c.deco = 'line';
@@ -20637,6 +20657,9 @@
     fmFontMsgTo('an-font-msg', [anCfg().tFont, anCfg().bFont]);
   }
   function anToday() { const d = new Date(); return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.'; }
+  // 학교 머리의 발행일: 비우면 오늘. 맨 아래 날짜 줄은 원본처럼 "2026년  6월  24일"(띄어쓰기 두 칸)
+  function anIssue(c) { return c.issue.trim() || anToday(); }
+  function anIssueKo(c) { const m = anIssue(c).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? m[1] + '년  ' + Number(m[2]) + '월  ' + Number(m[3]) + '일' : anIssue(c); }
 
   // ----- 번호·기호·들여쓰기 -----
   function anNumFmt(f, i) { // i: 1부터
@@ -20692,6 +20715,7 @@
     const cs = Math.max(9, c.bSize - 1), cLh = cs * FM_PT * 1.3;
     const linesOf = function(t, ww, size) { return Math.max(1, Math.ceil(anEm(t) * size * FM_PT / Math.max(10, ww) - 0.02)); };
     const blocks = [];
+    if (c.school) blocks.push({ k: 'head', h: AN_SCHOOL.h + AN_SCHOOL.gap }); // 학교 머리 그림 자리(그 위 부서·발행일 글상자는 종이 기준)
     // 제목: 꾸미기가 상자·띠면 안쪽 여백
     const boxed = c.deco === 'box' || c.deco === 'band';
     const tPadV = boxed ? 3 : c.deco === 'none' ? 0 : 1.5, tPadH = boxed ? 4 : 0, tLh = c.tSize * FM_PT * 1.3;
@@ -20743,9 +20767,10 @@
       const n = linesOf(t || ' ', W - left - hang, c.bSize);
       blocks.push({ k: 'p', lv: r.lv, al: al, t: t, left: left, hang: hang, before: before, n: n, h: n * lh + before });
     });
-    if (c.end) {
-      const eN = linesOf(c.endFrom || ' ', W, c.bSize + 4);
-      blocks.push({ k: 'end', date: c.endDate.trim() || anToday(), from: c.endFrom, n: eN, h: 2 * lh + lh + eN * (c.bSize + 4) * FM_PT * 1.6 });
+    if (c.end || c.school) { // 학교 머리면 맨 아래는 발행일 날짜(12pt 굵게) + "부 광 고 등 학 교 장"(제목 글꼴 22pt) 고정
+      const fs = c.school ? AN_SCHOOL.fromSize : c.bSize + 4, from = c.school ? AN_SCHOOL.from : c.endFrom;
+      const eN = linesOf(from || ' ', W, fs);
+      blocks.push({ k: 'end', date: c.school ? anIssueKo(c) : (c.endDate.trim() || anToday()), from: from, n: eN, fs: fs, ds: c.school ? AN_SCHOOL.dateSize : c.bSize, h: 2 * lh + lh + eN * fs * FM_PT * 1.6 });
     }
     // 쪽 나누기(어림 — 한글은 문단 단위로 알아서 넘김)
     const pages = [[]];
@@ -20787,9 +20812,13 @@
     if (b.k === 'box') return '<div class="an-box" style="margin-left:' + b.left + 'mm; width:' + b.W + 'mm; box-sizing:border-box; border:' + fmBdCss(fmLn('solid', 0.12)) + '; padding:' + AN_BOX_PAD + 'mm ' + AN_BOX_SIDE + 'mm; margin-bottom:' + AN_AFTER + 'mm;">' +
       b.lines.map(function(x) { return '<div class="an-p" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; padding-left:' + (x.left + x.hang) + 'mm; text-indent:' + (-x.hang) + 'mm; text-align:justify;">' + (ntEsc(x.t) || '&nbsp;') + '</div>'; }).join('') + '</div>';
     if (b.k === 'end') {
-      const ea = c.endAlign === 'R' ? 'right' : 'center';
-      return '<div style="height:' + (2 * L.lh) + 'mm;"></div><div class="an-p" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; text-align:' + ea + ';">' + ntEsc(b.date) + '</div>' +
-        '<div class="an-p" style="' + bF + ' font-size:' + (c.bSize + 4) + 'pt; line-height:' + ((c.bSize + 4) * FM_PT * 1.6) + 'mm; text-align:' + ea + '; font-weight:800; margin-top:' + L.lh + 'mm;">' + (ntEsc(b.from) || '&nbsp;') + '</div>';
+      const ea = c.school ? 'center' : c.endAlign === 'R' ? 'right' : 'center';
+      return '<div style="height:' + (2 * L.lh) + 'mm;"></div><div class="an-p" style="' + bF + ' font-size:' + b.ds + 'pt; line-height:' + L.lh + 'mm; text-align:' + ea + ';' + (c.school ? ' font-weight:800;' : '') + '">' + ntEsc(b.date) + '</div>' +
+        '<div class="an-p" style="' + (c.school ? tF : bF) + ' font-size:' + b.fs + 'pt; line-height:' + (b.fs * FM_PT * 1.6) + 'mm; text-align:' + ea + ';' + (c.school ? '' : ' font-weight:800;') + ' margin-top:' + L.lh + 'mm;">' + (ntEsc(b.from) || '&nbsp;') + '</div>';
+    }
+    if (b.k === 'head') { // 학교 머리: 그림은 글 자리, 부서·발행일 상자는 종이(an-sheet) 기준 절대 위치
+      const S = AN_SCHOOL, bx = function(o, t) { return '<div class="an-hbox" style="left:' + o.x + 'mm; top:' + o.y + 'mm; width:' + o.w + 'mm; height:' + S.boxH + 'mm; ' + bF + ' font-size:' + S.boxSize + 'pt;">' + ntEsc(t) + '</div>'; };
+      return '<div class="an-head" style="height:' + b.h + 'mm;"><img src="' + S.img + '" alt="" style="width:' + S.w + 'mm; height:' + S.h + 'mm; display:block;"></div>' + bx(S.dept, c.dept) + bx(S.issue, anIssue(c));
     }
     return '';
   }
@@ -20880,6 +20909,12 @@
     const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
     document.getElementById('an-tpls').innerHTML = AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')" onmouseenter="anPeekTpl(\'' + t.k + '\')" onmouseleave="anPeekTpl(null)"', t.n, '마우스를 올리면 미리보기에 이 틀의 예시가 보여요. 누르면 지금 제목·내용이 이 예시로 바뀌어요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
     setVal('an-title', c.title); setVal('an-sub', c.sub);
+    document.getElementById('an-school').checked = c.school;
+    setVal('an-dept', c.dept); setVal('an-issue', c.issue);
+    document.getElementById('an-issue').placeholder = anToday() + ' (비우면 오늘)';
+    ['an-dept', 'an-issue'].forEach(function(id) { document.getElementById(id).disabled = !c.school; });
+    document.getElementById('an-end-fixed').style.display = c.school ? '' : 'none';
+    document.querySelector('#an-end-box .an-end-row').style.display = c.school ? 'none' : '';
     anSavedFill();
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#an-rows')) anRowsFill(c);
     // 고른 줄이 상자면 큰·작은 항목·점·줄표·본문·참고는 상자 안 커서 줄 아래에 넣는다(anAddOrBox) — 점·※ 같은 기호는 키보드로 치기 어려워서
@@ -21267,9 +21302,11 @@
     const all = function(p) { return { t: p, b: p, l: p, r: p }; };
     const bfs = [{ fill: null, s: all(NONE) }, { fill: null, s: all(K(0.12)) }, { fill: '#EEEEEE', s: all(K(0.12)) }, { fill: null, s: all(K(0.12)) }, { fill: c.deco === 'band' ? '#EEEEEE' : null, s: titleBf }];
     const cs = Math.max(9, c.bSize - 1);
-    const CPN = { title: 0, sub: 1, h1: 2, body: 3, th: 4, td: 5, date: 6, from: 7 };
+    const CPN = { title: 0, sub: 1, h1: 2, body: 3, th: 4, td: 5, date: 6, from: 7, hbox: 8 };
     const charPrs = [{ size: c.tSize, font: hT, bold: c.tBold }, { size: L.subSize, font: hB }, { size: c.bSize, font: hB, bold: c.h1Bold }, { size: c.bSize, font: hB },
-      { size: cs, font: hB, bold: true }, { size: cs, font: hB }, { size: c.bSize, font: hB }, { size: c.bSize + 4, font: hB, bold: true }];
+      { size: cs, font: hB, bold: true }, { size: cs, font: hB },
+      c.school ? { size: AN_SCHOOL.dateSize, font: hB, bold: true } : { size: c.bSize, font: hB }, c.school ? { size: AN_SCHOOL.fromSize, font: hT } : { size: c.bSize + 4, font: hB, bold: true },
+      { size: AN_SCHOOL.boxSize, font: hB }];
     // 스타일(F6) — 줄 종류마다 기본 위치의 문단 모양
     const bsMm = L.bs, hw = function(sym) { return anEm(sym + ' ') * bsMm; };
     const h1W = hw(anNumFmt(c.n1, 1)), bulW = hw(c.bul);
@@ -21289,7 +21326,8 @@
       if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, pt(b.before)) };
       if (b.k === 'tbl') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), cellL: PPi({ align: 'LEFT', line: 130 }), cellC: PPi({ align: 'CENTER', line: 130 }) };
       if (b.k === 'box') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), lines: b.lines.map(function(x) { return ppOf('JUSTIFY', x.left, x.hang); }) };
-      if (b.k === 'end') { const al = c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line, after: pt(L.lh) }), from: PPi({ align: al, line: 160 }) }; }
+      if (b.k === 'end') { const al = !c.school && c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line, after: pt(L.lh) }), from: PPi({ align: al, line: c.school ? 120 : 160 }) }; }
+      if (b.k === 'head') return { pp: PPi({ align: 'LEFT', line: 100, after: pt(b.h - c.bSize * FM_PT) }), box: PPi({ align: 'CENTER', line: 160 }) }; // 그림 높이만큼 비우는 문단(글 뒤 그림이 여기 앉음)
       if (b.k === 'title') return { pp: PPi({ align: tAl, line: 130, after: pt(c.sub ? 3 : 6) }), cell: PPi({ align: tAl, line: 130 }), holder: PPi({ align: 'LEFT', line: 100, after: pt(c.sub ? 3 : 6) }) };
       if (b.k === 'sub') return { pp: PPi({ align: tAl, line: 150, after: pt(5) }) };
       return {};
@@ -21362,16 +21400,43 @@
       if (b.k === 'end') {
         body += P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.date), R(CP('date'), T(b.date))) + P(PP(pl.from), R(CP('from'), T(b.from)));
         text.push(b.date, b.from);
+        return;
+      }
+      if (b.k === 'head') { // 학교 머리: 원본 hwpx의 그림(글 뒤, 문단 위치)과 글상자 두 개(글 앞, 종이 기준) 수치 그대로
+        const S = AN_SCHOOL, SID = 2080461451;
+        const pic = '<hp:pic id="' + SID + '" zOrder="0" numberingType="PICTURE" textWrap="BEHIND_TEXT" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" href="" groupLevel="0" instid="' + (SID + 100) + '" reverse="0"><hp:offset x="0" y="0"/><hp:orgSz width="71640" height="14040"/><hp:curSz width="' + S.huW + '" height="' + S.huH + '"/><hp:flip horizontal="0" vertical="0"/><hp:rotationInfo angle="0" centerX="' + Math.round(S.huW / 2) + '" centerY="' + Math.round(S.huH / 2) + '" rotateimage="1"/>' +
+          '<hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:scaMatrix e1="0.701689" e2="0" e3="0" e4="0" e5="0.696368" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo>' +
+          '<hp:imgRect><hc:pt0 x="0" y="0"/><hc:pt1 x="71640" y="0"/><hc:pt2 x="71640" y="14040"/><hc:pt3 x="0" y="14040"/></hp:imgRect><hp:imgClip left="0" right="119340" top="0" bottom="23340"/><hp:inMargin left="0" right="0" top="0" bottom="0"/><hp:imgDim dimwidth="119340" dimheight="23340"/>' +
+          '<hc:img binaryItemIDRef="image1" bright="0" contrast="0" effect="REAL_PIC" alpha="0"/><hp:effects/><hp:sz width="' + S.huW + '" widthRelTo="ABSOLUTE" height="' + S.huH + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+          '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:shapeComment>가정통신문 머리</hp:shapeComment></hp:pic>';
+        const rect = function(o, t, k) {
+          const w = o.huW, hh = S.huBoxH;
+          return '<hp:rect id="' + (SID + k) + '" zOrder="' + (k + 3) + '" numberingType="PICTURE" textWrap="IN_FRONT_OF_TEXT" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" href="" groupLevel="0" instid="' + (SID + 100 + k) + '" ratio="0"><hp:offset x="0" y="0"/><hp:orgSz width="' + w + '" height="' + hh + '"/><hp:curSz width="' + w + '" height="' + hh + '"/><hp:flip horizontal="0" vertical="0"/><hp:rotationInfo angle="0" centerX="' + Math.round(w / 2) + '" centerY="' + Math.round(hh / 2) + '" rotateimage="1"/>' +
+            '<hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:scaMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo>' +
+            '<hp:lineShape color="#000000" width="0" style="NONE" endCap="FLAT" headStyle="NORMAL" tailStyle="NORMAL" headfill="1" tailfill="1" headSz="SMALL_SMALL" tailSz="SMALL_SMALL" outlineStyle="NORMAL" alpha="0"/><hp:shadow type="NONE" color="#B2B2B2" offsetX="0" offsetY="0" alpha="0"/>' +
+            '<hp:drawText lastWidth="' + w + '" name="" editable="0"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + P(PP(pl.box), R(CP('hbox'), T(t))) + '</hp:subList><hp:textMargin left="283" right="283" top="283" bottom="283"/></hp:drawText>' +
+            '<hc:pt0 x="0" y="0"/><hc:pt1 x="' + w + '" y="0"/><hc:pt2 x="' + w + '" y="' + hh + '"/><hc:pt3 x="0" y="' + hh + '"/><hp:sz width="' + w + '" widthRelTo="ABSOLUTE" height="' + hh + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+            '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="0" allowOverlap="1" holdAnchorAndSO="0" vertRelTo="PAPER" horzRelTo="PAPER" vertAlign="TOP" horzAlign="LEFT" vertOffset="' + o.huY + '" horzOffset="' + o.huX + '"/><hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:shapeComment>' + fmX(t) + '</hp:shapeComment></hp:rect>';
+        };
+        body += P(PP(pl.pp), R(CP('body'), pic + rect(S.dept, c.dept, 1) + rect(S.issue, anIssue(c), 2) + T('')));
+        text.push(c.dept, anIssue(c));
       }
     });
     if (!body) body = P(PP(0), R(CP('body'), T('')));
     body = body.replace(/<hp:run charPrIDRef="\d+">/, function(m) { return m + head + '</hp:run>' + m; }); // 쪽 설정은 맨 첫 문단의 첫 글자 묶음에(제목 표 안이 아니라 표를 감싼 문단)
     zip.file('Contents/section0.xml', secOpen + body + '</hs:sec>');
-    const hpf = (await zip.file('Contents/content.hpf').async('string'))
+    let hpf = (await zip.file('Contents/content.hpf').async('string'))
       .replace(/<opf:title\/>|<opf:title>[\s\S]*?<\/opf:title>/, '<opf:title>' + fmX(c.title || '안내문') + '</opf:title>')
       .replace(/synthetic-fixture-author/g, fmX((window.currentTeacher && window.currentTeacher.name) || ''))
       .replace(/(<opf:meta name="(?:CreatedDate|ModifiedDate)" content="text">)[^<]*/g, '$1' + new Date().toISOString().replace(/\.\d+Z$/, 'Z'))
       .replace(/(<opf:meta name="date" content="text">)[^<]*/, '$1');
+    if (c.school) { // 머리 그림: 앱 저장소의 파일을 받아 한글 파일에 넣는다(개인 자료 서버엔 안 올라감)
+      fmStage = '학교 머리 그림 받는 중';
+      const res = await fetch(AN_SCHOOL.img, { cache: 'force-cache' });
+      if (!res.ok) throw new Error('학교 머리 그림(' + AN_SCHOOL.img + ')을 받지 못했어요(' + res.status + ')');
+      zip.file('BinData/image1.jpg', await res.arrayBuffer());
+      hpf = hpf.replace('<opf:item id="section0"', '<opf:item id="image1" href="BinData/image1.jpg" media-type="image/jpg" isEmbeded="1"/><opf:item id="section0"');
+    }
     zip.file('Contents/content.hpf', hpf);
     zip.file('Preview/PrvText.txt', text.filter(Boolean).join('\r\n').slice(0, 1000));
     zip.remove('Preview/PrvImage.png');

@@ -466,7 +466,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const pk1 = await P.evaluate(() => ({ inTitle: !!document.querySelector('#an-title-box .nt-title #an-tpls'), prev: document.querySelector('#fm-pages .an-title').textContent, cfg: anCfg().title, form: document.getElementById('an-title').value, label: document.getElementById('fm-prev-label').textContent }));
   await P.mouse.move(5, 5); await P.waitForTimeout(250);
   const pk2 = await P.evaluate(() => ({ prev: document.querySelector('#fm-pages .an-title').textContent, label: document.getElementById('fm-prev-label').textContent }));
-  check('틀 단추는 제목 줄 오른쪽. 올리면 미리보기만 예시(현장체험학습 안내)·라벨에 "틀 예시 미리 보기", 내 글·칸은 그대로, 떼면 내 글로', pk1.inTitle && pk1.prev === '현장체험학습 안내' && pk1.cfg === '내 제목' && pk1.form === '내 제목' && /틀 예시 미리 보기/.test(pk1.label) && pk2.prev === '내 제목' && !/틀 예시/.test(pk2.label), { pk1, pk2 });
+  check('틀 단추는 제목 줄 오른쪽. 올리면 미리보기만 예시(가정통신문 예시 제목)·라벨에 "틀 예시 미리 보기", 내 글·칸은 그대로, 떼면 내 글로', pk1.inTitle && pk1.prev === '2026학년도 3학년 ‘수업량 유연화’ 강좌신청 안내' && pk1.cfg === '내 제목' && pk1.form === '내 제목' && /틀 예시 미리 보기/.test(pk1.label) && pk2.prev === '내 제목' && !/틀 예시/.test(pk2.label), { pk1, pk2 });
   // 상자 줄을 고르면 ＋ 큰·작은 항목·점·줄표·본문·참고는 상자 안 커서 줄 아래에(표·가운데·상자는 밖에). Enter면 같은 기호로 이어지고 기호만 있는 줄에서 Enter면 기호가 지워짐
   await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'box', t: '첫 줄' }] }, true)); await P.waitForTimeout(200);
   await P.click('#an-rows .an-row[data-i="1"] textarea'); await P.waitForTimeout(150);
@@ -542,6 +542,38 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const stk = await P.evaluate(() => { const r = document.getElementById('an-more').getBoundingClientRect(), L = document.getElementById('fm-left').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, lb: L.bottom, vis: r.top >= L.top && r.bottom <= L.bottom + 1, closed: !document.getElementById('an-more').open, scrollH: document.getElementById('fm-left').scrollHeight, clientH: document.getElementById('fm-left').clientHeight }; });
   check('줄 40개로 왼쪽이 길어져도(스크롤 맨 위) 🎨 더 꾸미기 바가 왼쪽 화면 안 맨 아래에 보임', stk.vis && stk.closed && stk.scrollH > stk.clientH && stk.lb - stk.bottom <= 16, stk); // 바닥 여백(#fm-left padding 14px)만큼 위
   await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
+
+  // 🏫 가정통신문 틀 = 우리 학교 양식: 학교 머리 켜짐(부서·발행일 칸), 미리보기에 머리 그림 + 부서·발행일 상자(종이 기준 위치), 경기천년 글꼴·쪽 여백, 맨 아래 발행일 날짜 + 부광고등학교장
+  await P.mouse.move(5, 5);
+  await P.click('#an-tpls [data-tpl="home"]'); await P.waitForTimeout(200);
+  if (await P.$('#custom-confirm-overlay:visible')) { await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300); }
+  await P.mouse.move(5, 5); await P.waitForTimeout(150);
+  await setText(P, '#an-issue', '2026. 6. 24.'); await P.waitForTimeout(250);
+  const sc = await P.evaluate(() => { const c = anCfg(), img = document.querySelector('#fm-pages .an-head img'), bx = [...document.querySelectorAll('#fm-pages .an-hbox')];
+    const sh = document.querySelector('#fm-pages .an-sheet').getBoundingClientRect(), mm = sh.width / 210;
+    const ps = [...document.querySelectorAll('#fm-pages .an-sheet .an-p')].map(d => d.textContent);
+    return { school: c.school, dept: c.dept, chk: document.getElementById('an-school').checked, deptOn: !document.getElementById('an-dept').disabled, endRow: document.querySelector('#an-end-box .an-end-row').style.display, fixed: document.getElementById('an-end-fixed').style.display,
+      img: img ? { src: img.getAttribute('src'), w: Math.round(img.getBoundingClientRect().width / mm), loaded: img.complete && img.naturalWidth > 0 } : null,
+      boxes: bx.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent, x: Math.round((r.left - sh.left) / mm), y: Math.round((r.top - sh.top) / mm) }; }),
+      tFont: c.tFont, bFont: c.bFont, bul: c.bul, mL: c.mL, mR: c.mR, last2: ps.slice(-2), title: ps[0] }; });
+  check('🏫 가정통신문 틀: 학교 머리 켜짐(부서 교육과정부, 칸 활성, 끝맺음 칸 대신 고정 안내), 미리보기 머리 그림 177mm(파일 받아짐) + 부서(17,41mm)·발행일(164,41mm) 상자, 경기천년 글꼴·☑·여백 16/18, 맨 아래 "2026년  6월  24일"·"부 광 고 등 학 교 장"',
+    sc.school && sc.dept === '교육과정부' && sc.chk && sc.deptOn && sc.endRow === 'none' && sc.fixed === '' && sc.img && /가정통신문-머리\.jpg$/.test(sc.img.src) && Math.abs(sc.img.w - 177) <= 1 && sc.img.loaded &&
+    sc.boxes.length === 2 && sc.boxes[0].t === '교육과정부' && Math.abs(sc.boxes[0].x - 17) <= 1 && Math.abs(sc.boxes[0].y - 41) <= 1 && sc.boxes[1].t === '2026. 6. 24.' && Math.abs(sc.boxes[1].x - 164) <= 1 &&
+    sc.tFont === '경기천년제목 Medium' && sc.bFont === '경기천년바탕 Regular' && sc.bul === '☑' && sc.mL === 16 && sc.mR === 18 && sc.last2[0] === '2026년  6월  24일' && sc.last2[1] === '부 광 고 등 학 교 장', sc);
+  if (JSZIP_JS) {
+    const sx = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const sec = await z.file('Contents/section0.xml').async('string'); const h = await z.file('Contents/header.xml').async('string'); const hpf = await z.file('Contents/content.hpf').async('string'); const img = z.file('BinData/image1.jpg');
+      return { img: img ? (await img.async('uint8array')).length : 0, manifest: /<opf:item id="image1" href="BinData\/image1.jpg"/.test(hpf), pic: /<hp:pic [^>]*textWrap="BEHIND_TEXT"[\s\S]*?binaryItemIDRef="image1"/.test(sec),
+        rects: (sec.match(/<hp:rect /g) || []).length, deptRect: /<hp:rect [^>]*>[\s\S]*?<hp:t>교육과정부<\/hp:t>[\s\S]*?horzOffset="4893"/.test(sec), issueRect: /<hp:t>2026\. 6\. 24\.<\/hp:t>[\s\S]*?horzOffset="46473"/.test(sec),
+        secFirst: sec.indexOf('<hp:secPr') < sec.indexOf('<hp:pic'), fonts: /경기천년제목 Medium/.test(h) && /경기천년바탕 Regular/.test(h), from: /부 광 고 등 학 교 장/.test(sec), date: /2026년  6월  24일/.test(sec), margin: /<hp:margin header="0" footer="0" gutter="0" left="4535" right="5102" top="4252" bottom="3969"\/>|left="4535"/.test(sec) }; });
+    check('한글 파일: BinData/image1.jpg(231KB) + 목록, 글 뒤 그림 문단(쪽 설정 다음), 글상자 2개(부서 4893·발행일 46473 위치), 경기천년 글꼴, 발행일 날짜·학교장, 왼쪽 여백 16mm', sx.img > 200000 && sx.manifest && sx.pic && sx.rects === 2 && sx.deptRect && sx.issueRect && sx.secFirst && sx.fonts && sx.from && sx.date && sx.margin, sx);
+  }
+  await P.click('#an-school'); await P.waitForTimeout(250);
+  const sc2 = await P.evaluate(() => ({ school: anCfg().school, img: !!document.querySelector('#fm-pages .an-head'), boxes: document.querySelectorAll('#fm-pages .an-hbox').length, endRow: document.querySelector('#an-end-box .an-end-row').style.display, deptOn: !document.getElementById('an-dept').disabled }));
+  check('학교 머리를 끄면 그림·상자 없고 끝맺음 칸이 다시 보임, 부서 칸 비활성', !sc2.school && !sc2.img && sc2.boxes === 0 && sc2.endRow === '' && !sc2.deptOn, sc2);
+  if (JSZIP_JS) {
+    const sx2 = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const hpf = await z.file('Contents/content.hpf').async('string'); return { img: !!z.file('BinData/image1.jpg'), manifest: /image1/.test(hpf) }; });
+    check('학교 머리를 끄면 한글 파일에 그림 없음', !sx2.img && !sx2.manifest, sx2);
+  }
 
   // 초기화 → 처음 예시로, 다른 양식은 그대로
   await P.click('#fm-reset-btn'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
