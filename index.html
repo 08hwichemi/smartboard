@@ -1402,12 +1402,34 @@
     #pe-ms-chars, #pe-ms-cell, #pe-ms-gap, #pe-ms-color, #pe-ms-pbox { gap: 4px; }
     /* 안내문 */
     #an-grid { display: flex; flex-direction: column; gap: 12px; }
-    #an-grid > * { flex-shrink: 0; min-width: 0; }
+    .an-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .an-col > * { flex-shrink: 0; min-width: 0; }
     #an-grid .nt-chip { padding: 3px 8px; }
     #an-grid .nt-row { gap: 4px; }
-    .an-lb { flex: 0 0 auto; min-width: 58px; font-size: 11.5px; color: var(--text-sub); }
-    #an-rows { display: flex; flex-direction: column; gap: 3px; max-height: 420px; overflow-y: auto; padding-right: 2px; }
-    .an-row { display: flex; align-items: flex-start; gap: 4px; }
+    .an-lb { flex: 0 0 auto; min-width: 58px; font-size: 11.5px; color: var(--text-sub); white-space: nowrap; }
+    #an-grid { word-break: keep-all; overflow-wrap: anywhere; } /* 한글이 낱말 중간에서 끊기지 않게(띄어쓰기에서 줄바꿈) */
+    #an-look-box .nt-row, #an-paper { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 4px; }
+    #an-look-box .an-lb, #an-paper .an-lb { min-width: 0; }
+    .an-chips { display: grid; gap: 4px; min-width: 0; }
+    .an-chips .nt-chip, #an-tpls .nt-chip, #an-add .nt-chip { min-width: 0; padding: 3px 4px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    /* 틀 4개·＋ 단추 9개: 칸 수를 #fm-left 폭에 맞춰 고르게(하나만 다음 줄로 떨어지지 않게). 600px 이상이면 두 열이라 왼쪽 열은 약 55% */
+    #an-tpls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+    #an-add { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    @container (min-width: 360px) { #an-tpls { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @container (min-width: 440px) { #an-add { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+    @container (min-width: 600px) { #an-tpls { grid-template-columns: repeat(2, minmax(0, 1fr)); } #an-add { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @container (min-width: 680px) { #an-tpls { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    #an-rows { display: flex; flex-direction: column; gap: 3px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
+    .an-row { display: flex; align-items: flex-start; gap: 4px; border-radius: 6px; padding-top: 1px; padding-bottom: 1px; }
+    .an-row.cur { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
+    .an-row.drop-b { box-shadow: 0 -2px 0 var(--accent-color); } .an-row.drop-a { box-shadow: 0 2px 0 var(--accent-color); }
+    .an-drag { flex: 0 0 auto; cursor: grab; color: var(--text-sub); font-size: 13px; padding: 4px 1px 0 3px; user-select: none; }
+    .an-plus { flex: 0 0 auto; border: none; background: none; color: var(--accent-color); cursor: pointer; font-size: 14px; font-weight: 800; padding: 3px 1px 0; }
+    #an-cur { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 20px; }
+    #an-cur .an-cg { display: inline-flex; align-items: center; gap: 3px; color: var(--text-sub); }
+    #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 7px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
+    #an-cur button.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
+    #an-cur .an-iv { min-width: 22px; text-align: center; font-weight: 800; color: var(--text-main); }
     .an-row .an-lv { flex: 0 0 auto; width: 74px; font-size: 11px; padding: 3px 2px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-main); font-family: inherit; }
     .an-row .an-sym { flex: 0 0 auto; min-width: 22px; text-align: right; font-weight: 700; font-size: 12.5px; padding-top: 4px; color: var(--text-main); }
     .an-row[data-lv="h1"] input[type="text"] { font-weight: 700; }
@@ -1617,7 +1639,9 @@
     @container (min-width: 600px) {
       #ws-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
       #pe-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
-      #an-grid { display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: auto 1fr auto; grid-auto-flow: column; align-items: stretch; } /* 왼쪽 ①제목 ②내용 ③끝맺음 / 오른쪽 ④모양 ⑤쪽 ⑥글꼴 */
+      /* 왼쪽 ①제목 ②내용 ③끝맺음 / 오른쪽 ④모양 ⑤쪽 ⑥글꼴 — 두 열은 따로 쌓고(옆 상자 높이에 맞추지 않음) 맨 아래만 맞춤: 짧은 쪽의 ②내용·⑥글꼴이 늘어남 */
+      #an-grid { display: grid; grid-template-columns: 1.22fr 1fr; align-items: stretch; }
+      #an-rows-box, #an-font-box { flex-grow: 1; }
       #bs-grid { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; } /* 왼쪽 ①시정표 ②시간 / 오른쪽 ③디자인 ④표 모양 ⑤글씨 ⑥쪽 */
       #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
@@ -3789,6 +3813,7 @@
       </div>
       <div class="fm-guide" id="an-guide" style="display:none;" title="①②만 채우면 끝. ③~⑥은 필요할 때만 — 다 되면 ⬇️ 한글 파일"><b class="fm-step">1</b><b class="fm-step">2</b>만 채우면 끝. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b></div>
       <div id="an-grid" style="display:none;">
+      <div class="an-col" id="an-col-1">
       <div class="nt-box" id="an-title-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📢 제목</span> <span class="nt-muted">틀을 고르면 예시 내용이 채워져요</span></div>
         <div class="nt-row" id="an-tpls"></div>
@@ -3798,8 +3823,9 @@
       <div class="nt-box" id="an-rows-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>📝 내용</span> <span class="nt-muted">한 칸에 한 줄 · <a href="#" onclick="anClearRows(); return false;">내용 비우기</a></span></div>
         <div id="an-rows"></div>
+        <div id="an-cur"></div>
         <div class="nt-row" id="an-add"></div>
-        <div class="nt-muted" id="an-help">번호·기호는 저절로 붙어요. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기, Alt+↑↓ = 순서. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
+        <div class="nt-muted" id="an-help">번호·기호는 저절로 붙어요. 줄을 누르면 위 도구로 들여쓰기·정렬·순서를 바꾸고, ＋ 단추는 그 줄 아래에 더해요. ⠿를 끌면 순서가 바뀌어요. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
       </div>
       <div class="nt-box" id="an-end-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>✍️ 끝맺음</span> <span class="nt-muted">맨 아래 날짜·보내는 사람</span></div>
@@ -3807,6 +3833,8 @@
         <div class="ws-row"><span class="ws-lb">날짜</span><input type="text" id="an-end-date" class="lp-input" oninput="anSet({ endDate: this.value })"></div>
         <div class="ws-row"><span class="ws-lb">보낸 이</span><input type="text" id="an-end-from" class="lp-input" placeholder="○○고등학교장 · 2학년 담임 ○○○" oninput="anSet({ endFrom: this.value })"></div>
       </div>
+      </div>
+      <div class="an-col" id="an-col-2">
       <div class="nt-box" id="an-look-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>🎨 모양</span> <span class="nt-muted">번호·기호·제목 꾸미기</span></div>
         <div class="nt-row" id="an-deco"></div>
@@ -3817,6 +3845,8 @@
         <div class="nt-row" id="an-dash"></div>
         <div class="nt-row" id="an-line"></div>
         <div class="nt-row" id="an-gap"></div>
+        <div class="nt-row" id="an-step"></div>
+        <div class="nt-row" id="an-hang"></div>
       </div>
       <div class="nt-box" id="an-page-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
@@ -3836,6 +3866,7 @@
         <input type="text" id="an-bfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="본문 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="anOnFontCustom('bFont', this.value)">
         <div class="nt-row"><label class="pe-chk"><input type="checkbox" id="an-tbold" onchange="anSet({ tBold: this.checked }, true)">제목 굵게</label><label class="pe-chk"><input type="checkbox" id="an-h1bold" onchange="anSet({ h1Bold: this.checked }, true)">큰 항목(1.) 굵게</label></div>
         <div class="nt-muted" id="an-font-msg"></div>
+      </div>
       </div>
       </div>
       <div class="fm-guide" id="bs-guide" style="display:none;"></div>
@@ -18754,6 +18785,7 @@
             .replace(/<hh:lineSpacing type="\w+" value="\d+"/, '<hh:lineSpacing type="PERCENT" value="' + o.line + '"');
         };
         if (o.squeeze) s = s.replace('lineWrap="BREAK"', 'lineWrap="SQUEEZE"'); // 한 줄로 입력(넘치면 자간을 줄여 한 줄)
+        if (o.keepWord) s = s.replace(/breakNonLatinWord="\w+"/, 'breakNonLatinWord="KEEP_WORD"'); // 한글을 어절(띄어쓰기) 단위로 줄바꿈 — 낱말 중간에서 끊기지 않게
         s = s.replace(/<hp:case[\s\S]*?<\/hp:case>/, function(m) { return fix(m, 1); }).replace(/<hp:default>[\s\S]*?<\/hp:default>/, function(m) { return fix(m, 2); });
         return s;
       }).join('');
@@ -20464,12 +20496,14 @@
   const AN_LV_NAME = { h1: '큰 항목', h2: '작은 항목', b: '점', d: '줄표', p: '본문', c: '가운데 글', n: '참고', tbl: '표', box: '상자' };
   const AN_TAB_ORDER = ['h1', 'h2', 'b', 'd']; // Tab = 한 단계 안으로, Shift+Tab = 밖으로
   const AN_N1 = ['1.', 'Ⅰ.', '①', '1)'], AN_N2 = ['가.', '1)', '(1)', '①'], AN_BUL = ['•', '○', '▪', '◦', '·', '◆'], AN_DASH = ['-', '–', '·', '▸'];
-  const AN_DECO = [['none', '없음'], ['line', '밑줄'], ['double', '이중 밑줄'], ['box', '상자'], ['band', '회색 띠']];
+  const AN_DECO = [['none', '없음'], ['line', '밑줄'], ['double', '이중선'], ['box', '상자'], ['band', '회색 띠']];
   const AN_LINES = [130, 160, 180], AN_GAPS = [[0, '붙여서'], [4, '조금'], [8, '넓게']]; // 큰 항목 위 띄움(pt)
+  const AN_STEPS = [['auto', '윗줄에 맞춤'], [1, '1글자'], [2, '2글자'], [4, '4글자']]; // 단계마다 들여쓰기: 윗줄 글 시작에 맞춤(기본) / 글자 수로 고정
+  const AN_ALIGN = { J: ['JUSTIFY', 'justify', '양쪽'], L: ['LEFT', 'left', '왼쪽'], C: ['CENTER', 'center', '가운데'], R: ['RIGHT', 'right', '오른쪽'] };
   const AN_TBL_PAD = 1.2, AN_CELL_PAD = 1.8, AN_BOX_PAD = 2.5, AN_BOX_SIDE = 3.5, AN_AFTER = 2; // 표 칸 위아래·좌우 안쪽, 상자 안쪽 위아래·좌우, 표·상자 아래 띄움(mm)
   const AN_TBL_MAXC = 8, AN_TBL_MAXR = 40;
   const AN_TPLS = [
-    { k: 'pe', n: '📋 수행평가 안내', d: { title: '2학기 화학Ⅱ 수행평가 안내', sub: '2학년 화학Ⅱ 수강생', end: false, endFrom: '', rows: [
+    { k: 'pe', n: '📋 수행평가', d: { title: '2학기 화학Ⅱ 수행평가 안내', sub: '2학년 화학Ⅱ 수강생', end: false, endFrom: '', rows: [
       { lv: 'h1', t: '평가 개요' }, { lv: 'b', t: '평가 기간: 10월 20일(월) ~ 10월 24일(금), 수업 시간' }, { lv: 'b', t: '평가 영역: 탐구 보고서 작성 및 발표' },
       { lv: 'h1', t: '평가 기준' },
       { lv: 'tbl', head: true, cells: [['영역', '배점', '평가 내용'], ['보고서', '20점', '탐구 과정과 결과를 논리적으로 정리했는가'], ['발표', '10점', '핵심 내용을 3분 안에 정확하게 전달했는가']] },
@@ -20481,7 +20515,7 @@
       { lv: 'h1', t: '일시: 2026년 10월 24일(금) 08:30 ~ 16:00' }, { lv: 'h1', t: '장소: ○○ 과학관' }, { lv: 'h1', t: '대상: 1학년 학생 전체' },
       { lv: 'h1', t: '준비물: 도시락, 필기도구, 편한 복장' }, { lv: 'h1', t: '유의 사항' }, { lv: 'b', t: '집합 시각(08:30)을 꼭 지켜 주세요.' },
       { lv: 'b', t: '건강 문제로 참가가 어려운 학생은 10월 17일(금)까지 담임 선생님께 알려 주세요.' }] } },
-    { k: 'event', n: '📢 행사·일정 안내', d: { title: '2학기 주요 학교 행사 안내', sub: '', end: false, endFrom: '', rows: [
+    { k: 'event', n: '📢 행사·일정', d: { title: '2학기 주요 학교 행사 안내', sub: '', end: false, endFrom: '', rows: [
       { lv: 'h1', t: '주요 일정' },
       { lv: 'tbl', head: true, cells: [['날짜', '행사', '대상', '장소'], ['10. 15.(수)', '체육대회', '전교생', '운동장'], ['10. 28.(화)', '진로 특강', '2학년', '강당'], ['11. 19.(목)', '대학수학능력시험', '3학년', '-']] },
       { lv: 'h1', t: '안내 사항' }, { lv: 'b', t: '일정은 학교 사정에 따라 바뀔 수 있습니다.' }, { lv: 'b', t: '자세한 내용은 담임 선생님께 문의해 주세요.' },
@@ -20490,7 +20524,7 @@
   ];
   const AN_DEFAULT = Object.assign({
     title: '', sub: '', rows: [], end: false, endDate: '', endFrom: '', endAlign: 'C',
-    deco: 'line', tAlign: 'C', n1: '1.', n2: '가.', bul: '•', dash: '-', line: 160, gap: 4,
+    deco: 'line', tAlign: 'C', n1: '1.', n2: '가.', bul: '•', dash: '-', line: 160, gap: 4, step: 'auto', hang: true,
     paper: 'A4', land: false, mT: 20, mB: 20, mL: 20, mR: 20,
     tFont: 'HY헤드라인M', tSize: 22, bFont: '함초롬바탕', bSize: 12, tBold: false, h1Bold: true, tFontC: false, bFontC: false,
   }, AN_TPLS[0].d); // 처음 열면 수행평가 안내 예시(무엇을 만드는지 바로 보이게 — "🗑 초기화"도 이 예시로)
@@ -20500,10 +20534,18 @@
       if (!cells.length) cells = [['', ''], ['', '']];
       const nc = Math.max(1, Math.min(AN_TBL_MAXC, Math.max.apply(null, cells.map(function(x) { return x.length; }))));
       cells = cells.map(function(row) { row = row.slice(0, nc); while (row.length < nc) row.push(''); return row; });
-      return { lv: 'tbl', cells: cells, head: r.head !== false };
+      return anRowExtra(r, { lv: 'tbl', cells: cells, head: r.head !== false });
     }
-    return { lv: r.lv, t: String(r.t == null ? '' : r.t) };
+    return anRowExtra(r, { lv: r.lv, t: String(r.t == null ? '' : r.t) });
   }
+  // 줄마다 덧붙인 들여쓰기(글자 수, ind)·정렬(al) — 기본값이면 저장하지 않는다
+  function anRowExtra(r, o) {
+    const ind = Math.round(Number(r.ind) || 0);
+    if (ind) o.ind = Math.max(-8, Math.min(20, ind));
+    if (AN_ALIGN[r.al] && r.al !== anAlDef(o.lv) && o.lv !== 'tbl' && o.lv !== 'box') o.al = r.al;
+    return o;
+  }
+  function anAlDef(lv) { return lv === 'c' ? 'C' : 'J'; }
   function anCfg() {
     let v = {};
     try { v = JSON.parse(localStorage.getItem(AN_CFG_KEY) || '{}') || {}; } catch (e) {}
@@ -20518,6 +20560,7 @@
     if (AN_BUL.indexOf(c.bul) < 0) c.bul = '•'; if (AN_DASH.indexOf(c.dash) < 0) c.dash = '-';
     c.line = AN_LINES.indexOf(Number(c.line)) >= 0 ? Number(c.line) : 160;
     c.gap = AN_GAPS.some(function(g) { return g[0] === Number(c.gap); }) ? Number(c.gap) : 4;
+    c.step = [1, 2, 4].indexOf(Number(c.step)) >= 0 ? Number(c.step) : 'auto'; c.hang = c.hang !== false;
     if (!FM_PAPERS[c.paper]) c.paper = 'A4';
     c.land = !!c.land;
     ['mT', 'mB', 'mL', 'mR'].forEach(function(k) { c[k] = ntNum(c[k], 0, 40, 20); });
@@ -20616,10 +20659,11 @@
     if (c.sub) { const n = linesOf(c.sub, W, subSize); blocks.push({ k: 'sub', n: n, lh: subLh, h: n * subLh + 5 }); }
     // 내용
     const M = anMarks(c), textAt = [0];
-    const leftOf = function(dep) { for (let d = dep; d > 0; d--) if (textAt[d] != null) return textAt[d]; return 0; };
+    // 단계 위치: 윗줄에 맞춤이면 바로 윗단계 줄의 글 시작 위치, 글자 수로 고정이면 단계 × 그 글자 수
+    const leftOf = function(dep) { if (c.step !== 'auto') return dep * c.step * bs; for (let d = dep; d > 0; d--) if (textAt[d] != null) return textAt[d]; return 0; };
     let firstH1 = true;
     c.rows.forEach(function(r, i) {
-      const mk = M[i], left = mk.dep ? leftOf(mk.dep) : 0;
+      const mk = M[i], left = Math.max(0, Math.min(W - 40, (mk.dep ? leftOf(mk.dep) : 0) + (r.ind || 0) * bs)); // 줄마다 ◀ ▶로 더한 들여쓰기(글자 수)
       if (r.lv === 'tbl') {
         const TW = W - left, nc = r.cells[0].length;
         const nat = [];
@@ -20646,13 +20690,14 @@
         blocks.push({ k: 'box', left: left, W: BW, lines: lines, h: ih + 2 * AN_BOX_PAD + AN_AFTER });
         return;
       }
-      const sym = mk.sym, hang = sym ? anEm(sym + ' ') * bs : 0;
+      const sym = mk.sym, symW = sym ? anEm(sym + ' ') * bs : 0, al = r.al || anAlDef(r.lv);
+      const hang = c.hang && (al === 'J' || al === 'L') ? symW : 0; // 내어쓰기: 줄이 넘어가면 기호 뒤 글자에 맞춤(가운데·오른쪽 정렬이면 안 함)
       const t = sym ? sym + ' ' + r.t : r.t;
-      textAt.length = mk.dep + 1; textAt[mk.dep + 1] = left + hang; // 이 줄 아래 단계는 이 줄 글 시작 위치에
+      textAt.length = mk.dep + 1; textAt[mk.dep + 1] = left + symW; // 이 줄 아래 단계는 이 줄 글 시작 위치에
       const before = r.lv === 'h1' && !firstH1 ? gapMm : 0;
       if (r.lv === 'h1') firstH1 = false;
       const n = linesOf(t || ' ', W - left - hang, c.bSize);
-      blocks.push({ k: 'p', lv: r.lv, t: t, left: left, hang: hang, before: before, n: n, h: n * lh + before });
+      blocks.push({ k: 'p', lv: r.lv, al: al, t: t, left: left, hang: hang, before: before, n: n, h: n * lh + before });
     });
     if (c.end) {
       const eN = linesOf(c.endFrom || ' ', W, c.bSize + 4);
@@ -20683,7 +20728,7 @@
     if (b.k === 'sub') return '<div class="an-p an-sub" style="' + bF + ' font-size:' + L.subSize + 'pt; line-height:' + b.lh + 'mm; text-align:' + al + '; margin-bottom:5mm;">' + ntEsc(c.sub) + '</div>';
     if (b.k === 'p') {
       const bold = b.lv === 'h1' && c.h1Bold;
-      return '<div class="an-p an-' + b.lv + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; padding-left:' + (b.left + b.hang) + 'mm; text-indent:' + (-b.hang) + 'mm; margin-top:' + b.before + 'mm; text-align:' + (b.lv === 'c' ? 'center' : 'justify') + ';' + (bold ? ' font-weight:800;' : '') + '">' + (ntEsc(b.t) || '&nbsp;') + '</div>';
+      return '<div class="an-p an-' + b.lv + '" style="' + bF + ' font-size:' + c.bSize + 'pt; line-height:' + L.lh + 'mm; padding-left:' + (b.left + b.hang) + 'mm; text-indent:' + (-b.hang) + 'mm; margin-top:' + b.before + 'mm; text-align:' + AN_ALIGN[b.al][1] + ';' + (bold ? ' font-weight:800;' : '') + '">' + (ntEsc(b.t) || '&nbsp;') + '</div>';
     }
     if (b.k === 'tbl') {
       const bd = fmBdCss(fmLn('solid', 0.12)), r = b.r;
@@ -20725,10 +20770,10 @@
     const c = anCfg();
     const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
     const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
-    document.getElementById('an-tpls').innerHTML = '<span class="an-lb">틀</span>' + AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')"', t.n, '이 틀의 예시 제목·내용으로 바꿔요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
+    document.getElementById('an-tpls').innerHTML = AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')"', t.n, '이 틀의 예시 제목·내용으로 바꿔요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
     setVal('an-title', c.title); setVal('an-sub', c.sub);
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#an-rows')) anRowsFill(c);
-    document.getElementById('an-add').innerHTML = '＋ ' + AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '" onclick="anAdd(\'' + k + '\')"', ntEsc(anLvLabel(c, k))); }).join('');
+    document.getElementById('an-add').innerHTML = AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '" onmousedown="event.preventDefault()" onclick="anAdd(\'' + k + '\')"', '＋ ' + ntEsc(anLvLabel(c, k)), '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래)'); }).join('');
     // 끝맺음
     document.getElementById('an-end').checked = c.end;
     document.getElementById('an-end-align').innerHTML = [['C', '가운데'], ['R', '오른쪽']].map(function(o) { return chip(c.endAlign === o[0], 'data-ea="' + o[0] + '" onclick="anSet({ endAlign: \'' + o[0] + '\' }, true)"', o[1]); }).join('');
@@ -20736,25 +20781,30 @@
     document.getElementById('an-end-date').placeholder = anToday() + ' (비우면 오늘 날짜)';
     ['an-end-date', 'an-end-from'].forEach(function(id) { document.getElementById(id).disabled = !c.end; });
     // 모양
-    const row = function(id, label, list, key, cur, fmt) {
-      document.getElementById(id).innerHTML = '<span class="an-lb">' + label + '</span>' + list.map(function(x) {
-        const v = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : fmt ? fmt(x) : x;
-        return chip(cur === v, 'data-v="' + ntEsc(String(v)) + '" onclick="anSet({ ' + key + ': ' + (typeof v === 'number' ? v : '\'' + v + '\'') + ' }, true)"', ntEsc(String(t)));
-      }).join('');
+    // 고르기 줄: 이름 칸 + 같은 폭 단추들(한 줄에 다 — 하나만 다음 줄로 떨어지지 않게)
+    const lit = function(v) { return typeof v === 'number' || typeof v === 'boolean' ? String(v) : '\'' + v + '\''; };
+    const row = function(id, label, list, key, cur, tip) {
+      document.getElementById(id).innerHTML = '<span class="an-lb">' + label + '</span><span class="an-chips" style="grid-template-columns:repeat(' + list.length + ', minmax(0, 1fr));">' + list.map(function(x) {
+        const v = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : x;
+        return chip(cur === v, 'data-v="' + ntEsc(String(v)) + '" onclick="anSet({ ' + key + ': ' + lit(v) + ' }, true)"', ntEsc(String(t)), tip && tip(v));
+      }).join('') + '</span>';
     };
-    row('an-deco', '제목 꾸미기', AN_DECO, 'deco', c.deco);
+    const nums = function(f) { return [1, 2, 3].map(function(i) { return anNumFmt(f, i); }).join(' '); };
+    row('an-deco', '제목 꾸밈', AN_DECO, 'deco', c.deco);
     row('an-talign', '제목 정렬', [['C', '가운데'], ['L', '왼쪽']], 'tAlign', c.tAlign);
-    row('an-n1', '큰 항목', AN_N1, 'n1', c.n1, function(f) { return [1, 2, 3].map(function(i) { return anNumFmt(f, i); }).join(' '); });
-    row('an-n2', '작은 항목', AN_N2, 'n2', c.n2, function(f) { return [1, 2, 3].map(function(i) { return anNumFmt(f, i); }).join(' '); });
+    row('an-n1', '큰 항목', AN_N1.map(function(f) { return [f, anNumFmt(f, 1)]; }), 'n1', c.n1, nums);
+    row('an-n2', '작은 항목', AN_N2.map(function(f) { return [f, anNumFmt(f, 1)]; }), 'n2', c.n2, nums);
     row('an-bul', '점 기호', AN_BUL, 'bul', c.bul);
     row('an-dash', '줄표 기호', AN_DASH, 'dash', c.dash);
     row('an-line', '줄 간격', AN_LINES.map(function(v) { return [v, v + '%']; }), 'line', c.line);
     row('an-gap', '큰 항목 위', AN_GAPS, 'gap', c.gap);
+    row('an-step', '들여쓰기', AN_STEPS.map(function(x) { return [x[0], x[0] === 'auto' ? '자동' : x[1]]; }), 'step', c.step, function(v) { return v === 'auto' ? '윗줄 글 시작 위치에 맞춰 들여 써요' : '단계마다 ' + v + '글자씩 들여 써요'; });
+    row('an-hang', '내어쓰기', [[true, '켬'], [false, '끔']], 'hang', c.hang, function(v) { return v ? '줄이 넘어가면 기호 뒤 글자에 맞춰 들어가요' : '줄이 넘어가면 기호 자리부터 써요'; });
     // 쪽
-    document.getElementById('an-paper').innerHTML = '용지 ' + Object.keys(FM_PAPERS).map(function(k) {
+    document.getElementById('an-paper').innerHTML = '<span class="an-lb">용지</span><span class="an-chips" style="grid-template-columns:repeat(4, minmax(0, 1fr)) 4px repeat(2, minmax(0, 1fr));">' + Object.keys(FM_PAPERS).map(function(k) {
       return chip(c.paper === k, 'data-paper="' + k + '" onclick="anSet({ paper: \'' + k + '\' }, true)"', k, FM_PAPERS[k][0] + '×' + FM_PAPERS[k][1] + 'mm');
-    }).join('') + '<span class="fm-sep" style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></span>' +
-      [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="anSet({ land: ' + o[0] + ' }, true)"', o[1]); }).join('');
+    }).join('') + '<span></span>' +
+      [[false, '세로'], [true, '가로']].map(function(o) { return chip(c.land === o[0], 'data-land="' + (o[0] ? 1 : 0) + '" onclick="anSet({ land: ' + o[0] + ' }, true)"', o[1]); }).join('') + '</span>';
     document.querySelectorAll('#an-margins input').forEach(function(inp) { if (document.activeElement !== inp) inp.value = c[inp.dataset.k]; });
     // 글꼴
     setVal('an-tsize', c.tSize); setVal('an-bsize', c.bSize);
@@ -20782,25 +20832,90 @@
       if (r.lv === 'tbl') body = anTblEditor(r, i);
       else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩(앞에 • - ※ 를 붙이면 그 모양으로)" oninput="anRowInput(' + i + ', this.value)" onfocus="anFocus=' + i + '">' + ntEsc(r.t) + '</textarea>';
       else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')" onfocus="anFocus=' + i + '">';
-      return '<div class="an-row" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + Math.min(3, M[i].dep) * 14 + 'px;">' + sel + body + '<button class="ws-ol-x" title="이 줄 지우기" onclick="anRowDel(' + i + ')">✕</button></div>';
+      const pad = Math.max(0, Math.min(3, M[i].dep) * 14 + Math.max(-4, Math.min(8, r.ind || 0)) * 5);
+      return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onmousedown="anPick(' + i + ')" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')">' +
+        '<span class="an-drag" draggable="true" title="끌어서 순서 바꾸기" ondragstart="anDragStart(event, ' + i + ')" ondragend="anDragEnd()">⠿</span>' + sel + body +
+        '<button class="an-plus" title="이 줄 바로 아래에 줄 더하기" onmousedown="event.preventDefault()" onclick="anAddBelow(' + i + ')">＋</button>' +
+        '<button class="ws-ol-x" title="이 줄 지우기" onclick="anRowDel(' + i + ')">✕</button></div>';
     }).join('') : '<div class="nt-muted">아래 ＋ 단추로 줄을 더하세요.</div>';
+    anCurFill(c);
   }
+  // 고른 줄(파란 표시) — 아래 도구(들여쓰기·정렬·순서)와 ＋ 단추가 이 줄에 대해 움직인다
+  function anPick(i) {
+    if (anFocus === i) return;
+    anFocus = i;
+    document.querySelectorAll('#an-rows .an-row').forEach(function(el) { el.classList.toggle('cur', +el.dataset.i === i); });
+    anCurFill();
+  }
+  function anCurFill(c) {
+    c = c || anCfg();
+    const box = document.getElementById('an-cur'), i = anFocus, r = i != null ? c.rows[i] : null;
+    if (!box) return;
+    if (!r) { box.innerHTML = '<span class="nt-muted">줄을 누르면 그 줄의 들여쓰기·정렬·순서를 여기서 바꿀 수 있어요.</span>'; return; }
+    const b = function(on, fn, t, tip) { return '<button' + (on ? ' class="on"' : '') + ' onmousedown="event.preventDefault()" onclick="' + fn + '" title="' + tip + '">' + t + '</button>'; };
+    const txt = r.lv !== 'tbl' && r.lv !== 'box', al = r.al || anAlDef(r.lv), ind = r.ind || 0;
+    box.innerHTML = '<b>' + (i + 1) + '번째 줄</b>' +
+      '<span class="an-cg">들여쓰기' + b(false, 'anIndent(-1)', '◀', '한 글자 왼쪽으로') + '<span class="an-iv">' + (ind > 0 ? '+' : '') + ind + '</span>' + b(false, 'anIndent(1)', '▶', '한 글자 오른쪽으로') + (ind ? b(false, 'anIndent(0)', '처음대로', '덧붙인 들여쓰기 없애기') : '') + '</span>' +
+      (txt ? '<span class="an-cg">정렬' + ['J', 'L', 'C', 'R'].map(function(a) { return b(al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
+      '<span class="an-cg">순서' + b(false, 'anMove(-1)', '↑', '한 줄 위로') + b(false, 'anMove(1)', '↓', '한 줄 아래로') + '</span>';
+  }
+  function anIndent(d) {
+    const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r) return;
+    r.ind = d === 0 ? 0 : Math.max(-8, Math.min(20, (r.ind || 0) + d));
+    anRowsSave(rows, i);
+  }
+  function anAlign(a) {
+    const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r || !AN_ALIGN[a]) return;
+    r.al = a; anRowsSave(rows, i);
+  }
+  function anMove(d) {
+    const rows = anCfg().rows, i = anFocus, j = i + d; if (!rows[i] || j < 0 || j >= rows.length) return;
+    const tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp; anRowsSave(rows, j);
+  }
+  function anAddBelow(i) {
+    const r = anCfg().rows[i]; if (!r) return;
+    anAdd(r.lv === 'h1' || r.lv === 'h2' ? 'b' : r.lv === 'tbl' || r.lv === 'box' || r.lv === 'c' ? 'p' : r.lv, i + 1);
+  }
+  // ⠿ 끌어서 옮기기: 놓는 줄의 위쪽 절반이면 그 위, 아래쪽 절반이면 그 아래
+  let anDragI = null;
+  function anDragStart(e, i) {
+    anDragI = i; e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', ''); } catch (x) {}
+    const row = e.target.closest('.an-row'); if (row && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(row, 12, 12);
+  }
+  function anDragMark(row, after) { document.querySelectorAll('#an-rows .an-row').forEach(function(el) { el.classList.remove('drop-a', 'drop-b'); }); if (row) row.classList.add(after ? 'drop-a' : 'drop-b'); }
+  function anDragOver(e, i) {
+    if (anDragI == null) return;
+    e.preventDefault();
+    const row = e.currentTarget, rc = row.getBoundingClientRect(), after = e.clientY > rc.top + rc.height / 2;
+    row.dataset.after = after ? '1' : '0'; anDragMark(row, after);
+  }
+  function anDrop(e, i) {
+    if (anDragI == null) return;
+    e.preventDefault();
+    const from = anDragI, rows = anCfg().rows; anDragI = null; anDragMark(null);
+    let to = i + (e.currentTarget.dataset.after === '1' ? 1 : 0);
+    const m = rows.splice(from, 1)[0]; if (from < to) to--;
+    rows.splice(to, 0, m); anRowsSave(rows, to);
+  }
+  function anDragEnd() { anDragI = null; anDragMark(null); }
   function anTblEditor(r, i) {
     const nc = r.cells[0].length, nr = r.cells.length;
     const b = function(dr, dc, t, tip) { return '<button onclick="anTblSize(' + i + ', ' + dr + ', ' + dc + ')" title="' + tip + '">' + t + '</button>'; };
     return '<div class="an-tbl"><div class="an-tbl-tools">칸 ' + b(0, -1, '−', '맨 오른쪽 칸 빼기') + nc + b(0, 1, '＋', '칸 더하기') + '　줄 ' + b(-1, 0, '−', '맨 아래 줄 빼기') + nr + b(1, 0, '＋', '줄 더하기') +
-      '<label class="pe-chk" style="font-size:11px;"><input type="checkbox"' + (r.head ? ' checked' : '') + ' onchange="anTblHead(' + i + ', this.checked)">첫 줄 제목칸(회색)</label></div>' +
+      '<label class="pe-chk" style="font-size:11px;" title="첫 줄을 굵은 글씨·회색 바탕의 제목칸으로"><input type="checkbox"' + (r.head ? ' checked' : '') + ' onchange="anTblHead(' + i + ', this.checked)">첫 줄 회색</label></div>' +
       '<div class="an-tbl-grid" style="grid-template-columns:repeat(' + nc + ', minmax(54px, 1fr));">' + r.cells.map(function(row, ri) {
         return row.map(function(v, ki) {
           return '<input type="text" class="lp-input' + (r.head && ri === 0 ? ' an-th' : '') + '" value="' + ntEsc(v) + '" data-r="' + ri + '" data-k="' + ki + '" oninput="anCell(' + i + ', ' + ri + ', ' + ki + ', this.value)" onkeydown="anCellKey(event, ' + i + ', ' + ri + ', ' + ki + ')" onpaste="anCellPaste(event, ' + i + ', ' + ri + ', ' + ki + ')" onfocus="anFocus=' + i + '">';
         }).join('');
-      }).join('') + '</div><div class="nt-muted" style="font-size:10.5px;">엑셀에서 여러 칸을 복사해 붙여 넣으면 한꺼번에 들어가요.</div></div>';
+      }).join('') + '</div><div class="nt-muted" style="font-size:10.5px;">엑셀 표를 복사해 칸에 붙여 넣어도 돼요.</div></div>';
   }
   function anRowsSave(rows, focus, sel) {
     anSet({ rows: rows });
+    if (focus != null) anFocus = focus;
+    if (anFocus != null && anFocus >= rows.length) anFocus = rows.length ? rows.length - 1 : null;
     anRowsFill(anCfg());
     if (focus != null) {
-      anFocus = focus;
       const el = document.querySelector('#an-rows .an-row[data-i="' + focus + '"] ' + (sel || 'input[type="text"], #an-rows .an-row[data-i="' + focus + '"] textarea'));
       if (el) { el.focus(); if (el.setSelectionRange) { const n = el.value.length; el.setSelectionRange(n, n); } }
     }
@@ -20919,7 +21034,7 @@
     const blocks = [].concat.apply([], L.pages);
     // 문단 모양: 쓰는 것만 모아 번호를 매긴다(같은 모양은 하나로)
     const ppList = [], ppIdx = {};
-    const PPi = function(o) { const k = JSON.stringify(o); if (ppIdx[k] == null) { ppIdx[k] = ppList.length; ppList.push(o); } return ppIdx[k]; };
+    const PPi = function(o) { o.keepWord = true; const k = JSON.stringify(o); if (ppIdx[k] == null) { ppIdx[k] = ppList.length; ppList.push(o); } return ppIdx[k]; };
     // 내어쓰기: 한글은 첫 줄이 왼쪽 여백(left)에서 시작하고, 둘째 줄부터 |indent|만큼 더 들어간다 → left = 기호 자리, indent = −기호 폭
     const r1 = function(v) { return Math.round(v * 10) / 10; };
     const ppOf = function(align, left, hang, before, after, line) { return PPi({ align: align, line: line || c.line, left: r1(pt(left)), indent: -r1(pt(hang)), before: before || 0, after: after || 0 }); };
@@ -20933,19 +21048,22 @@
     const charPrs = [{ size: c.tSize, font: hT, bold: c.tBold }, { size: L.subSize, font: hB }, { size: c.bSize, font: hB, bold: c.h1Bold }, { size: c.bSize, font: hB },
       { size: cs, font: hB, bold: true }, { size: cs, font: hB }, { size: c.bSize, font: hB }, { size: c.bSize + 4, font: hB, bold: true }];
     // 스타일(F6) — 줄 종류마다 기본 위치의 문단 모양
-    const bsMm = L.bs, h1Hang = anEm(anNumFmt(c.n1, 1) + ' ') * bsMm, h2Hang = anEm(anNumFmt(c.n2, 1) + ' ') * bsMm;
-    const bulHang = anEm(c.bul + ' ') * bsMm, dashHang = anEm(c.dash + ' ') * bsMm, noteHang = anEm('※ ') * bsMm;
+    const bsMm = L.bs, hw = function(sym) { return anEm(sym + ' ') * bsMm; };
+    const h1W = hw(anNumFmt(c.n1, 1)), bulW = hw(c.bul);
+    const lv1 = c.step === 'auto' ? h1W : c.step * bsMm, lv2 = c.step === 'auto' ? h1W + bulW : 2 * c.step * bsMm; // 스타일은 큰 항목 아래 기준
+    const hg = function(sym) { return c.hang ? hw(sym) : 0; };
+    const h1Hang = hg(anNumFmt(c.n1, 1)), h2Hang = hg(anNumFmt(c.n2, 1)), bulHang = hg(c.bul), dashHang = hg(c.dash), noteHang = hg('※');
     const tAl = c.tAlign === 'L' ? 'LEFT' : 'CENTER';
     const stDefs = [
       ['안내문 제목', PPi({ align: tAl, line: 130 }), CPN.title], ['안내문 부제목', PPi({ align: tAl, line: 150, after: pt(5) }), CPN.sub],
-      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, c.gap), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', h1Hang, h2Hang), CPN.body],
-      ['안내문 • 점', ppOf('JUSTIFY', h1Hang, bulHang), CPN.body], ['안내문 - 줄표', ppOf('JUSTIFY', h1Hang + bulHang, dashHang), CPN.body],
-      ['안내문 본문', ppOf('JUSTIFY', h1Hang, 0), CPN.body], ['안내문 가운데 글', PPi({ align: 'CENTER', line: c.line }), CPN.body], ['안내문 ※ 참고', ppOf('JUSTIFY', 0, noteHang), CPN.body],
+      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, c.gap), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', lv1, h2Hang), CPN.body],
+      ['안내문 • 점', ppOf('JUSTIFY', lv1, bulHang), CPN.body], ['안내문 - 줄표', ppOf('JUSTIFY', lv2, dashHang), CPN.body],
+      ['안내문 본문', ppOf('JUSTIFY', lv1, 0), CPN.body], ['안내문 가운데 글', PPi({ align: 'CENTER', line: c.line }), CPN.body], ['안내문 ※ 참고', ppOf('JUSTIFY', 0, noteHang), CPN.body],
     ];
     const ST_OF = { h1: 2, h2: 3, b: 4, d: 5, p: 6, c: 7, n: 8 };
     // 문단마다 쓸 문단 모양을 먼저 모은다
     const plan = blocks.map(function(b) {
-      if (b.k === 'p') return { pp: b.lv === 'c' ? PPi({ align: 'CENTER', line: c.line, before: pt(b.before) }) : ppOf('JUSTIFY', b.left, b.hang, pt(b.before)) };
+      if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, pt(b.before)) };
       if (b.k === 'tbl') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), cellL: PPi({ align: 'LEFT', line: 130 }), cellC: PPi({ align: 'CENTER', line: 130 }) };
       if (b.k === 'box') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), lines: b.lines.map(function(x) { return ppOf('JUSTIFY', 0, x.hang); }) };
       if (b.k === 'end') { const al = c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line, after: pt(L.lh) }), from: PPi({ align: al, line: 160 }) }; }
@@ -23118,9 +23236,9 @@
     { selector: '#pe-word-box', before: fmTourPeWord, title: '📝 수행평가 · 🔤 단어 시험', desc: '엑셀에서 단어·뜻 두 칸을 복사해 단어 칸에 붙여 넣거나 📂 엑셀·CSV 파일을 올리면 바로 시험지가 돼요(번호·품사 칸, 맨 위 머리 줄은 알아서 골라요). 문제 방향(영어 → 뜻 / 뜻 → 영어 / 반반 섞기), 1단·2단, 칸 높이, 몇 개만 무작위로 뽑기, 순서(↺ 적은 대로 · 🔀 무작위 → 🎲 랜덤 / 🔤 알파벳순)를 고르고, 점수 칸·정답지(시험지 뒤에 빨간 답)·A형·B형(순서만 다른 두 판)을 체크로 넣어요. 영어 단어는 첫 글자 힌트(a _ _ _ _)·품사·✏️ 따라 쓰기 연습지도 돼요. 한자·용어는 📋 일반(문제 | 답)을 골라 칸 이름을 바꿔 써요.' },
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 안내문을 볼게요.' },
     { selector: '#fm-right', before: fmTourAn, title: '📢 안내문 — 이런 걸 만들어요', desc: '수행평가 안내·가정통신문·행사 안내처럼 공지하는 글을 만들어요. 제목 아래 "1. 큰 항목 → • 점 → - 줄표"로 단계마다 들여 쓰고, 줄이 넘어가면 기호 뒤 글자에 맞춰 내어 써요. 표·상자도 넣을 수 있어요.\n\n한글에서 들여쓰기·내어쓰기·표를 맞추느라 애쓰지 않아도 칸만 채우면 돼요.' },
-    { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '먼저 틀(📋 수행평가 안내 · 🏫 가정통신문 · 📢 행사·일정 안내 · 📄 빈 안내문)을 하나 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.' },
-    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '한 칸에 한 줄이에요. 왼쪽에서 줄 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호가 저절로 붙어요.\n\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점)\n· Tab / Shift+Tab: 한 단계 안으로 / 밖으로\n· 빈 칸에서 Backspace: 줄 지우기 · Alt+↑↓: 순서 바꾸기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
-    { selector: '#an-look-box', before: fmTourAn, title: '📢 안내문 · 3~6단계 (필요할 때만)', desc: '③ 끝맺음: 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람.\n④ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격.\n⑤ 쪽 설정 · ⑥ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
+    { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '먼저 틀(📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정 · 📄 빈 안내문)을 하나 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.' },
+    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '한 칸에 한 줄이에요. 왼쪽에서 줄 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호가 저절로 붙어요.\n\n· 줄을 누르면 파랗게 표시되고, 아래 도구로 그 줄의 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)를 바꿔요. 아래 ＋ 단추도 그 줄 아래에 더해요.\n· 줄 오른쪽 ＋: 바로 아래에 줄 더하기 · ⠿를 끌면 순서 바꾸기\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
+    { selector: '#an-look-box', before: fmTourAn, title: '📢 안내문 · 3~6단계 (필요할 때만)', desc: '③ 끝맺음: 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람.\n④ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격, 단계 들여쓰기(자동 = 윗줄 글에 맞춤 / 1·2·4글자), 내어쓰기 켬·끔.\n⑤ 쪽 설정 · ⑥ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
     // 🏷️ 이름표(양식의 둘째 탭(시정표 뒤) — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
     { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
     { selector: '#nt-next', before: fmTourNtBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },

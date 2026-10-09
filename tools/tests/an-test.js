@@ -306,7 +306,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#an-n1 [data-v="Ⅰ."]'); await P.click('#an-bul [data-v="○"]'); await P.click('#an-deco [data-v="box"]'); await P.waitForTimeout(250);
   const d2 = await prev();
   check('모양: 큰 항목 Ⅰ., 점 ○', d2.paras.some(p => p.t === 'Ⅰ. 일시: 10월 20일') && d2.paras.some(p => p.t === '○ 준비물'), d2.paras.map(p => p.t));
-  check('＋ 단추 이름도 바뀐 기호로', await P.evaluate(() => document.querySelector('#an-add [data-add="b"]').textContent) === '○ 점');
+  check('＋ 단추 이름도 바뀐 기호로', await P.evaluate(() => document.querySelector('#an-add [data-add="b"]').textContent) === '＋ ○ 점');
   // 끝맺음
   await P.click('#an-end'); await setText(P, '#an-end-from', '○○고등학교장'); await P.waitForTimeout(250);
   const endT = await P.evaluate(() => [...document.querySelectorAll('#fm-pages .an-sheet .an-p')].map(d => d.textContent).slice(-2));
@@ -344,6 +344,76 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     check('한글 파일: A4 세로 · 여백 20mm · 글꼴', /width="59528"/.test(hz.page) && /left="5669"/.test(hz.margin) && hz.font, { page: hz.page, margin: hz.margin });
     if (process.env.AN_OUT) { const b64 = await P.evaluate(async () => { const u8 = new Uint8Array(await (await anBuildHwpx(anCfg())).arrayBuffer()); let t = ''; u8.forEach(x => t += String.fromCharCode(x)); return btoa(t); }); fs.writeFileSync(process.env.AN_OUT, Buffer.from(b64, 'base64')); }
   } else console.log('  ⚠️ JSZip이 없어 한글 파일 검사는 건너뜀');
+
+  // ----- 줄 고르기 도구: 들여쓰기·정렬·순서, 줄마다 ＋, 끌어서 옮기기 -----
+  await P.click('[data-tpl="pe"]'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
+  await P.evaluate(() => anSet({ n1: '1.', bul: '•', deco: 'line' }, true)); await P.waitForTimeout(200);
+  const rowsLv = () => P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + (r.t || '').slice(0, 6)));
+  // 1번 큰 항목 줄의 ＋ → 바로 아래(2번째 줄)에 점
+  await P.click('#an-rows .an-row[data-i="0"] .an-plus'); await P.waitForTimeout(200);
+  const lv1 = await rowsLv();
+  check('큰 항목 줄의 ＋ → 바로 아래에 점 줄(맨 아래 아님)', lv1[1] === 'b:' && lv1[2].startsWith('b:평가 기간'), lv1.slice(0, 4));
+  await P.keyboard.type('맨 위 점'); await P.waitForTimeout(200);
+  check('새 줄에 바로 글을 쓸 수 있음(커서가 거기에)', await P.evaluate(() => anCfg().rows[1].t) === '맨 위 점');
+  // 줄을 누르면 고른 줄 표시 + 도구, 아래 ＋ 단추는 그 줄 아래에
+  await P.click('#an-rows .an-row[data-i="4"] input[type="text"]'); await P.waitForTimeout(150);
+  const cur = await P.evaluate(() => ({ cls: [...document.querySelectorAll('#an-rows .an-row.cur')].map(e => e.dataset.i).join(), tool: document.getElementById('an-cur').textContent }));
+  check('줄을 누르면 그 줄만 파랗게 + 도구에 "5번째 줄"', cur.cls === '4' && /5번째 줄/.test(cur.tool) && /들여쓰기/.test(cur.tool) && /정렬/.test(cur.tool), cur);
+  await P.click('#an-add [data-add="d"]'); await P.waitForTimeout(200);
+  check('아래 ＋ 단추도 고른 줄 아래에(5번째 줄 다음)', (await rowsLv())[5] === 'd:', (await rowsLv()).slice(3, 7));
+  await P.keyboard.type('세부'); await P.waitForTimeout(150);
+  // 들여쓰기 ▶ 두 번 → 2글자, 미리보기 2 × 글자 폭만큼
+  const pl = () => P.evaluate(() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent === '- 세부'); return d && parseFloat(d.style.paddingLeft); });
+  const pl0 = await pl();
+  await P.click('#an-cur button[title="한 글자 오른쪽으로"]'); await P.click('#an-cur button[title="한 글자 오른쪽으로"]'); await P.waitForTimeout(200);
+  const pl1 = await pl(), bs = await P.evaluate(() => anCfg().bSize * FM_PT);
+  check('들여쓰기 ▶▶ → 저장 ind 2, 미리보기가 2글자만큼 오른쪽으로, 도구에 +2', await P.evaluate(() => anCfg().rows[5].ind) === 2 && Math.abs(pl1 - pl0 - 2 * bs) < 0.05 && /\+2/.test(await P.evaluate(() => document.getElementById('an-cur').textContent)), { pl0, pl1, bs });
+  // 정렬 가운데
+  await P.click('#an-cur button[title="가운데 정렬"]'); await P.waitForTimeout(200);
+  check('정렬 가운데 → 미리보기 가운데, 내어쓰기 없음', await P.evaluate(() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent === '- 세부'); return d.style.textAlign === 'center' && parseFloat(d.style.textIndent) === 0; }));
+  // 순서 ↑
+  await P.click('#an-cur button[title="한 줄 위로"]'); await P.waitForTimeout(200);
+  check('순서 ↑ → 한 줄 위로, 고른 줄도 따라감', (await rowsLv())[4] === 'd:세부' && await P.evaluate(() => anFocus) === 4, (await rowsLv()).slice(3, 7));
+  // 끌어서 옮기기: 4번째 줄(세부)을 맨 첫 줄 위로
+  await P.evaluate(() => {
+    const dt = new DataTransfer(), rows = () => document.querySelectorAll('#an-rows .an-row');
+    rows()[4].querySelector('.an-drag').dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }));
+    const r0 = rows()[0], rc = r0.getBoundingClientRect();
+    r0.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true, clientY: rc.top + 2 }));
+    r0.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, clientY: rc.top + 2 }));
+  });
+  await P.waitForTimeout(250);
+  check('⠿ 끌어서 첫 줄 위에 놓기 → 맨 위로', (await rowsLv())[0] === 'd:세부' && (await rowsLv())[1].startsWith('h1:평가 개요'), (await rowsLv()).slice(0, 3));
+  // 한글 파일: 그 줄은 가운데 정렬, 모든 문단은 어절 단위 줄바꿈
+  if (JSZIP_JS) {
+    const kz = await P.evaluate(async () => {
+      const zip = await JSZip.loadAsync(await anBuildHwpx(anCfg())), sec = await zip.file('Contents/section0.xml').async('string'), head = await zip.file('Contents/header.xml').async('string');
+      const m = sec.match(/<hp:p [^>]*paraPrIDRef="(\d+)"[^>]*><hp:run[^>]*>(?:<hp:secPr[\s\S]*?<\/hp:run><hp:run[^>]*>)?<hp:t>- 세부<\/hp:t>/);
+      const pp = m && head.match(new RegExp('<hh:paraPr id="' + m[1] + '"[\\s\\S]*?</hh:paraPr>'))[0];
+      const ids = [...new Set([...sec.matchAll(/paraPrIDRef="(\d+)"/g)].map(x => x[1]))];
+      const keep = ids.every(id => /breakNonLatinWord="KEEP_WORD"/.test(head.match(new RegExp('<hh:paraPr id="' + id + '"[\\s\\S]*?</hh:paraPr>'))[0]));
+      return { center: !!pp && /horizontal="CENTER"/.test(pp), keep };
+    });
+    check('한글 파일: 가운데 정렬로 바꾼 줄은 CENTER, 모든 문단이 어절 단위 줄바꿈(KEEP_WORD)', kz.center && kz.keep, kz);
+  }
+  // 모양: 들여쓰기 2글자 고정, 내어쓰기 끔
+  await P.click('#an-step [data-v="2"]'); await P.click('#an-hang [data-v="false"]'); await P.waitForTimeout(250);
+  const st = await P.evaluate(() => { const bs = anCfg().bSize * FM_PT, d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent.startsWith('• 평가 기간')); return { pl: parseFloat(d.style.paddingLeft), ti: parseFloat(d.style.textIndent), bs }; });
+  check('들여쓰기 "2글자" → 점 줄은 2글자 자리, 내어쓰기 끔 → 넘어간 줄도 기호 자리부터', Math.abs(st.pl - 2 * st.bs) < 0.05 && st.ti === 0, st);
+  await P.click('#an-step [data-v="auto"]'); await P.click('#an-hang [data-v="true"]'); await P.waitForTimeout(200);
+  // 단추 묶음: 하나만 다음 줄로 떨어지지 않음(한 줄 또는 고른 칸), 글자가 잘리지 않음
+  const lay = await P.evaluate(() => {
+    const tops = (els) => [...new Set([...els].map(e => Math.round(e.getBoundingClientRect().top)))];
+    const rowsOk = [...document.querySelectorAll('#an-grid .an-chips')].every(g => tops(g.children).length === 1);
+    const tplRows = tops(document.querySelectorAll('#an-tpls .nt-chip')), perRow = document.querySelectorAll('#an-tpls .nt-chip').length / tplRows.length;
+    const cut = [...document.querySelectorAll('#an-grid .an-chips .nt-chip, #an-tpls .nt-chip')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent);
+    return { rowsOk, tplRows: tplRows.length, perRow, cut };
+  });
+  check('고르기 단추는 줄마다 한 줄, 틀 단추는 고르게(4개 한 줄 또는 2×2), 잘린 글자 없음', lay.rowsOk && Number.isInteger(lay.perRow) && lay.cut.length === 0, lay);
+  // 좁은 화면으로 바꿔도 ② 내용 칸이 접히지 않음(예전 버그)
+  await P.setViewportSize({ width: 1280, height: 800 }); await P.waitForTimeout(500);
+  check('넓은 화면 → 좁은 화면으로 바꿔도 ② 내용 칸이 보임', await P.evaluate(() => document.getElementById('an-rows').offsetHeight > 100));
+  await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
 
   // 초기화 → 처음 예시로, 다른 양식은 그대로
   await P.click('#fm-reset-btn'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
