@@ -544,6 +544,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
   check('창을 좁혀 줄 수가 늘어도 칸 높이가 따라감', txh2[1].h > txh[1].h && !txh2[1].cut, { txh, txh2 });
 
+  // 표 칸 폭: 긴 칸이 있어도 짧은 제목 칸(연번·학년·인원)은 글이 한 줄에 들어갈 폭을 지킴(한글에서 "연/번"으로 꺾이던 것)
+  await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'tbl', head: true, cells: [['연번', '학년', '주제 또는 제목', '융합교과', '수업장소', '인원'], ['1', '3', '아주 긴 주제 '.repeat(8), '국어+영어+영상제작', '3-3, 3-5, 교내 및 학교 인근', '45']] }] }, true); }); await P.waitForTimeout(250);
+  const tw = await P.evaluate(() => { const t = document.querySelector('#fm-pages .an-tb'); const w = [...t.querySelectorAll('col')].map(c => parseFloat(c.style.width)); const h = [...t.rows[0].cells].map(td => td.getBoundingClientRect().height); return { w, sameH: Math.max(...h) - Math.min(...h) < 1, total: w.reduce((a, b) => a + b, 0), W: parseFloat(t.style.width) }; });
+  check('짧은 칸(연번·학년·인원)은 12mm 이상(글이 안 꺾임), 긴 칸이 나머지를 나눔, 폭 합 = 표 폭', tw.w[0] >= 11.9 && tw.w[1] >= 11.9 && tw.w[5] >= 11.9 && tw.w[2] > tw.w[0] * 3 && Math.abs(tw.total - tw.W) < 0.05, tw);
+
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
   await P.setViewportSize({ width: 1280, height: 720 }); await P.waitForTimeout(400);

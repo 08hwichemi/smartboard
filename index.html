@@ -20737,7 +20737,15 @@
         const emMax = function(t) { return Math.max.apply(null, String(t).split('\n').map(anEm)); };
         for (let k = 0; k < nc; k++) nat.push(Math.max(12, Math.max.apply(null, r.cells.map(function(row, ri) { return emMax(row[k]) * cs * FM_PT * (r.head && ri === 0 ? 1.05 : 1); })) + 2 * AN_CELL_PAD + 1));
         const sum = nat.reduce(function(a, x) { return a + x; }, 0);
-        const cols = nat.map(function(x) { return TW * x / sum; });
+        // 칸 폭: 글이 다 들어가면 비율대로 늘리고, 넘치면 짧은 칸(연번·학년·인원 같은 22mm 이하)은 제 폭을 지키고 긴 칸들만 줄인다 — "연/번"처럼 꺾이지 않게
+        let cols;
+        if (sum <= TW) cols = nat.map(function(x) { return TW * x / sum; });
+        else {
+          const fixed = nat.map(function(x) { return x <= 22; }), fixedSum = nat.reduce(function(a, x, k) { return a + (fixed[k] ? x : 0); }, 0), longSum = sum - fixedSum;
+          const rest = TW - fixedSum, nLong = fixed.filter(function(f) { return !f; }).length;
+          if (nLong && rest >= nLong * 14) cols = nat.map(function(x, k) { return fixed[k] ? x : rest * x / longSum; });
+          else cols = nat.map(function(x) { return TW * x / sum; });
+        }
         const shortCol = []; for (let k = 0; k < nc; k++) shortCol.push(r.cal === 'C' ? true : r.cal === 'L' ? false : Math.max.apply(null, r.cells.map(function(row, ri) { return r.head && ri === 0 ? 0 : emMax(row[k]); })) <= 6);
         const rows = r.cells.map(function(row) {
           const n = Math.max.apply(null, row.map(function(t, k) { return String(t).split('\n').reduce(function(a, x) { return a + linesOf(x || ' ', cols[k] - 2 * AN_CELL_PAD, cs); }, 0); }));
