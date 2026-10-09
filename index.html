@@ -1401,9 +1401,9 @@
     .pe-p { white-space: pre-wrap; word-break: break-all; }
     #pe-ms-chars, #pe-ms-cell, #pe-ms-gap, #pe-ms-color, #pe-ms-pbox { gap: 4px; }
     /* 안내문 */
+    /* 📢 안내문: 한 열, 종이 순서(① 제목 → ② 내용 → 끝맺음) + 🎨 더 꾸미기(접힘). 줄은 종이처럼(기호 + 글만), 손잡이·＋·✕는 누르거나 올렸을 때만 */
     #an-grid { display: flex; flex-direction: column; gap: 12px; }
-    .an-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    .an-col > * { flex-shrink: 0; min-width: 0; }
+    #an-grid > * { flex-shrink: 0; min-width: 0; }
     #an-grid .nt-chip { padding: 3px 8px; }
     #an-grid .nt-row { gap: 4px; }
     .an-lb { flex: 0 0 auto; min-width: 58px; font-size: 11.5px; color: var(--text-sub); white-space: nowrap; }
@@ -1412,25 +1412,50 @@
     #an-look-box .an-lb, #an-paper .an-lb { min-width: 0; }
     .an-chips { display: grid; gap: 4px; min-width: 0; }
     .an-chips .nt-chip, #an-tpls .nt-chip, #an-add .nt-chip { min-width: 0; padding: 3px 4px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
-    /* 틀 4개·＋ 단추 9개: 칸 수를 #fm-left 폭에 맞춰 고르게(하나만 다음 줄로 떨어지지 않게). 600px 이상이면 두 열이라 왼쪽 열은 약 55% */
+    /* 틀 4개·＋ 단추 9개: 칸 수를 #fm-left 폭에 맞춰 고르게(하나만 다음 줄로 떨어지지 않게) */
     #an-tpls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
     #an-add { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
     @container (min-width: 360px) { #an-tpls { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
     @container (min-width: 440px) { #an-add { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-    @container (min-width: 600px) { #an-tpls { grid-template-columns: repeat(2, minmax(0, 1fr)); } #an-add { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @container (min-width: 680px) { #an-tpls { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    #an-rows { display: flex; flex-direction: column; gap: 3px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
+    @container (min-width: 860px) { #an-add { grid-template-columns: repeat(9, minmax(0, 1fr)); } } /* 9개 한 줄은 글이 안 잘릴 때만 */
+    #an-more { border: 1px dashed var(--border-color); border-radius: 14px; padding: 8px 12px; }
+    #an-more summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--text-sub); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #an-more summary .nt-muted { font-weight: 600; }
+    #an-more[open] summary { margin-bottom: 10px; }
+    #an-more-grid { display: flex; flex-direction: column; gap: 12px; }
+    #an-more-grid > * { min-width: 0; }
+    @container (min-width: 600px) { #an-more-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; } #an-look-box { grid-row: 1 / span 2; } }
+    #an-end-box { border-top: 1px dashed var(--border-color); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .an-end-row { flex-wrap: wrap; }
+    .an-end-row .ws-lb { width: auto; }
+    .an-end-row input[type="text"].lp-input { flex: 1 1 120px; width: auto; }
+    .an-end-row #an-end-align { flex: none; }
+    #an-rows { display: flex; flex-direction: column; gap: 3px; max-height: max(280px, calc(100vh - 470px)); overflow-y: auto; padding-right: 2px; } /* 화면 높이에 맞춰 — 아래 끝맺음이 멀어지지 않게 */
+    #an-help { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 한 줄(전체 글은 올리면 보임) */
     .an-row { display: flex; align-items: flex-start; gap: 4px; border-radius: 6px; padding-top: 1px; padding-bottom: 1px; }
     .an-row.cur { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
+    /* 종이처럼: 글 칸 테두리는 올리거나 고르거나 커서가 있을 때만, ⠿·＋·✕도 그때만(자리는 그대로 두어 글이 움직이지 않게 — opacity) */
+    .an-row input[type="text"].lp-input { border-color: transparent; background: transparent; }
+    .an-row:hover input[type="text"].lp-input, .an-row.cur input[type="text"].lp-input, .an-row input[type="text"].lp-input:focus { border-color: var(--border-color); background: var(--card-bg); }
+    .an-row .an-drag, .an-row .an-plus, .an-row .ws-ol-x { opacity: 0; transition: opacity .12s; }
+    .an-row:hover .an-drag, .an-row.cur .an-drag, .an-row:hover .an-plus, .an-row.cur .an-plus, .an-row:hover .ws-ol-x, .an-row.cur .ws-ol-x { opacity: 1; }
+    .an-row .an-sym { cursor: default; }
     .an-row.drop-b { box-shadow: 0 -2px 0 var(--accent-color); } .an-row.drop-a { box-shadow: 0 2px 0 var(--accent-color); }
     .an-drag { flex: 0 0 auto; cursor: grab; color: var(--text-sub); font-size: 13px; padding: 4px 1px 0 3px; user-select: none; }
     .an-plus { flex: 0 0 auto; border: none; background: none; color: var(--accent-color); cursor: pointer; font-size: 14px; font-weight: 800; padding: 3px 1px 0; }
-    #an-cur { display: flex; align-items: center; align-content: center; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 50px; box-sizing: border-box; } /* 줄을 고를 때 높이가 바뀌어 아래 줄들이 밀리지 않게(두 줄 높이로 고정) */
+    #an-cur { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 62px; box-sizing: border-box; } /* 두 줄(종류 / 들여쓰기·정렬·순서) 높이로 고정 — 줄을 고를 때 아래 줄들이 밀려 클릭이 빗나가지 않게 */
+    #an-cur .an-cl { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+    #an-cur .an-cl:first-child { flex-wrap: nowrap; }
     #an-cur .an-cg { display: inline-flex; align-items: center; gap: 3px; color: var(--text-sub); }
-    #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 7px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
+    #an-cur .an-cg:has(.an-lvs) { flex: 1 1 auto; min-width: 0; }
+    #an-cur .an-lvs { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; } /* 종류 9개는 늘 한 줄(글이 길면 줄임) */
+    #an-cur .an-lvs button { min-width: 0; padding-left: 3px; padding-right: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #an-cur .an-cn { flex: 0 0 auto; white-space: nowrap; min-width: 58px; }
+    #an-cur .an-iv { cursor: pointer; }
+    #an-cur button:disabled { opacity: .45; cursor: default; }
+    #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 5px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
     #an-cur button.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
     #an-cur .an-iv { min-width: 22px; text-align: center; font-weight: 800; color: var(--text-main); }
-    .an-row .an-lv { flex: 0 0 auto; width: 74px; font-size: 11px; padding: 3px 2px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-main); font-family: inherit; }
     .an-row .an-sym { flex: 0 0 auto; min-width: 22px; text-align: right; font-weight: 700; font-size: 12.5px; padding-top: 4px; color: var(--text-main); }
     .an-row[data-lv="h1"] input[type="text"] { font-weight: 700; }
     .an-row input[type="text"], .an-row textarea { flex: 1; min-width: 0; padding: 4px 6px !important; }
@@ -1444,6 +1469,10 @@
     .an-tbl-grid textarea.an-th { font-weight: 700; background: var(--tt-bg); }
     #fm-left .an-tbl-grid textarea.lp-input { resize: none; min-height: 0; }
     .an-p { white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
+    .an-sheet { position: relative; }
+    .an-ghost { display: block; margin: 0 auto; width: 70%; text-align: center; color: #8a94a6; background: transparent; border: 1px dashed #b7c0d0; border-radius: 2mm; padding: 2mm 3mm; font-size: 10.5pt; cursor: pointer; font-family: inherit; } /* 끝맺음을 안 넣었을 때 마지막 글 바로 아래(끝맺음이 들어갈 자리) 흐린 안내(누르면 넣기) — 인쇄·한글 파일엔 없음 */
+    .an-ghost:hover { color: var(--accent-color); border-color: var(--accent-color); }
+    @media print { .an-ghost { display: none !important; } }
     .an-tb { border-collapse: collapse; table-layout: fixed; }
     .an-tb td { vertical-align: middle; overflow-wrap: anywhere; word-break: keep-all; white-space: pre-wrap; }
     .pe-pbox { box-sizing: border-box; }
@@ -1640,9 +1669,6 @@
     @container (min-width: 600px) {
       #ws-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
       #pe-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-items: stretch; }
-      /* 왼쪽 ①제목 ②내용 ③끝맺음 / 오른쪽 ④모양 ⑤쪽 ⑥글꼴 — 두 열은 따로 쌓고(옆 상자 높이에 맞추지 않음) 맨 아래만 맞춤: 짧은 쪽의 ②내용·⑥글꼴이 늘어남 */
-      #an-grid { display: grid; grid-template-columns: 1.22fr 1fr; align-items: stretch; }
-      #an-rows-box, #an-font-box { flex-grow: 1; }
       #bs-grid { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; } /* 왼쪽 ①시정표 ②시간 / 오른쪽 ③디자인 ④표 모양 ⑤글씨 ⑥쪽 */
       #fm-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; align-items: stretch; }
     }
@@ -3812,9 +3838,9 @@
         <div class="nt-muted" id="pe-font-msg"></div>
       </div>
       </div>
-      <div class="fm-guide" id="an-guide" style="display:none;" title="①②만 채우면 끝. ③~⑥은 필요할 때만 — 다 되면 ⬇️ 한글 파일"><b class="fm-step">1</b><b class="fm-step">2</b>만 채우면 끝. <b class="fm-step opt">3</b>~<b class="fm-step opt">6</b>은 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b></div>
+      <div class="fm-guide" id="an-guide" style="display:none;" title="①②만 채우면 끝. 🎨 더 꾸미기는 필요할 때만 — 다 되면 ⬇️ 한글 파일"><b class="fm-step">1</b><b class="fm-step">2</b>만 채우면 끝. <b>🎨 더 꾸미기</b>는 필요할 때만 — 다 되면 <b>⬇️ 한글 파일</b></div>
+      <!-- 📢 안내문: 종이와 같은 순서로 한 열(① 제목 → ② 내용 → 끝맺음). 모양·쪽·글꼴은 "🎨 더 꾸미기"로 접어 둠(10/9 사용자: 끝맺음이 스크롤 아래 숨어 있는지도 모름) -->
       <div id="an-grid" style="display:none;">
-      <div class="an-col" id="an-col-1">
       <div class="nt-box" id="an-title-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📢 제목</span> <span class="nt-muted">틀을 고르면 예시 내용이 채워져요</span></div>
         <div class="nt-row" id="an-tpls"></div>
@@ -3822,22 +3848,23 @@
         <div class="ws-row"><span class="ws-lb">부제목</span><input type="text" id="an-sub" class="lp-input" placeholder="없어도 돼요 — 예) 2학년 화학Ⅱ 수강생 대상" oninput="anSet({ sub: this.value })"></div>
       </div>
       <div class="nt-box" id="an-rows-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>📝 내용</span> <span class="nt-muted">한 칸에 한 줄 · <a href="#" onclick="anClearRows(); return false;">내용 비우기</a></span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>📝 내용</span> <span class="nt-muted">종이에 보이는 그대로 · <a href="#" onclick="anClearRows(); return false;">내용 비우기</a></span></div>
         <div id="an-cur"></div>
-        <div id="an-rows"></div>
+        <div id="an-rows" onclick="if (event.target === this) anUnpick()"></div>
         <div class="nt-row" id="an-add"></div>
-        <div class="nt-muted" id="an-help">번호·기호는 저절로 붙어요. 줄을 누르면 위 도구로 들여쓰기·정렬·순서를 바꾸고, ＋ 단추는 그 줄 아래에 더해요. ⠿를 끌면 순서가 바뀌어요. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
+        <div class="nt-muted" id="an-help" title="줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 &quot;1.&quot; &quot;-&quot; &quot;•&quot; 같은 앞 기호를 보고 알아서 나눠요.">줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
+        <div id="an-end-box">
+          <div class="nt-title"><span class="fm-tt">✍️ 끝맺음</span> <span class="nt-muted">종이 맨 아래 날짜·보내는 사람</span></div>
+          <div class="ws-row an-end-row"><label class="pe-chk"><input type="checkbox" id="an-end" onchange="anSet({ end: this.checked }, true)">넣기</label><span class="nt-row" id="an-end-align" style="gap:4px;"></span>
+            <span class="ws-lb">날짜</span><input type="text" id="an-end-date" class="lp-input" oninput="anSet({ endDate: this.value })">
+            <span class="ws-lb">보낸 이</span><input type="text" id="an-end-from" class="lp-input" placeholder="○○고등학교장 · 2학년 담임 ○○○" oninput="anSet({ endFrom: this.value })"></div>
+        </div>
       </div>
-      <div class="nt-box" id="an-end-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>✍️ 끝맺음</span> <span class="nt-muted">맨 아래 날짜·보내는 사람</span></div>
-        <div class="ws-row"><label class="pe-chk"><input type="checkbox" id="an-end" onchange="anSet({ end: this.checked }, true)">넣기</label><span class="nt-row" id="an-end-align" style="gap:4px;"></span></div>
-        <div class="ws-row"><span class="ws-lb">날짜</span><input type="text" id="an-end-date" class="lp-input" oninput="anSet({ endDate: this.value })"></div>
-        <div class="ws-row"><span class="ws-lb">보낸 이</span><input type="text" id="an-end-from" class="lp-input" placeholder="○○고등학교장 · 2학년 담임 ○○○" oninput="anSet({ endFrom: this.value })"></div>
-      </div>
-      </div>
-      <div class="an-col" id="an-col-2">
+      <details id="an-more">
+        <summary title="제목 꾸미기·번호 모양·기호·줄 간격·쪽 설정·글꼴 — 처음엔 안 건드려도 돼요"><span class="fm-tt">🎨 더 꾸미기</span> <span class="nt-muted">모양 · 쪽 설정 · 글꼴 — 처음엔 안 건드려도 돼요</span></summary>
+        <div id="an-more-grid">
       <div class="nt-box" id="an-look-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>🎨 모양</span> <span class="nt-muted">번호·기호·제목 꾸미기</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">3</b>🎨 모양</span> <span class="nt-muted">번호·기호·제목 꾸미기</span></div>
         <div class="nt-row" id="an-deco"></div>
         <div class="nt-row" id="an-talign"></div>
         <div class="nt-row" id="an-n1"></div>
@@ -3850,7 +3877,7 @@
         <div class="nt-row" id="an-hang"></div>
       </div>
       <div class="nt-box" id="an-page-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">4</b>📄 쪽 설정</span> <span class="nt-muted">한글의 편집 용지(F7)</span></div>
         <div class="nt-row" id="an-paper"></div>
         <div id="an-margins" class="fm-mgrid" title="여백(mm)">
           <label>위<input type="number" class="lp-input" min="0" max="40" step="1" data-k="mT" oninput="anOnNum(this, 0, 40)"></label>
@@ -3860,7 +3887,7 @@
         </div>
       </div>
       <div class="nt-box" id="an-font-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">6</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step opt">5</b>🔤 글꼴</span> <span class="nt-muted">학교 PC에 있는 글꼴</span></div>
         <div class="nt-row fm-fontrow" title="맨 위 제목"><span class="fm-fl">제목</span><select id="an-tfont" class="mini-select" onchange="anOnFontPick('tFont', this.value)"></select><input type="number" id="an-tsize" class="lp-input" min="12" max="40" step="1" data-k="tSize" oninput="anOnNum(this, 12, 40)">pt</div>
         <input type="text" id="an-tfont-custom" class="lp-input" list="fm-local-fonts" style="display:none;" placeholder="제목 글꼴 이름 (한글 글꼴 목록에 보이는 그대로)" oninput="anOnFontCustom('tFont', this.value)">
         <div class="nt-row fm-fontrow" title="부제목·내용·표·끝맺음"><span class="fm-fl">본문</span><select id="an-bfont" class="mini-select" onchange="anOnFontPick('bFont', this.value)"></select><input type="number" id="an-bsize" class="lp-input" min="9" max="18" step="0.5" data-k="bSize" oninput="anOnNum(this, 9, 18)">pt</div>
@@ -3868,7 +3895,8 @@
         <div class="nt-row"><label class="pe-chk"><input type="checkbox" id="an-tbold" onchange="anSet({ tBold: this.checked }, true)">제목 굵게</label><label class="pe-chk"><input type="checkbox" id="an-h1bold" onchange="anSet({ h1Bold: this.checked }, true)">큰 항목(1.) 굵게</label></div>
         <div class="nt-muted" id="an-font-msg"></div>
       </div>
-      </div>
+        </div>
+      </details>
       </div>
       <div class="fm-guide" id="bs-guide" style="display:none;"></div>
       <div id="bs-grid" style="display:none;">
@@ -20495,6 +20523,7 @@
   const AN_CFG_KEY = 'fm-an';
   const AN_LV_ORDER = ['h1', 'h2', 'b', 'd', 'p', 'c', 'n', 'tbl', 'box'];
   const AN_LV_NAME = { h1: '큰 항목', h2: '작은 항목', b: '점', d: '줄표', p: '본문', c: '가운데 글', n: '참고', tbl: '표', box: '상자' };
+  const AN_LV_SHORT = { h1: '큰', h2: '작은', b: '점', d: '줄표', p: '본문', c: '가운데', n: '참고', tbl: '표', box: '상자' }; // 고른 줄 도구의 종류 단추(한 줄에 9개)
   const AN_TAB_ORDER = ['h1', 'h2', 'b', 'd']; // Tab = 한 단계 안으로, Shift+Tab = 밖으로
   const AN_N1 = ['1.', 'Ⅰ.', '①', '1)'], AN_N2 = ['가.', '1)', '(1)', '①'], AN_BUL = ['•', '○', '▪', '◦', '·', '◆'], AN_DASH = ['-', '–', '·', '▸'];
   const AN_DECO = [['none', '없음'], ['line', '밑줄'], ['double', '이중선'], ['box', '상자'], ['band', '회색 띠']];
@@ -20755,13 +20784,21 @@
   function anRender() {
     const c = anCfg(), L = anLayout(c);
     const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
+    // 끝맺음을 안 넣었으면 마지막 쪽 맨 아래에 흐린 안내(화면에만 — 인쇄·한글 파일엔 없음). 누르면 끝맺음이 켜지고 보낸 이 칸으로
+    const ghost = !c.end ? '<button type="button" class="an-ghost" style="margin-top:' + (2 * L.lh) + 'mm;" onclick="anEndOn()" title="누르면 맨 아래에 날짜와 보내는 사람이 들어가요">✍️ 날짜 · 보내는 사람 넣기</button>' : '';
     box.innerHTML = L.pages.map(function(pg, pi) {
       return '<div class="fm-sheet an-sheet" data-page="' + (pi + 1) + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">' +
-        pg.map(function(b) { return anBlockHtml(c, L, b); }).join('') + '</div>';
+        pg.map(function(b) { return anBlockHtml(c, L, b); }).join('') + (pi === L.pages.length - 1 ? ghost : '') + '</div>';
     }).join('');
     label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽(어림) 미리보기';
     document.getElementById('fm-fit-info').textContent = '';
     fmFitPreview();
+  }
+
+  function anEndOn() {
+    anSet({ end: true }, true);
+    const el = document.getElementById('an-end-from');
+    if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
   }
 
   // ----- 왼쪽 입력칸 -----
@@ -20829,24 +20866,33 @@
   function anRowsFill(c) {
     const M = anMarks(c);
     document.getElementById('an-rows').innerHTML = c.rows.length ? c.rows.map(function(r, i) {
-      const sel = '<select class="an-lv" title="줄 종류 — Tab·Shift+Tab으로도 바꿔요" onchange="anLvSet(' + i + ', this.value)">' +
-        AN_LV_ORDER.map(function(k) { return '<option value="' + k + '"' + (k === r.lv ? ' selected' : '') + '>' + ntEsc(anLvLabel(c, k)) + '</option>'; }).join('') + '</select>';
       let body;
       if (r.lv === 'tbl') body = anTblEditor(r, i);
       else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩(앞에 • - ※ 를 붙이면 그 모양으로)" oninput="anRowInput(' + i + ', this.value)">' + ntEsc(r.t) + '</textarea>';
       else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')">';
       const pad = Math.max(0, Math.min(3, M[i].dep) * 14 + Math.max(-4, Math.min(8, r.ind || 0)) * 5);
-      return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onclick="anPick(' + i + ')" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')">' +
-        '<span class="an-drag" draggable="true" title="끌어서 순서 바꾸기" ondragstart="anDragStart(event, ' + i + ')" ondragend="anDragEnd()">⠿</span>' + sel + body +
+      // 종류 고르기는 위 도구(#an-cur)에서 — 줄에는 기호와 글만(종이처럼). 같은 줄을 다시 누르면(글 칸 바깥) 고르기 취소
+      return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onclick="anPick(' + i + ', event)" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')" title="' + ntEsc(AN_LV_NAME[r.lv]) + ' 줄">' +
+        '<span class="an-drag" draggable="true" title="끌어서 순서 바꾸기" ondragstart="anDragStart(event, ' + i + ')" ondragend="anDragEnd()">⠿</span>' + body +
         '<button class="an-plus" title="이 줄 바로 아래에 줄 더하기" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); anAddBelow(' + i + ')">＋</button>' +
         '<button class="ws-ol-x" title="이 줄 지우기" onclick="event.stopPropagation(); anRowDel(' + i + ')">✕</button></div>';
     }).join('') : '<div class="nt-muted">아래 ＋ 단추로 줄을 더하세요.</div>';
     anFitCells();
     anCurFill(c);
   }
+  function anUnpick() {
+    anFocus = null;
+    document.querySelectorAll('#an-rows .an-row.cur').forEach(function(el) { el.classList.remove('cur'); });
+    const a = document.activeElement; if (a && a.closest && a.closest('#an-rows')) a.blur();
+    anCurFill();
+  }
   // 고른 줄(파란 표시) — 아래 도구(들여쓰기·정렬·순서)와 ＋ 단추가 이 줄에 대해 움직인다
-  function anPick(i) {
-    if (anFocus === i) return;
+  function anPick(i, e) {
+    if (anFocus === i) {
+      // 고른 줄을 다시 누르면 고르기 취소 — 글 칸·단추를 누른 건 빼고(커서 옮기기·＋·✕)
+      if (e && e.type === 'click' && !(e.target && e.target.closest && e.target.closest('input, textarea, select, button, label, .an-tbl'))) anUnpick();
+      return;
+    }
     anFocus = i;
     document.querySelectorAll('#an-rows .an-row').forEach(function(el) { el.classList.toggle('cur', +el.dataset.i === i); });
     anCurFill();
@@ -20855,14 +20901,16 @@
     c = c || anCfg();
     const box = document.getElementById('an-cur'), i = anFocus, r = i != null ? c.rows[i] : null;
     if (!box) return;
-    if (!r) { box.innerHTML = '<span class="nt-muted">줄을 누르면 그 줄의 들여쓰기·정렬·순서를 여기서 바꿀 수 있어요.</span>'; return; }
-    const b = function(on, fn, t, tip) { return '<button' + (on ? ' class="on"' : '') + ' onmousedown="event.preventDefault()" onclick="' + fn + '" title="' + tip + '">' + t + '</button>'; };
-    const txt = r.lv !== 'tbl' && r.lv !== 'box', al = r.al || anAlDef(r.lv), ind = r.ind || 0;
-    box.innerHTML = '<b>' + (i + 1) + '번째 줄</b>' +
-      '<span class="an-cg">들여쓰기' + b(false, 'anIndent(-1)', '◀', '한 글자 왼쪽으로') + '<span class="an-iv">' + (ind > 0 ? '+' : '') + ind + '</span>' + b(false, 'anIndent(1)', '▶', '한 글자 오른쪽으로') + (ind ? b(false, 'anIndent(0)', '처음대로', '덧붙인 들여쓰기 없애기') : '') + '</span>' +
-      (txt ? '<span class="an-cg">정렬' + ['J', 'L', 'C', 'R'].map(function(a) { return b(al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
-      (r.lv === 'tbl' ? '<span class="an-cg">칸 글 정렬' + [['', '자동', '짧은 칸은 가운데, 긴 칸은 왼쪽'], ['L', '왼쪽', '모든 칸 왼쪽'], ['C', '가운데', '모든 칸 가운데']].map(function(a) { return b((r.cal || '') === a[0], 'anTblAlign(\'' + a[0] + '\')', a[1], a[2]); }).join('') + '</span>' : '') +
-      '<span class="an-cg">순서' + b(false, 'anMove(-1)', '↑', '한 줄 위로') + b(false, 'anMove(1)', '↓', '한 줄 아래로') + '</span>';
+    // 줄을 안 골랐을 때도 같은 모양(단추는 비활성) — 고를 때 도구 높이가 바뀌어 아래 줄이 밀리고 클릭이 빗나가던 것
+    const b = function(on, fn, t, tip, extra) { return '<button' + (on ? ' class="on"' : '') + (extra ? ' ' + extra : '') + (r ? '' : ' disabled') + ' onmousedown="event.preventDefault()" onclick="' + fn + '" title="' + tip + '">' + t + '</button>'; };
+    const txt = !r || (r.lv !== 'tbl' && r.lv !== 'box'), al = r ? (r.al || anAlDef(r.lv)) : 'J', ind = r ? (r.ind || 0) : 0;
+    box.innerHTML = '<div class="an-cl"><b class="an-cn" title="고른 줄의 종류·들여쓰기·정렬·순서를 바꿔요">' + (r ? (i + 1) + '번째 줄' : '줄을 누르면') + '</b><span class="an-cg" title="줄 종류"><span class="an-lvs">' +
+      AN_LV_ORDER.map(function(k) { return b(!!r && r.lv === k, 'anLvSet(' + i + ', \'' + k + '\')', ntEsc(anLvLabel(c, k).replace(AN_LV_NAME[k], AN_LV_SHORT[k])), anLvLabel(c, k) + ' 줄로 바꿔요(Tab·Shift+Tab으로도)', 'data-lv="' + k + '"'); }).join('') + '</span></span></div>' +
+      '<div class="an-cl"><span class="an-cg">들여쓰기' + b(false, 'anIndent(-1)', '◀', '한 글자 왼쪽으로') + '<span class="an-iv" title="덧붙인 들여쓰기(글자 수) — 누르면 처음대로" onclick="anIndent(0)">' + (ind > 0 ? '+' : '') + ind + '</span>' + b(false, 'anIndent(1)', '▶', '한 글자 오른쪽으로') + '</span>' +
+      (txt ? '<span class="an-cg">정렬' + ['J', 'L', 'C', 'R'].map(function(a) { return b(!!r && al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
+      (r && r.lv === 'tbl' ? '<span class="an-cg">칸 글 정렬' + [['', '자동', '짧은 칸은 가운데, 긴 칸은 왼쪽'], ['L', '왼쪽', '모든 칸 왼쪽'], ['C', '가운데', '모든 칸 가운데']].map(function(a) { return b((r.cal || '') === a[0], 'anTblAlign(\'' + a[0] + '\')', a[1], a[2]); }).join('') + '</span>' : '') +
+      '<span class="an-cg">순서' + b(false, 'anMove(-1)', '↑', '한 줄 위로') + b(false, 'anMove(1)', '↓', '한 줄 아래로') + '</span>' +
+      '<span class="an-cg">' + b(false, 'anRowDel(' + i + ')', '✕ 지우기', '이 줄 지우기') + b(false, 'anUnpick()', '고르기 취소', '줄 고르기를 풀어요(Esc) — 고른 줄을 다시 눌러도 돼요') + '</span></div>';
   }
   function anIndent(d) {
     const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r) return;
@@ -20961,6 +21009,7 @@
       rows[i] = { lv: nk, t: e.target.value }; anRowsSave(rows, i);
     }
     else if (e.key === 'Backspace' && !e.target.value) { e.preventDefault(); rows.splice(i, 1); anRowsSave(rows, rows.length ? Math.max(0, i - 1) : null); }
+    else if (e.key === 'Escape') { e.preventDefault(); anUnpick(); }
     else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.altKey) {
       e.preventDefault(); const j = i + (e.key === 'ArrowUp' ? -1 : 1); if (j < 0 || j >= rows.length) return;
       rows[i].t = e.target.value; const tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp; anRowsSave(rows, j);
@@ -23206,6 +23255,7 @@
   const fmTourPeAs = function(demo) { return function() { fmDemoSet(true); fmDemo.pe = demo; if (fmCfg().kind !== 'pe') fmSetKind('pe'); else { fmFillForm(); fmRender(); } }; };
   const fmTourPe = fmTourPeAs(PE_DEMO), fmTourPeMs = fmTourPeAs(PE_DEMO_MS), fmTourPeWord = fmTourPeAs(PE_DEMO_WORD);
   // 안내문: 가정통신문 틀을 예시로(저장 안 함)
+  const fmTourAnMore = function() { fmTourAn(); const d = document.getElementById('an-more'); if (d) d.open = true; };
   const fmTourAn = function() { fmDemoSet(true); fmDemo.an = Object.assign({}, AN_TPLS[1].d, { endFrom: '○○고등학교장' }); if (fmCfg().kind !== 'an') fmSetKind('an'); else { fmFillForm(); fmRender(); } };
   // 시정표: 평상시 단계는 선생님 설정 그대로(바꾸지 않음 — 지금 보던 게 시험 기간이어도 평상시로 보여 줌), 시험 기간 단계는 사용자 양식 예시(BS_EX_DEMO)
   const fmTourBsAs = function(mode) { return function() { fmDemoSet(true); fmDemo.bsMode = mode; if (fmCfg().kind !== 'bs') fmSetKind('bs'); else { fmFillForm(); fmRender(); } }; };
@@ -23258,8 +23308,8 @@
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 안내문을 볼게요.' },
     { selector: '#fm-right', before: fmTourAn, title: '📢 안내문 — 이런 걸 만들어요', desc: '수행평가 안내·가정통신문·행사 안내처럼 공지하는 글을 만들어요. 제목 아래 "1. 큰 항목 → • 점 → - 줄표"로 단계마다 들여 쓰고, 줄이 넘어가면 기호 뒤 글자에 맞춰 내어 써요. 표·상자도 넣을 수 있어요.\n\n한글에서 들여쓰기·내어쓰기·표를 맞추느라 애쓰지 않아도 칸만 채우면 돼요.' },
     { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '먼저 틀(📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정 · 📄 빈 안내문)을 하나 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.' },
-    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '한 칸에 한 줄이에요. 왼쪽에서 줄 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호가 저절로 붙어요.\n\n· 줄을 누르면 파랗게 표시되고, 아래 도구로 그 줄의 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)를 바꿔요. 아래 ＋ 단추도 그 줄 아래에 더해요.\n· 줄 오른쪽 ＋: 바로 아래에 줄 더하기 · ⠿를 끌면 순서 바꾸기\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
-    { selector: '#an-look-box', before: fmTourAn, title: '📢 안내문 · 3~6단계 (필요할 때만)', desc: '③ 끝맺음: 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람.\n④ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격, 단계 들여쓰기(자동 = 윗줄 글에 맞춤 / 1·2·4글자), 내어쓰기 켬·끔.\n⑤ 쪽 설정 · ⑥ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
+    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '종이에 보이는 그대로 한 칸에 한 줄이에요. 줄을 누르면 파랗게 표시되고, 위 도구에서 그 줄의 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호·들여쓰기가 저절로 맞춰져요.\n\n· 위 도구: 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)·지우기. 아래 ＋ 단추도 그 줄 아래에 더해요. 같은 줄을 다시 누르면 고르기가 풀려요.\n· 줄에 마우스를 올리면 오른쪽 ＋(바로 아래에 줄 더하기)·✕(지우기), 왼쪽 ⠿(끌어서 순서 바꾸기)가 나와요\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
+    { selector: '#an-more', before: fmTourAnMore, title: '📢 안내문 · 🎨 더 꾸미기 (필요할 때만)', desc: '내용 상자 맨 아래 ✍️ 끝맺음: 종이 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람(미리보기 맨 아래 흐린 "날짜 · 보내는 사람 넣기"를 눌러도 돼요).\n\n🎨 더 꾸미기를 펼치면 — ③ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격, 단계 들여쓰기(자동 = 윗줄 글에 맞춤 / 1·2·4글자), 내어쓰기 켬·끔.\n④ 쪽 설정 · ⑤ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
     // 🏷️ 이름표(양식의 둘째 탭(시정표 뒤) — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
     { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
     { selector: '#nt-next', before: fmTourNtBoard, title: '👉 "지금 할 일" 상자', desc: '왼쪽 맨 위 상자가 지금 할 일과 각 칸을 어떻게 쓰는지 알려 줘요. 눌러야 할 곳이 반짝이고, 고르기·확인만 하면 되는 단계는 상자의 "다음 →"로 넘어가요.\n\n순서: ① 무엇을(게시판·사물함·분리수거함) → ② 내용 → ③ 크기 → ④ 장수·글자 크기 → ⑤ 글꼴 → ⑥ 디자인·색 → ⑦ 출력(위쪽 오른쪽). 지난 칸엔 ✓, 지금 칸엔 "지금" 표시가 붙어요.' },

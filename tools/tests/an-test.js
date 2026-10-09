@@ -221,6 +221,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const P = hr.page;
   await P.click('#rail-forms-btn'); await P.waitForTimeout(600);
   await P.click('#fm-kind-switch [data-kind="an"]'); await P.waitForTimeout(400);
+  const moreClosedAtStart = await P.evaluate(() => !document.getElementById('an-more').open); // 🎨 더 꾸미기는 처음엔 접혀 있음
   const vis = await P.evaluate(() => ({ an: getComputedStyle(document.getElementById('an-grid')).display !== 'none', pe: document.getElementById('pe-grid').style.display,
     xlsx: document.getElementById('fm-xlsx-btn').style.display, hwpx: document.getElementById('fm-hwpx-btn').style.display, kind: JSON.parse(localStorage.getItem('fm-cfg')).kind,
     tabs: [...document.querySelectorAll('#fm-kind-switch .tab-btn')].filter(b => b.style.display !== 'none').map(b => b.textContent.trim()).join() }));
@@ -299,10 +300,12 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const tr2 = await P.evaluate((i) => anCfg().rows[i].cells, ti);
   check('표 칸에 여러 칸 붙여 넣기 → 그 칸부터 채우고 모자란 줄은 늘림', tr2.length === 5 && tr2[3].join() === '11. 19.,수능,3학년' && tr2[4][2] === '전교생', tr2);
   // 줄 종류 바꾸기: 본문 → 상자
-  await P.selectOption('#an-rows .an-row[data-i="5"] select.an-lv', 'box'); await P.waitForTimeout(200);
-  check('줄 종류를 상자로 → 미리보기에 상자', (await prev()).boxes === 1);
+  // 줄 종류는 줄을 고른 뒤 위 도구(#an-cur)의 종류 단추로(줄에는 종류 상자 없음 — 종이처럼)
+  await P.click('#an-rows .an-row[data-i="5"] input[type="text"]'); await P.click('#an-cur [data-lv="box"]'); await P.waitForTimeout(200);
+  check('줄을 고르고 도구의 "상자" → 미리보기에 상자, 줄에는 종류 상자(select) 없음', (await prev()).boxes === 1 && await P.evaluate(() => !document.querySelector('#an-rows select')));
 
-  // 모양: 큰 항목 Ⅰ., 점 ○, 제목 꾸미기 상자
+  // 모양: 큰 항목 Ⅰ., 점 ○, 제목 꾸미기 상자 — 🎨 더 꾸미기(접힘)를 먼저 펼침
+  await P.click('#an-more summary'); await P.waitForTimeout(150);
   await P.click('#an-n1 [data-v="Ⅰ."]'); await P.click('#an-bul [data-v="○"]'); await P.click('#an-deco [data-v="box"]'); await P.waitForTimeout(250);
   const d2 = await prev();
   check('모양: 큰 항목 Ⅰ., 점 ○', d2.paras.some(p => p.t === 'Ⅰ. 일시: 10월 20일') && d2.paras.some(p => p.t === '○ 준비물'), d2.paras.map(p => p.t));
@@ -430,6 +433,32 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.setViewportSize({ width: 1280, height: 800 }); await P.waitForTimeout(500);
   check('넓은 화면 → 좁은 화면으로 바꿔도 ② 내용 칸이 보임', await P.evaluate(() => document.getElementById('an-rows').offsetHeight > 100));
   await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
+
+  // 한 열·종이 순서: 끝맺음은 ② 내용 상자 안 맨 아래, 모양·쪽·글꼴은 "🎨 더 꾸미기"(접힘) 안
+  const lay2 = await P.evaluate(() => ({ endIn: !!document.querySelector('#an-rows-box > #an-end-box'), endLast: document.getElementById('an-rows-box').lastElementChild.id === 'an-end-box',
+    lookIn: !!document.querySelector('#an-more #an-look-box') && !!document.querySelector('#an-more #an-font-box'),
+    endBelowRows: document.getElementById('an-end-box').getBoundingClientRect().top > document.getElementById('an-rows').getBoundingClientRect().bottom,
+    cols: new Set([...document.querySelectorAll('#an-grid > *')].map(e => Math.round(e.getBoundingClientRect().left))).size }));
+  check('끝맺음은 ② 내용 상자 맨 아래(줄 목록 바로 밑), 모양·쪽·글꼴은 처음에 접힌 "더 꾸미기" 안, 왼쪽은 한 열', lay2.endIn && lay2.endLast && moreClosedAtStart && lay2.lookIn && lay2.endBelowRows && lay2.cols === 1, lay2);
+  // 고른 줄을 다시 누르면(글 칸 바깥) 고르기 취소, Esc도
+  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100);
+  await P.click('#an-rows .an-row[data-i="2"] .an-sym'); await P.waitForTimeout(150);
+  const un1 = await P.evaluate(() => ({ cur: document.querySelectorAll('#an-rows .an-row.cur').length, f: anFocus, tool: document.getElementById('an-cur').textContent }));
+  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100);
+  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100); // 글 칸을 다시 누르는 건 커서 옮기기 — 그대로 고른 채
+  const un2 = await P.evaluate(() => document.querySelectorAll('#an-rows .an-row.cur').length);
+  await P.keyboard.press('Escape'); await P.waitForTimeout(100);
+  const un3 = await P.evaluate(() => document.querySelectorAll('#an-rows .an-row.cur').length);
+  check('고른 줄의 기호를 다시 누르면 고르기 취소(도구는 안내 글), 글 칸을 다시 누르면 그대로, Esc로도 취소', un1.cur === 0 && un1.f === null && /줄을 누르면/.test(un1.tool) && un2 === 1 && un3 === 0, { un1, un2, un3 });
+  // 끝맺음을 안 넣었으면 미리보기 맨 아래 흐린 안내 → 누르면 켜지고 보낸 이 칸으로(인쇄엔 안 나옴)
+  await P.evaluate(() => anSet({ end: false }, true)); await P.waitForTimeout(200);
+  const g0 = await P.evaluate(() => ({ n: document.querySelectorAll('#fm-pages .an-ghost').length, last: !!document.querySelector('#fm-pages .an-sheet:last-child .an-ghost') }));
+  await P.click('#fm-pages .an-ghost'); await P.waitForTimeout(250);
+  const g1 = await P.evaluate(() => ({ end: anCfg().end, n: document.querySelectorAll('#fm-pages .an-ghost').length, focus: document.activeElement && document.activeElement.id, chk: document.getElementById('an-end').checked }));
+  await P.emulateMedia({ media: 'print' });
+  const gPrint = await P.evaluate(() => { anSet({ end: false }, true); return getComputedStyle(document.querySelector('#fm-pages .an-ghost')).display; });
+  await P.emulateMedia({ media: 'screen' }); await P.evaluate(() => anSet({ end: true }, true)); await P.waitForTimeout(150);
+  check('끝맺음 없을 때 마지막 쪽에 흐린 "날짜 · 보내는 사람 넣기" 하나 → 누르면 끝맺음 켜짐·보낸 이 칸에 커서·안내 사라짐, 인쇄에선 안 보임', g0.n === 1 && g0.last && g1.end && g1.n === 0 && g1.focus === 'an-end-from' && g1.chk && gPrint === 'none', { g0, g1, gPrint });
 
   // 초기화 → 처음 예시로, 다른 양식은 그대로
   await P.click('#fm-reset-btn'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
