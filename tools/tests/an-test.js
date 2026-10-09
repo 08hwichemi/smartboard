@@ -460,6 +460,34 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.emulateMedia({ media: 'screen' }); await P.evaluate(() => anSet({ end: true }, true)); await P.waitForTimeout(150);
   check('끝맺음 없을 때 마지막 쪽에 흐린 "날짜 · 보내는 사람 넣기" 하나 → 누르면 끝맺음 켜짐·보낸 이 칸에 커서·안내 사라짐, 인쇄에선 안 보임', g0.n === 1 && g0.last && g1.end && g1.n === 0 && g1.focus === 'an-end-from' && g1.chk && gPrint === 'none', { g0, g1, gPrint });
 
+  // 틀 단추는 ① 제목 상자의 제목 줄 오른쪽에. 올리면 미리보기에만 예시(내 글은 그대로), 떼면 돌아옴
+  await P.evaluate(() => anSet({ title: '내 제목', rows: [{ lv: 'h1', t: '내 글' }] }, true)); await P.waitForTimeout(200);
+  await P.hover('#an-tpls [data-tpl="home"]'); await P.waitForTimeout(250);
+  const pk1 = await P.evaluate(() => ({ inTitle: !!document.querySelector('#an-title-box .nt-title #an-tpls'), prev: document.querySelector('#fm-pages .an-title').textContent, cfg: anCfg().title, form: document.getElementById('an-title').value, label: document.getElementById('fm-prev-label').textContent }));
+  await P.mouse.move(5, 5); await P.waitForTimeout(250);
+  const pk2 = await P.evaluate(() => ({ prev: document.querySelector('#fm-pages .an-title').textContent, label: document.getElementById('fm-prev-label').textContent }));
+  check('틀 단추는 제목 줄 오른쪽. 올리면 미리보기만 예시(현장체험학습 안내)·라벨에 "틀 예시 미리 보기", 내 글·칸은 그대로, 떼면 내 글로', pk1.inTitle && pk1.prev === '현장체험학습 안내' && pk1.cfg === '내 제목' && pk1.form === '내 제목' && /틀 예시 미리 보기/.test(pk1.label) && pk2.prev === '내 제목' && !/틀 예시/.test(pk2.label), { pk1, pk2 });
+  // 상자 줄을 고르면 ＋ 큰·작은 항목·점·줄표·본문·참고는 상자 안 커서 줄 아래에(표·가운데·상자는 밖에). Enter면 같은 기호로 이어지고 기호만 있는 줄에서 Enter면 기호가 지워짐
+  await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'box', t: '첫 줄' }] }, true)); await P.waitForTimeout(200);
+  await P.click('#an-rows .an-row[data-i="1"] textarea'); await P.waitForTimeout(150);
+  const bm = await P.evaluate(() => ({ cls: document.getElementById('an-add').classList.contains('in-box'), lbl: getComputedStyle(document.getElementById('an-add'), '::before').content }));
+  await P.click('#an-add [data-add="b"]'); await P.waitForTimeout(150); await P.keyboard.type('점 하나'); await P.keyboard.press('Enter'); await P.keyboard.type('점 둘');
+  await P.keyboard.press('Enter'); await P.keyboard.press('Enter'); await P.keyboard.type('그냥 글'); await P.waitForTimeout(150);
+  await P.click('#an-add [data-add="h1"]'); await P.keyboard.type('첫 항목'); await P.keyboard.press('Enter'); await P.keyboard.type('둘째 항목'); await P.waitForTimeout(150);
+  await P.click('#an-add [data-add="tbl"]'); await P.waitForTimeout(200);
+  const bx = await P.evaluate(() => ({ t: anCfg().rows[1].t, n: anCfg().rows.length, lv2: anCfg().rows[2] && anCfg().rows[2].lv, act: document.activeElement.tagName }));
+  check('상자 안: "상자 안에" 표시, ＋ 점 → 상자 안에 "• 점 하나", Enter → "• 점 둘", 빈 점 줄 Enter → 기호 지움, ＋ 큰 항목 → "1." 다음 Enter "2.", ＋ 표는 상자 밖 새 줄',
+    bm.cls && /상자 안에/.test(bm.lbl) && bx.t === '첫 줄\n• 점 하나\n• 점 둘\n그냥 글\n1. 첫 항목\n2. 둘째 항목' && bx.n === 3 && bx.lv2 === 'tbl', { bm, bx });
+  await P.evaluate(() => anUnpick());
+  check('상자 줄을 안 고르면 "상자 안에" 표시 없음', await P.evaluate(() => !document.getElementById('an-add').classList.contains('in-box')));
+  // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
+  await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
+  await P.setViewportSize({ width: 1280, height: 720 }); await P.waitForTimeout(400);
+  await P.evaluate(() => { document.getElementById('an-more').open = false; document.getElementById('fm-left').scrollTop = 0; }); await P.waitForTimeout(150);
+  const stk = await P.evaluate(() => { const r = document.getElementById('an-more').getBoundingClientRect(), L = document.getElementById('fm-left').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, lb: L.bottom, vis: r.top >= L.top && r.bottom <= L.bottom + 1, closed: !document.getElementById('an-more').open, scrollH: document.getElementById('fm-left').scrollHeight, clientH: document.getElementById('fm-left').clientHeight }; });
+  check('줄 40개로 왼쪽이 길어져도(스크롤 맨 위) 🎨 더 꾸미기 바가 왼쪽 화면 안 맨 아래에 보임', stk.vis && stk.closed && stk.scrollH > stk.clientH && stk.lb - stk.bottom <= 16, stk); // 바닥 여백(#fm-left padding 14px)만큼 위
+  await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
+
   // 초기화 → 처음 예시로, 다른 양식은 그대로
   await P.click('#fm-reset-btn'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
   check('🗑 초기화 → 수행평가 안내 예시로', await P.evaluate(() => anCfg().title === '2학기 화학Ⅱ 수행평가 안내' && anCfg().n1 === '1.'));

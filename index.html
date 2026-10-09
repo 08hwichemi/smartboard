@@ -1413,12 +1413,15 @@
     .an-chips { display: grid; gap: 4px; min-width: 0; }
     .an-chips .nt-chip, #an-tpls .nt-chip, #an-add .nt-chip { min-width: 0; padding: 3px 4px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
     /* 틀 4개·＋ 단추 9개: 칸 수를 #fm-left 폭에 맞춰 고르게(하나만 다음 줄로 떨어지지 않게) */
-    #an-tpls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+    #an-title-box .nt-title { flex-wrap: wrap; } /* 틀 4개는 제목 줄 오른쪽에(좁으면 통째로 아랫줄로) */
+    #an-tpls { display: grid; grid-template-columns: repeat(4, auto); gap: 4px; margin-left: auto; }
     #an-add { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-    @container (min-width: 360px) { #an-tpls { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    #an-add.in-box::before { content: '상자 안에 ↓'; font-size: 11.5px; color: var(--accent-color); font-weight: 800; align-self: center; white-space: nowrap; } /* 고른 줄이 상자일 때 */
+    #an-add.in-box .nt-chip[data-inbox] { border-style: dashed; border-color: var(--accent-color); color: var(--accent-color); }
     @container (min-width: 440px) { #an-add { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
     @container (min-width: 860px) { #an-add { grid-template-columns: repeat(9, minmax(0, 1fr)); } } /* 9개 한 줄은 글이 안 잘릴 때만 */
-    #an-more { border: 1px dashed var(--border-color); border-radius: 14px; padding: 8px 12px; }
+    #an-more { border: 1px dashed var(--border-color); border-radius: 14px; padding: 8px 12px; background: var(--card-bg); position: sticky; bottom: 0; z-index: 3; box-shadow: 0 -6px 14px -6px rgba(0,0,0,.18); } /* 접혀 있을 땐 왼쪽 화면 맨 아래에 늘 보임(내용이 길어도) */
+    #an-more[open] { position: static; box-shadow: none; }
     #an-more summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--text-sub); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     #an-more summary .nt-muted { font-weight: 600; }
     #an-more[open] summary { margin-bottom: 10px; }
@@ -3842,8 +3845,7 @@
       <!-- 📢 안내문: 종이와 같은 순서로 한 열(① 제목 → ② 내용 → 끝맺음). 모양·쪽·글꼴은 "🎨 더 꾸미기"로 접어 둠(10/9 사용자: 끝맺음이 스크롤 아래 숨어 있는지도 모름) -->
       <div id="an-grid" style="display:none;">
       <div class="nt-box" id="an-title-box">
-        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📢 제목</span> <span class="nt-muted">틀을 고르면 예시 내용이 채워져요</span></div>
-        <div class="nt-row" id="an-tpls"></div>
+        <div class="nt-title"><span class="fm-tt"><b class="fm-step">1</b>📢 제목</span> <span id="an-tpls" title="틀: 마우스를 올리면 미리보기에 예시가 보이고, 누르면 그 예시 제목·내용으로 바뀌어요"></span></div>
         <div class="ws-row"><span class="ws-lb">제목</span><input type="text" id="an-title" class="lp-input" placeholder="2학기 화학Ⅱ 수행평가 안내" oninput="anSet({ title: this.value })"></div>
         <div class="ws-row"><span class="ws-lb">부제목</span><input type="text" id="an-sub" class="lp-input" placeholder="없어도 돼요 — 예) 2학년 화학Ⅱ 수강생 대상" oninput="anSet({ sub: this.value })"></div>
       </div>
@@ -3860,7 +3862,7 @@
             <span class="ws-lb">보낸 이</span><input type="text" id="an-end-from" class="lp-input" placeholder="○○고등학교장 · 2학년 담임 ○○○" oninput="anSet({ endFrom: this.value })"></div>
         </div>
       </div>
-      <details id="an-more">
+      <details id="an-more" ontoggle="anMoreToggle(this)">
         <summary title="제목 꾸미기·번호 모양·기호·줄 간격·쪽 설정·글꼴 — 처음엔 안 건드려도 돼요"><span class="fm-tt">🎨 더 꾸미기</span> <span class="nt-muted">모양 · 쪽 설정 · 글꼴 — 처음엔 안 건드려도 돼요</span></summary>
         <div id="an-more-grid">
       <div class="nt-box" id="an-look-box">
@@ -20781,8 +20783,18 @@
     }
     return '';
   }
+  // 틀 단추에 마우스를 올린 동안: 미리보기에만 그 틀의 예시(내 글·저장은 그대로)
+  let anPeek = null;
+  function anPeekTpl(k) {
+    const t = k ? AN_TPLS.find(function(x) { return x.k === k; }) : null;
+    anPeek = t ? JSON.parse(JSON.stringify(t.d)) : null;
+    if (fmIsOpen() && fmCfg().kind === 'an') anRender();
+  }
+  function anMoreToggle(d) { if (d.open) requestAnimationFrame(function() { d.scrollIntoView({ block: 'start', behavior: 'smooth' }); }); }
   function anRender() {
-    const c = anCfg(), L = anLayout(c);
+    let c = anCfg();
+    if (anPeek) { c = Object.assign({}, c, anPeek); c.rows = c.rows.map(anCleanRow); c.end = c.end === true; c.endAlign = c.endAlign === 'R' ? 'R' : 'C'; }
+    const L = anLayout(c);
     const box = document.getElementById('fm-pages'), label = document.getElementById('fm-prev-label');
     // 끝맺음을 안 넣었으면 마지막 쪽 맨 아래에 흐린 안내(화면에만 — 인쇄·한글 파일엔 없음). 누르면 끝맺음이 켜지고 보낸 이 칸으로
     const ghost = !c.end ? '<button type="button" class="an-ghost" style="margin-top:' + (2 * L.lh) + 'mm;" onclick="anEndOn()" title="누르면 맨 아래에 날짜와 보내는 사람이 들어가요">✍️ 날짜 · 보내는 사람 넣기</button>' : '';
@@ -20790,7 +20802,7 @@
       return '<div class="fm-sheet an-sheet" data-page="' + (pi + 1) + '" style="width:' + L.w + 'mm; height:' + L.h + 'mm; padding:' + c.mT + 'mm ' + c.mR + 'mm ' + c.mB + 'mm ' + c.mL + 'mm;">' +
         pg.map(function(b) { return anBlockHtml(c, L, b); }).join('') + (pi === L.pages.length - 1 ? ghost : '') + '</div>';
     }).join('');
-    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽(어림) 미리보기';
+    label.textContent = c.paper + ' ' + (c.land ? '가로' : '세로') + ' · ' + L.pages.length + '쪽(어림) 미리보기' + (anPeek ? ' — 틀 예시 미리 보기(누르면 이 예시로 바뀌어요)' : '');
     document.getElementById('fm-fit-info').textContent = '';
     fmFitPreview();
   }
@@ -20810,10 +20822,12 @@
     const c = anCfg();
     const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
     const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
-    document.getElementById('an-tpls').innerHTML = AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')"', t.n, '이 틀의 예시 제목·내용으로 바꿔요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
+    document.getElementById('an-tpls').innerHTML = AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')" onmouseenter="anPeekTpl(\'' + t.k + '\')" onmouseleave="anPeekTpl(null)"', t.n, '마우스를 올리면 미리보기에 이 틀의 예시가 보여요. 누르면 지금 제목·내용이 이 예시로 바뀌어요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
     setVal('an-title', c.title); setVal('an-sub', c.sub);
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#an-rows')) anRowsFill(c);
-    document.getElementById('an-add').innerHTML = AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '" onmousedown="event.preventDefault()" onclick="anAdd(\'' + k + '\')"', '＋ ' + ntEsc(anLvLabel(c, k)), '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래)'); }).join('');
+    // 고른 줄이 상자면 큰·작은 항목·점·줄표·본문·참고는 상자 안 커서 줄 아래에 넣는다(anAddOrBox) — 점·※ 같은 기호는 키보드로 치기 어려워서
+    document.getElementById('an-add').innerHTML = AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '"' + (AN_BOX_INNER.indexOf(k) >= 0 ? ' data-inbox="1"' : '') + ' onmousedown="event.preventDefault()" onclick="anAddOrBox(\'' + k + '\')"', '＋ ' + ntEsc(anLvLabel(c, k)), AN_BOX_INNER.indexOf(k) >= 0 ? '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래). 고른 줄이 상자면 상자 안 커서 줄 아래에' : '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래)'); }).join('');
+    anAddMode();
     // 끝맺음
     document.getElementById('an-end').checked = c.end;
     document.getElementById('an-end-align').innerHTML = [['C', '가운데'], ['R', '오른쪽']].map(function(o) { return chip(c.endAlign === o[0], 'data-ea="' + o[0] + '" onclick="anSet({ endAlign: \'' + o[0] + '\' }, true)"', o[1]); }).join('');
@@ -20868,7 +20882,7 @@
     document.getElementById('an-rows').innerHTML = c.rows.length ? c.rows.map(function(r, i) {
       let body;
       if (r.lv === 'tbl') body = anTblEditor(r, i);
-      else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩(앞에 • - ※ 를 붙이면 그 모양으로)" oninput="anRowInput(' + i + ', this.value)">' + ntEsc(r.t) + '</textarea>';
+      else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩. 아래 ＋ 단추로 점·번호를 넣고, Enter면 다음 줄도 같은 기호로" oninput="anRowInput(' + i + ', this.value); anFitBox(this)" onkeydown="anBoxKey(event, ' + i + ')">' + ntEsc(r.t) + '</textarea>';
       else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')">';
       const pad = Math.max(0, Math.min(3, M[i].dep) * 14 + Math.max(-4, Math.min(8, r.ind || 0)) * 5);
       // 종류 고르기는 위 도구(#an-cur)에서 — 줄에는 기호와 글만(종이처럼). 같은 줄을 다시 누르면(글 칸 바깥) 고르기 취소
@@ -20901,6 +20915,7 @@
     c = c || anCfg();
     const box = document.getElementById('an-cur'), i = anFocus, r = i != null ? c.rows[i] : null;
     if (!box) return;
+    anAddMode();
     // 줄을 안 골랐을 때도 같은 모양(단추는 비활성) — 고를 때 도구 높이가 바뀌어 아래 줄이 밀리고 클릭이 빗나가던 것
     const b = function(on, fn, t, tip, extra) { return '<button' + (on ? ' class="on"' : '') + (extra ? ' ' + extra : '') + (r ? '' : ' disabled') + ' onmousedown="event.preventDefault()" onclick="' + fn + '" title="' + tip + '">' + t + '</button>'; };
     const txt = !r || (r.lv !== 'tbl' && r.lv !== 'box'), al = r ? (r.al || anAlDef(r.lv)) : 'J', ind = r ? (r.ind || 0) : 0;
@@ -20981,6 +20996,61 @@
       if (el) { el.focus(); if (el.setSelectionRange) { const n = el.value.length; el.setSelectionRange(n, n); } }
     }
   }
+  const AN_BOX_INNER = ['h1', 'h2', 'b', 'd', 'p', 'n']; // 상자 안에 넣을 수 있는 줄 종류(가운데 글·표·상자는 상자 밖에)
+  function anAddMode() { // ＋ 단추 묶음: 고른 줄이 상자면 "상자 안에" 표시
+    const el = document.getElementById('an-add'), r = anFocus != null ? anCfg().rows[anFocus] : null;
+    if (el) el.classList.toggle('in-box', !!r && r.lv === 'box');
+  }
+  function anAddOrBox(lv) {
+    const r = anFocus != null ? anCfg().rows[anFocus] : null;
+    if (r && r.lv === 'box' && AN_BOX_INNER.indexOf(lv) >= 0) anBoxInsert(anFocus, lv); else anAdd(lv);
+  }
+  // 상자 안 줄 기호: 번호는 상자 안에서 이어서(1. 2. / 가. 나.), 점·줄표는 모양에서 고른 기호
+  function anBoxPrefix(c, lv, text) {
+    const count = function(re) { return text.split('\n').filter(function(l) { return re.test(l.trim()); }).length; };
+    if (lv === 'h1') return anNumFmt(c.n1, count(/^(\d{1,2}|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ])\s*[.)]|^[①-⑳]/) + 1) + ' ';
+    if (lv === 'h2') return anNumFmt(c.n2, count(/^[가-하]\s*\.|^\(\d{1,2}\)|^\d{1,2}\)|^[①-⑳]/) + 1) + ' ';
+    if (lv === 'b') return c.bul + ' ';
+    if (lv === 'd') return c.dash + ' ';
+    if (lv === 'n') return '※ ';
+    return '';
+  }
+  function anBoxInsert(i, lv) {
+    const ta = document.querySelector('#an-rows .an-row[data-i="' + i + '"] textarea'); if (!ta) return;
+    const c = anCfg(), v = ta.value, pos = ta.selectionEnd != null ? ta.selectionEnd : v.length;
+    const ls = v.lastIndexOf('\n', pos - 1) + 1, le0 = v.indexOf('\n', pos), le = le0 < 0 ? v.length : le0;
+    const line = v.slice(ls, le), prefix = anBoxPrefix(c, lv, v);
+    let nv, at;
+    if (!line.trim()) { nv = v.slice(0, ls) + prefix + v.slice(le); at = ls + prefix.length; } // 빈 줄이면 그 줄에
+    else { nv = v.slice(0, le) + '\n' + prefix + v.slice(le); at = le + 1 + prefix.length; } // 아니면 그 줄 아래 새 줄로
+    ta.value = nv; anRowInput(i, nv); anFitBox(ta);
+    ta.focus(); ta.setSelectionRange(at, at);
+  }
+  // 다음 기호: 번호(1. 가. ① Ⅰ.)는 하나 올리고, 점·줄표·※는 그대로
+  function anBoxNextPrefix(m) {
+    const t = m.trim(); let x;
+    if ((x = t.match(/^(\d{1,2})([.)])$/))) return (Number(x[1]) + 1) + x[2] + ' ';
+    if ((x = t.match(/^\((\d{1,2})\)$/))) return '(' + (Number(x[1]) + 1) + ') ';
+    if ((x = t.match(/^([가-하])\.$/))) { const i = '가나다라마바사아자차카타파하'.indexOf(x[1]); return i >= 0 && i < 13 ? '가나다라마바사아자차카타파하'.charAt(i + 1) + '. ' : null; }
+    if ((x = t.match(/^([①-⑳])$/))) { const i = x[1].charCodeAt(0) - 0x245F; return i < 20 ? String.fromCharCode(0x2460 + i) + ' ' : null; }
+    if ((x = t.match(/^([ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ])\.$/))) { const i = x[1].charCodeAt(0) - 0x215F; return i < 10 ? String.fromCharCode(0x2160 + i) + '. ' : null; }
+    return t + ' ';
+  }
+  // 상자 안 Enter: 줄이 기호로 시작하면 다음 줄도 같은 기호로(번호는 이어서), 기호만 있는 줄에서 Enter면 기호를 지움(목록 끝)
+  function anBoxKey(e, i) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey) return;
+    const ta = e.target, v = ta.value, pos = ta.selectionEnd, ls = v.lastIndexOf('\n', pos - 1) + 1, le0 = v.indexOf('\n', pos), le = le0 < 0 ? v.length : le0;
+    const line = v.slice(ls, le), m = line.match(AN_PREFIX_RE) || line.match(/^(\d{1,2}\s*[.)]|[가-하]\s*\.|\(\d{1,2}\)|[①-⑳]|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]\s*\.|[•○●▪◦◆■□·∙\-–—▸※])\s*$/);
+    if (!m) return;
+    e.preventDefault();
+    let nv, at;
+    if (!line.slice(m[0].length).trim()) { nv = v.slice(0, ls) + v.slice(le); at = ls; } // 기호만 있는 줄 → 기호 지움
+    else { const nx = anBoxNextPrefix(m[1]) || ''; nv = v.slice(0, pos) + '\n' + nx + v.slice(pos); at = pos + 1 + nx.length; }
+    ta.value = nv; anRowInput(i, nv); anFitBox(ta);
+    ta.setSelectionRange(at, at);
+  }
+  function anFitBox(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(44, ta.scrollHeight + 2) + 'px'; }
   function anNewRow(lv) { return lv === 'tbl' ? { lv: 'tbl', head: true, cells: [['', ''], ['', '']] } : { lv: lv, t: '' }; }
   function anAdd(lv, at) {
     const rows = anCfg().rows, i = at != null ? at : anFocus != null && anFocus < rows.length ? anFocus + 1 : rows.length;
@@ -23307,8 +23377,8 @@
     { selector: '#pe-word-box', before: fmTourPeWord, title: '📝 수행평가 · 🔤 단어 시험', desc: '엑셀에서 단어·뜻 두 칸을 복사해 단어 칸에 붙여 넣거나 📂 엑셀·CSV 파일을 올리면 바로 시험지가 돼요(번호·품사 칸, 맨 위 머리 줄은 알아서 골라요). 문제 방향(영어 → 뜻 / 뜻 → 영어 / 반반 섞기), 1단·2단, 칸 높이, 몇 개만 무작위로 뽑기, 순서(↺ 적은 대로 · 🔀 무작위 → 🎲 랜덤 / 🔤 알파벳순)를 고르고, 점수 칸·정답지(시험지 뒤에 빨간 답)·A형·B형(순서만 다른 두 판)을 체크로 넣어요. 영어 단어는 첫 글자 힌트(a _ _ _ _)·품사·✏️ 따라 쓰기 연습지도 돼요. 한자·용어는 📋 일반(문제 | 답)을 골라 칸 이름을 바꿔 써요.' },
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 안내문을 볼게요.' },
     { selector: '#fm-right', before: fmTourAn, title: '📢 안내문 — 이런 걸 만들어요', desc: '수행평가 안내·가정통신문·행사 안내처럼 공지하는 글을 만들어요. 제목 아래 "1. 큰 항목 → • 점 → - 줄표"로 단계마다 들여 쓰고, 줄이 넘어가면 기호 뒤 글자에 맞춰 내어 써요. 표·상자도 넣을 수 있어요.\n\n한글에서 들여쓰기·내어쓰기·표를 맞추느라 애쓰지 않아도 칸만 채우면 돼요.' },
-    { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '먼저 틀(📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정 · 📄 빈 안내문)을 하나 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.' },
-    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '종이에 보이는 그대로 한 칸에 한 줄이에요. 줄을 누르면 파랗게 표시되고, 위 도구에서 그 줄의 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호·들여쓰기가 저절로 맞춰져요.\n\n· 위 도구: 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)·지우기. 아래 ＋ 단추도 그 줄 아래에 더해요. 같은 줄을 다시 누르면 고르기가 풀려요.\n· 줄에 마우스를 올리면 오른쪽 ＋(바로 아래에 줄 더하기)·✕(지우기), 왼쪽 ⠿(끌어서 순서 바꾸기)가 나와요\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
+    { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '제목 줄 오른쪽의 틀(📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정 · 📄 빈 안내문)에 마우스를 올리면 미리보기에 그 예시가 보이고, 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.' },
+    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '종이에 보이는 그대로 한 칸에 한 줄이에요. 줄을 누르면 파랗게 표시되고, 위 도구에서 그 줄의 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호·들여쓰기가 저절로 맞춰져요.\n\n· 위 도구: 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)·지우기. 아래 ＋ 단추도 그 줄 아래에 더해요. 같은 줄을 다시 누르면 고르기가 풀려요.\n· 줄에 마우스를 올리면 오른쪽 ＋(바로 아래에 줄 더하기)·✕(지우기), 왼쪽 ⠿(끌어서 순서 바꾸기)가 나와요\n· 상자 줄을 고르면 아래 ＋ 단추가 "상자 안에"로 바뀌어 점·번호를 상자 안 커서 줄 아래에 넣어요. 상자 안에서 Enter면 다음 줄도 같은 기호로 이어져요\n· 🎨 더 꾸미기 바는 왼쪽 맨 아래에 늘 보여요\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
     { selector: '#an-more', before: fmTourAnMore, title: '📢 안내문 · 🎨 더 꾸미기 (필요할 때만)', desc: '내용 상자 맨 아래 ✍️ 끝맺음: 종이 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람(미리보기 맨 아래 흐린 "날짜 · 보내는 사람 넣기"를 눌러도 돼요).\n\n🎨 더 꾸미기를 펼치면 — ③ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격, 단계 들여쓰기(자동 = 윗줄 글에 맞춤 / 1·2·4글자), 내어쓰기 켬·끔.\n④ 쪽 설정 · ⑤ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
     // 🏷️ 이름표(양식의 둘째 탭(시정표 뒤) — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
     { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
