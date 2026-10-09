@@ -539,6 +539,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'p', t: '짧은 글' }, { lv: 'p', t: '아주 긴 글 '.repeat(40) }] }, true); }); await P.waitForTimeout(200);
   const txh = await P.evaluate(() => [...document.querySelectorAll('#an-rows textarea.an-tx')].map(t => ({ h: t.offsetHeight, sh: t.scrollHeight, cut: t.scrollHeight > t.offsetHeight + 1 })));
   check('긴 글 줄은 칸이 높아져 잘리지 않음(짧은 글은 한 줄 높이)', txh.length === 2 && txh[0].h < 36 && txh[1].h > txh[0].h * 2 && !txh[1].cut, txh);
+  await P.setViewportSize({ width: 1200, height: 800 }); await P.waitForTimeout(400);
+  const txh2 = await P.evaluate(() => [...document.querySelectorAll('#an-rows textarea.an-tx')].map(t => ({ h: t.offsetHeight, cut: t.scrollHeight > t.offsetHeight + 1 })));
+  await P.setViewportSize({ width: 1600, height: 1000 }); await P.waitForTimeout(300);
+  check('창을 좁혀 줄 수가 늘어도 칸 높이가 따라감', txh2[1].h > txh[1].h && !txh2[1].cut, { txh, txh2 });
 
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);

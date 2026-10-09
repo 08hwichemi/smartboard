@@ -20990,6 +20990,7 @@
   // 글 줄 칸: 글 길이에 맞춰 높이(한 줄이면 한 줄 높이)
   function anFitTx(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
   function anFitTxs() { document.querySelectorAll('#an-rows textarea.an-tx').forEach(anFitTx); }
+  window.addEventListener('resize', function() { if (document.querySelector('#an-rows textarea.an-tx')) anFitTxs(); }); // 창 크기가 바뀌면 줄 수가 달라지므로 높이 다시
   function anUnpick() {
     anFocus = null;
     document.querySelectorAll('#an-rows .an-row.cur').forEach(function(el) { el.classList.remove('cur'); });
