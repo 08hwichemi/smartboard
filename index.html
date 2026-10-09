@@ -20546,7 +20546,7 @@
   const AN_TAB_ORDER = ['h1', 'h2', 'b', 'd']; // Tab = 한 단계 안으로, Shift+Tab = 밖으로
   const AN_N1 = ['1.', 'Ⅰ.', '①', '1)'], AN_N2 = ['가.', '1)', '(1)', '①'], AN_BUL = ['•', '○', '▪', '◦', '·', '◆', '☑'], AN_DASH = ['-', '–', '·', '▸'];
   const AN_DECO = [['none', '없음'], ['line', '밑줄'], ['double', '이중선'], ['box', '상자'], ['band', '회색 띠']];
-  const AN_LINES = [130, 160, 180], AN_GAPS = [[0, '붙여서'], [4, '조금'], [8, '넓게']]; // 큰 항목 위 띄움(pt)
+  const AN_LINES = [130, 160, 180], AN_GAPS = [[0, '붙여서'], [4, '조금'], [8, '넓게'], ['line', '한 줄']]; // 큰 항목 위 띄움(pt) — '한 줄'은 빈 줄 하나를 넣음(한글에서 Enter 친 것과 같음)
   const AN_STEPS = [['auto', '윗줄에 맞춤'], [1, '1글자'], [2, '2글자'], [4, '4글자']]; // 단계마다 들여쓰기: 윗줄 글 시작에 맞춤(기본) / 글자 수로 고정
   const AN_ALIGN = { J: ['JUSTIFY', 'justify', '양쪽'], L: ['LEFT', 'left', '왼쪽'], C: ['CENTER', 'center', '가운데'], R: ['RIGHT', 'right', '오른쪽'] };
   const AN_TBL_PAD = 1.2, AN_CELL_PAD = 1.8, AN_BOX_PAD = 2.5, AN_BOX_SIDE = 3.5, AN_AFTER = 2; // 표 칸 위아래·좌우 안쪽, 상자 안쪽 위아래·좌우, 표·상자 아래 띄움(mm)
@@ -20560,7 +20560,7 @@
       { lv: 'b', t: '결시자는 학업성적관리규정에 따라 처리합니다.' }, { lv: 'p', t: '' }, { lv: 'n', t: '문의: 과학과 ○○○ 선생님' }] } },
     // 🏫 가정통신문 = 우리 학교(부광고) 양식: 머리 그림(forms/가정통신문-머리.jpg) + 그 위 부서·발행일 글상자, 경기천년 글꼴, 원본 쪽 여백, 맨 아래 발행일 날짜 + "부 광 고 등 학 교 장" 고정(school: true)
     { k: 'home', n: '🏫 가정통신문', d: { title: '2026학년도 3학년 ‘수업량 유연화’ 강좌신청 안내', sub: '', school: true, dept: '교육과정부', issue: '', end: true, endAlign: 'C', endFrom: '부 광 고 등 학 교 장',
-      deco: 'none', tAlign: 'C', bul: '☑', tFont: '경기천년제목 Medium', tFontC: false, tSize: 18, tBold: false, bFont: '경기천년바탕 Regular', bFontC: false, bSize: 11, line: 160, paper: 'A4', land: false, mT: 15, mB: 14, mL: 16, mR: 18, rows: [
+      deco: 'none', tAlign: 'C', bul: '☑', tFont: '경기천년제목 Medium', tFontC: false, tSize: 18, tBold: false, bFont: '경기천년바탕 Regular', bFontC: false, bSize: 11, line: 160, gap: 'line', paper: 'A4', land: false, mT: 15, mB: 14, mL: 16, mR: 18, rows: [
       { lv: 'p', t: '안녕하십니까?' },
       { lv: 'p', t: '본교에서는 7월 13~14일 학교 자율적 교육과정의 날을 맞아 학교생활기록부와 연계하여 학생들의 진로에 맞는 다양한 교육경험을 제공하고자 융합, 심화, 진로 수업을 운영합니다. 이에 따라 아래와 같이 선착순으로 강좌신청을 받습니다.' },
       { lv: 'h1', t: '내용: 2026학년도 3학년 1학기 수업량 유연화 강좌 신청' },
@@ -20621,7 +20621,7 @@
     if (AN_N1.indexOf(c.n1) < 0) c.n1 = '1.'; if (AN_N2.indexOf(c.n2) < 0) c.n2 = '가.';
     if (AN_BUL.indexOf(c.bul) < 0) c.bul = '•'; if (AN_DASH.indexOf(c.dash) < 0) c.dash = '-';
     c.line = AN_LINES.indexOf(Number(c.line)) >= 0 ? Number(c.line) : 160;
-    c.gap = AN_GAPS.some(function(g) { return g[0] === Number(c.gap); }) ? Number(c.gap) : 4;
+    c.gap = c.gap === 'line' ? 'line' : AN_GAPS.some(function(g) { return g[0] === Number(c.gap); }) ? Number(c.gap) : 4;
     c.step = [1, 2, 4].indexOf(Number(c.step)) >= 0 ? Number(c.step) : 'auto'; c.hang = c.hang !== false;
     if (!FM_PAPERS[c.paper]) c.paper = 'A4';
     c.land = !!c.land;
@@ -20711,7 +20711,7 @@
   // ----- 쪽 배치(mm) — 미리보기·한글 파일이 같이 쓴다 -----
   function anLayout(c) {
     const p = FM_PAPERS[c.paper], w = c.land ? p[1] : p[0], h = c.land ? p[0] : p[1], W = w - c.mL - c.mR;
-    const bs = c.bSize * FM_PT, lh = bs * c.line / 100, gapMm = c.gap * FM_PT;
+    const bs = c.bSize * FM_PT, lh = bs * c.line / 100, gapMm = c.gap === 'line' ? lh : c.gap * FM_PT;
     const cs = Math.max(9, c.bSize - 1), cLh = cs * FM_PT * 1.3;
     const linesOf = function(t, ww, size) { return Math.max(1, Math.ceil(anEm(t) * size * FM_PT / Math.max(10, ww) - 0.02)); };
     const blocks = [];
@@ -20765,7 +20765,7 @@
       const before = r.lv === 'h1' && !firstH1 ? gapMm : 0;
       if (r.lv === 'h1') firstH1 = false;
       const n = linesOf(t || ' ', W - left - hang, c.bSize);
-      blocks.push({ k: 'p', lv: r.lv, al: al, t: t, left: left, hang: hang, before: before, n: n, h: n * lh + before });
+      blocks.push({ k: 'p', lv: r.lv, al: al, t: t, left: left, hang: hang, before: before, blank: c.gap === 'line' && before > 0, n: n, h: n * lh + before }); // blank: 위에 빈 줄 하나(간격 대신)
     });
     if (c.end || c.school) { // 학교 머리면 맨 아래는 발행일 날짜(12pt 굵게) + "부 광 고 등 학 교 장"(제목 글꼴 22pt) 고정
       const fs = c.school ? AN_SCHOOL.fromSize : c.bSize + 4, from = c.school ? AN_SCHOOL.from : c.endFrom;
@@ -20943,7 +20943,7 @@
     row('an-bul', '점 기호', AN_BUL, 'bul', c.bul);
     row('an-dash', '줄표 기호', AN_DASH, 'dash', c.dash);
     row('an-line', '줄 간격', AN_LINES.map(function(v) { return [v, v + '%']; }), 'line', c.line);
-    row('an-gap', '큰 항목 위', AN_GAPS, 'gap', c.gap);
+    row('an-gap', '큰 항목 위', AN_GAPS, 'gap', c.gap, function(v) { return v === 'line' ? '큰 항목 앞에 빈 줄 하나(한글에서 Enter 친 것과 같음)' : v ? '큰 항목 앞을 ' + v + 'pt 띄워요' : '띄우지 않아요'; });
     row('an-step', '들여쓰기', AN_STEPS.map(function(x) { return [x[0], x[0] === 'auto' ? '자동' : x[1]]; }), 'step', c.step, function(v) { return v === 'auto' ? '윗줄 글 시작 위치에 맞춰 들여 써요' : '단계마다 ' + v + '글자씩 들여 써요'; });
     row('an-hang', '내어쓰기', [[true, '켬'], [false, '끔']], 'hang', c.hang, function(v) { return v ? '줄이 넘어가면 기호 뒤 글자에 맞춰 들어가요' : '줄이 넘어가면 기호 자리부터 써요'; });
     // 쪽
@@ -21316,14 +21316,14 @@
     const tAl = c.tAlign === 'L' ? 'LEFT' : 'CENTER';
     const stDefs = [
       ['안내문 제목', PPi({ align: tAl, line: 130 }), CPN.title], ['안내문 부제목', PPi({ align: tAl, line: 150, after: pt(5) }), CPN.sub],
-      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, c.gap), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', lv1, h2Hang), CPN.body],
+      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, c.gap === 'line' ? 0 : c.gap), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', lv1, h2Hang), CPN.body],
       ['안내문 • 점', ppOf('JUSTIFY', lv1, bulHang), CPN.body], ['안내문 - 줄표', ppOf('JUSTIFY', lv2, dashHang), CPN.body],
       ['안내문 본문', ppOf('JUSTIFY', lv1, 0), CPN.body], ['안내문 가운데 글', PPi({ align: 'CENTER', line: c.line }), CPN.body], ['안내문 ※ 참고', ppOf('JUSTIFY', 0, noteHang), CPN.body],
     ];
     const ST_OF = { h1: 2, h2: 3, b: 4, d: 5, p: 6, c: 7, n: 8 };
     // 문단마다 쓸 문단 모양을 먼저 모은다
     const plan = blocks.map(function(b) {
-      if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, pt(b.before)) };
+      if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, b.blank ? 0 : pt(b.before)), blankPp: b.blank ? PPi({ align: 'JUSTIFY', line: c.line }) : null };
       if (b.k === 'tbl') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), cellL: PPi({ align: 'LEFT', line: 130 }), cellC: PPi({ align: 'CENTER', line: 130 }) };
       if (b.k === 'box') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), lines: b.lines.map(function(x) { return ppOf('JUSTIFY', x.left, x.hang); }) };
       if (b.k === 'end') { const al = !c.school && c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line, after: pt(L.lh) }), from: PPi({ align: al, line: c.school ? 120 : 160 }) }; }
@@ -21367,7 +21367,7 @@
       const pl = plan[bi];
       if (b.k === 'title') {
         text.push(c.title);
-        if (c.deco === 'none') { body += P(pl.pp, R(CP('title'), T(c.title)), 0); return; }
+        if (c.deco === 'none') { body += P(PP(pl.pp), R(CP('title'), T(c.title)), 0); return; } // PP() 매핑이 빠져 한글에서 제목이 양쪽 정렬로 나오던 버그(10/9)
         const TW = hu(L.W), TH = hu(b.n * b.lh + 2 * b.padV);
         const cell = tc({ c: 0, r: 0, w: TW, h: TH, bf: BF(4), ml: b.padH, mt: b.padV, p: P(PP(pl.cell), R(CP('title'), T(c.title)), 0) });
         // 표를 감싼 문단(글자처럼 취급) — 첫 문단이라 쪽 설정도 여기에
@@ -21376,7 +21376,7 @@
         return;
       }
       if (b.k === 'sub') { body += P(PP(pl.pp), R(CP('sub'), T(c.sub)), 1); text.push(c.sub); return; }
-      if (b.k === 'p') { body += P(PP(pl.pp), R(CP(b.lv === 'h1' ? 'h1' : 'body'), T(b.t)), ST_OF[b.lv]); if (b.t) text.push(b.t); return; }
+      if (b.k === 'p') { if (b.blank) body += P(PP(pl.blankPp), R(CP('body'), T(''))); body += P(PP(pl.pp), R(CP(b.lv === 'h1' ? 'h1' : 'body'), T(b.t)), ST_OF[b.lv]); if (b.t) text.push(b.t); return; }
       if (b.k === 'tbl') {
         const CW = b.cols.map(hu), TW = hu(b.W);
         CW[CW.length - 1] += TW - CW.reduce(function(a, x) { return a + x; }, 0);

@@ -567,6 +567,14 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
         secFirst: sec.indexOf('<hp:secPr') < sec.indexOf('<hp:pic'), spacer: (() => { const m = sec.match(/<\/hp:rect><hp:tbl [^>]*rowCnt="1" colCnt="1"[^>]*><hp:sz width="\d+" widthRelTo="ABSOLUTE" height="(\d+)"/); return m ? Math.round(+m[1] / 283.46) : 0; })(), fonts: /경기천년제목 Medium/.test(h) && /경기천년바탕 Regular/.test(h), from: /부 광 고 등 학 교 장/.test(sec), date: /2026년  6월  24일/.test(sec), margin: /<hp:margin header="0" footer="0" gutter="0" left="4535" right="5102" top="4252" bottom="3969"\/>|left="4535"/.test(sec) }; });
     check('한글 파일: BinData/image1.jpg(231KB) + 목록, 글 뒤 그림 문단(쪽 설정 다음), 글상자 2개(부서 4893·발행일 46473 위치), 자리 비우는 표 38.5mm, 경기천년 글꼴, 발행일 날짜·학교장, 왼쪽 여백 16mm', sx.img > 200000 && sx.manifest && sx.pic && sx.rects === 2 && sx.deptRect && sx.issueRect && sx.secFirst && Math.abs(sx.spacer - 38.5) <= 1 && sx.fonts && sx.from && sx.date && sx.margin, sx);
   }
+  if (JSZIP_JS) { // 제목 꾸밈 없음 → 한글 제목 문단은 가운데(예전엔 문단 모양 번호가 틀려 양쪽 정렬) · 큰 항목 위 "한 줄" → 둘째 큰 항목 앞에 빈 문단
+    const tx = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const sec = await z.file('Contents/section0.xml').async('string'); const h = await z.file('Contents/header.xml').async('string');
+      const i = sec.indexOf('강좌신청 안내'), j = sec.lastIndexOf('<hp:p ', i), pp = sec.slice(j, i).match(/paraPrIDRef="(\d+)"/)[1];
+      const al = (h.match(new RegExp('<hh:paraPr id="' + pp + '"[^>]*>[\\s\\S]*?<hh:align horizontal="(\\w+)"')) || [])[1];
+      const k = sec.indexOf('<hp:t>2. 신청방법'), prevP = sec.slice(0, k).split('<hp:p ').slice(-2)[0]; // 바로 앞 문단
+      return { al, gap: anCfg().gap, blankBefore: /<hp:t\/>/.test(prevP) && !/<hp:t>[^<]/.test(prevP), prevMm: (() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent.startsWith('2. 신청방법')); return d ? parseFloat(d.style.marginTop) : -1; })() }; });
+    check('한글 파일: 제목(꾸밈 없음) 가운데 정렬, 큰 항목 위 "한 줄" = 2. 앞에 빈 문단(미리보기도 한 줄 높이 띄움)', tx.al === 'CENTER' && tx.gap === 'line' && tx.blankBefore && tx.prevMm > 5, tx);
+  }
   await P.click('#an-school'); await P.waitForTimeout(250);
   const sc2 = await P.evaluate(() => ({ school: anCfg().school, img: !!document.querySelector('#fm-pages .an-head'), boxes: document.querySelectorAll('#fm-pages .an-hbox').length, endRow: document.querySelector('#an-end-box .an-end-row').style.display, deptOn: !document.getElementById('an-dept').disabled }));
   check('학교 머리를 끄면 그림·상자 없고 끝맺음 칸이 다시 보임, 부서 칸 비활성', !sc2.school && !sc2.img && sc2.boxes === 0 && sc2.endRow === '' && !sc2.deptOn, sc2);
