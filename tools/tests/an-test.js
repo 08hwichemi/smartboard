@@ -245,7 +245,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 줄 편집: 맨 끝 줄에서 Enter → 같은 종류(참고), Tab → 점, 글 → 미리보기
   const rowsN = () => P.evaluate(() => anCfg().rows.length);
   const n0 = await rowsN();
-  const last = P.locator('#an-rows .an-row').last().locator('input[type="text"]');
+  const last = P.locator('#an-rows .an-row').last().locator('textarea.an-tx');
   await last.click(); await last.press('End'); await last.press('Enter'); await P.waitForTimeout(200);
   check('Enter → 아래에 같은 종류 줄(참고)', await rowsN() === n0 + 1 && await P.evaluate(() => anCfg().rows[anCfg().rows.length - 1].lv) === 'n');
   await P.keyboard.press('Tab'); await P.waitForTimeout(150);
@@ -268,7 +268,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
   check('빈 안내문 틀 → 제목 비고 줄 3개(1. • •)', await P.evaluate(() => { const c = anCfg(); return c.title === '' && c.rows.map(r => r.lv).join() === 'h1,b,b'; }));
   await P.evaluate(() => {
-    const inp = document.querySelector('#an-rows .an-row[data-i="0"] input[type="text"]'); inp.focus();
+    const inp = document.querySelector('#an-rows .an-row[data-i="0"] textarea.an-tx'); inp.focus();
     const dt = new DataTransfer(); dt.setData('text/plain', '1. 일시: 10월 20일\n가. 오전\n• 준비물\n- 필기구\n※ 문의: 교무실\n그냥 글');
     inp.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
   });
@@ -279,7 +279,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('작은 항목 가. 아래 점은 두 단계 안으로', (() => { const a = d1.paras.find(p => p.t === '가. 오전'), b = d1.paras.find(p => p.t === '• 준비물'); return a && b && b.pl + b.ti > a.pl + a.ti + 1; })(), d1.paras);
   // 탭으로 나뉜 여러 줄 → 표
   await P.evaluate(() => {
-    const inp = document.querySelector('#an-rows .an-row[data-i="5"] input[type="text"]'); inp.focus();
+    const inp = document.querySelector('#an-rows .an-row[data-i="5"] textarea.an-tx'); inp.focus();
     const dt = new DataTransfer(); dt.setData('text/plain', '날짜\t행사\n10. 15.\t체육대회\n10. 28.\t진로 특강\n');
     inp.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
   });
@@ -301,7 +301,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   check('표 칸에 여러 칸 붙여 넣기 → 그 칸부터 채우고 모자란 줄은 늘림', tr2.length === 5 && tr2[3].join() === '11. 19.,수능,3학년' && tr2[4][2] === '전교생', tr2);
   // 줄 종류 바꾸기: 본문 → 상자
   // 줄 종류는 줄을 고른 뒤 위 도구(#an-cur)의 종류 단추로(줄에는 종류 상자 없음 — 종이처럼)
-  await P.click('#an-rows .an-row[data-i="5"] input[type="text"]'); await P.click('#an-cur [data-lv="box"]'); await P.waitForTimeout(200);
+  await P.click('#an-rows .an-row[data-i="5"] textarea.an-tx'); await P.click('#an-cur [data-lv="box"]'); await P.waitForTimeout(200);
   check('줄을 고르고 도구의 "상자" → 미리보기에 상자, 줄에는 종류 상자(select) 없음', (await prev()).boxes === 1 && await P.evaluate(() => !document.querySelector('#an-rows select')));
 
   // 모양: 큰 항목 Ⅰ., 점 ○, 제목 꾸미기 상자 — 🎨 더 꾸미기(접힘)를 먼저 펼침
@@ -359,7 +359,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.keyboard.type('맨 위 점'); await P.waitForTimeout(200);
   check('새 줄에 바로 글을 쓸 수 있음(커서가 거기에)', await P.evaluate(() => anCfg().rows[1].t) === '맨 위 점');
   // 줄을 누르면 고른 줄 표시 + 도구, 아래 ＋ 단추는 그 줄 아래에
-  await P.click('#an-rows .an-row[data-i="4"] input[type="text"]'); await P.waitForTimeout(150);
+  await P.click('#an-rows .an-row[data-i="4"] textarea.an-tx'); await P.waitForTimeout(150);
   const cur = await P.evaluate(() => ({ cls: [...document.querySelectorAll('#an-rows .an-row.cur')].map(e => e.dataset.i).join(), tool: document.getElementById('an-cur').textContent }));
   check('줄을 누르면 그 줄만 파랗게 + 도구에 "5번째 줄"', cur.cls === '4' && /5번째 줄/.test(cur.tool) && /들여쓰기/.test(cur.tool) && /정렬/.test(cur.tool), cur);
   await P.click('#an-add [data-add="d"]'); await P.waitForTimeout(200);
@@ -441,11 +441,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     cols: new Set([...document.querySelectorAll('#an-grid > *')].map(e => Math.round(e.getBoundingClientRect().left))).size }));
   check('끝맺음은 ② 내용 상자 맨 아래(줄 목록 바로 밑), 모양·쪽·글꼴은 처음에 접힌 "더 꾸미기" 안, 왼쪽은 한 열', lay2.endIn && lay2.endLast && moreClosedAtStart && lay2.lookIn && lay2.endBelowRows && lay2.cols === 1, lay2);
   // 고른 줄을 다시 누르면(글 칸 바깥) 고르기 취소, Esc도
-  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100);
+  await P.click('#an-rows .an-row[data-i="2"] textarea.an-tx'); await P.waitForTimeout(100);
   await P.click('#an-rows .an-row[data-i="2"] .an-sym'); await P.waitForTimeout(150);
   const un1 = await P.evaluate(() => ({ cur: document.querySelectorAll('#an-rows .an-row.cur').length, f: anFocus, tool: document.getElementById('an-cur').textContent }));
-  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100);
-  await P.click('#an-rows .an-row[data-i="2"] input[type="text"]'); await P.waitForTimeout(100); // 글 칸을 다시 누르는 건 커서 옮기기 — 그대로 고른 채
+  await P.click('#an-rows .an-row[data-i="2"] textarea.an-tx'); await P.waitForTimeout(100);
+  await P.click('#an-rows .an-row[data-i="2"] textarea.an-tx'); await P.waitForTimeout(100); // 글 칸을 다시 누르는 건 커서 옮기기 — 그대로 고른 채
   const un2 = await P.evaluate(() => document.querySelectorAll('#an-rows .an-row.cur').length);
   await P.keyboard.press('Escape'); await P.waitForTimeout(100);
   const un3 = await P.evaluate(() => document.querySelectorAll('#an-rows .an-row.cur').length);
@@ -524,7 +524,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
 
   // 빈 줄: ＋ ↵ 빈 줄 = 글 없는 본문 줄, 기호만 있는 빈 줄에서 Enter = 그 줄이 빈 줄로(한글처럼 Enter 두 번), 상자 안이면 빈 줄 하나
   await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'b', t: '점' }] }, true)); await P.waitForTimeout(200);
-  await P.click('#an-rows .an-row[data-i="1"] input[type="text"]'); await P.keyboard.press('End'); await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  await P.click('#an-rows .an-row[data-i="1"] textarea.an-tx'); await P.keyboard.press('End'); await P.keyboard.press('Enter'); await P.waitForTimeout(150);
   const bl1 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
   await P.keyboard.press('Enter'); await P.waitForTimeout(150);
   const bl2 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
@@ -534,6 +534,11 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#an-rows .an-row[data-i="0"] textarea'); await P.evaluate(() => { const ta = anBoxTa(0); ta.setSelectionRange(2, 2); }); await P.click('#an-add [data-add="blank"]'); await P.waitForTimeout(150);
   const bl4 = await P.evaluate(() => anCfg().rows[0].t);
   check('점 줄 Enter → 새 점 줄, 빈 점 줄에서 Enter → 빈 줄(본문), ＋ ↵ 빈 줄 → 빈 줄 하나 더(미리보기에 빈 줄 2개), 상자 안이면 커서 줄 아래 빈 줄', bl1 === 'h1:안내,b:점,b:' && bl2 === 'h1:안내,b:점,p:' && bl3.rows === 'h1:안내,b:점,p:,p:' && bl3.blank === 2 && bl4 === '첫 줄\n\n둘째', { bl1, bl2, bl3, bl4 });
+
+  // 긴 글은 칸이 저절로 높아져 다 보임(한 줄 입력칸이 아니라 textarea)
+  await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'p', t: '짧은 글' }, { lv: 'p', t: '아주 긴 글 '.repeat(40) }] }, true); }); await P.waitForTimeout(200);
+  const txh = await P.evaluate(() => [...document.querySelectorAll('#an-rows textarea.an-tx')].map(t => ({ h: t.offsetHeight, sh: t.scrollHeight, cut: t.scrollHeight > t.offsetHeight + 1 })));
+  check('긴 글 줄은 칸이 높아져 잘리지 않음(짧은 글은 한 줄 높이)', txh.length === 2 && txh[0].h < 36 && txh[1].h > txh[0].h * 2 && !txh[1].cut, txh);
 
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
@@ -556,10 +561,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       img: img ? { src: img.getAttribute('src'), w: Math.round(img.getBoundingClientRect().width / mm), loaded: img.complete && img.naturalWidth > 0 } : null,
       boxes: bx.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent, x: Math.round((r.left - sh.left) / mm), y: Math.round((r.top - sh.top) / mm) }; }),
       tFont: c.tFont, bFont: c.bFont, bul: c.bul, mL: c.mL, mR: c.mR, last2: ps.slice(-2), title: ps[0] }; });
-  check('🏫 가정통신문 틀: 학교 머리 켜짐(부서 교육과정부, 칸 활성, 끝맺음 칸 대신 고정 안내), 미리보기 머리 그림 177mm(파일 받아짐) + 부서(17,41mm)·발행일(164,41mm) 상자, 경기천년 글꼴·☑·여백 16/18, 맨 아래 "2026년  6월  24일"·"부 광 고 등 학 교 장"',
+  check('🏫 가정통신문 틀: 학교 머리 켜짐(부서 교육과정부, 칸 활성, 끝맺음 칸 대신 고정 안내), 미리보기 머리 그림 177mm(파일 받아짐) + 부서(17,41mm)·발행일(164,41mm) 상자, 경기천년 글꼴·점 •·여백 16/18, 맨 아래 "2026년  6월  24일"·"부 광 고 등 학 교 장"',
     sc.school && sc.dept === '교육과정부' && sc.chk && sc.deptOn && sc.endRow === 'none' && sc.fixed === '' && sc.img && /가정통신문-머리\.jpg$/.test(sc.img.src) && Math.abs(sc.img.w - 177) <= 1 && sc.img.loaded &&
     sc.boxes.length === 2 && sc.boxes[0].t === '교육과정부' && Math.abs(sc.boxes[0].x - 17) <= 1 && Math.abs(sc.boxes[0].y - 41) <= 1 && sc.boxes[1].t === '2026. 6. 24.' && Math.abs(sc.boxes[1].x - 164) <= 1 &&
-    sc.tFont === '경기천년제목 Medium' && sc.bFont === '경기천년바탕 Regular' && sc.bul === '☑' && sc.mL === 16 && sc.mR === 18 && sc.last2[0] === '2026년  6월  24일' && sc.last2[1] === '부 광 고 등 학 교 장', sc);
+    sc.tFont === '경기천년제목 Medium' && sc.bFont === '경기천년바탕 Regular' && sc.bul === '•' && sc.mL === 16 && sc.mR === 18 && sc.last2[0] === '2026년  6월  24일' && sc.last2[1] === '부 광 고 등 학 교 장', sc);
   if (JSZIP_JS) {
     const sx = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const sec = await z.file('Contents/section0.xml').async('string'); const h = await z.file('Contents/header.xml').async('string'); const hpf = await z.file('Contents/content.hpf').async('string'); const img = z.file('BinData/image1.jpg');
       return { img: img ? (await img.async('uint8array')).length : 0, manifest: /<opf:item id="image1" href="BinData\/image1.jpg"/.test(hpf), pic: /<hp:pic [^>]*textWrap="BEHIND_TEXT"[\s\S]*?binaryItemIDRef="image1"/.test(sec),
@@ -572,8 +577,9 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
       const i = sec.indexOf('강좌신청 안내'), j = sec.lastIndexOf('<hp:p ', i), pp = sec.slice(j, i).match(/paraPrIDRef="(\d+)"/)[1];
       const al = (h.match(new RegExp('<hh:paraPr id="' + pp + '"[^>]*>[\\s\\S]*?<hh:align horizontal="(\\w+)"')) || [])[1];
       const k = sec.indexOf('<hp:t>2. 신청방법'), prevP = sec.slice(0, k).split('<hp:p ').slice(-2)[0]; // 바로 앞 문단
-      return { al, gap: anCfg().gap, blankBefore: /<hp:t\/>/.test(prevP) && !/<hp:t>[^<]/.test(prevP), prevMm: (() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent.startsWith('2. 신청방법')); return d ? parseFloat(d.style.marginTop) : -1; })() }; });
-    check('한글 파일: 제목(꾸밈 없음) 가운데 정렬, 큰 항목 위 "한 줄" = 2. 앞에 빈 문단(미리보기도 한 줄 높이 띄움)', tx.al === 'CENTER' && tx.gap === 'line' && tx.blankBefore && tx.prevMm > 5, tx);
+      const t2 = sec.slice(i); const nextP = t2.slice(t2.indexOf('</hp:p>') + 7); const gapP = nextP.slice(0, nextP.indexOf('</hp:p>') + 7); const gcp = (gapP.match(/charPrIDRef="(\d+)"/) || [])[1]; const gsz = gcp && (h.match(new RegExp('<hh:charPr id="' + gcp + '" height="(\\d+)"')) || [])[1];
+      return { titleGapBlank: /<hp:t\/>/.test(gapP) && !/<hp:t>[^<]/.test(gapP), titleGapPt: gsz ? +gsz / 100 : 0, noNext: !/<hc:next value="[1-9]/.test(h), al, gap: anCfg().gap, blankBefore: /<hp:t\/>/.test(prevP) && !/<hp:t>[^<]/.test(prevP), prevMm: (() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent.startsWith('2. 신청방법')); return d ? parseFloat(d.style.marginTop) : -1; })() }; });
+    check('한글 파일: 제목(꾸밈 없음) 가운데 정렬 + 그 아래 간격은 17pt 빈 문단(문단 위·아래 간격은 안 씀), 큰 항목 위 "한 줄" = 2. 앞에 빈 문단(미리보기도 한 줄 높이 띄움)', tx.al === 'CENTER' && tx.gap === 'line' && tx.blankBefore && tx.prevMm > 5 && tx.titleGapBlank && Math.abs(tx.titleGapPt - 17) <= 0.6, tx);
   }
   await P.click('#an-school'); await P.waitForTimeout(250);
   const sc2 = await P.evaluate(() => ({ school: anCfg().school, img: !!document.querySelector('#fm-pages .an-head'), boxes: document.querySelectorAll('#fm-pages .an-hbox').length, endRow: document.querySelector('#an-end-box .an-end-row').style.display, deptOn: !document.getElementById('an-dept').disabled }));

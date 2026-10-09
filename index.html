@@ -1448,8 +1448,8 @@
     .an-row { display: flex; align-items: flex-start; gap: 4px; border-radius: 6px; padding-top: 1px; padding-bottom: 1px; }
     .an-row.cur { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-color); }
     /* 종이처럼: 글 칸 테두리는 올리거나 고르거나 커서가 있을 때만, ⠿·＋·✕도 그때만(자리는 그대로 두어 글이 움직이지 않게 — opacity) */
-    .an-row input[type="text"].lp-input { border-color: transparent; background: transparent; }
-    .an-row:hover input[type="text"].lp-input, .an-row.cur input[type="text"].lp-input, .an-row input[type="text"].lp-input:focus { border-color: var(--border-color); background: var(--card-bg); }
+    .an-row textarea.an-tx { border-color: transparent; background: transparent; min-height: 0; height: 27px; resize: none; overflow: hidden; line-height: 1.45; white-space: pre-wrap; }
+    .an-row:hover textarea.an-tx, .an-row.cur textarea.an-tx, .an-row textarea.an-tx:focus { border-color: var(--border-color); background: var(--card-bg); }
     .an-row .an-drag, .an-row .an-plus, .an-row .ws-ol-x { opacity: 0; transition: opacity .12s; }
     .an-row:hover .an-drag, .an-row.cur .an-drag, .an-row:hover .an-plus, .an-row.cur .an-plus, .an-row:hover .ws-ol-x, .an-row.cur .ws-ol-x { opacity: 1; }
     .an-row .an-sym { cursor: default; }
@@ -1470,9 +1470,10 @@
     #an-cur button.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
     #an-cur .an-iv { min-width: 22px; text-align: center; font-weight: 800; color: var(--text-main); }
     .an-row .an-sym { flex: 0 0 auto; min-width: 22px; text-align: right; font-weight: 700; font-size: 12.5px; padding-top: 4px; color: var(--text-main); }
-    .an-row[data-lv="h1"] input[type="text"] { font-weight: 700; }
-    .an-row input[type="text"], .an-row textarea { flex: 1; min-width: 0; padding: 4px 6px !important; }
-    .an-row textarea { resize: vertical; min-height: 44px; font-family: inherit; line-height: 1.5; font-size: 12px; tab-size: 2; } /* 상자 안 줄 들여쓰기(탭)는 두 칸 폭으로 보이게 */
+    .an-row[data-lv="h1"] textarea.an-tx { font-weight: 700; }
+    .an-row textarea { flex: 1; min-width: 0; padding: 4px 6px !important; }
+    .an-row textarea { resize: vertical; min-height: 44px; font-family: inherit; line-height: 1.5; font-size: 12px; tab-size: 2; }
+    #fm-left .an-row textarea.an-tx.lp-input { min-height: 0; resize: none; } /* #fm-left textarea.lp-input의 min-height 52px보다 세게 — 한 줄 높이에서 시작 */ /* 상자 안 줄 들여쓰기(탭)는 두 칸 폭으로 보이게 */
     .an-row .ws-ol-x { padding-top: 4px; }
     .an-tbl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; border: 1px dashed var(--border-color); border-radius: 8px; padding: 5px; }
     .an-tbl-tools { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 11px; color: var(--text-sub); }
@@ -20560,7 +20561,7 @@
       { lv: 'b', t: '결시자는 학업성적관리규정에 따라 처리합니다.' }, { lv: 'p', t: '' }, { lv: 'n', t: '문의: 과학과 ○○○ 선생님' }] } },
     // 🏫 가정통신문 = 우리 학교(부광고) 양식: 머리 그림(forms/가정통신문-머리.jpg) + 그 위 부서·발행일 글상자, 경기천년 글꼴, 원본 쪽 여백, 맨 아래 발행일 날짜 + "부 광 고 등 학 교 장" 고정(school: true)
     { k: 'home', n: '🏫 가정통신문', d: { title: '2026학년도 3학년 ‘수업량 유연화’ 강좌신청 안내', sub: '', school: true, dept: '교육과정부', issue: '', end: true, endAlign: 'C', endFrom: '부 광 고 등 학 교 장',
-      deco: 'none', tAlign: 'C', bul: '☑', tFont: '경기천년제목 Medium', tFontC: false, tSize: 18, tBold: false, bFont: '경기천년바탕 Regular', bFontC: false, bSize: 11, line: 160, gap: 'line', paper: 'A4', land: false, mT: 15, mB: 14, mL: 16, mR: 18, rows: [
+      deco: 'none', tAlign: 'C', bul: '•', tFont: '경기천년제목 Medium', tFontC: false, tSize: 18, tBold: false, bFont: '경기천년바탕 Regular', bFontC: false, bSize: 11, line: 160, gap: 'line', paper: 'A4', land: false, mT: 15, mB: 14, mL: 16, mR: 18, rows: [
       { lv: 'p', t: '안녕하십니까?' },
       { lv: 'p', t: '본교에서는 7월 13~14일 학교 자율적 교육과정의 날을 맞아 학교생활기록부와 연계하여 학생들의 진로에 맞는 다양한 교육경험을 제공하고자 융합, 심화, 진로 수업을 운영합니다. 이에 따라 아래와 같이 선착순으로 강좌신청을 받습니다.' },
       { lv: 'h1', t: '내용: 2026학년도 3학년 1학기 수업량 유연화 강좌 신청' },
@@ -20975,7 +20976,7 @@
       let body;
       if (r.lv === 'tbl') body = anTblEditor(r, i);
       else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩. 아래 ＋ 단추로 점·번호를 넣고, Enter면 다음 줄도 같은 기호로" oninput="anRowInput(' + i + ', this.value); anFitBox(this)" onkeydown="anBoxKey(event, ' + i + ')" onkeyup="anCurFill()" onmouseup="anCurFill()">' + ntEsc(r.t) + '</textarea>';
-      else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')">';
+      else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><textarea rows="1" class="lp-input an-tx" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value); anFitTx(this)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')">' + ntEsc(r.t) + '</textarea>'; // 글이 길면 칸이 저절로 높아짐(한 줄 입력칸 대신)
       const pad = Math.max(0, Math.min(3, M[i].dep) * 14 + Math.max(-4, Math.min(8, r.ind || 0)) * 5);
       // 종류 고르기는 위 도구(#an-cur)에서 — 줄에는 기호와 글만(종이처럼). 같은 줄을 다시 누르면(글 칸 바깥) 고르기 취소
       return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onclick="anPick(' + i + ', event)" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')" title="' + ntEsc(AN_LV_NAME[r.lv]) + ' 줄">' +
@@ -20983,9 +20984,12 @@
         '<button class="an-plus" title="이 줄 바로 아래에 줄 더하기" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); anAddBelow(' + i + ')">＋</button>' +
         '<button class="ws-ol-x" title="이 줄 지우기" onclick="event.stopPropagation(); anRowDel(' + i + ')">✕</button></div>';
     }).join('') : '<div class="nt-muted">아래 ＋ 단추로 줄을 더하세요.</div>';
-    anFitCells();
+    anFitCells(); anFitTxs();
     anCurFill(c);
   }
+  // 글 줄 칸: 글 길이에 맞춰 높이(한 줄이면 한 줄 높이)
+  function anFitTx(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
+  function anFitTxs() { document.querySelectorAll('#an-rows textarea.an-tx').forEach(anFitTx); }
   function anUnpick() {
     anFocus = null;
     document.querySelectorAll('#an-rows .an-row.cur').forEach(function(el) { el.classList.remove('cur'); });
@@ -21087,7 +21091,7 @@
     if (anFocus != null && anFocus >= rows.length) anFocus = rows.length ? rows.length - 1 : null;
     anRowsFill(anCfg());
     if (focus != null) {
-      const el = document.querySelector('#an-rows .an-row[data-i="' + focus + '"] ' + (sel || 'input[type="text"], #an-rows .an-row[data-i="' + focus + '"] textarea'));
+      const el = document.querySelector('#an-rows .an-row[data-i="' + focus + '"] ' + (sel || 'textarea'));
       if (el) { el.focus(); if (el.setSelectionRange) { const n = el.value.length; el.setSelectionRange(n, n); } }
     }
   }
@@ -21150,7 +21154,7 @@
     ta.value = nv; anRowInput(i, nv); anFitBox(ta);
     ta.setSelectionRange(at, at);
   }
-  function anBoxTa(i) { return document.querySelector('#an-rows .an-row[data-i="' + i + '"] textarea'); }
+  function anBoxTa(i) { return document.querySelector('#an-rows .an-row[data-lv="box"][data-i="' + i + '"] textarea'); }
   function anBoxLineAt(v, pos) { const ls = v.lastIndexOf('\n', pos - 1) + 1, le0 = v.indexOf('\n', pos), le = le0 < 0 ? v.length : le0; return { ls: ls, le: le, line: v.slice(ls, le) }; }
   function anBoxTabs(line) { return (line.match(/^\t*/) || [''])[0].length; }
   // 상자 안 커서 줄(또는 고른 범위의 줄들)의 들여쓰기: 앞에 탭을 넣고 뺀다(0이면 모두 뺌)
@@ -21201,8 +21205,10 @@
     else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.altKey) {
       e.preventDefault(); const j = i + (e.key === 'ArrowUp' ? -1 : 1); if (j < 0 || j >= rows.length) return;
       rows[i].t = e.target.value; const tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp; anRowsSave(rows, j);
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      const el = document.querySelector('#an-rows .an-row[data-i="' + (i + (e.key === 'ArrowUp' ? -1 : 1)) + '"] input[type="text"]'); if (el) { e.preventDefault(); el.focus(); }
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { // 칸 안 첫 줄/마지막 줄에서만 옆 줄로
+      const v = e.target.value, pos = e.target.selectionStart;
+      if (e.key === 'ArrowUp' ? v.lastIndexOf('\n', pos - 1) >= 0 : v.indexOf('\n', pos) >= 0) return;
+      const el = document.querySelector('#an-rows .an-row[data-i="' + (i + (e.key === 'ArrowUp' ? -1 : 1)) + '"] textarea'); if (el) { e.preventDefault(); el.focus(); }
     }
   }
   // 여러 줄을 붙여 넣으면 앞 기호를 보고 줄 종류를 나눠 넣고, 칸(탭)으로 나뉜 줄들이면 표로
@@ -21296,6 +21302,10 @@
     // 내어쓰기: 한글은 첫 줄이 왼쪽 여백(left)에서 시작하고, 둘째 줄부터 |indent|만큼 더 들어간다 → left = 기호 자리, indent = −기호 폭
     const r1 = function(v) { return Math.round(v * 10) / 10; };
     const ppOf = function(align, left, hang, before, after, line) { return PPi({ align: align, line: line || c.line, left: r1(pt(left)), indent: -r1(pt(hang)), before: before || 0, after: after || 0 }); };
+    // 문단 위·아래 간격(prev/next)은 한글에서 적은 값의 약 4배로 나와(10/9 사용자 확인) 안내문에선 쓰지 않고, 그 높이의 빈 문단(글자 크기 = 간격, 줄 간격 100%)을 넣는다
+    const gapCp = {};
+    const CPGAP = function(mm) { const ptv = Math.max(1, Math.round(mm / FM_PT * 10) / 10), k = String(ptv); if (gapCp[k] == null) { gapCp[k] = charPrs.length; charPrs.push({ size: ptv, font: hB }); } return gapCp[k]; };
+    const PPGAP = PPi({ align: 'LEFT', line: 100 });
     // 테두리: 0 없음, 1 표 칸, 2 표 제목칸(회색), 3 상자, 4 제목(꾸미기)
     const titleBf = c.deco === 'line' ? { b: K(0.5), t: NONE, l: NONE, r: NONE } : c.deco === 'double' ? { b: fmLn('double', 0.7), t: NONE, l: NONE, r: NONE }
       : c.deco === 'box' ? { t: K(0.4), b: K(0.4), l: K(0.4), r: K(0.4) } : { t: K(0.4), b: K(0.4), l: NONE, r: NONE };
@@ -21316,20 +21326,20 @@
     const tAl = c.tAlign === 'L' ? 'LEFT' : 'CENTER';
     const stDefs = [
       ['안내문 제목', PPi({ align: tAl, line: 130 }), CPN.title], ['안내문 부제목', PPi({ align: tAl, line: 150, after: pt(5) }), CPN.sub],
-      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, c.gap === 'line' ? 0 : c.gap), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', lv1, h2Hang), CPN.body],
+      ['안내문 1. 큰 항목', ppOf('JUSTIFY', 0, h1Hang, 0), CPN.h1], ['안내문 가. 작은 항목', ppOf('JUSTIFY', lv1, h2Hang), CPN.body],
       ['안내문 • 점', ppOf('JUSTIFY', lv1, bulHang), CPN.body], ['안내문 - 줄표', ppOf('JUSTIFY', lv2, dashHang), CPN.body],
       ['안내문 본문', ppOf('JUSTIFY', lv1, 0), CPN.body], ['안내문 가운데 글', PPi({ align: 'CENTER', line: c.line }), CPN.body], ['안내문 ※ 참고', ppOf('JUSTIFY', 0, noteHang), CPN.body],
     ];
     const ST_OF = { h1: 2, h2: 3, b: 4, d: 5, p: 6, c: 7, n: 8 };
     // 문단마다 쓸 문단 모양을 먼저 모은다
     const plan = blocks.map(function(b) {
-      if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, b.blank ? 0 : pt(b.before)), blankPp: b.blank ? PPi({ align: 'JUSTIFY', line: c.line }) : null };
-      if (b.k === 'tbl') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), cellL: PPi({ align: 'LEFT', line: 130 }), cellC: PPi({ align: 'CENTER', line: 130 }) };
-      if (b.k === 'box') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)), after: pt(AN_AFTER) }), lines: b.lines.map(function(x) { return ppOf('JUSTIFY', x.left, x.hang); }) };
-      if (b.k === 'end') { const al = !c.school && c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line, after: pt(L.lh) }), from: PPi({ align: al, line: c.school ? 120 : 160 }) }; }
-      if (b.k === 'head') return { pp: PPi({ align: 'LEFT', line: 100 }), box: PPi({ align: 'CENTER', line: 160 }) }; // 글 뒤 그림이 앉는 문단 — 자리는 테두리 없는 표(그림 높이)로 비운다(문단 아래 간격은 한글이 너무 크게 잡았음)
-      if (b.k === 'title') return { pp: PPi({ align: tAl, line: 130, after: pt(c.sub ? 3 : 6) }), cell: PPi({ align: tAl, line: 130 }), holder: PPi({ align: 'LEFT', line: 100, after: pt(c.sub ? 3 : 6) }) };
-      if (b.k === 'sub') return { pp: PPi({ align: tAl, line: 150, after: pt(5) }) };
+      if (b.k === 'p') return { pp: ppOf(AN_ALIGN[b.al][0], b.left, b.hang, 0), blankPp: b.blank ? PPi({ align: 'JUSTIFY', line: c.line }) : null, gapCp: !b.blank && b.before > 0 ? CPGAP(b.before) : null };
+      if (b.k === 'tbl') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)) }), cellL: PPi({ align: 'LEFT', line: 130 }), cellC: PPi({ align: 'CENTER', line: 130 }), gapCp: CPGAP(AN_AFTER) };
+      if (b.k === 'box') return { pp: PPi({ align: 'LEFT', line: 100, left: r1(pt(b.left)) }), lines: b.lines.map(function(x) { return ppOf('JUSTIFY', x.left, x.hang); }), gapCp: CPGAP(AN_AFTER) };
+      if (b.k === 'end') { const al = !c.school && c.endAlign === 'R' ? 'RIGHT' : 'CENTER'; return { blank: PPi({ align: 'JUSTIFY', line: c.line }), date: PPi({ align: al, line: c.line }), from: PPi({ align: al, line: c.school ? 120 : 160 }), gapCp: CPGAP(L.lh) }; }
+      if (b.k === 'head') return { pp: PPi({ align: 'LEFT', line: 100 }), box: PPi({ align: 'CENTER', line: 160 }) }; // 글 뒤 그림이 앉는 문단 — 자리는 테두리 없는 표(그림 높이)로 비운다
+      if (b.k === 'title') return { pp: PPi({ align: tAl, line: 130 }), cell: PPi({ align: tAl, line: 130 }), holder: PPi({ align: 'LEFT', line: 100 }), gapCp: CPGAP(c.sub ? 3 : 6) };
+      if (b.k === 'sub') return { pp: PPi({ align: tAl, line: 150 }), gapCp: CPGAP(5) };
       return {};
     });
     const H = fmHeaderAdd(await zip.file('Contents/header.xml').async('string'), {
@@ -21363,20 +21373,21 @@
     };
     const text = [];
     let body = '';
+    const GAP = function(pl) { return pl.gapCp != null ? P(PP(PPGAP), R(H.cp[pl.gapCp], T(''))) : ''; }; // 간격용 빈 문단
     blocks.forEach(function(b, bi) {
       const pl = plan[bi];
       if (b.k === 'title') {
         text.push(c.title);
-        if (c.deco === 'none') { body += P(PP(pl.pp), R(CP('title'), T(c.title)), 0); return; } // PP() 매핑이 빠져 한글에서 제목이 양쪽 정렬로 나오던 버그(10/9)
+        if (c.deco === 'none') { body += P(PP(pl.pp), R(CP('title'), T(c.title)), 0) + GAP(pl); return; } // PP() 매핑이 빠져 한글에서 제목이 양쪽 정렬로 나오던 버그(10/9)
         const TW = hu(L.W), TH = hu(b.n * b.lh + 2 * b.padV);
         const cell = tc({ c: 0, r: 0, w: TW, h: TH, bf: BF(4), ml: b.padH, mt: b.padV, p: P(PP(pl.cell), R(CP('title'), T(c.title)), 0) });
         // 표를 감싼 문단(글자처럼 취급) — 첫 문단이라 쪽 설정도 여기에
         const inner = tbl('<hp:tr>' + cell + '</hp:tr>', 1, 1, TW, TH);
-        body += P(PP(pl.holder), R(CP('body'), inner));
+        body += P(PP(pl.holder), R(CP('body'), inner)) + GAP(pl);
         return;
       }
-      if (b.k === 'sub') { body += P(PP(pl.pp), R(CP('sub'), T(c.sub)), 1); text.push(c.sub); return; }
-      if (b.k === 'p') { if (b.blank) body += P(PP(pl.blankPp), R(CP('body'), T(''))); body += P(PP(pl.pp), R(CP(b.lv === 'h1' ? 'h1' : 'body'), T(b.t)), ST_OF[b.lv]); if (b.t) text.push(b.t); return; }
+      if (b.k === 'sub') { body += P(PP(pl.pp), R(CP('sub'), T(c.sub)), 1) + GAP(pl); text.push(c.sub); return; }
+      if (b.k === 'p') { if (b.blank) body += P(PP(pl.blankPp), R(CP('body'), T(''))); else body += GAP(pl); body += P(PP(pl.pp), R(CP(b.lv === 'h1' ? 'h1' : 'body'), T(b.t)), ST_OF[b.lv]); if (b.t) text.push(b.t); return; }
       if (b.k === 'tbl') {
         const CW = b.cols.map(hu), TW = hu(b.W);
         CW[CW.length - 1] += TW - CW.reduce(function(a, x) { return a + x; }, 0);
@@ -21388,17 +21399,17 @@
           }).join('') + '</hp:tr>';
           row.forEach(function(t) { if (t) text.push(t.replace(/\n/g, ' ')); });
         });
-        body += P(PP(pl.pp), R(CP('body'), tbl(rowsXml, b.r.cells.length, CW.length, TW, TH)));
+        body += P(PP(pl.pp), R(CP('body'), tbl(rowsXml, b.r.cells.length, CW.length, TW, TH))) + GAP(pl);
         return;
       }
       if (b.k === 'box') {
         const TW = hu(b.W), TH = hu(b.h - AN_AFTER);
         const cell = tc({ c: 0, r: 0, w: TW, h: TH, bf: BF(3), ml: AN_BOX_SIDE, mt: AN_BOX_PAD, p: b.lines.map(function(x, k) { if (x.t) text.push(x.t); return P(PP(pl.lines[k]), R(CP('body'), T(x.t))); }).join('') });
-        body += P(PP(pl.pp), R(CP('body'), tbl('<hp:tr>' + cell + '</hp:tr>', 1, 1, TW, TH)));
+        body += P(PP(pl.pp), R(CP('body'), tbl('<hp:tr>' + cell + '</hp:tr>', 1, 1, TW, TH))) + GAP(pl);
         return;
       }
       if (b.k === 'end') {
-        body += P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.date), R(CP('date'), T(b.date))) + P(PP(pl.from), R(CP('from'), T(b.from)));
+        body += P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.blank), R(CP('body'), T(''))) + P(PP(pl.date), R(CP('date'), T(b.date))) + GAP(pl) + P(PP(pl.from), R(CP('from'), T(b.from)));
         text.push(b.date, b.from);
         return;
       }
