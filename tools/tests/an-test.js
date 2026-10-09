@@ -480,6 +480,48 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     bm.cls && /상자 안에/.test(bm.lbl) && bx.t === '첫 줄\n• 점 하나\n• 점 둘\n그냥 글\n1. 첫 항목\n2. 둘째 항목' && bx.n === 3 && bx.lv2 === 'tbl', { bm, bx });
   await P.evaluate(() => anUnpick());
   check('상자 줄을 안 고르면 "상자 안에" 표시 없음', await P.evaluate(() => !document.getElementById('an-add').classList.contains('in-box')));
+  // 상자 안 줄별 들여쓰기: 도구 ◀ ▶·Tab·Shift+Tab은 상자 전체가 아니라 커서가 있는 줄(앞의 탭 = 한 글자). 미리보기·한글 문단 왼쪽 여백에 반영
+  await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'box', t: '첫 줄\n• 둘째 줄' }] }, true)); await P.waitForTimeout(200);
+  await P.click('#an-rows .an-row[data-i="1"] textarea'); await P.evaluate(() => { const ta = anBoxTa(1); ta.setSelectionRange(ta.value.length, ta.value.length); }); await P.waitForTimeout(100);
+  const boxPl = () => P.evaluate(() => [...document.querySelectorAll('#fm-pages .an-box .an-p')].map(d => parseFloat(d.style.paddingLeft) + parseFloat(d.style.textIndent)));
+  const bp0 = await boxPl();
+  await P.click('#an-cur button[title^="상자 안 커서가 있는 줄을 한 글자 오른쪽으로"]'); await P.waitForTimeout(150);
+  const bi1 = await P.evaluate(() => ({ t: anCfg().rows[1].t, ind: anCfg().rows[1].ind || 0, lb: document.getElementById('an-cur').textContent.includes('들여쓰기(커서 줄)'), iv: document.querySelector('#an-cur .an-iv').textContent, act: document.activeElement.tagName }));
+  const bp1 = await boxPl();
+  await P.keyboard.press('Tab'); await P.waitForTimeout(100); const bi2 = await P.evaluate(() => anCfg().rows[1].t);
+  await P.keyboard.press('Shift+Tab'); await P.waitForTimeout(100); const bi3 = await P.evaluate(() => anCfg().rows[1].t);
+  await P.keyboard.press('Enter'); await P.keyboard.type('셋째'); await P.waitForTimeout(100); const bi4 = await P.evaluate(() => anCfg().rows[1].t);
+  await P.click('#an-cur button[title^="상자 안 커서가 있는 줄을 한 글자 왼쪽으로"]'); await P.waitForTimeout(100); const bi5 = await P.evaluate(() => anCfg().rows[1].t);
+  check('상자 커서 줄 ▶ → 그 줄 앞에 탭(상자 ind는 0), 도구 "들여쓰기(커서 줄)" +1, 미리보기 둘째 줄만 한 글자 들어감 · Tab 두 번째 · Shift+Tab 하나 · Enter 다음 줄도 같은 들여쓰기·같은 기호 · ◀ 뺌',
+    bi1.t === '첫 줄\n\t• 둘째 줄' && bi1.ind === 0 && bi1.lb && bi1.iv === '+1' && bi1.act === 'TEXTAREA' && bp0[0] === bp1[0] && bp1[1] - bp0[1] > 3 && bi2 === '첫 줄\n\t\t• 둘째 줄' && bi3 === '첫 줄\n\t• 둘째 줄' && bi4 === '첫 줄\n\t• 둘째 줄\n\t• 셋째' && bi5 === '첫 줄\n\t• 둘째 줄\n• 셋째', { bi1, bp0, bp1, bi2, bi3, bi4, bi5 });
+  if (JSZIP_JS) {
+    const xmlBox = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const x = await z.file('Contents/section0.xml').async('string'); const h = await z.file('Contents/header.xml').async('string'); return { x, h }; });
+    // 들여쓴 줄의 문단 모양은 left > 0 (header.xml의 paraPr 중 하나) — 느슨하게: "둘째 줄" 문단이 있고, 상자 줄 문단 모양 중 왼쪽 여백이 0이 아닌 것이 있음
+    check('한글 파일: 상자 안 들여쓴 줄(둘째 줄)이 들어 있음', /둘째 줄/.test(xmlBox.x) && /셋째/.test(xmlBox.x), null);
+  }
+  await P.evaluate(() => anUnpick());
+  // 내 안내문 보관함: 💾 보관(이름) → 단추 생김(서버 키 fm-an-saved), 올리면 미리보기, 글을 바꾼 뒤 눌러 불러오기(확인), 🗑 초기화해도 남음, ✕ 지우기
+  await P.evaluate(() => anSet({ title: '보관할 제목', sub: '', rows: [{ lv: 'h1', t: '보관 글' }], deco: 'box' }, true)); await P.waitForTimeout(200);
+  await P.click('#an-save-btn'); await P.waitForSelector('#custom-prompt-overlay', { state: 'visible' });
+  const defName = await P.evaluate(() => document.getElementById('custom-prompt-input').value);
+  await P.fill('#custom-prompt-input', '우리 반 안내'); await P.click('#custom-prompt-ok-btn'); await P.waitForTimeout(400);
+  const sv1 = await P.evaluate(() => ({ chips: [...document.querySelectorAll('#an-saved [data-doc]')].map(b => b.textContent), stored: JSON.parse(localStorage.getItem('fm-an-saved')).map(x => x.name) }));
+  await P.waitForTimeout(2200);
+  const sv1s = serverVal(T2, 'fm-an-saved');
+  check('💾 보관: 기본 이름 = 제목, 이름을 적으면 "내 안내문"에 단추, 서버에도 fm-an-saved로 올라감', defName === '보관할 제목' && sv1.chips.join() === '📄 우리 반 안내' && sv1.stored.join() === '우리 반 안내' && typeof sv1s === 'string' && /우리 반 안내/.test(sv1s), { defName, sv1, sv1s: String(sv1s).slice(0, 80) });
+  await P.evaluate(() => anSet({ title: '다른 글', rows: [{ lv: 'b', t: '다른 내용' }], deco: 'line' }, true)); await P.waitForTimeout(200);
+  await P.hover('#an-saved [data-doc]'); await P.waitForTimeout(250);
+  const sv2 = await P.evaluate(() => ({ prev: document.querySelector('#fm-pages .an-title').textContent, cfg: anCfg().title, border: document.querySelector('#fm-pages .an-title').style.border }));
+  await P.mouse.move(5, 5); await P.waitForTimeout(200);
+  await P.click('#an-saved [data-doc]'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
+  const sv3 = await P.evaluate(() => ({ title: anCfg().title, rows: anCfg().rows.map(r => r.lv + ':' + r.t).join(), deco: anCfg().deco, form: document.getElementById('an-title').value }));
+  check('보관한 글 단추: 올리면 미리보기에 그 글(모양까지 — 제목 상자), 내 글은 그대로 · 누르고 확인하면 제목·내용·모양이 보관한 대로', sv2.prev === '보관할 제목' && sv2.cfg === '다른 글' && !!sv2.border && sv3.title === '보관할 제목' && sv3.rows === 'h1:보관 글' && sv3.deco === 'box' && sv3.form === '보관할 제목', { sv2, sv3 });
+  await P.click('#fm-reset-btn'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
+  const sv4 = await P.evaluate(() => ({ chips: document.querySelectorAll('#an-saved [data-doc]').length, title: anCfg().title }));
+  await P.click('#an-saved .an-sv .ws-ol-x'); await P.waitForSelector('#custom-confirm-overlay', { state: 'visible' }); await P.click('#custom-confirm-ok-btn'); await P.waitForTimeout(300);
+  const sv5 = await P.evaluate(() => ({ chips: document.querySelectorAll('#an-saved [data-doc]').length, empty: /보관한 글이 없어요/.test(document.getElementById('an-saved').textContent) }));
+  check('🗑 초기화해도 보관함은 남음(글만 예시로), ✕로 지우면 비어 있다는 안내', sv4.chips === 1 && sv4.title === '2학기 화학Ⅱ 수행평가 안내' && sv5.chips === 0 && sv5.empty, { sv4, sv5 });
+
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
   await P.setViewportSize({ width: 1280, height: 720 }); await P.waitForTimeout(400);
