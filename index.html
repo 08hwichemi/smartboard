@@ -1425,7 +1425,7 @@
     .an-row.drop-b { box-shadow: 0 -2px 0 var(--accent-color); } .an-row.drop-a { box-shadow: 0 2px 0 var(--accent-color); }
     .an-drag { flex: 0 0 auto; cursor: grab; color: var(--text-sub); font-size: 13px; padding: 4px 1px 0 3px; user-select: none; }
     .an-plus { flex: 0 0 auto; border: none; background: none; color: var(--accent-color); cursor: pointer; font-size: 14px; font-weight: 800; padding: 3px 1px 0; }
-    #an-cur { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 20px; }
+    #an-cur { display: flex; align-items: center; align-content: center; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 50px; box-sizing: border-box; } /* 줄을 고를 때 높이가 바뀌어 아래 줄들이 밀리지 않게(두 줄 높이로 고정) */
     #an-cur .an-cg { display: inline-flex; align-items: center; gap: 3px; color: var(--text-sub); }
     #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 7px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
     #an-cur button.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
@@ -1440,8 +1440,9 @@
     .an-tbl-tools { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 11px; color: var(--text-sub); }
     .an-tbl-tools button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 0 6px; font-size: 11px; cursor: pointer; line-height: 18px; }
     .an-tbl-grid { display: grid; gap: 2px; overflow-x: auto; }
-    .an-tbl-grid input { min-width: 54px; width: 100%; box-sizing: border-box; padding: 3px 4px !important; font-size: 11.5px; }
-    .an-tbl-grid input.an-th { font-weight: 700; background: var(--tt-bg); }
+    .an-tbl-grid textarea { min-width: 0; width: 100%; box-sizing: border-box; padding: 3px 4px !important; font-size: 11.5px; line-height: 1.4; resize: none; overflow: hidden; font-family: inherit; min-height: 0 !important; height: auto; display: block; }
+    .an-tbl-grid textarea.an-th { font-weight: 700; background: var(--tt-bg); }
+    #fm-left .an-tbl-grid textarea.lp-input { resize: none; min-height: 0; }
     .an-p { white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
     .an-tb { border-collapse: collapse; table-layout: fixed; }
     .an-tb td { vertical-align: middle; overflow-wrap: anywhere; word-break: keep-all; white-space: pre-wrap; }
@@ -3822,8 +3823,8 @@
       </div>
       <div class="nt-box" id="an-rows-box">
         <div class="nt-title"><span class="fm-tt"><b class="fm-step">2</b>📝 내용</span> <span class="nt-muted">한 칸에 한 줄 · <a href="#" onclick="anClearRows(); return false;">내용 비우기</a></span></div>
-        <div id="an-rows"></div>
         <div id="an-cur"></div>
+        <div id="an-rows"></div>
         <div class="nt-row" id="an-add"></div>
         <div class="nt-muted" id="an-help">번호·기호는 저절로 붙어요. 줄을 누르면 위 도구로 들여쓰기·정렬·순서를 바꾸고, ＋ 단추는 그 줄 아래에 더해요. ⠿를 끌면 순서가 바뀌어요. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
       </div>
@@ -20543,6 +20544,7 @@
     const ind = Math.round(Number(r.ind) || 0);
     if (ind) o.ind = Math.max(-8, Math.min(20, ind));
     if (AN_ALIGN[r.al] && r.al !== anAlDef(o.lv) && o.lv !== 'tbl' && o.lv !== 'box') o.al = r.al;
+    if (o.lv === 'tbl' && (r.cal === 'L' || r.cal === 'C')) o.cal = r.cal; // 표 칸 글 정렬(없으면 자동: 짧은 칸 가운데·긴 칸 왼쪽)
     return o;
   }
   function anAlDef(lv) { return lv === 'c' ? 'C' : 'J'; }
@@ -20667,12 +20669,13 @@
       if (r.lv === 'tbl') {
         const TW = W - left, nc = r.cells[0].length;
         const nat = [];
-        for (let k = 0; k < nc; k++) nat.push(Math.max(12, Math.max.apply(null, r.cells.map(function(row, ri) { return anEm(row[k]) * cs * FM_PT * (r.head && ri === 0 ? 1.05 : 1); })) + 2 * AN_CELL_PAD + 1));
+        const emMax = function(t) { return Math.max.apply(null, String(t).split('\n').map(anEm)); };
+        for (let k = 0; k < nc; k++) nat.push(Math.max(12, Math.max.apply(null, r.cells.map(function(row, ri) { return emMax(row[k]) * cs * FM_PT * (r.head && ri === 0 ? 1.05 : 1); })) + 2 * AN_CELL_PAD + 1));
         const sum = nat.reduce(function(a, x) { return a + x; }, 0);
         const cols = nat.map(function(x) { return TW * x / sum; });
-        const shortCol = []; for (let k = 0; k < nc; k++) shortCol.push(Math.max.apply(null, r.cells.map(function(row, ri) { return r.head && ri === 0 ? 0 : anEm(row[k]); })) <= 6);
+        const shortCol = []; for (let k = 0; k < nc; k++) shortCol.push(r.cal === 'C' ? true : r.cal === 'L' ? false : Math.max.apply(null, r.cells.map(function(row, ri) { return r.head && ri === 0 ? 0 : emMax(row[k]); })) <= 6);
         const rows = r.cells.map(function(row) {
-          const n = Math.max.apply(null, row.map(function(t, k) { return linesOf(t || ' ', cols[k] - 2 * AN_CELL_PAD, cs); }));
+          const n = Math.max.apply(null, row.map(function(t, k) { return String(t).split('\n').reduce(function(a, x) { return a + linesOf(x || ' ', cols[k] - 2 * AN_CELL_PAD, cs); }, 0); }));
           return { h: n * cLh + 2 * AN_TBL_PAD };
         });
         const th = rows.reduce(function(a, x) { return a + x.h; }, 0);
@@ -20830,14 +20833,15 @@
         AN_LV_ORDER.map(function(k) { return '<option value="' + k + '"' + (k === r.lv ? ' selected' : '') + '>' + ntEsc(anLvLabel(c, k)) + '</option>'; }).join('') + '</select>';
       let body;
       if (r.lv === 'tbl') body = anTblEditor(r, i);
-      else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩(앞에 • - ※ 를 붙이면 그 모양으로)" oninput="anRowInput(' + i + ', this.value)" onfocus="anFocus=' + i + '">' + ntEsc(r.t) + '</textarea>';
-      else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')" onfocus="anFocus=' + i + '">';
+      else if (r.lv === 'box') body = '<textarea class="lp-input" rows="3" placeholder="상자 안 글 — 한 줄씩(앞에 • - ※ 를 붙이면 그 모양으로)" oninput="anRowInput(' + i + ', this.value)">' + ntEsc(r.t) + '</textarea>';
+      else body = '<span class="an-sym">' + ntEsc(M[i].sym) + '</span><input type="text" class="lp-input" value="' + ntEsc(r.t) + '" placeholder="' + anPh(r.lv) + '" oninput="anRowInput(' + i + ', this.value)" onkeydown="anRowKey(event, ' + i + ')" onpaste="anRowPaste(event, ' + i + ')">';
       const pad = Math.max(0, Math.min(3, M[i].dep) * 14 + Math.max(-4, Math.min(8, r.ind || 0)) * 5);
-      return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onmousedown="anPick(' + i + ')" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')">' +
+      return '<div class="an-row' + (anFocus === i ? ' cur' : '') + '" data-i="' + i + '" data-lv="' + r.lv + '" style="padding-left:' + pad + 'px;" onclick="anPick(' + i + ')" onfocusin="anPick(' + i + ')" ondragover="anDragOver(event, ' + i + ')" ondrop="anDrop(event, ' + i + ')">' +
         '<span class="an-drag" draggable="true" title="끌어서 순서 바꾸기" ondragstart="anDragStart(event, ' + i + ')" ondragend="anDragEnd()">⠿</span>' + sel + body +
-        '<button class="an-plus" title="이 줄 바로 아래에 줄 더하기" onmousedown="event.preventDefault()" onclick="anAddBelow(' + i + ')">＋</button>' +
-        '<button class="ws-ol-x" title="이 줄 지우기" onclick="anRowDel(' + i + ')">✕</button></div>';
+        '<button class="an-plus" title="이 줄 바로 아래에 줄 더하기" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); anAddBelow(' + i + ')">＋</button>' +
+        '<button class="ws-ol-x" title="이 줄 지우기" onclick="event.stopPropagation(); anRowDel(' + i + ')">✕</button></div>';
     }).join('') : '<div class="nt-muted">아래 ＋ 단추로 줄을 더하세요.</div>';
+    anFitCells();
     anCurFill(c);
   }
   // 고른 줄(파란 표시) — 아래 도구(들여쓰기·정렬·순서)와 ＋ 단추가 이 줄에 대해 움직인다
@@ -20857,6 +20861,7 @@
     box.innerHTML = '<b>' + (i + 1) + '번째 줄</b>' +
       '<span class="an-cg">들여쓰기' + b(false, 'anIndent(-1)', '◀', '한 글자 왼쪽으로') + '<span class="an-iv">' + (ind > 0 ? '+' : '') + ind + '</span>' + b(false, 'anIndent(1)', '▶', '한 글자 오른쪽으로') + (ind ? b(false, 'anIndent(0)', '처음대로', '덧붙인 들여쓰기 없애기') : '') + '</span>' +
       (txt ? '<span class="an-cg">정렬' + ['J', 'L', 'C', 'R'].map(function(a) { return b(al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
+      (r.lv === 'tbl' ? '<span class="an-cg">칸 글 정렬' + [['', '자동', '짧은 칸은 가운데, 긴 칸은 왼쪽'], ['L', '왼쪽', '모든 칸 왼쪽'], ['C', '가운데', '모든 칸 가운데']].map(function(a) { return b((r.cal || '') === a[0], 'anTblAlign(\'' + a[0] + '\')', a[1], a[2]); }).join('') + '</span>' : '') +
       '<span class="an-cg">순서' + b(false, 'anMove(-1)', '↑', '한 줄 위로') + b(false, 'anMove(1)', '↓', '한 줄 아래로') + '</span>';
   }
   function anIndent(d) {
@@ -20867,6 +20872,11 @@
   function anAlign(a) {
     const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r || !AN_ALIGN[a]) return;
     r.al = a; anRowsSave(rows, i);
+  }
+  function anTblAlign(a) {
+    const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r || r.lv !== 'tbl') return;
+    if (a) r.cal = a; else delete r.cal;
+    anRowsSave(rows, null);
   }
   function anMove(d) {
     const rows = anCfg().rows, i = anFocus, j = i + d; if (!rows[i] || j < 0 || j >= rows.length) return;
@@ -20881,7 +20891,9 @@
   function anDragStart(e, i) {
     anDragI = i; e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', ''); } catch (x) {}
-    const row = e.target.closest('.an-row'); if (row && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(row, 12, 12);
+    // e.target은 글자(텍스트 노드)일 때가 있어서(⠿ 글자를 잡고 끌면) closest가 없다 → 핸들(currentTarget)에서 찾는다
+    const h = e.currentTarget && e.currentTarget.closest ? e.currentTarget : null, row = h && h.closest('.an-row');
+    if (row && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(row, 12, 12);
   }
   function anDragMark(row, after) { document.querySelectorAll('#an-rows .an-row').forEach(function(el) { el.classList.remove('drop-a', 'drop-b'); }); if (row) row.classList.add(after ? 'drop-a' : 'drop-b'); }
   function anDragOver(e, i) {
@@ -20904,11 +20916,12 @@
     const b = function(dr, dc, t, tip) { return '<button onclick="anTblSize(' + i + ', ' + dr + ', ' + dc + ')" title="' + tip + '">' + t + '</button>'; };
     return '<div class="an-tbl"><div class="an-tbl-tools">칸 ' + b(0, -1, '−', '맨 오른쪽 칸 빼기') + nc + b(0, 1, '＋', '칸 더하기') + '　줄 ' + b(-1, 0, '−', '맨 아래 줄 빼기') + nr + b(1, 0, '＋', '줄 더하기') +
       '<label class="pe-chk" style="font-size:11px;" title="첫 줄을 굵은 글씨·회색 바탕의 제목칸으로"><input type="checkbox"' + (r.head ? ' checked' : '') + ' onchange="anTblHead(' + i + ', this.checked)">첫 줄 회색</label></div>' +
-      '<div class="an-tbl-grid" style="grid-template-columns:repeat(' + nc + ', minmax(54px, 1fr));">' + r.cells.map(function(row, ri) {
+      // 칸 폭은 글 길이에 따라(긴 칸이 넓게), 칸 안 글은 넘치면 줄이 바뀌고 칸이 저절로 높아져 다 보인다
+      '<div class="an-tbl-grid" style="grid-template-columns:' + anTblColsCss(r) + ';">' + r.cells.map(function(row, ri) {
         return row.map(function(v, ki) {
-          return '<input type="text" class="lp-input' + (r.head && ri === 0 ? ' an-th' : '') + '" value="' + ntEsc(v) + '" data-r="' + ri + '" data-k="' + ki + '" oninput="anCell(' + i + ', ' + ri + ', ' + ki + ', this.value)" onkeydown="anCellKey(event, ' + i + ', ' + ri + ', ' + ki + ')" onpaste="anCellPaste(event, ' + i + ', ' + ri + ', ' + ki + ')" onfocus="anFocus=' + i + '">';
+          return '<textarea rows="1" class="lp-input' + (r.head && ri === 0 ? ' an-th' : '') + '" data-r="' + ri + '" data-k="' + ki + '" oninput="anCell(' + i + ', ' + ri + ', ' + ki + ', this.value); anFitCell(this)" onkeydown="anCellKey(event, ' + i + ', ' + ri + ', ' + ki + ')" onpaste="anCellPaste(event, ' + i + ', ' + ri + ', ' + ki + ')">' + ntEsc(v) + '</textarea>';
         }).join('');
-      }).join('') + '</div><div class="nt-muted" style="font-size:10.5px;">엑셀 표를 복사해 칸에 붙여 넣어도 돼요.</div></div>';
+      }).join('') + '</div><div class="nt-muted" style="font-size:10.5px;">Enter = 아래 칸 · Shift+Enter = 칸 안에서 줄 바꾸기 · 엑셀 표를 복사해 칸에 붙여 넣어도 돼요.</div></div>';
   }
   function anRowsSave(rows, focus, sel) {
     anSet({ rows: rows });
@@ -20924,7 +20937,7 @@
   function anAdd(lv, at) {
     const rows = anCfg().rows, i = at != null ? at : anFocus != null && anFocus < rows.length ? anFocus + 1 : rows.length;
     rows.splice(i, 0, anNewRow(lv));
-    anRowsSave(rows, i, lv === 'tbl' ? 'input' : null);
+    anRowsSave(rows, i, lv === 'tbl' ? 'textarea' : null);
   }
   function anRowInput(i, v) { const rows = anCfg().rows; if (!rows[i]) return; rows[i].t = v; anSet({ rows: rows }); }
   function anRowDel(i) { const rows = anCfg().rows; rows.splice(i, 1); if (anFocus != null && anFocus >= rows.length) anFocus = rows.length ? rows.length - 1 : null; anRowsSave(rows, null); }
@@ -20982,6 +20995,14 @@
     anSet(JSON.parse(JSON.stringify(t.d)), true);
   }
   // 표 칸
+  function anTblColsCss(r) {
+    const nc = r.cells[0].length;
+    const w = []; for (let k = 0; k < nc; k++) w.push(Math.max(1, Math.min(4, Math.max.apply(null, r.cells.map(function(row) { return Math.max.apply(null, String(row[k]).split('\n').map(anEm)); })) / 4)));
+    return w.map(function(x) { return 'minmax(48px, ' + (Math.round(x * 10) / 10) + 'fr)'; }).join(' ');
+  }
+  // 칸 높이를 글에 맞춰(같은 줄 칸들은 그리드가 가장 높은 칸에 맞춤)
+  function anFitCell(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
+  function anFitCells(root) { (root || document).querySelectorAll('#an-rows .an-tbl-grid textarea').forEach(anFitCell); }
   function anCell(i, ri, ki, v) { const rows = anCfg().rows, r = rows[i]; if (!r || r.lv !== 'tbl' || !r.cells[ri]) return; r.cells[ri][ki] = v; anSet({ rows: rows }); }
   function anTblHead(i, on) { const rows = anCfg().rows; if (!rows[i] || rows[i].lv !== 'tbl') return; rows[i].head = on; anRowsSave(rows, null); }
   function anTblSize(i, dr, dc) {
@@ -20993,10 +21014,10 @@
     if (dr < 0 && r.cells.length > 1) r.cells.pop();
     anFocus = i; anRowsSave(rows, null);
   }
-  function anCellFocus(i, ri, ki) { const el = document.querySelector('#an-rows .an-row[data-i="' + i + '"] input[data-r="' + ri + '"][data-k="' + ki + '"]'); if (el) { el.focus(); el.select(); } }
+  function anCellFocus(i, ri, ki) { const el = document.querySelector('#an-rows .an-row[data-i="' + i + '"] textarea[data-r="' + ri + '"][data-k="' + ki + '"]'); if (el) { el.focus(); el.select(); } }
   function anCellKey(e, i, ri, ki) {
     if (e.isComposing || e.keyCode === 229) return;
-    if (e.key === 'Enter') { // 아래 칸으로(맨 아래면 줄 더하기)
+    if (e.key === 'Enter' && !e.shiftKey && !e.altKey) { // 아래 칸으로(맨 아래면 줄 더하기) — Shift+Enter는 칸 안 줄바꿈
       e.preventDefault();
       const r = anCfg().rows[i]; if (!r) return;
       if (ri === r.cells.length - 1) { anTblSize(i, 1, 0); }
@@ -21123,9 +21144,9 @@
         b.r.cells.forEach(function(row, ri) {
           const th = b.r.head && ri === 0, h = hu(b.rows[ri].h); TH += h;
           rowsXml += '<hp:tr>' + row.map(function(t, k) {
-            return tc({ c: k, r: ri, w: CW[k], h: h, bf: BF(th ? 2 : 1), ml: AN_CELL_PAD, mt: AN_TBL_PAD, p: P(PP(th || b.short[k] ? pl.cellC : pl.cellL), R(CP(th ? 'th' : 'td'), T(t))) });
+            return tc({ c: k, r: ri, w: CW[k], h: h, bf: BF(th ? 2 : 1), ml: AN_CELL_PAD, mt: AN_TBL_PAD, p: String(t).split('\n').map(function(x) { return P(PP(th || b.short[k] ? pl.cellC : pl.cellL), R(CP(th ? 'th' : 'td'), T(x))); }).join('') });
           }).join('') + '</hp:tr>';
-          row.forEach(function(t) { if (t) text.push(t); });
+          row.forEach(function(t) { if (t) text.push(t.replace(/\n/g, ' ')); });
         });
         body += P(PP(pl.pp), R(CP('body'), tbl(rowsXml, b.r.cells.length, CW.length, TW, TH)));
         return;

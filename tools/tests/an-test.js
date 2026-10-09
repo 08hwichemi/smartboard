@@ -291,7 +291,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#an-rows .an-row[data-i="' + ti + '"] .an-tbl-tools button[title="줄 더하기"]'); await P.waitForTimeout(150);
   check('＋칸·＋줄 → 4줄×3칸', await P.evaluate((i) => { const r = anCfg().rows[i]; return r.cells.length + 'x' + r.cells[0].length; }, ti) === '4x3');
   await P.evaluate((i) => {
-    const inp = document.querySelector('#an-rows .an-row[data-i="' + i + '"] input[data-r="3"][data-k="0"]'); inp.focus();
+    const inp = document.querySelector('#an-rows .an-row[data-i="' + i + '"] textarea[data-r="3"][data-k="0"]'); inp.focus();
     const dt = new DataTransfer(); dt.setData('text/plain', '11. 19.\t수능\t3학년\n12. 1.\t축제\t전교생');
     inp.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
   }, ti);
@@ -377,7 +377,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 끌어서 옮기기: 4번째 줄(세부)을 맨 첫 줄 위로
   await P.evaluate(() => {
     const dt = new DataTransfer(), rows = () => document.querySelectorAll('#an-rows .an-row');
-    rows()[4].querySelector('.an-drag').dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }));
+    rows()[4].querySelector('.an-drag').firstChild.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true })); // 글자(텍스트 노드)를 잡고 끌 때(예전 오류: e.target.closest is not a function)
     const r0 = rows()[0], rc = r0.getBoundingClientRect();
     r0.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true, clientY: rc.top + 2 }));
     r0.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, clientY: rc.top + 2 }));
@@ -396,6 +396,22 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
     });
     check('한글 파일: 가운데 정렬로 바꾼 줄은 CENTER, 모든 문단이 어절 단위 줄바꿈(KEEP_WORD)', kz.center && kz.keep, kz);
   }
+  // 도구는 ② 제목 바로 아래(줄 목록 위)
+  check('줄 도구는 줄 목록 위에', await P.evaluate(() => { const a = document.getElementById('an-cur'), b = document.getElementById('an-rows'); return a.nextElementSibling === b; }));
+  // 표: 긴 글도 칸 안에서 줄이 바뀌어 다 보임, Shift+Enter = 칸 안 줄바꿈, 칸 글 정렬
+  const tIdx = await P.evaluate(() => anCfg().rows.findIndex(r => r.lv === 'tbl'));
+  const cell = P.locator('#an-rows .an-row[data-i="' + tIdx + '"] textarea[data-r="1"][data-k="2"]');
+  await cell.click(); await P.keyboard.press('End'); await P.keyboard.press('Shift+Enter'); await P.keyboard.type('(사진 첨부 가능, 출처를 꼭 밝히고 그래프는 직접 그려서 붙임)'); await P.waitForTimeout(250);
+  const cv = await P.evaluate((i) => { const t = document.querySelector('#an-rows .an-row[data-i="' + i + '"] textarea[data-r="1"][data-k="2"]'); return { v: anCfg().rows[i].cells[1][2], full: t.scrollHeight <= t.clientHeight + 3, h: t.clientHeight }; }, tIdx);
+  check('표 칸: Shift+Enter로 칸 안 줄바꿈, 긴 글은 칸이 높아져 다 보임', /\n\(사진 첨부/.test(cv.v) && cv.full && cv.h > 30, cv);
+  await P.click('#an-cur button[title="모든 칸 가운데"]'); await P.waitForTimeout(200);
+  check('표 칸 글 정렬 "가운데" → 미리보기 모든 칸 가운데', await P.evaluate(() => [...document.querySelectorAll('#fm-pages .an-tb tr:nth-child(2) td')].every(td => td.style.textAlign === 'center')));
+  if (JSZIP_JS) {
+    const cz = await P.evaluate(async () => { const sec = await (await JSZip.loadAsync(await anBuildHwpx(anCfg()))).file('Contents/section0.xml').async('string');
+      const tc = sec.match(/<hp:tc [^>]*>(?:(?!<\/hp:tc>)[\s\S])*?탐구 과정과 결과를[\s\S]*?<\/hp:tc>/)[0]; return (tc.match(/<hp:p /g) || []).length; });
+    check('한글 파일: 칸 안 줄바꿈은 칸 안 문단 두 개', cz === 2, cz);
+  }
+
   // 모양: 들여쓰기 2글자 고정, 내어쓰기 끔
   await P.click('#an-step [data-v="2"]'); await P.click('#an-hang [data-v="false"]'); await P.waitForTimeout(250);
   const st = await P.evaluate(() => { const bs = anCfg().bSize * FM_PT, d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent.startsWith('• 평가 기간')); return { pl: parseFloat(d.style.paddingLeft), ti: parseFloat(d.style.textIndent), bs }; });
