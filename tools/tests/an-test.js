@@ -522,6 +522,19 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const sv5 = await P.evaluate(() => ({ chips: document.querySelectorAll('#an-saved [data-doc]').length, empty: /보관한 글이 없어요/.test(document.getElementById('an-saved').textContent) }));
   check('🗑 초기화해도 보관함은 남음(글만 예시로), ✕로 지우면 비어 있다는 안내', sv4.chips === 1 && sv4.title === '2학기 화학Ⅱ 수행평가 안내' && sv5.chips === 0 && sv5.empty, { sv4, sv5 });
 
+  // 빈 줄: ＋ ↵ 빈 줄 = 글 없는 본문 줄, 기호만 있는 빈 줄에서 Enter = 그 줄이 빈 줄로(한글처럼 Enter 두 번), 상자 안이면 빈 줄 하나
+  await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'b', t: '점' }] }, true)); await P.waitForTimeout(200);
+  await P.click('#an-rows .an-row[data-i="1"] input[type="text"]'); await P.keyboard.press('End'); await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  const bl1 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
+  await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  const bl2 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
+  await P.click('#an-add [data-add="blank"]'); await P.waitForTimeout(150);
+  const bl3 = await P.evaluate(() => ({ rows: anCfg().rows.map(r => r.lv + ':' + r.t).join(), blank: [...document.querySelectorAll('#fm-pages .an-sheet > .an-p.an-p')].filter(d => d.innerHTML === '&nbsp;').length }));
+  await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'box', t: '첫 줄\n둘째' }] }, true); }); await P.waitForTimeout(150); // 커서가 줄 안에 있으면 줄 목록을 다시 안 그리므로 먼저 고르기 취소
+  await P.click('#an-rows .an-row[data-i="0"] textarea'); await P.evaluate(() => { const ta = anBoxTa(0); ta.setSelectionRange(2, 2); }); await P.click('#an-add [data-add="blank"]'); await P.waitForTimeout(150);
+  const bl4 = await P.evaluate(() => anCfg().rows[0].t);
+  check('점 줄 Enter → 새 점 줄, 빈 점 줄에서 Enter → 빈 줄(본문), ＋ ↵ 빈 줄 → 빈 줄 하나 더(미리보기에 빈 줄 2개), 상자 안이면 커서 줄 아래 빈 줄', bl1 === 'h1:안내,b:점,b:' && bl2 === 'h1:안내,b:점,p:' && bl3.rows === 'h1:안내,b:점,p:,p:' && bl3.blank === 2 && bl4 === '첫 줄\n\n둘째', { bl1, bl2, bl3, bl4 });
+
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
   await P.setViewportSize({ width: 1280, height: 720 }); await P.waitForTimeout(400);

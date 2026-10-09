@@ -3863,7 +3863,7 @@
         <div id="an-cur"></div>
         <div id="an-rows" onclick="if (event.target === this) anUnpick()"></div>
         <div class="nt-row" id="an-add"></div>
-        <div class="nt-muted" id="an-help" title="줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 &quot;1.&quot; &quot;-&quot; &quot;•&quot; 같은 앞 기호를 보고 알아서 나눠요.">줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄, Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
+        <div class="nt-muted" id="an-help" title="줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄(기호만 있는 빈 줄에서 Enter = 빈 줄), Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 &quot;1.&quot; &quot;-&quot; &quot;•&quot; 같은 앞 기호를 보고 알아서 나눠요.">줄을 누르면 위 도구에서 그 줄의 종류·들여쓰기·정렬·순서를 바꿔요(다시 누르면 고르기 취소). 줄 오른쪽 ＋ ✕ = 아래에 더하기·지우기, ⠿ 끌기 = 순서. Enter = 아래 줄(기호만 있는 빈 줄에서 Enter = 빈 줄), Tab·Shift+Tab = 한 단계 안·밖, 빈 칸 Backspace = 지우기. 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요.</div>
         <div id="an-end-box">
           <div class="nt-title"><span class="fm-tt">✍️ 끝맺음</span> <span class="nt-muted">종이 맨 아래 날짜·보내는 사람</span></div>
           <div class="ws-row an-end-row"><label class="pe-chk"><input type="checkbox" id="an-end" onchange="anSet({ end: this.checked }, true)">넣기</label><span class="nt-row" id="an-end-align" style="gap:4px;"></span>
@@ -20536,7 +20536,7 @@
   const AN_LV_NAME = { h1: '큰 항목', h2: '작은 항목', b: '점', d: '줄표', p: '본문', c: '가운데 글', n: '참고', tbl: '표', box: '상자' };
   const AN_LV_SHORT = { h1: '큰', h2: '작은', b: '점', d: '줄표', p: '본문', c: '가운데', n: '참고', tbl: '표', box: '상자' }; // 고른 줄 도구의 종류 단추(한 줄에 9개)
   const AN_TAB_ORDER = ['h1', 'h2', 'b', 'd']; // Tab = 한 단계 안으로, Shift+Tab = 밖으로
-  const AN_N1 = ['1.', 'Ⅰ.', '①', '1)'], AN_N2 = ['가.', '1)', '(1)', '①'], AN_BUL = ['•', '○', '▪', '◦', '·', '◆'], AN_DASH = ['-', '–', '·', '▸'];
+  const AN_N1 = ['1.', 'Ⅰ.', '①', '1)'], AN_N2 = ['가.', '1)', '(1)', '①'], AN_BUL = ['•', '○', '▪', '◦', '·', '◆', '☑'], AN_DASH = ['-', '–', '·', '▸'];
   const AN_DECO = [['none', '없음'], ['line', '밑줄'], ['double', '이중선'], ['box', '상자'], ['band', '회색 띠']];
   const AN_LINES = [130, 160, 180], AN_GAPS = [[0, '붙여서'], [4, '조금'], [8, '넓게']]; // 큰 항목 위 띄움(pt)
   const AN_STEPS = [['auto', '윗줄에 맞춤'], [1, '1글자'], [2, '2글자'], [4, '4글자']]; // 단계마다 들여쓰기: 윗줄 글 시작에 맞춤(기본) / 글자 수로 고정
@@ -20671,14 +20671,14 @@
     });
   }
   // 상자 안 줄: 앞에 적은 기호를 보고 내어쓰기 폭만 정한다(글은 적은 그대로)
-  const AN_PREFIX_RE = /^(\d{1,2}\s*[.)]|[가-하]\s*\.|\(\d{1,2}\)|[①-⑳]|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]\s*\.|[•○●▪◦◆■□·∙\-–—▸※])\s+/;
+  const AN_PREFIX_RE = /^(\d{1,2}\s*[.)]|[가-하]\s*\.|\(\d{1,2}\)|[①-⑳]|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]\s*\.|[•○●▪◦◆■□·∙\-–—▸※☑☐✔])\s+/;
   function anParseLine(s) {
     const t = String(s).trim(); let m;
     if (!t) return { lv: 'p', t: '' };
     if ((m = t.match(/^(?:\d{1,2}|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ])\s*\.\s*(.*)$/))) return { lv: 'h1', t: m[1] };
     if ((m = t.match(/^[가-하]\s*\.\s*(.*)$/))) return { lv: 'h2', t: m[1] };
     if ((m = t.match(/^\(?\d{1,2}\)\s*(.*)$/)) || (m = t.match(/^[①-⑳]\s*(.*)$/))) return { lv: 'h2', t: m[1] };
-    if ((m = t.match(/^[•○●▪◦◆■□∙·]\s*(.*)$/))) return { lv: 'b', t: m[1] };
+    if ((m = t.match(/^[•○●▪◦◆■□∙·☑☐✔]\s*(.*)$/))) return { lv: 'b', t: m[1] };
     if (/^-\s*\S.*\S\s*-$/.test(t)) return { lv: 'c', t: t }; // "- 아 래 -"
     if ((m = t.match(/^[-–—▸]\s*(.*)$/))) return { lv: 'd', t: m[1] };
     if ((m = t.match(/^※\s*(.*)$/))) return { lv: 'n', t: m[1] };
@@ -20883,7 +20883,7 @@
     anSavedFill();
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#an-rows')) anRowsFill(c);
     // 고른 줄이 상자면 큰·작은 항목·점·줄표·본문·참고는 상자 안 커서 줄 아래에 넣는다(anAddOrBox) — 점·※ 같은 기호는 키보드로 치기 어려워서
-    document.getElementById('an-add').innerHTML = AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '"' + (AN_BOX_INNER.indexOf(k) >= 0 ? ' data-inbox="1"' : '') + ' onmousedown="event.preventDefault()" onclick="anAddOrBox(\'' + k + '\')"', '＋ ' + ntEsc(anLvLabel(c, k)), AN_BOX_INNER.indexOf(k) >= 0 ? '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래). 고른 줄이 상자면 상자 안 커서 줄 아래에' : '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래)'); }).join('');
+    document.getElementById('an-add').innerHTML = chip(false, 'data-add="blank" data-inbox="1" onmousedown="event.preventDefault()" onclick="anAddOrBox(\'blank\')"', '＋ ↵ 빈 줄', '한글에서 Enter로 줄을 비우듯 빈 줄 하나를 넣어요(고른 줄 아래, 상자면 상자 안). 기호가 붙은 빈 줄에서 Enter를 쳐도 빈 줄이 돼요') + AN_LV_ORDER.map(function(k) { return chip(false, 'data-add="' + k + '"' + (AN_BOX_INNER.indexOf(k) >= 0 ? ' data-inbox="1"' : '') + ' onmousedown="event.preventDefault()" onclick="anAddOrBox(\'' + k + '\')"', '＋ ' + ntEsc(anLvLabel(c, k)), AN_BOX_INNER.indexOf(k) >= 0 ? '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래). 고른 줄이 상자면 상자 안 커서 줄 아래에' : '고른 줄 아래에 더해요(고른 줄이 없으면 맨 아래)'); }).join('');
     anAddMode();
     // 끝맺음
     document.getElementById('an-end').checked = c.end;
@@ -20932,7 +20932,7 @@
     fmFontMsgTo('an-font-msg', [c.tFont, c.bFont]);
   }
   function anPh(lv) {
-    return { h1: '큰 항목 — 예) 일시: 10월 20일(월)', h2: '작은 항목', b: '점으로 적을 내용', d: '줄표로 적을 자세한 내용', p: '본문 글(비우면 빈 줄)', c: '가운데에 놓을 글 — 예) - 아 래 -', n: '참고 — 예) 문의: 교무실' }[lv] || '';
+    return { h1: '큰 항목 — 예) 일시: 10월 20일(월)', h2: '작은 항목', b: '점으로 적을 내용', d: '줄표로 적을 자세한 내용', p: '본문 글 — 비워 두면 빈 줄', c: '가운데에 놓을 글 — 예) - 아 래 -', n: '참고 — 예) 문의: 교무실' }[lv] || '';
   }
   function anRowsFill(c) {
     const M = anMarks(c);
@@ -21063,6 +21063,10 @@
   }
   function anAddOrBox(lv) {
     const r = anFocus != null ? anCfg().rows[anFocus] : null;
+    if (lv === 'blank') { // 빈 줄 = 글 없는 본문 줄(상자 안이면 빈 줄 하나)
+      if (r && r.lv === 'box') { const ta = anBoxTa(anFocus); if (!ta) return; const v = ta.value, pos = ta.selectionEnd != null ? ta.selectionEnd : v.length, le0 = v.indexOf('\n', pos), le = le0 < 0 ? v.length : le0; const nv = v.slice(0, le) + '\n' + v.slice(le); ta.value = nv; anRowInput(anFocus, nv); anFitBox(ta); ta.focus(); ta.setSelectionRange(le + 1, le + 1); return; }
+      return anAdd('p');
+    }
     if (r && r.lv === 'box' && AN_BOX_INNER.indexOf(lv) >= 0) anBoxInsert(anFocus, lv); else anAdd(lv);
   }
   // 상자 안 줄 기호: 번호는 상자 안에서 이어서(1. 2. / 가. 나.), 점·줄표는 모양에서 고른 기호
@@ -21146,7 +21150,11 @@
   function anRowKey(e, i) {
     if (e.isComposing || e.keyCode === 229) return; // 한글 조합 중
     const rows = anCfg().rows, r = rows[i]; if (!r) return;
-    if (e.key === 'Enter') { e.preventDefault(); anAdd(r.lv === 'h1' || r.lv === 'h2' ? 'b' : r.lv === 'c' ? 'p' : r.lv, i + 1); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!e.target.value.trim() && r.lv !== 'p') { rows[i] = anRowExtra(r, { lv: 'p', t: '' }); anRowsSave(rows, i); return; } // 기호만 있는 빈 줄에서 Enter = 그 줄을 빈 줄로(Enter 두 번 = 빈 줄)
+      anAdd(r.lv === 'h1' || r.lv === 'h2' ? 'b' : r.lv === 'c' ? 'p' : r.lv, i + 1);
+    }
     else if (e.key === 'Tab') {
       e.preventDefault();
       const k = AN_TAB_ORDER.indexOf(r.lv);
@@ -23453,7 +23461,7 @@
     { selector: '#fm-hwpx-btn', before: fmTourPeWord, title: '📝 수행평가 · 한글 파일 내려받기', desc: '쪽 설정·글꼴은 필요할 때만 바꾸고, ⬇️ 한글 파일로 내려받아 써요. 머리 표는 진짜 표, 보고서 항목·빈 줄은 그냥 글이라 한글에서 줄을 더하거나 지우기 쉬워요. 원고지·단어 시험은 쪽마다 표 하나로 들어가요(단어 시험 정답지는 시험지 뒤 쪽). 이제 안내문을 볼게요.' },
     { selector: '#fm-right', before: fmTourAn, title: '📢 안내문 — 이런 걸 만들어요', desc: '수행평가 안내·가정통신문·행사 안내처럼 공지하는 글을 만들어요. 제목 아래 "1. 큰 항목 → • 점 → - 줄표"로 단계마다 들여 쓰고, 줄이 넘어가면 기호 뒤 글자에 맞춰 내어 써요. 표·상자도 넣을 수 있어요.\n\n한글에서 들여쓰기·내어쓰기·표를 맞추느라 애쓰지 않아도 칸만 채우면 돼요.' },
     { selector: '#an-title-box', before: fmTourAn, title: '📢 안내문 · 1단계. 틀·제목', desc: '제목 줄 오른쪽의 틀(📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정 · 📄 빈 안내문)에 마우스를 올리면 미리보기에 그 예시가 보이고, 누르면 예시 제목·내용이 채워져요. 그걸 고쳐 쓰면 가장 빨라요.\n\n제목과 부제목(없어도 돼요)을 적어요.\n\n다 만든 글은 💾 지금 글 보관으로 이름 붙여 두세요. "내 안내문"에 남아 다음에 불러와 고쳐 쓸 수 있어요(올리면 미리보기, 누르면 불러오기).' },
-    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '종이에 보이는 그대로 한 칸에 한 줄이에요. 줄을 누르면 파랗게 표시되고, 위 도구에서 그 줄의 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호·들여쓰기가 저절로 맞춰져요.\n\n· 위 도구: 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)·지우기. 아래 ＋ 단추도 그 줄 아래에 더해요. 같은 줄을 다시 누르면 고르기가 풀려요.\n· 줄에 마우스를 올리면 오른쪽 ＋(바로 아래에 줄 더하기)·✕(지우기), 왼쪽 ⠿(끌어서 순서 바꾸기)가 나와요\n· 상자 줄을 고르면 아래 ＋ 단추가 "상자 안에"로 바뀌어 점·번호를 상자 안 커서 줄 아래에 넣어요. 상자 안에서 Enter면 다음 줄도 같은 기호로 이어져요\n· 🎨 더 꾸미기 바는 왼쪽 맨 아래에 늘 보여요\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
+    { selector: '#an-rows-box', before: fmTourAn, title: '📢 안내문 · 2단계. 내용', desc: '종이에 보이는 그대로 한 칸에 한 줄이에요. 줄을 누르면 파랗게 표시되고, 위 도구에서 그 줄의 종류(1. 큰 항목 · 가. 작은 항목 · • 점 · - 줄표 · 본문 · 가운데 글 · ※ 참고 · 표 · 상자)를 고르면 번호·기호·들여쓰기가 저절로 맞춰져요.\n\n· 위 도구: 들여쓰기(◀ ▶ 한 글자씩)·정렬(양쪽·왼쪽·가운데·오른쪽)·순서(↑↓)·지우기. 아래 ＋ 단추도 그 줄 아래에 더해요. 같은 줄을 다시 누르면 고르기가 풀려요.\n· 줄에 마우스를 올리면 오른쪽 ＋(바로 아래에 줄 더하기)·✕(지우기), 왼쪽 ⠿(끌어서 순서 바꾸기)가 나와요\n· 상자 줄을 고르면 아래 ＋ 단추가 "상자 안에"로 바뀌어 점·번호를 상자 안 커서 줄 아래에 넣어요. 상자 안에서 Enter면 다음 줄도 같은 기호로 이어져요\n· 🎨 더 꾸미기 바는 왼쪽 맨 아래에 늘 보여요\n· Enter: 아래에 줄 더하기(큰 항목 다음엔 점) · 기호만 있는 빈 줄에서 Enter: 빈 줄(한글처럼 Enter 두 번) · ＋ ↵ 빈 줄 단추도 있어요 · Tab / Shift+Tab: 한 단계 안으로 / 밖으로 · 빈 칸에서 Backspace: 줄 지우기\n· 한글·메모장의 여러 줄을 붙여 넣으면 "1." "-" "•" 같은 앞 기호를 보고 알아서 나눠요. 엑셀 표를 붙여 넣으면 표가 돼요.' },
     { selector: '#an-more', before: fmTourAnMore, title: '📢 안내문 · 🎨 더 꾸미기 (필요할 때만)', desc: '내용 상자 맨 아래 ✍️ 끝맺음: 종이 맨 아래 날짜와 "○○고등학교장" 같은 보내는 사람(미리보기 맨 아래 흐린 "날짜 · 보내는 사람 넣기"를 눌러도 돼요).\n\n🎨 더 꾸미기를 펼치면 — ③ 모양: 제목 꾸미기(밑줄·상자·회색 띠), 번호 모양(1. · Ⅰ. · ①), 점·줄표 기호, 줄 간격, 단계 들여쓰기(자동 = 윗줄 글에 맞춤 / 1·2·4글자), 내어쓰기 켬·끔.\n④ 쪽 설정 · ⑤ 글꼴은 다른 양식과 같아요.\n\n⬇️ 한글 파일에는 스타일(F6) "안내문 1. 큰 항목" "안내문 • 점"…이 들어 있어서, 한글에서 줄을 더 쓸 때도 같은 들여쓰기로 이어 쓸 수 있어요. 이제 이름표를 볼게요.' },
     // 🏷️ 이름표(양식의 둘째 탭(시정표 뒤) — 예시 없이 선생님 설정 그대로, 게시판 → 사물함 → 분리수거함 순서로 모드만 바꿔 보여 줌)
     { selector: '#fm-right', before: fmTourNtBoard, title: '🏷️ 이름표 — 이런 걸 만들어요', desc: '위쪽 "이름표" 탭이에요. 게시판·교실에 붙일 이름표를 큰 글씨로 만들어 A4에 실제 크기(cm) 그대로 인쇄해요. 한글 파일은 없고(둥근 모서리·입체 글씨·아이콘이 한글 표로는 안 돼서) 🖨️ 인쇄/PDF로 바로 뽑아요. 왼쪽을 위에서부터 채우면 오른쪽에 바로 만들어져요.' },
