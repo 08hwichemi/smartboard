@@ -1457,7 +1457,8 @@
     .an-drag { flex: 0 0 auto; cursor: grab; color: var(--text-sub); font-size: 13px; padding: 4px 1px 0 3px; user-select: none; }
     .an-plus { flex: 0 0 auto; border: none; background: none; color: var(--accent-color); cursor: pointer; font-size: 14px; font-weight: 800; padding: 3px 1px 0; }
     #an-cur { display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 11.5px; padding: 6px 8px; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); min-height: 62px; box-sizing: border-box; } /* 두 줄(종류 / 들여쓰기·정렬·순서) 높이로 고정 — 줄을 고를 때 아래 줄들이 밀려 클릭이 빗나가지 않게 */
-    #an-cur .an-cl { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+    #an-cur .an-cl { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; }
+    #an-cur .an-cl:last-child .an-cg + .an-cg { border-left: 1px solid var(--border-color); padding-left: 6px; } /* 묶음(들여쓰기·정렬·순서·빈 줄·지우기) 사이 구분선 */
     #an-cur .an-cl:first-child { flex-wrap: nowrap; }
     #an-cur .an-cg { display: inline-flex; align-items: center; gap: 3px; color: var(--text-sub); }
     #an-cur .an-cg:has(.an-lvs) { flex: 1 1 auto; min-width: 0; }
@@ -1466,7 +1467,7 @@
     #an-cur .an-cn { flex: 0 0 auto; white-space: nowrap; min-width: 58px; }
     #an-cur .an-iv { cursor: pointer; }
     #an-cur button:disabled { opacity: .45; cursor: default; }
-    #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 4px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
+    #an-cur button { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); border-radius: 6px; padding: 1px 3px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
     #an-cur button.on { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); font-weight: 800; }
     #an-cur .an-iv { min-width: 22px; text-align: center; font-weight: 800; color: var(--text-main); }
     .an-row .an-sym { flex: 0 0 auto; min-width: 22px; text-align: right; font-weight: 700; font-size: 12.5px; padding-top: 4px; color: var(--text-main); }
@@ -4719,7 +4720,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-10.2';
+  var BUILD_ID = '2026-10-10.3';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -21029,11 +21030,11 @@
     box.innerHTML = '<div class="an-cl"><b class="an-cn" title="고른 줄의 종류·들여쓰기·정렬·순서를 바꿔요">' + (r ? (i + 1) + '번째 줄' : '줄을 누르면') + '</b><span class="an-cg" title="줄 종류"><span class="an-lvs">' +
       AN_LV_ORDER.map(function(k) { return b(!!r && r.lv === k, 'anLvSet(' + i + ', \'' + k + '\')', ntEsc(anLvLabel(c, k).replace(AN_LV_NAME[k], AN_LV_SHORT[k])), anLvLabel(c, k) + ' 줄로 바꿔요(Tab·Shift+Tab으로도)', 'data-lv="' + k + '"'); }).join('') + '</span></span></div>' +
       '<div class="an-cl"><span class="an-cg">' + indLb + b(false, 'anIndent(-1)', '◀', indTip + '한 글자 왼쪽으로') + '<span class="an-iv" title="덧붙인 들여쓰기(글자 수) — 누르면 처음대로" onclick="anIndent(0)">' + (ind > 0 ? '+' : '') + ind + '</span>' + b(false, 'anIndent(1)', '▶', indTip + '한 글자 오른쪽으로' + (r && r.lv === 'box' ? '(Tab · Shift+Tab)' : '')) + '</span>' +
-      (txt ? '<span class="an-cg" title="정렬">' + ['J', 'L', 'C', 'R'].map(function(a) { return b(!!r && al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
+      (txt ? '<span class="an-cg">정렬' + ['J', 'L', 'C', 'R'].map(function(a) { return b(!!r && al === a, 'anAlign(\'' + a + '\')', AN_ALIGN[a][2], AN_ALIGN[a][2] + ' 정렬'); }).join('') + '</span>' : '') +
       (r && r.lv === 'tbl' ? '<span class="an-cg">칸 글 정렬' + [['', '자동', '짧은 칸은 가운데, 긴 칸은 왼쪽'], ['L', '왼쪽', '모든 칸 왼쪽'], ['C', '가운데', '모든 칸 가운데']].map(function(a) { return b((r.cal || '') === a[0], 'anTblAlign(\'' + a[0] + '\')', a[1], a[2]); }).join('') + '</span>' : '') +
-      '<span class="an-cg" title="순서">' + b(false, 'anMove(-1)', '↑', '순서: 한 줄 위로') + b(false, 'anMove(1)', '↓', '순서: 한 줄 아래로') + '</span>' +
-      '<span class="an-cg">빈 줄' + b(false, 'anAddBlank(-1)', '▲', '이 줄 위에 빈 줄') + b(false, 'anAddBlank(1)', '▼', '이 줄 아래에 빈 줄') + '</span>' +
-      '<span class="an-cg">' + b(false, 'anRowDel(' + i + ')', '✕ 지우기', '이 줄 지우기') + b(false, 'anUnpick()', '취소', '줄 고르기를 풀어요(Esc) — 고른 줄을 다시 눌러도 돼요') + '</span></div>';
+      '<span class="an-cg">순서' + b(false, 'anMove(-1)', '↑', '순서: 이 줄을 한 줄 위로') + b(false, 'anMove(1)', '↓', '순서: 이 줄을 한 줄 아래로') + '</span>' +
+      '<span class="an-cg">빈 줄' + b(false, 'anAddBlank(-1)', '위', '이 줄 위에 빈 줄') + b(false, 'anAddBlank(1)', '아래', '이 줄 아래에 빈 줄') + '</span>' +
+      '<span class="an-cg">' + b(false, 'anRowDel(' + i + ')', '지우기', '이 줄 지우기') + b(false, 'anUnpick()', '취소', '줄 고르기를 풀어요(Esc) — 고른 줄을 다시 눌러도 돼요') + '</span></div>';
   }
   function anIndent(d) {
     const rows = anCfg().rows, i = anFocus, r = rows[i]; if (!r) return;
