@@ -549,6 +549,10 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const tw = await P.evaluate(() => { const t = document.querySelector('#fm-pages .an-tb'); const w = [...t.querySelectorAll('col')].map(c => parseFloat(c.style.width)); const h = [...t.rows[0].cells].map(td => td.getBoundingClientRect().height); return { w, sameH: Math.max(...h) - Math.min(...h) < 1, total: w.reduce((a, b) => a + b, 0), W: parseFloat(t.style.width) }; });
   check('짧은 칸(연번·학년·인원)은 12mm 이상(글이 안 꺾임), 긴 칸이 나머지를 나눔, 폭 합 = 표 폭', tw.w[0] >= 11.9 && tw.w[1] >= 11.9 && tw.w[5] >= 11.9 && tw.w[2] > tw.w[0] * 3 && Math.abs(tw.total - tw.W) < 0.05, tw);
 
+  // 점 기호 ☑는 선택지에서 뺌 → 저장돼 있던 ☑는 •로(모양은 틀 공통 설정이라 수행평가 틀에서도 •)
+  const bulFix = await P.evaluate(() => { const v = JSON.parse(localStorage.getItem('fm-an') || '{}'); v.bul = '☑'; localStorage.setItem('fm-an', JSON.stringify(v)); anFillForm(); return { bul: anCfg().bul, chip: !!document.querySelector('#an-bul [data-v="☑"]'), add: document.querySelector('#an-add [data-add="b"]').textContent }; });
+  check('저장된 점 기호 ☑ → •로 돌아감, 선택지에 ☑ 없음, ＋ 단추도 •', bulFix.bul === '•' && !bulFix.chip && bulFix.add === '＋ • 점', bulFix);
+
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
   await P.setViewportSize({ width: 1280, height: 720 }); await P.waitForTimeout(400);
