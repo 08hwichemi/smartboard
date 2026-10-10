@@ -246,8 +246,8 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   const rowsN = () => P.evaluate(() => anCfg().rows.length);
   const n0 = await rowsN();
   const last = P.locator('#an-rows .an-row').last().locator('textarea.an-tx');
-  await last.click(); await last.press('End'); await last.press('Enter'); await P.waitForTimeout(200);
-  check('Enter → 아래에 같은 종류 줄(참고)', await rowsN() === n0 + 1 && await P.evaluate(() => anCfg().rows[anCfg().rows.length - 1].lv) === 'n');
+  await last.click(); await last.press('End'); await last.press('Shift+Enter'); await P.waitForTimeout(200);
+  check('Shift+Enter → 아래에 같은 종류 줄(참고)', await rowsN() === n0 + 1 && await P.evaluate(() => anCfg().rows[anCfg().rows.length - 1].lv) === 'n');
   await P.keyboard.press('Tab'); await P.waitForTimeout(150);
   await P.keyboard.type('새 점 줄'); await P.waitForTimeout(250);
   const r1 = await P.evaluate(() => { const r = anCfg().rows; return r[r.length - 1]; });
@@ -258,7 +258,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.keyboard.press('Shift+Tab'); await P.waitForTimeout(150);
   check('한 번 더 Shift+Tab → 큰 항목, 번호는 4.', (await prev()).paras.some(p => p.t === '4. 새 점 줄'));
   // 빈 줄 Backspace
-  await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  await P.keyboard.press('Shift+Enter'); await P.waitForTimeout(150);
   const n1 = await rowsN();
   await P.keyboard.press('Backspace'); await P.waitForTimeout(150);
   check('빈 칸에서 Backspace → 그 줄 지움', await rowsN() === n1 - 1);
@@ -361,7 +361,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 줄을 누르면 고른 줄 표시 + 도구, 아래 ＋ 단추는 그 줄 아래에
   await P.click('#an-rows .an-row[data-i="4"] textarea.an-tx'); await P.waitForTimeout(150);
   const cur = await P.evaluate(() => ({ cls: [...document.querySelectorAll('#an-rows .an-row.cur')].map(e => e.dataset.i).join(), tool: document.getElementById('an-cur').textContent }));
-  check('줄을 누르면 그 줄만 파랗게 + 도구에 "5번째 줄"', cur.cls === '4' && /5번째 줄/.test(cur.tool) && /들여쓰기/.test(cur.tool) && /정렬/.test(cur.tool), cur);
+  check('줄을 누르면 그 줄만 파랗게 + 도구에 "5번째 줄"', cur.cls === '4' && /5번째 줄/.test(cur.tool) && /들여쓰기/.test(cur.tool) && /양쪽/.test(cur.tool), cur);
   await P.click('#an-add [data-add="d"]'); await P.waitForTimeout(200);
   check('아래 ＋ 단추도 고른 줄 아래에(5번째 줄 다음)', (await rowsLv())[5] === 'd:', (await rowsLv()).slice(3, 7));
   await P.keyboard.type('세부'); await P.waitForTimeout(150);
@@ -375,7 +375,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#an-cur button[title="가운데 정렬"]'); await P.waitForTimeout(200);
   check('정렬 가운데 → 미리보기 가운데, 내어쓰기 없음', await P.evaluate(() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent === '- 세부'); return d.style.textAlign === 'center' && parseFloat(d.style.textIndent) === 0; }));
   // 순서 ↑
-  await P.click('#an-cur button[title="한 줄 위로"]'); await P.waitForTimeout(200);
+  await P.click('#an-cur button[title="순서: 한 줄 위로"]'); await P.waitForTimeout(200);
   check('순서 ↑ → 한 줄 위로, 고른 줄도 따라감', (await rowsLv())[4] === 'd:세부' && await P.evaluate(() => anFocus) === 4, (await rowsLv()).slice(3, 7));
   // 끌어서 옮기기: 4번째 줄(세부)을 맨 첫 줄 위로
   await P.evaluate(() => {
@@ -524,7 +524,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
 
   // 빈 줄: ＋ ↵ 빈 줄 = 글 없는 본문 줄, 기호만 있는 빈 줄에서 Enter = 그 줄이 빈 줄로(한글처럼 Enter 두 번), 상자 안이면 빈 줄 하나
   await P.evaluate(() => anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'b', t: '점' }] }, true)); await P.waitForTimeout(200);
-  await P.click('#an-rows .an-row[data-i="1"] textarea.an-tx'); await P.keyboard.press('End'); await P.keyboard.press('Enter'); await P.waitForTimeout(150);
+  await P.click('#an-rows .an-row[data-i="1"] textarea.an-tx'); await P.keyboard.press('End'); await P.keyboard.press('Shift+Enter'); await P.waitForTimeout(150);
   const bl1 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
   await P.keyboard.press('Enter'); await P.waitForTimeout(150);
   const bl2 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t).join());
@@ -533,7 +533,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'box', t: '첫 줄\n둘째' }] }, true); }); await P.waitForTimeout(150); // 커서가 줄 안에 있으면 줄 목록을 다시 안 그리므로 먼저 고르기 취소
   await P.click('#an-rows .an-row[data-i="0"] textarea'); await P.evaluate(() => { const ta = anBoxTa(0); ta.setSelectionRange(2, 2); }); await P.click('#an-add [data-add="blank"]'); await P.waitForTimeout(150);
   const bl4 = await P.evaluate(() => anCfg().rows[0].t);
-  check('점 줄 Enter → 새 점 줄, 빈 점 줄에서 Enter → 빈 줄(본문), ＋ ↵ 빈 줄 → 빈 줄 하나 더(미리보기에 빈 줄 2개), 상자 안이면 커서 줄 아래 빈 줄', bl1 === 'h1:안내,b:점,b:' && bl2 === 'h1:안내,b:점,p:' && bl3.rows === 'h1:안내,b:점,p:,p:' && bl3.blank === 2 && bl4 === '첫 줄\n\n둘째', { bl1, bl2, bl3, bl4 });
+  check('점 줄 Shift+Enter → 새 점 줄, 빈 점 줄에서 Enter → 빈 줄(본문), ＋ ↵ 빈 줄 → 빈 줄 하나 더(미리보기에 빈 줄 2개), 상자 안이면 커서 줄 아래 빈 줄', bl1 === 'h1:안내,b:점,b:' && bl2 === 'h1:안내,b:점,p:' && bl3.rows === 'h1:안내,b:점,p:,p:' && bl3.blank === 2 && bl4 === '첫 줄\n\n둘째', { bl1, bl2, bl3, bl4 });
 
   // 긴 글은 칸이 저절로 높아져 다 보임(한 줄 입력칸이 아니라 textarea)
   await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'p', t: '짧은 글' }, { lv: 'p', t: '아주 긴 글 '.repeat(40) }] }, true); }); await P.waitForTimeout(200);
@@ -552,6 +552,20 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   // 점 기호 ☑는 선택지에서 뺌 → 저장돼 있던 ☑는 •로(모양은 틀 공통 설정이라 수행평가 틀에서도 •)
   const bulFix = await P.evaluate(() => { const v = JSON.parse(localStorage.getItem('fm-an') || '{}'); v.bul = '☑'; localStorage.setItem('fm-an', JSON.stringify(v)); anFillForm(); return { bul: anCfg().bul, chip: !!document.querySelector('#an-bul [data-v="☑"]'), add: document.querySelector('#an-add [data-add="b"]').textContent }; });
   check('저장된 점 기호 ☑ → •로 돌아감, 선택지에 ☑ 없음, ＋ 단추도 •', bulFix.bul === '•' && !bulFix.chip && bulFix.add === '＋ • 점', bulFix);
+
+  // Enter = 줄 안 줄바꿈(미리보기 두 줄, 한글 파일 lineBreak), 도구의 빈 줄 ▲ ▼ = 고른 줄 위·아래에 빈 줄, 도구는 두 줄
+  await P.evaluate(() => { anUnpick(); anSet({ rows: [{ lv: 'h1', t: '안내' }, { lv: 'b', t: '첫째' }] }, true); }); await P.waitForTimeout(200);
+  await P.click('#an-rows .an-row[data-i="1"] textarea.an-tx'); await P.keyboard.press('End'); await P.keyboard.press('Enter'); await P.keyboard.type('둘째 줄'); await P.waitForTimeout(200);
+  const lb = await P.evaluate(() => ({ t: anCfg().rows[1].t, n: anCfg().rows.length, prevH: document.querySelector('#fm-pages .an-b').getBoundingClientRect().height, lh: document.querySelector('#fm-pages .an-h1').getBoundingClientRect().height }));
+  await P.click('#an-cur button[title="이 줄 위에 빈 줄"]'); await P.waitForTimeout(150);
+  const lb2 = await P.evaluate(() => anCfg().rows.map(r => r.lv + ':' + r.t.replace(/\n/g, '/')).join());
+  await P.evaluate(() => anPick(2)); await P.click('#an-cur button[title="이 줄 아래에 빈 줄"]'); await P.waitForTimeout(150);
+  const lb3 = await P.evaluate(() => ({ rows: anCfg().rows.map(r => r.lv + ':' + r.t.replace(/\n/g, '/')).join(), lines: [...document.querySelectorAll('#an-cur .an-cl')].map(l => { const t = [...l.querySelectorAll('button')].map(b => b.getBoundingClientRect().top); return Math.max(...t) - Math.min(...t) < 4 ? 1 : 2; }) }));
+  check('Enter → 같은 줄 안 줄바꿈(줄 수 그대로, 미리보기 두 줄 높이), 빈 줄 ▲ → 위에 빈 줄, ▼ → 아래에 빈 줄, 도구 각 줄은 한 줄', lb.t === '첫째\n둘째 줄' && lb.n === 2 && lb.prevH > lb.lh * 1.8 && lb2 === 'h1:안내,p:,b:첫째/둘째 줄' && lb3.rows === 'h1:안내,p:,b:첫째/둘째 줄,p:' && lb3.lines.every(n => n === 1), { lb, lb2, lb3 });
+  if (JSZIP_JS) {
+    const lbx = await P.evaluate(async () => { const z = await JSZip.loadAsync(await anBuildHwpx(anCfg())); const sec = await z.file('Contents/section0.xml').async('string'); return /<hp:t>• 첫째<hp:lineBreak\/>둘째 줄<\/hp:t>/.test(sec); });
+    check('한글 파일: 줄 안 줄바꿈은 같은 문단의 lineBreak', lbx);
+  }
 
   // 🎨 더 꾸미기 바는 내용이 길어도 왼쪽 화면 맨 아래에 늘 보임(접혀 있을 때)
   await P.evaluate(() => anSet({ rows: Array.from({ length: 40 }, (_, i) => ({ lv: 'b', t: '긴 내용 ' + (i + 1) })) }, true)); await P.waitForTimeout(200);
