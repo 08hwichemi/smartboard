@@ -375,7 +375,7 @@ const setText = (P, sel, v) => P.evaluate(([sel, v]) => { const el = document.qu
   await P.click('#an-cur button[title="가운데 정렬"]'); await P.waitForTimeout(200);
   check('정렬 가운데 → 미리보기 가운데, 내어쓰기 없음', await P.evaluate(() => { const d = [...document.querySelectorAll('#fm-pages .an-p')].find(x => x.textContent === '- 세부'); return d.style.textAlign === 'center' && parseFloat(d.style.textIndent) === 0; }));
   // 순서 ↑
-  await P.click('#an-cur button[title="순서: 이 줄을 한 줄 위로"]'); await P.waitForTimeout(200);
+  await P.click('#an-cur button[title="순서: 한 줄 위로"]'); await P.waitForTimeout(200);
   check('순서 ↑ → 한 줄 위로, 고른 줄도 따라감', (await rowsLv())[4] === 'd:세부' && await P.evaluate(() => anFocus) === 4, (await rowsLv()).slice(3, 7));
   // 끌어서 옮기기: 4번째 줄(세부)을 맨 첫 줄 위로
   await P.evaluate(() => {
