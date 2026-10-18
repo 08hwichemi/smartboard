@@ -192,7 +192,7 @@
     .editable:hover, .editable:focus { background: rgba(0,0,0,0.05); }
 
     .timetable-widget { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative;}
-    .timetable-grid { display: grid; grid-template-columns: 65px repeat(5, 1fr); grid-template-rows: 20px repeat(7, 1fr); gap: 4px; height: 100%; min-height: 0;}
+    .timetable-grid { display: grid; grid-template-columns: 65px repeat(5, 1fr); grid-template-rows: 20px repeat(var(--tt-rows, 7), 1fr); gap: 4px; height: 100%; min-height: 0;} /* --tt-rows: 개인판 교시 수(liteBoot) */
     .tt-header { font-size: 13px; color: var(--text-main); text-align: center; font-weight: 700; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;}
     .tt-cell { border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background-color: var(--tt-bg); border: 1px solid var(--border-color); transition: background-color 0.3s; }
     .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; padding: 2px; }
@@ -2664,13 +2664,17 @@
 
     <div class="lite-sec">
       <div class="lite-sec-title">④ 일과 시간 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">"지금 이 시간" 칸과 내 시간표 줄에 쓰여요</span></div>
+      <div class="lite-row"><label class="lite-lb">교시 수</label><select id="lite-period-count" style="flex:0 0 90px; min-width:0;"><option value="4">4교시</option><option value="5">5교시</option><option value="6">6교시</option><option value="7">7교시</option><option value="8">8교시</option><option value="9">9교시</option><option value="10">10교시</option></select><span class="lite-hint" style="margin-top:0;">내 시간표 줄 수도 이만큼이 돼요.</span></div>
       <table id="lite-times-table"><tbody id="lite-times-rows"></tbody></table>
-      <div class="lite-hint">"850"처럼 쳐도 08:50으로 맞춰져요. 수업이 7교시보다 적으면 남는 줄은 그대로 두면 돼요.</div>
-      <div class="lite-row" style="margin-top:8px;"><label class="lite-lb">조회 시작</label><input type="text" id="lite-day-homeroom" inputmode="numeric" maxlength="5" placeholder="08:40" style="flex:0 0 72px; min-width:0; text-align:center;" onblur="liteTimeNormalize(this)">
-        <label class="lite-lb" style="width:auto; flex:0 0 auto;">점심</label><select id="lite-day-lunch" style="flex:0 0 100px; min-width:0;"></select>
-        <label class="lite-lb" style="width:auto; flex:0 0 auto;">청소</label><select id="lite-day-clean" style="flex:0 0 100px; min-width:0;"></select>
-        <label class="lite-lb" style="width:auto; flex:0 0 auto;">종례</label><span style="display:inline-flex; align-items:center; gap:4px;">마지막 교시 뒤 <input type="number" id="lite-day-closing" min="0" max="120" style="width:52px; padding:5px 6px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-color); color:var(--text-main); font:inherit; font-size:12.5px; text-align:center;">분</span></div>
-      <div class="lite-hint">"지금 이 시간" 칸이 조회·점심·청소·종례를 이 설정으로 보여 줘요. 그 밖의 틈은 "쉬는 시간". 종례 0분이면 마지막 교시 뒤 바로 "퇴근 후 휴식".</div>
+      <div class="lite-hint">"850"처럼 쳐도 08:50으로 맞춰져요.</div>
+      <div style="font-weight:700; font-size:12px; margin:10px 0 4px;">조회 · 점심 · 청소 · 종례 <span class="lite-hint" style="display:inline; font-weight:500;">각각 시작 ~ 끝. 없으면 두 칸을 비워 두세요.</span></div>
+      <table id="lite-times-table" style="width:auto;"><tbody>
+        <tr><td style="font-weight:700;">조회</td><td><input type="text" id="lite-day-homeroom-s" inputmode="numeric" maxlength="5" placeholder="08:30" onblur="liteTimeNormalize(this)"></td><td>~</td><td><input type="text" id="lite-day-homeroom-e" inputmode="numeric" maxlength="5" placeholder="08:50" onblur="liteTimeNormalize(this)"></td>
+            <td style="font-weight:700; padding-left:14px;">점심</td><td><input type="text" id="lite-day-lunch-s" inputmode="numeric" maxlength="5" placeholder="12:40" onblur="liteTimeNormalize(this)"></td><td>~</td><td><input type="text" id="lite-day-lunch-e" inputmode="numeric" maxlength="5" placeholder="13:40" onblur="liteTimeNormalize(this)"></td></tr>
+        <tr><td style="font-weight:700;">청소</td><td><input type="text" id="lite-day-clean-s" inputmode="numeric" maxlength="5" placeholder="없음" onblur="liteTimeNormalize(this)"></td><td>~</td><td><input type="text" id="lite-day-clean-e" inputmode="numeric" maxlength="5" placeholder="" onblur="liteTimeNormalize(this)"></td>
+            <td style="font-weight:700; padding-left:14px;">종례</td><td><input type="text" id="lite-day-closing-s" inputmode="numeric" maxlength="5" placeholder="16:35" onblur="liteTimeNormalize(this)"></td><td>~</td><td><input type="text" id="lite-day-closing-e" inputmode="numeric" maxlength="5" placeholder="16:45" onblur="liteTimeNormalize(this)"></td></tr>
+      </tbody></table>
+      <div class="lite-hint">"지금 이 시간" 칸이 이 시간엔 조회·점심·청소·종례로, 수업 사이 나머지 틈은 "쉬는 시간"으로 보여 줘요. 처음엔 일과 시간에 맞춰 채워 두니 고치기만 하면 돼요.</div>
     </div>
 
     <div class="lite-sec">
@@ -4997,16 +5001,30 @@
   const LITE_SETTINGS_KEY = 'lite-settings';
   // 교육청 코드 → [시·도 이름, 위도, 경도] — 날씨는 학교 시·도의 대표 좌표로(주소→좌표 변환 서비스를 안 쓰기 위해)
   const LITE_SIDO = { B10: ['서울', 37.566, 126.978], C10: ['부산', 35.180, 129.075], D10: ['대구', 35.871, 128.602], E10: ['인천', 37.456, 126.705], F10: ['광주', 35.160, 126.851], G10: ['대전', 36.351, 127.385], H10: ['울산', 35.539, 129.311], I10: ['세종', 36.480, 127.289], J10: ['경기', 37.275, 127.009], K10: ['강원', 37.885, 127.730], M10: ['충북', 36.635, 127.489], N10: ['충남', 36.659, 126.673], P10: ['전북', 35.820, 127.109], Q10: ['전남', 34.816, 126.463], R10: ['경북', 36.576, 128.506], S10: ['경남', 35.238, 128.692], T10: ['제주', 33.499, 126.531] };
-  // 하루 흐름(조회·점심·청소·종례) 기본값: 점심은 가장 긴 틈 뒤, 청소 없음, 종례 10분
-  function liteDay() {
-    const s = liteSettings(); const d = Object.assign({ homeroomAt: '08:40', lunchAfter: 0, cleanAfter: 0, closingMin: 10 }, s.day || {});
-    if (!Number(d.lunchAfter)) { // 안 정했으면 일과 시간에서 가장 긴 틈 뒤를 점심으로
-      const times = s.classTimes || DEFAULT_TIMES; let best = 0, bestGap = 0;
-      for (let i = 0; i < times.length - 1; i++) { const gap = (minutesOf(times[i + 1].s) || 0) - (minutesOf(times[i].e) || 0); if (gap > bestGap) { bestGap = gap; best = i + 1; } }
-      d.lunchAfter = best;
-    }
+  // 하루 흐름 = { homeroom:{s,e}, lunch:{s,e}, clean:{s,e}, closing:{s,e} } — 각각 시작~끝 시각, 없으면 null.
+  // 안 정했으면 일과 시간에서 만든다: 조회 = 1교시 10분 전~1교시, 점심 = 가장 긴 틈, 청소 없음, 종례 = 마지막 교시 뒤 10분.
+  const LITE_DAY_KEYS = [['homeroom', '조회'], ['lunch', '점심'], ['clean', '청소'], ['closing', '종례']];
+  function liteDayDefaults(times) {
+    const fmt = function(v) { return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+    const d = { homeroom: null, lunch: null, clean: null, closing: null };
+    if (!times || !times.length) return d;
+    const f = minutesOf(times[0].s), l = minutesOf(times[times.length - 1].e);
+    if (f !== null) d.homeroom = { s: fmt(Math.max(0, f - 10)), e: times[0].s };
+    if (l !== null) d.closing = { s: times[times.length - 1].e, e: fmt(Math.min(24 * 60 - 1, l + 10)) };
+    let best = -1, bestGap = 0;
+    for (let i = 0; i < times.length - 1; i++) { const gap = (minutesOf(times[i + 1].s) || 0) - (minutesOf(times[i].e) || 0); if (gap > bestGap) { bestGap = gap; best = i; } }
+    if (best >= 0) d.lunch = { s: times[best].e, e: times[best + 1].s };
     return d;
   }
+  function liteDay() {
+    const s = liteSettings(); const times = s.classTimes || DEFAULT_TIMES;
+    const def = liteDayDefaults(times);
+    const d = s.day && typeof s.day === 'object' ? s.day : {};
+    const out = {};
+    LITE_DAY_KEYS.forEach(function(k) { const r = d[k[0]]; out[k[0]] = r === null ? null : (r && typeof r === 'object' && r.s ? { s: r.s, e: r.e } : (k[0] in d ? null : def[k[0]])); });
+    return out;
+  }
+  function liteTimesCount() { return Math.max(1, Math.min(10, parseInt(document.getElementById('lite-period-count').value) || 7)); }
   function liteSettings() { try { const s = JSON.parse(localStorage.getItem(LITE_SETTINGS_KEY) || 'null'); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; } }
   function liteSaveSettings(s) { localStorage.setItem(LITE_SETTINGS_KEY, JSON.stringify(s)); }
   function liteEsc(s) { return escapeHtmlAttr(String(s == null ? '' : s)); }
@@ -5021,6 +5039,7 @@
     const hr = !!(s.hrGrade && s.hrClass);
     window.currentTeacher = { id: 'lite', name: s.name || '선생님', is_admin: false, must_change_password: false, role: hr ? '담임' : '교사', homeroom_grade: hr ? s.hrGrade : null, homeroom_class: hr ? s.hrClass : null, schedule_manager: false };
     liteApplySchool(s);
+    document.documentElement.style.setProperty('--tt-rows', String((Array.isArray(s.classTimes) && s.classTimes.length) || 7));
     const nm = s.name || '선생님';
     document.getElementById('user-avatar-initial').innerText = nm.length > 2 ? nm.slice(-2) : nm;
     document.getElementById('user-chip-name').innerText = nm;
@@ -5099,12 +5118,12 @@
     document.getElementById('lite-school-results').innerHTML = '';
     document.getElementById('lite-school-q').value = '';
     liteRenderPicked();
-    liteRenderTimesRows(Array.isArray(s.classTimes) && s.classTimes.length === 7 ? s.classTimes : DEFAULT_TIMES);
+    const times = Array.isArray(s.classTimes) && s.classTimes.length ? s.classTimes : DEFAULT_TIMES;
+    document.getElementById('lite-period-count').value = String(times.length);
+    document.getElementById('lite-period-count').onchange = function() { liteRenderTimesRows(liteTimesRead(), liteTimesCount()); };
+    liteRenderTimesRows(times, times.length);
     const day = liteDay();
-    document.getElementById('lite-day-homeroom').value = day.homeroomAt;
-    const after = function(id, v, none) { const el = document.getElementById(id); let h = none ? '<option value="0">없음</option>' : ''; for (let i = 1; i <= 7; i++) h += '<option value="' + i + '"' + (Number(v) === i ? ' selected' : '') + '>' + i + '교시 뒤</option>'; el.innerHTML = h; if (!Number(v) && none) el.value = '0'; };
-    after('lite-day-lunch', day.lunchAfter, false); after('lite-day-clean', day.cleanAfter, true);
-    document.getElementById('lite-day-closing').value = String(Number(day.closingMin) || 0);
+    LITE_DAY_KEYS.forEach(function(k) { const r = day[k[0]]; document.getElementById('lite-day-' + k[0] + '-s').value = r ? r.s : ''; document.getElementById('lite-day-' + k[0] + '-e').value = r ? r.e : ''; });
     document.getElementById('lite-backup-filename').innerText = liteBackupFileName();
     liteBackupRefreshStatus();
     document.getElementById('user-menu-dropdown').style.display = 'none';
@@ -5166,10 +5185,20 @@
       liteRenderPicked();
     }, function() { customAlert('위치를 받지 못했어요(권한을 허용해야 해요). 학교의 시·도 기준으로 둘게요.'); });
   }
-  function liteRenderTimesRows(times) {
+  function liteTimesRead() { // 지금 칸에 적힌 값(교시 수를 바꿀 때 적은 것을 지키려고)
+    const out = []; for (let i = 1; i <= 10; i++) { const s = document.getElementById('lite-time-s-' + i), e = document.getElementById('lite-time-e-' + i); if (!s || !e) break; out.push({ s: s.value, e: e.value }); } return out;
+  }
+  function liteRenderTimesRows(times, count) {
+    count = count || times.length || 7;
     let h = '';
-    for (let i = 1; i <= 7; i++) {
-      const tm = times[i - 1] || { s: '', e: '' };
+    const fmt = function(v) { return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+    for (let i = 1; i <= count; i++) {
+      let tm = times[i - 1];
+      if (!tm) { // 새로 늘어난 줄: 앞 줄 끝 + 10분부터 50분(없으면 기본값)
+        const prev = times[i - 2] || (i >= 2 ? null : null); const pe = prev ? minutesOf(prev.e) : null;
+        tm = pe !== null ? { s: fmt(Math.min(pe + 10, 23 * 60)), e: fmt(Math.min(pe + 60, 23 * 60 + 59)) } : (DEFAULT_TIMES[i - 1] || { s: '', e: '' });
+        times = times.slice(); times[i - 1] = tm;
+      }
       h += '<tr><td style="font-weight:700;">' + i + '교시</td>' +
         '<td><input type="text" inputmode="numeric" maxlength="5" id="lite-time-s-' + i + '" value="' + liteEsc(tm.s) + '" placeholder="08:50" onblur="liteTimeNormalize(this)" oninput="liteTimesValidate()"></td><td>~</td>' +
         '<td><input type="text" inputmode="numeric" maxlength="5" id="lite-time-e-' + i + '" value="' + liteEsc(tm.e) + '" placeholder="09:40" onblur="liteTimeNormalize(this)" oninput="liteTimesValidate()"></td>' +
@@ -5186,9 +5215,10 @@
     if (hh !== undefined && parseInt(hh, 10) < 24 && parseInt(mm, 10) < 60) el.value = hh.padStart(2, '0') + ':' + mm.padStart(2, '0');
     liteTimesValidate();
   }
-  function liteTimesValidate() { // 7교시 모두 맞으면 [{s,e}], 아니면 null(빨간 표시)
+  function liteTimesValidate() { // 모든 교시가 맞으면 [{s,e}], 아니면 null(빨간 표시)
     let prevEnd = null, ok = true; const out = [];
-    for (let i = 1; i <= 7; i++) {
+    const count = liteTimesRead().length;
+    for (let i = 1; i <= count; i++) {
       const sEl = document.getElementById('lite-time-s-' + i), eEl = document.getElementById('lite-time-e-' + i), d = document.getElementById('lite-time-dur-' + i);
       if (!sEl || !eEl) return null;
       const s = minutesOf(sEl.value), e = minutesOf(eEl.value);
@@ -5208,7 +5238,7 @@
     if (liteSetupFirst && liteFsSupported && !(await liteBackupDir())) {
       if (!await customConfirm('① 백업 폴더를 아직 정하지 않았어요.\n서버가 없어서 폴더를 안 정하면 브라우저 자료가 지워질 때 복구할 수 없어요.\n\n그래도 폴더 없이 시작할까요? (나중에 💾 백업에서 정할 수 있어요)')) return;
     }
-    for (let i = 1; i <= 7; i++) { liteTimeNormalize(document.getElementById('lite-time-s-' + i)); liteTimeNormalize(document.getElementById('lite-time-e-' + i)); }
+    for (let i = 1; i <= liteTimesRead().length; i++) { liteTimeNormalize(document.getElementById('lite-time-s-' + i)); liteTimeNormalize(document.getElementById('lite-time-e-' + i)); }
     const times = liteTimesValidate();
     if (!times) { await customAlert('④ 빨갛게 표시된 교시 시간을 먼저 고쳐 주세요.'); return; }
     const s = liteSettings();
@@ -5220,10 +5250,15 @@
     s.school = liteSchoolTmp;
     s.lat = liteLatTmp ? liteLatTmp.lat : null; s.lon = liteLatTmp ? liteLatTmp.lon : null;
     s.classTimes = times;
-    liteTimeNormalize(document.getElementById('lite-day-homeroom'));
-    s.day = { homeroomAt: minutesOf(document.getElementById('lite-day-homeroom').value) !== null ? document.getElementById('lite-day-homeroom').value : '08:40',
-      lunchAfter: parseInt(document.getElementById('lite-day-lunch').value) || 0, cleanAfter: parseInt(document.getElementById('lite-day-clean').value) || 0,
-      closingMin: Math.max(0, Math.min(120, parseInt(document.getElementById('lite-day-closing').value) || 0)) };
+    const day = {};
+    for (let i = 0; i < LITE_DAY_KEYS.length; i++) {
+      const k = LITE_DAY_KEYS[i][0], sEl = document.getElementById('lite-day-' + k + '-s'), eEl = document.getElementById('lite-day-' + k + '-e');
+      liteTimeNormalize(sEl); liteTimeNormalize(eEl);
+      if (!sEl.value.trim() && !eEl.value.trim()) { day[k] = null; continue; } // 비우면 없음
+      if (minutesOf(sEl.value) === null || minutesOf(eEl.value) === null || minutesOf(eEl.value) <= minutesOf(sEl.value)) { await customAlert('④ ' + LITE_DAY_KEYS[i][1] + ' 시간을 "시작 ~ 끝"으로 적어 주세요(끝이 시작보다 늦게). 없으면 두 칸 다 비우면 돼요.'); return; }
+      day[k] = { s: sEl.value, e: eEl.value };
+    }
+    s.day = day;
     s.setupDone = true;
     liteSaveSettings(s);
     localStorage.setItem('my-n', name);
@@ -5569,7 +5604,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.7';
+  var BUILD_ID = '2026-10-18.8';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -9719,7 +9754,7 @@
     for(var d=0; d<days.length; d++) {
       html += '<div class="tt-header">' + days[d] + '</div>';
     }
-    for(let i=1; i<=7; i++) {
+    for(let i=1; i<=currentTimes.length; i++) { // 공용판 7교시, 개인판은 설정한 교시 수
       html += '<div class="tt-time">' + i + '<div style="font-size:12px; line-height:1.2; margin-top:4px; font-weight:700;">' + currentTimes[i-1].s + ' -<br>' + currentTimes[i-1].e + '</div></div>';
       for(let j=1; j<=5; j++) {
         html += '<div class="tt-cell"><div class="tt-subj editable" contenteditable="true" spellcheck="false" id="' + prefix + '-' + i + '-' + j + '-s" onblur="saveAllData()" onkeyup="updateCellColors(\'' + prefix + '\')" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}"></div><div class="tt-room editable" contenteditable="true" spellcheck="false" id="' + prefix + '-' + i + '-' + j + '-r" onblur="saveAllData()" onkeyup="updateCellColors(\'' + prefix + '\')" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}"></div></div>';
@@ -9729,7 +9764,7 @@
   }
 
   function updateCellColors(prefix) {
-    for(let i=1; i<=7; i++) {
+    for(let i=1; i<=Math.max(7, currentTimes.length); i++) {
       for(let j=1; j<=5; j++) {
         const sEl = document.getElementById(prefix + '-' + i + '-' + j + '-s');
         const rEl = document.getElementById(prefix + '-' + i + '-' + j + '-r');
@@ -11791,26 +11826,35 @@
     const m = function(s) { return Number(s.split(':')[0]) * 60 + Number(s.split(':')[1]); };
     const fmt = function(v) { return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
     const firstSM = m(times[0].s), lastEM = m(times[times.length - 1].e);
-    const homeroom = day ? (minutesOf(day.homeroomAt) !== null ? day.homeroomAt : '08:40') : '08:40';
-    const homeroomM = m(homeroom);
+    if (day) { // 개인판: 조회·점심·청소·종례가 각각 시작~끝 시각(없으면 비움). 수업 → 이름 붙은 시간 → 일과 전/퇴근 → 쉬는 시간 순으로 판단
+      const ranges = [];
+      [['homeroom', '조회 시간'], ['lunch', '점심 시간'], ['clean', '청소 시간'], ['closing', '종례 시간']].forEach(function(x) {
+        const r = day[x[0]]; if (r && minutesOf(r.s) !== null && minutesOf(r.e) !== null && m(r.e) > m(r.s)) ranges.push({ name: x[1], s: m(r.s), e: m(r.e), ss: r.s, es: r.e });
+      });
+      for (let i = 0; i < times.length; i++) if (curM >= m(times[i].s) && curM < m(times[i].e)) return { status: (i + 1) + '교시 수업 중', start: times[i].s, end: times[i].e };
+      for (let i = 0; i < ranges.length; i++) if (curM >= ranges[i].s && curM < ranges[i].e) return { status: ranges[i].name, start: ranges[i].ss, end: ranges[i].es };
+      // 이웃한 경계(수업·이름 붙은 시간의 시작/끝) 사이
+      let prevEnd = 0, nextStart = 24 * 60;
+      times.forEach(function(x) { if (m(x.e) <= curM) prevEnd = Math.max(prevEnd, m(x.e)); if (m(x.s) > curM) nextStart = Math.min(nextStart, m(x.s)); });
+      ranges.forEach(function(r) { if (r.e <= curM) prevEnd = Math.max(prevEnd, r.e); if (r.s > curM) nextStart = Math.min(nextStart, r.s); });
+      const dayEnd = ranges.reduce(function(a, r) { return Math.max(a, r.e); }, lastEM);
+      if (curM < firstSM && !ranges.some(function(r) { return r.s < firstSM && r.e <= curM; })) return { status: '일과 전', start: '00:00', end: fmt(nextStart) };
+      if (curM >= dayEnd) return { status: '퇴근 후 휴식', start: fmt(dayEnd), end: '23:59' };
+      return { status: '쉬는 시간', start: fmt(prevEnd), end: fmt(nextStart) };
+    }
+    const homeroom = '08:40', homeroomM = m(homeroom);
     if (curM < firstSM) {
       if (curM >= homeroomM) return { status: '조회 시간', start: homeroom, end: times[0].s };
       return { status: '일과 전', start: '00:00', end: homeroom };
     }
-    if (curM >= lastEM) {
-      const closing = day ? (Number(day.closingMin) || 0) : 0;
-      if (closing > 0 && curM < lastEM + closing) return { status: '종례 시간', start: times[times.length - 1].e, end: fmt(lastEM + closing) };
-      return { status: '퇴근 후 휴식', start: closing > 0 ? fmt(lastEM + closing) : times[times.length - 1].e, end: '23:59' };
-    }
+    if (curM >= lastEM) return { status: '퇴근 후 휴식', start: times[times.length - 1].e, end: '23:59' };
     for (let i = 0; i < times.length; i++) {
       const sM = m(times[i].s), eM = m(times[i].e);
       if (curM >= sM && curM < eM) return { status: (i + 1) + '교시 수업 중', start: times[i].s, end: times[i].e };
       if (i < times.length - 1) {
         const nextSM = m(times[i + 1].s);
         if (curM >= eM && curM < nextSM) {
-          let status;
-          if (day) status = (i + 1) === Number(day.lunchAfter) ? '점심 시간' : (i + 1) === Number(day.cleanAfter) ? '청소 시간' : '쉬는 시간';
-          else { status = nextSM - eM >= 40 ? '점심 시간' : '쉬는 시간'; if (i === 5) status = '청소 시간'; }
+          let status = nextSM - eM >= 40 ? '점심 시간' : '쉬는 시간'; if (i === 5) status = '청소 시간';
           return { status: status, start: times[i].e, end: times[i + 1].s };
         }
       }
