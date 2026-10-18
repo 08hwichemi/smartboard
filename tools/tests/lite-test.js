@@ -229,6 +229,11 @@ async function openPage(browser) {
   check('백업 파일보다 훨씬 작으면 안 덮어쓰고 띠', (await page.evaluate(() => window.__files['내 스마트보드_백업.json'].indexOf('셋째'))) === -1 && await vis('#lite-backup-banner') && (await page.textContent('#lite-backup-banner-text')).includes('훨씬 적어요'));
   await page.evaluate(() => { liteBackupHideBanner(); liteDirHandle = null; });
 
+  await page.evaluate(() => { liteBackupRefreshStatus(); document.getElementById('backup-overlay').style.display = 'flex'; }); await wait(200);
+  check('개인판 백업 창에 캘린더 CSV 없음', !(await vis('#csv-file-input + button')) && !(await page.isVisible('text=캘린더 CSV 다운로드')));
+  await page.screenshot({ path: 'lite-backup.png' });
+  await page.evaluate(() => { document.getElementById('backup-overlay').style.display = 'none'; });
+
   console.log('== 7. 설정 창 다시 열기·닫기, 설명서');
   await page.click('#rail-settings-btn'); await wait(200);
   check('설정 창 열림(닫기 있음)', await vis('#lite-setup-overlay') && await vis('#lite-setup-close'));
