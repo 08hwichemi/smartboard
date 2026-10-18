@@ -27,6 +27,7 @@ async function openPage(browser) {
     requests.push(url);
     if (url.startsWith('http://app.test/')) {
       if (url.includes('version.txt')) return route.fulfill({ body: BUILD_ID, contentType: 'text/plain' });
+      if (url.includes('absence/forms.json')) return route.fulfill({ body: fs.readFileSync(path.join(ROOT, 'absence/forms.json')), contentType: 'application/json' });
       if (url.includes('lite.html')) return route.fulfill({ body: html, contentType: 'text/html; charset=utf-8' });
       return route.fulfill({ status: 404, body: '' });
     }
@@ -222,8 +223,16 @@ async function openPage(browser) {
   check('좌석배치표: 담임 반(1-2) 명단 3명 자동', await page.evaluate(() => Array.isArray(scStudents) && scStudents.length === 3 && scStudents[0].name === '김하늘'), await page.evaluate(() => scStudents));
   await page.click('#rail-absence-btn'); await wait(900);
   check('결석계: 담임 반 명단 3명', await page.evaluate(() => Array.isArray(abRoster) && abRoster.length === 3), await page.evaluate(() => abRoster));
+  // 학교 이름이 들어가는 곳(결석계 양식·조퇴증·시정표)이 설정한 학교를 쓰는지 — 잠시 '테스트고등학교'로 바꿔 확인
+  await page.evaluate(() => { const s = liteSettings(); s.school = Object.assign({}, s.school, { name: '테스트고등학교' }); liteSaveSettings(s); abForms = null; abFormsLoading = null; });
+  const absHtml = await page.evaluate(async () => { const d = await abLoadForms(); return [d.trip.html.indexOf('테스트고등학교장') !== -1, d.trip.html.indexOf('부광고등학교') === -1, d.report.html.indexOf('테스트고등학교장') !== -1]; });
+  check('결석계 양식 속 학교 이름 = 설정한 학교', absHtml.every(Boolean), absHtml);
+  await page.click('#rail-leavepass-btn'); await wait(600);
+  check('조퇴증 학교 칸 = 설정한 학교', (await page.inputValue('#lp-cfg-school')) === '테스트고등학교', await page.inputValue('#lp-cfg-school'));
+  check('시정표 기본 제목 = 설정한 학교', await page.evaluate(() => bsNormalDefault().title === '테스트고등학교 시정표'));
+  await page.evaluate(() => { const s = liteSettings(); s.school = Object.assign({}, s.school, { name: '부광고등학교' }); liteSaveSettings(s); abForms = null; abFormsLoading = null; });
   await page.click('#rail-sgb-btn'); await wait(500);
-  check('생기부: 길라잡이 찾기 칸 없음(문장 점검만)', !(await vis('#sgb-pane-find')) && await vis('#sgb-pane-check'));
+  check('생기부: 길라잡이 찾기 칸 없음(문장 점검만), 탭 이름도', !(await vis('#sgb-pane-find')) && await vis('#sgb-pane-check') && (await page.textContent('#se-page .tab-btn[data-tab="check"]')).trim() === '✍️ 문장 점검');
   await page.evaluate(() => setSgbTab('edit')); await wait(900);
   check('생기부 편집기: 담임 반 명단 3명', await page.evaluate(() => Array.isArray(seRoster) && seRoster.length === 3), await page.evaluate(() => seRoster));
   await page.click('#rail-forms-btn'); await wait(800);
