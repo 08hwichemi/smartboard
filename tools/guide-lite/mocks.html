@@ -1,0 +1,85 @@
+<!doctype html><html lang="ko"><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  body { margin: 0; background: #fff; font-family: Pretendard, 'Malgun Gothic', sans-serif; color: #17191C; }
+  .shot { width: 900px; padding: 28px; background: #E9ECF1; box-sizing: border-box; }
+  .win { background: #fff; border-radius: 12px; box-shadow: 0 10px 28px rgba(23,25,28,.13); overflow: hidden; border: 1px solid #DDE1E7; }
+  .tabs { background: #DEE1E6; padding: 10px 12px 0; display: flex; gap: 8px; align-items: flex-end; }
+  .tab { background: #fff; border-radius: 10px 10px 0 0; padding: 8px 16px; font-size: 14px; min-width: 200px; display:flex; gap:8px; align-items:center; }
+  .tab .fav { width: 16px; height: 16px; border-radius: 4px; background: #1F3A5F; }
+  .bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #E4E6EA; }
+  .nav { color: #777; font-size: 18px; letter-spacing: 6px; }
+  .url { flex: 1; background: #F1F3F4; border-radius: 999px; padding: 8px 16px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .url.hl { outline: 3px solid #E8590C; outline-offset: 1px; }
+  .ico { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; color: #444; }
+  .ico.hl { outline: 3px solid #E8590C; outline-offset: 1px; }
+  .page { height: 220px; background: #fff; position: relative; }
+  .popup { position: absolute; right: 18px; top: 10px; width: 300px; background: #fff; border: 1px solid #DDE1E7; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 14px 16px; font-size: 14px; }
+  .popup h4 { margin: 0 0 4px; font-size: 16px; }
+  .popup .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .popup .row span { padding: 6px 16px; border-radius: 999px; border: 1px solid #DDE1E7; font-size: 14px; }
+  .popup .row span.go { background: #1A73E8; color: #fff; border-color: #1A73E8; outline: 3px solid #E8590C; outline-offset: 2px; }
+  .appsgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; padding: 24px 40px; }
+  .appsgrid div { text-align: center; font-size: 13px; }
+  .appsgrid .icon { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 6px; background: #E8EEF6; display: grid; place-items: center; font-size: 30px; }
+  .appsgrid .me .icon { background: #1F3A5F; }
+  .menu { position: absolute; left: 150px; top: 60px; background: #fff; border: 1px solid #DDE1E7; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px 0; font-size: 14px; width: 240px; }
+  .menu div { padding: 7px 14px; }
+  .menu div.hl { background: #FDEBDD; outline: 3px solid #E8590C; outline-offset: -3px; }
+  .menu .sep { height: 1px; background: #E4E6EA; margin: 4px 0; padding: 0; }
+  /* 실행 창 */
+  .run { width: 420px; margin: 0 auto; background: #F3F3F3; border: 1px solid #999; border-radius: 8px; box-shadow: 0 10px 28px rgba(0,0,0,.2); font-size: 14px; }
+  .run .t { background: #fff; padding: 8px 12px; font-weight: 700; border-bottom: 1px solid #DDD; }
+  .run .b { padding: 16px 14px; }
+  .run .field { background: #fff; border: 2px solid #1A73E8; border-radius: 4px; padding: 5px 8px; font-family: Consolas, monospace; font-weight: 700; margin-top: 6px; }
+  .run .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+  .run .row span { padding: 4px 18px; border: 1px solid #999; border-radius: 4px; background: #fff; }
+  .run .row span.go { border-color: #1A73E8; outline: 3px solid #E8590C; outline-offset: 2px; }
+  /* 두 모니터 */
+  .desk { display: flex; gap: 28px; align-items: flex-end; justify-content: center; padding: 30px 20px 10px; }
+  .mon { width: 400px; }
+  .mon .screen { height: 230px; border: 10px solid #2B2F36; border-radius: 10px; background: #fff; overflow: hidden; position: relative; }
+  .mon .stand { width: 90px; height: 16px; background: #2B2F36; margin: 0 auto; border-radius: 0 0 6px 6px; }
+  .mon .base { width: 180px; height: 8px; background: #2B2F36; margin: 0 auto; border-radius: 6px; }
+  .mon .label { text-align: center; font-size: 15px; font-weight: 700; margin-top: 10px; color: #17191C; }
+  .mon .screen img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+  .mon.hl .screen { outline: 4px solid #E8590C; outline-offset: 3px; }
+  .doc { padding: 14px; font-size: 11px; color: #555; }
+  .doc .bar2 { height: 10px; background: #E4E6EA; border-radius: 3px; margin: 6px 0; }
+  .doc .bar2.w { width: 70%; } .doc .bar2.s { width: 45%; }
+  .win-ani { position: absolute; left: 60px; top: 40px; width: 60%; height: 60%; border: 2px dashed #E8590C; border-radius: 6px; background: rgba(232,89,12,.06); }
+  .arrow { position: absolute; left: 40%; top: 45%; font-size: 40px; color: #E8590C; font-weight: 800; }
+</style>
+<body>
+<!-- 1. 주소 넣기 -->
+<div class="shot" id="m-addr"><div class="win">
+  <div class="tabs"><div class="tab"><span class="fav"></span>새 탭</div></div>
+  <div class="bar"><span class="nav">‹ › ↻</span><div class="url hl">🔒 <span>08hwichemi.github.io/smartboard/lite.html</span></div><span class="ico">⋮</span></div>
+  <div class="page"></div>
+</div></div>
+<!-- 2. 설치 아이콘 -->
+<div class="shot" id="m-install"><div class="win">
+  <div class="tabs"><div class="tab"><span class="fav"></span>내 스마트보드</div></div>
+  <div class="bar"><span class="nav">‹ › ↻</span><div class="url">🔒 <span>08hwichemi.github.io/smartboard/lite.html</span></div><span class="ico hl">🖥️</span><span class="ico">⋮</span></div>
+  <div class="page"><div class="popup"><h4>앱 설치</h4><div style="color:#5F6670">내 스마트보드<br>08hwichemi.github.io</div><div class="row"><span class="go">설치</span><span>취소</span></div></div></div>
+</div></div>
+<!-- 3. chrome://apps -->
+<div class="shot" id="m-apps"><div class="win">
+  <div class="tabs"><div class="tab"><span class="fav"></span>앱</div></div>
+  <div class="bar"><span class="nav">‹ › ↻</span><div class="url">🔒 <span>chrome://apps</span></div><span class="ico">⋮</span></div>
+  <div class="page" style="height:260px;"><div class="appsgrid"><div class="me"><div class="icon">🧳</div>내 스마트보드</div><div><div class="icon">📄</div>문서</div><div><div class="icon">📁</div>드라이브</div><div><div class="icon">🎬</div>YouTube</div><div><div class="icon">🛒</div>웹 스토어</div></div>
+    <div class="menu"><div>열기</div><div>새 창에서 열기</div><div class="sep"></div><div>바로가기 만들기…</div><div class="hl">☑ 로그인 시 앱 시작</div><div class="sep"></div><div>Chrome에서 삭제…</div></div></div>
+</div></div>
+<!-- 4. 실행 창 -->
+<div class="shot" id="m-run" style="background:#fff;"><div class="run"><div class="t">🏃 실행</div><div class="b">열기: <div class="field">shell:startup</div><div class="row"><span class="go">확인</span><span>취소</span><span>찾아보기…</span></div></div></div></div>
+<!-- 5. 두 모니터 -->
+<div class="shot" id="m-dual" style="background:#fff;"><div class="desk">
+  <div class="mon"><div class="screen"><div class="doc">한글 — 수행평가 안내문.hwp<div class="bar2 w"></div><div class="bar2"></div><div class="bar2 s"></div><div class="bar2 w"></div><div class="bar2"></div><div class="bar2 s"></div><div class="bar2 w"></div></div></div><div class="stand"></div><div class="base"></div><div class="label">주 모니터 — 나이스·한글 작업</div></div>
+  <div class="mon hl"><div class="screen"><img src="home.png" alt=""></div><div class="stand"></div><div class="base"></div><div class="label">보조 모니터 — 내 스마트보드를 늘 띄워 둠</div></div>
+</div></div>
+<!-- 6. 창 옮기기 -->
+<div class="shot" id="m-move" style="background:#fff;"><div class="desk">
+  <div class="mon"><div class="screen"><div class="win-ani"></div><div class="arrow">→</div></div><div class="stand"></div><div class="base"></div><div class="label">⊞ + Shift + → 를 누르면</div></div>
+  <div class="mon hl"><div class="screen"><img src="home.png" alt=""></div><div class="stand"></div><div class="base"></div><div class="label">옆 모니터로 창이 넘어가요</div></div>
+</div></div>
+</body></html>
