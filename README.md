@@ -109,4 +109,5 @@ GitHub Pages — `https://08hwichemi.github.io/smartboard/`
 - **백업**: 💾 백업 창에서 폴더를 고르면(바탕화면 자체는 Chrome이 막아 그 안에 새 폴더) 거기에, 자료가 바뀌면 1분 뒤(최대 5분에 한 번) `내 스마트보드_백업.json`에 덮어쓰고 일주일에 한 번 `내 스마트보드_백업_지난주.json`도 남김(Chrome·Edge의 폴더 접근 기능, 폴더 손잡이는 IndexedDB `lite-fs`).
   브라우저 자료가 비어 있는데 백업 파일이 크면 덮어쓰지 않고 복원을 권한다. 폴더를 못 쓰는 브라우저는 하루 한 번 내려받기를 권하는 띠만.
 - 명렬표를 읽는 모든 화면은 `rosterRows(학년, 반)` 하나를 거친다(공용판은 서버 `students`, 개인판은 브라우저).
+- 선생님께 보내는 안내 페이지: `https://08hwichemi.github.io/smartboard/lite-guide.html`(`lite-guide.html`, 그림은 `guide/lite/` — `guide.html`과 같은 CSS).
 - 테스트: `tools/tests/lite-test.js`.

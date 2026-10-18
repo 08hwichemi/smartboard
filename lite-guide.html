@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 스마트보드 사용 설명서</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<!-- 선생님들께 보내는 안내 페이지. 구성·엔진은 AutoFolder 설명서(08hwichemi/file-organizer-releases gh-pages)와 같고, 색은 스마트보드 남색.
+     장면 내용은 아래 스크립트의 S 배열만 고치면 된다. 그림은 guide/lite/*.webp(만드는 법: docs/이어서-작업하기.md 10/18 17차). -->
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 한 화면에 한 장면. 위: 차례(장), 가운데: 글+화면이 한 카드, 아래: 이전/진행/다음.
+     색·글꼴은 AutoFolder 프로그램과 같게. 장면 내용은 아래 스크립트의 S 배열만 고치면 된다. */
+  :root {
+    --bg: #F4F5F7;
+    --surface: #FFFFFF;
+    --surface-sub: #F7F8FA;
+    --fg: #17191C;
+    --sub: #5F6670;
+    --line: #E4E6EA;
+    --accent: #1F3A5F;
+    --accent-hover: #16304F;
+    --accent-soft: #E8EEF6;
+    --folder: #E3B23C;
+    --folder-light: #F5CB5C;
+    --ok: #1B6E43;
+    --hl: #E8590C;
+    --hl-soft: #FDEBDD;
+    --ex: #8A5A00;
+    --ex-soft: #FFF3D6;
+    --shot-shadow: 0 10px 28px rgba(23, 25, 28, 0.13);
+    --font: Pretendard, "Pretendard Variable", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121418; --surface: #1B1E24; --surface-sub: #22262D; --fg: #EDEFF2; --sub: #A3AAB4;
+      --line: #2E333B; --accent: #8FB0E6; --accent-hover: #A9C3F0; --accent-soft: #24344D;
+      --ok: #6CC596; --hl: #FF8A4C; --hl-soft: #3A2516; --ex: #F2C46B; --ex-soft: #3A2F16;
+      --shot-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121418; --surface: #1B1E24; --surface-sub: #22262D; --fg: #EDEFF2; --sub: #A3AAB4;
+    --line: #2E333B; --accent: #8FB0E6; --accent-hover: #A9C3F0; --accent-soft: #24344D;
+    --ok: #6CC596; --hl: #FF8A4C; --hl-soft: #3A2516; --ex: #F2C46B; --ex-soft: #3A2F16;
+    --shot-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.6;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    height: 100%;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-block: 12px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    gap: 12px;
+  }
+  .nw { white-space: nowrap !important; }
+
+  /* 위: 이름 + 차례 */
+  .top { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 17px; white-space: nowrap; }
+  .logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; flex-shrink: 0; }
+  .brand small { font-weight: 500; color: var(--sub); font-size: 14px; }
+  .toc {
+    display: flex; gap: 2px; flex-wrap: nowrap; overflow-x: auto;
+    margin-left: auto; padding: 4px; min-width: 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    scrollbar-width: none;
+  }
+  .toc::-webkit-scrollbar { display: none; }
+  .toc button {
+    display: inline-flex; align-items: center; gap: 5px;
+    min-height: 36px; padding: 0 11px; flex-shrink: 0;
+    border: 0; border-radius: 9px; background: transparent;
+    color: var(--sub); font: inherit; font-size: 14px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+  }
+  .toc button:hover { background: var(--surface-sub); color: var(--fg); }
+  .toc button[aria-current="step"] { background: var(--accent-soft); color: var(--accent); }
+  .toc .star { color: var(--folder); font-size: 11px; }
+
+  /* 가운데: 한 장면 */
+  .stage { flex: 1; min-height: 0; display: flex; }
+  .scene {
+    flex: 1; min-height: 0; min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.45fr);
+    gap: clamp(20px, 3vw, 48px);
+    align-items: center;
+    padding: clamp(20px, 3vw, 44px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    overflow: auto;
+    animation: in 0.22s ease-out;
+  }
+  .scene:focus { outline: none; }
+  @keyframes in { from { opacity: 0.4; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .scene { animation: none; } }
+
+  .text { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .chip {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 12px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 13.5px; font-weight: 700; white-space: nowrap;
+  }
+  .chip span { font-weight: 600; opacity: 0.8; font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.25; font-weight: 800; }
+  h2 { font-size: clamp(24px, 2.5vw, 31px); line-height: 1.3; font-weight: 800; }
+  .text p { margin: 0; font-size: 17px; color: var(--sub); text-wrap: pretty; }
+  .text p b { color: var(--fg); font-weight: 700; }
+  b.mark { color: var(--fg); font-weight: 750; box-shadow: inset 0 -0.42em 0 var(--hl-soft); }
+  .btnlike {
+    display: inline-block; padding: 0 8px; border-radius: 6px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 15px; line-height: 1.65;
+  }
+  .key {
+    display: inline-block; min-width: 1.6em; padding: 0 7px; text-align: center;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+    background: var(--surface-sub); color: var(--fg); font-size: 14px; font-weight: 650; line-height: 1.6;
+  }
+  .copy {
+    display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+    padding: 6px 6px 6px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-sub);
+  }
+  .copy code {
+    flex: 1; min-width: 0; font-family: var(--font); font-size: 15px; font-weight: 650; color: var(--fg);
+    word-break: break-all; line-height: 1.45;
+  }
+  .copy button {
+    flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 9px; border: 0;
+    background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .copy button:hover { background: var(--accent-hover); }
+  .tip {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 14px; border-radius: 12px; background: var(--surface-sub);
+  }
+  .tip svg { flex-shrink: 0; margin-top: 4px; color: var(--ok); }
+  .tip > span { color: var(--sub); font-size: 15px; text-wrap: pretty; }
+  .legend { display: inline-flex; align-items: center; gap: 8px; color: var(--sub); font-size: 13.5px; }
+  .legend i { width: 18px; height: 12px; border: 2.5px solid var(--hl); border-radius: 4px; flex-shrink: 0; }
+
+  /* 화면 그림 */
+  .fig { margin: 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .fig img {
+    display: block; max-width: 100%; height: auto;
+    max-height: calc(100dvh - 220px);
+    object-fit: contain;
+    border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--shot-shadow); background: #fff;
+  }
+  .extag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px; background: var(--ex-soft); color: var(--ex);
+    font-size: 13px; font-weight: 650; white-space: nowrap;
+  }
+
+  /* 시작 세 장: 무엇인지 · 어디에 뜨는지 · 이렇게 써요 */
+  .cover { display: flex; flex-direction: column; gap: 20px; align-items: stretch; align-content: start; }
+  .cv-top { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .cv-top h1 { font-size: clamp(32px, 3.4vw, 48px); line-height: 1.2; }
+  .cv-top h2 { margin: 0; font-size: clamp(28px, 2.8vw, 38px); line-height: 1.25; }
+  .cv-lead { margin: 0; font-size: clamp(18px, 1.6vw, 22px); line-height: 1.6; max-width: 40em; text-wrap: pretty; }
+  .cv-lead b { color: var(--accent); }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 16px; font-weight: 700; }
+  .facts span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .facts svg { color: var(--ok); }
+  /* 정리 전 → 정리 후 */
+  .cv-ba { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 18px; }
+  .cv-box { border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px 16px; background: var(--surface-sub); }
+  .cv-box h3 { margin: 0 0 10px; font-size: 16px; color: var(--sub); }
+  .cv-box.after { background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent-soft); }
+  .cv-box.after h3 { color: var(--accent); }
+  .cv-mess { display: flex; flex-wrap: wrap; gap: 7px; }
+  .cv-file { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px 5px 5px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; white-space: nowrap; }
+  .cv-file i { font-style: normal; font-size: 9px; font-weight: 800; width: 30px; height: 22px; border-radius: 5px; display: grid; place-items: center; }
+  .cv-arrow { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--accent); font-weight: 800; font-size: 14px; }
+  .cv-folders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .cv-folder { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 15px; font-weight: 700; }
+  .cv-folder small { font-weight: 500; color: var(--sub); font-size: 12.5px; }
+  /* 어디에 뜨는지 */
+  .cv-desk { margin: 0; align-self: center; max-width: min(100%, calc((100dvh - 390px) * 16 / 9)); }
+  .cv-desk img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shot-shadow); }
+  /* 이렇게 써요 */
+  .cv-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .cv-step { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: var(--surface); }
+  .cv-step img { width: 100%; height: clamp(140px, 26vh, 260px); object-fit: cover; object-position: top left; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  .cv-step h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 19px; }
+  .cv-step h3 b { flex-shrink: 0; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; }
+  .cv-step p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--sub); text-wrap: pretty; }
+  .cv-step p strong { color: var(--fg); }
+  @media (max-height: 700px) and (min-width: 861px) {
+    .cover { gap: 14px; }
+    .cv-mess { gap: 5px; }
+    .cv-file { padding-block: 3px; }
+  }
+  @media (max-width: 860px) {
+    .cv-ba, .cv-steps { grid-template-columns: minmax(0, 1fr); }
+    .cv-arrow svg { transform: rotate(90deg); }
+    .cv-desk { max-width: 100%; }
+  }
+
+  /* 자주 묻는 것 */
+  .faq { grid-template-columns: 1fr; align-content: start; align-items: start; }
+  .qa { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .qa div { padding: 14px 16px; border-radius: 14px; background: var(--surface-sub); }
+  .qa h3 { margin: 0 0 4px; font-size: 16px; }
+  .qa p { margin: 0; color: var(--sub); font-size: 14.5px; line-height: 1.55; text-wrap: pretty; }
+  .terms { margin: 0; color: var(--sub); font-size: 13.5px; }
+  .faq { gap: 16px; }
+  @media (max-height: 800px) and (min-width: 861px) {
+    .faq { padding-block: 20px; }
+    .qa { gap: 10px; }
+    .qa div { padding: 11px 14px; }
+    .qa p { font-size: 14px; line-height: 1.5; }
+  }
+
+  /* 아래: 이전 / 진행 / 다음 */
+  .nav { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+  .nav button.go {
+    min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--fg); font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .nav button.go:hover:not(:disabled) { background: var(--surface-sub); }
+  .nav button.go.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav button.go.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .nav button.go:disabled { opacity: 0.35; cursor: default; }
+  .bar { flex: 1; display: flex; gap: 4px; min-width: 0; }
+  .bar span { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; min-width: 8px; }
+  .bar span i { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+  .count { color: var(--sub); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  @media (max-width: 1000px) {
+    .brand small { display: none; }
+  }
+  @media (max-width: 860px) {
+    .top { flex-direction: column; align-items: stretch; gap: 8px; }
+    .toc { margin-left: 0; }
+    .scene { grid-template-columns: minmax(0, 1fr); align-items: start; align-content: start; }
+    .fig img { max-height: none; }
+    .qa { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .nav { gap: 10px; }
+    .nav button.go { padding: 0 12px; }
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-6.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg></span>
+      내 스마트보드 <small>사용 설명서</small>
+    </div>
+    <nav class="toc" aria-label="차례" id="toc"></nav>
+  </header>
+
+  <main class="stage" id="stage"></main>
+
+  <footer class="nav">
+    <button type="button" class="go" id="prev">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>이전
+    </button>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <span class="count" id="count" aria-live="polite"></span>
+    <button type="button" class="go primary" id="next"></button>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // 장(차례). star = 주요 기능
+  const CH = [
+    { key: "start", name: "시작" },
+    { key: "install", name: "설치하기" },
+    { key: "setup", name: "처음 설정" },
+    { key: "auto", name: "켤 때 자동 실행" },
+    { key: "dual", name: "두 모니터", star: true },
+    { key: "home", name: "홈 화면", star: true },
+    { key: "class", name: "우리 반", star: true },
+    { key: "work", name: "수업·업무" },
+    { key: "backup", name: "백업" },
+    { key: "faq", name: "자주 묻는 것" },
+  ];
+  const URL_APP = "08hwichemi.github.io/smartboard/lite.html";
+
+  // 장면. 글 표시법: [[단추]]  {{키}}  ==강조==  (뒤에 붙은 조사·마침표는 같은 줄에 붙어 다닌다)
+  // ex: true = 크롬·윈도우 화면을 흉내 낸 예시 그림(실제와 조금 다를 수 있음). hl: true = 그림에 주황 테두리 있음.
+  const S = [
+    { id: "start", ch: "start", cover: "what" },
+    { id: "start-where", ch: "start", cover: "where", img: "dual.webp" },
+    { id: "start-how", ch: "start", cover: "how" },
+
+    { id: "install-1", ch: "install", ex: true, hl: true, img: "addr.webp",
+      alt: "크롬 새 탭의 주소 칸에 내 스마트보드 주소를 넣은 모습",
+      title: "크롬을 열고 <span class=\"nw\">주소 칸에</span> 주소 넣기",
+      body: [
+        "크롬(또는 엣지)을 열고 맨 위 ==주소 칸==을 누르세요. 아래 [[복사]]를 누른 뒤 주소 칸에 {{Ctrl}}+{{V}}로 붙여 넣고 {{Enter}}.",
+        "인터넷 창은 꼭 ==크롬이나 엣지==로 여세요. 백업 폴더 자동 저장이 이 둘에서만 돼요.",
+      ],
+      copy: URL_APP,
+      tip: "메신저나 메일로 받은 링크가 있으면 그 링크를 눌러도 같은 화면이 열려요." },
+
+    { id: "install-2", ch: "install", ex: true, hl: true, img: "install.webp",
+      alt: "주소 칸 오른쪽 끝의 설치 아이콘을 누르면 뜨는 앱 설치 창에서 설치를 누르는 모습",
+      title: "주소 칸 오른쪽 <span class=\"nw\">설치 아이콘</span> → [설치]",
+      body: [
+        "화면이 열리면 주소 칸 ==맨 오른쪽==에 모니터 모양 ==설치 아이콘==이 생겨요. 누르고 [[설치]].",
+        "그러면 주소창 없는 ==앱 창==으로 다시 열리고, 바탕화면과 시작 메뉴에 ==내 스마트보드== 아이콘이 생겨요.",
+      ],
+      tip: "아이콘이 안 보이면 오른쪽 위 ⋮ 메뉴 → ‘전송, 저장 및 공유’ → ‘앱 설치…’. 엣지는 ⋯ 메뉴 → ‘앱’ → ‘이 사이트를 앱으로 설치’." },
+
+    { id: "install-3", ch: "install", img: "home.webp",
+      alt: "앱 창으로 열린 내 스마트보드 홈 화면",
+      title: "앱 창으로 열리면 설치 끝",
+      body: [
+        "이제부터는 바탕화면의 ==내 스마트보드== 아이콘을 두 번 누르면 바로 떠요. 크롬을 따로 열 필요가 없어요.",
+        "처음 열면 ==처음 설정== 창이 떠요. 다음 장부터 이어서 볼게요.",
+      ],
+      tip: "설치하지 않고 크롬 탭으로만 써도 모든 기능은 같아요. 다만 ‘켤 때 자동 실행’은 설치가 필요해요." },
+
+    { id: "setup-1", ch: "setup", hl: true, img: "settings.webp",
+      alt: "처음 설정 창. 맨 위 ① 백업 폴더의 백업 폴더 정하기 버튼에 주황 테두리",
+      title: "① 백업 폴더 먼저 정하기",
+      body: [
+        "이 보드는 서버가 없어서 ==백업 폴더가 유일한 안전장치==예요. 맨 위 [[📁 백업 폴더 정하기]]를 누르세요.",
+        "폴더 고르기 창이 뜨면 바탕화면에서 ==새 폴더==를 하나 만들어(예: 내 스마트보드 백업) 그 폴더를 고르고 [[폴더 선택]].",
+      ],
+      tip: "바탕화면 자체를 고르면 크롬이 ‘시스템 파일이 포함되어 열 수 없음’이라고 막아요. 그 안에 만든 새 폴더는 돼요." },
+
+    { id: "setup-2", ch: "setup", hl: true, img: "settings-name.webp",
+      alt: "② 선생님 이름 칸에 주황 테두리, 아래 담임 반 고르기",
+      title: "② 이름과 담임 반",
+      body: [
+        "==선생님 성함==을 적으세요. 홈 오른쪽 위와 내 시간표 제목에 들어가요.",
+        "담임이면 ==담임 반==도 고르세요. 명렬표·결석계·좌석배치표·조퇴증이 그 반으로 먼저 열려요.",
+      ] },
+
+    { id: "setup-3", ch: "setup", hl: true, img: "settings-school.webp",
+      alt: "③ 학교 찾기 칸에 주황 테두리, 고른 학교 한빛고등학교",
+      title: "③ 학교 찾기",
+      body: [
+        "학교 이름 일부를 적고 [[🔍 찾기]] → 목록에서 ==우리 학교==를 누르세요.",
+        "급식·학사일정·날씨가 그 학교로 나오고, 조퇴증·결석계·시정표에 들어가는 학교 이름도 이걸 써요.",
+      ],
+      tip: "같은 이름의 학교가 여럿이면 주소를 보고 고르세요. 날씨는 학교가 있는 시·도 기준이고, ‘📍 내 위치로’를 누르면 더 정확해져요." },
+
+    { id: "setup-4", ch: "setup", hl: true, img: "settings-times.webp",
+      alt: "④ 일과 시간. 위 회색 상자(교시 수, 1교시 시작, 수업·쉬는 시간, 조회·점심·청소·종례)에 주황 테두리, 아래 교시 표",
+      title: "④ 일과 시간은 위 칸만 채우면 돼요",
+      body: [
+        "==교시 수==, ==1교시 시작==, 수업·쉬는 시간 분, 조회·점심·청소·종례만 적으면 아래 교시 표가 ==저절로 계산==돼요.",
+        "다른 교시(예: 7교시만 짧은 날)는 표에서 그 칸만 직접 고치면 돼요.",
+      ],
+      tip: "‘850’처럼 쳐도 08:50으로 맞춰져요. 맨 아래 🕒 줄에서 조회·점심·청소·종례 시각을 확인하세요." },
+
+    { id: "setup-5", ch: "setup", hl: true, img: "settings-save.webp",
+      alt: "⑤ 학년·반 수와 맨 아래 저장하고 시작하기 버튼에 주황 테두리",
+      title: "⑤ 학년·반 수 확인하고 [저장하고 시작하기]",
+      body: [
+        "학년 수와 학년당 반 수는 학년·반 고르는 칸의 범위예요. 명렬표를 넣으면 그 안의 학년·반까지는 저절로 늘어나요.",
+        "맨 아래 [[저장하고 시작하기]]. 끝이에요. 나중에 바꾸려면 왼쪽 맨 아래 ==⚙️ 설정==.",
+      ] },
+
+    { id: "auto-1", ch: "auto", ex: true, hl: true, img: "apps.webp",
+      alt: "chrome://apps 화면에서 내 스마트보드 아이콘을 오른쪽 클릭하면 나오는 메뉴의 로그인 시 앱 시작에 주황 테두리",
+      title: "방법 A: 크롬 앱 목록에서 ‘로그인 시 앱 시작’",
+      body: [
+        "크롬 주소 칸에 ==chrome://apps== 를 넣고 {{Enter}}. 설치한 앱들이 보여요.",
+        "==내 스마트보드== 아이콘을 ==오른쪽 클릭== → [[로그인 시 앱 시작]]에 체크. 다음부터 윈도우에 로그인하면 보드가 저절로 떠요.",
+      ],
+      tip: "가장 쉬운 방법이에요. 이게 되면 방법 B는 안 해도 돼요." },
+
+    { id: "auto-2", ch: "auto", ex: true, hl: true, img: "run.webp",
+      alt: "실행 창에 shell:startup을 넣고 확인을 누르는 모습",
+      title: "방법 B: 시작프로그램 폴더에 넣기",
+      body: [
+        "{{⊞ 윈도우}}+{{R}}을 누르면 왼쪽 아래에 ==실행== 창이 떠요. ==shell:startup== 을 넣고 [[확인]].",
+        "열린 ==시작프로그램== 폴더에 바탕화면의 ==내 스마트보드== 아이콘을 복사해 넣으세요({{Ctrl}}+{{C}} → {{Ctrl}}+{{V}}).",
+      ],
+      tip: "바탕화면에 아이콘이 없으면 시작(⊞) 단추를 누르고 ‘내 스마트보드’를 입력 → 오른쪽 클릭 → ‘파일 위치 열기’." },
+
+    { id: "dual-1", ch: "dual", ex: true, hl: true, img: "move.webp",
+      alt: "윈도우 키와 Shift와 오른쪽 화살표를 누르면 보드 창이 옆 모니터로 넘어가는 그림",
+      title: "창을 옆 모니터로 보내기",
+      body: [
+        "모니터가 두 대면 이 보드는 ==보조 모니터에 종일 켜 두고== 쓸 때 가장 편해요.",
+        "보드 창을 연 채로 {{⊞ 윈도우}}+{{Shift}}+{{→}}(또는 {{←}})를 누르면 창이 옆 모니터로 넘어가요. 거기서 {{⊞ 윈도우}}+{{↑}}로 꽉 채우세요.",
+      ],
+      tip: "마우스로 창 제목을 잡아 옆 모니터로 끌어다 놓아도 돼요. 한 번 놓아두면 다음에 켜도 같은 자리에 떠요." },
+
+    { id: "dual-2", ch: "dual", ex: true, img: "dual.webp",
+      alt: "주 모니터에는 한글 문서, 보조 모니터에는 내 스마트보드가 늘 떠 있는 그림",
+      title: "한쪽엔 일, 한쪽엔 보드",
+      body: [
+        "주 모니터에서 나이스·한글 작업을 하는 동안 옆 모니터에는 ==시계·시간표·할 일·급식==이 늘 보여요.",
+        "수업 가기 전에 할 일을 적어 두고, 자리로 돌아오면 바로 보이고, 쉬는 시간엔 급식·학사일정·뉴스를 힐끗.",
+      ],
+      tip: "모니터가 한 대라도 ⊞+→로 화면 반쪽에 두고 쓰면 돼요." },
+
+    { id: "home-1", ch: "home", hl: true, img: "home-top.webp",
+      alt: "홈 맨 윗줄. 가운데 지금 이 시간 칸에 주황 테두리, 아래 다가오는 학사일정 띠",
+      title: "지금 몇 교시인지, 다가오는 학사일정",
+      body: [
+        "맨 위 가운데 ==지금 이 시간== 칸이 몇 교시인지, 쉬는 시간·점심·조회·종례인지 설정한 일과 시간대로 보여 줘요.",
+        "그 아래 띠에는 설정한 학교의 ==나이스 학사일정==이 앞으로 90일치 흘러가요.",
+      ] },
+
+    { id: "home-2", ch: "home", img: "home-tt.webp",
+      alt: "내 시간표 칸. 요일·교시 격자에 과목과 교실이 색깔별로 적혀 있음",
+      title: "내 시간표는 칸을 눌러 직접 적어요",
+      body: [
+        "==칸을 누르고== 위에 과목, 아래에 교실(또는 반)을 적으면 바로 저장돼요. 과목마다 색이 붙어요.",
+        "학교 시간표 양식과 상관없이 요일 × 교시 격자라서 어느 학교든 써요. 교시 수와 시간은 ⚙️ 설정에서.",
+      ],
+      tip: "오른쪽 위 A-/A+로 글씨 크기를 바꿀 수 있어요. 비워 두면 그냥 빈 칸이에요." },
+
+    { id: "home-3", ch: "home", img: "home-cal.webp",
+      alt: "캘린더 탭. 한 달 달력에 메모와 학사일정이 들어 있음",
+      title: "캘린더 · ½캘린더",
+      body: [
+        "==📅 캘린더==는 한 달, ==🗓️ ½캘린더==는 월~금 5일을 작게 보여 줘요. 날짜를 누르면 바로 메모가 돼요.",
+        "나이스 학사일정이 같은 칸에 같이 들어와요.",
+      ] },
+
+    { id: "home-4", ch: "home", img: "home-right.webp",
+      alt: "오른쪽 열. 급식, 웹 검색, 뉴스 칸",
+      title: "급식 · 날씨 · 뉴스 · 검색",
+      body: [
+        "==급식==은 설정한 학교의 오늘 메뉴예요. ◀▶로 다른 날도. ==날씨==는 시계 옆에 시간별 예보와 미세먼지까지.",
+        "==뉴스==는 분야 탭을 눌러 보고, 제목을 누르면 기사가 새 탭에서 열려요. ==웹 검색==은 구글.",
+      ] },
+
+    { id: "home-5", ch: "home", img: "home-left.webp",
+      alt: "즐겨찾기 8칸과 D-day 두 칸",
+      title: "즐겨찾기 8칸 · D-day · 할 일",
+      body: [
+        "==즐겨찾기==는 자주 가는 사이트 8개. 오른쪽 위 연필을 눌러 이름과 주소를 적어요.",
+        "==D-day==는 칸을 눌러 날짜와 이름(예: 2차고사)을 적으면 자동 계산. 맨 오른쪽 ==할 일==은 업무/상담 두 탭의 체크 목록이에요.",
+      ] },
+
+    { id: "class-1", ch: "class", hl: true, img: "roster.webp",
+      alt: "명렬표 패널. 📥 엑셀, 📋 붙여넣기, 📄 양식 받기 단추 줄에 주황 테두리, 아래 2학년 3반 명단",
+      title: "명렬표 한 번만 넣으면 전부 이어져요",
+      body: [
+        "왼쪽 메뉴 ==명렬표==에서 [[📄 양식 받기]]로 엑셀 양식(학년·반·번호·이름)을 받아 채운 뒤 [[📥 엑셀]]로 올리세요. 여러 학년·반을 한 파일에 넣어도 돼요.",
+        "엑셀이 번거로우면 학년·반을 고르고 [[📋 붙여넣기]]에 한 줄에 한 명(번호 이름)씩 붙여 넣어도 돼요.",
+      ],
+      tip: "좌석배치표·결석계·조퇴증·수행평가·생기부·양식이 모두 이 명단을 써요. 다른 화면에서 또 넣을 필요가 없어요." },
+
+    { id: "class-2", ch: "class", img: "seatchart.webp",
+      alt: "좌석배치표 화면. 왼쪽에 ① 학생 명단 ② 반 구조 ③ 특수 좌석 ④ 자리 채우기 ⑤ 종이 디자인, 오른쪽에 미리보기",
+      title: "좌석배치표",
+      body: [
+        "①~⑤ 순서대로: 반을 고르면 명단이 들어오고, ==반 구조==(분단·줄·짝)를 그린 뒤 ==번호순·랜덤==으로 채워요.",
+        "고정석·제외석을 정할 수 있고, 종이 디자인을 고른 뒤 [[인쇄/PDF]]. 결과는 반마다 저장돼요.",
+      ],
+      tip: "위 파란 상자 ‘지금 할 일’이 다음에 누를 곳을 알려 줘요. 처음엔 그 상자만 따라가면 돼요." },
+
+    { id: "class-3", ch: "class", img: "absence.webp",
+      alt: "결석계 화면. 결석 현황 입력 표와 오른쪽 출력 미리보기",
+      title: "결석계",
+      body: [
+        "맨 윗줄에 번호·사유·기간을 적고 {{Enter}}. 학생별 현황과 ==출력 미리보기==가 바로 나와요.",
+        "확인서·교외체험학습 신청서(+결과보고서)를 [[출력]]으로 인쇄해요. 학교 이름은 설정한 학교로 들어가요.",
+      ],
+      tip: "양식의 칸 구성은 한 학교 양식을 기준으로 했어요. 제출용은 학교 양식을 쓰고, 여기선 기록 관리와 초안용으로 쓰셔도 돼요." },
+
+    { id: "class-4", ch: "class", img: "leavepass.webp",
+      alt: "조퇴증 화면. 왼쪽 학교·학급 정보와 도장 글꼴, 오른쪽에 조퇴·외출 확인증 9장",
+      title: "조퇴증",
+      body: [
+        "학교·학년·반·담임 이름이 설정값으로 채워지고, ==담임 도장==이 자동으로 만들어져요(글꼴·위치·크기 조절).",
+        "A4 한 장에 9장. [[인쇄/PDF]]로 뽑아 잘라 두면 돼요.",
+      ] },
+
+    { id: "work-1", ch: "work", img: "pa.webp",
+      alt: "수행평가 화면",
+      title: "수행평가",
+      body: [
+        "과목·반을 만들고 명렬표에서 학생을 고르면 ==점수·평가 내용==을 적는 표가 생겨요. 합계와 ==세특 초안==까지 이어져요.",
+        "[[📤 엑셀 내려받기]]·[[📥 가져오기]]로 보관하거나 옮길 수 있어요.",
+      ] },
+
+    { id: "work-2", ch: "work", img: "sgb.webp",
+      alt: "생기부 문장 점검 화면. 적은 문장의 바이트 수와 점검 결과",
+      title: "생기부 ① 문장 점검",
+      body: [
+        "문장을 붙여 넣으면 ==바이트 수==와 ==기재 불가 표현==(특수문자, 종결어미 등)을 적는 대로 점검해요.",
+        "적은 문장은 이 화면 안에서만 보고 저장하거나 어디로 보내지 않아요.",
+      ] },
+
+    { id: "work-3", ch: "work", img: "sgb-edit.webp",
+      alt: "생기부 자율·진로·행발 편집기 화면",
+      title: "생기부 ② 자율·진로·행발 편집기",
+      body: [
+        "반을 고르면 명단이 들어오고, 학생마다 ==관찰 기록==을 쌓아 두었다가 ==최종 문장==으로 다듬어요. 덕목 표시, 바이트 계산, 엑셀 내려받기까지.",
+      ],
+      tip: "자료는 이 컴퓨터에만 있으니 학기 끝엔 엑셀로도 받아 두세요." },
+
+    { id: "work-4", ch: "work", img: "forms.webp",
+      alt: "양식 만들기 화면",
+      title: "양식 만들기",
+      body: [
+        "==명렬표 수합==(체크 칸 있는 명단, 한글 파일), ==학습지 틀==, ==수행평가 안내==, ==안내문==, ==시정표==, ==게시판·사물함 이름표==를 만들어 한글·PDF로 받아요.",
+      ] },
+
+    { id: "work-5", ch: "work", img: "monthly.webp",
+      alt: "월간일정표 화면",
+      title: "월간일정표 · 단축키",
+      body: [
+        "==월간일정표==는 나이스 학사일정에 우리 반 일정을 더해 한 달 표로 인쇄해요.",
+        "==단축키==는 한글·엑셀·윈도우 단축키 표예요. 찾을 때 열어 보세요.",
+      ] },
+
+    { id: "backup-1", ch: "backup", hl: true, img: "backup.webp",
+      alt: "백업 창. 📁 백업 폴더 상자의 폴더 정하기 버튼에 주황 테두리",
+      title: "자료가 바뀌면 몇 분 안에 저절로 저장돼요",
+      body: [
+        "백업 폴더를 정해 두면 자료가 바뀔 때마다 몇 분 안에 ==내 스마트보드_백업.json== 한 파일에 덮어써 저장돼요. 파일이 쌓이지 않아요.",
+        "일주일에 한 번 ==…_백업_지난주.json==도 남겨요. 실수로 지운 게 있으면 이 파일로 돌아갈 수 있어요.",
+      ],
+      tip: "크롬을 다시 켠 뒤 첫 저장 때 ‘폴더 쓰기를 허용해 주세요’ 띠가 뜨면 한 번 눌러 주세요. ‘항상 허용’을 고르면 다음부턴 안 물어요." },
+
+    { id: "backup-2", ch: "backup", hl: true, img: "backup-restore.webp",
+      alt: "백업 창. 📤 백업 파일로 복원하기 버튼에 주황 테두리",
+      title: "다른 컴퓨터로 옮길 때",
+      body: [
+        "백업 폴더의 ==내 스마트보드_백업.json==을 USB 등으로 옮긴 뒤, 새 컴퓨터의 보드에서 오른쪽 위 [[💾 백업]] → [[📤 백업 파일로 복원하기]].",
+        "복원하면 그 컴퓨터의 자료가 ==파일 내용으로 바뀌어요==. 명렬표·설정·시간표·수행평가까지 전부 들어 있어요.",
+      ],
+      tip: "백업 파일엔 학생 이름·전화·결석 사유가 들어 있어요. 공용 PC·메신저에 두지 마세요." },
+
+    { id: "faq", ch: "faq", faq: true },
+  ];
+
+  const FAQ = [
+    ["집 컴퓨터에서도 볼 수 있나요?", "서버가 없어서 저절로 맞춰지진 않아요. 백업 파일을 USB로 가져가 집 컴퓨터에서 복원하면 돼요. 한 컴퓨터를 주로 쓰시길 권해요."],
+    ["결석계 양식이 우리 학교 것과 달라요", "학교 이름은 설정한 학교로 들어가지만 칸 구성은 한 학교 양식 기준이에요. 제출용은 학교 양식을 쓰고, 여기선 기록 관리·초안용으로."],
+    ["급식·학사일정이 안 나와요", "⚙️ 설정에서 학교를 골랐는지 보세요. 골랐는데도 비어 있으면 학교가 나이스에 그날 급식·일정을 올리지 않은 거예요."],
+    ["자료가 사라졌어요", "크롬의 ‘인터넷 사용 기록 삭제’에서 사이트 데이터를 지웠을 때 그래요. 💾 백업 → [폴더에서 복원]으로 돌려놓으세요. 보드가 백업보다 자료가 훨씬 적으면 스스로 복원할지 물어봐요."],
+    ["‘새 버전이 있습니다’ 띠가 떠요", "보드가 고쳐질 때마다 떠요. 눌러서 새로 고치면 돼요. 자료는 그대로예요."],
+    ["휴대폰에서도 되나요?", "열리긴 하고 시간표·캘린더·급식·할 일을 볼 수 있지만 자료는 컴퓨터와 따로예요. 컴퓨터용으로 생각해 주세요."],
+    ["내 자료가 밖으로 나가나요?", "아니요. 크롬 안(이 컴퓨터)과 백업 폴더에만 있어요. 만든 사람도 못 봐요. 급식·학사일정·날씨·뉴스만 공개 자료를 읽어 와요."],
+    ["더 자세한 사용법은요?", "보드 오른쪽 위 ❓ 설명서와 각 화면의 📖 설명서 버튼이 단계별로 알려 줘요."],
+    ["다른 선생님께 주려면요?", "이 설명서 주소 <span class=\"nw\">08hwichemi.github.io/</span><span class=\"nw\">smartboard/lite-guide.html</span>을 보내 주세요."],
+  ];
+
+  function fmt(s) {
+    return s
+      .replace(/\[\[(.+?)\]\]([가-힣]{0,3}[.,]?)/g, (m, a, b) => `<span class="nw"><span class="btnlike">${a}</span>${b}</span>`)
+      .replace(/\{\{(.+?)\}\}([가-힣]{0,3}[.,]?)/g, (m, a, b) => `<span class="nw"><span class="key">${a}</span>${b}</span>`)
+      .replace(/\[([^\[\]<>]+?)\]([가-힣]{0,3}[.,]?)/g, (m, a, b) => `<span class="nw">[${a}]${b}</span>`)
+      .replace(/‘([^’<]{1,16})’([가-힣]{0,3}[.,]?)/g, (m, a, b) => `<span class="nw">‘${a}’${b}</span>`)
+      .replace(/==(.+?)==([가-힣]{0,3}[.,]?)/g, (m, a, b) =>
+        a.length <= 12 ? `<span class="nw"><b class="mark">${a}</b>${b}</span>` : `<b class="mark">${a}</b>${b}`);
+  }
+  const TIP_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 7v4M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const CHECK = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+
+  const chScenes = (key) => S.filter((x) => x.ch === key);
+  const chName = (key) => CH.find((c) => c.key === key).name;
+  const RIGHT = '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>';
+  const PILL = (t) => `<span class="cv-file">${t}</span>`;
+
+  // 시작 세 장: what = 무엇인지, where = 어디에 두고 쓰는지, how = 이렇게 써요(세 단계)
+  function coverHTML(kind) {
+    if (kind === "where") {
+      return `
+      <div class="cv-top"><span class="chip">어디에 두고 쓰나요</span><h2>보조 모니터에 종일 띄워 두세요</h2>
+        <p class="cv-lead">한쪽에서 나이스·한글 작업을 하는 동안, 다른 한쪽에는 <b>시계·시간표·할 일·급식</b>이 늘 보여요. 창을 옮기는 법은 ‘두 모니터’ 장에.</p></div>
+      <figure class="cv-desk"><img src="guide/lite/dual.webp" alt="주 모니터에는 한글 문서, 보조 모니터에는 내 스마트보드가 늘 떠 있는 그림(주황 테두리)"></figure>`;
+    }
+    if (kind === "how") {
+      return `
+      <div class="cv-top"><span class="chip">한눈에 보기</span><h2>이렇게 써요</h2>
+        <p class="cv-lead">처음 한 번만 세 가지를 하면, 그 뒤로는 켜 두기만 하면 돼요.</p></div>
+      <div class="cv-steps">
+        <div class="cv-step"><img src="guide/lite/install.webp" alt=""><h3><b>1</b>크롬에서 열고 앱으로 설치</h3><p>주소를 넣고 <strong>설치 아이콘</strong> 한 번. 바탕화면에 아이콘이 생겨요.</p></div>
+        <div class="cv-step"><img src="guide/lite/settings.webp" alt=""><h3><b>2</b>처음 설정: 백업 폴더·이름·학교</h3><p><strong>백업 폴더</strong>를 먼저 정하고 이름·학교·일과 시간을 적어요.</p></div>
+        <div class="cv-step"><img src="guide/lite/roster.webp" alt=""><h3><b>3</b>명렬표 넣고 늘 켜 두기</h3><p>명렬표 한 번이면 <strong>좌석·결석·조퇴·수행평가·생기부</strong>가 다 이어져요.</p></div>
+      </div>`;
+    }
+    const home = ["🕒 지금 몇 교시", "⭐ 내 시간표", "📅 캘린더", "🍱 급식", "🌤️ 날씨", "📰 뉴스", "✅ 할 일", "🔗 즐겨찾기"].map(PILL).join("");
+    const cls = ["🪑 좌석배치표", "📋 결석계", "🎫 조퇴증", "📊 수행평가", "📝 생기부", "📄 양식"].map(PILL).join("");
+    return `
+      <div class="cv-top">
+        <span class="chip">선생님 한 분을 위한 교무 보드</span>
+        <h1>내 자리에 늘 켜 두는 보드.</h1>
+        <p class="cv-lead"><b>내 스마트보드</b>는 시계·시간표·캘린더·급식·할 일을 한 화면에 두고, <b>명렬표 하나로 좌석배치표·결석계·조퇴증·수행평가·생기부까지 이어 쓰는</b> <span class="nw">크롬 앱</span>이에요.</p>
+      </div>
+      <div class="cv-ba">
+        <div class="cv-box"><h3>홈 한 화면에</h3><div class="cv-mess">${home}</div></div>
+        <div class="cv-arrow">${RIGHT}명렬표 하나로</div>
+        <div class="cv-box after"><h3>우리 반·수업 일까지</h3><div class="cv-mess">${cls}</div></div>
+      </div>
+      <div class="facts"><span>${CHECK}설치 5분</span><span>${CHECK}서버·로그인 없음, 무료</span><span>${CHECK}자료는 내 컴퓨터에만</span></div>`;
+  }
+
+  function faqHTML() {
+    return `
+      <div class="text"><span class="chip">자주 묻는 것</span><h2>걱정되는 것, 궁금한 것</h2></div>
+      <div class="qa">${FAQ.map(([q, a]) => `<div><h3>${q}</h3><p>${fmt(a)}</p></div>`).join("")}</div>
+      <p class="terms">교육·개인·업무 용도로 무료로 쓸 수 있어요<span class="nw">(판매는 할 수 없어요)</span>. <span class="nw">만든 사람 이용휘(화학 교사)</span> · <span class="nw">© 2026 이용휘</span></p>`;
+  }
+
+  function sceneHTML(sc) {
+    if (sc.cover) return coverHTML(sc.cover);
+    if (sc.faq) return faqHTML();
+    const list = chScenes(sc.ch);
+    const k = list.indexOf(sc) + 1;
+    const star = CH.find((c) => c.key === sc.ch).star ? '<span aria-hidden="true">★</span> ' : "";
+    return `
+      <div class="text">
+        <span class="chip">${star}${chName(sc.ch)}<span>${k} / ${list.length}</span></span>
+        <h2>${fmt(sc.title)}</h2>
+        ${sc.body.map((p) => `<p>${fmt(p)}</p>`).join("")}
+        ${sc.copy ? `<div class="copy"><code>${sc.copy}</code><button type="button" data-copy="${sc.copy}">복사</button></div>` : ""}
+        ${sc.tip ? `<div class="tip">${TIP_ICON}<span>${fmt(sc.tip)}</span></div>` : ""}
+        ${sc.hl ? `<span class="legend"><i></i>주황 테두리가 누를 곳이에요</span>` : ""}
+      </div>
+      <figure class="fig">
+        <img src="guide/lite/${sc.img}" alt="${sc.alt}">
+        ${sc.ex ? `<figcaption class="extag">예시 그림 · 실제 화면과 조금 다를 수 있어요</figcaption>` : ""}
+      </figure>`;
+  }
+
+  const stage = document.getElementById("stage");
+  const toc = document.getElementById("toc");
+  const bar = document.getElementById("bar");
+  const count = document.getElementById("count");
+  const prev = document.getElementById("prev");
+  const next = document.getElementById("next");
+  const ARROW = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let cur = 0;
+
+  CH.forEach((c) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ch = c.key;
+    b.innerHTML = (c.star ? '<span class="star" aria-hidden="true">★</span>' : "") + c.name;
+    b.addEventListener("click", () => show(S.findIndex((x) => x.ch === c.key)));
+    toc.appendChild(b);
+    const seg = document.createElement("span");
+    seg.dataset.ch = c.key;
+    seg.style.flex = String(chScenes(c.key).length);
+    seg.innerHTML = "<i></i>";
+    bar.appendChild(seg);
+  });
+
+  function show(i, fromHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    const sc = S[cur];
+    const sec = document.createElement("section");
+    sec.className = "scene" + (sc.cover ? " cover" : "") + (sc.faq ? " faq" : "");
+    sec.id = sc.id;
+    sec.tabIndex = -1;
+    sec.setAttribute("aria-label", sc.title ? sc.title.replace(/\[\[|\]\]|\{\{|\}\}|==/g, "") : chName(sc.ch));
+    sec.innerHTML = sceneHTML(sc);
+    stage.replaceChildren(sec);
+
+    const ci = CH.findIndex((c) => c.key === sc.ch);
+    [...toc.children].forEach((b, k) => (k === ci ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current")));
+    toc.children[ci].scrollIntoView({ block: "nearest", inline: "nearest" });
+    [...bar.children].forEach((seg, k) => {
+      const list = chScenes(CH[k].key);
+      const done = k < ci ? list.length : k === ci ? list.indexOf(sc) + 1 : 0;
+      seg.firstChild.style.width = (done / list.length) * 100 + "%";
+    });
+    count.textContent = `${cur + 1} / ${S.length}`;
+    prev.disabled = cur === 0;
+    next.disabled = cur === S.length - 1;
+    next.innerHTML = (sc.id === "start-how" ? "설치부터 보기" : "다음") + ARROW;
+    if (!fromHash) {
+      try { history.replaceState(null, "", "#" + sc.id); } catch (e) {}
+    }
+    warmNear();
+  }
+
+  // 주소 복사
+  stage.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-copy]");
+    if (!btn) return;
+    const text = "https://" + btn.dataset.copy;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (err) {}
+    if (!ok) {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand("copy"); } catch (err) {}
+      ta.remove();
+    }
+    if (!ok) {
+      const r = document.createRange(); r.selectNodeContents(btn.previousElementSibling);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    btn.textContent = ok ? "복사했어요" : "Ctrl+C로 복사";
+    setTimeout(() => (btn.textContent = "복사"), 1800);
+  });
+
+  prev.addEventListener("click", () => show(cur - 1));
+  next.addEventListener("click", () => show(cur + 1));
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); show(cur + 1); }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); show(cur - 1); }
+  });
+
+  // 휴대폰: 옆으로 밀어 넘기기
+  let sx = null, sy = 0;
+  stage.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  stage.addEventListener("touchend", (e) => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) show(cur + (dx < 0 ? 1 : -1));
+    sx = null;
+  });
+
+  // 그림 미리 받기: 넘길 때 기다리지 않게 다음 장들을 먼저 받아 두고, 첫 화면이 뜬 뒤 나머지도 차례로 받는다.
+  const warmed = new Set();
+  const warm = (name) => {
+    if (!name || warmed.has(name)) return Promise.resolve();
+    warmed.add(name);
+    const im = new Image();
+    im.src = "guide/lite/" + name;
+    return im.decode().catch(() => {});
+  };
+  const warmNear = () => [1, 2, 3, -1].forEach((d) => warm(S[cur + d]?.img));
+  window.addEventListener("load", async () => {
+    for (const sc of S) await warm(sc.img);
+  });
+
+  const fromHash = () => S.findIndex((x) => "#" + x.id === location.hash);
+  const start = fromHash();
+  show(start >= 0 ? start : 0, true);
+  window.addEventListener("hashchange", () => { const k = fromHash(); if (k >= 0) show(k, true); });
+})();
+</script>
