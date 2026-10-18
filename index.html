@@ -2673,7 +2673,7 @@
         <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="liteBackupPickFolder()">📁 백업 폴더 정하기</button>
         <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('backup-overlay').style.display='flex'">💾 백업·복원 창 열기</button>
       </div>
-      <div class="lite-hint">📁 창에서 바탕화면에 <b>"새 폴더"</b>로 「내 스마트보드 백업」을 만들어 고르면(바탕화면 자체는 브라우저가 막아요), <b>자료가 바뀔 때마다 몇 분 안에</b> 그 폴더의 파일 하나(<span id="lite-backup-filename"></span>)에 덮어써 저장돼요(Chrome·Edge). 일주일에 한 번 "지난주" 파일도 하나 남겨요. 다른 컴퓨터에서 쓰려면 그 파일을 💾 백업·복원 창에서 불러오면 돼요. 학생 이름·전화·결석 사유가 들어 있으니 공용 PC에서는 쓰지 마세요.</div>
+      <div class="lite-hint">📁에서 고른 폴더에 그대로 저장돼요(바탕화면 자체는 브라우저가 막으니 창의 "새 폴더"로 그 안에 폴더를 만들어 고르세요). <b>자료가 바뀔 때마다 몇 분 안에</b> 파일 하나(<span id="lite-backup-filename"></span>)에 덮어써 저장돼요(Chrome·Edge). 일주일에 한 번 "지난주" 파일도 하나 남겨요. 다른 컴퓨터에서 쓰려면 그 파일을 💾 백업·복원 창에서 불러오면 돼요. 학생 이름·전화·결석 사유가 들어 있으니 공용 PC에서는 쓰지 마세요.</div>
     </div>
 
     <div style="display:flex; gap:8px; margin-top:6px;">
@@ -2691,7 +2691,7 @@
       <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 파일로 백업 (선택)</div>
       <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5; display:flex; flex-direction:column; gap:5px;" id="backup-scope">
         <div class="school-only">내 자료는 로그인한 계정으로 서버에 자동 저장돼서 다른 기기에서도 그대로 이어져요. 그것과 별개로 내 컴퓨터에 파일로 보관하고 싶을 때 받으세요.</div>
-        <div class="lite-only" style="color:var(--text-main);"><b>개인판은 서버가 없어요.</b> 모든 자료가 이 컴퓨터의 이 브라우저에만 있어서, 브라우저 자료를 지우거나 컴퓨터를 바꾸면 사라져요. 아래 <b>📁 백업 폴더</b>를 한 번 정해 두면(창에서 바탕화면에 "새 폴더"로 「내 스마트보드 백업」을 만들어 고르세요 — 바탕화면 자체는 브라우저가 막아요) 자료가 바뀔 때마다 몇 분 안에 그 폴더의 파일 하나에 자동으로 덮어써 저장되고, 일주일에 한 번 "지난주" 파일도 남아요.</div>
+        <div class="lite-only" style="color:var(--text-main);"><b>개인판은 서버가 없어요.</b> 모든 자료가 이 컴퓨터의 이 브라우저에만 있어서, 브라우저 자료를 지우거나 컴퓨터를 바꾸면 사라져요. 아래 <b>📁 백업 폴더</b>를 한 번 정해 두면(고른 폴더에 그대로 저장 — 바탕화면 자체는 브라우저가 막으니 창의 "새 폴더"로 그 안에 하나 만들어 고르세요) 자료가 바뀔 때마다 몇 분 안에 그 폴더의 파일 하나에 자동으로 덮어써 저장되고, 일주일에 한 번 "지난주" 파일도 남아요.</div>
         <div><b style="color:var(--text-main);">담기는 것</b> — 내 개인 자료 <b>전부</b>: 캘린더·할 일·상담 기록·즐겨찾기 + 수행평가·자율·진로·행발·결석계·좌석배치·월간일정표·조퇴증·양식 설정 등 모든 기능</div>
         <div><b style="color:var(--text-main);">안 담기는 것</b> — 학교 공용 자료(시간표·명렬표·공지·당번·학사일정 — 관리자가 관리)</div>
         <div>⚠️ 학생 이름·세특·결석 기록이 들어 있어요. 공용 PC·메신저에 두지 말고 잘 보관하세요.</div>
@@ -2701,7 +2701,7 @@
         <div style="font-weight:800; font-size:12.5px; margin-bottom:4px;">📁 백업 폴더(바뀌면 몇 분 안에 자동, 최신 파일 하나 + 지난주 파일 하나)</div>
         <div id="lite-backup-folder-status" style="font-size:11px; color:var(--text-sub); line-height:1.5; margin-bottom:6px;">아직 폴더를 정하지 않았어요.</div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="liteBackupPickFolder()">📁 폴더 정하기(바탕화면에 새 폴더)</button>
+          <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="liteBackupPickFolder()">📁 폴더 정하기</button>
           <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupWriteNow({ manual: true })">지금 폴더에 저장</button>
           <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupRestoreFromFolder()">폴더 파일에서 복원</button>
           <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupClearFolder()">폴더 해제</button>
@@ -5362,7 +5362,6 @@
   function liteBackupFileName() { return LITE_APP_NAME + '_백업.json'; }
   // 백업 주기: 자료가 바뀌면 조용해진 지 1분 안에, 아무리 바빠도 5분에 한 번(LITE_BACKUP_MIN_GAP). 켤 때·탭에 돌아올 때·탭을 떠날 때도
   // "바뀐 게 있으면" 저장. 최신 파일과 별도로 일주일에 한 번 "지난주" 파일을 덮어써 실수한 변경이 바로 백업까지 덮지 않게 한다.
-  const LITE_BACKUP_DIR_NAME = LITE_APP_NAME + ' 백업';
   const LITE_BACKUP_DEBOUNCE = 60 * 1000, LITE_BACKUP_MIN_GAP = 5 * 60 * 1000, LITE_BACKUP_WEEK = 7 * 24 * 60 * 60 * 1000;
   let liteBackupTimer = null;
   function liteNoteChanged(key) {
@@ -5394,17 +5393,15 @@
     if (!liteFsSupported) { customAlert('이 브라우저는 폴더에 바로 저장하는 기능이 없어요(Chrome·Edge에서 돼요).\n대신 💾 "지금 바로 백업 다운로드"로 파일을 받아 보관해 주세요.'); return; }
     // 바탕화면·문서 같은 윈도우 기본 폴더는 숨은 시스템 파일(desktop.ini) 때문에 브라우저가 "열 수 없음"으로 막는다 —
     // 그래서 그 안에 새 폴더를 만들어 고르게 안내한다(고른 폴더 이름이 다르면 그 안에 "내 스마트보드 백업"을 또 만든다).
-    await customAlert('다음 창에서 바탕화면으로 간 뒤 "새 폴더"를 눌러 「' + LITE_BACKUP_DIR_NAME + '」 폴더를 만들고, 그 폴더를 고른 채 [폴더 선택]을 누르세요.\n\n(바탕화면 자체를 고르면 브라우저가 "시스템 파일이 포함되어 열 수 없음"이라며 막아요 — 그 안의 새 폴더는 돼요.)');
+    await customAlert('다음 창에서 백업 파일을 둘 폴더를 고르세요. 고른 폴더에 그대로 저장돼요(폴더를 따로 만들지 않아요).\n\n바탕화면·문서 폴더 자체는 브라우저가 "시스템 파일이 포함되어 열 수 없음"이라며 막으니, 창의 "새 폴더"로 그 안에 폴더를 하나 만들어 고르면 돼요.');
     try {
-      const picked = await window.showDirectoryPicker({ id: 'lite-backup', mode: 'readwrite', startIn: 'desktop' });
-      // 바탕화면을 그대로 고르면 그 안에 "내 스마트보드 백업" 폴더를 만들어 쓴다(이미 그 이름의 폴더를 골랐으면 그대로).
-      const h = picked.name === LITE_BACKUP_DIR_NAME ? picked : await picked.getDirectoryHandle(LITE_BACKUP_DIR_NAME, { create: true });
+      const h = await window.showDirectoryPicker({ id: 'lite-backup', mode: 'readwrite', startIn: 'desktop' });
       await liteFsOp('readwrite', function(st) { return st.put(h, 'dir'); });
-      try { rawSetItem('device-lite-backup-parent', picked.name === h.name ? '' : picked.name); } catch (e) {}
+      try { rawRemoveItem('device-lite-backup-parent'); rawRemoveItem('device-lite-backup-week-at'); } catch (e) {} // 새 폴더엔 지난주 파일도 바로
       liteDirHandle = h;
       const ok = await liteBackupWriteNow({ manual: true, quiet: true, force: true });
       liteBackupRefreshStatus();
-      customAlert('백업 폴더를 정했어요: ' + (picked.name === h.name ? '' : picked.name + ' / ') + h.name + (ok ? '\n지금 첫 백업(' + liteBackupFileName() + ')을 저장했어요. 앞으로 자료가 바뀌면 몇 분 안에 같은 파일에 덮어쓰고, 일주일에 한 번 ' + liteBackupWeeklyName() + '도 남겨요.' : ''));
+      customAlert('백업 폴더를 정했어요: ' + h.name + (ok ? '\n지금 첫 백업(' + liteBackupFileName() + ')과 지난주 파일(' + liteBackupWeeklyName() + ')을 저장했어요. 앞으로 자료가 바뀌면 몇 분 안에 최신 파일에 덮어쓰고, 지난주 파일은 일주일에 한 번 바꿔요.' : ''));
     } catch (e) {
       if (e && e.name === 'AbortError') return;
       customAlert('폴더를 정하지 못했어요: ' + (e && e.message ? e.message : e));
@@ -5412,6 +5409,7 @@
   }
   async function liteBackupClearFolder() {
     try { await liteFsOp('readwrite', function(st) { return st.delete('dir'); }); } catch (e) {}
+    try { rawRemoveItem('device-lite-backup-parent'); rawRemoveItem('device-lite-backup-week-at'); } catch (e) {}
     liteDirHandle = null; liteBackupRefreshStatus();
   }
   async function liteBackupWriteNow(opts) {
@@ -5436,7 +5434,9 @@
     liteBackupMarkDone(); liteBackupHideBanner();
     // 일주일에 한 번 "지난주" 파일(실수로 지운 것이 바로 백업까지 덮지 않게 한 주 전쯤 상태를 따로)
     const weekAt = Number(localStorage.getItem('device-lite-backup-week-at')) || 0;
-    if (Date.now() - weekAt >= LITE_BACKUP_WEEK) {
+    let weekMissing = false;
+    try { await h.getFileHandle(liteBackupWeeklyName()); } catch (e) { weekMissing = true; }
+    if (weekMissing || Date.now() - weekAt >= LITE_BACKUP_WEEK) {
       try {
         const fw = await h.getFileHandle(liteBackupWeeklyName(), { create: true });
         const ww = await fw.createWritable(); await ww.write(json); await ww.close();
@@ -5466,7 +5466,7 @@
     let msg;
     if (!liteFsSupported) msg = '이 브라우저(Safari·Firefox 등)는 폴더 자동 저장이 안 돼요. Chrome·Edge를 쓰거나, 💾 백업 다운로드로 직접 받아 두세요. 마지막 백업: ' + when;
     else if (!h) msg = '아직 폴더를 정하지 않았어요. 마지막 백업: ' + when;
-    else { const parent = localStorage.getItem('device-lite-backup-parent') || ''; msg = '📁 ' + (parent ? parent + ' / ' : '') + h.name + ' / ' + liteBackupFileName() + ' · 마지막 저장 ' + when + (liteChangedSinceBackup ? ' · 그 뒤 바뀐 자료 있음(곧 저장)' : ''); }
+    else msg = '📁 ' + h.name + ' / ' + liteBackupFileName() + ' · 마지막 저장 ' + when + (liteChangedSinceBackup ? ' · 그 뒤 바뀐 자료 있음(곧 저장)' : '');
     ['lite-backup-folder-status', 'lite-setup-backup-status'].forEach(function(id) { const el = document.getElementById(id); if (el) el.innerText = msg; });
   }
   function liteBackupInit() {
@@ -5508,7 +5508,7 @@
       bt.appendChild(B('그래도 덮어쓰기', function() { liteBackupWriteNow({ manual: true, quiet: true, force: true }); }, true));
       bt.appendChild(B('나중에', snooze, true));
     } else if (kind === 'nofolder') {
-      tx.textContent = '💾 자료를 안전하게 보관하려면 백업 폴더를 정해 주세요(바탕화면에 새 폴더를 만들어 고르면 자료가 바뀔 때마다 자동 저장).';
+      tx.textContent = '💾 자료를 안전하게 보관하려면 백업 폴더를 정해 주세요(자료가 바뀔 때마다 그 폴더에 자동 저장).';
       bt.appendChild(B('📁 폴더 정하기', liteBackupPickFolder));
       bt.appendChild(B('지금 내려받기', manualBackupNow, true));
       bt.appendChild(B('오늘은 그만', snooze, true));
@@ -5541,7 +5541,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.4';
+  var BUILD_ID = '2026-10-18.5';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
