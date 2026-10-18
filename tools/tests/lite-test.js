@@ -118,6 +118,18 @@ async function openPage(browser) {
   check('일과 시간 적용(1교시 08:50)', await page.evaluate(() => currentTimes[0].s === '08:50'));
 
   await page.evaluate(() => rawSetItem('device-lite-banner-snooze', todayYmdDash())); // 폴더 없음 띠가 검사 중 단추를 가리지 않게
+  console.log('== 3b. 하루 흐름(조회·점심·청소·종례) 설정');
+  const st = await page.evaluate(() => {
+    const T = [{ s: '08:50', e: '09:40' }, { s: '09:50', e: '10:40' }, { s: '10:50', e: '11:40' }, { s: '11:50', e: '12:40' }, { s: '13:40', e: '14:30' }, { s: '14:40', e: '15:30' }, { s: '15:45', e: '16:35' }];
+    const d = { homeroomAt: '08:30', lunchAfter: 3, cleanAfter: 6, closingMin: 15 };
+    const at = (h, m) => periodStatusAt(h * 60 + m, T, d).status;
+    return [at(8, 35), at(8, 20), at(11, 45), at(12, 50), at(15, 35), at(16, 40), at(16, 55), periodStatusAt(12 * 60 + 50, T, null).status, periodStatusAt(15 * 60 + 35, T, null).status, liteDay().lunchAfter];
+  });
+  check('개인판 설정대로: 조회 08:30부터, 3교시 뒤 점심, 4교시 뒤는 쉬는 시간, 6교시 뒤 청소, 종례 15분', JSON.stringify(st.slice(0, 7)) === JSON.stringify(['조회 시간', '일과 전', '점심 시간', '쉬는 시간', '청소 시간', '종례 시간', '퇴근 후 휴식']), st);
+  check('공용판 규칙은 그대로(40분 틈 = 점심, 6교시 뒤 = 청소)', st[7] === '점심 시간' && st[8] === '청소 시간', st);
+  check('점심을 안 정했으면 가장 긴 틈 뒤(4교시)', st[9] === 4, st[9]);
+  check('설정 창에 하루 흐름 칸', await page.evaluate(() => !!document.getElementById('lite-day-lunch') && !!document.getElementById('lite-day-homeroom')));
+
   console.log('== 4. 내 시간표 직접 입력 → 저장 → 다시 열어도 남음');
   await page.click('#my-tt-1-1-s');
   await page.keyboard.type('화학');
