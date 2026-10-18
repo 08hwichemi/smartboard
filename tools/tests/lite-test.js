@@ -342,7 +342,19 @@ async function openPage(browser) {
   check('설명서에 공지·감독표·시간표 관리 단계 없음', !steps.some(s => ['#btn-notice', '#duty-alert-pill', '#notice-widget', '#schedule-overlay .modal-box', '#duty-overlay .modal-box'].includes(s)) && steps.includes('#my-tt-widget'), steps);
   await page.evaluate(() => openTour()); await wait(300);
   check('설명서 열림', await page.evaluate(() => document.getElementById('tour-overlay').style.display === 'block' && document.getElementById('tour-card-title').innerText.length > 0));
+  // 개인판 전용 설명서: 첫 장 = 내 스마트보드(처음 할 일), 단계마다 화면에 있는 곳을 짚고, 계정·관리자·로그인 말이 없다
+  const tourSeen = [];
+  for (let i = 0; i < 30; i++) {
+    const st = await page.evaluate(() => document.getElementById('tour-overlay').style.display === 'block' ? { p: document.getElementById('tour-card-progress').innerText, t: document.getElementById('tour-card-title').innerText, d: document.getElementById('tour-card-desc').innerText } : null);
+    if (!st) break;
+    tourSeen.push(st);
+    await page.evaluate(() => tourNext()); await wait(120);
+  }
+  check('개인판 설명서 첫 장 = 내 스마트보드 + 처음 할 일', tourSeen.length > 0 && tourSeen[0].t.includes('내 스마트보드') && tourSeen[0].d.includes('명렬표'), tourSeen[0]);
+  check('개인판 설명서 단계를 하나도 건너뛰지 않음', tourSeen.length === steps.length && tourSeen.length >= 15, [tourSeen.length, steps.length]);
+  check('개인판 설명서에 계정·관리자·공지·감독 말 없음', !tourSeen.some(s => /계정|관리자|공지|감독|모든 선생님/.test(s.t + s.d)), tourSeen.filter(s => /계정|관리자|공지|감독|모든 선생님/.test(s.t + s.d)).map(s => s.t));
   await page.evaluate(() => closeTour());
+  check('liteWords: 공용판 말을 개인판 말로', await page.evaluate(() => liteWords('관리자 설정의 일과 시간을 가져와요') === '⚙️ 설정의 일과 시간을 가져와요' && liteWords('적은 내용은 계정에 저절로 저장돼요.') === '적은 내용은 이 브라우저에 저절로 저장돼요.'));
 
   console.log('== 8. 공용판(index.html) 자료와 섞이지 않음');
   const mixed = await page.evaluate(() => { window.__realLs.setItem('my-tt-1-1-s', '공용판값'); return localStorage.getItem('my-tt-1-1-s'); });

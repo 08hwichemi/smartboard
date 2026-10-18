@@ -2385,7 +2385,7 @@
         <input type="file" id="lite-roster-excel" accept=".xlsx,.xls" style="display:none;" onchange="liteRosterImportExcel(this.files[0]); this.value='';">
         <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="document.getElementById('lite-roster-excel').click()" title="'학년'·'반'·'번호'·'이름' 열(📄 양식) 또는 나이스식 '학번'(10203)·'이름' 열이 있는 엑셀 — 학생번호·어머니번호·아버지번호 열은 있으면 같이 읽어요. 파일에 든 모든 학년·반이 한 번에 들어가요.">📥 엑셀</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTogglePaste()" title="고른 학년·반에 이름을 한 줄에 한 명씩 붙여 넣어요">📋 붙여넣기</button>
-        <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTemplate()" title="학번·이름·전화 열이 있는 빈 엑셀 양식을 받아요 — 채워서 📥 엑셀로 올리면 돼요">📄 양식 받기</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTemplate()" title="학년·반·번호·이름·전화 열이 있는 빈 엑셀 양식을 받아요 — 채워서 📥 엑셀로 올리면 돼요">📄 양식 받기</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterClearClass()" title="고른 반의 명단만 지워요">🗑 이 반 지우기</button>
         <span id="lite-roster-count" style="font-size:11px; color:var(--text-sub); margin-left:auto;"></span>
       </div>
@@ -2657,7 +2657,7 @@
 
     <div class="lite-sec">
       <div class="lite-sec-title">③ 학교 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">급식 · 학사일정 · 날씨</span></div>
-      <div class="lite-row"><label class="lite-lb" for="lite-school-q">학교 찾기</label><input type="search" id="lite-school-q" placeholder="학교 이름(예: 부광고)" onkeydown="if(event.key==='Enter'){event.preventDefault(); liteSchoolSearch();}"><button class="top-btn accent" style="font-size:11.5px; padding:6px 12px;" onclick="liteSchoolSearch()">🔍 찾기</button></div>
+      <div class="lite-row"><label class="lite-lb" for="lite-school-q">학교 찾기</label><input type="search" id="lite-school-q" placeholder="학교 이름(예: 한빛고)" onkeydown="if(event.key==='Enter'){event.preventDefault(); liteSchoolSearch();}"><button class="top-btn accent" style="font-size:11.5px; padding:6px 12px;" onclick="liteSchoolSearch()">🔍 찾기</button></div>
       <div id="lite-school-results"></div>
       <div class="lite-row" style="margin-top:6px;"><label class="lite-lb">고른 학교</label><span id="lite-school-picked" style="font-weight:700;">(없음 — 급식·학사일정 없이 쓸 수도 있어요)</span></div>
       <div class="lite-row"><label class="lite-lb">날씨 위치</label><span id="lite-weather-label" style="font-size:12px;">학교를 고르면 그 시·도 기준</span><button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteUseMyLocation()" title="브라우저 위치 권한으로 지금 있는 곳의 날씨를 보여줘요">📍 내 위치로</button></div>
@@ -3724,7 +3724,7 @@
       <select id="ab-class" class="mini-select" style="width:64px;" onchange="abOnClassChange('class')"></select>
       <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다" onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="abResetClass()" title="지금 고른 반의 결석 기록을 모두 지웁니다">🗑 초기화</button>
-      <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b>내 계정에만</b> 저장돼요(다른 선생님·관리자 화면엔 안 보임).</span>
+      <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b class="school-only">내 계정에만</b><b class="lite-only">이 컴퓨터의 브라우저에만</b> 저장돼요<span class="school-only">(다른 선생님·관리자 화면엔 안 보임)</span><span class="lite-only">(💾 백업 파일에도 들어가요)</span>.</span>
     </div>
     <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="abPrint()" title="미리보기에 보이는 양식을 인쇄합니다">🖨️ 출력</button>
   </div>
@@ -3755,7 +3755,7 @@
 
       <div id="ab-pane-hol" class="ab-pane" style="display:none;">
         <div class="ab-muted" style="margin-bottom:8px; line-height:1.6;">결석 일수는 <b>토·일요일과 아래 휴일</b>을 빼고 셉니다. 학사일정(나이스)의 휴업일·공휴일은 자동으로 들어오고,
-          빠진 날(재량휴업일 등)은 직접 더하세요. 직접 더한 날은 내 계정에만 저장돼요.</div>
+          빠진 날(재량휴업일 등)은 직접 더하세요. 직접 더한 날은 <span class="school-only">내 계정에만</span><span class="lite-only">이 브라우저에만</span> 저장돼요.</div>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
           <input type="date" id="ab-hol-date" class="lp-input" style="width:150px;">
           <input type="text" id="ab-hol-name" class="lp-input" style="width:160px;" placeholder="이름 (예: 재량휴업일)">
@@ -4408,7 +4408,7 @@
           <button class="top-btn" data-tab="edit" onclick="seSetTab('edit')">② 편집</button>
           <button class="top-btn" data-tab="final" onclick="seSetTab('final')">③ 최종</button>
         </div>
-        <span class="se-muted">🔒 <b>내 계정에만</b> 저장(다른 선생님·관리자 안 보임) · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
+        <span class="se-muted">🔒 <b class="school-only">내 계정에만</b><b class="lite-only">이 컴퓨터의 브라우저에만</b> 저장<span class="school-only">(다른 선생님·관리자 안 보임)</span> · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
       </div>
       <!-- 자율/진로 고르기: 세 탭 모두 이 자리에 고정(최종 탭에선 "전체"도). 옆 안내는 탭마다 바뀜. -->
       <div id="se-kind-row">
@@ -4510,7 +4510,7 @@
         <button class="top-btn" data-tab="sum" onclick="paSetTab('sum')">④ 합계·나이스</button>
         <button class="top-btn" data-tab="sk" onclick="paSetTab('sk')">⑤ 세특</button>
       </div>
-      <span class="se-muted"><b>내 계정에만</b> 저장 · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
+      <span class="se-muted"><b class="school-only">내 계정에만</b><b class="lite-only">이 브라우저에만</b> 저장 · 입력 중엔 화면에만 있다가 <b>칸을 벗어나면</b> 저장돼요</span>
     </div>
     <div id="pa-next"></div>
     <div id="pa-pane"></div>
@@ -4772,6 +4772,23 @@
     try { Object.defineProperty(window, 'localStorage', { value: proxy, configurable: true }); } catch (e) {}
     document.documentElement.classList.add('lite');
   })();
+  // 공용판 글 속 "계정·관리자" 말을 개인판 말로 — 개인판엔 계정·관리자가 없고 자료는 이 브라우저에만 있다.
+  // 설명서 글·다음 할 일 안내처럼 JS 문자열로 만드는 글에 쓴다(HTML에 박힌 글은 school-only/lite-only로 나눈다).
+  const LITE_WORDS = [
+    ['계정에 저절로 저장돼서 다른 컴퓨터에서도 이어서 쓸 수 있어요', '이 브라우저에 저절로 저장돼요(다른 컴퓨터로 옮길 땐 💾 백업 파일로)'],
+    ['계정에 저절로 저장', '이 브라우저에 저절로 저장'],
+    ['선생님 계정에만 저장돼요(다른 선생님·관리자는 못 봐요)', '이 컴퓨터의 브라우저에만 저장돼요'],
+    ['선생님 계정에 저장되지만', '이 브라우저에 저장되지만'],
+    ['관리자 설정의 일과 시간', '⚙️ 설정의 일과 시간'],
+    ['관리자 일과 시간', '⚙️ 설정의 일과 시간'],
+    ['관리자가 명렬표를 올리면', '왼쪽 📋 명렬표에 이 반 명단을 넣으면'],
+    ['📋 수행평가 · 🏫 가정통신문 · 📢 행사·일정', '📋 수행평가 · 📢 행사·일정'] // 학교 가정통신문 틀은 공용판만
+  ];
+  function liteWords(t) {
+    if (!LITE || typeof t !== 'string') return t;
+    LITE_WORDS.forEach(function(w) { t = t.split(w[0]).join(w[1]); });
+    return t;
+  }
   function liteSbStub() { // 개인판엔 서버가 없다 — 어디서 sb를 불러도 조용히 "없음"으로 끝나게
     const err = { message: '개인판에는 서버가 없어요', code: 'LITE' };
     const q = new Proxy(function() {}, {
@@ -5126,6 +5143,9 @@
     const msPrint = document.getElementById('ms-print-school'); if (msPrint) msPrint.innerText = school;
     const bsTitle = document.getElementById('bs-title'); if (bsTitle) bsTitle.placeholder = (school || '○○학교') + ' 시정표';
     const sgbTab = document.querySelector('#se-page .tab-btn[data-tab="check"]'); if (sgbTab) { sgbTab.textContent = '✍️ 문장 점검'; sgbTab.title = '바이트·기재 불가 표현 점검'; }
+    // 공용판 말투(계정·관리자) → 개인판: 마우스를 올리면 보이는 글(눈에 보이는 글은 HTML의 school-only/lite-only)
+    document.querySelectorAll('[title*="내 계정에 기억"]').forEach(function(el) { el.title = el.title.replace('내 계정에 기억', '이 브라우저에 기억'); });
+    const paBk = document.getElementById('pa-backup'); if (paBk) paBk.title = '자료는 칸을 벗어날 때마다 이 브라우저에 저장돼요(💾 백업 파일에도 들어가요). 수행평가만 엑셀로 받아 두거나 다시 넣을 때 써요.';
     document.querySelectorAll('.et-cfg[data-k="school"], .et-cfg[data-k="place"]').forEach(function(el) { el.placeholder = school || '○○학교'; });
     await init();
     if (currentMainTab === 'tt') switchMainTab('halfcal');
@@ -5230,7 +5250,7 @@
       const data = await res.json();
       const rows = data.schoolInfo && data.schoolInfo[1] && data.schoolInfo[1].row ? data.schoolInfo[1].row : [];
       liteSchoolFound = rows.map(function(r) { return { name: r.SCHUL_NM || '', edu: r.ATPT_OFCDC_SC_CODE || '', eduName: r.ATPT_OFCDC_SC_NM || '', code: r.SD_SCHUL_CODE || '', kind: r.SCHUL_KND_SC_NM || '', addr: r.ORG_RDNMA || '' }; }).filter(function(x) { return x.code && x.edu; });
-      if (!liteSchoolFound.length) { box.innerHTML = '<div class="lite-hint">찾은 학교가 없어요. 이름 일부(예: "부광")로 다시 찾아보세요.</div>'; return; }
+      if (!liteSchoolFound.length) { box.innerHTML = '<div class="lite-hint">찾은 학교가 없어요. 이름 일부(예: "한빛")로 다시 찾아보세요.</div>'; return; }
       box.innerHTML = liteSchoolFound.map(function(x, i) {
         return '<button type="button" class="lite-school-item" onclick="liteSchoolPick(' + i + ')"><b>' + liteEsc(x.name) + '</b> · ' + liteEsc(x.kind) + ' · ' + liteEsc(x.eduName.replace(/교육청$/, '')) + '<br><span style="color:var(--text-sub);">' + liteEsc(x.addr) + '</span></button>';
       }).join('');
@@ -5695,27 +5715,38 @@
   }
   function liteBackupHideBanner() { const el = document.getElementById('lite-backup-banner'); if (el) el.style.display = 'none'; }
 
-  // 홈 설명서: 개인판에 없는 단계는 빼고 글을 맞춘다
-  function liteAdjustTour() {
-    const drop = ['#btn-notice', '#duty-alert-pill', '#notice-widget'];
-    const keep = tourSteps.filter(function(s) { return !s.modal && drop.indexOf(s.selector) === -1 && !(s.selector === '#search-tt-widget' && s.title.indexOf('🔍') !== -1); });
-    keep.forEach(function(s) {
-      if (s.selector === '#app-rail') s.desc = '맨 왼쪽 메뉴에서 명렬표·단축키·생기부·수행평가·양식·좌석배치표·월간일정표·결석계·조퇴증을 열어요. 맨 아래 ⚙️ 설정에서 이름·학교·일과 시간·백업 폴더를 바꿀 수 있어요.';
-      if (s.selector === '#favorites-panel') s.desc = '자주 가는 사이트 8개를 등록해 두는 칸이에요. 오른쪽 위 연필 버튼을 눌러 이름과 주소를 적어요.';
-      if (s.selector === '#my-tt-widget') s.desc = '내 시간표를 직접 적는 칸이에요. 칸을 누르고 위에 과목, 아래에 교실(또는 반)을 적으면 바로 저장돼요. 교시별 시간은 ⚙️ 설정의 일과 시간에서 바꿔요.';
-      if (s.selector === '#btn-backup') s.desc = '개인판은 서버가 없어서 모든 자료가 이 컴퓨터의 브라우저에만 있어요. 여기서 백업 폴더(바탕화면)를 정하면 자료가 바뀔 때마다 몇 분 안에 파일 하나에 자동으로 저장되고, 다른 컴퓨터로 옮길 때도 이 파일을 써요.';
-      if (s.selector === '#upcoming-schedule-pill') s.desc = '⚙️ 설정에서 고른 학교의 나이스 학사일정이 앞으로 90일치 흘러가요.';
-      if (s.selector === '#news-widget') s.desc = '탭을 눌러 종합/정치·사회/경제/IT·과학/스포츠 뉴스를 볼 수 있어요. 제목을 클릭하면 기사가 새 탭으로 열려요.';
-    });
-    tourSteps.length = 0; keep.forEach(function(s) { tourSteps.push(s); });
-  }
+  // 홈 설명서(❓): 개인판은 홈 구성·자료가 놓이는 곳(서버 대신 이 브라우저)·처음 할 일이 공용판과 달라서
+  // 공용 단계(tourSteps)를 고치지 않고 개인판 글을 따로 쓴다. liteBoot가 tourSteps를 이것으로 바꿔 끼운다.
+  const LITE_TOUR_STEPS = [
+    { selector: '.main-title', title: '🧳 내 스마트보드', desc: '로그인·서버 없이 이 컴퓨터의 브라우저에만 자료를 저장하는 나만의 스마트보드예요. 다른 사람은 내 자료를 볼 수 없어요.\n\n처음이라면 이 순서로 시작해 보세요.\n① ⚙️ 설정 — 이름·학교·담임 반·일과 시간·백업 폴더\n② 📋 명렬표 — 우리 반(수업 반) 학생 명단 넣기\n③ ⭐ 내 시간표 — 칸에 과목·반 적기\n\n홈 화면을 차례로 둘러볼게요.' },
+    { selector: '#rail-settings-btn', title: '⚙️ 설정', desc: '이름·학교·담임 반·학년/반 수·일과 시간·백업 폴더를 바꾸는 곳이에요. 고른 학교로 급식·학사일정·날씨가 바뀌고, 일과 시간은 내 시간표와 맨 위 "지금 이 시간"에 쓰여요. 오른쪽 위 내 이름을 눌러도 열려요.' },
+    { selector: '#rail-roster-btn', title: '📋 명렬표부터', desc: '반마다 학생 명단을 넣어 두는 곳이에요. 엑셀 파일을 올리거나(📄 양식 받기로 빈 양식을 받아 채워도 돼요) 엑셀 칸을 복사해 붙여 넣어요.\n\n한 번 넣으면 좌석배치표·결석계·수행평가·생기부 편집기·양식(명렬표 수합·사물함 이름표)이 모두 이 명단을 같이 써요.' },
+    { selector: '#app-rail', title: '📌 왼쪽 메뉴', desc: '"공통" 아래는 명렬표·단축키·생기부·수행평가·양식·좌석배치표·월간일정표, "학급" 아래는 담임 선생님이 주로 쓰는 결석계·조퇴증이에요. 같은 버튼을 한 번 더 누르면 홈으로 돌아와요.\n\n각 화면 위쪽의 "📖 설명서"를 누르면 그 화면 사용법을 볼 수 있어요.' },
+    { selector: '.top-center-bar', title: '⏰ 지금 이 시간', desc: '⚙️ 설정의 일과 시간(교시·조회·점심·청소·종례)으로 지금이 몇 교시인지, 쉬는 시간인지를 계산해 보여 줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지예요.' },
+    { selector: '#btn-backup', title: '💾 백업', desc: '서버가 없어서 모든 자료가 이 컴퓨터의 브라우저에만 있어요. 백업 폴더를 정해 두면 자료가 바뀔 때마다 몇 분 안에 그 폴더의 파일 하나에 저절로 저장돼요(지난주 파일도 하나 남아요).\n\n다른 컴퓨터로 옮길 때도 이 파일로 복원해요. 학생 이름·전화·결석 기록이 들어 있으니 공용 PC·메신저에 두지 마세요.' },
+    { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 11가지 색상 테마와 "오늘의 랜덤" 중에서 골라 화면 전체 색을 바꿀 수 있어요. 누르면 바로 바뀌어요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
+    { selector: '#upcoming-schedule-pill', title: '📅 다가오는 학사일정', desc: '⚙️ 설정에서 고른 학교의 나이스 학사일정이 앞으로 90일치 옆으로 흘러가요.' },
+    { selector: '#favorites-panel', title: '🔗 즐겨찾기', desc: '자주 가는 사이트 8개를 등록해 두는 칸이에요. 빈 칸(+)이나 오른쪽 위 ⚙ 버튼을 눌러 이름과 주소를 적어요.' },
+    { selector: '#dday-panel', title: '⏳ D-DAY', desc: '칸을 눌러 날짜와 설명(예: 2차 지필평가)을 적으면 D-day가 저절로 계산돼요. 두 개까지 따로 정할 수 있어요.' },
+    { selector: '#my-tt-widget', title: '⭐ 내 시간표', desc: '내 시간표를 직접 적는 칸이에요. 칸을 누르고 위에 과목, 아래에 교실(또는 반)을 적으면 바로 저장되고, 과목마다 색이 붙어요.\n\n교시 수와 교시별 시간은 ⚙️ 설정의 일과 시간에서 바꿔요. A-/A+로 글씨 크기를 바꿀 수 있어요.' },
+    { selector: '.time-group', title: '🕐 시계', desc: '현재 시각과 날짜, 요일, 음력 날짜를 보여 줘요.' },
+    { selector: '.weather-group', title: '🌤️ 날씨', desc: '현재 날씨·미세먼지와 최고/최저 기온, 앞으로 몇 시간의 예보예요. 고른 학교의 시·도 기준이고, ⚙️ 설정에서 "내 위치"로 바꿀 수 있어요.' },
+    { selector: '#left-bottom-cal', title: '📅 캘린더', desc: '날짜 칸을 누르면 바로 메모를 적을 수 있어요. 고른 학교의 나이스 학사일정도 같이 표시돼요.', tab: 'cal' },
+    { selector: '#search-tt-widget', title: '🗓️ 1/2 캘린더', desc: '이번 주 5일치(월~금)를 한 화면에 모아 봐요. 한 주 일정을 빠르게 훑어볼 때 편해요. 위 탭으로 📅 캘린더와 오가요.', tab: 'halfcal' },
+    { selector: '#meal-widget', title: '🍽 급식', desc: '고른 학교의 나이스 급식이에요. ◀▶ 버튼으로 어제·내일 메뉴도 볼 수 있어요.' },
+    { selector: '#websearch-widget', title: '🔍 웹 검색', desc: '여기서 검색하면 구글 검색 결과가 새 탭으로 열려요. 아래 뉴스 안에서 찾는 게 아니라 인터넷 전체를 검색하는 창이에요.' },
+    { selector: '#news-widget', title: '📰 뉴스', desc: '탭을 눌러 종합/정치/경제/IT/스포츠/교육 뉴스를 볼 수 있어요. 제목을 누르면 기사가 새 탭으로 열려요.' },
+    { selector: '#todo-work-widget', title: '💼 업무 / 👩‍🎓 상담', desc: '탭을 눌러 업무 할 일과 학생·상담 기록을 한 칸에서 오가요. 체크박스로 완료 표시, "✔️ Del"로 완료된 것만 지우기, "🗑️ ALL"로 전체 지우기예요.' },
+    { selector: '.qbtn.tour-btn', title: '❓ 설명서', desc: '이 설명은 언제든 오른쪽 위 "설명서"를 눌러 다시 볼 수 있어요. 왼쪽 메뉴의 각 화면에도 그 화면용 "📖 설명서"가 있어요.' }
+  ];
+  function liteAdjustTour() { tourSteps.length = 0; LITE_TOUR_STEPS.forEach(function(s) { tourSteps.push(s); }); }
 
   // ===== 🔄 새 버전 알림 =====
   // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.16';
+  var BUILD_ID = '2026-10-18.17';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7153,7 +7184,7 @@
     { selector: '.top-center-bar', title: '지금 이 시간', desc: '지금이 몇 교시인지, 쉬는 시간인지를 설정된 일과 시간표를 기준으로 자동 계산해서 보여줘요. 아래 얇은 바는 그 시간이 얼마나 지났는지 나타내는 진행률이에요.' },
     { selector: '#btn-notice', title: '📢 공지 보내기', desc: '전체 선생님 화면에 팝업으로 뜨는 공지를 보낼 수 있어요. 보낸 공지는 오른쪽 "공지 & 소담소담" 목록에도 계속 남아요.' },
     { selector: '#btn-backup', title: '💾 백업', desc: '화면에 입력한 캘린더·할 일·즐겨찾기 등을 파일로 저장하고, 필요할 때 그 파일로 다시 복원할 수 있어요. 15일마다 다운로드 폴더에 자동으로도 백업 파일이 생겨요.' },
-    { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 9가지 색상 테마 중 하나로 화면 전체를 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
+    { selector: '#theme-btn-group', title: '🎨 테마', desc: '"테마" 버튼을 누르면 11가지 색상 테마와 "오늘의 랜덤" 중 하나로 화면 전체를 바꿀 수 있어요. 동그라미를 누르면 바로 바뀌고, 지금 선택된 테마는 테두리로 표시돼요.', modal: function() { document.getElementById('theme-menu-dropdown').style.display = 'block'; } },
     { selector: '#schedule-overlay .modal-box', title: '🗓️ 시간표 관리', desc: '이 버튼을 누르면 이렇게 모달이 열려요. 위에서 선생님을 고른 뒤 "✏️ 수정"을 누르면 그 선생님 시간표를 직접 고칠 수 있고, "+ 새 선생님 추가"로 새 시간표를 만들 수도 있어요.', modal: function() { openScheduleModal(); } },
     { selector: '#duty-overlay .modal-box', title: '🌙 야자 감독표', desc: '이렇게 감독표가 열려요. 기본은 보기 전용이고, "✏️ 수정 모드"를 눌러야 편집·추가·삭제 버튼이 나타나요(실수 방지를 위해서예요).', modal: function() { openDutyModal('야자감독', '🌙'); } },
     { selector: '#duty-overlay .modal-box', title: '🍱 급식 감독표', desc: '같은 방식으로 급식 감독 일정도 확인·수정할 수 있어요.', modal: function() { openDutyModal('급식감독', '🍱'); } },
@@ -7295,7 +7326,7 @@
     }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     document.getElementById('tour-card-title').innerText = step.title;
-    document.getElementById('tour-card-desc').innerText = step.desc;
+    document.getElementById('tour-card-desc').innerText = liteWords(step.desc);
     document.getElementById('tour-card-progress').innerText = (t.index + 1) + ' / ' + t.steps.length;
     document.getElementById('tour-prev-btn').style.visibility = t.index === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').innerText = t.index === t.steps.length - 1 ? '완료 ✓' : '다음 ▶';
@@ -14072,7 +14103,7 @@
     } else {
       n = { done: true, msg: '<b>인쇄</b> — 위쪽 오른쪽 <b>⑥ 🖨️ 인쇄/PDF</b>를 눌러요. 인쇄 창에서 프린터 대신 "PDF로 저장"을 고르면 파일로 받아요.' +
         '<br>· 다른 달도 뽑으려면 위쪽 ◀ ▶로 달을 바꾸고 다시 인쇄해요.' +
-        '<br><span class="se-muted">적은 내용은 계정에 저절로 저장돼요. 💾 저장 / 📂 불러오기는 파일로 따로 보관하거나 다른 선생님께 줄 때만 써요.</span>',
+        liteWords('<br><span class="se-muted">적은 내용은 계정에 저절로 저장돼요. 💾 저장 / 📂 불러오기는 파일로 따로 보관하거나 다른 선생님께 줄 때만 써요.</span>'),
         glow: '#ms-print-btn', act: 'msPrintPaper()', btn: '🖨️ 인쇄/PDF', again: true };
     }
     if (msDemo) n.msg += '<br><span class="se-muted">📖 설명서 예시 화면이에요 — 가짜 일정이라 저장되지 않아요.</span>';
@@ -16381,7 +16412,7 @@
   function seNextInfo() {
     const go = function(tab, extra) { return Object.assign({ tab: tab }, extra || {}); };
     if (!seClassKey()) return { st: {}, next: null };
-    if (!seRoster.length) return { st: {}, next: go('src', { msg: '이 반 명렬표에 학생이 없어요. 관리자가 명렬표를 올리면 저절로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣어도 돼요.', glow: '#se-import-btn' }) };
+    if (!seRoster.length) return { st: {}, next: go('src', { msg: liteWords('이 반 명렬표에 학생이 없어요. 관리자가 명렬표를 올리면 저절로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣어도 돼요.'), glow: '#se-import-btn' }) };
     const kind = seKind(), K = SE_KIND_LABEL[kind];
     const I = seKindInfo(kind), N = seRoster.length, st = {};
     // 이 종류를 다 끝냈을 때: 아직 안 끝난 다른 종류(자율 → 진로 → 행발 순)로 안내, 다 끝났으면 ③ 최종으로
@@ -16481,7 +16512,7 @@
     }).join('') + (tab === 'final' ? '<button class="top-btn' + (cur === 'all' ? ' theme-active' : '') + '" data-kind="all" onclick="seSetKind(\'all\')">전체</button>' : '');
   }
   function seNoStudentsHtml() {
-    return '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px 20px; line-height:1.7;">이 반의 명렬표에 학생이 없어요.<br>관리자가 명렬표를 올리면 자동으로 채워지고, 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣으면 그 번호·이름을 써요.</div>';
+    return '<div style="text-align:center; color:var(--text-sub); font-size:12.5px; padding:30px 20px; line-height:1.7;">이 반의 명렬표에 학생이 없어요.<br>' + liteWords('관리자가 명렬표를 올리면 자동으로 채워지고') + ', 예전 엑셀 파일을 <b>📥 엑셀 가져오기</b>로 넣으면 그 번호·이름을 써요.</div>';
   }
 
   // ----- ① 자료 입력 -----
@@ -22541,7 +22572,7 @@
   // 시험 기간: 사용자 한글 양식(정기고사 시정표 + 일차별 시간표)을 그대로 — 아래 "📝 시험 기간" 묶음(bsEx*). 쉬는 시간 줄은 넣지 않음(사용자).
   // 한 장짜리: 제목(상자/표에 붙이기/글씨만/밑줄) + 표 하나, 줄 높이는 기본으로 종이에 꽉 차게(게시용).
   const BS_CFG_KEY = 'fm-bs';
-  const BS_MODES = [['normal', '🏫 평상시', '처음엔 관리자 설정의 일과 시간을 가져와요. 시작 시각과 줄마다 분만 고치면 뒤 시간이 저절로 계산돼요(이 시정표만 바뀌어요).'],
+  const BS_MODES = [['normal', '🏫 평상시', liteWords('처음엔 관리자 설정의 일과 시간을 가져와요. 시작 시각과 줄마다 분만 고치면 뒤 시간이 저절로 계산돼요(이 시정표만 바뀌어요).')],
     ['short', '⏱️ 단축 수업', '처음엔 평상시 시간을 옮겨 놓아요. 교시 분을 40으로 바꾸면 뒤 시간이 모두 따라 바뀌어요. 평상시와 따로 기억해요.'], ['exam', '📝 시험 기간', '정기고사 시정표(예비령·준비령·본령)와 일차별 시간표를 한 장씩 만들어요. 본령 시간만 적으면 예비령(10분 전)·준비령(5분 전)은 저절로 계산돼요.'],
     ['mock', '🎯 학력평가', '전국연합학력평가 시정표(교시 | 과목명 | 예비령 | 본령 | 총시간)예요. 올해(~2027학년도 수능)와 내년(2028학년도 통합형) 시간이 기본값으로 들어 있어 학년도에 맞춰 골라져요.'],
     ['jungsi', '📚 정시반', '수능 뒤 정시반이 학교 타종과 따로 치르는 모의고사 시정표(준비·본령, 점심시간)예요. 한글로 쓰던 양식의 시간이 들어 있고 줄마다 고칠 수 있어요.']];
@@ -22841,7 +22872,7 @@
     // 시간 줄
     document.getElementById('bs-np').innerHTML = '교시 수 ' + [4, 5, 6, 7, 8, 9].map(function(n) { return chip(m.nP === n, 'data-np="' + n + '" onclick="bsModeSet(function(m) { m.nP = ' + n + '; }, true)"', n); }).join('');
     // 되돌리기 단추는 상자 제목 오른쪽에(교시 수 줄에 두면 단축 수업에서 줄이 넘어감 — 사용자)
-    document.getElementById('bs-tools').innerHTML = c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="고친 교시 시간을 지우고 관리자 일과 시간대로">↺ 일과 시간대로</button>'
+    document.getElementById('bs-tools').innerHTML = c.mode === 'normal' ? '<button class="nt-chip" id="bs-reset-times" onclick="bsResetTimes()" title="' + liteWords('고친 교시 시간을 지우고 관리자 일과 시간대로') + '">↺ 일과 시간대로</button>'
       : '<button class="nt-chip" id="bs-copy-normal" onclick="bsCopyNormal()" title="평상시 시정표의 줄·시간을 그대로 가져와 고쳐 써요">↺ 평상시에서 가져오기</button>';
     document.getElementById('bs-calc').innerHTML = '시간 ' + chip(m.calc, 'data-calc="1" onclick="bsModeSet(function(m) { m.calc = true; }, true)"', '⏱️ 분으로 계산', '시작 시각과 줄마다 분만 적으면 시간이 저절로') +
       chip(!m.calc, 'data-calc="0" onclick="bsModeSet(function(m) { m.calc = false; }, true)"', '🕘 시각 직접', '줄마다 시작·끝 시각을 직접 적기') +
@@ -22939,7 +22970,7 @@
       const tIn = function(f, auto) {
         const v = (r.k === 'p' ? c[c.mode].periods[r.i] || {} : c[c.mode].extras[r.j])[f] || ''; // 적어 둔 값만(저절로 정해진 시간은 회색 placeholder)
         return '<input type="text" class="lp-input bs-t" inputmode="numeric" maxlength="5" data-f="' + f + '" value="' + ntEsc(v) + '" placeholder="' + ntEsc(ct[f] || (f === 's' ? '시작' : '끝')) + '"' +
-          (auto ? ' title="' + (r.k === 'p' ? '관리자 일과 시간(고치면 이 시정표만 바뀌어요)' : '교시 시간에 맞춘 시간(비워 두면 교시를 따라가요)') + '"' : '') + ' oninput="bsRowTime(\'' + id + '\', \'' + f + '\', this.value)" onchange="bsRowTimeDone(this, \'' + id + '\', \'' + f + '\')">';
+          (auto ? ' title="' + (r.k === 'p' ? liteWords('관리자 일과 시간(고치면 이 시정표만 바뀌어요)') : '교시 시간에 맞춘 시간(비워 두면 교시를 따라가요)') + '"' : '') + ' oninput="bsRowTime(\'' + id + '\', \'' + f + '\', this.value)" onchange="bsRowTimeDone(this, \'' + id + '\', \'' + f + '\')">';
       };
       return '<div class="bs-row" data-id="' + id + '" data-k="' + r.k + '">' +
         (r.k === 'p' ? '<span class="bs-pn">' + ntEsc(r.n) + '</span>' : '<input type="text" class="lp-input bs-n" value="' + ntEsc(r.n) + '" placeholder="이름" oninput="bsRowName(' + r.j + ', this.value)">') +
@@ -24498,7 +24529,7 @@
     const msg = kind === 'nt'
       ? '이름표 설정을 모두 처음 상태로 되돌릴까요?\n(게시판 내용·사물함 반·분리수거 종류·크기·장수·글꼴·디자인·색이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
       : kind === 'bs'
-      ? '시정표 설정을 모두 처음 상태로 되돌릴까요?\n(평상시·단축 수업 줄과 시간, 시험 기간 시간·일차별 과목, 제목, 디자인·글씨·쪽 설정이 기본값으로 돌아가요. 관리자 일과 시간과 다른 양식 설정은 그대로예요)'
+      ? liteWords('시정표 설정을 모두 처음 상태로 되돌릴까요?\n(평상시·단축 수업 줄과 시간, 시험 기간 시간·일차별 과목, 제목, 디자인·글씨·쪽 설정이 기본값으로 돌아가요. 관리자 일과 시간과 다른 양식 설정은 그대로예요)')
       : kind === 'an'
       ? '안내문 설정을 모두 처음 상태로 되돌릴까요?\n(제목·내용이 처음 예시로, 끝맺음·모양·쪽 설정·글꼴이 기본값으로 돌아가요. 다른 양식 설정은 그대로예요)'
       : kind === 'pe'
