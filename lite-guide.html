@@ -199,6 +199,16 @@
   .cv-folders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
   .cv-folder { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 15px; font-weight: 700; }
   .cv-folder small { font-weight: 500; color: var(--sub); font-size: 12.5px; }
+  /* 만든 사람 · 문의 (첫 장) */
+  .maker { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-sub); }
+  .maker .av { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 17px; }
+  .maker .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .maker .who b { font-size: 16px; }
+  .maker .who span { color: var(--sub); font-size: 14px; }
+  .maker .ask { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+  .maker .ask svg { flex-shrink: 0; }
+  @media (max-width: 860px) { .maker .ask { margin-left: 0; white-space: normal; } }
+
   /* 어디에 뜨는지 */
   .cv-desk { margin: 0; align-self: center; max-width: min(100%, calc((100dvh - 390px) * 16 / 9)); }
   .cv-desk img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shot-shadow); }
@@ -567,6 +577,7 @@
     ["휴대폰에서도 되나요?", "열리긴 하고 시간표·캘린더·급식·할 일을 볼 수 있지만 자료는 컴퓨터와 따로예요. 컴퓨터용으로 생각해 주세요."],
     ["내 자료가 밖으로 나가나요?", "아니요. 크롬 안(이 컴퓨터)과 백업 폴더에만 있어요. 만든 사람도 못 봐요. 급식·학사일정·날씨·뉴스만 공개 자료를 읽어 와요."],
     ["더 자세한 사용법은요?", "보드 오른쪽 위 ❓ 설명서와 각 화면의 📖 설명서 버튼이 단계별로 알려 줘요."],
+    ["오류가 나거나 물어볼 게 있어요", "아이스톡에서 <span class=\"nw\">이용휘(부광고등학교)</span>를 찾아 보내 주세요. 어느 화면에서 무엇을 눌렀는지, 가능하면 화면 캡처와 함께요."],
     ["다른 선생님께 주려면요?", "이 설명서 주소 <span class=\"nw\">08hwichemi.github.io/</span><span class=\"nw\">smartboard/lite-guide.html</span>을 보내 주세요."],
   ];
 
@@ -585,6 +596,7 @@
 
   const chScenes = (key) => S.filter((x) => x.ch === key);
   const chName = (key) => CH.find((c) => c.key === key).name;
+  const TALK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
   const RIGHT = '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>';
   const PILL = (t) => `<span class="cv-file">${t}</span>`;
 
@@ -619,7 +631,12 @@
         <div class="cv-arrow">${RIGHT}명렬표 하나로</div>
         <div class="cv-box after"><h3>우리 반·수업 일까지</h3><div class="cv-mess">${cls}</div></div>
       </div>
-      <div class="facts"><span>${CHECK}설치 5분</span><span>${CHECK}서버·로그인 없음, 무료</span><span>${CHECK}자료는 내 컴퓨터에만</span></div>`;
+      <div class="facts"><span>${CHECK}설치 5분</span><span>${CHECK}서버·로그인 없음, 무료</span><span>${CHECK}자료는 내 컴퓨터에만</span></div>
+      <div class="maker">
+        <span class="av" aria-hidden="true">휘</span>
+        <div class="who"><b>만든 사람 · 이용휘</b><span>화학 교사 · 현재 부광고등학교 근무</span></div>
+        <span class="ask">${TALK}오류·사용 문의는 아이스톡에서 <b>이용휘(부광고)</b>를 찾아 주세요</span>
+      </div>`;
   }
 
   function faqHTML() {
