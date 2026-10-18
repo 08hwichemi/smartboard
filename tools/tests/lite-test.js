@@ -51,6 +51,12 @@ async function openPage(browser) {
       if (f) return route.fulfill({ body: fs.readFileSync(f, 'utf8'), contentType: 'application/javascript' });
       return route.abort();
     }
+    if (url.includes('exceljs.min.js')) {
+      const cands = [process.env.EXCELJS_PATH, path.join(__dirname, 'node_modules/exceljs/dist/exceljs.min.js')].filter(Boolean);
+      const f = cands.find(x => fs.existsSync(x));
+      if (f) return route.fulfill({ body: fs.readFileSync(f, 'utf8'), contentType: 'application/javascript' });
+      return route.abort();
+    }
     if (url.includes('/functions/v1/news')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ categories: { '종합': [{ title: '개인판 뉴스 테스트', link: 'https://example.com', source: '테스트', pubDate: new Date().toISOString() }] } }) });
     }
@@ -116,6 +122,11 @@ async function openPage(browser) {
   for (const sel of ['#rail-settings-btn', '#rail-roster-btn', '#rail-pa-btn', '#rail-absence-btn', '#rail-leavepass-btn', '#my-tt-widget', '#news-widget', '#meal-widget', '#favorites-panel', '#upcoming-schedule-pill']) check('보임 ' + sel, await vis(sel));
   check('기본 탭 = 1/2 캘린더', await page.evaluate(() => currentMainTab === 'halfcal' && document.getElementById('half-cal-wrapper').style.display !== 'none'));
   check('급식 나옴', (await page.textContent('#meal-list')).includes('불고기'));
+  // 메뉴가 많아도 급식 칸이 내용만큼 늘어나 잘리지 않는다(최대 절반)
+  await page.evaluate(() => { document.getElementById('meal-list').innerHTML = Array.from({ length: 14 }, (_, i) => '<li>반찬' + i + ' 긴이름메뉴</li>').join(''); });
+  await wait(100);
+  check('급식 메뉴가 많으면 칸이 내용만큼 늘어남(최대 열의 절반, 그 뒤는 목록 스크롤)', await page.evaluate(() => { const w = document.getElementById('meal-widget'), l = document.getElementById('meal-list'); return w.getBoundingClientRect().height > 300 && getComputedStyle(l).overflowY === 'auto'; }), await page.evaluate(() => [document.getElementById('meal-widget').getBoundingClientRect().height, document.getElementById('meal-list').scrollHeight, document.getElementById('meal-list').clientHeight]));
+  await page.evaluate(() => updateMeal());
   check('학사일정 나옴', (await page.textContent('#upcoming-schedule-teaser')).includes('테스트 학사일정'));
   await page.waitForFunction(() => (document.getElementById('news-list').textContent || '').includes('개인판 뉴스 테스트'), null, { timeout: 5000 }).catch(() => {});
   check('뉴스 나옴(공개 함수 직접 호출)', (await page.textContent('#news-list')).includes('개인판 뉴스 테스트'));
@@ -221,10 +232,21 @@ async function openPage(browser) {
   await page.click('#rail-home-btn'); await wait(400);
   check('뉴스 칸에 글씨 크기 A-/A+', await vis('#news-widget .lite-only button'));
   if (await page.evaluate(() => typeof XLSX !== 'undefined')) {
-    await page.evaluate(() => { window.__dlName2 = null; XLSX.writeFile = function(wb, name) { window.__dlName2 = name; window.__wb = wb; }; });
+    await page.evaluate(() => { window.__dlName2 = null; window.__blob = null; window.liteSaveFile = function(blob, name) { window.__dlName2 = name; window.__blob = blob; }; XLSX.writeFile = function(wb, name) { window.__dlName2 = name; window.__wb = wb; }; });
     await page.click('#rail-roster-btn'); await wait(300);
-    await page.click('text=📄 양식 받기'); await wait(200);
-    check('명렬표 양식 엑셀 받기', (await page.evaluate(() => window.__dlName2)) === '명렬표_양식.xlsx' && await page.evaluate(() => XLSX.utils.sheet_to_json(window.__wb.Sheets['명렬표'], { header: 1 })[0][0] === '학번'));
+    await page.click('text=📄 양식 받기');
+    await page.waitForFunction(() => window.__dlName2 !== null, null, { timeout: 15000 }).catch(() => {});
+    await wait(200);
+    const tpl = await page.evaluate(async () => {
+      if (!window.__blob) return { name: window.__dlName2, plain: true, head: window.__wb ? XLSX.utils.sheet_to_json(window.__wb.Sheets['명렬표'], { header: 1 })[0].slice(0, 4) : null };
+      const buf = await window.__blob.arrayBuffer();
+      const head = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array' }).Sheets['명렬표'], { header: 1 })[1].slice(0, 4);
+      const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws = wb.getWorksheet('명렬표');
+      return { name: window.__dlName2, plain: false, head: head, fill: ws.getCell('A2').fill && ws.getCell('A2').fill.fgColor && ws.getCell('A2').fill.fgColor.argb, bold: ws.getCell('A2').font && ws.getCell('A2').font.bold, frozen: ws.views[0] && ws.views[0].ySplit, note: String(ws.getCell('A1').value || '').slice(0, 6) };
+    });
+    check('명렬표 양식 엑셀 받기(학년·반·번호·이름)', tpl.name === '명렬표_양식.xlsx' && JSON.stringify(tpl.head) === JSON.stringify(['학년', '반', '번호', '이름']), tpl);
+    if (tpl.plain) console.log('  ⚠️ ExcelJS 없음 — 민무늬 양식으로만 검사 (EXCELJS_PATH=…/exceljs.min.js)');
+    else check('양식 서식: 머리 색·굵게·틀 고정·안내 줄', tpl.fill === 'FF1F3A5F' && tpl.bold === true && tpl.frozen === 2 && tpl.note.indexOf('📋') === 0, tpl);
     await page.evaluate(() => document.getElementById('custom-alert-ok-btn').click());
     // 받은 양식을 그대로 📥 엑셀로 올리면 읽히는지(예시 3명: 1-1 두 명, 1-2 한 명)
     const imported = await page.evaluate(async () => {
@@ -235,7 +257,16 @@ async function openPage(browser) {
       await liteRosterImportExcel(new File([buf], 't.xlsx'));
       return [liteRosterGet(3, 1).length, liteRosterGet(3, 2).length, liteRosterGet(3, 1)[0].student_phone];
     });
-    check('양식대로 채운 엑셀 올리기 → 3학년 1반 2명·2반 1명', imported[0] === 2 && imported[1] === 1 && imported[2] === '010-1', imported);
+    check('학번 양식 엑셀 올리기 → 3학년 1반 2명·2반 1명', imported[0] === 2 && imported[1] === 1 && imported[2] === '010-1', imported);
+    const imported2 = await page.evaluate(async () => {
+      const mk = (rows) => { const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명렬표'); return new File([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], 't.xlsx'); };
+      window.customConfirm = async () => true; window.customAlert = async () => {}; window.customPrompt = async () => '2';
+      await liteRosterImportExcel(mk([['학년', '반', '번호', '이름', '학생전화'], [4, 3, 1, '차바람', '010-4'], [4, 3, 2, '하늘', ''], ['4', '5', '7', '구름', '']]));
+      await liteRosterImportExcel(mk([['반', '번호', '이름'], [6, 1, '학년없음'], [6, 2, '둘']])); // 학년 열 없음 → 물어서 2학년
+      return [liteRosterGet(4, 3).map(x => x.name + x.number), liteRosterGet(4, 5).length, liteRosterGet(4, 3)[0].student_phone, liteRosterGet(2, 6).length];
+    });
+    check('학년·반·번호 양식 올리기 → 4학년 3반 2명·5반 1명, 학생전화 열도', JSON.stringify(imported2[0]) === JSON.stringify(['차바람1', '하늘2']) && imported2[1] === 1 && imported2[2] === '010-4', imported2);
+    check("'학년' 열이 없으면 학년을 물어서 넣음(2학년 6반 2명)", imported2[3] === 2, imported2);
     await page.click('#roster-modal-box button:has-text("닫기")'); await wait(200);
   } else console.log('  ⚠️ XLSX 없음 — 양식 받기·엑셀 올리기 검사 건너뜀 (XLSX_PATH=…/xlsx.full.min.js)');
 

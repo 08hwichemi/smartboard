@@ -2149,7 +2149,7 @@
     html.lite #m-duty-row, html.lite #my-tt-widget #m-tt-teacher-select, html.lite #my-tt-widget .m-tt-nav, html.lite .m-menu-item.school-only { display: none !important; }
     html.lite .m-menu-item.lite-only { display: block; }
     html.lite #news-widget { flex: 1; }
-    html.lite #meal-widget { flex: 0 0 200px; }
+    html.lite #meal-widget { flex: 0 0 auto !important; max-height: 50%; } /* !important: 요소의 inline flex(136px)를 이김. 급식 칸은 메뉴 양만큼(최대 절반) — 뉴스가 나머지. 넘치면 급식 목록만 스크롤 */
     html.lite .lite-only { display: revert; }
     html.lite #news-widget .lite-only { display: flex !important; }
     html.lite .school-only { display: none !important; }
@@ -2383,7 +2383,7 @@
     <div id="lite-roster-tools"><!-- 개인판에서만 보임(html.lite) — 명단을 이 브라우저에 넣는 세 가지 길 -->
       <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
         <input type="file" id="lite-roster-excel" accept=".xlsx,.xls" style="display:none;" onchange="liteRosterImportExcel(this.files[0]); this.value='';">
-        <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="document.getElementById('lite-roster-excel').click()" title="'학번'(예: 10203 = 1학년 2반 3번)·'이름' 열이 있는 엑셀 — 학생번호·어머니번호·아버지번호 열은 있으면 같이 읽어요. 파일에 든 모든 학년·반이 한 번에 들어가요.">📥 엑셀</button>
+        <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="document.getElementById('lite-roster-excel').click()" title="'학년'·'반'·'번호'·'이름' 열(📄 양식) 또는 나이스식 '학번'(10203)·'이름' 열이 있는 엑셀 — 학생번호·어머니번호·아버지번호 열은 있으면 같이 읽어요. 파일에 든 모든 학년·반이 한 번에 들어가요.">📥 엑셀</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTogglePaste()" title="고른 학년·반에 이름을 한 줄에 한 명씩 붙여 넣어요">📋 붙여넣기</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTemplate()" title="학번·이름·전화 열이 있는 빈 엑셀 양식을 받아요 — 채워서 📥 엑셀로 올리면 돼요">📄 양식 받기</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterClearClass()" title="고른 반의 명단만 지워요">🗑 이 반 지우기</button>
@@ -5393,14 +5393,19 @@
   }
   async function liteRosterImportExcel(file) {
     if (!file) return;
-    let byGrade;
-    try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      byGrade = parseStudentWorkbook(wb);
-    } catch (e) { customAlert('엑셀 파일을 읽지 못했어요.\n' + (e && e.message ? e.message : e) + "\n\n첫 시트에 '학번'(예: 10203 = 1학년 2반 3번)과 '이름' 열이 있어야 해요."); return; }
+    let byGrade, wb;
+    try { const buf = await file.arrayBuffer(); wb = XLSX.read(buf, { type: 'array' }); }
+    catch (e) { customAlert('엑셀 파일을 읽지 못했어요.\n' + (e && e.message ? e.message : e)); return; }
+    try { byGrade = parseStudentWorkbook(wb); }
+    catch (e) {
+      if (e && e.code === 'NEED_GRADE') { // 반·번호만 있는 파일: 몇 학년인지 묻고 다시
+        const g = parseInt(await customPrompt("이 파일엔 '학년' 열이 없어요. 몇 학년 명단인가요? (숫자만)"), 10);
+        if (!g) return;
+        try { byGrade = parseStudentWorkbook(wb, g); } catch (e2) { customAlert('엑셀 파일을 읽지 못했어요.\n' + (e2 && e2.message ? e2.message : e2)); return; }
+      } else { customAlert('엑셀 파일을 읽지 못했어요.\n' + (e && e.message ? e.message : e) + "\n\n첫 시트에 '이름'과 함께 '학년'·'반'·'번호' 열(📄 양식) 또는 '학번' 열이 있어야 해요."); return; }
+    }
     const grades = Object.keys(byGrade).map(Number).sort(function(a, b) { return a - b; });
-    if (!grades.length) { customAlert("학생을 찾지 못했어요. '학번'이 10203(1학년 2반 3번) 같은 5자리인지 확인해 주세요."); return; }
+    if (!grades.length) { customAlert("학생을 찾지 못했어요. 학년·반·번호가 숫자인지(또는 '학번'이 10203 같은 5자리인지) 확인해 주세요."); return; }
     const byClass = {};
     grades.forEach(function(g) { byGrade[g].forEach(function(e) { const k = g + '-' + e.class_no; (byClass[k] = byClass[k] || []).push(e); }); });
     const summary = grades.map(function(g) { return g + '학년 ' + byGrade[g].length + '명(' + Object.keys(byClass).filter(function(k) { return k.indexOf(g + '-') === 0; }).length + '개 반)'; }).join(', ');
@@ -5410,17 +5415,55 @@
     await liteRosterAfterChange(parseInt(first[0]), parseInt(first[1]));
     customAlert('명단을 넣었어요: ' + summary + '\n\n좌석배치표·결석계·수행평가·생기부·양식에서 바로 쓸 수 있어요.');
   }
-  // 빈 엑셀 양식(학번·이름·학생번호·어머니번호·아버지번호) — 채워서 📥 엑셀로 올리면 parseStudentWorkbook이 그대로 읽는다
-  function liteRosterTemplate() {
+  // 📄 빈 엑셀 양식(학년·반·번호·이름·학생번호·어머니번호·아버지번호) — 채워서 📥 엑셀로 올리면 parseStudentWorkbook이 그대로 읽는다.
+  // 서식(머리 색·테두리·틀 고정·숫자 검사)은 ExcelJS(수업 변경에서 쓰는 것과 같은 도구, 누를 때만 받음)로 넣고, 못 받으면 민무늬(XLSX)로.
+  function liteSaveFile(blob, name) {
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  }
+  async function liteRosterTemplate() {
+    const name = '명렬표_양식.xlsx';
+    const head = ['학년', '반', '번호', '이름', '학생번호', '어머니번호', '아버지번호'];
+    const examples = [[1, 1, 1, '김하늘 (예시 — 지우고 쓰세요)', '010-0000-0000', '010-0000-0000', ''], [1, 1, 2, '이바다 (예시)', '', '', ''], [1, 2, 1, '박산들 (예시 — 1학년 2반 1번)', '', '', '']];
     try {
-      const rows = [['학번', '이름', '학생번호', '어머니번호', '아버지번호'], ['10101', '김하늘(예시 — 지우고 쓰세요)', '010-0000-0000', '010-0000-0000', ''], ['10102', '이바다(예시)', '', '', ''], ['10201', '박산들(예시 — 1학년 2반 1번)', '', '', '']];
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '명렬표');
-      XLSX.writeFile(wb, '명렬표_양식.xlsx');
-      customAlert("'명렬표_양식.xlsx'를 받았어요.\n학번은 5자리(예: 10203 = 1학년 2반 3번), 이름은 꼭 채우고 전화는 비워도 돼요.\n여러 학년·반을 한 파일에 넣어도 한 번에 들어가요.");
-    } catch (e) { customAlert('양식을 만들지 못했어요: ' + (e && e.message ? e.message : e)); }
+      await sccLoadExcelJS();
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('명렬표', { views: [{ state: 'frozen', ySplit: 2 }] });
+      ws.columns = [{ width: 7 }, { width: 6 }, { width: 7 }, { width: 30 }, { width: 16 }, { width: 16 }, { width: 16 }];
+      const accent = 'FF1F3A5F', line = 'FFCBD2DC', thin = { style: 'thin', color: { argb: line } };
+      const border = { top: thin, bottom: thin, left: thin, right: thin };
+      // 1행: 안내
+      ws.mergeCells('A1:G1');
+      const note = ws.getCell('A1');
+      note.value = '📋 내 스마트보드 명렬표 양식 — 학년·반·번호는 숫자, 이름은 꼭 채우고 전화는 비워도 돼요. 예시 줄은 지우고 쓰세요. 여러 학년·반을 한 파일에 넣어도 돼요.';
+      note.font = { name: '맑은 고딕', size: 10, color: { argb: 'FF5B6472' } }; note.alignment = { vertical: 'middle' }; ws.getRow(1).height = 22;
+      // 2행: 머리
+      const hr = ws.getRow(2); hr.values = head; hr.height = 24;
+      hr.eachCell(function(c) { c.font = { name: '맑은 고딕', bold: true, size: 11, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accent } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
+      // 3~5행 예시(회색 기울임), 이어서 빈 줄 30개(테두리만)
+      for (let r = 0; r < examples.length + 30; r++) {
+        const row = ws.getRow(3 + r); const ex = examples[r];
+        if (ex) row.values = ex;
+        row.height = 20;
+        for (let c = 1; c <= head.length; c++) {
+          const cell = row.getCell(c);
+          cell.border = border; cell.font = { name: '맑은 고딕', size: 11, italic: !!ex, color: { argb: ex ? 'FF8A94A6' : 'FF222222' } };
+          cell.alignment = { horizontal: c <= 3 ? 'center' : 'left', vertical: 'middle' };
+          if (!ex && r % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6FA' } };
+        }
+      }
+      ['A', 'B', 'C'].forEach(function(col) { for (let r = 3; r <= 2 + examples.length + 30; r++) ws.getCell(col + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [1, 99], showErrorMessage: true, errorTitle: '숫자만', error: '학년·반·번호는 1~99 숫자로 적어 주세요.' }; });
+      ws.autoFilter = 'A2:G2';
+      const buf = await wb.xlsx.writeBuffer();
+      liteSaveFile(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name);
+    } catch (e) {
+      try { // 서식 도구를 못 받으면 민무늬로
+        const ws = XLSX.utils.aoa_to_sheet([head].concat(examples));
+        ws['!cols'] = [{ wch: 6 }, { wch: 5 }, { wch: 6 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명렬표'); XLSX.writeFile(wb, name);
+      } catch (e2) { customAlert('양식을 만들지 못했어요: ' + (e2 && e2.message ? e2.message : e2)); return; }
+    }
+    customAlert("'" + name + "'을 받았어요.\n학년·반·번호·이름을 채우고(전화는 비워도 돼요) 📥 엑셀로 올리면 돼요.\n여러 학년·반을 한 파일에 넣어도 한 번에 들어가고, 나이스에서 받은 '학번'(10203) 양식도 그대로 읽혀요.");
   }
   function liteRosterTogglePaste(show) {
     const box = document.getElementById('lite-roster-paste');
@@ -5669,7 +5712,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.12';
+  var BUILD_ID = '2026-10-18.13';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -10461,42 +10504,48 @@
   // '어머니번호', '아버지번호' 열을 헤더 텍스트로 찾아서 읽는다. 헤더 행이 몇 번째 줄에
   // 있는지는 파일마다 다를 수 있어서(제목 줄이 있거나 없거나) 위 5줄 안에서 '학번'과
   // '이름'이 같이 있는 줄을 찾는 방식으로 유연하게 처리한다.
-  function parseStudentWorkbook(wb) {
+  // 두 양식을 다 읽는다: ① '학번'(10203 = 1학년 2반 3번) + '이름' ② '학년'·'반'·'번호' + '이름'(개인판 양식).
+  // ②에서 '학년' 열이 없으면 defaultGrade를 쓰고, 그것도 없으면 NEED_GRADE 오류(부르는 쪽이 학년을 물어 다시 부름).
+  function parseStudentWorkbook(wb, defaultGrade) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
 
     let headerIdx = -1, col = {};
     for (let i = 0; i < Math.min(rows.length, 6); i++) {
-      const row = rows[i].map(function(v) { return String(v || '').trim(); });
+      const row = rows[i].map(function(v) { return String(v || '').trim().replace(/\s+/g, ''); });
       const idxNo = row.indexOf('학번');
       const idxName = row.indexOf('이름');
-      if (idxNo !== -1 && idxName !== -1) {
+      const idxCls = row.indexOf('반'), idxNum = row.indexOf('번호'), idxGrade = row.indexOf('학년');
+      if (idxName !== -1 && (idxNo !== -1 || (idxCls !== -1 && idxNum !== -1))) {
         headerIdx = i;
         col = {
-          no: idxNo, name: idxName,
-          studentPhone: row.indexOf('학생번호'),
-          motherPhone: row.indexOf('어머니번호'),
-          fatherPhone: row.indexOf('아버지번호'),
+          no: idxNo, name: idxName, grade: idxGrade, cls: idxCls, num: idxNum,
+          studentPhone: row.indexOf('학생번호') !== -1 ? row.indexOf('학생번호') : row.indexOf('학생전화'),
+          motherPhone: row.indexOf('어머니번호') !== -1 ? row.indexOf('어머니번호') : row.indexOf('어머니전화'),
+          fatherPhone: row.indexOf('아버지번호') !== -1 ? row.indexOf('아버지번호') : row.indexOf('아버지전화'),
         };
         break;
       }
     }
     if (headerIdx === -1) {
-      throw new Error("'학번'과 '이름' 열을 찾지 못했습니다. 양식을 확인해주세요.");
+      throw new Error("'이름' 열과 함께 '학번' 열이나 '학년'·'반'·'번호' 열이 있어야 해요. 양식을 확인해주세요.");
     }
+    if (col.no === -1 && col.grade === -1 && !defaultGrade) { const e = new Error("'학년' 열이 없어요."); e.code = 'NEED_GRADE'; throw e; }
 
     const byGrade = {};
     for (let i = headerIdx + 1; i < rows.length; i++) {
       const row = rows[i];
-      const rawNo = row[col.no];
-      const studentNo = parseInt(String(rawNo).replace(/[^0-9]/g, ''), 10);
       const name = String(row[col.name] || '').trim();
-      if (!studentNo || !name) continue;
-
-      const grade = Math.floor(studentNo / 10000);
-      const rem = studentNo % 10000;
-      const classNo = Math.floor(rem / 100);
-      const number = rem % 100;
+      if (!name) continue;
+      const digits = function(v) { return parseInt(String(v == null ? '' : v).replace(/[^0-9]/g, ''), 10) || 0; };
+      let grade, classNo, number;
+      if (col.no !== -1 && digits(row[col.no]) >= 10000) { // 학번
+        const studentNo = digits(row[col.no]);
+        grade = Math.floor(studentNo / 10000); const rem = studentNo % 10000; classNo = Math.floor(rem / 100); number = rem % 100;
+      } else if (col.cls !== -1 && col.num !== -1) { // 학년·반·번호
+        grade = col.grade !== -1 ? digits(row[col.grade]) : 0; if (!grade) grade = Number(defaultGrade) || 0;
+        classNo = digits(row[col.cls]); number = digits(row[col.num]);
+      } else continue;
       if (!grade || !classNo || !number) continue;
 
       const entry = {
