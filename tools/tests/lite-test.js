@@ -137,29 +137,36 @@ async function openPage(browser) {
   check('쉬는 시간 끝 = 다음 경계(5교시 시작)', st[4] === '13:40', st[4]);
   check('공용판 규칙 그대로(40분 틈 = 점심)', st[10] === '점심 시간', st[10]);
   check('기본값: 조회 1교시 10분 전, 점심 가장 긴 틈, 종례 10분', st[11] === JSON.stringify({ homeroom: { s: '08:40', e: '08:50' }, lunch: { s: '12:40', e: '13:40' }, clean: null, closing: { s: '15:30', e: '15:40' } }), st[11]);
-  // 교시 수를 6으로 바꿔 저장 → 내 시간표 6줄
+  // 하루 흐름 값으로 표가 다시 계산되는지: 8교시, 09:00부터 45분·10분, 조회 10분, 3교시 뒤 점심 50분, 4교시 뒤 청소 10분, 종례 10분
   await page.click('#rail-settings-btn'); await wait(200);
-  await page.selectOption('#lite-period-count', '6'); await wait(100);
-  check('교시 수 6 → 줄 6개', (await page.$$('#lite-times-rows tr')).length === 6);
   await page.selectOption('#lite-period-count', '8'); await wait(100);
-  check('8로 늘리면 8줄, 새 줄은 앞 줄에 이어 채움', (await page.$$('#lite-times-rows tr')).length === 8 && (await page.inputValue('#lite-time-s-8')) !== '');
-  // ⚡ 한 번에 채우기: 09:00부터 45분 수업·10분 쉬는 시간·3교시 뒤 점심 50분 → 8교시
+  check('교시 수 8 → 줄 8개', (await page.$$('#lite-times-rows tr')).length === 8);
   await page.fill('#lite-fill-start', '900'); await page.dispatchEvent('#lite-fill-start', 'blur');
   await page.selectOption('#lite-fill-len', '45'); await page.selectOption('#lite-fill-break', '10'); await page.selectOption('#lite-fill-lunch-after', '3'); await page.selectOption('#lite-fill-lunch', '50');
-  await page.click('#lite-fill-row button'); await wait(100);
+  await page.selectOption('#lite-fill-clean-after', '4'); await page.selectOption('#lite-fill-clean', '10'); await wait(100);
   const filled = await page.evaluate(() => liteTimesRead().map(x => x.s + '-' + x.e));
-  check('한 번에 채우기 결과', JSON.stringify(filled) === JSON.stringify(['09:00-09:45', '09:55-10:40', '10:50-11:35', '12:25-13:10', '13:20-14:05', '14:15-15:00', '15:10-15:55', '16:05-16:50']), filled);
-  check('점심·조회·종례도 같이 채움', (await page.inputValue('#lite-day-lunch-s')) === '11:35' && (await page.inputValue('#lite-day-lunch-e')) === '12:25' && (await page.inputValue('#lite-day-homeroom-s')) === '08:50' && (await page.inputValue('#lite-day-closing-e')) === '17:00');
-  await page.selectOption('#lite-period-count', '6'); await wait(100);
-  check('채우기 줄의 1교시 시작·수업 길이가 지금 표에서 읽힘', (await page.inputValue('#lite-fill-start')) === '09:00' && (await page.inputValue('#lite-fill-len')) === '45');
-  await page.fill('#lite-day-clean-s', ''); await page.fill('#lite-day-clean-e', '');
+  check('값을 바꾸면 표가 다시 계산됨(청소 10분이 4교시 뒤에 끼어 5교시부터 밀림)', JSON.stringify(filled) === JSON.stringify(['09:00-09:45', '09:55-10:40', '10:50-11:35', '12:25-13:10', '13:20-14:05', '14:15-15:00', '15:10-15:55', '16:05-16:50']), filled);
+  const summary = await page.textContent('#lite-day-summary');
+  check('요약 줄: 조회 08:50~09:00 · 점심 11:35~12:25 · 청소 13:10~13:20 · 종례 16:50~17:00', summary.includes('조회 08:50~09:00') && summary.includes('점심 11:35~12:25') && summary.includes('청소 13:10~13:20') && summary.includes('종례 16:50~17:00'), summary);
+  // 점심과 청소가 같은 교시 뒤면 점심 다음에 청소
+  await page.selectOption('#lite-fill-clean-after', '3'); await wait(100);
+  const filled2 = await page.evaluate(() => liteTimesRead().map(x => x.s + '-' + x.e).slice(2, 5));
+  check('점심·청소 같은 교시 뒤 → 틈 60분, 4교시 12:35', JSON.stringify(filled2) === JSON.stringify(['10:50-11:35', '12:35-13:20', '13:30-14:15']), filled2);
+  check('요약: 점심 11:35~12:25 · 청소 12:25~12:35', (await page.textContent('#lite-day-summary')).includes('청소 12:25~12:35'));
+  // 표를 직접 고치면 요약도 따라감(7교시를 10분 늦게)
+  await page.selectOption('#lite-fill-clean-after', '0'); await page.selectOption('#lite-period-count', '6'); await wait(100);
+  await page.fill('#lite-time-e-6', '15:10'); await page.dispatchEvent('#lite-time-e-6', 'blur'); await wait(100);
+  check('표 직접 고침 → 종례가 15:10부터', (await page.textContent('#lite-day-summary')).includes('종례 15:10~15:20'));
   await Promise.all([page.waitForNavigation(), page.click('text=저장하고 시작하기')]);
   await page.waitForFunction(() => typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 });
   await wait(500);
   await page.evaluate(() => { const f = document.createElement('iframe'); f.style.display = 'none'; document.body.appendChild(f); window.__realLs = f.contentWindow.localStorage; });
   check('저장 뒤 일과 시간 6교시', await page.evaluate(() => currentTimes.length === 6 && liteSettings().classTimes.length === 6));
   check('내 시간표 격자 6줄', (await page.$$('#my-timetable-grid .tt-time')).length === 6 && await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tt-rows').trim() === '6'));
-  check('청소 없음으로 저장', await page.evaluate(() => liteDay().clean === null && liteDay().lunch && liteDay().homeroom.s === '08:50'));
+  check('저장된 하루 흐름: 청소 없음, 점심 11:35~12:25, 조회 08:50~, 종례 15:10~15:20', await page.evaluate(() => { const d = liteDay(); return d.clean === null && d.lunch.s === '11:35' && d.lunch.e === '12:25' && d.homeroom.s === '08:50' && d.closing.s === '15:10' && d.closing.e === '15:20'; }), await page.evaluate(() => liteDay()));
+  await page.click('#rail-settings-btn'); await wait(200);
+  check('다시 열면 값이 그대로(8교시→6교시, 3교시 뒤 점심 50분)', (await page.inputValue('#lite-fill-lunch-after')) === '3' && (await page.inputValue('#lite-fill-lunch')) === '50' && (await page.inputValue('#lite-period-count')) === '6' && (await page.inputValue('#lite-time-e-6')) === '15:10');
+  await page.click('#lite-setup-close');
 
   console.log('== 4. 내 시간표 직접 입력 → 저장 → 다시 열어도 남음');
   await page.click('#my-tt-1-1-s');
