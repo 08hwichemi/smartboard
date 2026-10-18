@@ -46,6 +46,13 @@ def main():
     html.write_text(t, encoding='utf-8')
 
     print('판 %s — version.txt와 index.html의 BUILD_ID를 맞췄습니다.' % ver)
+
+    # 개인판(lite.html)도 같은 코드에서 다시 만든다 — 두 판이 어긋나지 않게.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('lite_build', ROOT / 'tools' / '개인판만들기.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.build()
     print('이제 git add/commit/push 하면 됩니다.')
 
 

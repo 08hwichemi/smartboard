@@ -2137,6 +2137,40 @@
     #sb-sleep button.sb-sleep-primary { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
     #sb-sleep .sb-sleep-hint { font-size: 12px; color: var(--alert, #c0392b); margin-top: 12px; min-height: 1em; }
     #m-debug-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 99999; background: #c0392b; color: #fff; font-size: 12px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.35); white-space: pre-wrap; word-break: break-word; cursor: pointer; }
+    /* ===== 🧳 개인판(lite.html)에서 숨기는 학교 공용 요소 — html.lite는 스크립트 맨 앞에서 붙임 ===== */
+    html.lite #btn-notice, html.lite #quick-school-btns, html.lite #duty-alert-pill, html.lite #notice-widget, html.lite #search-teacher-picker,
+    html.lite .tab-tt-btn, html.lite .m-tt-change-btn, html.lite .m-tt-nav, html.lite #m-tt-teacher-select, html.lite #rail-persontt-btn, html.lite #btn-logout,
+    html.lite #an-school-row, html.lite #active-semester-label, html.lite #login-gate-overlay, html.lite #my-tt-revert-btn, html.lite #user-chip-admin-badge { display: none !important; }
+    html.lite #upcoming-schedule-pill { flex: 1; }
+    /* 휴대폰 화면: 감독·공지 줄, 다른 선생님 시간표 고르기(모바일 규칙이 더 구체적이라 여기서 다시 이김) */
+    html.lite #m-duty-row, html.lite #my-tt-widget #m-tt-teacher-select, html.lite #my-tt-widget .m-tt-nav, html.lite .m-menu-item.school-only { display: none !important; }
+    html.lite .m-menu-item.lite-only { display: block; }
+    html.lite #news-widget { flex: 1; }
+    html.lite .lite-only { display: revert; }
+    html.lite .school-only { display: none !important; }
+    .lite-only { display: none; }
+    html.lite #rail-settings-btn { display: flex !important; }
+    #lite-setup-overlay .modal-box { width: 560px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; text-align: left; }
+    .lite-sec { border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: var(--card-bg); }
+    .lite-sec-title { font-weight: 800; font-size: 13.5px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .lite-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; font-size: 12.5px; }
+    .lite-row label.lite-lb { width: 72px; flex: 0 0 72px; font-weight: 700; color: var(--text-sub); font-size: 12px; }
+    .lite-row input[type="text"], .lite-row input[type="search"], .lite-row select { flex: 1; min-width: 120px; padding: 6px 9px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main); font: inherit; font-size: 12.5px; }
+    .lite-hint { font-size: 11px; color: var(--text-sub); line-height: 1.5; margin-top: 4px; }
+    #lite-school-results { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; margin-top: 4px; }
+    .lite-school-item { text-align: left; padding: 6px 9px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main); cursor: pointer; font: inherit; font-size: 12px; }
+    .lite-school-item:hover { border-color: var(--accent-color); }
+    .lite-school-item b { color: var(--accent-color); }
+    #lite-times-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #lite-times-table td { padding: 3px 4px; }
+    #lite-times-table input { width: 64px; padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-main); font: inherit; font-size: 12px; text-align: center; }
+    #lite-times-table .bad { color: #E5484D; font-weight: 700; }
+    #lite-backup-banner { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 9000; background: var(--accent-color); color: var(--on-accent, #fff); padding: 10px 16px; border-radius: 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: none; align-items: center; gap: 10px; max-width: calc(100vw - 32px); }
+    #lite-backup-banner button { font: inherit; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 8px; border: 0; cursor: pointer; background: #fff; color: #222; }
+    #lite-backup-banner button.ghost { background: transparent; color: inherit; border: 1px solid rgba(255,255,255,0.6); }
+    #lite-roster-tools { display: none; flex-direction: column; gap: 6px; padding: 8px 0 10px; border-bottom: 1px dashed var(--border-color); margin-bottom: 6px; }
+    html.lite #lite-roster-tools { display: flex; }
+    #lite-roster-tools textarea { width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; font-size: 12px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main); resize: vertical; }
   </style>
 </head>
 <body onload="bootAuth()">
@@ -2289,7 +2323,7 @@
     </div>
 
     <div class="quick-row">
-      <div style="display:flex; gap:7px; flex-wrap:wrap; flex-shrink:0;">
+      <div id="quick-school-btns" style="display:flex; gap:7px; flex-wrap:wrap; flex-shrink:0;">
         <button class="qbtn" style="border-bottom: 3px solid var(--accent-color);" onclick="openScheduleModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-color);"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 4v16"/></svg>시간표 관리</button>
         <button class="qbtn" style="border-bottom: 3px solid #F07178;" onclick="openDutyModal('야자감독', '🌙')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#F07178;"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9z"/></svg>야자 감독표</button>
         <button class="qbtn" style="border-bottom: 3px solid #FF8A65;" onclick="openDutyModal('급식감독', '🍱')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:#FF8A65;"><path d="M5.5 2v6.5a2.5 2.5 0 0 0 5 0V2"/><path d="M8 8.5V22"/><path d="M16.5 2c-1.8 0-2.7 2.4-2.7 5.5s.9 5.5 2.7 5.5"/><path d="M16.5 13v9"/></svg>급식 감독표</button>
@@ -2340,6 +2374,23 @@
         <button class="top-btn" style="font-size:11px; padding:4px 8px;" onclick="changeFontSize('roster', 1)">A+</button>
         <button class="top-btn" id="roster-edit-toggle" style="font-size:11px; padding:4px 8px;" onclick="toggleRosterEditMode()">✏️ 수정</button>
       </div>
+    </div>
+    <div id="lite-roster-tools"><!-- 개인판에서만 보임(html.lite) — 명단을 이 브라우저에 넣는 세 가지 길 -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <input type="file" id="lite-roster-excel" accept=".xlsx,.xls" style="display:none;" onchange="liteRosterImportExcel(this.files[0]); this.value='';">
+        <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="document.getElementById('lite-roster-excel').click()" title="'학번'(예: 10203 = 1학년 2반 3번)·'이름' 열이 있는 엑셀 — 학생번호·어머니번호·아버지번호 열은 있으면 같이 읽어요. 파일에 든 모든 학년·반이 한 번에 들어가요.">📥 엑셀</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTogglePaste()" title="고른 학년·반에 이름을 한 줄에 한 명씩 붙여 넣어요">📋 붙여넣기</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterClearClass()" title="고른 반의 명단만 지워요">🗑 이 반 지우기</button>
+        <span id="lite-roster-count" style="font-size:11px; color:var(--text-sub); margin-left:auto;"></span>
+      </div>
+      <div id="lite-roster-paste" style="display:none; flex-direction:column; gap:6px;">
+        <textarea id="lite-roster-paste-text" placeholder="한 줄에 한 명 — 번호와 이름(탭·공백·쉼표로 구분), 뒤에 학생 전화·부모 전화를 더 써도 돼요.&#10;예)&#10;1 김하늘&#10;2 이바다 010-1234-5678&#10;이름만 쓰면 위에서부터 1번, 2번… 으로 번호가 붙어요."></textarea>
+        <div style="display:flex; gap:6px; justify-content:flex-end;">
+          <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTogglePaste(false)">취소</button>
+          <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="liteRosterPaste()">이 반에 넣기</button>
+        </div>
+      </div>
+      <div class="lite-hint">명단은 서버가 아니라 <b>이 컴퓨터의 브라우저</b>에만 저장돼요. 좌석배치표·결석계·수행평가·생기부·양식이 모두 이 명단을 써요. 다른 컴퓨터에서도 쓰려면 💾 백업 파일로 옮겨요.</div>
     </div>
     <div style="flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0;" id="roster-list-container">
       <div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">학년과 반을 선택하세요.</div>
@@ -2554,6 +2605,15 @@
       <input type="text" id="bm-url-2" placeholder="접속할 주소 (URL)">
       <input type="text" id="bm-name-3" placeholder="버튼 이름">
       <input type="text" id="bm-url-3" placeholder="접속할 주소 (URL)">
+      <!-- 개인판(lite)은 고정 링크 없이 내 링크 8칸 -->
+      <input type="text" class="lite-only" id="bm-name-4" placeholder="버튼 이름">
+      <input type="text" class="lite-only" id="bm-url-4" placeholder="접속할 주소 (URL)">
+      <input type="text" class="lite-only" id="bm-name-5" placeholder="버튼 이름">
+      <input type="text" class="lite-only" id="bm-url-5" placeholder="접속할 주소 (URL)">
+      <input type="text" class="lite-only" id="bm-name-6" placeholder="버튼 이름">
+      <input type="text" class="lite-only" id="bm-url-6" placeholder="접속할 주소 (URL)">
+      <input type="text" class="lite-only" id="bm-name-7" placeholder="버튼 이름">
+      <input type="text" class="lite-only" id="bm-url-7" placeholder="접속할 주소 (URL)">
     </div>
     <div style="display: flex; gap: 10px; margin-top: 15px;">
       <button class="top-btn" style="flex: 1; padding:8px;" onclick="closeBookmarkSettings()">취소</button>
@@ -2562,6 +2622,63 @@
   </div>
 </div>
 
+<!-- 🧳 개인판 설정(처음 열 때 = 첫 설정, 그 뒤엔 레일 ⚙️ 설정) -->
+<div class="overlay" id="lite-setup-overlay" style="z-index: 9500;">
+  <div class="modal-box">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+      <div style="font-weight: 800; font-size: 17px;">🧳 <span id="lite-setup-title">처음 설정</span></div>
+      <button class="top-btn" id="lite-setup-close" style="font-size:11px; padding:4px 10px;" onclick="liteCloseSettings()">닫기</button>
+    </div>
+    <div class="lite-hint" id="lite-setup-intro" style="margin-bottom:10px; font-size:12px;">이 보드는 <b>서버·로그인 없이</b> 이 컴퓨터의 브라우저에만 자료를 저장해요. 아래 네 가지만 정하면 바로 쓸 수 있어요(나중에 왼쪽 메뉴 ⚙️ 설정에서 바꿀 수 있어요).</div>
+
+    <div class="lite-sec">
+      <div class="lite-sec-title">① 선생님 이름</div>
+      <div class="lite-row"><label class="lite-lb" for="lite-name">이름</label><input type="text" id="lite-name" placeholder="예) 김하늘" maxlength="20"></div>
+      <div class="lite-row"><label class="lite-lb">담임 반</label>
+        <select id="lite-hr-grade" style="flex:0 0 90px;"><option value="">담임 아님</option></select>
+        <select id="lite-hr-class" style="flex:0 0 80px;"><option value="">반</option></select>
+        <span class="lite-hint" style="margin-top:0;">정하면 명렬표·결석계·좌석배치표가 그 반으로 먼저 열려요.</span></div>
+    </div>
+
+    <div class="lite-sec">
+      <div class="lite-sec-title">② 학교 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">급식 · 학사일정 · 날씨</span></div>
+      <div class="lite-row"><label class="lite-lb" for="lite-school-q">학교 찾기</label><input type="search" id="lite-school-q" placeholder="학교 이름(예: 부광고)" onkeydown="if(event.key==='Enter'){event.preventDefault(); liteSchoolSearch();}"><button class="top-btn accent" style="font-size:11.5px; padding:6px 12px;" onclick="liteSchoolSearch()">🔍 찾기</button></div>
+      <div id="lite-school-results"></div>
+      <div class="lite-row" style="margin-top:6px;"><label class="lite-lb">고른 학교</label><span id="lite-school-picked" style="font-weight:700;">(없음 — 급식·학사일정 없이 쓸 수도 있어요)</span></div>
+      <div class="lite-row"><label class="lite-lb">날씨 위치</label><span id="lite-weather-label" style="font-size:12px;">학교를 고르면 그 시·도 기준</span><button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteUseMyLocation()" title="브라우저 위치 권한으로 지금 있는 곳의 날씨를 보여줘요">📍 내 위치로</button></div>
+      <div class="lite-hint">급식·학사일정은 나이스 교육정보 개방포털(공개 자료)에서 바로 받아요. 학교마다 나이스에 올린 만큼만 나와요.</div>
+    </div>
+
+    <div class="lite-sec">
+      <div class="lite-sec-title">③ 일과 시간 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">"지금 이 시간" 칸과 내 시간표 줄에 쓰여요</span></div>
+      <table id="lite-times-table"><tbody id="lite-times-rows"></tbody></table>
+      <div class="lite-hint">"850"처럼 쳐도 08:50으로 맞춰져요. 수업이 7교시보다 적으면 남는 줄은 그대로 두면 돼요.</div>
+    </div>
+
+    <div class="lite-sec">
+      <div class="lite-sec-title">④ 학년·반 수 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">학년·반 고르는 칸의 범위</span></div>
+      <div class="lite-row"><label class="lite-lb">학년 수</label><select id="lite-grade-count" style="flex:0 0 90px;"><option value="3">3학년까지</option><option value="6">6학년까지</option><option value="1">1학년만</option><option value="2">2학년까지</option><option value="4">4학년까지</option><option value="5">5학년까지</option></select>
+        <label class="lite-lb" style="width:auto; flex:0 0 auto;">학년당 반 수</label><input type="number" id="lite-class-count" min="1" max="30" value="10" style="width:64px; flex:0 0 64px; padding:6px 8px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-color); color:var(--text-main); font:inherit; font-size:12.5px;"></div>
+      <div class="lite-hint">명렬표를 넣으면 그 안의 학년·반까지는 저절로 늘어나요.</div>
+    </div>
+
+    <div class="lite-sec" id="lite-sec-backup">
+      <div class="lite-sec-title">⑤ 자료 보관(백업) <span style="font-weight:600; font-size:11px; color:var(--text-sub);">서버가 없으니 이게 유일한 안전장치예요</span></div>
+      <div id="lite-setup-backup-status" class="lite-hint" style="margin-bottom:6px;"></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="liteBackupPickFolder()">📁 백업 폴더 정하기</button>
+        <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('backup-overlay').style.display='flex'">💾 백업·복원 창 열기</button>
+      </div>
+      <div class="lite-hint">폴더를 정하면 <b>하루 한 번</b>, 그 폴더의 <b>파일 하나</b>(<span id="lite-backup-filename"></span>)에 덮어써 저장돼요(Chrome·Edge). 다른 컴퓨터에서 쓰려면 그 파일을 💾 백업·복원 창에서 불러오면 돼요. 학생 이름·전화·결석 사유가 들어 있으니 공용 PC에서는 쓰지 마세요.</div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:6px;">
+      <button class="top-btn accent" style="flex:1; padding:10px; font-size:14px;" onclick="liteSaveSetup()">저장하고 시작하기</button>
+    </div>
+  </div>
+</div>
+<div id="lite-backup-banner"><span id="lite-backup-banner-text"></span><span id="lite-backup-banner-btns" style="display:flex; gap:6px;"></span></div>
+
 <div class="overlay" id="backup-overlay">
   <div class="modal-box" style="width: 380px; max-width: calc(100vw - 32px); text-align: center;">
     <div style="font-weight: 800; font-size: 16px; margin-bottom: 12px;">💾 데이터 백업 / 복원</div>
@@ -2569,11 +2686,22 @@
     <div style="background: var(--tt-bg); border-radius: 12px; padding: 14px; margin-bottom: 15px; text-align: left;">
       <div style="font-weight:700; font-size:13px; margin-bottom:6px;">📥 파일로 백업 (선택)</div>
       <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.5; display:flex; flex-direction:column; gap:5px;" id="backup-scope">
-        <div>내 자료는 로그인한 계정으로 서버에 자동 저장돼서 다른 기기에서도 그대로 이어져요. 그것과 별개로 내 컴퓨터에 파일로 보관하고 싶을 때 받으세요.</div>
+        <div class="school-only">내 자료는 로그인한 계정으로 서버에 자동 저장돼서 다른 기기에서도 그대로 이어져요. 그것과 별개로 내 컴퓨터에 파일로 보관하고 싶을 때 받으세요.</div>
+        <div class="lite-only" style="color:var(--text-main);"><b>개인판은 서버가 없어요.</b> 모든 자료가 이 컴퓨터의 이 브라우저에만 있어서, 브라우저 자료를 지우거나 컴퓨터를 바꾸면 사라져요. 아래 <b>📁 백업 폴더</b>를 한 번 정해 두면 하루 한 번 그 폴더의 파일 하나에 자동으로 덮어써 저장돼요.</div>
         <div><b style="color:var(--text-main);">담기는 것</b> — 내 개인 자료 <b>전부</b>: 캘린더·할 일·상담 기록·즐겨찾기 + 수행평가·자율·진로·행발·결석계·좌석배치·월간일정표·조퇴증·양식 설정 등 모든 기능</div>
         <div><b style="color:var(--text-main);">안 담기는 것</b> — 학교 공용 자료(시간표·명렬표·공지·당번·학사일정 — 관리자가 관리)</div>
         <div>⚠️ 학생 이름·세특·결석 기록이 들어 있어요. 공용 PC·메신저에 두지 말고 잘 보관하세요.</div>
         <div><b style="color:var(--text-main);">복원</b>하면 내 자료 전부가 파일 내용으로 바뀌어요(파일에 없는 것은 지워짐). 수행평가·자율·진로만 옮기거나 학기 끝에 보관할 땐 그 화면의 <b>엑셀 내려받기·가져오기</b>가 편해요.</div>
+      </div>
+      <div class="lite-only" style="margin-bottom:10px; padding:10px; border:1px solid var(--border-color); border-radius:10px; text-align:left;">
+        <div style="font-weight:800; font-size:12.5px; margin-bottom:4px;">📁 백업 폴더(하루 한 번 자동, 파일 하나에 덮어쓰기)</div>
+        <div id="lite-backup-folder-status" style="font-size:11px; color:var(--text-sub); line-height:1.5; margin-bottom:6px;">아직 폴더를 정하지 않았어요.</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="top-btn accent" style="font-size:11px; padding:5px 10px;" onclick="liteBackupPickFolder()">📁 폴더 정하기(바탕화면 등)</button>
+          <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupWriteNow({ manual: true })">지금 폴더에 저장</button>
+          <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupRestoreFromFolder()">폴더 파일에서 복원</button>
+          <button class="top-btn" style="font-size:11px; padding:5px 10px;" onclick="liteBackupClearFolder()">폴더 해제</button>
+        </div>
       </div>
       <div style="display:flex; flex-direction:column; gap:6px;">
         <button class="top-btn accent" style="padding:8px;" onclick="manualBackupNow()">💾 지금 바로 백업 다운로드</button>
@@ -2746,7 +2874,7 @@
       <div id="search-tt-widget" class="widget timetable-widget w-accent-b" style="min-width: 0;">
         <div class="widget-title" style="height: 32px; margin-bottom: 8px;">
           <div class="tab-switch">
-            <button class="tab-btn active" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
+            <button class="tab-btn active tab-tt-btn" id="tab-tt" onclick="switchMainTab('tt')">🔍 시간표</button>
             <button class="tab-btn" id="tab-cal" onclick="switchMainTab('cal')">📅 캘린더</button>
             <button class="tab-btn" id="tab-halfcal" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2 캘린더</button>
           </div>
@@ -2780,7 +2908,7 @@
         <div></div>
         <div class="widget-title" style="height: 32px; margin-bottom: 0; padding-left: 16px;"><!-- 16px = 1/2 캘린더 칸의 테두리 2px + 안쪽 여백 14px → 탭 버튼이 같은 자리에 -->
           <div class="tab-switch">
-            <button class="tab-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
+            <button class="tab-btn tab-tt-btn" onclick="switchMainTab('tt')">🔍 시간표</button>
             <button class="tab-btn active" onclick="switchMainTab('cal')">📅 캘린더</button>
             <button class="tab-btn" style="padding:4px 8px;" onclick="switchMainTab('halfcal')">🗓️ 1/2 캘린더</button>
           </div>
@@ -4527,7 +4655,9 @@
     <div id="m-menu-wrap">
       <button id="m-menu-btn" onclick="mToggleMenu()" aria-label="메뉴">☰</button>
       <div id="m-menu-dropdown">
-        <button class="m-menu-item" onclick="mCloseMenu(); openNoticeModal();">📢 공지 보내기</button>
+        <button class="m-menu-item school-only" onclick="mCloseMenu(); openNoticeModal();">📢 공지 보내기</button>
+        <button class="m-menu-item lite-only" onclick="mCloseMenu(); liteOpenSettings();">⚙️ 설정(이름·학교·일과 시간)</button>
+        <button class="m-menu-item lite-only" onclick="mCloseMenu(); document.getElementById('backup-overlay').style.display='flex';">💾 백업 / 복원</button>
         <div style="border-top:1px solid var(--border-color); margin:4px 0;"></div>
         <div style="font-size:11px; font-weight:700; color:var(--text-sub); padding:6px 10px 0;">🎨 테마</div>
         <div id="m-menu-theme-row">
@@ -4545,7 +4675,7 @@
           <button style="background:conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D);" onclick="changeTheme('random')" title="오늘의 랜덤"></button>
         </div>
         <div style="border-top:1px solid var(--border-color); margin:6px 0 4px;"></div>
-        <button class="m-menu-item" style="color:var(--alert);" onclick="mLogout()">🚪 로그아웃</button>
+        <button class="m-menu-item school-only" style="color:var(--alert);" onclick="mLogout()">🚪 로그아웃</button>
       </div>
     </div>
   </div>
@@ -4591,6 +4721,52 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
+  // ===== 🧳 개인판(서버 없는 스마트보드) 모드 =====
+  // 'school' = 부광고 공용판(index.html — 로그인·Supabase), 'personal' = 개인판(lite.html — 서버 없이 이 브라우저에만 저장).
+  // lite.html은 tools/개인판만들기.py가 index.html을 복사해 이 한 줄만 바꿔 만든다(판올리기.py가 함께 돌림). 손으로 고치지 말 것.
+  const APP_MODE = 'school';
+  const LITE = APP_MODE === 'personal';
+  const LITE_APP_NAME = '내 스마트보드';
+  // 개인판은 같은 주소(08hwichemi.github.io)의 공용판과 localStorage를 나눠 쓴다 — 키 앞에 'lite:'를 붙인 저장소로
+  // window.localStorage를 통째로 바꿔 끼워서, 아래 모든 코드가 그대로 돌아도 공용판 자료와 섞이지 않게 한다.
+  if (LITE) (function() {
+    const real = window.localStorage, P = 'lite:';
+    function keys() { const out = []; for (let i = 0; i < real.length; i++) { const k = real.key(i); if (k && k.indexOf(P) === 0) out.push(k.slice(P.length)); } return out; }
+    const store = {
+      getItem: function(k) { return real.getItem(P + k); },
+      setItem: function(k, v) { real.setItem(P + k, String(v)); },
+      removeItem: function(k) { real.removeItem(P + k); },
+      clear: function() { keys().forEach(function(k) { real.removeItem(P + k); }); },
+      key: function(i) { const ks = keys(); return i >= 0 && i < ks.length ? ks[i] : null; },
+      get length() { return keys().length; }
+    };
+    const proxy = new Proxy(store, {
+      ownKeys: function(tg) { return Reflect.ownKeys(tg).concat(keys().filter(function(k) { return !(k in tg); })); },
+      getOwnPropertyDescriptor: function(tg, k) {
+        if (Object.prototype.hasOwnProperty.call(tg, k)) return Reflect.getOwnPropertyDescriptor(tg, k);
+        const v = typeof k === 'string' ? real.getItem(P + k) : null;
+        return v === null ? undefined : { value: v, enumerable: true, configurable: true, writable: true };
+      }
+    });
+    try { Object.defineProperty(window, 'localStorage', { value: proxy, configurable: true }); } catch (e) {}
+    document.documentElement.classList.add('lite');
+  })();
+  function liteSbStub() { // 개인판엔 서버가 없다 — 어디서 sb를 불러도 조용히 "없음"으로 끝나게
+    const err = { message: '개인판에는 서버가 없어요', code: 'LITE' };
+    const q = new Proxy(function() {}, {
+      get: function(_, prop) { if (prop === 'then') return function(res) { return Promise.resolve({ data: null, error: err }).then(res); }; return function() { return q; }; },
+      apply: function() { return q; }
+    });
+    return {
+      from: function() { return q; },
+      rpc: function() { return Promise.resolve({ data: null, error: err }); },
+      auth: { getSession: function() { return Promise.resolve({ data: { session: null } }); }, signOut: function() { return Promise.resolve({}); }, onAuthStateChange: function() { return { data: { subscription: { unsubscribe: function() {} } } }; } },
+      channel: function() { const ch = {}; ch.on = function() { return ch; }; ch.subscribe = function() { return ch; }; return ch; },
+      removeChannel: function() {},
+      functions: { invoke: function() { return Promise.resolve({ data: null, error: err }); } }
+    };
+  }
+
   // ===== 🚨 모바일: #app-shell 안에 갇혀있던 공용 모달을 body 바로 아래로 꺼내기 =====
   // 모바일 화면에서는 PC용 레이아웃 전체(#app-shell)를 display:none으로 숨기는데,
   // 확인/알림 팝업(customConfirm/Alert/Prompt), 감독표, 수업변경 모달이 전부 그
@@ -4619,7 +4795,7 @@
   let sbWinChan = null;
   let sbWinSleeping = false;
   function sbAppBaseUrl() { return location.href.split('?')[0].split('#')[0]; }
-  try { sbWinChan = new BroadcastChannel('sb-one-window'); } catch (e) {}
+  if (!LITE) try { sbWinChan = new BroadcastChannel('sb-one-window'); } catch (e) {} // 개인판은 서버 사용량이 없어 창 수를 제한하지 않음
   if (sbWinChan && !SB_SLEEP) {
     sbWinChan.onmessage = function(e) {
       const m = e.data || {};
@@ -4687,7 +4863,7 @@
   const SUPABASE_URL = 'https://pqreeimkjnphupqqwiqo.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_3LTnOme1yT3sNFka2PhUHQ_MWuTPYK1';
   // 쉬는 창(아래 🪟)은 로그인 토큰을 스스로 갱신하지 않는다 — 갱신은 쓰는 창이 한다.
-  const sb = SB_SLEEP ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false } }) : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = LITE ? liteSbStub() : (SB_SLEEP ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false } }) : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
 
   // ===== 📤 개인 데이터 자동 서버 동기화 (localStorage 변경 자동 감지) =====
   // 개인 자료(할 일/메모/D-day/글씨 크기/테마 등)는 localStorage 키 하나하나가 서버
@@ -4740,6 +4916,7 @@
   }
 
   function markSyncDirty(key) {
+    if (LITE) { liteNoteChanged(key); return; } // 개인판: 서버 없음 — 바뀐 것만 기억(폴더 백업용)
     if (isLocalOnlyKey(key)) return;
     syncLocalEditAt[key] = Date.now();
     const list = getSyncDirtyKeys();
@@ -4803,12 +4980,514 @@
     if (window.currentTeacher && window.currentTeacher.id) { pushDirtyItems(); pullRemoteChanges(false); }
   });
 
+  // ===== 🧳 개인판(lite.html) — 설정·학교 찾기·명렬표(브라우저 저장)·폴더 백업 =====
+  // 공용판(index.html)에서는 이 묶음의 함수들이 불리지 않는다(LITE가 false). 개인판은 로그인·Supabase 없이
+  // bootAuth → liteBoot로 들어와, 설정(lite-settings)에서 이름·학교·일과 시간을 읽어 홈을 그린다.
+  const LITE_SETTINGS_KEY = 'lite-settings';
+  // 교육청 코드 → [시·도 이름, 위도, 경도] — 날씨는 학교 시·도의 대표 좌표로(주소→좌표 변환 서비스를 안 쓰기 위해)
+  const LITE_SIDO = { B10: ['서울', 37.566, 126.978], C10: ['부산', 35.180, 129.075], D10: ['대구', 35.871, 128.602], E10: ['인천', 37.456, 126.705], F10: ['광주', 35.160, 126.851], G10: ['대전', 36.351, 127.385], H10: ['울산', 35.539, 129.311], I10: ['세종', 36.480, 127.289], J10: ['경기', 37.275, 127.009], K10: ['강원', 37.885, 127.730], M10: ['충북', 36.635, 127.489], N10: ['충남', 36.659, 126.673], P10: ['전북', 35.820, 127.109], Q10: ['전남', 34.816, 126.463], R10: ['경북', 36.576, 128.506], S10: ['경남', 35.238, 128.692], T10: ['제주', 33.499, 126.531] };
+  function liteSettings() { try { const s = JSON.parse(localStorage.getItem(LITE_SETTINGS_KEY) || 'null'); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; } }
+  function liteSaveSettings(s) { localStorage.setItem(LITE_SETTINGS_KEY, JSON.stringify(s)); }
+  function liteEsc(s) { return escapeHtmlAttr(String(s == null ? '' : s)); }
+
+  async function liteBoot() {
+    const s = liteSettings();
+    document.title = LITE_APP_NAME;
+    const mt = document.querySelector('.main-title');
+    if (mt) Array.prototype.forEach.call(mt.childNodes, function(n) { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = LITE_APP_NAME; });
+    const gate = document.getElementById('login-gate-overlay'); if (gate) gate.style.display = 'none';
+    const mTitle = document.querySelector('#m-header .m-title'); if (mTitle) mTitle.textContent = '🧳 ' + LITE_APP_NAME;
+    const hr = !!(s.hrGrade && s.hrClass);
+    window.currentTeacher = { id: 'lite', name: s.name || '선생님', is_admin: false, must_change_password: false, role: hr ? '담임' : '교사', homeroom_grade: hr ? s.hrGrade : null, homeroom_class: hr ? s.hrClass : null, schedule_manager: false };
+    liteApplySchool(s);
+    const nm = s.name || '선생님';
+    document.getElementById('user-avatar-initial').innerText = nm.length > 2 ? nm.slice(-2) : nm;
+    document.getElementById('user-chip-name').innerText = nm;
+    const chip = document.getElementById('user-chip'); if (chip) chip.title = '⚙️ 설정(이름·학교·일과 시간·백업)';
+    const rs = document.getElementById('rail-settings-btn');
+    if (rs) { rs.title = '설정'; rs.setAttribute('onclick', 'liteOpenSettings()'); rs.style.display = 'flex'; }
+    paUpdateRail();
+    liteAdjustTour();
+    // 학교 고유 기본값(부광고) → 설정한 학교로
+    const school = s.school && s.school.name ? s.school.name : '';
+    const msSchool = document.getElementById('ms-cfg-school'); if (msSchool) msSchool.value = school;
+    const msPrint = document.getElementById('ms-print-school'); if (msPrint) msPrint.innerText = school;
+    const bsTitle = document.getElementById('bs-title'); if (bsTitle) bsTitle.placeholder = (school || '○○학교') + ' 시정표';
+    document.querySelectorAll('.et-cfg[data-k="school"], .et-cfg[data-k="place"]').forEach(function(el) { el.placeholder = school || '○○학교'; });
+    await init();
+    if (currentMainTab === 'tt') switchMainTab('halfcal');
+    syncAppStarted = true;
+    liteBackupInit();
+    if (!s.setupDone) liteOpenSettings(true);
+  }
+
+  function liteApplySchool(s) {
+    const sc = s.school && s.school.code ? s.school : null;
+    EDU_CODE = sc ? sc.edu : '';
+    SCH_CODE = sc ? sc.code : '';
+    const sido = sc ? LITE_SIDO[sc.edu] : null;
+    let label = '인천(기본)';
+    if (s.lat && s.lon) { WEATHER_LAT = String(s.lat); WEATHER_LON = String(s.lon); label = '내 위치'; }
+    else if (sido) { WEATHER_LAT = String(sido[1]); WEATHER_LON = String(sido[2]); label = sido[0]; }
+    const wl = document.getElementById('weather-location-label'); if (wl) wl.innerText = label;
+  }
+
+  // 내 시간표: 서버 시간표 대신 칸에 직접 적는다(칸은 .editable이라 loadAllData/saveAllData가 이 브라우저에 저장·복원)
+  function liteSetupMyTimetable() {
+    const s = liteSettings();
+    const nameEl = document.getElementById('my-tt-name'); if (nameEl) nameEl.innerText = s.name ? s.name : '(칸을 눌러 직접 입력)';
+    const c = document.getElementById('cal-my-tt-name2'); if (c) c.innerText = s.name || '';
+    setMyTtEditable(true);
+    window.allSchedules = {};
+    updateCellColors('my-tt');
+  }
+
+  // 학년·반 수: 설정값 + 명렬표에 있는 학년·반까지
+  function liteClassStructure() {
+    const s = liteSettings();
+    let gc = parseInt(s.gradeCount) || 3; const cc = parseInt(s.classCount) || 10;
+    const counts = []; for (let g = 1; g <= gc; g++) counts.push(cc);
+    for (let i = 0; i < localStorage.length; i++) {
+      const m = /^lite-roster-(\d+)-(\d+)$/.exec(localStorage.key(i) || '');
+      if (!m) continue;
+      const g = parseInt(m[1]), c = parseInt(m[2]);
+      if (g > gc) { while (counts.length < g) counts.push(cc); gc = g; }
+      if (c > counts[g - 1]) counts[g - 1] = c;
+    }
+    return { gradeCount: gc, classCounts: counts };
+  }
+
+  // ----- 설정 창 -----
+  let liteSetupFirst = false, liteSchoolTmp = null, liteLatTmp = null, liteSchoolFound = [];
+  function liteOpenSettings(first) {
+    liteSetupFirst = !!first;
+    const s = liteSettings();
+    document.getElementById('lite-setup-title').innerText = first ? '처음 설정' : '설정';
+    document.getElementById('lite-setup-close').style.display = first ? 'none' : '';
+    document.getElementById('lite-setup-intro').style.display = first ? '' : 'none';
+    document.getElementById('lite-name').value = s.name || '';
+    document.getElementById('lite-grade-count').value = String(parseInt(s.gradeCount) || 3);
+    document.getElementById('lite-class-count').value = String(parseInt(s.classCount) || 10);
+    document.getElementById('lite-grade-count').onchange = function() { liteFillHrSelects(); };
+    document.getElementById('lite-class-count').oninput = function() { liteFillHrSelects(); };
+    document.getElementById('lite-hr-grade').onchange = function() { liteFillHrSelects(); };
+    liteFillHrSelects(s.hrGrade, s.hrClass);
+    liteSchoolTmp = s.school && s.school.code ? s.school : null;
+    liteLatTmp = s.lat && s.lon ? { lat: s.lat, lon: s.lon } : null;
+    liteSchoolFound = [];
+    document.getElementById('lite-school-results').innerHTML = '';
+    document.getElementById('lite-school-q').value = '';
+    liteRenderPicked();
+    liteRenderTimesRows(Array.isArray(s.classTimes) && s.classTimes.length === 7 ? s.classTimes : DEFAULT_TIMES);
+    document.getElementById('lite-backup-filename').innerText = liteBackupFileName();
+    liteBackupRefreshStatus();
+    document.getElementById('user-menu-dropdown').style.display = 'none';
+    document.getElementById('lite-setup-overlay').style.display = 'flex';
+    setTimeout(function() { if (!s.name) document.getElementById('lite-name').focus(); }, 60);
+  }
+  function liteCloseSettings() { if (liteSetupFirst) return; document.getElementById('lite-setup-overlay').style.display = 'none'; }
+  function liteFillHrSelects(g, c) {
+    const gSel = document.getElementById('lite-hr-grade'), cSel = document.getElementById('lite-hr-class');
+    const gc = parseInt(document.getElementById('lite-grade-count').value) || 3;
+    const cc = Math.max(1, Math.min(30, parseInt(document.getElementById('lite-class-count').value) || 10));
+    const curG = g !== undefined ? g : (parseInt(gSel.value) || null);
+    const curC = c !== undefined ? c : (parseInt(cSel.value) || null);
+    let h = '<option value="">담임 아님</option>';
+    for (let i = 1; i <= gc; i++) h += '<option value="' + i + '"' + (curG === i ? ' selected' : '') + '>' + i + '학년</option>';
+    gSel.innerHTML = h;
+    let h2 = '<option value="">반</option>';
+    for (let i = 1; i <= cc; i++) h2 += '<option value="' + i + '"' + (curC === i ? ' selected' : '') + '>' + i + '반</option>';
+    cSel.innerHTML = h2;
+    cSel.style.display = parseInt(gSel.value) ? '' : 'none';
+  }
+  async function liteSchoolSearch() {
+    const q = document.getElementById('lite-school-q').value.trim();
+    const box = document.getElementById('lite-school-results');
+    if (!q) { box.innerHTML = '<div class="lite-hint">학교 이름을 적고 찾기를 누르세요.</div>'; return; }
+    box.innerHTML = '<div class="lite-hint">나이스에서 찾는 중…</div>';
+    try {
+      const url = 'https://open.neis.go.kr/hub/schoolInfo?KEY=' + NEIS_KEY + '&Type=json&pIndex=1&pSize=40&SCHUL_NM=' + encodeURIComponent(q);
+      const res = await fetch(url);
+      const data = await res.json();
+      const rows = data.schoolInfo && data.schoolInfo[1] && data.schoolInfo[1].row ? data.schoolInfo[1].row : [];
+      liteSchoolFound = rows.map(function(r) { return { name: r.SCHUL_NM || '', edu: r.ATPT_OFCDC_SC_CODE || '', eduName: r.ATPT_OFCDC_SC_NM || '', code: r.SD_SCHUL_CODE || '', kind: r.SCHUL_KND_SC_NM || '', addr: r.ORG_RDNMA || '' }; }).filter(function(x) { return x.code && x.edu; });
+      if (!liteSchoolFound.length) { box.innerHTML = '<div class="lite-hint">찾은 학교가 없어요. 이름 일부(예: "부광")로 다시 찾아보세요.</div>'; return; }
+      box.innerHTML = liteSchoolFound.map(function(x, i) {
+        return '<button type="button" class="lite-school-item" onclick="liteSchoolPick(' + i + ')"><b>' + liteEsc(x.name) + '</b> · ' + liteEsc(x.kind) + ' · ' + liteEsc(x.eduName.replace(/교육청$/, '')) + '<br><span style="color:var(--text-sub);">' + liteEsc(x.addr) + '</span></button>';
+      }).join('');
+    } catch (e) {
+      box.innerHTML = '<div class="lite-hint">나이스에 연결하지 못했어요(인터넷 연결 확인). 학교 없이 저장하고 나중에 다시 찾아도 돼요.</div>';
+    }
+  }
+  function liteSchoolPick(i) {
+    const x = liteSchoolFound[i]; if (!x) return;
+    liteSchoolTmp = { name: x.name, edu: x.edu, eduName: x.eduName, code: x.code, kind: x.kind, addr: x.addr };
+    liteLatTmp = null;
+    document.getElementById('lite-school-results').innerHTML = '';
+    liteRenderPicked();
+  }
+  function liteRenderPicked() {
+    const el = document.getElementById('lite-school-picked');
+    if (liteSchoolTmp) el.innerHTML = liteEsc(liteSchoolTmp.name) + ' <span style="font-weight:500; color:var(--text-sub); font-size:11px;">' + liteEsc(liteSchoolTmp.addr) + '</span> <button type="button" class="top-btn" style="font-size:10.5px; padding:2px 7px; margin-left:4px;" onclick="liteSchoolTmp=null; liteLatTmp=null; liteRenderPicked();">지우기</button>';
+    else el.innerText = '(없음 — 급식·학사일정 없이 쓸 수도 있어요)';
+    const sido = liteSchoolTmp ? LITE_SIDO[liteSchoolTmp.edu] : null;
+    document.getElementById('lite-weather-label').innerText = liteLatTmp ? ('내 위치(' + Number(liteLatTmp.lat).toFixed(2) + ', ' + Number(liteLatTmp.lon).toFixed(2) + ')') : (sido ? sido[0] + ' 기준' : '학교를 고르면 그 시·도 기준(없으면 인천)');
+  }
+  function liteUseMyLocation() {
+    if (!navigator.geolocation) return customAlert('이 브라우저는 위치를 알려 주지 않아요.');
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      liteLatTmp = { lat: Math.round(pos.coords.latitude * 1000) / 1000, lon: Math.round(pos.coords.longitude * 1000) / 1000 };
+      liteRenderPicked();
+    }, function() { customAlert('위치를 받지 못했어요(권한을 허용해야 해요). 학교의 시·도 기준으로 둘게요.'); });
+  }
+  function liteRenderTimesRows(times) {
+    let h = '';
+    for (let i = 1; i <= 7; i++) {
+      const tm = times[i - 1] || { s: '', e: '' };
+      h += '<tr><td style="font-weight:700;">' + i + '교시</td>' +
+        '<td><input type="text" inputmode="numeric" maxlength="5" id="lite-time-s-' + i + '" value="' + liteEsc(tm.s) + '" placeholder="08:50" onblur="liteTimeNormalize(this)" oninput="liteTimesValidate()"></td><td>~</td>' +
+        '<td><input type="text" inputmode="numeric" maxlength="5" id="lite-time-e-' + i + '" value="' + liteEsc(tm.e) + '" placeholder="09:40" onblur="liteTimeNormalize(this)" oninput="liteTimesValidate()"></td>' +
+        '<td id="lite-time-dur-' + i + '" style="color:var(--text-sub);"></td></tr>';
+    }
+    document.getElementById('lite-times-rows').innerHTML = h;
+    liteTimesValidate();
+  }
+  function liteTimeNormalize(el) {
+    const v = el.value.trim().replace(/[^0-9:]/g, '');
+    let hh, mm;
+    if (/^\d{1,2}:\d{1,2}$/.test(v)) { hh = v.split(':')[0]; mm = v.split(':')[1]; }
+    else if (/^\d{3,4}$/.test(v)) { hh = v.slice(0, v.length - 2); mm = v.slice(-2); }
+    if (hh !== undefined && parseInt(hh, 10) < 24 && parseInt(mm, 10) < 60) el.value = hh.padStart(2, '0') + ':' + mm.padStart(2, '0');
+    liteTimesValidate();
+  }
+  function liteTimesValidate() { // 7교시 모두 맞으면 [{s,e}], 아니면 null(빨간 표시)
+    let prevEnd = null, ok = true; const out = [];
+    for (let i = 1; i <= 7; i++) {
+      const sEl = document.getElementById('lite-time-s-' + i), eEl = document.getElementById('lite-time-e-' + i), d = document.getElementById('lite-time-dur-' + i);
+      if (!sEl || !eEl) return null;
+      const s = minutesOf(sEl.value), e = minutesOf(eEl.value);
+      let msg = '', bad = false;
+      if (s === null || e === null) { msg = '시간을 입력하세요'; bad = true; }
+      else if (e <= s) { msg = '끝이 시작보다 빠름'; bad = true; }
+      else if (prevEnd !== null && s < prevEnd) { msg = (e - s) + '분 · 앞 교시와 겹침'; bad = true; }
+      else msg = (e - s) + '분';
+      d.innerText = msg; d.classList.toggle('bad', bad);
+      if (bad) ok = false; else { prevEnd = e; out.push({ s: sEl.value, e: eEl.value }); }
+    }
+    return ok ? out : null;
+  }
+  async function liteSaveSetup() {
+    const name = document.getElementById('lite-name').value.trim();
+    if (!name) { await customAlert('① 선생님 이름을 적어 주세요.'); document.getElementById('lite-name').focus(); return; }
+    for (let i = 1; i <= 7; i++) { liteTimeNormalize(document.getElementById('lite-time-s-' + i)); liteTimeNormalize(document.getElementById('lite-time-e-' + i)); }
+    const times = liteTimesValidate();
+    if (!times) { await customAlert('③ 빨갛게 표시된 교시 시간을 먼저 고쳐 주세요.'); return; }
+    const s = liteSettings();
+    s.name = name;
+    s.gradeCount = parseInt(document.getElementById('lite-grade-count').value) || 3;
+    s.classCount = Math.max(1, Math.min(30, parseInt(document.getElementById('lite-class-count').value) || 10));
+    const hg = parseInt(document.getElementById('lite-hr-grade').value) || null, hc = parseInt(document.getElementById('lite-hr-class').value) || null;
+    s.hrGrade = hg && hc ? hg : null; s.hrClass = hg && hc ? hc : null;
+    s.school = liteSchoolTmp;
+    s.lat = liteLatTmp ? liteLatTmp.lat : null; s.lon = liteLatTmp ? liteLatTmp.lon : null;
+    s.classTimes = times;
+    s.setupDone = true;
+    liteSaveSettings(s);
+    localStorage.setItem('my-n', name);
+    document.getElementById('lite-setup-overlay').style.display = 'none';
+    location.reload(); // 학교·일과 시간이 바뀌면 홈 전체를 다시 그리는 게 가장 확실
+  }
+
+  // ===== 📋 명렬표 읽기(공용) — 공용판은 서버 students 표, 개인판은 이 브라우저의 lite-roster-* =====
+  // 명렬표를 쓰는 모든 화면(명렬표·좌석배치표·결석계·사물함 이름표·생기부 편집기·수행평가·양식 명렬표 수합·시험 이름표)이
+  // 이 함수 하나로 읽는다. classNos가 배열이면 여러 반을 한 번에(반 번호 → 번호 순).
+  async function rosterRows(grade, classNos) {
+    const many = Array.isArray(classNos);
+    if (LITE) {
+      let out = [];
+      (many ? classNos : [classNos]).map(Number).sort(function(a, b) { return a - b; }).forEach(function(c) { out = out.concat(liteRosterGet(Number(grade), c)); });
+      return { data: out, error: null };
+    }
+    let q = sb.from('students').select('*').eq('grade', grade);
+    q = many ? q.in('class_no', classNos).order('class_no') : q.eq('class_no', classNos);
+    return q.order('number');
+  }
+
+  // ----- 명렬표(이 브라우저에 저장) -----
+  // lite-roster-<학년>-<반> = [{n:번호, name, sp:학생전화, mp:어머니, fp:아버지}, …]. 학생 id는 학번(학년*10000+반*100+번호).
+  function liteRosterKey(g, c) { return 'lite-roster-' + g + '-' + c; }
+  function liteRosterGet(g, c) {
+    let a = null;
+    try { a = JSON.parse(localStorage.getItem(liteRosterKey(g, c)) || 'null'); } catch (e) {}
+    if (!Array.isArray(a)) return [];
+    return a.map(function(r) {
+      const n = Number(r.n || r.number) || 0;
+      return { id: g * 10000 + c * 100 + n, grade: g, class_no: c, number: n, name: r.name || '', student_phone: r.sp || '', mother_phone: r.mp || '', father_phone: r.fp || '' };
+    }).filter(function(r) { return r.number > 0 && r.name; });
+  }
+  function liteRosterSet(g, c, rows) {
+    const compact = (rows || []).filter(function(r) { return Number(r.number) > 0 && String(r.name || '').trim(); })
+      .sort(function(a, b) { return Number(a.number) - Number(b.number); })
+      .map(function(r) { const o = { n: Number(r.number), name: String(r.name).trim() }; if (r.student_phone) o.sp = r.student_phone; if (r.mother_phone) o.mp = r.mother_phone; if (r.father_phone) o.fp = r.father_phone; return o; });
+    if (compact.length) localStorage.setItem(liteRosterKey(g, c), JSON.stringify(compact)); else localStorage.removeItem(liteRosterKey(g, c));
+    window.classStructure = null;
+  }
+  function liteRosterUpdatePhone(id, sp, mp, fp) {
+    const g = Math.floor(id / 10000), c = Math.floor((id % 10000) / 100);
+    const rows = liteRosterGet(g, c);
+    const r = rows.find(function(x) { return x.id === id; });
+    if (!r) throw new Error('학생을 찾지 못했어요');
+    r.student_phone = sp; r.mother_phone = mp; r.father_phone = fp;
+    liteRosterSet(g, c, rows);
+  }
+  function liteRosterUpdateCount() {
+    const el = document.getElementById('lite-roster-count'); if (!el) return;
+    let classes = 0, students = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const m = /^lite-roster-(\d+)-(\d+)$/.exec(localStorage.key(i) || '');
+      if (m) { classes++; students += liteRosterGet(parseInt(m[1]), parseInt(m[2])).length; }
+    }
+    el.innerText = classes ? ('모두 ' + classes + '개 반 · ' + students + '명') : '아직 명단이 없어요';
+  }
+  async function liteRosterAfterChange(g, c) {
+    await ensureClassStructureLoaded();
+    const gradeSel = document.getElementById('roster-grade-select'), classSel = document.getElementById('roster-class-select');
+    gradeSel.innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(g);
+    classSel.innerHTML = '<option value="">반</option>' + classOptionsHtml(g, c);
+    gradeSel.value = String(g); classSel.value = String(c);
+    liteRosterUpdateCount();
+    loadStudentRoster(g, c);
+  }
+  async function liteRosterImportExcel(file) {
+    if (!file) return;
+    let byGrade;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      byGrade = parseStudentWorkbook(wb);
+    } catch (e) { customAlert('엑셀 파일을 읽지 못했어요.\n' + (e && e.message ? e.message : e) + "\n\n첫 시트에 '학번'(예: 10203 = 1학년 2반 3번)과 '이름' 열이 있어야 해요."); return; }
+    const grades = Object.keys(byGrade).map(Number).sort(function(a, b) { return a - b; });
+    if (!grades.length) { customAlert("학생을 찾지 못했어요. '학번'이 10203(1학년 2반 3번) 같은 5자리인지 확인해 주세요."); return; }
+    const byClass = {};
+    grades.forEach(function(g) { byGrade[g].forEach(function(e) { const k = g + '-' + e.class_no; (byClass[k] = byClass[k] || []).push(e); }); });
+    const summary = grades.map(function(g) { return g + '학년 ' + byGrade[g].length + '명(' + Object.keys(byClass).filter(function(k) { return k.indexOf(g + '-') === 0; }).length + '개 반)'; }).join(', ');
+    if (!await customConfirm('엑셀에서 ' + summary + '을 찾았어요.\n\n이 반들의 명단을 파일 내용으로 바꿀까요?\n(파일에 없는 반은 그대로 둬요)')) return;
+    Object.keys(byClass).forEach(function(k) { const gc = k.split('-'); liteRosterSet(parseInt(gc[0]), parseInt(gc[1]), byClass[k]); });
+    const first = Object.keys(byClass).sort()[0].split('-');
+    await liteRosterAfterChange(parseInt(first[0]), parseInt(first[1]));
+    customAlert('명단을 넣었어요: ' + summary + '\n\n좌석배치표·결석계·수행평가·생기부·양식에서 바로 쓸 수 있어요.');
+  }
+  function liteRosterTogglePaste(show) {
+    const box = document.getElementById('lite-roster-paste');
+    const on = show === undefined ? box.style.display !== 'flex' : !!show;
+    box.style.display = on ? 'flex' : 'none';
+    if (on) setTimeout(function() { document.getElementById('lite-roster-paste-text').focus(); }, 30);
+  }
+  function liteRosterSelected() {
+    const g = parseInt(document.getElementById('roster-grade-select').value), c = parseInt(document.getElementById('roster-class-select').value);
+    if (!g || !c) { customAlert('먼저 위에서 학년과 반을 고르세요.'); return null; }
+    return { g: g, c: c };
+  }
+  async function liteRosterPaste() {
+    const sel = liteRosterSelected(); if (!sel) return;
+    const ta = document.getElementById('lite-roster-paste-text');
+    const lines = ta.value.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+    if (!lines.length) return customAlert('붙여 넣은 내용이 없어요.');
+    const rows = []; let auto = 0;
+    lines.forEach(function(line) {
+      const parts = line.split(/[\t,]+|\s+/).filter(Boolean);
+      let num = null;
+      if (/^\d{1,2}\.?$/.test(parts[0])) num = parseInt(parts.shift());
+      else if (/^\d{5}$/.test(parts[0])) num = parseInt(parts.shift()) % 100;
+      const name = (parts.shift() || '').replace(/[^가-힣a-zA-Z·\-]/g, '');
+      if (!name) return;
+      if (num === null) num = auto + 1;
+      auto = num;
+      const phones = parts.filter(function(x) { return /\d{3,}/.test(x); });
+      rows.push({ number: num, name: name, student_phone: phones[0] || '', mother_phone: phones[1] || '', father_phone: phones[2] || '' });
+    });
+    if (!rows.length) return customAlert('이름을 찾지 못했어요. 한 줄에 "번호 이름" 또는 "이름"만 써 주세요.');
+    const existing = liteRosterGet(sel.g, sel.c);
+    if (existing.length && !await customConfirm(sel.g + '학년 ' + sel.c + '반에 이미 ' + existing.length + '명이 있어요.\n붙여 넣은 ' + rows.length + '명으로 바꿀까요?')) return;
+    liteRosterSet(sel.g, sel.c, rows);
+    ta.value = ''; liteRosterTogglePaste(false);
+    await liteRosterAfterChange(sel.g, sel.c);
+  }
+  async function liteRosterClearClass() {
+    const sel = liteRosterSelected(); if (!sel) return;
+    const existing = liteRosterGet(sel.g, sel.c);
+    if (!existing.length) return customAlert('이 반엔 명단이 없어요.');
+    if (!await customConfirm(sel.g + '학년 ' + sel.c + '반 명단 ' + existing.length + '명을 지울까요?\n(좌석배치표·결석계 등에 이미 적은 기록은 그대로 남아요)')) return;
+    liteRosterSet(sel.g, sel.c, []);
+    await liteRosterAfterChange(sel.g, sel.c);
+  }
+
+  // ----- 폴더 백업(하루 한 번, 파일 하나에 덮어쓰기) -----
+  // 폴더 손잡이(FileSystemDirectoryHandle)는 IndexedDB(lite-fs)에 둔다 — localStorage엔 못 넣는다. Chrome·Edge만 지원.
+  const LITE_FS_DB = 'lite-fs';
+  const liteFsSupported = typeof window.showDirectoryPicker === 'function';
+  let liteDirHandle; // undefined = 아직 안 읽음, null = 없음
+  let liteChangedSinceBackup = false;
+  function liteFsDb() {
+    return new Promise(function(res, rej) {
+      let r; try { r = indexedDB.open(LITE_FS_DB, 1); } catch (e) { return rej(e); }
+      r.onupgradeneeded = function() { r.result.createObjectStore('kv'); };
+      r.onsuccess = function() { res(r.result); }; r.onerror = function() { rej(r.error); };
+    });
+  }
+  function liteFsOp(mode, fn) {
+    return liteFsDb().then(function(db) { return new Promise(function(res, rej) { const tx = db.transaction('kv', mode); const q = fn(tx.objectStore('kv')); q.onsuccess = function() { res(q.result); }; q.onerror = function() { rej(q.error); }; }); });
+  }
+  async function liteBackupDir() {
+    if (liteDirHandle === undefined) { try { liteDirHandle = (await liteFsOp('readonly', function(st) { return st.get('dir'); })) || null; } catch (e) { liteDirHandle = null; } }
+    return liteDirHandle;
+  }
+  function liteBackupFileName() { return LITE_APP_NAME + '_백업.json'; }
+  function liteNoteChanged(key) { if (isLocalOnlyKey(key)) return; liteChangedSinceBackup = true; try { rawSetItem('device-lite-changed', '1'); } catch (e) {} }
+  function liteBackupMarkDone() {
+    try { rawSetItem('device-lite-backup-date', todayYmdDash()); rawSetItem('device-lite-backup-at', String(Date.now())); rawRemoveItem('device-lite-changed'); } catch (e) {}
+    liteChangedSinceBackup = false;
+  }
+  async function liteBackupPermission(h, ask) {
+    try {
+      let p = await h.queryPermission({ mode: 'readwrite' });
+      if (p !== 'granted' && ask) p = await h.requestPermission({ mode: 'readwrite' });
+      return p === 'granted';
+    } catch (e) { return false; }
+  }
+  async function liteBackupReadExisting(h) {
+    try { const fh = await h.getFileHandle(liteBackupFileName()); const f = await fh.getFile(); return await f.text(); } catch (e) { return null; }
+  }
+  async function liteBackupPickFolder() {
+    if (!liteFsSupported) { customAlert('이 브라우저는 폴더에 바로 저장하는 기능이 없어요(Chrome·Edge에서 돼요).\n대신 💾 "지금 바로 백업 다운로드"로 파일을 받아 보관해 주세요.'); return; }
+    try {
+      const h = await window.showDirectoryPicker({ id: 'lite-backup', mode: 'readwrite', startIn: 'desktop' });
+      await liteFsOp('readwrite', function(st) { return st.put(h, 'dir'); });
+      liteDirHandle = h;
+      const ok = await liteBackupWriteNow({ manual: true, quiet: true, force: true });
+      liteBackupRefreshStatus();
+      customAlert('백업 폴더를 정했어요: ' + h.name + (ok ? '\n지금 첫 백업(' + liteBackupFileName() + ')을 저장했고, 앞으로 하루 한 번 같은 파일에 덮어써요.' : ''));
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      customAlert('폴더를 정하지 못했어요: ' + (e && e.message ? e.message : e));
+    }
+  }
+  async function liteBackupClearFolder() {
+    try { await liteFsOp('readwrite', function(st) { return st.delete('dir'); }); } catch (e) {}
+    liteDirHandle = null; liteBackupRefreshStatus();
+  }
+  async function liteBackupWriteNow(opts) {
+    opts = opts || {};
+    const h = await liteBackupDir();
+    if (!h) { if (opts.manual && !opts.quiet) customAlert('먼저 📁 백업 폴더를 정해 주세요.'); return false; }
+    if (!await liteBackupPermission(h, !!opts.manual)) {
+      if (opts.manual && !opts.quiet) customAlert('폴더에 쓸 권한이 없어요. 📁 폴더 정하기를 다시 눌러 주세요.');
+      else if (!opts.manual) liteBackupBanner('permission');
+      return false;
+    }
+    const json = JSON.stringify(collectBackupData(), null, 2);
+    if (!opts.force) { // 브라우저 자료가 지워진 채 열렸을 때 좋은 백업을 빈 자료로 덮어쓰지 않게
+      const old = await liteBackupReadExisting(h);
+      if (old && old.length > 2000 && json.length < old.length * 0.5) { liteBackupBanner('shrunk', { oldKb: Math.round(old.length / 1024), nowKb: Math.round(json.length / 1024) }); return false; }
+    }
+    try {
+      const fh = await h.getFileHandle(liteBackupFileName(), { create: true });
+      const w = await fh.createWritable();
+      await w.write(json); await w.close();
+    } catch (e) { if (opts.manual && !opts.quiet) customAlert('폴더에 저장하지 못했어요: ' + (e && e.message ? e.message : e)); return false; }
+    liteBackupMarkDone(); liteBackupHideBanner(); liteBackupRefreshStatus();
+    if (opts.manual && !opts.quiet) customAlert('저장했어요: ' + h.name + ' / ' + liteBackupFileName());
+    return true;
+  }
+  async function liteBackupRestoreFromFolder() {
+    const h = await liteBackupDir();
+    if (!h) return customAlert('먼저 📁 백업 폴더를 정해 주세요.');
+    if (!await liteBackupPermission(h, true)) return customAlert('폴더를 읽을 권한이 없어요.');
+    const text = await liteBackupReadExisting(h);
+    if (text === null) return customAlert('폴더에 ' + liteBackupFileName() + ' 파일이 없어요.');
+    if (!await customConfirm('폴더의 백업 파일로 복원할까요?\n지금 이 브라우저의 자료 전부가 파일 내용으로 바뀌어요(파일에 없는 것은 지워짐).')) return;
+    try { await applyBackupText(text); } catch (e) { return customAlert('백업 파일을 읽지 못했어요. 올바른 백업 파일인지 확인해 주세요.'); }
+    liteBackupMarkDone();
+    await customAlert('복원했어요. 새로 고칩니다.');
+    location.reload();
+  }
+  async function liteBackupRefreshStatus() {
+    const h = liteFsSupported ? await liteBackupDir() : null;
+    const at = Number(localStorage.getItem('device-lite-backup-at')) || 0;
+    const when = at ? new Date(at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '없음';
+    let msg;
+    if (!liteFsSupported) msg = '이 브라우저(Safari·Firefox 등)는 폴더 자동 저장이 안 돼요. Chrome·Edge를 쓰거나, 💾 백업 다운로드로 직접 받아 두세요. 마지막 백업: ' + when;
+    else if (!h) msg = '아직 폴더를 정하지 않았어요. 마지막 백업: ' + when;
+    else msg = '📁 ' + h.name + ' / ' + liteBackupFileName() + ' · 마지막 저장 ' + when + (liteChangedSinceBackup ? ' · 그 뒤 바뀐 자료 있음' : '');
+    ['lite-backup-folder-status', 'lite-setup-backup-status'].forEach(function(id) { const el = document.getElementById(id); if (el) el.innerText = msg; });
+  }
+  function liteBackupInit() {
+    if (localStorage.getItem('device-lite-changed')) liteChangedSinceBackup = true;
+    setTimeout(liteBackupTick, 4000); // 홈이 다 그려진 뒤
+    setInterval(liteBackupTick, 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') liteBackupTick(); });
+  }
+  async function liteBackupTick() {
+    const today = todayYmdDash();
+    const last = localStorage.getItem('device-lite-backup-date') || '';
+    if (last === today) return;
+    if (Object.keys(collectBackupData()).length < 2) return; // 설정만 있고 아직 적은 게 없음
+    if (last && !liteChangedSinceBackup) return; // 지난 백업 뒤 바뀐 게 없으면 안 씀
+    if (localStorage.getItem('device-lite-banner-snooze') === today) return;
+    const h = liteFsSupported ? await liteBackupDir() : null;
+    if (!h) { liteBackupBanner(liteFsSupported ? 'nofolder' : 'download'); return; }
+    await liteBackupWriteNow({});
+  }
+  function liteBackupBanner(kind, info) {
+    const el = document.getElementById('lite-backup-banner'), tx = document.getElementById('lite-backup-banner-text'), bt = document.getElementById('lite-backup-banner-btns');
+    if (!el) return;
+    const B = function(label, fn, ghost) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (ghost) b.className = 'ghost'; b.onclick = fn; return b; };
+    bt.innerHTML = '';
+    const snooze = function() { try { rawSetItem('device-lite-banner-snooze', todayYmdDash()); } catch (e) {} liteBackupHideBanner(); };
+    if (kind === 'permission') {
+      tx.textContent = '📁 오늘 백업을 하려면 백업 폴더 쓰기를 한 번 허용해 주세요.';
+      bt.appendChild(B('허용하고 저장', function() { liteBackupWriteNow({ manual: true, quiet: true }); }));
+      bt.appendChild(B('나중에', snooze, true));
+    } else if (kind === 'shrunk') {
+      tx.textContent = '⚠️ 지금 자료(' + info.nowKb + 'KB)가 백업 파일(' + info.oldKb + 'KB)보다 훨씬 적어요. 브라우저 자료가 지워진 건 아닌가요? 백업을 덮어쓰지 않았어요.';
+      bt.appendChild(B('백업 파일에서 복원', liteBackupRestoreFromFolder));
+      bt.appendChild(B('그래도 덮어쓰기', function() { liteBackupWriteNow({ manual: true, quiet: true, force: true }); }, true));
+      bt.appendChild(B('나중에', snooze, true));
+    } else if (kind === 'nofolder') {
+      tx.textContent = '💾 자료를 안전하게 보관하려면 백업 폴더를 정해 주세요(하루 한 번 파일 하나에 자동 저장).';
+      bt.appendChild(B('📁 폴더 정하기', liteBackupPickFolder));
+      bt.appendChild(B('지금 내려받기', manualBackupNow, true));
+      bt.appendChild(B('오늘은 그만', snooze, true));
+    } else {
+      tx.textContent = '💾 오늘 백업을 아직 안 했어요. 이 브라우저는 폴더 자동 저장이 안 돼서 직접 받아야 해요.';
+      bt.appendChild(B('지금 내려받기', manualBackupNow));
+      bt.appendChild(B('오늘은 그만', snooze, true));
+    }
+    el.style.display = 'flex';
+  }
+  function liteBackupHideBanner() { const el = document.getElementById('lite-backup-banner'); if (el) el.style.display = 'none'; }
+
+  // 홈 설명서: 개인판에 없는 단계는 빼고 글을 맞춘다
+  function liteAdjustTour() {
+    const drop = ['#btn-notice', '#duty-alert-pill', '#notice-widget'];
+    const keep = tourSteps.filter(function(s) { return !s.modal && drop.indexOf(s.selector) === -1 && !(s.selector === '#search-tt-widget' && s.title.indexOf('🔍') !== -1); });
+    keep.forEach(function(s) {
+      if (s.selector === '#app-rail') s.desc = '맨 왼쪽 메뉴에서 명렬표·단축키·생기부·수행평가·양식·좌석배치표·월간일정표·결석계·조퇴증을 열어요. 맨 아래 ⚙️ 설정에서 이름·학교·일과 시간·백업 폴더를 바꿀 수 있어요.';
+      if (s.selector === '#favorites-panel') s.desc = '자주 가는 사이트 8개를 등록해 두는 칸이에요. 오른쪽 위 연필 버튼을 눌러 이름과 주소를 적어요.';
+      if (s.selector === '#my-tt-widget') s.desc = '내 시간표를 직접 적는 칸이에요. 칸을 누르고 위에 과목, 아래에 교실(또는 반)을 적으면 바로 저장돼요. 교시별 시간은 ⚙️ 설정의 일과 시간에서 바꿔요.';
+      if (s.selector === '#btn-backup') s.desc = '개인판은 서버가 없어서 모든 자료가 이 컴퓨터의 브라우저에만 있어요. 여기서 백업 폴더를 정하면 하루 한 번 파일 하나에 자동으로 저장되고, 다른 컴퓨터로 옮길 때도 이 파일을 써요.';
+      if (s.selector === '#upcoming-schedule-pill') s.desc = '⚙️ 설정에서 고른 학교의 나이스 학사일정이 앞으로 90일치 흘러가요.';
+      if (s.selector === '#news-widget') s.desc = '탭을 눌러 종합/정치·사회/경제/IT·과학/스포츠 뉴스를 볼 수 있어요. 제목을 클릭하면 기사가 새 탭으로 열려요.';
+    });
+    tourSteps.length = 0; keep.forEach(function(s) { tourSteps.push(s); });
+  }
+
   // ===== 🔄 새 버전 알림 =====
   // 열어 둔 탭은 새로고침 전까지 예전 화면 그대로다. GitHub Pages가 index.html도
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-13.1';
+  var BUILD_ID = '2026-10-18.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -4923,6 +5602,7 @@
   }
 
   async function bootAuth() {
+    if (LITE) { initUpdateChecker(); await liteBoot(); return; } // 개인판: 로그인 없음
     if (SB_SLEEP) { paintVersion(); sbShowSleep(false); return; } // 쉬는 창: 로그인·화면 그리기·서버 요청 없이 안내만
     initUpdateChecker();
     document.getElementById('login-pw-input').onkeydown = function(e) { if (e.key === 'Enter') submitLogin(); };
@@ -5112,6 +5792,7 @@
   let syncPushRetryTimer = null;
   let syncPushRetryDelay = 5000; // 5초에서 시작, 실패할 때마다 두 배씩 최대 5분까지
   function pushDirtyItems() {
+    if (LITE) return Promise.resolve();
     if (syncPushPromise) { syncPushAgain = true; return syncPushPromise; }
     syncPushPromise = (async function() {
       let ok;
@@ -5179,6 +5860,7 @@
   let syncPullChain = Promise.resolve(false);
   let syncPullRetryTimer = null;
   function pullRemoteChanges(full) {
+    if (LITE) return Promise.resolve();
     syncPullChain = syncPullChain.then(function() { return doPullRemoteChanges(full); }, function() { return doPullRemoteChanges(full); });
     return syncPullChain;
   }
@@ -5323,6 +6005,7 @@
     }, 400);
   }
   function subscribeToOwnDataChanges(teacherId) {
+    if (LITE) return;
     if (syncSubscribed) return;
     syncSubscribed = true;
     try {
@@ -5579,6 +6262,7 @@
   }
 
   function toggleUserMenu() {
+    if (LITE) { liteOpenSettings(); return; }
     const dd = document.getElementById('user-menu-dropdown');
     dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
   }
@@ -5617,6 +6301,7 @@
   async function loadUpcomingScheduleTeaser() {
     const teaserEl = document.getElementById('upcoming-schedule-teaser');
     if (!teaserEl) return;
+    if (LITE && !SCH_CODE) { teaserEl.innerText = '⚙️ 설정에서 학교를 정하면 나이스 학사일정이 나와요.'; return; }
     try {
       const today = new Date();
       const to = new Date(today); to.setDate(to.getDate() + 90);
@@ -5958,7 +6643,7 @@
   }
 
   const NEIS_KEY = '0cf49e69fe4a426089a5484684533ea8';
-  const EDU_CODE = 'E10'; const SCH_CODE = '7310046';
+  let EDU_CODE = 'E10'; let SCH_CODE = '7310046'; // 개인판은 liteBoot가 설정한 학교로 바꿔 넣는다
 
   // ===== 🛰️ 나이스 학급 시간표 시험 조회 =====
   // 나이스 시간표 API는 학교급마다 서비스 이름이 다르다(초 elsTimetable / 중 misTimetable / 고 hisTimetable /
@@ -6325,7 +7010,7 @@
     if (step.modal) step.modal();
 
     const el = document.querySelector(step.selector);
-    if (!el) {
+    if (!el || (LITE && el.offsetParent === null && getComputedStyle(el).display === 'none')) {
       if (tourIndex < tourSteps.length - 1) { tourIndex++; showTourStep(); } else closeTour();
       return;
     }
@@ -6414,15 +7099,14 @@
     buildTodo('todo-work', 'work', todoCounts.work);
     buildTodo('todo-stu', 'stu', todoCounts.stu);
 
-    fetchSchedule();
+    if (LITE) liteSetupMyTimetable(); else fetchSchedule();
     updateMeal(); loadAllData();
     setInterval(updateTime, 1000); updateTime();
     fetchWeather(); setInterval(fetchWeather, 1800000);
     renderNewsTabs(); fetchNews(); setInterval(function() { if (document.visibilityState === 'visible') fetchNews(); }, 30 * 60 * 1000);
     document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') fetchNews(); });
 
-    checkNotice(); startNoticeWatcher();
-    checkAllDuties();
+    if (!LITE) { checkNotice(); startNoticeWatcher(); checkAllDuties(); }
     renderBigCalendar();
     loadUpcomingScheduleTeaser();
 
@@ -6499,8 +7183,29 @@
   function manualBackupNow() {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10) + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-    downloadBackupFile('대시보드_백업_' + stamp + '.json');
+    downloadBackupFile((LITE ? LITE_APP_NAME : '대시보드') + '_백업_' + stamp + '.json');
+    if (LITE) liteBackupMarkDone();
     customAlert('백업 파일이 다운로드 폴더에 저장되었습니다.');
+  }
+
+  // 백업 JSON 글을 이 브라우저에 "바꿔치기"로 적용한다: 파일에 없는 항목은 지우고, 있는 항목은 파일
+  // 값으로 쓴다. localStorage.clear() 대신 하나씩 지우고 쓰는 건, 가로채기가 바뀐 항목을 기록해서
+  // 서버에도 똑같이(지운 것까지) 반영되게 하려는 것이다. 로그인 토큰 같은 이 기기 전용 값은 파일에
+  // 있어도 건드리지 않는다. (파일 고르기 복원과 개인판 폴더 복원이 같이 씀)
+  async function applyBackupText(text) {
+    const data = JSON.parse(text);
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('형식 오류');
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!isLocalOnlyKey(k) && !Object.prototype.hasOwnProperty.call(data, k)) toRemove.push(k);
+    }
+    toRemove.forEach(function(k) { localStorage.removeItem(k); });
+    Object.keys(data).forEach(function(k) {
+      if (isLocalOnlyKey(k)) return;
+      localStorage.setItem(k, stripLogoFromSavedSettings(k, String(data[k])));
+    });
+    return data;
   }
 
   async function restoreFromBackupFile(event) {
@@ -6511,22 +7216,7 @@
     const reader = new FileReader();
     reader.onload = async function(e) {
       try {
-        const data = JSON.parse(e.target.result);
-        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('형식 오류');
-        // 백업 파일 내용으로 "바꿔치기"한다: 파일에 없는 항목은 지우고, 있는 항목은 파일
-        // 값으로 쓴다. localStorage.clear() 대신 하나씩 지우고 쓰는 건, 가로채기가 바뀐
-        // 항목을 기록해서 서버에도 똑같이(지운 것까지) 반영되게 하려는 것이다. 로그인
-        // 토큰 같은 이 기기 전용 값은 파일에 있어도 건드리지 않는다.
-        const toRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (!isLocalOnlyKey(k) && !Object.prototype.hasOwnProperty.call(data, k)) toRemove.push(k);
-        }
-        toRemove.forEach(function(k) { localStorage.removeItem(k); });
-        Object.keys(data).forEach(function(k) {
-          if (isLocalOnlyKey(k)) return;
-          localStorage.setItem(k, stripLogoFromSavedSettings(k, String(data[k])));
-        });
+        await applyBackupText(e.target.result);
         await flushPendingSaveAndSync();
         if (getSyncDirtyKeys().length > 0) {
           await customAlert('복원은 이 기기에 완료됐지만 아직 서버에 올리지 못했습니다.\n인터넷이 연결되면 자동으로 올라갑니다.');
@@ -6551,6 +7241,7 @@
     document.getElementById('tab-cal').classList.remove('active');
     document.getElementById('tab-halfcal').classList.remove('active');
 
+    if (LITE && tab === 'tt') tab = 'halfcal'; // 개인판엔 다른 선생님 시간표가 없다
     currentMainTab = tab;
     localStorage.setItem('main-tab', tab);
 
@@ -7082,6 +7773,7 @@
     document.getElementById('roster-class-select').innerHTML = '<option value="">반</option>';
     document.getElementById('roster-overlay').style.display = 'flex';
     document.getElementById('roster-modal-box').style.display = 'flex';
+    if (LITE) liteRosterUpdateCount();
 
     const t = window.currentTeacher;
     if (t && t.role === '담임' && t.homeroom_grade && t.homeroom_class) {
@@ -7862,7 +8554,7 @@
     const listEl = document.getElementById('roster-list-container');
     listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">불러오는 중...</div>';
     try {
-      const { data, error } = await sb.from('students').select('*').eq('grade', grade).eq('class_no', classNo).order('number');
+      const { data, error } = await rosterRows(grade, classNo);
       if (error) throw error;
       renderStudentRosterList(data || []);
     } catch (e) {
@@ -7875,7 +8567,7 @@
   function renderStudentRosterList(rows) {
     const listEl = document.getElementById('roster-list-container');
     window.__rosterRows = rows;
-    if (rows.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">등록된 학생이 없습니다.</div>'; return; }
+    if (rows.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size: 12px; padding: 20px;">' + (LITE ? '이 반 명단이 아직 없어요.<br>위 <b>📥 엑셀</b>이나 <b>📋 붙여넣기</b>로 넣어 주세요.' : '등록된 학생이 없습니다.') + '</div>'; return; }
 
     const cols = rosterEditMode ? '26px 42px 1fr 1fr 30px' : '26px 42px 1fr 1fr';
     let html = '<div style="display:grid; grid-template-columns: ' + cols + '; gap:4px; padding:6px 3px; font-size:calc(var(--fz-roster) - 1px); font-weight:800; color:var(--text-sub); border-bottom:2px solid var(--border-color);">' +
@@ -7915,8 +8607,11 @@
     const motherPhone = document.getElementById('roster-edit-mother-' + id).value.trim();
     const fatherPhone = document.getElementById('roster-edit-father-' + id).value.trim();
     try {
-      const { error } = await sb.rpc('update_student_phone', { p_student_id: id, p_student_phone: studentPhone, p_mother_phone: motherPhone, p_father_phone: fatherPhone });
-      if (error) throw error;
+      if (LITE) liteRosterUpdatePhone(id, studentPhone, motherPhone, fatherPhone);
+      else {
+        const { error } = await sb.rpc('update_student_phone', { p_student_id: id, p_student_phone: studentPhone, p_mother_phone: motherPhone, p_father_phone: fatherPhone });
+        if (error) throw error;
+      }
       document.getElementById('roster-view-student-' + id).innerText = studentPhone || '-';
       document.getElementById('roster-view-parent-' + id).innerText = (motherPhone || fatherPhone || '-');
       toggleStudentEditUI(id);
@@ -8374,10 +9069,14 @@
     localStorage.setItem('fz-' + target, fontSizes[target]);
   }
 
+  const BM_SLOTS = LITE ? 8 : 4; // 개인판: 고정 링크 없이 내 링크 8칸
   function loadBookmarks() {
-    let bms = JSON.parse(localStorage.getItem('bookmarks'));
-    if (!bms || bms.length !== 4) bms = [{name:'',url:''},{name:'',url:''},{name:'',url:''},{name:'',url:''}];
-    const fixed = (window.fixedBookmarks && window.fixedBookmarks.length === 4) ? window.fixedBookmarks : defaultBookmarks;
+    let bms = null;
+    try { bms = JSON.parse(localStorage.getItem('bookmarks')); } catch (e) {}
+    if (!Array.isArray(bms)) bms = [];
+    while (bms.length < BM_SLOTS) bms.push({ name: '', url: '' });
+    if (bms.length > BM_SLOTS) bms = bms.slice(0, BM_SLOTS);
+    const fixed = LITE ? [] : ((window.fixedBookmarks && window.fixedBookmarks.length === 4) ? window.fixedBookmarks : defaultBookmarks);
 
     const grid = document.getElementById('bookmark-grid');
     grid.innerHTML = '';
@@ -8509,6 +9208,7 @@
 
   // ===== 🏫 학급 구성 (학년 수 + 학년별 반 개수) — 나중에 담임 지정·학급시간표에서 재사용할 기초 데이터 =====
   async function ensureClassStructureLoaded() {
+    if (LITE) { window.classStructure = liteClassStructure(); return window.classStructure; }
     if (window.classStructure) return window.classStructure;
     try {
       const { data, error } = await sb.from('app_settings').select('value').eq('key', 'class_structure').maybeSingle();
@@ -8520,6 +9220,7 @@
 
   // ===== ⏰ 일과 시간(교시별 시작·종료) — 개인 설정이 아니라 관리자가 정하는 학교 공통 설정 =====
   async function ensureClassTimesLoaded() {
+    if (LITE) { window.classTimes = liteSettings().classTimes || DEFAULT_TIMES; currentTimes = window.classTimes; return window.classTimes; }
     if (window.classTimes) { currentTimes = window.classTimes; return window.classTimes; }
     try {
       const { data, error } = await sb.from('app_settings').select('value').eq('key', 'class_times').maybeSingle();
@@ -8573,7 +9274,7 @@
 
   function saveBookmarks() {
     const bms = [];
-    for(let i=0; i<4; i++) {
+    for(let i=0; i<BM_SLOTS; i++) {
       bms.push({
         name: document.getElementById('bm-name-' + i).value || '',
         url: document.getElementById('bm-url-' + i).value || ''
@@ -8731,8 +9432,8 @@
     return '좋음';
   }
 
-  const WEATHER_LAT = '37.495';
-  const WEATHER_LON = '126.722';
+  let WEATHER_LAT = '37.495';
+  let WEATHER_LON = '126.722'; // 개인판은 liteBoot가 학교 시·도 좌표로 바꿔 넣는다
 
   async function fetchWeather() {
     try {
@@ -8857,7 +9558,12 @@
       if (cached && cached.data && Date.now() - cached.at >= 0 && Date.now() - cached.at < NEWS_REFRESH_MS) {
         data = cached.data;
       } else {
-        const res = await sb.functions.invoke('news');
+        let res;
+        if (LITE) { // 개인판: 로그인 없이 공개 함수(verify_jwt=false)를 직접 부른다 — 뉴스만 공용 서버를 빌려 씀
+          const r = await fetch(SUPABASE_URL + '/functions/v1/news', { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+          if (!r.ok) throw new Error('news ' + r.status);
+          res = { data: await r.json(), error: null };
+        } else res = await sb.functions.invoke('news');
         if (res.error) throw res.error;
         data = res.data;
         try { if (data && data.categories) rawSetItem(NEWS_CACHE_KEY, JSON.stringify({ at: Date.now(), data: data })); } catch (e) {}
@@ -10936,7 +11642,7 @@
   }
   
   function loadAllData() {
-    loadFixedBookmarks();
+    if (LITE) loadBookmarks(); else loadFixedBookmarks();
 
     ['title-todo-work', 'title-todo-stu'].forEach(function(id) {
       if(localStorage.getItem(id)) document.getElementById(id).innerText = localStorage.getItem(id);
@@ -10979,6 +11685,7 @@
   }
 
   async function updateMeal() {
+    if (LITE && !SCH_CODE) { document.getElementById('meal-list').innerHTML = '<li>⚙️ 설정에서 학교를 정하면 급식이 나와요.</li>'; return; }
     const date = new Date(); date.setDate(date.getDate() + mealOffset);
     const dateStr = date.getFullYear() + String(date.getMonth()+1).padStart(2,'0') + String(date.getDate()).padStart(2,'0');
     document.getElementById('meal-date-label').innerText = (date.getMonth()+1) + '/' + date.getDate();
@@ -11354,7 +12061,7 @@
     const statusEl = document.getElementById('sc-roster-status');
     statusEl.textContent = '불러오는 중...';
     try {
-      const { data, error } = await sb.from('students').select('*').eq('grade', grade).eq('class_no', classNo).order('number');
+      const { data, error } = await rosterRows(grade, classNo);
       if (error) throw error;
       scStudents = (data || []).map(function(r) { return { num: String(r.number), name: r.name }; });
       statusEl.textContent = scStudents.length ? ('총 ' + scStudents.length + '명을 불러왔습니다.') : '등록된 학생이 없습니다.';
@@ -13687,7 +14394,7 @@
     if (abRosterKey === key) return;
     try {
       // 연락처는 필요 없어서 번호·이름만 받는다.
-      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
+      const { data, error } = await rosterRows(c.g, c.c);
       if (error) throw error;
       abRoster = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
       abRosterKey = key;
@@ -14463,7 +15170,7 @@
     let list = [];
     try {
       // 연락처는 필요 없어서 번호·이름만 받는다.
-      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.lG).eq('class_no', c.lC).order('number');
+      const { data, error } = await rosterRows(c.lG, c.lC);
       if (error) throw error;
       list = (data || []).map(function(st) { return { num: Number(st.number), name: st.name || '' }; });
     } catch (e) { list = null; }
@@ -15168,7 +15875,7 @@
     if (seIsOldClass(key) && saved.length) rows = saved;
     else {
       try {
-        const { data, error } = await sb.from('students').select('number, name').eq('grade', c.g).eq('class_no', c.c).order('number');
+        const { data, error } = await rosterRows(c.g, c.c);
         if (error) throw error;
         rows = (data || []).map(function(s) { return { num: Number(s.number), name: s.name }; });
       } catch (e) { rows = []; }
@@ -17109,7 +17816,7 @@
     box.innerHTML = '<div class="se-muted">불러오는 중…</div>';
     let rows = [];
     try {
-      const { data, error } = await sb.from('students').select('number, name').eq('grade', g).eq('class_no', c).order('number');
+      const { data, error } = await rosterRows(g, c);
       if (error) throw error;
       rows = (data || []).map(function(s) { return { g: g, c: c, n: Number(s.number), name: s.name }; });
     } catch (e) { box.innerHTML = '<div class="se-muted">명렬표를 불러오지 못했어요.</div>'; return; }
@@ -18347,7 +19054,7 @@
     fmRoster.loading = key;
     let by = {};
     try {
-      const { data, error } = await sb.from('students').select('class_no, number, name').eq('grade', c.rG).in('class_no', c.rCs).order('class_no').order('number');
+      const { data, error } = await rosterRows(c.rG, c.rCs);
       if (error) throw error;
       (data || []).forEach(function(st) {
         const k = Number(st.class_no);
@@ -23076,7 +23783,7 @@
     const c = etCfg().cfg, btn = document.getElementById('et-roster-btn');
     btn.disabled = true; etListMsg('명렬표를 받는 중…');
     try {
-      const { data, error } = await sb.from('students').select('number, name').eq('grade', c.grade).eq('class_no', c.cls).order('number');
+      const { data, error } = await rosterRows(c.grade, c.cls);
       if (error) throw error;
       const list = (data || []).map(function(st) { const s = etNewStu(Number(st.number)); s.name = st.name || ''; return s; });
       if (!list.length) { etListMsg('⚠️ ' + c.grade + '학년 ' + c.cls + '반 명렬표가 비어 있어요(관리자 설정 → 명렬표).'); return; }

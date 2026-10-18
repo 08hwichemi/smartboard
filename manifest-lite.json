@@ -1,0 +1,15 @@
+{
+  "name": "내 스마트보드",
+  "short_name": "내 스마트보드",
+  "description": "서버 없이 내 컴퓨터에만 저장하는 선생님용 스마트보드(개인판)",
+  "start_url": "lite.html",
+  "scope": ".",
+  "id": "lite",
+  "display": "standalone",
+  "background_color": "#F4F5F7",
+  "theme_color": "#1F3A5F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
