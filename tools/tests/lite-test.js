@@ -225,10 +225,11 @@ async function openPage(browser) {
   check('결석계: 담임 반 명단 3명', await page.evaluate(() => Array.isArray(abRoster) && abRoster.length === 3), await page.evaluate(() => abRoster));
   // 학교 이름이 들어가는 곳(결석계 양식·조퇴증·시정표)이 설정한 학교를 쓰는지 — 잠시 '테스트고등학교'로 바꿔 확인
   await page.evaluate(() => { const s = liteSettings(); s.school = Object.assign({}, s.school, { name: '테스트고등학교' }); liteSaveSettings(s); abForms = null; abFormsLoading = null; });
-  const absHtml = await page.evaluate(async () => { const d = await abLoadForms(); return [d.trip.html.indexOf('테스트고등학교장') !== -1, d.trip.html.indexOf('부광고등학교') === -1, d.report.html.indexOf('테스트고등학교장') !== -1]; });
+  const absHtml = await page.evaluate(async () => { const d = await abLoadForms(); return [d.trip.html.indexOf('테스트고등학교장') !== -1, d.trip.html.indexOf('부광고등학교') === -1, d.report.html.indexOf('테스트고등학교장') !== -1, d.confirm.html.indexOf('테 스 트 고 등 학 교 장') !== -1, !/부\s*광\s*고/.test(d.confirm.html)]; });
   check('결석계 양식 속 학교 이름 = 설정한 학교', absHtml.every(Boolean), absHtml);
+  await page.evaluate(() => localStorage.setItem('lp-data', JSON.stringify({ school: '부광고등학교' }))); // 예전 판이 저장해 둔 기본값
   await page.click('#rail-leavepass-btn'); await wait(600);
-  check('조퇴증 학교 칸 = 설정한 학교', (await page.inputValue('#lp-cfg-school')) === '테스트고등학교', await page.inputValue('#lp-cfg-school'));
+  check('조퇴증 학교 칸 = 설정한 학교(예전 기본값이 저장돼 있어도)', (await page.inputValue('#lp-cfg-school')) === '테스트고등학교', await page.inputValue('#lp-cfg-school'));
   check('시정표 기본 제목 = 설정한 학교', await page.evaluate(() => bsNormalDefault().title === '테스트고등학교 시정표'));
   await page.evaluate(() => { const s = liteSettings(); s.school = Object.assign({}, s.school, { name: '부광고등학교' }); liteSaveSettings(s); abForms = null; abFormsLoading = null; });
   await page.click('#rail-sgb-btn'); await wait(500);
