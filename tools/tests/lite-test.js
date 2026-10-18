@@ -143,7 +143,15 @@ async function openPage(browser) {
   check('교시 수 6 → 줄 6개', (await page.$$('#lite-times-rows tr')).length === 6);
   await page.selectOption('#lite-period-count', '8'); await wait(100);
   check('8로 늘리면 8줄, 새 줄은 앞 줄에 이어 채움', (await page.$$('#lite-times-rows tr')).length === 8 && (await page.inputValue('#lite-time-s-8')) !== '');
+  // ⚡ 한 번에 채우기: 09:00부터 45분 수업·10분 쉬는 시간·3교시 뒤 점심 50분 → 8교시
+  await page.fill('#lite-fill-start', '900'); await page.dispatchEvent('#lite-fill-start', 'blur');
+  await page.selectOption('#lite-fill-len', '45'); await page.selectOption('#lite-fill-break', '10'); await page.selectOption('#lite-fill-lunch-after', '3'); await page.selectOption('#lite-fill-lunch', '50');
+  await page.click('#lite-fill-row button'); await wait(100);
+  const filled = await page.evaluate(() => liteTimesRead().map(x => x.s + '-' + x.e));
+  check('한 번에 채우기 결과', JSON.stringify(filled) === JSON.stringify(['09:00-09:45', '09:55-10:40', '10:50-11:35', '12:25-13:10', '13:20-14:05', '14:15-15:00', '15:10-15:55', '16:05-16:50']), filled);
+  check('점심·조회·종례도 같이 채움', (await page.inputValue('#lite-day-lunch-s')) === '11:35' && (await page.inputValue('#lite-day-lunch-e')) === '12:25' && (await page.inputValue('#lite-day-homeroom-s')) === '08:50' && (await page.inputValue('#lite-day-closing-e')) === '17:00');
   await page.selectOption('#lite-period-count', '6'); await wait(100);
+  check('채우기 줄의 1교시 시작·수업 길이가 지금 표에서 읽힘', (await page.inputValue('#lite-fill-start')) === '09:00' && (await page.inputValue('#lite-fill-len')) === '45');
   await page.fill('#lite-day-clean-s', ''); await page.fill('#lite-day-clean-e', '');
   await Promise.all([page.waitForNavigation(), page.click('text=저장하고 시작하기')]);
   await page.waitForFunction(() => typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 });
@@ -151,7 +159,7 @@ async function openPage(browser) {
   await page.evaluate(() => { const f = document.createElement('iframe'); f.style.display = 'none'; document.body.appendChild(f); window.__realLs = f.contentWindow.localStorage; });
   check('저장 뒤 일과 시간 6교시', await page.evaluate(() => currentTimes.length === 6 && liteSettings().classTimes.length === 6));
   check('내 시간표 격자 6줄', (await page.$$('#my-timetable-grid .tt-time')).length === 6 && await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tt-rows').trim() === '6'));
-  check('청소 없음으로 저장', await page.evaluate(() => liteDay().clean === null && liteDay().lunch && liteDay().homeroom.s === '08:40'));
+  check('청소 없음으로 저장', await page.evaluate(() => liteDay().clean === null && liteDay().lunch && liteDay().homeroom.s === '08:50'));
 
   console.log('== 4. 내 시간표 직접 입력 → 저장 → 다시 열어도 남음');
   await page.click('#my-tt-1-1-s');

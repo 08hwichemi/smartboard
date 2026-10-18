@@ -2666,8 +2666,16 @@
     <div class="lite-sec">
       <div class="lite-sec-title">④ 일과 시간 <span style="font-weight:600; font-size:11px; color:var(--text-sub);">"지금 이 시간" 칸과 내 시간표 줄에 쓰여요</span></div>
       <div class="lite-row"><label class="lite-lb">교시 수</label><select id="lite-period-count" style="flex:0 0 90px; min-width:0;"><option value="4">4교시</option><option value="5">5교시</option><option value="6">6교시</option><option value="7">7교시</option><option value="8">8교시</option><option value="9">9교시</option><option value="10">10교시</option></select><span class="lite-hint" style="margin-top:0;">내 시간표 줄 수도 이만큼이 돼요.</span></div>
+      <div class="lite-row" id="lite-fill-row" style="background:var(--tt-bg); border-radius:10px; padding:8px 10px; row-gap:6px;">
+        <span style="font-weight:800; font-size:12px; flex:0 0 auto;">⚡ 한 번에 채우기</span>
+        <span style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">1교시 <input type="text" id="lite-fill-start" inputmode="numeric" maxlength="5" placeholder="08:50" style="width:62px; flex:0 0 62px; min-width:0; text-align:center;" onblur="liteTimeNormalize(this)">부터</span>
+        <span style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">수업 <select id="lite-fill-len" style="flex:0 0 auto; min-width:0;"><option>40</option><option>45</option><option selected>50</option><option>55</option><option>60</option></select>분</span>
+        <span style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">쉬는 시간 <select id="lite-fill-break" style="flex:0 0 auto; min-width:0;"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>분</span>
+        <span style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">점심 <select id="lite-fill-lunch-after" style="flex:0 0 auto; min-width:0;"></select> <select id="lite-fill-lunch" style="flex:0 0 auto; min-width:0;"><option>40</option><option>50</option><option selected>60</option><option>70</option><option>80</option><option>90</option></select>분</span>
+        <button type="button" class="top-btn accent" style="font-size:11.5px; padding:5px 12px;" onclick="liteFillTimes()">채우기</button>
+      </div>
       <table id="lite-times-table"><tbody id="lite-times-rows"></tbody></table>
-      <div class="lite-hint">"850"처럼 쳐도 08:50으로 맞춰져요.</div>
+      <div class="lite-hint">위 ⚡로 한 번에 채운 뒤 다른 교시만 고치면 돼요. "850"처럼 쳐도 08:50으로 맞춰져요.</div>
       <div style="font-weight:700; font-size:12px; margin:10px 0 4px;">조회 · 점심 · 청소 · 종례 <span class="lite-hint" style="display:inline; font-weight:500;">각각 시작 ~ 끝. 없으면 두 칸을 비워 두세요.</span></div>
       <table id="lite-times-table" style="width:auto;"><tbody>
         <tr><td style="font-weight:700;">조회</td><td><input type="text" id="lite-day-homeroom-s" inputmode="numeric" maxlength="5" placeholder="08:30" onblur="liteTimeNormalize(this)"></td><td>~</td><td><input type="text" id="lite-day-homeroom-e" inputmode="numeric" maxlength="5" placeholder="08:50" onblur="liteTimeNormalize(this)"></td>
@@ -5025,6 +5033,37 @@
     LITE_DAY_KEYS.forEach(function(k) { const r = d[k[0]]; out[k[0]] = r === null ? null : (r && typeof r === 'object' && r.s ? { s: r.s, e: r.e } : (k[0] in d ? null : def[k[0]])); });
     return out;
   }
+  // ⚡ 한 번에 채우기: 1교시 시작·수업 길이·쉬는 시간·점심(N교시 뒤, 길이)으로 모든 교시를 만든다
+  function liteFillRowFromTimes(times) {
+    const count = liteTimesCount();
+    const sel = document.getElementById('lite-fill-lunch-after'); const cur = parseInt(sel.value) || 0;
+    let h = ''; for (let i = 1; i < count; i++) h += '<option value="' + i + '">' + i + '교시 뒤</option>'; sel.innerHTML = h;
+    if (!times || !times.length) return;
+    const s0 = minutesOf(times[0].s), e0 = minutesOf(times[0].e);
+    document.getElementById('lite-fill-start').value = times[0].s || '';
+    const pick = function(id, v) { const el = document.getElementById(id); if (v == null) return; const opts = Array.from(el.options).map(function(o) { return Number(o.value); }); el.value = String(opts.reduce(function(a, b) { return Math.abs(b - v) < Math.abs(a - v) ? b : a; }, opts[0])); };
+    if (s0 !== null && e0 !== null) pick('lite-fill-len', e0 - s0);
+    let best = -1, bestGap = 0, smallGap = null;
+    for (let i = 0; i < times.length - 1; i++) { const g = (minutesOf(times[i + 1].s) || 0) - (minutesOf(times[i].e) || 0); if (g > bestGap) { bestGap = g; best = i; } if (i === 0) smallGap = g; }
+    if (smallGap != null) pick('lite-fill-break', smallGap);
+    if (best >= 0 && best + 1 < count) { sel.value = String(best + 1); pick('lite-fill-lunch', bestGap); } else if (cur && cur < count) sel.value = String(cur); else sel.value = String(Math.min(4, Math.max(1, count - 1)));
+  }
+  function liteFillTimes() {
+    const fmt = function(v) { return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+    const startEl = document.getElementById('lite-fill-start'); liteTimeNormalize(startEl);
+    const start = minutesOf(startEl.value);
+    if (start === null) { customAlert('1교시 시작 시각을 적어 주세요(예: 08:50).'); startEl.focus(); return; }
+    const len = parseInt(document.getElementById('lite-fill-len').value) || 50, brk = parseInt(document.getElementById('lite-fill-break').value) || 10;
+    const lunchAfter = parseInt(document.getElementById('lite-fill-lunch-after').value) || 0, lunch = parseInt(document.getElementById('lite-fill-lunch').value) || 60;
+    const count = liteTimesCount(); const times = []; let cur = start;
+    for (let i = 1; i <= count; i++) { if (cur + len > 23 * 60 + 59) break; times.push({ s: fmt(cur), e: fmt(cur + len) }); cur = cur + len + (i === lunchAfter ? lunch : brk); }
+    liteRenderTimesRows(times, count);
+    // 조회·점심·종례도 맞춰 둔다(청소는 그대로)
+    const set = function(k, s, e) { document.getElementById('lite-day-' + k + '-s').value = s; document.getElementById('lite-day-' + k + '-e').value = e; };
+    if (lunchAfter >= 1 && lunchAfter < times.length) set('lunch', times[lunchAfter - 1].e, times[lunchAfter].s);
+    set('homeroom', fmt(Math.max(0, start - 10)), times[0].s);
+    const last = minutesOf(times[times.length - 1].e); if (last !== null) set('closing', times[times.length - 1].e, fmt(Math.min(23 * 60 + 59, last + 10)));
+  }
   function liteTimesCount() { return Math.max(1, Math.min(10, parseInt(document.getElementById('lite-period-count').value) || 7)); }
   function liteSettings() { try { const s = JSON.parse(localStorage.getItem(LITE_SETTINGS_KEY) || 'null'); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; } }
   function liteSaveSettings(s) { localStorage.setItem(LITE_SETTINGS_KEY, JSON.stringify(s)); }
@@ -5121,8 +5160,9 @@
     liteRenderPicked();
     const times = Array.isArray(s.classTimes) && s.classTimes.length ? s.classTimes : DEFAULT_TIMES;
     document.getElementById('lite-period-count').value = String(times.length);
-    document.getElementById('lite-period-count').onchange = function() { liteRenderTimesRows(liteTimesRead(), liteTimesCount()); };
+    document.getElementById('lite-period-count').onchange = function() { liteRenderTimesRows(liteTimesRead(), liteTimesCount()); liteFillRowFromTimes(liteTimesRead()); };
     liteRenderTimesRows(times, times.length);
+    liteFillRowFromTimes(times);
     const day = liteDay();
     LITE_DAY_KEYS.forEach(function(k) { const r = day[k[0]]; document.getElementById('lite-day-' + k[0] + '-s').value = r ? r.s : ''; document.getElementById('lite-day-' + k[0] + '-e').value = r ? r.e : ''; });
     document.getElementById('lite-backup-filename').innerText = liteBackupFileName();
@@ -5605,7 +5645,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.9';
+  var BUILD_ID = '2026-10-18.10';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
