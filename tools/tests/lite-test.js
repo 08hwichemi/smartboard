@@ -117,6 +117,7 @@ async function openPage(browser) {
   check('내 시간표 칸 편집 가능', await page.evaluate(() => document.getElementById('my-tt-1-1-s').getAttribute('contenteditable') === 'true'));
   check('일과 시간 적용(1교시 08:50)', await page.evaluate(() => currentTimes[0].s === '08:50'));
 
+  await page.evaluate(() => rawSetItem('device-lite-banner-snooze', todayYmdDash())); // 폴더 없음 띠가 검사 중 단추를 가리지 않게
   console.log('== 4. 내 시간표 직접 입력 → 저장 → 다시 열어도 남음');
   await page.click('#my-tt-1-1-s');
   await page.keyboard.type('화학');
@@ -197,6 +198,36 @@ async function openPage(browser) {
   await page.evaluate(() => document.getElementById('custom-alert-ok-btn').click());
   const restored = await page.evaluate(async () => { const data = collectBackupData(); localStorage.removeItem('lite-roster-1-2'); await applyBackupText(JSON.stringify(data)); return liteRosterGet(1, 2).length; });
   check('백업 글로 복원하면 명단 돌아옴', restored === 3);
+
+  console.log('== 6b. 폴더 백업: 바뀌면 저장, 5분 간격, 지난주 파일, 줄어들면 안 덮어씀 (가짜 폴더 손잡이)');
+  await page.evaluate(() => {
+    window.__files = {}; window.__perm = 'granted';
+    const fileHandle = (name) => ({ getFile: async () => ({ text: async () => { if (!(name in window.__files)) throw new Error('없음'); return window.__files[name]; } }), createWritable: async () => ({ write: async (s) => { window.__files[name] = s; }, close: async () => {} }) });
+    window.__dir = { name: '내 스마트보드 백업', queryPermission: async () => window.__perm, requestPermission: async () => { window.__perm = 'granted'; return 'granted'; },
+      getFileHandle: async (name, o) => { if (!(name in window.__files) && !(o && o.create)) throw new Error('없음'); return fileHandle(name); } };
+    liteDirHandle = window.__dir;
+    rawRemoveItem('device-lite-backup-at'); rawRemoveItem('device-lite-backup-week-at'); liteChangedSinceBackup = true;
+  });
+  await page.evaluate(() => liteBackupTick()); await wait(300);
+  let files = await page.evaluate(() => Object.keys(window.__files));
+  check('첫 저장: 최신 + 지난주 파일 둘 다', files.includes('내 스마트보드_백업.json') && files.includes('내 스마트보드_백업_지난주.json'), files);
+  check('저장 뒤 "바뀐 자료" 표시 꺼짐', await page.evaluate(() => liteChangedSinceBackup === false && !localStorage.getItem('device-lite-changed')));
+  await page.evaluate(() => { window.__files['내 스마트보드_백업_지난주.json'] = 'OLD'; localStorage.setItem('cal-memo-2026-11-11', '새 메모'); });
+  check('자료가 바뀌면 저장이 예약됨', await page.evaluate(() => liteChangedSinceBackup === true && liteBackupTimer !== null));
+  await page.evaluate(() => liteBackupTick()); await wait(300);
+  check('5분 안에는 다시 안 씀(예약만)', (await page.evaluate(() => JSON.parse(window.__files['내 스마트보드_백업.json'])['cal-memo-2026-11-11'])) === undefined);
+  await page.evaluate(() => rawSetItem('device-lite-backup-at', String(Date.now() - 6 * 60 * 1000)));
+  await page.evaluate(() => liteBackupTick()); await wait(300);
+  check('5분 지나면 최신 파일에 새 메모 들어감', (await page.evaluate(() => JSON.parse(window.__files['내 스마트보드_백업.json'])['cal-memo-2026-11-11'])) === '새 메모');
+  check('지난주 파일은 일주일 안엔 그대로', (await page.evaluate(() => window.__files['내 스마트보드_백업_지난주.json'])) === 'OLD');
+  await page.evaluate(() => { rawSetItem('device-lite-backup-week-at', String(Date.now() - 8 * 24 * 3600 * 1000)); rawSetItem('device-lite-backup-at', String(Date.now() - 6 * 60 * 1000)); localStorage.setItem('cal-memo-2026-11-12', '둘째'); });
+  await page.evaluate(() => liteBackupTick()); await wait(300);
+  check('일주일 지나면 지난주 파일 새로 씀', (await page.evaluate(() => window.__files['내 스마트보드_백업_지난주.json'])) !== 'OLD');
+  // 자료가 확 줄었을 때(브라우저 자료 삭제 등)는 덮어쓰지 않고 띠
+  await page.evaluate(() => { window.__files['내 스마트보드_백업.json'] = JSON.stringify(Object.assign({}, collectBackupData(), { big: 'x'.repeat(200000) })); rawSetItem('device-lite-backup-at', String(Date.now() - 6 * 60 * 1000)); localStorage.setItem('cal-memo-2026-11-13', '셋째'); });
+  await page.evaluate(() => liteBackupTick()); await wait(300);
+  check('백업 파일보다 훨씬 작으면 안 덮어쓰고 띠', (await page.evaluate(() => window.__files['내 스마트보드_백업.json'].indexOf('셋째'))) === -1 && await vis('#lite-backup-banner') && (await page.textContent('#lite-backup-banner-text')).includes('훨씬 적어요'));
+  await page.evaluate(() => { liteBackupHideBanner(); liteDirHandle = null; });
 
   console.log('== 7. 설정 창 다시 열기·닫기, 설명서');
   await page.click('#rail-settings-btn'); await wait(200);
