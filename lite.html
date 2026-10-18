@@ -2143,6 +2143,7 @@
     html.lite .tab-tt-btn, html.lite .m-tt-change-btn, html.lite .m-tt-nav, html.lite #m-tt-teacher-select, html.lite #rail-persontt-btn, html.lite #btn-logout,
     html.lite #an-school-row, html.lite #active-semester-label, html.lite #login-gate-overlay, html.lite #my-tt-revert-btn, html.lite #user-chip-admin-badge { display: none !important; }
     html.lite #upcoming-schedule-pill { flex: 1; }
+    html.lite #backup-overlay { z-index: 1001; } /* 설정 창(1000)에서 열어도 그 위에 */
     html.lite #sgb-pane-find { display: none !important; }
     /* 휴대폰 화면: 감독·공지 줄, 다른 선생님 시간표 고르기(모바일 규칙이 더 구체적이라 여기서 다시 이김) */
     html.lite #m-duty-row, html.lite #my-tt-widget #m-tt-teacher-select, html.lite #my-tt-widget .m-tt-nav, html.lite .m-menu-item.school-only { display: none !important; }
@@ -2169,7 +2170,7 @@
     #lite-times-table td { padding: 3px 4px; }
     #lite-times-table input { width: 64px; padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-main); font: inherit; font-size: 12px; text-align: center; }
     #lite-times-table .bad { color: #E5484D; font-weight: 700; }
-    #lite-backup-banner { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 9000; background: var(--accent-color); color: var(--on-accent, #fff); padding: 10px 16px; border-radius: 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: none; align-items: center; gap: 10px; max-width: calc(100vw - 32px); }
+    #lite-backup-banner { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 1090; background: var(--accent-color); color: var(--on-accent, #fff); padding: 10px 16px; border-radius: 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: none; align-items: center; gap: 10px; max-width: calc(100vw - 32px); }
     #lite-backup-banner button { font: inherit; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 8px; border: 0; cursor: pointer; background: #fff; color: #222; }
     #lite-backup-banner button.ghost { background: transparent; color: inherit; border: 1px solid rgba(255,255,255,0.6); }
     #lite-roster-tools { display: none; flex-direction: column; gap: 6px; padding: 8px 0 10px; border-bottom: 1px dashed var(--border-color); margin-bottom: 6px; }
@@ -2628,7 +2629,7 @@
 </div>
 
 <!-- 🧳 개인판 설정(처음 열 때 = 첫 설정, 그 뒤엔 레일 ⚙️ 설정) -->
-<div class="overlay" id="lite-setup-overlay" style="z-index: 9500;">
+<div class="overlay" id="lite-setup-overlay" style="z-index: 1000;"><!-- 알림창(1100)보다 아래, 다른 창(999)보다 위 -->
   <div class="modal-box">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
       <div style="font-weight: 800; font-size: 17px;">🧳 <span id="lite-setup-title">처음 설정</span></div>
@@ -5605,7 +5606,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.8';
+  var BUILD_ID = '2026-10-18.9';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 

@@ -79,6 +79,13 @@ async function openPage(browser) {
 
   console.log('== 2. 첫 설정: 이름·학교·담임 반 저장');
   await page.screenshot({ path: 'lite-setup.png' });
+  // 📁 백업 폴더 정하기 → 안내 알림창이 설정 창 "위"에 떠야 한다(예전엔 설정 창 z-index가 더 커서 뒤에 숨어 눌리지 않았음)
+  await page.click('#lite-sec-backup button:has-text("백업 폴더 정하기")'); await wait(300);
+  check('폴더 정하기 알림창이 설정 창 위에 뜸', await page.isVisible('#custom-alert-overlay') && await page.evaluate(() => parseInt(getComputedStyle(document.getElementById('custom-alert-overlay')).zIndex) > parseInt(getComputedStyle(document.getElementById('lite-setup-overlay')).zIndex)));
+  await page.click('#custom-alert-ok-btn'); await wait(200);
+  await page.click('#lite-sec-backup button:has-text("백업·복원 창")'); await wait(200);
+  check('백업·복원 창도 설정 창 위에', await page.isVisible('#backup-overlay') && await page.evaluate(() => parseInt(getComputedStyle(document.getElementById('backup-overlay')).zIndex) > parseInt(getComputedStyle(document.getElementById('lite-setup-overlay')).zIndex)));
+  await page.evaluate(() => { document.getElementById('backup-overlay').style.display = 'none'; });
   await page.fill('#lite-name', '김하늘');
   await page.fill('#lite-school-q', '부광');
   await page.click('text=🔍 찾기');
