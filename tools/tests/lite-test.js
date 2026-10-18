@@ -242,11 +242,12 @@ async function openPage(browser) {
       const buf = await window.__blob.arrayBuffer();
       const head = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array' }).Sheets['명렬표'], { header: 1 })[1].slice(0, 4);
       const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws = wb.getWorksheet('명렬표');
-      return { name: window.__dlName2, plain: false, head: head, fill: ws.getCell('A2').fill && ws.getCell('A2').fill.fgColor && ws.getCell('A2').fill.fgColor.argb, bold: ws.getCell('A2').font && ws.getCell('A2').font.bold, frozen: ws.views[0] && ws.views[0].ySplit, note: String(ws.getCell('A1').value || '').slice(0, 6) };
+      const row3 = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array' }).Sheets['명렬표'], { header: 1 })[2] || [];
+      return { name: window.__dlName2, row3Empty: row3.every(v => v === '' || v == null), plain: false, head: head, fill: ws.getCell('A2').fill && ws.getCell('A2').fill.fgColor && ws.getCell('A2').fill.fgColor.argb, bold: ws.getCell('A2').font && ws.getCell('A2').font.bold, frozen: ws.views[0] && ws.views[0].ySplit, note: String(ws.getCell('A1').value || '').slice(0, 6) };
     });
     check('명렬표 양식 엑셀 받기(학년·반·번호·이름)', tpl.name === '명렬표_양식.xlsx' && JSON.stringify(tpl.head) === JSON.stringify(['학년', '반', '번호', '이름']), tpl);
     if (tpl.plain) console.log('  ⚠️ ExcelJS 없음 — 민무늬 양식으로만 검사 (EXCELJS_PATH=…/exceljs.min.js)');
-    else check('양식 서식: 머리 색·굵게·틀 고정·안내 줄', tpl.fill === 'FF1F3A5F' && tpl.bold === true && tpl.frozen === 2 && tpl.note.indexOf('📋') === 0, tpl);
+    else { check('양식 서식: 머리 색·굵게·틀 고정·안내 줄', tpl.fill === 'FF1F3A5F' && tpl.bold === true && tpl.frozen === 2 && tpl.note.indexOf('📋') === 0, tpl); check('예시 줄 없음(3행이 비어 있음)', tpl.row3Empty === true, tpl); }
     await page.evaluate(() => document.getElementById('custom-alert-ok-btn').click());
     // 받은 양식을 그대로 📥 엑셀로 올리면 읽히는지(예시 3명: 1-1 두 명, 1-2 한 명)
     const imported = await page.evaluate(async () => {

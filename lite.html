@@ -5424,7 +5424,7 @@
   async function liteRosterTemplate() {
     const name = '명렬표_양식.xlsx';
     const head = ['학년', '반', '번호', '이름', '학생번호', '어머니번호', '아버지번호'];
-    const examples = [[1, 1, 1, '김하늘 (예시 — 지우고 쓰세요)', '010-0000-0000', '010-0000-0000', ''], [1, 1, 2, '이바다 (예시)', '', '', ''], [1, 2, 1, '박산들 (예시 — 1학년 2반 1번)', '', '', '']];
+    const examples = []; // 예시 줄 없음 — 다른 엑셀에서 바로 붙여 넣을 수 있게(3행부터 빈 줄)
     try {
       await sccLoadExcelJS();
       const wb = new ExcelJS.Workbook();
@@ -5435,13 +5435,13 @@
       // 1행: 안내
       ws.mergeCells('A1:G1');
       const note = ws.getCell('A1');
-      note.value = '📋 내 스마트보드 명렬표 양식 — 학년·반·번호는 숫자, 이름은 꼭 채우고 전화는 비워도 돼요. 예시 줄은 지우고 쓰세요. 여러 학년·반을 한 파일에 넣어도 돼요.';
+      note.value = '📋 내 스마트보드 명렬표 양식 — 3행부터 적으세요. 학년·반·번호는 숫자(예: 1 / 2 / 3 = 1학년 2반 3번), 이름은 꼭, 전화는 비워도 돼요. 여러 학년·반을 한 파일에 넣어도 돼요.';
       note.font = { name: '맑은 고딕', size: 10, color: { argb: 'FF5B6472' } }; note.alignment = { vertical: 'middle' }; ws.getRow(1).height = 22;
       // 2행: 머리
       const hr = ws.getRow(2); hr.values = head; hr.height = 24;
       hr.eachCell(function(c) { c.font = { name: '맑은 고딕', bold: true, size: 11, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accent } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
-      // 3~5행 예시(회색 기울임), 이어서 빈 줄 30개(테두리만)
-      for (let r = 0; r < examples.length + 30; r++) {
+      // 3행부터 빈 줄 40개(테두리·줄무늬만)
+      for (let r = 0; r < examples.length + 40; r++) {
         const row = ws.getRow(3 + r); const ex = examples[r];
         if (ex) row.values = ex;
         row.height = 20;
@@ -5452,7 +5452,7 @@
           if (!ex && r % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6FA' } };
         }
       }
-      ['A', 'B', 'C'].forEach(function(col) { for (let r = 3; r <= 2 + examples.length + 30; r++) ws.getCell(col + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [1, 99], showErrorMessage: true, errorTitle: '숫자만', error: '학년·반·번호는 1~99 숫자로 적어 주세요.' }; });
+      ['A', 'B', 'C'].forEach(function(col) { for (let r = 3; r <= 2 + examples.length + 40; r++) ws.getCell(col + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [1, 99], showErrorMessage: true, errorTitle: '숫자만', error: '학년·반·번호는 1~99 숫자로 적어 주세요.' }; });
       ws.autoFilter = 'A2:G2';
       const buf = await wb.xlsx.writeBuffer();
       liteSaveFile(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name);
@@ -5463,7 +5463,7 @@
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명렬표'); XLSX.writeFile(wb, name);
       } catch (e2) { customAlert('양식을 만들지 못했어요: ' + (e2 && e2.message ? e2.message : e2)); return; }
     }
-    customAlert("'" + name + "'을 받았어요.\n학년·반·번호·이름을 채우고(전화는 비워도 돼요) 📥 엑셀로 올리면 돼요.\n여러 학년·반을 한 파일에 넣어도 한 번에 들어가고, 나이스에서 받은 '학번'(10203) 양식도 그대로 읽혀요.");
+    customAlert("'" + name + "'을 받았어요.\n3행부터 학년·반·번호·이름을 채우고(다른 엑셀에서 붙여 넣어도 돼요, 전화는 비워도 돼요) 📥 엑셀로 올리면 돼요.\n여러 학년·반을 한 파일에 넣어도 한 번에 들어가고, 나이스에서 받은 '학번'(10203) 양식도 그대로 읽혀요.");
   }
   function liteRosterTogglePaste(show) {
     const box = document.getElementById('lite-roster-paste');
@@ -5712,7 +5712,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.13';
+  var BUILD_ID = '2026-10-18.14';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
