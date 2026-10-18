@@ -2142,11 +2142,13 @@
     html.lite .tab-tt-btn, html.lite .m-tt-change-btn, html.lite .m-tt-nav, html.lite #m-tt-teacher-select, html.lite #rail-persontt-btn, html.lite #btn-logout,
     html.lite #an-school-row, html.lite #active-semester-label, html.lite #login-gate-overlay, html.lite #my-tt-revert-btn, html.lite #user-chip-admin-badge { display: none !important; }
     html.lite #upcoming-schedule-pill { flex: 1; }
+    html.lite #sgb-pane-find { display: none !important; }
     /* 휴대폰 화면: 감독·공지 줄, 다른 선생님 시간표 고르기(모바일 규칙이 더 구체적이라 여기서 다시 이김) */
     html.lite #m-duty-row, html.lite #my-tt-widget #m-tt-teacher-select, html.lite #my-tt-widget .m-tt-nav, html.lite .m-menu-item.school-only { display: none !important; }
     html.lite .m-menu-item.lite-only { display: block; }
     html.lite #news-widget { flex: 1; }
     html.lite .lite-only { display: revert; }
+    html.lite #news-widget .lite-only { display: flex !important; }
     html.lite .school-only { display: none !important; }
     .lite-only { display: none; }
     html.lite #rail-settings-btn { display: flex !important; }
@@ -2380,6 +2382,7 @@
         <input type="file" id="lite-roster-excel" accept=".xlsx,.xls" style="display:none;" onchange="liteRosterImportExcel(this.files[0]); this.value='';">
         <button class="top-btn accent" style="font-size:11px; padding:4px 9px;" onclick="document.getElementById('lite-roster-excel').click()" title="'학번'(예: 10203 = 1학년 2반 3번)·'이름' 열이 있는 엑셀 — 학생번호·어머니번호·아버지번호 열은 있으면 같이 읽어요. 파일에 든 모든 학년·반이 한 번에 들어가요.">📥 엑셀</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTogglePaste()" title="고른 학년·반에 이름을 한 줄에 한 명씩 붙여 넣어요">📋 붙여넣기</button>
+        <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterTemplate()" title="학번·이름·전화 열이 있는 빈 엑셀 양식을 받아요 — 채워서 📥 엑셀로 올리면 돼요">📄 양식 받기</button>
         <button class="top-btn" style="font-size:11px; padding:4px 9px;" onclick="liteRosterClearClass()" title="고른 반의 명단만 지워요">🗑 이 반 지우기</button>
         <span id="lite-roster-count" style="font-size:11px; color:var(--text-sub); margin-left:auto;"></span>
       </div>
@@ -2992,6 +2995,7 @@
           <div class="w-chip" style="width:19px; height:19px; border-radius:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 0 1 8-8"/><path d="M4 11a8 8 0 0 0 8 8"/><circle cx="12" cy="11" r="2.2"/><path d="M12 3v1.5M12 17.5V19M20 11h-1.5M5.5 11H4"/></svg></div>
           뉴스
         </div>
+        <div class="lite-only" style="display:none; gap:2px; margin-left:auto;"><button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', -1)">A-</button><button class="top-btn" style="padding:2px 6px; font-size:10px;" onclick="changeFontSize('noti', 1)">A+</button></div>
         <div id="news-tab-switch" style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:3px;"></div>
       </div>
       <ul class="recent-notices" id="news-list">
@@ -5277,6 +5281,18 @@
     await liteRosterAfterChange(parseInt(first[0]), parseInt(first[1]));
     customAlert('명단을 넣었어요: ' + summary + '\n\n좌석배치표·결석계·수행평가·생기부·양식에서 바로 쓸 수 있어요.');
   }
+  // 빈 엑셀 양식(학번·이름·학생번호·어머니번호·아버지번호) — 채워서 📥 엑셀로 올리면 parseStudentWorkbook이 그대로 읽는다
+  function liteRosterTemplate() {
+    try {
+      const rows = [['학번', '이름', '학생번호', '어머니번호', '아버지번호'], ['10101', '김하늘(예시 — 지우고 쓰세요)', '010-0000-0000', '010-0000-0000', ''], ['10102', '이바다(예시)', '', '', ''], ['10201', '박산들(예시 — 1학년 2반 1번)', '', '', '']];
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '명렬표');
+      XLSX.writeFile(wb, '명렬표_양식.xlsx');
+      customAlert("'명렬표_양식.xlsx'를 받았어요.\n학번은 5자리(예: 10203 = 1학년 2반 3번), 이름은 꼭 채우고 전화는 비워도 돼요.\n여러 학년·반을 한 파일에 넣어도 한 번에 들어가요.");
+    } catch (e) { customAlert('양식을 만들지 못했어요: ' + (e && e.message ? e.message : e)); }
+  }
   function liteRosterTogglePaste(show) {
     const box = document.getElementById('lite-roster-paste');
     const on = show === undefined ? box.style.display !== 'flex' : !!show;
@@ -5487,7 +5503,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-18.1';
+  var BUILD_ID = '2026-10-18.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -21713,7 +21729,7 @@
     const c = anCfg();
     const setVal = function(id, v) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
     const chip = function(on, attrs, label, title) { return '<button class="nt-chip' + (on ? ' on' : '') + '" ' + attrs + (title ? ' title="' + title + '"' : '') + '>' + label + '</button>'; };
-    document.getElementById('an-tpls').innerHTML = AN_TPLS.map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')" onmouseenter="anPeekTpl(\'' + t.k + '\')" onmouseleave="anPeekTpl(null)"', t.n, '마우스를 올리면 미리보기에 이 틀의 예시가 보여요. 누르면 지금 제목·내용이 이 예시로 바뀌어요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
+    document.getElementById('an-tpls').innerHTML = AN_TPLS.filter(function(t) { return !(LITE && t.k === 'home'); }).map(function(t) { return chip(false, 'data-tpl="' + t.k + '" onclick="anUseTpl(\'' + t.k + '\')" onmouseenter="anPeekTpl(\'' + t.k + '\')" onmouseleave="anPeekTpl(null)"', t.n, '마우스를 올리면 미리보기에 이 틀의 예시가 보여요. 누르면 지금 제목·내용이 이 예시로 바뀌어요(모양·글꼴·쪽 설정은 그대로)'); }).join('');
     setVal('an-title', c.title); setVal('an-sub', c.sub);
     document.getElementById('an-school').checked = c.school;
     setVal('an-dept', c.dept); setVal('an-issue', c.issue);
@@ -24301,7 +24317,7 @@
   const fmTourPe = fmTourPeAs(PE_DEMO), fmTourPeMs = fmTourPeAs(PE_DEMO_MS), fmTourPeWord = fmTourPeAs(PE_DEMO_WORD);
   // 안내문: 가정통신문 틀을 예시로(저장 안 함)
   const fmTourAnMore = function() { fmTourAn(); const d = document.getElementById('an-more'); if (d) d.open = true; };
-  const fmTourAn = function() { fmDemoSet(true); fmDemo.an = Object.assign({}, AN_TPLS[1].d, { endFrom: '○○고등학교장' }); if (fmCfg().kind !== 'an') fmSetKind('an'); else { fmFillForm(); fmRender(); } };
+  const fmTourAn = function() { fmDemoSet(true); fmDemo.an = Object.assign({}, AN_TPLS[LITE ? 0 : 1].d, { endFrom: '○○고등학교장' }); if (fmCfg().kind !== 'an') fmSetKind('an'); else { fmFillForm(); fmRender(); } };
   // 시정표: 평상시 단계는 선생님 설정 그대로(바꾸지 않음 — 지금 보던 게 시험 기간이어도 평상시로 보여 줌), 시험 기간 단계는 사용자 양식 예시(BS_EX_DEMO)
   const fmTourBsAs = function(mode) { return function() { fmDemoSet(true); fmDemo.bsMode = mode; if (fmCfg().kind !== 'bs') fmSetKind('bs'); else { fmFillForm(); fmRender(); } }; };
   const fmTourBs = fmTourBsAs('normal'), fmTourBsExam = fmTourBsAs('exam'), fmTourBsMock = fmTourBsAs('mock'), fmTourBsJs = fmTourBsAs('jungsi');

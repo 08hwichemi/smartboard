@@ -44,6 +44,13 @@ async function openPage(browser) {
     if (url.includes('open-meteo.com')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ current_weather: { temperature: 12, weathercode: 1 }, daily: { temperature_2m_max: [15], temperature_2m_min: [5] }, hourly: { time: [], temperature_2m: [], weathercode: [] }, current: { pm10: 20, pm2_5: 10 } }) });
     }
+    if (url.includes('xlsx.full.min.js')) {
+      // 앱은 CDN에서 받지만 여기선 CDN이 막혀 있어 로컬 파일을 준다: XLSX_PATH=…/xlsx.full.min.js (없으면 양식 검사만 건너뜀)
+      const cands = [process.env.XLSX_PATH, path.join(__dirname, 'node_modules/xlsx/dist/xlsx.full.min.js'), '/opt/node22/lib/node_modules/xlsx/dist/xlsx.full.min.js'].filter(Boolean);
+      const f = cands.find(x => fs.existsSync(x));
+      if (f) return route.fulfill({ body: fs.readFileSync(f, 'utf8'), contentType: 'application/javascript' });
+      return route.abort();
+    }
     if (url.includes('/functions/v1/news')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ categories: { '종합': [{ title: '개인판 뉴스 테스트', link: 'https://example.com', source: '테스트', pubDate: new Date().toISOString() }] } }) });
     }
@@ -143,6 +150,40 @@ async function openPage(browser) {
   // 전화번호 수정(개인판은 브라우저에)
   await page.evaluate(() => liteRosterUpdatePhone(10202, '010-9', '010-8', ''));
   check('전화 수정 저장', (await page.evaluate(() => liteRosterGet(1, 2)[1].mother_phone)) === '010-8');
+
+  console.log('== 5b. 명렬표가 다른 화면에 그대로 이어지는지(화면 흐름으로)');
+  await page.click('#roster-modal-box button:has-text("닫기")'); await wait(200);
+  await page.click('#rail-seatchart-btn'); await wait(900);
+  check('좌석배치표: 담임 반(1-2) 명단 3명 자동', await page.evaluate(() => Array.isArray(scStudents) && scStudents.length === 3 && scStudents[0].name === '김하늘'), await page.evaluate(() => scStudents));
+  await page.click('#rail-absence-btn'); await wait(900);
+  check('결석계: 담임 반 명단 3명', await page.evaluate(() => Array.isArray(abRoster) && abRoster.length === 3), await page.evaluate(() => abRoster));
+  await page.click('#rail-sgb-btn'); await wait(500);
+  check('생기부: 길라잡이 찾기 칸 없음(문장 점검만)', !(await vis('#sgb-pane-find')) && await vis('#sgb-pane-check'));
+  await page.evaluate(() => setSgbTab('edit')); await wait(900);
+  check('생기부 편집기: 담임 반 명단 3명', await page.evaluate(() => Array.isArray(seRoster) && seRoster.length === 3), await page.evaluate(() => seRoster));
+  await page.click('#rail-forms-btn'); await wait(800);
+  await page.evaluate(() => fmSetKind('an')); await wait(400);
+  check('안내문 틀에 🏫 가정통신문 없음', !(await page.textContent('#an-tpls')).includes('가정통신문') && (await page.textContent('#an-tpls')).includes('수행평가'));
+  await page.click('#rail-home-btn'); await wait(400);
+  check('뉴스 칸에 글씨 크기 A-/A+', await vis('#news-widget .lite-only button'));
+  if (await page.evaluate(() => typeof XLSX !== 'undefined')) {
+    await page.evaluate(() => { window.__dlName2 = null; XLSX.writeFile = function(wb, name) { window.__dlName2 = name; window.__wb = wb; }; });
+    await page.click('#rail-roster-btn'); await wait(300);
+    await page.click('text=📄 양식 받기'); await wait(200);
+    check('명렬표 양식 엑셀 받기', (await page.evaluate(() => window.__dlName2)) === '명렬표_양식.xlsx' && await page.evaluate(() => XLSX.utils.sheet_to_json(window.__wb.Sheets['명렬표'], { header: 1 })[0][0] === '학번'));
+    await page.evaluate(() => document.getElementById('custom-alert-ok-btn').click());
+    // 받은 양식을 그대로 📥 엑셀로 올리면 읽히는지(예시 3명: 1-1 두 명, 1-2 한 명)
+    const imported = await page.evaluate(async () => {
+      const rows = [['학번', '이름', '학생번호', '어머니번호', '아버지번호'], ['30101', '가나다', '010-1', '', ''], ['30102', '라마바', '', '', ''], ['30201', '사아자', '', '', '']];
+      const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명렬표');
+      const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      window.customConfirm = async () => true; window.customAlert = async () => {};
+      await liteRosterImportExcel(new File([buf], 't.xlsx'));
+      return [liteRosterGet(3, 1).length, liteRosterGet(3, 2).length, liteRosterGet(3, 1)[0].student_phone];
+    });
+    check('양식대로 채운 엑셀 올리기 → 3학년 1반 2명·2반 1명', imported[0] === 2 && imported[1] === 1 && imported[2] === '010-1', imported);
+    await page.click('#roster-modal-box button:has-text("닫기")'); await wait(200);
+  } else console.log('  ⚠️ XLSX 없음 — 양식 받기·엑셀 올리기 검사 건너뜀 (XLSX_PATH=…/xlsx.full.min.js)');
 
   console.log('== 6. 백업: 파일 내려받기에 설정·명단 포함, 복원');
   const bk = await page.evaluate(() => collectBackupData());
