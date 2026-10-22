@@ -1,7 +1,7 @@
 // 🔁 확장 프로그램 자동 조회: 가짜 나이스(eXBuilder6처럼 생긴 화면 — 위 메뉴 교과담임 → 접힌 왼쪽 메뉴 시간표관리 → 전체시간표조회,
 // 변경수업조회 동그라미, 일자 칸 + 하루빼기/더하기 단추, 눌러서 펼치는 학년 목록, 조회 단추, 보고서 뷰어 프레임)에서
-// 나이스에 로그인하면(시각이 지났고 오늘 안 했으면) 저절로 1·2·3학년을 지난주~3주 뒤로 조회 → 스마트보드 탭에 한꺼번에(auto) 넘김,
-// 하루 한 번만, 시각 전엔 안 함, 실패하면 이유를 남기고 스마트보드에 알림, "지금 해 보기".
+// 나이스에 로그인하면(시각이 지났고 오늘 안 했으면) 저절로 1·2·3학년을 이번 주 월~금으로 조회 → 스마트보드 탭에 한꺼번에(auto) 넘김,
+// 그날 한 번(3시간 지나 다시 로그인하면 한 번 더), 시각 전엔 안 함, 실패하면 이유를 남기고 스마트보드에 알림, "지금 해 보기".
 // 실행: cd tools/tests && NODE_PATH=/opt/node22/lib/node_modules node neisauto-test.js
 const { chromium } = require('playwright');
 const path = require('path');
@@ -100,20 +100,32 @@ function reportXml(url) {
   check('자동 조회 성공(1·2·3학년)', st.lastRun && st.lastRun.ok && JSON.stringify(st.lastRun.grades) === '[1,2,3]', st.lastRun);
   check('메뉴를 따라 들어감(교과담임 → 메뉴판 시간표관리 → 왼쪽 전체시간표조회 → 변경수업조회)', st.lastRun && ['위 메뉴 교과담임', '메뉴판 시간표관리', '왼쪽 메뉴 전체시간표조회', '변경수업조회 고름'].every((s) => st.lastRun.steps.some((x) => x.s === s)), st.lastRun && st.lastRun.steps.map((x) => x.s));
   const want = (d) => ymd(d).replace(/-/g, '.') + '.';
-  check('일자 = 지난주(7일 전) ~ 3주 뒤', reportsServed.length === 3 && reportsServed.every((q) => decodeURIComponent(q).includes('f=' + want(add(-7))) && decodeURIComponent(q).includes('t=' + want(add(21))) && q.includes('c=1')), reportsServed.map(decodeURIComponent));
+  const wd0 = new Date().getDay(), monOff = wd0 === 0 ? -6 : 1 - wd0;
+  check('일자 = 이번 주 월 ~ 금', reportsServed.length === 3 && reportsServed.every((q) => decodeURIComponent(q).includes('f=' + want(add(monOff))) && decodeURIComponent(q).includes('t=' + want(add(monOff + 4))) && q.includes('c=1')), reportsServed.map(decodeURIComponent));
   check('학년 1 → 2 → 3 차례로', reportsServed.map((q) => /g=(\d)/.exec(q)[1]).join() === '1,2,3', reportsServed);
   check('오늘 한 것으로 기록', st.lastAutoDate === ymd(new Date()), st.lastAutoDate);
   await wait(800);
   const got = await sb.evaluate(() => window.got);
   check('스마트보드엔 끝난 뒤 한꺼번에(3개, 자동 표시) — 하나씩 따로 오지 않음', got.length >= 1 && got.every((g) => g.length === 3) && got[0].every((r) => r.auto), got);
 
-  console.log('== 3. 하루 한 번: 다시 로그인해도 안 함');
+  console.log('== 3. 곧바로 다시 로그인하면 안 함 · 3시간 지나 다시 로그인하면 한 번 더');
   const n3 = reportsServed.length;
   await neis.reload(); await wait(2500);
-  check('오늘은 다시 조회 안 함', reportsServed.length === n3, reportsServed.length - n3);
+  check('3시간 안에 다시 로그인하면 조회 안 함', reportsServed.length === n3, reportsServed.length - n3);
+  if (weekday) {
+    await sb.evaluate((ids) => window.postMessage({ __sbNeis: 'ack', ids: ids }, '*'), got[got.length - 1].map((r) => r.id)); await wait(300);
+    await pop.evaluate(() => chrome.storage.local.set({ lastAutoAt: Date.now() - 4 * 3600000 }));
+    const at3 = (await status()).lastRun.at;
+    await neis.reload();
+    for (let i = 0; i < 60 && (await status()).lastRun.at === at3; i++) await wait(500);
+    await wait(500);
+    check('3시간 지나 다시 로그인하면 한 번 더(1·2·3학년)', reportsServed.length === n3 + 3 && (await status()).lastRun.ok, reportsServed.length - n3);
+    await neis.reload(); await wait(2500);
+    check('그 뒤 곧바로 다시 로그인하면 또 안 함', reportsServed.length === n3 + 3, reportsServed.length - n3);
+  } else console.log('  (주말이라 로그인 조회는 건너뜀)');
 
   console.log('== 4. 실패하면 이유를 남기고 스마트보드에 알림 + "지금 해 보기"');
-  await sb.evaluate((ids) => window.postMessage({ __sbNeis: 'ack', ids: ids }, '*'), got[got.length - 1].map((r) => r.id)); await wait(300);
+  await sb.evaluate((ids) => window.postMessage({ __sbNeis: 'ack', ids: ids }, '*'), (await sb.evaluate(() => window.got)).flat().map((r) => r.id)); await wait(300);
   breakGradeList = true; await neis.reload(); await wait(1500);
   const n4 = reportsServed.length;
   await bg({ t: 'runNow' });
