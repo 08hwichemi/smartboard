@@ -2181,7 +2181,7 @@
 <body onload="bootAuth()">
 
 <div id="updateBar" class="updatebar" hidden>
-  <span id="updateBarText">🔄 새 버전이 있습니다. 새로고침해서 최신 화면으로 보세요.</span>
+  <span id="updateBarText">🔄 새 버전이 있습니다. 지금 새로고침하거나, 다음에 켤 때(또는 내일) 저절로 바뀌어요.</span>
   <button type="button" id="updateReload">새로고침</button>
   <button type="button" id="updateClose" class="updatebar-x" aria-label="닫기">&times;</button>
 </div>
@@ -5793,6 +5793,7 @@
           if (alreadyTriedVersion(t)) return;
           SERVER_VERSION = t;
           showUpdateBar();
+          maybeAutoReload();
         }
       })
       .catch(function() {});
@@ -5829,6 +5830,48 @@
     showMobileDebugError('비동기 오류: ' + msg);
   });
 
+  // ----- 새 판 저절로 받기 -----
+  // 띠의 "새로고침"을 잘 안 누르셔서(10/22 사용자), 화면을 쓰는 중이 아닐 때는 저절로 새 판으로 바꾼다.
+  //  ① 막 켰을 때: 연 지 2분 안이고 아직 아무것도 안 만졌으면 바로 — 컴퓨터를 다시 켜서 브라우저가 옛 화면을
+  //     캐시에서 되살렸을 때도 선생님이 쓰기 전에 바뀐다.
+  //  ② 다음 날: 컴퓨터를 안 끄고 둬서 어제 연 화면이 그대로면, 1분 동안 안 만졌을 때.
+  //  같은 날 쓰는 중에는 띠만 띄운다(수업 중에 화면이 깜빡이지 않게). 쓰던 글·저장 안 한 감독표가 있으면 미룬다.
+  //  version.txt가 판 번호 꼴이고 지금 판보다 새것일 때만(캐시가 섞여 옛 판을 줄 때 되돌아가지 않게).
+  var PAGE_OPENED_AT = Date.now();
+  var PAGE_OPENED_DAY = new Date().toDateString();
+  var lastUserInputAt = 0;
+  var autoReloadStarted = false;
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function(ev) {
+    document.addEventListener(ev, function() { lastUserInputAt = Date.now(); }, { capture: true, passive: true });
+  });
+  function versionKey(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})\.(\d+)$/.exec(String(v || ''));
+    return m ? Number(m[1] + m[2] + m[3]) * 10000 + Number(m[4]) : null;
+  }
+  function isNewerVersion(v) {
+    var a = versionKey(v), b = versionKey(BUILD_ID);
+    return a !== null && b !== null && a > b;
+  }
+  function autoReloadBusy() {
+    var ae = document.activeElement;
+    if (ae && ae !== document.body && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable)) return true;
+    if (typeof dutyEditMode !== 'undefined' && dutyEditMode && dutyHasUnsaved()) return true;
+    return false;
+  }
+  async function maybeAutoReload() {
+    if (autoReloadStarted || !SERVER_VERSION || !isNewerVersion(SERVER_VERSION) || alreadyTriedVersion(SERVER_VERSION)) return;
+    var now = Date.now();
+    var justOpened = now - PAGE_OPENED_AT < 2 * 60 * 1000 && !lastUserInputAt;
+    var nextDay = new Date().toDateString() !== PAGE_OPENED_DAY && now - lastUserInputAt > 60 * 1000;
+    if (!(justOpened || nextDay) || autoReloadBusy()) return;
+    autoReloadStarted = true;
+    // 공용판은 아직 서버에 못 올린 자료를 먼저 올린다(못 올려도 이 브라우저에 남아 있다가 다시 열 때 올라감).
+    if (!LITE && window.currentTeacher && window.currentTeacher.id) {
+      await Promise.race([Promise.resolve(flushPendingSaveAndSync()).catch(function() {}), new Promise(function(r) { setTimeout(r, 3000); })]);
+    }
+    reloadFresh();
+  }
+
   // 그냥 location.reload()는 브라우저가 쥐고 있던 캐시를 그대로 다시 쓸 수 있어서,
   // 주소에 ?v=를 붙여 다시 열어 새 파일을 받게 한다.
   function reloadFresh() {
@@ -5846,8 +5889,9 @@
 
     checkForUpdate();
     setInterval(checkForUpdate, 3 * 60 * 1000);
+    setInterval(maybeAutoReload, 60 * 1000); // 띠가 이미 떠 있으면 checkForUpdate는 쉬므로, 날이 바뀌었는지는 따로 본다
     document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'visible') checkForUpdate();
+      if (document.visibilityState === 'visible') { checkForUpdate(); maybeAutoReload(); }
     });
   }
 
