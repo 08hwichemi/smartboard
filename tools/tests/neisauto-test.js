@@ -19,10 +19,10 @@ const reportsServed = [];
 let breakGradeList = false; // 학년 목록이 안 펼쳐지는 경우(실패 기록 시험)
 
 // 가짜 나이스 메인 화면
-const neisMain = `<!doctype html><html><head><meta charset="utf-8"><style>.hide{display:none}.cl-combobox-list{position:absolute;background:#fff;border:1px solid #888}</style></head><body>
+const neisMain = `<!doctype html><html><head><meta charset="utf-8"><style>.hide{display:none}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.cl-combobox-list{position:absolute;background:#fff;border:1px solid #888}</style></head><body>
 <div id="topnav"><a class="cl-navigationbar-content" id="nav-hak">학급담임 <span>0단계 메뉴항목</span></a> <a class="cl-navigationbar-content" id="nav-gyo">교과담임 <span>0단계 메뉴항목</span></a></div>
-<div id="mega" class="hide"><div><span>학교정보</span><a>성적/학생부수정이력</a></div><div><span>교육과정</span><a id="mega-tt">시간표관리</a></div><div><span>학적</span><a>출결관리</a></div></div>
-<div id="side" class="hide">
+<div id="mega" class="hide"><div><span>학교정보</span><a data-role="menuitem">성적/학생부수정이력<span class="sr">1단계 메뉴항목</span></a></div><div><span>교육과정</span><a data-role="menuitem" id="mega-tt"><div class="cl-text">시간표관리</div><span class="sr">1단계 메뉴항목</span></a></div><div><span>학적</span><a data-role="menuitem">출결관리<span class="sr">1단계 메뉴항목</span></a></div></div>
+<div id="side" class="hide cl-sidenavigation">
   <a class="cl-folder cl-level-1 cl-expanded" title="시간표관리" id="fold">시간표관리 2단계 메뉴항목</a>
   <div id="leafs"><a class="cl-leaf cl-level-2 cl-sidenavigation-item" title="교사별시간표조회">교사별시간표조회 3단계</a>
   <a class="cl-leaf cl-level-2 cl-sidenavigation-item" title="전체시간표조회" id="leaf">전체시간표조회 3단계</a></div>

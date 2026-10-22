@@ -9,7 +9,7 @@ const SB_URL = ['https://08hwichemi.github.io/smartboard/*', 'https://raw.githac
 const NEIS_MAIN = 'https://*.neis.go.kr/jsp/main.jsp*';
 const KEEP_MS = 24 * 60 * 60 * 1000;
 const RETRY_MS = 30 * 60 * 1000;
-const RUN_MAX_MS = 6 * 60 * 1000;
+const RUN_MAX_MS = 3 * 60 * 1000; // 이만큼 단계 소식이 없으면 멈춘 것으로 본다
 const DEFAULT_AUTO = { on: true, time: '08:40' };
 
 function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -71,6 +71,14 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       o.history.push({ at: r.at, what: r.what, auto: r.auto });
       await save(o); await badge(o);
       if (!o.running) await push(o); // 자동 조회 중이면 끝날 때 한꺼번에
+      reply({ ok: true });
+    } else if (m.t === 'autoStep') {
+      if (o.running && o.running.run === m.run) { o.running.step = m.s; o.running.at = Date.now(); await save(o); } // 단계가 진행되는 동안은 멈춘 것으로 보지 않음
+      reply({ ok: true });
+    } else if (m.t === 'autoStop') {
+      const tabs = await chrome.tabs.query({ url: NEIS_MAIN });
+      for (const t of tabs) { try { await chrome.tabs.sendMessage(t.id, { t: 'autoStop' }, { frameId: 0 }); } catch (e) {} }
+      if (o.running) { o.lastRun = { at: Date.now(), date: ymd(new Date()), ok: false, grades: [], steps: [{ s: '✗ 멈춤(팝업에서 멈추기)' + (o.running.step ? ' — 마지막 단계: ' + o.running.step : '') }] }; o.running = null; await save(o); await badge(o); }
       reply({ ok: true });
     } else if (m.t === 'reportSince') {
       reply({ ok: o.pending.some(function (x) { return x.at >= m.since && x.grade === m.grade; }) });

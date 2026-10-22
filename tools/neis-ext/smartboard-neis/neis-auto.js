@@ -9,7 +9,18 @@
   const shown = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   const txt = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
   function all(sel) { return Array.prototype.filter.call(document.querySelectorAll(sel), shown); }
-  async function waitFor(fn, ms) { const end = Date.now() + (ms || 15000); for (;;) { const v = fn(); if (v) return v; if (Date.now() > end) return null; await sleep(250); } }
+  let cancelled = false; // 팝업의 "■ 멈추기"
+  async function waitFor(fn, ms) { const end = Date.now() + (ms || 15000); for (;;) { if (cancelled) return null; const v = fn(); if (v) return v; if (Date.now() > end) return null; await sleep(250); } }
+  // 글자가 꼭 맞는 칸 찾기: 화면의 글자 조각(text node)만 훑어 그 부모 칸을 고른다.
+  // (칸마다 innerText를 읽으면 나이스처럼 칸이 수만 개인 화면에선 몇 분씩 걸려 멈춘 것처럼 됨 — 1.3에서 겪음)
+  function textEls(t) {
+    const out = [], w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      const v = n.nodeValue; if (v.length > t.length + 20 || v.indexOf(t) < 0) continue;
+      if (v.replace(/\s+/g, ' ').trim() === t && n.parentElement && shown(n.parentElement) && out.indexOf(n.parentElement) < 0) out.push(n.parentElement);
+    }
+    return out;
+  }
   // eXBuilder6 단추는 마우스 누름·뗌으로 동작하는 것이 있어 사람이 누를 때의 이벤트를 차례로 보낸다
   function press(el) {
     el.scrollIntoView({ block: 'center' });
@@ -28,14 +39,9 @@
   // ---- 화면 찾기 ----
   const gradeBox = function () { return all('[aria-label^="학년,"]')[0] || null; };
   const searchBtn = function () { return all('.btn-i-search[aria-label="조회"], .btn-i-search').filter(function (e) { return /조회/.test(txt(e) + (e.getAttribute('aria-label') || '')); })[0] || null; };
-  const screenOpen = function () { return gradeBox() && searchBtn() && all('*').some(function (e) { return e.children.length === 0 && txt(e) === '변경수업조회'; }) ? true : null; };
+  const screenOpen = function () { return gradeBox() && searchBtn() && textEls('변경수업조회').length ? true : null; };
   const byTitle = function (t) { return all('[title="' + t + '"]'); };
-  // 글자가 꼭 맞는 가장 작은 칸(메뉴판 항목 등 title이 없는 것): 링크·메뉴 항목이면 그것, 아니면 글자 칸
-  const byText = function (t) {
-    return all('a, [role="menuitem"], [role="treeitem"], span, div, li').filter(function (e) {
-      return txt(e) === t && !Array.prototype.some.call(e.children, function (c) { return shown(c) && txt(c) === t; });
-    });
-  };
+  const byText = textEls; // 메뉴판 항목처럼 title이 없는 것
   const sideLeaf = function () {
     return byTitle('전체시간표조회').filter(function (e) { return /sidenavigation/.test(e.className); })[0] ||
       all('.cl-sidenavigation-item, [class*="sidenavigation"] a').filter(function (e) { return /^전체시간표조회/.test(txt(e)); })[0] || null;
@@ -49,7 +55,12 @@
       // 위 메뉴 "교과담임" → 펼쳐지는 큰 메뉴판의 "시간표관리"(교육과정 아래) → 왼쪽 메뉴가 생김
       const top = all('.cl-navigationbar-content').filter(function (e) { return /^교과담임/.test(txt(e)); })[0];
       if (!top) { log('✗ 위 메뉴 "교과담임"을 못 찾음', snap(all('.cl-navigationbar-content'))); return false; }
-      const mega = function () { return byText('시간표관리').filter(function (e) { return !/sidenavigation|cl-folder/.test(e.className); })[0]; };
+      // 메뉴판 항목엔 눈에 안 보이는 안내 글("… 1단계 메뉴항목")이 붙어 있을 수 있어 글자 조각 → 안 되면 "시간표관리"로 시작하는 메뉴 항목
+      const notSide = function (e) { return !e.closest('.cl-sidenavigation, [class*="sidenavigation"]'); };
+      const mega = function () {
+        return byText('시간표관리').filter(notSide)[0] ||
+          all('a, [data-role="menuitem"], [role="menuitem"]').filter(function (e) { return notSide(e) && /^시간표관리(\s|$)/.test((e.textContent || '').replace(/\s+/g, ' ').trim()); })[0];
+      };
       if (!mega()) { press(top); log('위 메뉴 교과담임'); }
       side = await waitFor(function () { return sideLeaf() || (mega() ? 'mega' : null); }, 8000);
       if (side === 'mega') {
@@ -57,7 +68,7 @@
         side = await waitFor(sideLeaf, 10000);
       }
       if (!side) {
-        const folder = byTitle('시간표관리')[0] || byText('시간표관리').filter(function (e) { return /cl-folder|sidenavigation/.test(e.className); })[0];
+        const folder = byTitle('시간표관리').filter(function (e) { return !notSide(e); })[0] || byText('시간표관리').filter(function (e) { return !notSide(e); })[0];
         if (folder) { press(folder); log('왼쪽 메뉴 시간표관리 펼침'); side = await waitFor(sideLeaf, 8000); }
       }
       if (!side) { log('✗ 왼쪽 메뉴 "전체시간표조회"를 못 찾음', { menu: snap(byText('시간표관리')), side: snap(all('.cl-sidenavigation-item, [class*="sidenavigation"]')) }); return false; }
@@ -69,7 +80,7 @@
   }
   // 동그라미 고르기: 글자 "변경수업조회"가 든 가장 작은 칸 → 그 위의 radio 묶음 항목을 누른다
   async function pickChangeRadio(log) {
-    const label = all('*').filter(function (e) { return e.children.length === 0 && txt(e) === '변경수업조회'; })[0];
+    const label = textEls('변경수업조회')[0];
     if (!label) { log('✗ "변경수업조회"를 못 찾음'); return false; }
     const item = label.closest('[role="radio"], .cl-radiobutton-item, [class*="radio-item"], [class*="radiobutton"] > *') || label;
     const on = function () { const it = label.closest('[role="radio"], .cl-radiobutton-item, [class*="radio-item"]') || label.parentElement; return it && (it.getAttribute('aria-checked') === 'true' || /cl-checked|cl-selected/.test(it.className)); };
@@ -140,10 +151,12 @@
     return true;
   }
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {
+    if (m && m.t === 'autoStop') { cancelled = true; reply({ ok: true }); return; }
     if (!m || m.t !== 'autoQuery') return;
     reply({ started: true });
     (async function () {
-      const steps = [], log = function (s, info) { steps.push(info ? { s: s, info: info } : { s: s }); };
+      const steps = [], log = function (s, info) { steps.push(info ? { s: s, info: info } : { s: s }); try { chrome.runtime.sendMessage({ t: 'autoStep', run: m.run, s: s }); } catch (e) {} };
+      cancelled = false;
       let ok = false, grades = [];
       try {
         const from = new Date(m.from + 'T00:00:00'), to = new Date(m.to + 'T00:00:00');
@@ -152,6 +165,7 @@
           for (const g of m.grades) { if (await query(g, log)) grades.push(g); else ok = false; }
         }
       } catch (e) { log('✗ 오류: ' + (e && e.message ? e.message : e)); ok = false; }
+      if (cancelled) { log('✗ 멈춤(팝업에서 멈추기)'); ok = false; }
       try { chrome.runtime.sendMessage({ t: 'autoDone', run: m.run, ok: ok, grades: grades, steps: steps }); } catch (e) {}
     })();
   });
