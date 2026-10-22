@@ -23,6 +23,7 @@ const teachers = {
 const items = new Map(); // teacher|key -> {teacher_id,key,value,updated_at}
 const history = [];
 const changes = [];
+const cellChanges = []; // 나이스 "칸 그대로" 기록(schedule_cell_changes)
 let lastTs = Date.now();
 function nowIso() { lastTs = Math.max(Date.now(), lastTs + 1); return new Date(lastTs).toISOString(); }
 const pages = []; // {page, name, offline, realtimeDown}
@@ -75,6 +76,11 @@ async function handleDb(pageInfo, req) {
     // 오늘이 속한 학기: 한 달 전 ~ 두 달 뒤
     const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
     return { data: { value: { '1학기': { start: '2000-03-01', end: '2000-07-20' }, '2학기': { start: d(-30), end: d(60) } } }, error: null };
+  }
+  if (table === 'schedule_cell_changes') {
+    if (op === 'insert') { const out = []; (Array.isArray(rows) ? rows : [rows]).forEach(x => { const row = Object.assign({ id: Math.max(0, ...cellChanges.map(c => c.id)) + 1, created_by: teachers[pageInfo.uid].name, created_at: nowIso() }, x); cellChanges.push(row); out.push({ id: row.id }); }); return { data: out, error: null }; }
+    if (op === 'delete') { const f = filters.find(x => x.col === 'id'); const ids = f ? (f.op === 'in' ? f.val : [f.val]) : []; for (let i = cellChanges.length - 1; i >= 0; i--) if (ids.includes(cellChanges[i].id)) cellChanges.splice(i, 1); return { data: null, error: null }; }
+    if (op === 'select') return { data: cellChanges.slice().sort((x, y) => x.id - y.id), error: null };
   }
   if (table === 'schedule_changes') {
     if (op === 'insert') { const r = Array.isArray(rows) ? rows : [rows]; const out = []; r.forEach(x => { const row = Object.assign({ id: Math.max(0, ...changes.map(c => c.id)) + 1, created_by: teachers[pageInfo.uid].name }, x); changes.push(row); out.push({ id: row.id }); }); return { data: out, error: null }; }
@@ -301,32 +307,45 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   check('반 103·과목·교사·보강 여부', e1 && e1.subject === '과학' && e1.teacher === '바교사' && !e1.makeup, e1);
   check('[보강] 두 줄 글을 이어 읽음', parsed.entries.some((e) => e.makeup && e.teacher === '라교사' && e.subject === '영어'));
 
+  console.log('== 1b. 마지막 관문: 넣은 뒤 스마트보드 시간표가 나이스와 다르면 그 기록은 빼기');
+  const ver = await P.evaluate(([d0, d2]) => {
+    const e = { grade: 1, date: d0, period: 1, room: '101', text: '수학(나교사)', subject: '수학', teacher: '나교사', makeup: false };
+    // 나이스엔 월1 101만 바뀌었는데, 수3 101(나이스엔 그대로)까지 바꾸는 교환 → 빼야 함 / 칸 그대로는 나이스와 같으니 남김
+    const wrong = { type: 'exchange', teacher_a: '가교사', change_date: d0, period_a: 1, teacher_b: '나교사', change_date_b: d2, period_b: 3, room_a: '101', room_b: '101', from: [e] };
+    const right = { type: 'cell', teacher_a: '가교사', change_date: d0, period_a: 1, teacher_b: '나교사', change_date_b: d0, period_b: 1, room_a: '101', room_b: null, subject: '수학', from: [e] };
+    const a = neisVerify({ records: [wrong], skipped: [] }, [e]), b = neisVerify({ records: [right], skipped: [] }, [e]);
+    return { a: [a.records.length, a.skipped.map((x) => x.why)], b: b.records.length };
+  }, [D[0], D[2]]);
+  check('나이스에 없는 칸까지 바꾸는 기록은 빼고 "넣어 보니 나이스와 달라짐", 나이스와 같은 기록은 남김', ver.a[0] === 0 && /넣어 보니 나이스와 달라짐/.test(ver.a[1].join()) && ver.b === 1, ver);
+
   console.log('== 2. 받기 → 미리 보기');
   await P.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'r1', xml: x, at: 1 }] }, '*'), g1);
   await P.waitForSelector('#neis-in-overlay', { state: 'visible', timeout: 5000 });
   await wait2(300);
   const view = await P.evaluate(() => ({ rows: [...document.querySelectorAll('#neis-in-body .neis-in-row')].map((r) => r.innerText), body: document.getElementById('neis-in-body').innerText, btn: document.getElementById('neis-in-save').textContent }));
-  check('넣을 것 4건: 교환 가↔나, 보강 다→라, 맞물린 교환 마↔바·마↔사', view.rows.length === 4 && view.btn === '4건 넣기', [view.rows, view.btn]);
+  check('넣을 것 5건: 교환 가↔나, 보강 다→라, 맞물린 교환 마↔바·마↔사, 짝이 안 보이는 교체는 나이스 표 그대로(파→하)', view.rows.length === 5 && view.btn === '5건 넣기' && view.rows.some((r) => /교체 \(나이스 표 그대로\) .*금\) 2교시 1-3 — 파교사 → 하교사 음악/.test(r)), [view.rows, view.btn]);
   check('교환 가교사 월1 101 국어 ↔ 나교사 수3 101 수학', view.rows.some((r) => /교환 가교사 .*월\) 1교시 1-1 국어 ↔ 나교사 .*수\) 3교시 1-1 수학/.test(r)), view.rows);
   check('보강 월2 1-2 영어 다교사 → 라교사', view.rows.some((r) => /보강 .*월\) 2교시 1-2 영어 — 다교사 → 라교사/.test(r)), view.rows);
   check('맞물린 교체 둘 다(103·104)', view.rows.some((r) => /마교사 .*화\) 1교시 1-3 정보 ↔ 바교사 .*화\) 5교시 1-3 과학/.test(r)) && view.rows.some((r) => /사교사 .*화\) 1교시 1-4 영어 ↔ 마교사 .*화\) 5교시 1-4 정보/.test(r)), view.rows);
-  check('넣지 않은 칸: 이미 있음·다름·짝 없음·모르는 선생님·행사', /이미 스마트보드에 있음/.test(view.body) && /스마트보드와 다름/.test(view.body) && /교체 짝을 못 찾음/.test(view.body) && /없는교사 선생님이 스마트보드 시간표에 없음/.test(view.body) && /행사\(동아리활동\)/.test(view.body), view.body);
+  check('넣지 않은 칸: 이미 있음·다름·모르는 선생님·행사(짝 못 찾음은 이제 없음)', /이미 스마트보드에 있음/.test(view.body) && /스마트보드와 다름/.test(view.body) && !/교체 짝을 못 찾음/.test(view.body) && /없는교사 선생님이 스마트보드 시간표에 없음/.test(view.body) && /행사\(동아리활동\)/.test(view.body), view.body);
   check('아직 안 받은 학년 안내(2·3학년)', /2·3학년도 나이스에서 조회하면/.test(view.body));
 
   console.log('== 3. 다른 학년을 더 받으면 같은 창에 합침');
   await P.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'r1', xml: 'dup', at: 1 }, { id: 'r3', xml: x, at: 2 }] }, '*'), g3);
   await wait2(800);
   const v2 = await P.evaluate(() => ({ n: document.querySelectorAll('#neis-in-body .neis-in-row').length, body: document.getElementById('neis-in-body').innerText }));
-  check('3학년 보강(러교사 → 머교사)·같은 시간 반 맞바꿈(키↔피) 더해져 6건, 받은 조회에 1·3학년', v2.n === 6 && /키교사 .*금\) 4교시 3-1 영어 ↔ 피교사 .*금\) 4교시 3-2 과학/.test(v2.body) && /러교사 → 머교사/.test(v2.body) && /1학년 .* · 3학년/.test(v2.body) && /2학년도 나이스에서/.test(v2.body), v2);
+  check('3학년 보강(러교사 → 머교사)·같은 시간 반 맞바꿈(키↔피) 더해져, 다른 반·다른 시간 교체는 칸 그대로 2건 → 9건, 받은 조회에 1·3학년', v2.n === 9 && /키교사 .*금\) 4교시 3-1 영어 ↔ 피교사 .*금\) 4교시 3-2 과학/.test(v2.body) && /러교사 → 머교사/.test(v2.body) && /1학년 .* · 3학년/.test(v2.body) && /2학년도 나이스에서/.test(v2.body), v2);
 
-  check('다른 반·다른 시간끼리는 짝짓지 않음(쉬↔위 확인 필요)', !/쉬교사 .*↔|위교사 .*↔/.test(v2.body) && /목\) 2교시 3-1 수학\(위교사\)/.test(v2.body) && /목\) 3교시 3-2 국어\(쉬교사\)/.test(v2.body), v2.body);
+  check('다른 반·다른 시간끼리는 교환으로 짝짓지 않고 나이스 표 그대로(쉬→위·위→쉬)', !/쉬교사 .*↔|위교사 .*↔/.test(v2.body) && /목\) 2교시 3-1 — 쉬교사 → 위교사 수학/.test(v2.body) && /목\) 3교시 3-2 — 위교사 → 쉬교사 국어/.test(v2.body), v2.body);
   console.log('== 4. 고른 것만 넣기 → 저장·확인(ack)');
   await P.evaluate(() => { const r = [...document.querySelectorAll('#neis-in-body .neis-in-row')].find((x) => /다교사 → 라교사/.test(x.innerText)); r.querySelector('input').click(); });
-  check('체크를 끄면 단추 글이 5건', (await P.textContent('#neis-in-save')) === '5건 넣기', await P.textContent('#neis-in-save'));
-  const before = changes.length;
+  check('체크를 끄면 단추 글이 8건', (await P.textContent('#neis-in-save')) === '8건 넣기', await P.textContent('#neis-in-save'));
+  const before = changes.length, beforeCell = cellChanges.length;
   await P.click('#neis-in-save'); await wait2(800);
   const added = changes.slice(before);
-  check('5건 저장(보강 다→라는 뺌)', added.length === 5 && !added.some((c) => c.teacher_b === '라교사'), added);
+  const addedCell = cellChanges.slice(beforeCell);
+  check('나이스 표 그대로 3건은 칸 기록 표에(파→하·쉬→위·위→쉬)', addedCell.length === 3 && addedCell.some((c) => c.teacher_from === '파교사' && c.teacher_to === '하교사' && c.room === '103' && c.period === 2 && c.subject === '음악'), addedCell);
+  check('교환·보강 5건 저장(보강 다→라는 뺌)', added.length === 5 && !added.some((c) => c.teacher_b === '라교사'), added);
   const ex = added.find((c) => c.teacher_a === '가교사');
   check('교환 기록 모양: 가 월1 ↔ 나 수3, 반 101', ex && ex.type === 'exchange' && ex.change_date === D[0] && ex.period_a === 1 && ex.teacher_b === '나교사' && ex.change_date_b === D[2] && ex.period_b === 3 && ex.room_a === '101' && ex.room_b === '101', ex);
   const mk = added.find((c) => c.type === 'makeup');
@@ -376,12 +395,14 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   const b6c = changes.length;
   await P.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'c2', xml: x, at: 9 }] }, '*'), g2);
   await P.waitForSelector('#neis-in-overlay', { state: 'visible', timeout: 5000 }); await wait2(300);
-  const v6c = await P.evaluate(() => ({ rows: [...document.querySelectorAll('#neis-in-body .neis-in-row')].map((r) => r.innerText), body: document.getElementById('neis-in-body').innerText }));
-  check('세 명 교체 두 줄 → 교환 4건(각 2건, "3명이 돌아가며")', v6c.rows.length === 4 && v6c.rows.every((r) => /3명이 돌아가며/.test(r)), v6c.rows);
-  check('시험 칸은 "시험(정기고사)"로 빼고, 닫히지 않는 줄은 확인 필요', /시험\(정기고사\) — 넣지 않음/.test(v6c.body) && /교체 짝을 못 찾음\(삼교사/.test(v6c.body), v6c.body);
+  const v6c = await P.evaluate(() => ({ rows: [...document.querySelectorAll('#neis-in-body .neis-in-row')].map((r) => r.innerText), body: document.getElementById('neis-in-body').textContent })); // 넣지 않은 칸이 모두 "넣지 않아도 되는 칸"이면 목록이 접혀 있음
+  check('세 명 교체 두 줄 → 교환 4건(각 2건, "3명이 돌아가며") + 닫히지 않는 줄은 나이스 표 그대로(삼→암)', v6c.rows.length === 5 && v6c.rows.filter((r) => /3명이 돌아가며/.test(r)).length === 4 && v6c.rows.some((r) => /삼교사 → 암교사 지리/.test(r)), v6c.rows);
+  check('시험 칸은 "시험(정기고사)"로 빼고 넣지 않음', /시험\(정기고사\) — 넣지 않음/.test(v6c.body) && !/잠교사/.test(v6c.rows.join()), v6c.body);
   await P.click('#neis-in-save'); await wait2(800);
   await P.click('#custom-alert-ok-btn').catch(() => {}); await wait2(200);
-  check('4건을 만든 차례 그대로 넣음', changes.length === b6c + 4 && changes.slice(b6c).every((c) => c.type === 'exchange'), changes.slice(b6c));
+  check('교환 4건을 만든 차례 그대로 넣음', changes.length === b6c + 4 && changes.slice(b6c).every((c) => c.type === 'exchange'), changes.slice(b6c));
+  const t205 = await P.evaluate((d3) => { const m = sccEffectiveMap(sccAllChanges()); return [m.get('암교사', d3, 1).text, m.get('삼교사', d3, 1).text]; }, D[3]);
+  check('칸 그대로: 암교사 목1에 지리 205, 삼교사는 빠짐(나이스와 같음)', t205[0] === '지리 205' && t205[1] === '', t205);
   const cellsNow = await P.evaluate(([d1, d2]) => {
     const m = sccEffectiveMap(sccAllChanges()), who = (d, p, room) => sccTeacherNames().filter((t) => m.get(t, d, p).list.some((x) => x.r === room)).join();
     return [who(d1, 2, '201'), who(d1, 2, '202'), who(d1, 2, '203'), who(d2, 1, '204'), who(d2, 2, '204'), who(d2, 3, '204')];
