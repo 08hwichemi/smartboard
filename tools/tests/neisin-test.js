@@ -227,6 +227,8 @@ put('파교사', 5, 2, '음악', '103'); put('하교사', 4, 6, '음악', '104')
 put('거교사', 4, 1, '체육', '101'); put('너교사', 4, 1, '체육', '102'); put('더교사', 4, 1, '체육', '103'); // 행사 날
 put('러교사', 3, 2, '물리', '305'); put('머교사', 3, 2, '화학', '306');      // 3학년 보강
 put('버교사', 1, 7, '지구', '306');
+put('쉬교사', 4, 2, '국어', '301'); put('위교사', 4, 3, '수학', '302');      // 다른 반·다른 시간 → 짝짓지 않음(10/22 실제로 잘못 들어갔던 꼴)
+put('키교사', 5, 4, '영어', '301'); put('피교사', 5, 4, '과학', '302');      // 같은 시간에 두 반 맞바꿈 → 교환
 global.__tt = Object.keys(tt).map((n) => ({ teacher_name: n, cells: tt[n] }));
 // 이미 있는 기록: 보강 아 월4 → 자 / 교환 차 화3 ↔ 카 금3
 changes.push({ id: 1, type: 'makeup', change_date: D[0], period_a: 4, teacher_a: '아교사', change_date_b: D[0], period_b: 4, teacher_b: '자교사', room_a: '101', room_b: null, created_by: '수업계', created_at: '2026-01-01T00:00:00Z' });
@@ -271,7 +273,9 @@ const g1 = mml(1, [
   [{ date: D[3], cells: { 1: { 1: '동아리활동(거교사)', 2: '동아리활동(너교사)', 3: '동아리활동(더교사)' } } },
    { date: D[4], cells: { 2: { 3: '음악(하교사)', 4: '[보강]음악(없는교사)' } } }]
 ]);
-const g3 = mml(3, [[{ date: D[2], cells: { 2: { 5: '[보강]물리(머교사)' } } }]]);
+const g3 = mml(3, [[{ date: D[2], cells: { 2: { 5: '[보강]물리(머교사)' } } },
+  { date: D[3], cells: { 2: { 1: '수학(위교사)' }, 3: { 2: '국어(쉬교사)' } } },
+  { date: D[4], cells: { 4: { 1: '과학(피교사)', 2: '영어(키교사)' } } }]]);
 
 const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
@@ -305,15 +309,16 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   await P.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'r1', xml: 'dup', at: 1 }, { id: 'r3', xml: x, at: 2 }] }, '*'), g3);
   await wait2(800);
   const v2 = await P.evaluate(() => ({ n: document.querySelectorAll('#neis-in-body .neis-in-row').length, body: document.getElementById('neis-in-body').innerText }));
-  check('3학년 보강(러교사 → 머교사) 더해져 5건, 받은 조회에 1·3학년', v2.n === 5 && /러교사 → 머교사/.test(v2.body) && /1학년 .* · 3학년/.test(v2.body) && /2학년도 나이스에서/.test(v2.body), v2);
+  check('3학년 보강(러교사 → 머교사)·같은 시간 반 맞바꿈(키↔피) 더해져 6건, 받은 조회에 1·3학년', v2.n === 6 && /키교사 .*금\) 4교시 3-1 영어 ↔ 피교사 .*금\) 4교시 3-2 과학/.test(v2.body) && /러교사 → 머교사/.test(v2.body) && /1학년 .* · 3학년/.test(v2.body) && /2학년도 나이스에서/.test(v2.body), v2);
 
+  check('다른 반·다른 시간끼리는 짝짓지 않음(쉬↔위 확인 필요)', !/쉬교사 .*↔|위교사 .*↔/.test(v2.body) && /목\) 2교시 3-1 수학\(위교사\)/.test(v2.body) && /목\) 3교시 3-2 국어\(쉬교사\)/.test(v2.body), v2.body);
   console.log('== 4. 고른 것만 넣기 → 저장·확인(ack)');
   await P.evaluate(() => { const r = [...document.querySelectorAll('#neis-in-body .neis-in-row')].find((x) => /다교사 → 라교사/.test(x.innerText)); r.querySelector('input').click(); });
-  check('체크를 끄면 단추 글이 4건', (await P.textContent('#neis-in-save')) === '4건 넣기', await P.textContent('#neis-in-save'));
+  check('체크를 끄면 단추 글이 5건', (await P.textContent('#neis-in-save')) === '5건 넣기', await P.textContent('#neis-in-save'));
   const before = changes.length;
   await P.click('#neis-in-save'); await wait2(800);
   const added = changes.slice(before);
-  check('4건 저장(보강 다→라는 뺌)', added.length === 4 && !added.some((c) => c.teacher_b === '라교사'), added);
+  check('5건 저장(보강 다→라는 뺌)', added.length === 5 && !added.some((c) => c.teacher_b === '라교사'), added);
   const ex = added.find((c) => c.teacher_a === '가교사');
   check('교환 기록 모양: 가 월1 ↔ 나 수3, 반 101', ex && ex.type === 'exchange' && ex.change_date === D[0] && ex.period_a === 1 && ex.teacher_b === '나교사' && ex.change_date_b === D[2] && ex.period_b === 3 && ex.room_a === '101' && ex.room_b === '101', ex);
   const mk = added.find((c) => c.type === 'makeup');
@@ -331,7 +336,7 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   check('남은 것은 지난번에 뺀 보강 다→라 하나', v3.length === 1 && /다교사 → 라교사/.test(v3[0]), v3);
   await P.click('#neis-in-overlay .top-btn:not(.accent)'); await wait2(200);
   const acks = await P.evaluate(() => window.__acks);
-  check('닫기도 확인(ack r4), 저장은 안 함', JSON.stringify(acks[acks.length - 1]) === '["r4"]' && changes.length === before + 4, [acks, changes.length - before]);
+  check('닫기도 확인(ack r4), 저장은 안 함', JSON.stringify(acks[acks.length - 1]) === '["r4"]' && changes.length === before + 5, [acks, changes.length - before]);
 
   console.log('== 6. 아침 자동 조회로 받은 것(auto): 확인 없이 바로 넣고 알림 카드 · 보기 · 되돌리기');
   const b6 = changes.length;

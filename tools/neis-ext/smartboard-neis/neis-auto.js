@@ -3,8 +3,10 @@
 //    교과담임(큰 메뉴판) → 시간표관리 → 왼쪽 메뉴 전체시간표조회 → 변경수업조회 → 일자(지난주 ~ 3주 뒤) → 학년 1·2·3 차례로 조회한다.
 //    보고서는 neis-hook.js가 잡아 background로 보낸다. 단계마다 기록을 남기고, 못 찾은 단계는 그 근처 화면 정보를 함께 보낸다.
 (function () {
-  if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname) || window.__sbNeisAuto) return;
-  window.__sbNeisAuto = true;
+  if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname)) return;
+  // 확장을 업데이트하면 예전 판은 연결이 끊긴 채 남는다 — 살아 있는 판이 이미 있을 때만 건너뛴다
+  if (window.__sbNeisAuto && window.__sbNeisAuto()) return;
+  window.__sbNeisAuto = function () { try { return !!chrome.runtime.id; } catch (e) { return false; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const shown = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   const txt = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();

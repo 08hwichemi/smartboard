@@ -24,6 +24,7 @@ function show() {
 document.getElementById('on').onchange = function () { chrome.runtime.sendMessage({ t: 'setAuto', auto: { on: this.checked } }, show); };
 document.getElementById('time').onchange = function () { if (/^\d\d:\d\d$/.test(this.value)) chrome.runtime.sendMessage({ t: 'setAuto', auto: { time: this.value } }, show); };
 document.getElementById('stop').onclick = function () { chrome.runtime.sendMessage({ t: 'autoStop' }, function () { setTimeout(show, 300); }); };
+document.getElementById('reset').onclick = function () { if (confirm('오늘 자동 조회 기록과 기다리는 보고서를 지울까요?\n(나이스에 다시 로그인하면 처음 켠 것처럼 자동 조회해요)')) chrome.runtime.sendMessage({ t: 'resetToday' }, show); };
 document.getElementById('now').onclick = function () { chrome.runtime.sendMessage({ t: 'runNow' }, function () { setTimeout(show, 500); }); };
 document.getElementById('log').onclick = function () {
   const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), lastRun: last && last.lastRun, auto: last && last.auto, history: last && last.history }, null, 1)], { type: 'application/json' });

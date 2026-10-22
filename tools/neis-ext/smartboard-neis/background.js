@@ -58,7 +58,18 @@ async function maybeRun(reason) {
     await save(o); await badge(o);
   }
 }
-chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
+// 설치·업데이트하면 이미 열린 나이스·스마트보드 탭에도 붙인다(새로 고침하지 않아도 되게)
+async function attachOpenTabs() {
+  for (const t of await chrome.tabs.query({ url: 'https://*.neis.go.kr/*' })) {
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: t.id, allFrames: true }, files: ['neis-hook.js'], world: 'MAIN' });
+      await chrome.scripting.executeScript({ target: { tabId: t.id, allFrames: true }, files: ['neis-relay.js'] });
+      await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['neis-auto.js'] });
+    } catch (e) {}
+  }
+  for (const t of await sbTabs()) { try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['sb-relay.js'] }); } catch (e) {} }
+}
+chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); attachOpenTabs(); });
 chrome.runtime.onStartup.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
 chrome.alarms.onAlarm.addListener(function (a) { if (a.name === 'tick') maybeRun('tick'); });
 
@@ -105,6 +116,9 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       o.auto = Object.assign({}, o.auto, m.auto); await save(o); reply({ ok: true });
     } else if (m.t === 'runNow') {
       reply({ ok: true }); await maybeRun('now');
+    } else if (m.t === 'resetToday') { // 시험용: 오늘 한 기록·기다리는 보고서를 지워 처음 켠 것처럼
+      o.lastAutoDate = ''; o.lastRun = null; o.lastTryAt = 0; o.running = null; o.pending = [];
+      await save(o); await badge(o); reply({ ok: true });
     } else if (m.t === 'resend') {
       reply({ sent: await push(o) });
     } else if (m.t === 'clear') {
