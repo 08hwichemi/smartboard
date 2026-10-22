@@ -226,7 +226,7 @@ function check(label, cond, detail) {
   }, [T2, S3]);
   await P.evaluate(() => saveAllTeacherRolesUI()); await wait(400);
   const r1 = await P.evaluate(() => [window.__rpcCalls, window.__lastAlert]);
-  check('역할 저장: 박교사 역할 1건 + 최실무 수업변경 담당 1건만', r1[0].length === 2 && r1[0].some(c => c[0] === 'admin_set_teacher_role' && c[1] === T2) && r1[0].some(c => c[0] === 'admin_set_schedule_manager' && c[1] === S3) && r1[1].includes('2명'), r1);
+  check('역할 저장: 박교사 역할 1건 + 최실무 나이스 시간표 받기 1건만', r1[0].length === 2 && r1[0].some(c => c[0] === 'admin_set_teacher_role' && c[1] === T2) && r1[0].some(c => c[0] === 'admin_set_schedule_manager' && c[1] === S3) && r1[1].includes('2명'), r1);
   for (const t of ['bookmarks', 'danger']) { await P.evaluate((t) => switchAdminTab(t), t); await wait(400); }
   await P.screenshot({ path: 'adm-danger.png' });
   await P.evaluate(() => switchAdminTab('semester')); await wait(300);

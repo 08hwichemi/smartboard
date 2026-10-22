@@ -274,117 +274,12 @@
     .mini-select option { background: var(--card-bg); color: var(--text-main); }
 
     .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(2px);}
-    /* 알림·확인·입력 창은 다른 창(수업 변경 등) 위에서 뜨는 경우가 많아 항상 맨 위에 둔다 —
-       예전엔 수업 변경 창 뒤에 "등록했습니다" 알림이 숨어서 확인을 누를 수 없었다. */
+    /* 알림·확인·입력 창은 다른 창 위에서 뜨는 경우가 많아 항상 맨 위에 둔다 — */
     #custom-alert-overlay, #custom-confirm-overlay, #custom-prompt-overlay { z-index: 1100; }
     .modal-box { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
     .modal-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; margin-top: 10px; resize: none; box-sizing: border-box; font-family: inherit;}
     .modal-box input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 12px; }
 
-    /* ===== 🔁 수업 변경 큰 창: 왼쪽·오른쪽 시간표에서 칸을 눌러 교환/보강 ===== */
-    #schedule-change-overlay .scc-box { width: min(1340px, 96vw); height: 94vh; max-height: 94vh; box-sizing: border-box; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
-    .scc-head { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-    .scc-title { font-weight: 800; font-size: 17px; white-space: nowrap; }
-    .scc-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
-    .scc-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
-    .scc-toolbar .tab-btn { font-size: 13px; padding: 6px 16px; }
-    #scc-hint { font-size: 12.5px; color: var(--text-sub); font-weight: 700; }
-    .scc-sides { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .scc-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; }
-    .scc-side-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-    .scc-side-label { font-size: 12px; font-weight: 800; color: var(--on-accent); background: var(--accent-color); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
-    #scc-side-b .scc-side-label { background: #D9822B; }
-    .scc-side-head select { min-width: 110px; font-size: 13px; font-weight: 700; }
-    .scc-fixed-name { font-size: 14px; font-weight: 800; }
-    .scc-week { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-    .scc-week input[type="date"] { width: 132px; padding: 4px 6px; font-size: 12px; }
-    .scc-week .top-btn { padding: 4px 9px; font-size: 12px; }
-    /* 날짜 칸 대신 "9.28(월) ~ 10.2(금)"처럼 주로 보여 주고, 누르면 달력(투명한 날짜 칸을 위에 겹침) */
-    .scc-week-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 168px; padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--card-bg); color: var(--text-main); font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; box-sizing: border-box; }
-    .scc-week-pick:hover { border-color: var(--accent-color); }
-    .scc-week-pick .scc-this { font-size: 10.5px; font-weight: 800; color: var(--on-accent, #fff); background: var(--accent-color); border-radius: 5px; padding: 0 5px; }
-    .scc-week .scc-week-pick input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 0; margin: 0; border: 0; cursor: pointer; }
-    .scc-week-range { font-size: 11.5px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
-    .scc-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(5, minmax(0, 1fr)); grid-template-rows: 30px repeat(7, minmax(38px, 1fr)); gap: 4px; }
-    .scc-grid .scc-dh { font-size: 12.5px; font-weight: 800; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; border-radius: 6px; }
-    .scc-grid .scc-dh small { font-size: 10.5px; font-weight: 700; color: var(--text-sub); }
-    .scc-grid .scc-dh.today { background: var(--accent-soft); color: var(--accent-color); }
-    .scc-grid .scc-dh.off { opacity: 0.35; }
-    .scc-grid .scc-ph { font-size: 12.5px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
-    .scc-grid .scc-ph small { font-size: 9.5px; font-weight: 700; color: var(--text-sub); }
-    .scc-cell { position: relative; border-radius: 8px; background: var(--tt-bg); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-width: 0; overflow: hidden; line-height: 1.2; padding: 2px; box-sizing: border-box; color: inherit; font-family: inherit; }
-    .scc-cell .s { font-size: 13.5px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
-    .scc-cell .r { font-size: 11px; font-weight: 700; opacity: 0.8; }
-    .scc-cell.has { color: #222; }
-    .scc-cell.pick { cursor: pointer; }
-    .scc-cell.pick:hover { outline: 2px solid var(--accent-color); outline-offset: -1px; }
-    #scc-grid-b .scc-cell.pick:hover { outline-color: #D9822B; }
-    .scc-cell.pick.empty::after { content: '빈 시간'; font-size: 11px; font-weight: 700; color: var(--text-sub); }
-    .scc-cell.pick.empty:hover::after { content: '＋ 여기로'; color: #D9822B; }
-    .scc-cell.no { opacity: 0.28; cursor: not-allowed; }
-    .scc-cell.chg { opacity: 0.6; border-style: dashed; border-color: var(--text-sub); cursor: not-allowed; }
-    .scc-cell.chg.pick { opacity: 0.9; cursor: pointer; } /* 바뀐 칸도 다시 바꿀 수 있음(연속 교환) */
-    .scc-cell.dbl { opacity: 1; border: 2px solid var(--alert); } /* 수업이 겹친 칸 — 다음 변경으로 하나를 비켜 놓으면 풀림 */
-    .scc-cell.dbl .s { font-size: 11.5px; } .scc-cell.dbl .r { font-size: 10px; }
-    #scc-preview .scc-room-btn { padding: 1px 8px; font-size: 12px; margin-left: 4px; }
-    #scc-preview .scc-room-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
-    /* 📋 일자·교시 고르기(나이스 수업 교체 화면처럼): 시간표 자리에 일자(− +) · 교시 목록 · 과목정보 */
-    .scc-listmode .scc-week { display: none; }
-    .scc-grid.scc-listpick { display: grid; grid-template-columns: 76px 1fr; grid-template-rows: none; gap: 0; align-content: start; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; font-size: 13px; }
-    .scc-listpick > div { padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; min-height: 40px; box-sizing: border-box; }
-    .scc-listpick > div:nth-last-child(-n+2) { border-bottom: 0; }
-    .scc-listpick .scc-lp-l { background: var(--tt-bg); font-weight: 800; color: var(--text-sub); justify-content: center; }
-    .scc-listpick input[type=date], .scc-listpick select { font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); font-family: inherit; }
-    .scc-listpick select { flex: 1; min-width: 0; }
-    .scc-listpick .scc-lp-day { width: 26px; height: 26px; border-radius: 50%; padding: 0; font-weight: 800; }
-    .scc-listpick .scc-lp-info { min-height: 72px; align-items: flex-start; line-height: 1.5; }
-    .scc-listpick .scc-lp-info.empty { color: var(--text-sub); }
-    .scc-listpick .scc-empty-msg { grid-column: 1 / -1; }
-    .scc-listpick .scc-lp-l small { display: block; font-weight: 600; font-size: 11px; }
-    .scc-listpick .scc-lp-l { flex-direction: column; gap: 0; text-align: center; }
-    .scc-listpick .scc-lp-info.busy { color: #c0392b; font-weight: 700; }
-    .scc-listpick .scc-lp-free { flex-wrap: wrap; gap: 5px; align-content: flex-start; min-height: 0; max-height: 220px; overflow-y: auto; }
-    .scc-listpick .scc-free-btn { padding: 3px 9px; font-size: 12.5px; font-weight: 700; border-radius: 999px; }
-    .scc-listpick .scc-free-btn.active { background: #D9822B; color: #fff; border-color: #D9822B; }
-    .scc-cell .badge { position: absolute; top: 2px; right: 3px; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #fff; }
-    .scc-cell.sel { outline: 3px solid var(--accent-color); outline-offset: -2px; opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
-    #scc-grid-b .scc-cell.sel { outline-color: #D9822B; box-shadow: 0 0 0 3px rgba(217,130,43,0.25); }
-    .scc-cell.sel .badge { background: var(--accent-color); }
-    #scc-grid-b .scc-cell.sel .badge { background: #D9822B; }
-    .scc-empty-msg { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; align-items: center; justify-content: center; color: var(--text-sub); font-size: 13px; font-weight: 700; }
-    .scc-foot { display: flex; align-items: stretch; gap: 10px; flex-shrink: 0; }
-    #scc-preview { flex: 1; font-size: 13px; color: var(--text-main); background: var(--bg-color); border: 1px dashed var(--border-color); border-radius: 8px; padding: 8px 12px; line-height: 1.55; white-space: pre-line; min-height: 42px; box-sizing: border-box; }
-    #scc-preview .warn { color: var(--alert); font-weight: 800; }
-    .scc-foot .top-btn { padding: 8px 18px; font-size: 13px; }
-    #scc-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    /* 변경 내역 */
-    .scc-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-    .scc-filters .tab-btn { font-size: 12.5px; padding: 5px 11px; }
-    .scc-filters input { width: 150px; padding: 5px 8px; font-size: 12.5px; }
-    .scc-filters select { font-size: 12.5px; }
-    #scc-list-summary { font-size: 12.5px; color: var(--text-sub); font-weight: 700; }
-    #scc-list { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; }
-    .scc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .scc-table th { position: sticky; top: 0; z-index: 1; background: var(--accent-color); color: var(--on-accent); font-size: 12px; font-weight: 800; padding: 7px 8px; text-align: left; white-space: nowrap; }
-    .scc-table td { padding: 7px 8px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-    .scc-table tr.scc-day td { background: var(--tt-bg); font-weight: 800; font-size: 12.5px; padding: 6px 8px; }
-    .scc-table tr.scc-day.today td { background: var(--accent-soft); color: var(--accent-color); }
-    .scc-table tr.scc-day .cnt { font-weight: 700; color: var(--text-sub); margin-left: 6px; font-size: 11.5px; }
-    .scc-table .nowrap { white-space: nowrap; }
-    .scc-table .sub { color: var(--text-sub); font-size: 11.5px; }
-    .scc-type { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
-    .scc-type.ex { background: #E3EEFA; color: #1F5C99; }
-    .scc-type.mk { background: #FDEBD7; color: #A65A12; }
-    @media screen and (max-width: 860px) {
-      #schedule-change-overlay .scc-box { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; padding: 10px; overflow-y: auto; }
-      .scc-pane { flex: none; }
-      .scc-sides { grid-template-columns: 1fr; }
-      .scc-grid { height: 420px; flex: none; grid-template-columns: 40px repeat(5, minmax(0, 1fr)); }
-      .scc-cell .s { font-size: 11.5px; }
-      .scc-foot { flex-direction: column; }
-      #scc-list { max-height: none; overflow: visible; }
-      .scc-table { font-size: 12px; }
-    }
     
     .time-select-group { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
@@ -874,22 +769,7 @@
     .theme-chip-dot { width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); box-sizing: border-box; }
     .theme-chip-random .theme-chip-dot { background: conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 900; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
 
-    /* ===== 📥 나이스 변경수업 가져오기 창 ===== */
-    #neis-in-overlay { z-index: 1050; }
-    .neis-in-box { width: 640px; max-width: calc(100vw - 24px); max-height: calc(100vh - 40px); display: flex; flex-direction: column; text-align: left; }
-    .neis-in-title { font-weight: 800; font-size: 16px; margin-bottom: 6px; }
-    #neis-in-body { overflow-y: auto; min-height: 0; flex: 1; font-size: 12.5px; }
-    .neis-in-sub { margin-bottom: 10px; line-height: 1.6; }
-    .neis-in-sec { font-weight: 800; margin: 8px 0 6px; }
-    .neis-in-list { display: flex; flex-direction: column; gap: 4px; }
-    .neis-in-row { display: flex; gap: 6px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; line-height: 1.5; }
-    .neis-in-row input { flex: 0 0 auto; width: auto; margin: 3px 0 0; }
-    .neis-in-row span { flex: 1; text-align: left; }
-    .neis-in-box, .neis-in-box summary { text-align: left; }
-    .neis-in-skip { margin-top: 12px; }
-    .neis-in-skip summary { cursor: pointer; font-weight: 700; }
-    .neis-in-why { margin: 6px 0 0 4px; line-height: 1.6; }
-    .neis-in-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+    /* ===== 📥 나이스 시간표 알림 ===== */
     #neis-toast { position: fixed; right: 18px; bottom: 18px; z-index: 1040; display: none; flex-direction: column; gap: 8px; max-width: 360px; padding: 12px 14px; border-radius: 12px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; line-height: 1.55; }
     .neis-toast-btns { display: flex; justify-content: flex-end; gap: 6px; }
     .neis-toast-btns .top-btn { font-size: 12px; padding: 4px 10px; }
@@ -2137,13 +2017,11 @@
        오류가 나면(원인 불명으로 "아무 반응 없음"처럼 보이는 대부분의 경우) 화면
        맨 아래에 빨간 띠로 오류 내용을 띄워서, 스크린샷으로 바로 공유할 수 있게 한다. */
     /* 본인 시간표가 없는 분(교장·교감 등)은 "내 시간표" 칸이 PC에서도 선생님을 골라 보는 칸이 된다
-       (◀ 이름 ▶ 목록을 보이고, 제목은 "시간표", 내 수업이 없으니 수업변경 버튼은 숨김). */
+       (◀ 이름 ▶ 목록을 보이고, 제목은 "시간표"). */
     #my-tt-widget.my-tt-browse #m-tt-teacher-select { display: inline-block !important; width: 96px; }
     #my-tt-widget.my-tt-browse .m-tt-nav { display: inline-flex !important; }
     #my-tt-widget.my-tt-browse .m-tt-title-desktop { display: none !important; }
     #my-tt-widget.my-tt-browse .m-tt-title-mobile { display: inline !important; }
-    #my-tt-widget.my-tt-browse .m-tt-change-btn { display: none !important; }
-    body.schedule-manager #my-tt-widget.my-tt-browse .m-tt-change-btn { display: inline-flex !important; }
     #my-tt-widget.my-tt-browse #my-tt-name { display: none !important; } /* 이름은 목록에 이미 보인다 */
 
     /* 🪟 쉬는 창(같은 브라우저에 보드 창이 또 열렸을 때 먼저 있던 창) */
@@ -2160,7 +2038,7 @@
     #m-debug-error { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 99999; background: #c0392b; color: #fff; font-size: 12px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.35); white-space: pre-wrap; word-break: break-word; cursor: pointer; }
     /* ===== 🧳 개인판(lite.html)에서 숨기는 학교 공용 요소 — html.lite는 스크립트 맨 앞에서 붙임 ===== */
     html.lite #btn-notice, html.lite #quick-school-btns, html.lite #duty-alert-pill, html.lite #notice-widget, html.lite #search-teacher-picker,
-    html.lite .tab-tt-btn, html.lite .m-tt-change-btn, html.lite .m-tt-nav, html.lite #m-tt-teacher-select, html.lite #rail-persontt-btn, html.lite #btn-logout,
+    html.lite .tab-tt-btn, html.lite .m-tt-nav, html.lite #m-tt-teacher-select, html.lite #rail-persontt-btn, html.lite #btn-logout,
     html.lite #an-school-row, html.lite #active-semester-label, html.lite #login-gate-overlay, html.lite #my-tt-revert-btn, html.lite #user-chip-admin-badge { display: none !important; }
     html.lite #upcoming-schedule-pill { flex: 1; }
     html.lite #backup-overlay { z-index: 1001; } /* 설정 창(1000)에서 열어도 그 위에 */
@@ -2524,90 +2402,6 @@
   </div>
 </div>
 
-<div class="overlay" id="schedule-change-overlay">
-  <div class="modal-box scc-box">
-    <div class="scc-head">
-      <div class="scc-title">🔁 수업 변경</div>
-      <div class="tab-switch">
-        <button class="tab-btn active" id="scc-tab-new-btn" onclick="sccShowTab('new')">✏️ 변경 등록</button>
-        <button class="tab-btn" id="scc-tab-list-btn" onclick="sccShowTab('list')">📋 변경 내역</button>
-      </div>
-      <div style="flex:1;"></div>
-      <button class="top-btn" style="padding:6px 14px;" onclick="closeScheduleChangeModal()">✕ 닫기</button>
-    </div>
-
-    <!-- 등록: 왼쪽(바꿀 수업)·오른쪽(상대/보강) 시간표에서 칸을 눌러 고른다. 두 쪽은 날짜(주)를 따로 고를 수 있다. -->
-    <div class="scc-pane" id="scc-pane-new">
-      <div class="scc-toolbar">
-        <div class="tab-switch">
-          <button class="tab-btn active" id="scc-type-exchange-btn" onclick="sccSetType('exchange')">🔄 교환</button>
-          <button class="tab-btn" id="scc-type-makeup-btn" onclick="sccSetType('makeup')">🩹 보강</button>
-        </div>
-        <!-- 고르는 방식(10/7 사용자: 시간표 칸보다 나이스처럼 일자·교시 목록이 편한 분이 있음) — 계정에 기억(scc-view) -->
-        <div class="tab-switch" id="scc-view-switch" title="수업을 고르는 방식 — 고른 것은 내 계정에 기억돼요">
-          <button class="tab-btn active" id="scc-view-grid" onclick="sccSetView('grid')">🗓 시간표에서 누르기</button>
-          <button class="tab-btn" id="scc-view-list" onclick="sccSetView('list')">📋 일자·교시 고르기</button>
-        </div>
-        <div id="scc-hint"></div>
-      </div>
-      <div class="scc-sides">
-        <div class="scc-side" id="scc-side-a">
-          <div class="scc-side-head">
-            <span class="scc-side-label" id="scc-side-a-label">① 바꿀 수업</span>
-            <select id="scc-teacher-a" class="mini-select" style="display:none;" onchange="sccOnTeacherAChange()"></select>
-            <span class="scc-fixed-name" id="scc-teacher-a-fixed"></span>
-            <div class="scc-week">
-              <button class="top-btn" id="scc-week-a-prev" onclick="sccMoveWeek('a', -1)" title="지난주">◀</button>
-              <label class="scc-week-pick" title="누르면 달력이 열려요 — 날짜를 고르면 그 주(월~금)가 보여요"><span id="scc-week-a-text"></span><input type="date" id="scc-week-a" onchange="sccOnWeekDate('a')" onclick="sccShowPicker(this)"></label>
-              <button class="top-btn" id="scc-week-a-next" onclick="sccMoveWeek('a', 1)" title="다음 주">▶</button>
-            </div>
-          </div>
-          <div class="scc-grid" id="scc-grid-a"></div>
-        </div>
-        <div class="scc-side" id="scc-side-b">
-          <div class="scc-side-head">
-            <span class="scc-side-label" id="scc-side-b-label">② 맞바꿀 수업</span>
-            <select id="scc-partner" class="mini-select" onchange="sccOnPartnerChange()"><option value="">선생님 선택</option></select>
-            <div class="scc-week">
-              <button class="top-btn" id="scc-week-b-prev" onclick="sccMoveWeek('b', -1)" title="지난주">◀</button>
-              <label class="scc-week-pick" title="누르면 달력이 열려요 — 날짜를 고르면 그 주(월~금)가 보여요"><span id="scc-week-b-text"></span><input type="date" id="scc-week-b" onchange="sccOnWeekDate('b')" onclick="sccShowPicker(this)"></label>
-              <button class="top-btn" id="scc-week-b-next" onclick="sccMoveWeek('b', 1)" title="다음 주">▶</button>
-            </div>
-          </div>
-          <div class="scc-grid" id="scc-grid-b"></div>
-        </div>
-      </div>
-      <div class="scc-foot">
-        <div id="scc-preview"></div>
-        <button class="top-btn" onclick="sccClearPicks()">선택 지우기</button>
-        <button class="top-btn accent" id="scc-save-btn" onclick="sccSave()" disabled>등록하기</button>
-      </div>
-    </div>
-
-    <!-- 변경 내역: 기간·구분·이름으로 거르고, 날짜별로 묶어 표로. 거른 그대로 엑셀로 내려받기. -->
-    <div class="scc-pane" id="scc-pane-list" style="display:none;">
-      <div class="scc-filters">
-        <div class="tab-switch" id="scc-range-btns">
-          <button class="tab-btn" data-range="all" onclick="sccSetListRange('all')">전체</button>
-          <button class="tab-btn active" data-range="upcoming" onclick="sccSetListRange('upcoming')">오늘부터</button>
-          <button class="tab-btn" data-range="thisweek" onclick="sccSetListRange('thisweek')">이번 주</button>
-          <button class="tab-btn" data-range="nextweek" onclick="sccSetListRange('nextweek')">다음 주</button>
-          <button class="tab-btn" data-range="month" onclick="sccSetListRange('month')">이번 달</button>
-          <button class="tab-btn" data-range="past" onclick="sccSetListRange('past')">지난 내역</button>
-        </div>
-        <select id="scc-type-filter" class="mini-select" onchange="sccRenderList()">
-          <option value="all">구분: 전체</option><option value="exchange">교환만</option><option value="makeup">보강만</option><option value="cell">교체(나이스 칸)만</option>
-        </select>
-        <input type="text" id="scc-search" placeholder="🔍 선생님 이름" oninput="sccRenderList()">
-        <span id="scc-list-summary"></span>
-        <div style="flex:1;"></div>
-        <button class="top-btn accent" id="scc-excel-btn" style="padding:6px 14px;" onclick="sccExportExcel()" title="위에서 고른 기간·구분과 상관없이 이번 학기 전체 내역을 받아요">📥 이번 학기 전체 엑셀로 받기</button>
-      </div>
-      <div id="scc-list"></div>
-    </div>
-  </div>
-</div>
-
 <div class="overlay" id="notice-overlay">
   <div class="modal-box" style="width: 300px;">
     <div style="font-weight: 800; font-size: 16px;">📢 전체 교사 공지 전송</div>
@@ -2905,7 +2699,6 @@
             <button class="top-btn m-tt-fz-desktop" style="padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt', 1)">A+</button>
             <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', -1)">A-</button>
             <button class="top-btn m-tt-fz-mobile" style="display:none; padding:2px 6px; font-size:11px;" onclick="changeFontSize('tt-mobile', 1)">A+</button>
-            <button class="top-btn m-tt-change-btn" style="padding:2px 6px; font-size:11px;" onclick="openScheduleChangeModal()" title="수업 변경(교환/보강) 등록">🔁 수업변경</button>
           </div>
         </div>
         <div class="timetable-grid" id="my-timetable-grid"></div>
@@ -4827,14 +4620,14 @@
 
   // ===== 🚨 모바일: #app-shell 안에 갇혀있던 공용 모달을 body 바로 아래로 꺼내기 =====
   // 모바일 화면에서는 PC용 레이아웃 전체(#app-shell)를 display:none으로 숨기는데,
-  // 확인/알림 팝업(customConfirm/Alert/Prompt), 감독표, 수업변경 모달이 전부 그
+  // 확인/알림 팝업(customConfirm/Alert/Prompt), 감독표가 전부 그
   // #app-shell 안쪽에 있어서 — JS로 style.display='flex'를 줘도 부모가 display:none이면
   // 절대 화면에 보이지 않는다. 그래서 모바일에서 로그아웃 확인창이나 감독표 버튼을
   // 눌러도 "완전히 무반응"으로 보였던 것 — 공지사항 팝업만 유일하게 #app-shell 밖에
   // 새로 만들어서 정상 동작했다. 이 공용 모달들을 body 바로 아래로 옮겨서(내용/기능은
   // 그대로, 위치만 이동) PC/모바일 어디서든 항상 보이게 한다.
   (function() {
-    ['custom-confirm-overlay', 'custom-alert-overlay', 'custom-prompt-overlay', 'duty-overlay', 'schedule-change-overlay'].forEach(function(id) {
+    ['custom-confirm-overlay', 'custom-alert-overlay', 'custom-prompt-overlay', 'duty-overlay'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) document.body.appendChild(el);
     });
@@ -5459,7 +5252,7 @@
     customAlert('명단을 넣었어요: ' + summary + '\n\n좌석배치표·결석계·수행평가·생기부·양식에서 바로 쓸 수 있어요.');
   }
   // 📄 빈 엑셀 양식(학년·반·번호·이름·학생번호·어머니번호·아버지번호) — 채워서 📥 엑셀로 올리면 parseStudentWorkbook이 그대로 읽는다.
-  // 서식(머리 색·테두리·틀 고정·숫자 검사)은 ExcelJS(수업 변경에서 쓰는 것과 같은 도구, 누를 때만 받음)로 넣고, 못 받으면 민무늬(XLSX)로.
+  // 서식(머리 색·테두리·틀 고정·숫자 검사)은 ExcelJS(누를 때만 받음)로 넣고, 못 받으면 민무늬(XLSX)로.
   function liteSaveFile(blob, name) {
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
@@ -5469,7 +5262,7 @@
     const head = ['학년', '반', '번호', '이름', '학생번호', '어머니번호', '아버지번호'];
     const examples = []; // 예시 줄 없음 — 다른 엑셀에서 바로 붙여 넣을 수 있게(3행부터 빈 줄)
     try {
-      await sccLoadExcelJS();
+      await loadExcelJS();
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('명렬표', { views: [{ state: 'frozen', ySplit: 2 }] });
       ws.columns = [{ width: 7 }, { width: 6 }, { width: 7 }, { width: 30 }, { width: 16 }, { width: 16 }, { width: 16 }];
@@ -6043,8 +5836,6 @@
     document.getElementById('user-chip-admin-badge').style.display = data.is_admin ? 'inline-block' : 'none';
     document.getElementById('rail-settings-btn').style.display = data.is_admin ? 'flex' : 'none';
     paUpdateRail();
-    // 수업변경 담당: 본인 시간표가 없어도 "내 시간표" 칸의 수업변경 버튼을 보인다(홈 둘째 줄엔 따로 두지 않음).
-    document.body.classList.toggle('schedule-manager', !!data.schedule_manager);
 
     if (data.must_change_password) {
       document.getElementById('force-password-overlay').style.display = 'flex';
@@ -6748,8 +6539,8 @@
         '<select id="role-grade-' + t.id + '" class="mini-select" style="font-size:11px;" onchange="onHomeroomGradeChange(\'' + t.id + '\')">' + gradeOptionsHtml(t.homeroom_grade) + '</select>' +
         '<select id="role-class-' + t.id + '" class="mini-select" style="font-size:11px;">' + classOptionsHtml(t.homeroom_grade || 1, t.homeroom_class) + '</select>' +
         '</span>' +
-        '<label style="display:inline-flex; align-items:center; gap:3px; margin-left:10px; font-size:11px; cursor:pointer;" title="체크하면 누구 수업이든 교환·보강을 등록하고 지울 수 있어요">' +
-        '<input type="checkbox" id="scc-mgr-' + t.id + '" onchange="void 0"' + (t.schedule_manager ? ' checked' : '') + '>🔁 수업변경 담당</label>' +
+        '<label style="display:inline-flex; align-items:center; gap:3px; margin-left:10px; font-size:11px; cursor:pointer;" title="체크하면 이 선생님이 로그인한 스마트보드가 확장 프로그램에서 받은 나이스 시간표(바뀐 칸)를 모두에게 넣어요">' +
+        '<input type="checkbox" id="scc-mgr-' + t.id + '" onchange="void 0"' + (t.schedule_manager ? ' checked' : '') + '>📥 나이스 시간표 받기</label>' +
         '</div>' +
         '</div>';
     });
@@ -10000,7 +9791,7 @@
         }
       }); 
       window.allSchedules = data;
-      await fetchScheduleChanges();
+      await fetchNeisCells();
       mPopulateTtTeacherSelect();
 
       const lastSearch = localStorage.getItem('last-search');
@@ -10109,7 +9900,7 @@
       document.getElementById('staff-tt-name-' + i).innerText = sched ? chosen : '미설정';
       if (sched) {
         applyScheduleToGrid(prefix, sched);
-        applyChangeOverlayToGrid(prefix, chosen);
+        applyNeisToGrid(prefix, chosen);
       } else {
         document.querySelectorAll('#staff-tt-grid-' + i + ' .tt-subj, #staff-tt-grid-' + i + ' .tt-room').forEach(function(el) { el.innerHTML = ''; });
       }
@@ -10719,7 +10510,7 @@
     const s = window.allSchedules[n];
 
     applyScheduleToGrid('search-tt', s);
-    applyChangeOverlayToGrid('search-tt', n);
+    applyNeisToGrid('search-tt', n);
     updateCellColors('search-tt');
   }
 
@@ -10763,7 +10554,7 @@
     if (calMyTtName) calMyTtName.innerText = has ? view : '';
     if (has) {
       applyScheduleToGrid('my-tt', window.allSchedules[view]);
-      applyChangeOverlayToGrid('my-tt', view);
+      applyNeisToGrid('my-tt', view);
     } else {
       document.querySelectorAll('#my-timetable-grid .tt-subj, #my-timetable-grid .tt-room').forEach(function(el) { el.innerHTML = ''; });
     }
@@ -10798,26 +10589,15 @@
       document.getElementById('my-tt-' + p + '-' + d + '-s').innerHTML = subjDisplayHtml(parts[0] || '');
       document.getElementById('my-tt-' + p + '-' + d + '-r').innerText = parts[1] || ''; 
     }
-    applyChangeOverlayToGrid('my-tt', my);
+    applyNeisToGrid('my-tt', my);
     updateCellColors('my-tt');
     saveElements('#my-timetable-grid .editable');
   }
 
-  // ===== 🔁 수업 변경(교환/보강) =====
-  // 시간표 자체(매주 반복되는 정규 패턴)는 건드리지 않고, "이 날짜엔 이 교시가 이렇게
-  // 바뀐다"는 기록을 schedule_changes 테이블에 따로 쌓아둔다. 시간표를 그릴 때(내 시간표/
-  // 검색 시간표) 지금 보여주는 주(이번 주 월~금 실제 날짜)에 해당하는 기록이 있으면
-  // 그 칸 위에 겹쳐서 보여준다 — 다음 주가 되면 그 날짜가 더 이상 "이번 주"가 아니게 되므로
-  // 자동으로 원래 시간표로 돌아간다(시간표알리미와 같은 방식).
-  //
-  // 나(A)는 change_date의 period_a, 상대방(B)은 change_date_b의 period_b(비어 있으면 change_date와
-  // 같은 날 — 예전에 등록한 기록). 두 날짜는 서로 달라도 된다(월 3교시 ↔ 수 5교시).
-  // 교환: 서로 자리를 맞바꾼다 — 내 (날짜A, 교시A) 수업이 (날짜B, 교시B) 자리로 옮겨가고, 상대방의
-  //   (날짜B, 교시B) 수업이 내 (날짜A, 교시A) 자리로 옮겨간다. 각자 자기 과목을 그대로 들고
-  //   시간만 옮기는 것(내용을 서로 맞바꾸는 게 아님). 단, 같은 날짜·같은 교시끼리 교환은 그 시간에 서로
-  //   반(수업)을 맞바꿔 들어가는 것 — 내 칸엔 상대방 수업이, 상대방 칸엔 내 수업이 보인다.
-  // 보강: 내가 (날짜A, 교시A) 수업을 못 해서 상대방이 (날짜B, 교시B)에 대신 가르쳐준다 — 보통은
-  //   같은 날짜·교시. 내 칸은 비고, 상대방 시간표 (날짜B, 교시B)에 내 수업이 추가된다.
+  // ===== 📅 이번 주 실제 시간표 =====
+  // 시간표 자체(매주 반복되는 정규 패턴)는 건드리지 않고, 나이스에서 받아 온 "이 날짜 이 교시 이 반은 이렇게 바뀐다"는 칸
+  // (schedule_cell_changes)을 지금 보여주는 주(이번 주 월~금 실제 날짜)의 칸 위에 덮어 그린다 — 다음 주가 되면
+  // 그 날짜가 더 이상 "이번 주"가 아니게 되므로 자동으로 원래 시간표로 돌아간다(시간표알리미와 같은 방식).
   function getCurrentWeekDates() {
     const now = new Date();
     const day = now.getDay();
@@ -10849,7 +10629,7 @@
   }
   const sbCombo = { sel: null, input: null, items: [], on: 0 };
   function sbNameComboAll() {
-    ['search-select', 'scc-teacher-a', 'scc-partner', 'm-tt-teacher-select', 'schedule-teacher-select'].forEach(function(id) { sbNameCombo(document.getElementById(id)); });
+    ['search-select', 'm-tt-teacher-select', 'schedule-teacher-select'].forEach(function(id) { sbNameCombo(document.getElementById(id)); });
     document.querySelectorAll('select[id^="staff-tt-select-"]').forEach(sbNameCombo);
   }
   function sbNameCombo(sel) {
@@ -10959,685 +10739,81 @@
   window.addEventListener('resize', function() { if (sbCombo.input) { const i = sbCombo.input; sbComboClose(); i.blur(); } });
   document.addEventListener('DOMContentLoaded', sbNameComboAll);
 
-  // 수업 변경을 등록할 수 있는 기간: 이번 주 월요일부터 지금 학기 끝날까지(관리자 설정의 학기 날짜).
-  // 학기 날짜가 없거나 이미 지났으면 예전처럼 이번 주만.
-  function sccDateRange() {
-    const weekDates = getCurrentWeekDates();
-    const r = (window.semesterRanges || {})[window.currentActiveSemester || getActiveSemester()];
-    const end = (r && r.end && r.end > weekDates[4]) ? r.end : weekDates[4];
-    return { min: weekDates[0], max: end };
-  }
-
-  // 수업 변경 창에서 고를 수 있는 기간: 이 학기 시작(관리자 설정 학기 날짜) ~ 학기 끝. 지난 날짜도 기록할 수 있게(사용자 요청 10/2) —
-  // 학기 날짜가 없거나 이번 주가 학기 밖이면 예전처럼 이번 주부터. 홈 시간표·받아 오기 기준(sccDateRange)은 그대로.
-  function sccPickRange() {
-    const range = sccDateRange(), weekMon = getCurrentWeekDates()[0];
-    const r = (window.semesterRanges || {})[window.currentActiveSemester || getActiveSemester()];
-    const min = (r && r.start && r.start < weekMon && (!r.end || r.end >= weekMon)) ? r.start : range.min;
-    return { min: min, max: range.max };
-  }
-
   // 날짜 문자열(YYYY-MM-DD)의 요일 번호: 월=1 … 금=5, 주말은 0 또는 6.
-  function sccWeekdayOf(dateStr) {
+  function weekdayOfYmd(dateStr) {
     const p = dateStr.split('-');
     return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getDay();
   }
 
-  // 등록할 수 있는 날짜인지 확인하고, 안 되면 이유를 돌려준다.
-  function sccDateProblem(dateStr) {
-    const range = sccPickRange();
-    if (dateStr < range.min || dateStr > range.max) return '이번 학기(' + sccMD(range.min) + ' ~ ' + sccMD(range.max) + ') 날짜만 고를 수 있어요.';
-    const wd = sccWeekdayOf(dateStr);
-    if (wd < 1 || wd > 5) return '월~금요일만 고를 수 있어요.';
-    return '';
-  }
-
-  function sccDateB(c) { return c.change_date_b || c.change_date; }
-
-  // 시간표에는 이번 주 변경만 그리지만, 창의 목록에서 앞으로 등록된 것도 보이도록 학기 끝까지 받아 둔다.
-  // 두 날짜 중 하나라도 이번 주 ~ 학기 끝에 걸리면 필요하다 — 날짜A가 지난주여도 날짜B가 이번 주일 수
-  // 있어서, 날짜A는 넉넉히 반년 전부터 받아 와서 화면에서 거른다(표가 작아서 부담 없음).
-  // 나이스 "칸 그대로" 기록 → 수업 변경 목록에 섞을 모양. 짝이 나이스 표에 안 보이는 교체(시수 맞추려 다른 요일 수업을
-  // 당겨 하는 날 등)를 나이스에 적힌 그대로 "이 날 이 교시 이 반은 teacher_b 선생님 subject 과목"으로 담는다(원래 teacher_a, 없으면 '').
-  function sccCellRecord(c) {
-    return { id: 'cell-' + c.id, cellId: c.id, type: 'cell', change_date: c.change_date, change_date_b: c.change_date, period_a: c.period, period_b: c.period,
-      teacher_a: c.teacher_from || '', teacher_b: c.teacher_to, room_a: c.room, room_b: null, subject: c.subject || '', source: c.source || null, created_by: c.created_by, created_at: c.created_at };
-  }
-  async function fetchScheduleChanges() {
-    try {
-      const range = sccDateRange();
-      const pr = sccPickRange();
-      const from = new Date(pr.min < range.min ? pr.min : range.min); from.setDate(from.getDate() - 200);
-      // 서버는 한 번에 1000줄까지만 준다 — 연속 교환은 기록이 하나라도 빠지면 틀리게 그려지므로 1000줄씩 끝까지 받는다
-      const data = [];
-      for (let off = 0; ; off += 1000) {
-        const res = await sb.from('schedule_changes').select('*')
-          .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max)
-          .order('id', { ascending: true }).range(off, off + 999);
-        if (res.error) throw res.error;
-        (res.data || []).forEach(function(c) { data.push(c); });
-        if (!res.data || res.data.length < 1000) break;
-      }
-      // 나이스 "칸 그대로" 기록(schedule_cell_changes)도 같은 목록에 type 'cell'로 섞는다 — 못 받으면 칸 기록 없이
-      for (let off = 0; ; off += 1000) {
-        const res = await sb.from('schedule_cell_changes').select('*')
-          .gte('change_date', from.toISOString().slice(0, 10)).lte('change_date', range.max)
-          .order('id', { ascending: true }).range(off, off + 999);
-        if (res.error) break;
-        (res.data || []).forEach(function(c) { data.push(sccCellRecord(c)); });
-        if (!res.data || res.data.length < 1000) break;
-      }
-      // 변경 창(지난 내역·다른 주 보기·엑셀)은 받아 온 전부를, 홈 시간표는 이번 주 ~ 학기 끝만 쓴다.
-      window.scheduleChangesAll = data;
-      window.scheduleChangesRaw = window.scheduleChangesAll.filter(function(c) {
-        const inRange = function(d) { return d >= range.min && d <= range.max; };
-        return inRange(c.change_date) || inRange(sccDateB(c));
-      });
-    } catch (e) { window.scheduleChangesRaw = []; window.scheduleChangesAll = []; }
-  }
-
-  // 변경 기록을 등록한 순서(created_at → id)대로 차례로 적용해 "실제" 시간표를 만든다(10/7 사용자: 연속 교환이 많다).
-  // 앞 기록이 옮겨 놓은 수업을 뒤 기록이 그대로 이어받는다(바뀐 칸을 다시 바꾸면 "지금 그 칸에 와 있는 수업"이 옮겨감).
-  // 한 칸에 수업이 여러 개 있을 수 있다(10/7 담당 선생님 검증): 교환으로 이미 수업이 있는 시간에 수업이 오면 잠시 두 수업이 겹치고,
-  // 다음 기록으로 하나를 비켜 놓아 푸는 식으로 넣는 경우가 많다. 예전엔 한 칸에 하나만 담아 덮어써서 넣는 순서에 따라 수업이 사라졌다.
-  // 겹친 칸에서 어느 수업을 옮기는지: 기록의 room_a / room_b(그 수업의 반) → 없으면(옛 기록) 상대 수업과 같은 반 → 그래도 모르면 나중에 온 수업.
-  // get(teacher, date, period) → { list: [{ s, r, by }], s, r(첫 수업 — 한 개일 때 그대로 쓰기 편하게), text(겹치면 " / "로), change(그 칸을 마지막으로 바꾼 기록) }
-  //   by = 그 수업을 그 칸으로 옮겨 놓은 기록 id(정규 시간표 수업이면 null)
-  // 홈 시간표(이번 주)·수업 변경 창(아무 주)·겹침 경고·변경 내역 글·엑셀이 모두 이것 하나를 쓴다.
-  //   교환(다른 시간): A의 (날짜A,교시A) 수업이 A의 (날짜B,교시B) 자리로, B의 (날짜B,교시B) 수업이 B의 (날짜A,교시A) 자리로 — 각자 자기 수업을 들고 시간만 옮김
-  //   교환(같은 시간): 그 시간에 서로 상대방 수업으로 / 보강: A의 수업이 B의 (날짜B,교시B)에, A 칸에서는 빠짐
-  // info[id] = { classA, classB(그 기록이 옮긴 수업 글 — 변경 내역), a, b([과목, 반] — 엑셀 칸), deps(이 기록이 옮겨 놓은 수업을 다시 옮긴 뒤 기록 수 — 지울 때 경고) }
-  // choose(record) = 그 기록을 지금 등록하면 옮겨질 수업 { a, b } — 미리보기·등록(room_a/room_b 저장)에 쓴다.
-  function sccClassTextOf(x) { return x && x.s ? x.s + (x.r ? ' ' + x.r : '') : ''; }
-  function sccCellOf(list, change) {
-    return { list: list, s: list.length ? list[0].s : '', r: list.length ? list[0].r : '', text: list.map(sccClassTextOf).join(' / '), change: change };
-  }
-  let sccEffCache = null;
-  function sccEffectiveMap(list) {
-    list = list || [];
-    if (sccEffCache && sccEffCache.list === list && sccEffCache.n === list.length && sccEffCache.sched === window.allSchedules) return sccEffCache.map;
-    const cells = {}, info = {};
-    const key = function(t, date, p) { return t + '|' + date + '|' + p; };
-    const get = function(t, date, p) {
-      const k = key(t, date, p);
-      if (cells[k]) return cells[k];
-      const c = sccRegularCell(t, sccWeekdayOf(date), p);
-      return sccCellOf(c[0] ? [{ s: c[0], r: c[1], by: null }] : [], null);
-    };
-    // 칸에서 옮길 수업 하나 고르기: 정한 반(room) → 상대 수업들과 같은 반(하나뿐일 때) → 나중에 온 수업
-    const pickFrom = function(cell, room, others) {
-      const l = cell.list;
-      if (!l.length) return null;
-      if (room) { const f = l.filter(function(x) { return x.r === room; }); if (f.length) return f[f.length - 1]; }
-      if (l.length === 1) return l[0];
-      const rooms = (others || []).map(function(x) { return x.r; });
-      const m = l.filter(function(x) { return x.r && rooms.indexOf(x.r) >= 0; });
-      return m.length === 1 ? m[0] : l[l.length - 1];
-    };
-    const choose = function(c) {
-      const A = get(c.teacher_a, c.change_date, c.period_a);
-      if (c.type !== 'exchange') return { a: pickFrom(A, c.room_a, null), b: null, A: A, B: null };
-      const B = get(c.teacher_b, sccDateB(c), c.period_b);
-      const a = pickFrom(A, c.room_a, c.room_b ? [{ r: c.room_b }] : B.list);
-      const b = pickFrom(B, c.room_b, a ? [a] : A.list);
-      return { a: a, b: b, A: A, B: B };
-    };
-    const sorted = list.slice().sort(function(x, y) {
-      return String(x.created_at || '').localeCompare(String(y.created_at || '')) || ((Number(x.id) || 0) - (Number(y.id) || 0)) || String(x.id).localeCompare(String(y.id));
-    });
-    sorted.forEach(function(c) {
-      const dateA = c.change_date, dateB = sccDateB(c), pA = c.period_a, pB = c.period_b;
-      if (c.type === 'cell') { // 나이스 칸 그대로: 그 반 수업만 원래 선생님에게서 빼고 새 선생님에게 넣는다
-        const A0 = c.teacher_a ? get(c.teacher_a, dateA, pA) : null;
-        const gone = A0 ? A0.list.filter(function(x) { return x.r === c.room_a; })[0] || null : null;
-        if (gone && gone.by != null && info[gone.by]) info[gone.by].deps++;
-        if (A0) cells[key(c.teacher_a, dateA, pA)] = sccCellOf(A0.list.filter(function(x) { return x !== gone; }), c);
-        cells[key(c.teacher_b, dateA, pA)] = sccCellOf(get(c.teacher_b, dateA, pA).list.concat([{ s: c.subject, r: c.room_a, by: c.id }]), c);
-        info[c.id] = { classA: sccClassTextOf(gone), classB: sccClassTextOf({ s: c.subject, r: c.room_a }), a: gone ? [gone.s, gone.r] : ['', ''], b: [c.subject, c.room_a], deps: 0 };
-        return;
-      }
-      const ch = choose(c), a = ch.a, b = ch.b;
-      // 이어받기: 옮기는 수업을 앞 기록이 옮겨 놓았으면 그 기록에 "뒤에 이어진 변경" 하나를 더한다
-      [a, b].forEach(function(x) { if (x && x.by != null && info[x.by]) info[x.by].deps++; });
-      const without = function(cell, x) { return cell.list.filter(function(y) { return y !== x; }); };
-      const set = function(t, date, p, l) { cells[key(t, date, p)] = sccCellOf(l, c); };
-      const moved = function(x) { return x ? [{ s: x.s, r: x.r, by: c.id }] : []; };
-      if (c.type === 'exchange') {
-        if (dateB === dateA && pA === pB) {
-          set(c.teacher_a, dateA, pA, without(ch.A, a).concat(moved(b)));
-          set(c.teacher_b, dateB, pB, without(ch.B, b).concat(moved(a)));
-        } else {
-          set(c.teacher_a, dateA, pA, without(ch.A, a));
-          set(c.teacher_a, dateB, pB, get(c.teacher_a, dateB, pB).list.concat(moved(a)));
-          set(c.teacher_b, dateB, pB, without(ch.B, b));
-          set(c.teacher_b, dateA, pA, get(c.teacher_b, dateA, pA).list.concat(moved(b)));
-        }
-      } else {
-        set(c.teacher_a, dateA, pA, without(ch.A, a));
-        set(c.teacher_b, dateB, pB, get(c.teacher_b, dateB, pB).list.concat(moved(a)));
-      }
-      info[c.id] = { classA: sccClassTextOf(a), classB: c.type === 'exchange' ? sccClassTextOf(b) : '', a: a ? [a.s, a.r] : ['', ''], b: b && c.type === 'exchange' ? [b.s, b.r] : ['', ''], deps: 0 };
-    });
-    const map = { get: get, info: info, choose: function(c) { const x = choose(c); return { a: x.a, b: x.b }; } };
-    sccEffCache = { list: list, n: list.length, sched: window.allSchedules, map: map };
-    return map;
-  }
-  function sccAllChanges() { return window.scheduleChangesAll || window.scheduleChangesRaw || []; }
-  // 그 날짜·교시에 그 선생님이 실제로 하는 수업("국어 2-3") — 변경까지 반영
-  function sccClassAt(teacher, date, period) { return sccEffectiveMap(sccAllChanges()).get(teacher, date, period).text; }
-  // 이 기록이 옮겨 놓은 수업을 이어받은 뒤 기록 수(지울 때 경고)
-  function sccChainDependents(id) { const i = sccEffectiveMap(sccAllChanges()).info[id]; return i ? i.deps : 0; }
-
   // 정규 시간표 한 칸(요일 wd 1~5, 교시 1~7)의 [과목, 교실]
-  function sccRegularCell(teacher, wd, period) {
+  function regularCellOf(teacher, wd, period) {
     const s = (window.allSchedules || {})[teacher];
     if (!s || wd < 1 || wd > 5) return ['', ''];
     const parts = (s[(wd - 1) * 7 + (period - 1)] || '').split(String.fromCharCode(10));
     return [parts[0] || '', parts[1] || ''];
   }
 
-  // 어떤 안내 문구나 뱃지도 없이, 실제로 그 요일에 무슨 수업이 있는지 "결과만" 보여준다.
-  // 원래 그 교시의 주인이었던 사람 칸은 빈 시간처럼 비우고, 지금 실제로 그 시간에
-  // 가르치는(또는 가르칠) 사람의 칸에 그 수업 내용을 평범한 시간표 칸처럼 그대로 넣는다.
-  function applyChangeOverlayToGrid(prefix, teacherName) {
-    if (!teacherName || !window.scheduleChangesRaw) return;
-    const map = sccEffectiveMap(sccAllChanges()), weekDates = getCurrentWeekDates();
+  // 이번 주(월~금) 나이스 바뀐 칸(schedule_cell_changes)을 받아 둔다 — 홈·검색 시간표가 이것을 덮어 그린다.
+  async function fetchNeisCells() {
+    try {
+      const w = getCurrentWeekDates(), data = [];
+      for (let off = 0; ; off += 1000) {
+        const res = await sb.from('schedule_cell_changes').select('*')
+          .gte('change_date', w[0]).lte('change_date', w[4])
+          .order('id', { ascending: true }).range(off, off + 999);
+        if (res.error) throw res.error;
+        (res.data || []).forEach(function(c) { data.push(c); });
+        if (!res.data || res.data.length < 1000) break;
+      }
+      window.neisCells = data;
+    } catch (e) { window.neisCells = []; }
+  }
+
+  // 그 날짜·교시에 그 선생님이 실제로 하는 수업 → { list: [{ s, r }], changed }
+  // 나이스에 바뀐 칸이 있는 반(날짜·교시·반)은 기본 시간표의 그 반 수업을 빼고, 나이스에 적힌 선생님에게 넣는다.
+  let neisCellIdx = null;
+  function neisCellIndex() {
+    const rows = window.neisCells || [];
+    if (neisCellIdx && neisCellIdx.rows === rows) return neisCellIdx;
+    const slot = {}, byTeacher = {};
+    rows.forEach(function(c) {
+      const k = c.change_date + '|' + c.period;
+      (slot[k] = slot[k] || {})[c.room] = true;
+      const tk = c.teacher_to + '|' + k;
+      (byTeacher[tk] = byTeacher[tk] || []).push({ s: c.subject || '', r: c.room });
+    });
+    neisCellIdx = { rows: rows, slot: slot, byTeacher: byTeacher };
+    return neisCellIdx;
+  }
+  function timetableCellAt(teacher, date, period) {
+    const idx = neisCellIndex(), k = date + '|' + period, taken = idx.slot[k] || {};
+    const base = regularCellOf(teacher, weekdayOfYmd(date), period), list = [];
+    let changed = false;
+    if (base[0]) { if (base[1] && taken[base[1]]) changed = true; else list.push({ s: base[0], r: base[1] }); }
+    (idx.byTeacher[teacher + '|' + k] || []).forEach(function(x) { changed = true; list.push(x); });
+    return { list: list, changed: changed };
+  }
+
+  // 어떤 안내 문구나 뱃지도 없이, 이번 주에 실제로 하는 수업 "결과만" 평범한 시간표 칸처럼 보여준다.
+  function applyNeisToGrid(prefix, teacherName) {
+    if (!teacherName || !(window.neisCells || []).length) return;
+    const weekDates = getCurrentWeekDates();
     for (let p = 1; p <= 7; p++) for (let d = 1; d <= 5; d++) {
-      const cell = map.get(teacherName, weekDates[d - 1], p);
-      if (!cell.change) continue;
+      const cell = timetableCellAt(teacherName, weekDates[d - 1], p);
+      if (!cell.changed) continue;
       const subjEl = document.getElementById(prefix + '-' + p + '-' + d + '-s');
       const roomEl = document.getElementById(prefix + '-' + p + '-' + d + '-r');
-      // 수업이 겹친 칸(잠시 두 수업 — 다음 변경으로 풀 것)은 과목·반을 " / "로 같이 보여 준다
+      // 한 칸에 수업이 둘(나이스에서 겹치게 넣은 경우)이면 과목·반을 " / "로 같이 보여 준다
       const subjs = cell.list.map(function(x) { return x.s; }).filter(function(x, i, l) { return l.indexOf(x) === i; });
       if (subjEl) subjEl.innerHTML = subjs.map(subjDisplayHtml).join(' / ');
       if (roomEl) roomEl.innerText = cell.list.map(function(x) { return x.r; }).join(' / ');
     }
   }
 
-  // ----- 수업 변경 큰 창 -----
-  // 왼쪽 = 바꿀 수업(담당이면 아무 선생님, 아니면 나), 오른쪽 = 교환 상대 / 보강해 줄 선생님.
-  // 두 쪽이 날짜(주)를 따로 고른다 — 오른쪽은 직접 옮기기 전까지 왼쪽 주를 따라간다.
-  // 칸을 누르면 날짜·교시가 한 번에 정해진다(pickA / pickB = { date, period }).
-  const scc = { type: 'exchange', weekA: '', weekB: '', bTouched: false, pickA: null, pickB: null, tab: 'new', listRange: 'upcoming', listDate: { a: '', b: '' } };
-  const SCC_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
-  function sccYmd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-  function sccParse(ymd) { const p = ymd.split('-'); return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)); }
-  function sccAddDays(ymd, n) { const d = sccParse(ymd); d.setDate(d.getDate() + n); return sccYmd(d); }
-  // 그 날짜가 들어 있는 주의 월요일(토·일은 다음 주 월요일)
-  function sccMondayOf(ymd) {
-    const wd = sccWeekdayOf(ymd);
-    return sccAddDays(ymd, wd === 0 ? 1 : wd === 6 ? 2 : 1 - wd);
-  }
-  function sccWeekDates(monday) { const out = []; for (let i = 0; i < 5; i++) out.push(sccAddDays(monday, i)); return out; }
-  function sccMD(ymd) { const p = ymd.split('-'); return parseInt(p[1], 10) + '/' + parseInt(p[2], 10); }
-
-  // 수업변경 담당(관리자가 계정 관리에서 체크)은 누구 수업이든 등록하고, 전체 내역을 보고 지울 수 있다.
-  function isScheduleManager() {
-    return !!(window.currentTeacher && window.currentTeacher.schedule_manager);
-  }
-
-  // 변경할 수업의 주인: 담당이면 창에서 고른 선생님, 아니면 나.
-  function sccTeacherA() {
-    if (isScheduleManager()) return document.getElementById('scc-teacher-a').value;
-    return localStorage.getItem('my-n');
-  }
-  function sccPartner() { return document.getElementById('scc-partner').value; }
-
-  function sccTeacherNames() {
-    return Object.keys(window.allSchedules || {}).sort().filter(function(n) { return n !== '선생님' && n.trim() !== ''; });
-  }
-
-  function sccFillPartnerOptions() {
-    const a = sccTeacherA();
-    const partnerSel = document.getElementById('scc-partner');
-    const prev = partnerSel.value;
-    partnerSel.innerHTML = '<option value="">선생님 선택</option>' + sccTeacherNames()
-      .filter(function(n) { return n !== a; })
-      .map(function(n) { return '<option value="' + escapeHtmlAttr(n) + '">' + escapeHtmlText(n) + '</option>'; }).join('');
-    partnerSel.value = (prev && prev !== a) ? prev : '';
-  }
-
-  function sccOnTeacherAChange() {
-    scc.pickA = null;
-    const before = sccPartner();
-    sccFillPartnerOptions();
-    if (before && !sccPartner()) scc.pickB = null;
-    sccRenderNew();
-  }
-
-  function sccOnPartnerChange() {
-    scc.pickB = null;
-    sccRenderNew();
-  }
-
-  // 그 선생님의 그 주 실제 시간표(등록된 변경까지 반영): cells[period][d] = { s, r, change }
-  function sccCellsForWeek(teacher, weekDates) {
-    const map = sccEffectiveMap(sccAllChanges()), cells = {};
-    for (let p = 1; p <= 7; p++) {
-      cells[p] = {};
-      for (let d = 1; d <= 5; d++) cells[p][d] = map.get(teacher, weekDates[d - 1], p);
-    }
-    return cells;
-  }
-
-  // 그 날짜·교시에 그 선생님이 (변경까지 반영해서) 수업이 있는지
-  function sccBusyAt(teacher, date, period) {
-    const wd = sccWeekdayOf(date);
-    if (wd < 1 || wd > 5) return '';
-    return sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)))[period][wd].text;
-  }
-
-  // 칸을 누를 수 있는지. 못 누르면 이유(마우스를 올리면 보임)를 돌려준다.
-  function sccCellBlock(side, date, cell) {
-    if (sccDateProblem(date)) return sccDateProblem(date);
-    // 이미 바뀐 칸도 다시 바꿀 수 있다(연속 교환 — 지금 그 칸에 와 있는 수업이 옮겨감). 예전엔 여기서 막았음.
-    if (side === 'a') return cell.s ? '' : '빈 시간이에요 — 수업이 있는 칸을 눌러 주세요.';
-    if (scc.type === 'exchange') return cell.s ? '' : '교환은 수업이 있는 칸끼리 바꿔요.';
-    return cell.s ? '이 시간엔 이미 수업이 있어요 — 보강은 빈 시간을 눌러 주세요.' : '';
-  }
-
-  function sccRenderGrid(side) {
-    const teacher = side === 'a' ? sccTeacherA() : sccPartner();
-    const monday = side === 'a' ? scc.weekA : scc.weekB;
-    const grid = document.getElementById('scc-grid-' + side);
-    if (sccView() === 'list') return sccRenderListPick(side, teacher, grid);
-    grid.classList.remove('scc-listpick');
-    const weekDates = sccWeekDates(monday);
-    const today = todayYmdDash();
-    let html = '<div></div>';
-    weekDates.forEach(function(date, i) {
-      html += '<div class="scc-dh' + (date === today ? ' today' : '') + (sccDateProblem(date) ? ' off' : '') + '">' + SCC_DAYS[i + 1] + '<small>' + sccMD(date) + '</small></div>';
-    });
-    if (!teacher || !window.allSchedules[teacher]) {
-      html += '<div class="scc-empty-msg">' + (side === 'a' ? '위에서 선생님을 고르세요.' : '위에서 ' + (scc.type === 'exchange' ? '교환할' : '보강해 줄') + ' 선생님을 고르세요.') + '</div>';
-      grid.innerHTML = html;
-      return;
-    }
-    const cells = sccCellsForWeek(teacher, weekDates);
-    const pick = side === 'a' ? scc.pickA : scc.pickB;
-    for (let p = 1; p <= 7; p++) {
-      const t = currentTimes[p - 1] || { s: '' };
-      html += '<div class="scc-ph">' + p + '<small>' + escapeHtmlText(t.s) + '</small></div>';
-      for (let d = 1; d <= 5; d++) {
-        const date = weekDates[d - 1];
-        const cell = cells[p][d];
-        const block = sccCellBlock(side, date, cell);
-        const sel = pick && pick.date === date && pick.period === p;
-        // sel = 고른 칸, chg = 이미 변경된 칸, pick = 누를 수 있음, no = 흐리게(기간 밖·고를 수 없는 종류).
-        // 왼쪽의 빈 시간은 흐리게 하지 않고 그냥 못 누르게만(시간표가 읽기 쉽게).
-        let cls = 'scc-cell' + (cell.s ? ' has' : ' empty');
-        if (cell.change) cls += ' chg'; // 바뀐 칸 표시(점선) — 누를 수 있으면 pick도 같이
-        if (cell.list.length > 1) cls += ' dbl'; // 수업이 겹친 칸(빨간 테두리)
-        if (sel) cls += ' sel';
-        else if (!block) cls += ' pick';
-        else if (sccDateProblem(date) || side === 'b') cls += ' no';
-        const bg = cell.s ? ' style="background:' + getSubjectColor(cell.s + cell.r) + ';"' : '';
-        const badge = sel ? (side === 'a' ? '①' : '②') : cell.list.length > 1 ? '겹침' : cell.change ? (cell.change.type === 'exchange' ? '교환' : '보강') : '';
-        html += '<div class="' + cls + '"' + bg + ' data-date="' + date + '" data-p="' + p + '"' +
-          (block && !sel ? ' title="' + escapeHtmlAttr(block) + '"' : '') +
-          (!block || sel ? ' onclick="sccPick(\'' + side + '\', \'' + date + '\', ' + p + ')"' : '') + '>' +
-          cell.list.map(function(x) { return '<span class="s">' + subjDisplayHtml(x.s) + '</span><span class="r">' + escapeHtmlText(x.r) + '</span>'; }).join('') +
-          (badge ? '<span class="badge">' + badge + '</span>' : '') + '</div>';
-      }
-    }
-    grid.innerHTML = html;
-  }
-
-  // ----- 📋 일자·교시 고르기(나이스 "수업 교체" 화면과 같은 꼴: 일자(− +) · 교시 · 과목정보) -----
-  // 시간표 칸을 누르는 대신 날짜와 교시 목록으로 고른다(같은 pickA/pickB를 채우므로 미리보기·등록은 그대로). 방식은 계정 자료 'scc-view'에 기억.
-  function sccView() { let v = ''; try { v = localStorage.getItem('scc-view') || ''; } catch (e) {} return v === 'list' ? 'list' : 'grid'; }
-  function sccSetView(v) {
-    try { if (v === 'list') localStorage.setItem('scc-view', 'list'); else localStorage.removeItem('scc-view'); } catch (e) {}
-    scheduleBackupWrite();
-    sccRenderNew();
-  }
-  function sccListDate(side, v) {
-    if (!v) return;
-    scc.listDate[side] = v;
-    scc[side === 'a' ? 'pickA' : 'pickB'] = null; // 날짜가 바뀌면 교시는 다시 고른다
-    sccSetWeek(side, sccMondayOf(v)); // 시간표 방식으로 돌아가도 그 주가 보이게
-    sccRenderNew();
-  }
-  // − / +: 앞·뒤 평일로(주말은 건너뜀), 고를 수 있는 기간 안에서
-  function sccListDay(side, dir) {
-    let d = scc.listDate[side]; if (!d) return;
-    const range = sccPickRange();
-    for (let i = 0; i < 4; i++) { d = sccAddDays(d, dir); const wd = sccWeekdayOf(d); if (wd >= 1 && wd <= 5) break; }
-    if (d < range.min || d > range.max) return;
-    sccListDate(side, d);
-  }
-  function sccListPeriod(side, v) {
-    const p = parseInt(v, 10), date = scc.listDate[side];
-    scc[side === 'a' ? 'pickA' : 'pickB'] = p && date ? { date: date, period: p } : null;
-    sccRenderNew();
-  }
-  // 🩹 보강 + 📋 일자·교시 고르기: ②는 선생님만 고른다 — ①과 같은 일자·교시에 대신 들어감(10/8 사용자 요청)
-  function sccMakeupSameTime() { return scc.type === 'makeup' && sccView() === 'list'; }
-  function sccSyncMakeupB() {
-    if (!sccMakeupSameTime()) return;
-    scc.pickB = scc.pickA ? { date: scc.pickA.date, period: scc.pickA.period } : null;
-  }
-  // 그 시간에 수업이 없는 선생님(①의 선생님 빼고) — 변경까지 반영
-  function sccFreeTeachersAt(date, period, except) {
-    const map = sccEffectiveMap(sccAllChanges());
-    return sccTeacherNames().filter(function(n) { return n !== except && window.allSchedules[n] && !map.get(n, date, period).text; });
-  }
-  function sccSetPartner(name) {
-    document.getElementById('scc-partner').value = name;
-    sccOnPartnerChange();
-  }
-  function sccRenderMakeupB(teacher, grid) {
-    const A = scc.pickA, a = sccTeacherA();
-    let h = '';
-    if (!A) {
-      h = '<div class="scc-lp-l">보강 시간</div><div class="scc-lp-info empty">①에서 보강이 필요한 수업의 일자·교시를 고르면, 그 시간에 들어갈 선생님만 고르면 돼요.</div>';
-      grid.innerHTML = h;
-      return;
-    }
-    const t = currentTimes[A.period - 1] || { s: '' };
-    h += '<div class="scc-lp-l">보강 시간</div><div><b>' + escapeHtmlText(sccSlotText(A.date, A.period)) + (t.s ? ' (' + escapeHtmlText(t.s) + ')' : '') + '</b><span class="sub" style="color:var(--text-sub);">①과 같은 시간</span></div>';
-    if (teacher && window.allSchedules[teacher]) {
-      const busy = sccBusyAt(teacher, A.date, A.period);
-      h += '<div class="scc-lp-l">' + escapeHtmlText(teacher) + '</div><div class="scc-lp-info' + (busy ? ' busy' : '') + '">' +
-        (busy ? '⚠️ 이 시간엔 "' + escapeHtmlText(busy) + '" 수업이 있어요 — 아래에서 빈 선생님을 고르세요.' : '✅ 이 시간이 비어 있어요 — 보강할 수 있어요.') + '</div>';
-    }
-    const free = sccFreeTeachersAt(A.date, A.period, a);
-    h += '<div class="scc-lp-l">빈 선생님<small>' + free.length + '명</small></div><div class="scc-lp-info scc-lp-free">' +
-      (free.length ? free.map(function(n) {
-        return '<button type="button" class="top-btn scc-free-btn' + (n === teacher ? ' active' : '') + '" onclick="sccSetPartner(\'' + escapeHtmlAttr(n.replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">' + escapeHtmlText(n) + '</button>';
-      }).join('') : '이 시간에 비어 있는 선생님이 없어요.') + '</div>';
-    grid.innerHTML = h;
-  }
-  function sccRenderListPick(side, teacher, grid) {
-    grid.classList.add('scc-listpick'); grid.style.display = '';
-    if (side === 'b' && sccMakeupSameTime()) return sccRenderMakeupB(teacher, grid);
-    const pick = side === 'a' ? scc.pickA : scc.pickB;
-    const monday = side === 'a' ? scc.weekA : scc.weekB, today = todayYmdDash();
-    if (pick) scc.listDate[side] = pick.date;
-    if (!scc.listDate[side]) scc.listDate[side] = (sccMondayOf(today) === monday && sccWeekdayOf(today) >= 1 && sccWeekdayOf(today) <= 5) ? today : monday;
-    const date = scc.listDate[side], range = sccPickRange();
-    if (!teacher || !window.allSchedules[teacher]) {
-      grid.innerHTML = '<div class="scc-empty-msg">' + (side === 'a' ? '위에서 선생님을 고르세요.' : '위에서 ' + (scc.type === 'exchange' ? '교환할' : '보강해 줄') + ' 선생님을 고르세요.') + '</div>';
-      return;
-    }
-    const problem = sccDateProblem(date), wd = sccWeekdayOf(date);
-    let h = '<div class="scc-lp-l">일자</div><div><input type="date" id="scc-ld-' + side + '" value="' + date + '" min="' + range.min + '" max="' + range.max + '" onchange="sccListDate(\'' + side + '\', this.value)" onclick="sccShowPicker(this)">' +
-      (wd >= 1 && wd <= 5 ? '<span class="scc-this" style="font-weight:800;">' + SCC_DAYS[wd] + '</span>' : '') +
-      '<button class="top-btn scc-lp-day" onclick="sccListDay(\'' + side + '\', -1)" title="하루 전(평일)">−</button><button class="top-btn scc-lp-day" onclick="sccListDay(\'' + side + '\', 1)" title="하루 뒤(평일)">+</button></div>';
-    if (problem) {
-      h += '<div class="scc-lp-l">교시</div><div class="scc-lp-info empty">' + escapeHtmlText(problem) + '</div>';
-    } else {
-      const cells = sccCellsForWeek(teacher, sccWeekDates(sccMondayOf(date)));
-      h += '<div class="scc-lp-l">교시</div><div><select id="scc-lp-' + side + '" onchange="sccListPeriod(\'' + side + '\', this.value)"><option value="">선택</option>';
-      for (let p = 1; p <= 7; p++) {
-        const cell = cells[p][wd], block = sccCellBlock(side, date, cell), t = currentTimes[p - 1] || { s: '' };
-        const text = p + '교시' + (t.s ? ' (' + t.s + ')' : '') + ' — ' + (cell.text || '빈 시간') + (cell.list.length > 1 ? ' [겹침]' : cell.change ? ' [' + (cell.change.type === 'exchange' ? '교환됨' : '보강됨') + ']' : '');
-        h += '<option value="' + p + '"' + (pick && pick.period === p ? ' selected' : '') + (block ? ' disabled' : '') + ' title="' + escapeHtmlAttr(block) + '">' + escapeHtmlText(text) + '</option>';
-      }
-      h += '</select></div>';
-      const info = pick ? sccClassAt(teacher, pick.date, pick.period) : '';
-      h += '<div class="scc-lp-l">과목정보</div><div class="scc-lp-info' + (pick && info ? '' : ' empty') + '">' + (pick ? (info ? '<b>' + escapeHtmlText(info) + '</b>&nbsp;' + escapeHtmlText(sccSlotText(pick.date, pick.period)) + (cells[pick.period][wd].change ? ' <span class="sub">(변경으로 지금 이 수업)</span>' : '') : '빈 시간 — ' + escapeHtmlText(sccSlotText(pick.date, pick.period))) : '교시를 고르면 그 수업이 여기 보여요. 고를 수 없는 줄은 흐리게(이유는 마우스를 올리면).') + '</div>';
-    }
-    grid.innerHTML = h;
-  }
-
-  function sccPick(side, date, period) {
-    const key = side === 'a' ? 'pickA' : 'pickB';
-    const cur = scc[key];
-    scc[key] = (cur && cur.date === date && cur.period === period) ? null : { date: date, period: period };
-    sccRenderNew();
-  }
-
-  function sccClearPicks() { scc.pickA = null; scc.pickB = null; sccRenderNew(); }
-
-  // 주 옮기기: 고를 수 있는 기간(학기 시작 ~ 학기 끝) 안에서만
-  function sccSetWeek(side, monday) {
-    const range = sccPickRange();
-    const minMon = sccMondayOf(range.min), maxMon = sccMondayOf(range.max) > range.max ? sccAddDays(sccMondayOf(range.max), -7) : sccMondayOf(range.max);
-    if (monday < minMon) monday = minMon;
-    if (monday > maxMon) monday = maxMon;
-    if (side === 'a') {
-      scc.weekA = monday;
-      if (!scc.bTouched) scc.weekB = monday;
-    } else {
-      scc.weekB = monday;
-      scc.bTouched = true;
-    }
-  }
-  function sccMoveWeek(side, dir) {
-    sccSetWeek(side, sccAddDays(side === 'a' ? scc.weekA : scc.weekB, dir * 7));
-    sccRenderNew();
-  }
-  // 투명한 날짜 칸을 누르면 바로 달력이 뜨게(크롬은 글자 부분을 눌러선 안 열림)
-  function sccShowPicker(el) { try { if (el.showPicker) el.showPicker(); } catch (e) {} }
-  function sccOnWeekDate(side) {
-    const v = document.getElementById('scc-week-' + side).value;
-    if (v) sccSetWeek(side, sccMondayOf(v));
-    sccRenderNew();
-  }
-
-  function sccSetType(type) {
-    scc.type = type;
-    scc.pickB = null; // 교환은 수업 칸, 보강은 빈 칸 — 고를 수 있는 칸이 달라진다
-    sccRenderNew();
-  }
-
-  function sccRenderNew() {
-    sccSyncMakeupB();
-    const ex = scc.type === 'exchange';
-    document.getElementById('scc-type-exchange-btn').classList.toggle('active', ex);
-    const list = sccView() === 'list';
-    document.getElementById('scc-view-grid').classList.toggle('active', !list);
-    document.getElementById('scc-view-list').classList.toggle('active', list);
-    document.getElementById('scc-pane-new').classList.toggle('scc-listmode', list);
-    document.getElementById('scc-type-makeup-btn').classList.toggle('active', !ex);
-    document.getElementById('scc-side-a-label').innerText = ex ? '① 바꿀 수업' : '① 보강이 필요한 수업';
-    document.getElementById('scc-side-b-label').innerText = ex ? '② 맞바꿀 수업' : list ? '② 보강해 줄 선생님' : '② 보강해 줄 빈 시간';
-    document.getElementById('scc-hint').innerText = list
-      ? (ex ? '①과 ②에서 일자를 고르고 교시 목록에서 수업을 고르세요(그 날 수업이 글로 보여요). 지난 날짜도 이번 학기 안이면 돼요.' : '①에서 보강이 필요한 수업의 일자·교시를 고르고, ②에서 그 시간에 들어갈 선생님만 고르세요(빈 선생님은 눌러서 바로 골라요).')
-      : ex
-      ? '①에서 바꿀 수업, ②에서 맞바꿀 수업 칸을 누르세요. 날짜가 다른 주면 ◀ ▶나 📅 주(누르면 달력)로 그쪽 주를 옮기세요. 지난 날짜도 이번 학기 안이면 고를 수 있어요.'
-      : '①에서 보강이 필요한 수업, ②에서 보강해 줄 선생님의 빈 시간을 누르세요.';
-    const range = sccPickRange(), thisMon = sccMondayOf(todayYmdDash());
-    ['a', 'b'].forEach(function(side) {
-      const monday = side === 'a' ? scc.weekA : scc.weekB;
-      const input = document.getElementById('scc-week-' + side);
-      input.min = range.min; input.max = range.max;
-      const pick = side === 'a' ? scc.pickA : scc.pickB;
-      // 달력에서 처음 보이는 날: 고른 칸이 이 주에 있으면 그 날짜, 아니면 그 주 월요일
-      input.value = (pick && sccMondayOf(pick.date) === monday) ? pick.date : monday;
-      // 보이는 글은 날짜 하나가 아니라 그 주(월~금) — 헷갈리지 않게
-      const fri = sccAddDays(monday, 4), dot = function(d) { return sccMD(d).replace('/', '.'); };
-      document.getElementById('scc-week-' + side + '-text').innerHTML = '📅 ' + dot(monday) + '(월) ~ ' + dot(fri) + '(금)' +
-        (monday === thisMon ? ' <span class="scc-this">이번 주</span>' : '');
-      document.getElementById('scc-week-' + side + '-prev').disabled = monday <= sccMondayOf(range.min);
-      document.getElementById('scc-week-' + side + '-next').disabled = sccAddDays(monday, 7) > range.max;
-      sccRenderGrid(side);
-    });
-    sccUpdatePreview();
-  }
-
-  function sccShowTab(tab) {
-    scc.tab = tab;
-    document.getElementById('scc-tab-new-btn').classList.toggle('active', tab === 'new');
-    document.getElementById('scc-tab-list-btn').classList.toggle('active', tab === 'list');
-    document.getElementById('scc-pane-new').style.display = tab === 'new' ? 'flex' : 'none';
-    document.getElementById('scc-pane-list').style.display = tab === 'list' ? 'flex' : 'none';
-    if (tab === 'list') sccRenderList(); else sccRenderNew();
-  }
-
-  function openScheduleChangeModal() {
-    const myName = localStorage.getItem('my-n');
-    const manager = isScheduleManager();
-    if (!manager && (!myName || !window.allSchedules[myName])) { customAlert('먼저 "내 시간표"에 본인 시간표를 지정해주세요.'); return; }
-
-    const aSel = document.getElementById('scc-teacher-a');
-    aSel.style.display = manager ? '' : 'none';
-    document.getElementById('scc-teacher-a-fixed').innerText = manager ? '' : (myName + ' (나)');
-    if (manager) {
-      aSel.innerHTML = '<option value="">선생님 선택</option>' + sccTeacherNames()
-        .map(function(n) { return '<option value="' + escapeHtmlAttr(n) + '">' + escapeHtmlText(n) + '</option>'; }).join('');
-      aSel.value = (myName && window.allSchedules[myName]) ? myName : '';
-    }
-    document.getElementById('scc-partner').value = '';
-    sccFillPartnerOptions();
-
-    scc.type = 'exchange'; scc.pickA = null; scc.pickB = null; scc.bTouched = false; scc.listDate = { a: '', b: '' };
-    sccSetWeek('a', sccMondayOf(todayYmdDash())); // 주말이면 다음 주, 학기 밖이면 기간 안으로 맞춰진다
-    document.getElementById('scc-search').value = '';
-    document.getElementById('scc-type-filter').value = 'all';
-    sccShowTab('new');
-    document.getElementById('schedule-change-overlay').style.display = 'flex';
-    // 다른 선생님이 방금 등록한 것도 보이게 한 번 새로 받아 온다.
-    fetchScheduleChanges().then(function() {
-      if (document.getElementById('schedule-change-overlay').style.display !== 'flex') return;
-      if (scc.tab === 'list') sccRenderList(); else sccRenderNew();
-    });
-  }
-
-  function closeScheduleChangeModal() {
-    document.getElementById('schedule-change-overlay').style.display = 'none';
-  }
-
-  function sccSubjectAt(teacherName, weekday, period) {
-    const s = window.allSchedules[teacherName];
-    if (!s) return '(시간표 없음)';
-    return sccRegularCell(teacherName, weekday, period)[0] || '(빈 시간)';
-  }
-  // 과목 + 반·교실 ("국어 2-3")
-  function sccClassText(teacherName, weekday, period) {
-    const c = sccRegularCell(teacherName, weekday, period);
-    return c[0] ? c[0] + (c[1] ? ' ' + c[1] : '') : '';
-  }
-
-  // "9/30(수) 3교시"
-  function sccSlotText(dateStr, period) {
-    return sccMD(dateStr) + '(' + SCC_DAYS[sccWeekdayOf(dateStr)] + ') ' + period + '교시';
-  }
-
-  function sccUpdatePreview() {
-    const a = sccTeacherA(), b = sccPartner();
-    const ex = scc.type === 'exchange';
-    const previewEl = document.getElementById('scc-preview');
-    const saveBtn = document.getElementById('scc-save-btn');
-    saveBtn.disabled = true;
-    const aName = isScheduleManager() ? (a + '쌤') : ('나(' + a + ')');
-    if (!scc.pickA || !scc.pickB || !a || !b) {
-      const step = function(done, text) { return (done ? '✅ ' : '⬜ ') + text; };
-      previewEl.innerText = step(!!scc.pickA, '① ' + (scc.pickA ? sccSlotText(scc.pickA.date, scc.pickA.period) + ' ' + sccClassAt(a, scc.pickA.date, scc.pickA.period) : (ex ? '바꿀 수업 칸을 누르세요' : '보강이 필요한 수업 칸을 누르세요'))) + '\n' +
-        step(!!scc.pickB && !!b, '② ' + (!b ? (ex ? '교환할' : '보강해 줄') + ' 선생님을 고르세요' : sccMakeupSameTime() ? b + '쌤 — ①과 같은 시간' : scc.pickB ? sccSlotText(scc.pickB.date, scc.pickB.period) + (ex ? ' ' + sccClassAt(b, scc.pickB.date, scc.pickB.period) : ' 빈 시간') : (ex ? '맞바꿀 수업 칸을 누르세요' : '빈 시간 칸을 누르세요')));
-      return;
-    }
-    const A = scc.pickA, B = scc.pickB;
-    const problem = sccDateProblem(A.date) || sccDateProblem(B.date);
-    if (problem) { previewEl.innerText = problem; return; }
-    const slotA = sccSlotText(A.date, A.period), slotB = sccSlotText(B.date, B.period);
-    // 변경까지 반영한 지금 그 칸의 수업(연속 교환) — 수업이 겹친 칸이면 옮길 수업을 고른 것(또는 저절로 고른 것)
-    const ch = sccEffectiveMap(sccAllChanges()).choose(sccDraftRecord());
-    const classA = sccClassTextOf(ch.a);
-    let html;
-    const warns = [];
-    if (ex) {
-      const classB = sccClassTextOf(ch.b);
-      if (A.date === B.date && A.period === B.period) {
-        html = '<b>' + escapeHtmlText(slotA) + '</b> 같은 시간에 서로 반을 맞바꿔 들어감\n' +
-          escapeHtmlText(aName) + ' → "' + escapeHtmlText(classB) + '" 수업으로 · ' + escapeHtmlText(b) + '쌤 → "' + escapeHtmlText(classA) + '" 수업으로';
-      } else {
-        html = escapeHtmlText(aName) + ' <b>' + escapeHtmlText(slotA) + '</b> "' + escapeHtmlText(classA) + '" → <b>' + escapeHtmlText(slotB) + '</b>로 이동\n' +
-          escapeHtmlText(b) + '쌤 <b>' + escapeHtmlText(slotB) + '</b> "' + escapeHtmlText(classB) + '" → <b>' + escapeHtmlText(slotA) + '</b>로 이동';
-        // 옮겨 가는 시간에 이미 수업이 있으면 한 사람이 같은 시간에 두 수업 — 경고만(등록은 됨)
-        const busyA = sccBusyAt(a, B.date, B.period), busyB = sccBusyAt(b, A.date, A.period);
-        if (busyA) warns.push(a + '쌤은 ' + slotB + '에 이미 "' + busyA + '" 수업이 있어서 겹쳐요.');
-        if (busyB) warns.push(b + '쌤은 ' + slotA + '에 이미 "' + busyB + '" 수업이 있어서 겹쳐요.');
-      }
-    } else {
-      // 보강해 줄 선생님은 그 시간이 비어 있어야(시간표에서 누르기는 빈 칸만 눌림 — 선생님만 고르는 방식도 같은 규칙)
-      const busyB = sccBusyAt(b, B.date, B.period);
-      if (busyB) { previewEl.innerHTML = '<span class="warn">⚠️ ' + escapeHtmlText(b) + '쌤은 ' + escapeHtmlText(slotB) + '에 "' + escapeHtmlText(busyB) + '" 수업이 있어서 보강할 수 없어요. 그 시간에 빈 선생님을 골라 주세요.</span>'; return; }
-      const same = A.date === B.date && A.period === B.period;
-      html = escapeHtmlText(aName) + ' <b>' + escapeHtmlText(slotA) + '</b> "' + escapeHtmlText(classA) + '"를 ' + escapeHtmlText(b) + '쌤이 ' + (same ? '대신 가르쳐 줌' : '<b>' + escapeHtmlText(slotB) + '</b>에 대신 가르쳐 줌') + '\n' +
-        escapeHtmlText(b) + '쌤 시간표 ' + escapeHtmlText(slotB) + '에 이 수업이 추가로 표시돼요.';
-    }
-    if (warns.length) html += '\n<span class="warn">⚠️ ' + warns.map(escapeHtmlText).join(' ') + '</span>';
-    html += sccRoomChoiceHtml('a', a, A, ch.a) + (ex ? sccRoomChoiceHtml('b', b, B, ch.b) : '');
-    previewEl.innerHTML = html;
-    saveBtn.disabled = false;
-  }
-
-  // 지금 고른 두 칸으로 만들 기록(room_a / room_b = 겹친 칸에서 직접 고른 반, 없으면 null — 저절로 고름)
-  function sccDraftRecord() {
-    return {
-      change_date: scc.pickA.date, change_date_b: scc.pickB.date, type: scc.type,
-      teacher_a: sccTeacherA(), period_a: scc.pickA.period, teacher_b: sccPartner(), period_b: scc.pickB.period,
-      room_a: scc.pickA.room || null, room_b: scc.type === 'exchange' ? (scc.pickB.room || null) : null
-    };
-  }
-  // 고른 칸에 수업이 겹쳐 있으면(잠시 두 수업) 옮길 수업을 고르는 단추 줄
-  function sccRoomChoiceHtml(side, teacher, pick, chosen) {
-    const cell = sccEffectiveMap(sccAllChanges()).get(teacher, pick.date, pick.period);
-    if (cell.list.length < 2) return '';
-    return '\n<span class="warn">' + (side === 'a' ? '①' : '②') + ' ' + escapeHtmlText(teacher) + '쌤 ' + escapeHtmlText(sccSlotText(pick.date, pick.period)) + '엔 수업이 ' + cell.list.length + '개 겹쳐 있어요 — 옮길 수업:</span>' +
-      cell.list.map(function(x) {
-        return '<button type="button" class="top-btn scc-room-btn' + (x === chosen ? ' active' : '') + '" onclick="sccChooseRoom(\'' + side + '\', \'' + escapeHtmlAttr(String(x.r).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">' + escapeHtmlText(sccClassTextOf(x)) + '</button>';
-      }).join('');
-  }
-  function sccChooseRoom(side, room) {
-    const pick = side === 'a' ? scc.pickA : scc.pickB;
-    if (pick) pick.room = room;
-    sccUpdatePreview();
-  }
-
-  async function sccSave() {
-    const a = sccTeacherA(), b = sccPartner();
-    if (!a) return customAlert('수업을 바꿀 선생님을 선택해주세요.');
-    if (!b) return customAlert('선생님을 선택해주세요.');
-    if (!scc.pickA || !scc.pickB) return customAlert('①과 ② 시간표에서 칸을 하나씩 눌러 주세요.');
-    const problem = sccDateProblem(scc.pickA.date) || sccDateProblem(scc.pickB.date);
-    if (problem) return customAlert(problem);
-    if (scc.type === 'makeup' && sccBusyAt(b, scc.pickB.date, scc.pickB.period)) return customAlert(b + '쌤은 그 시간에 수업이 있어서 보강할 수 없어요.');
-
-    const record = sccDraftRecord();
-
-    const btn = document.getElementById('scc-save-btn');
-    btn.disabled = true;
-    try {
-      // 창을 연 뒤 다른 분이 같은 칸을 바꿨을 수 있다(연속 교환은 "지금 그 칸의 수업"을 옮김) — 저장 직전에 다시 받아
-      // 미리보기에서 본 수업과 같은지 확인하고, 달라졌으면 등록하지 않고 새 내용을 보여 준다.
-      const seen = [sccClassAt(a, record.change_date, record.period_a), sccClassAt(b, record.change_date_b, record.period_b)];
-      await fetchScheduleChanges();
-      const now = [sccClassAt(a, record.change_date, record.period_a), sccClassAt(b, record.change_date_b, record.period_b)];
-      if (seen[0] !== now[0] || seen[1] !== now[1]) {
-        loadMyTimetable();
-        renderSearchTimetable(true);
-        scc.pickA = null; scc.pickB = null;
-        sccRenderNew();
-        return customAlert('방금 다른 분이 이 시간의 수업을 바꿔서 등록하지 않았어요.\n바뀐 시간표를 확인하고 다시 골라 주세요.');
-      }
-      // 옮기는 수업의 반을 같이 저장 — 나중에 그 칸에 수업이 겹쳐도(넣는 순서와 상관없이) 어느 수업인지 정해진다
-      const ch = sccEffectiveMap(sccAllChanges()).choose(record);
-      record.room_a = ch.a && ch.a.r ? ch.a.r : null;
-      record.room_b = record.type === 'exchange' && ch.b && ch.b.r ? ch.b.r : null;
-      const { error } = await sb.from('schedule_changes').insert(record);
-      if (error) throw error;
-      await fetchScheduleChanges();
-      loadMyTimetable();
-      renderSearchTimetable(true);
-      scc.pickA = null; scc.pickB = null;
-      sccRenderNew();
-      await customAlert('등록했습니다! 🎉');
-    } catch (e) {
-      sccUpdatePreview();
-      customAlert('등록 실패: ' + (e && e.message ? e.message : e));
-    }
-  }
-
-  // ===== 🔁 나이스 변경수업 → 수업 변경 =====
-  // 나이스 "전체시간표 조회 → 변경수업조회" 보고서(크라운릭스 MML XML, 확장 프로그램이 넘겨 줌)를 읽어
-  // 보강·교체를 schedule_changes 기록으로 바꾼다. 나이스 표는 칸마다 "새로 들어가는 수업"만 주므로
-  //  보강 [보강]과목(교사) = 그 칸의 원래 수업(기본 시간표에서 반·요일·교시로 찾은 선생님)을 그 교사가 대신
-  //  교체 과목(교사)       = 원래 주인 Y의 자리에 X가 들어옴 → Y가 X의 원래 자리로 간 칸(짝)을 찾아 교환 하나로
-  // 짝·원래 수업을 못 찾거나 이미 다른 변경이 걸린 칸은 넣지 않고 이유와 함께 보여 준다(행사 날 등).
+  // ===== 📥 나이스 시간표 받기 =====
+  // 수업 변경(교환·보강)은 수업계가 나이스에서 하고, 스마트보드는 나이스의 완성된 시간표를 그대로 보여 준다(10/22 사용자).
+  // 확장 프로그램(tools/neis-ext)이 나이스 "전체시간표 조회 → 변경수업조회" 보고서(크라운릭스 MML XML)를 넘겨 주면
+  // 바뀐 칸(날짜·교시·반 → 과목·선생님)을 schedule_cell_changes에 나이스에 적힌 그대로 담는다. 정기고사·행사 칸은 뺀다.
   function neisXmlText(s) {
     return String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, function(_, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
   }
@@ -11672,147 +10848,37 @@
     });
     return out;
   }
-  // entries(여러 학년을 합쳐도 됨) → { records, skipped }
-  //  schedules = { 교사 이름: 35칸 } (기본 시간표), teachersAt(date, period, room) = 지금 등록된 변경까지 반영해
-  //  그 시간에 그 반에 들어가는 선생님들(수업 변경 창이 쓰는 sccEffectiveMap과 같은 결과).
-  //  나이스 칸마다: 이미 그 선생님이 들어가 있으면 "이미 있음", 원래 선생님 수업이 다른 기록으로 옮겨졌으면 "다름(확인)",
-  //  그 밖엔 새로 넣는다. 같은 조회 안의 기록끼리는 서로 막지 않는다(한 교사의 두 교체가 맞물린 경우 — 반(room)으로 구분).
-  function neisBuildChanges(entries, schedules, teachersAt) {
-    const records = [], skipped = [];
-    const wdOf = function(date) { return new Date(date + 'T00:00:00').getDay(); };
-    const ownersOf = function(e) {
-      const wd = wdOf(e.date); if (wd < 1 || wd > 5) return [];
-      return Object.keys(schedules).filter(function(t) { const v = (schedules[t] || [])[(wd - 1) * 7 + e.period - 1] || ''; return v.split('\n')[1] === e.room; });
-    };
-    const skip = function(e, why) { skipped.push({ e: e, why: why }); };
-    const known = function(t) { return Object.prototype.hasOwnProperty.call(schedules, t); };
-    // 행사(동아리활동 등): 같은 학년·날짜·교시에 같은 과목이 세 반 이상 → 교체가 아니라 그날 시간표가 통째로 바뀐 것
+  // 나이스 칸(entries, 여러 학년을 합쳐도 됨) → 서버에 담을 줄 { rows, skipped }
+  //  schedules = { 교사 이름: 35칸 } (기본 시간표) — 원래 그 반 선생님(teacher_from, 참고용)과 행사 판단에만 쓴다.
+  function neisCellRows(entries, schedules) {
+    const rows = [], skipped = [];
+    const norm = function(t) { return String(t || '').replace(/\s/g, ''); };
+    // 행사(동아리활동 등): 같은 학년·날짜·교시에 같은 과목이 세 반 이상 → 그날 시간표가 통째로 바뀐 것이라 넣지 않는다.
+    // 단, 그 선생님이 원래 그 반에 그 과목을 가르치면 진짜 수업(다른 요일 수업을 당겨 하는 날엔 세 반이 우연히 같은 과목일 수 있음 — 10/22 실제 11/4 4교시 통합과학2)
     const evCount = {};
     entries.forEach(function(e) { if (!e.makeup) { const k = e.grade + '|' + e.date + '|' + e.period + '|' + e.subject; evCount[k] = (evCount[k] || 0) + 1; } });
-    // 단, 그 선생님이 원래 그 반에 그 과목을 가르치면 진짜 수업(다른 요일 수업을 당겨 하는 날엔 세 반이 우연히 같은 과목일 수 있음 — 10/22 실제 11/4 4교시 통합과학2)
-    const norm = function(t) { return String(t || '').replace(/\s/g, ''); };
     const teachesNormally = function(e) { return (schedules[e.teacher] || []).some(function(v) { const q = String(v || '').split('\n'); return q[1] === e.room && norm(q[0]) === norm(e.subject); }); };
     const isEvent = function(e) { return !e.makeup && evCount[e.grade + '|' + e.date + '|' + e.period + '|' + e.subject] >= 3 && !teachesNormally(e); };
-    // 정기고사: 나이스가 시험 날 반마다 "2학기 1차 시험-과목(감독)"을 변경수업으로 보여 준다 — 보강·교체가 아니라 뺀다
+    // 정기고사: 나이스가 시험 날 반마다 "2학기 1차 시험-과목(감독)"을 변경수업으로 보여 준다 — 사용자: 정기고사는 원래 뺀다
     const isExam = function(e) { return /(시험|고사)\s*-/.test(e.subject) || /^정기고사/.test(e.subject); };
-    // 칸 하나 살피기 → { ok, y(원래 선생님), why }
-    const check = function(e) {
-      if (isExam(e)) return { why: '시험(정기고사) — 넣지 않음' };
-      if (isEvent(e)) return { why: '행사(' + e.subject + ') — 보강·교체만 넣음' };
-      if (!e.teacher || !known(e.teacher)) return { why: e.teacher ? e.teacher + ' 선생님이 스마트보드 시간표에 없음' : '선생님 이름이 없음' };
-      const now = teachersAt(e.date, e.period, e.room);
-      if (now.indexOf(e.teacher) >= 0) return { why: '이미 스마트보드에 있음' };
-      const owners = ownersOf(e);
-      if (!owners.length) return { ok: true, y: '' }; // 원래 수업이 없던 칸(창체 보강·새로 생긴 수업) → 칸 그대로
-      if (owners.length !== 1) return { why: '원래 수업이 여럿(' + owners.join('·') + ')' };
-      if (owners[0] === e.teacher) return { why: '원래 선생님과 같음' };
-      if (now.indexOf(owners[0]) < 0) return { why: '스마트보드와 다름 — 지금 ' + (now.length ? now.join('·') : '빈 시간') + '(으)로 되어 있음, 확인 필요' };
-      return { ok: true, y: owners[0] };
+    const ownersOf = function(e) {
+      const wd = weekdayOfYmd(e.date); if (wd < 1 || wd > 5) return [];
+      return Object.keys(schedules).filter(function(t) { const v = (schedules[t] || [])[(wd - 1) * 7 + e.period - 1] || ''; return v.split('\n')[1] === e.room; });
     };
-    const st = entries.map(check);
-    const used = new Set(), left = []; // left = 두 사람 짝을 못 찾은 교체 칸(아래에서 여러 명이 돌아가며 바꾼 것으로 다시 봄)
-    // 이어지는 두 칸: 같은 반(그 반 수업 시간을 옮김)이거나 같은 날·같은 교시(그 시간에 반을 맞바꿈)여야 한 번의 교환으로 옮길 수 있다
-    const linkOk = function(a, b) { return a.room === b.room || (a.date === b.date && a.period === b.period); };
-    // 칸 그대로(type 'cell'): 나이스에 적힌 대로 그 칸에 새 선생님·과목, 원래 선생님(y)에게서 그 반 수업을 뺀다
-    const cellRec = function(e, y) { return { type: 'cell', teacher_a: y, change_date: e.date, period_a: e.period, teacher_b: e.teacher, change_date_b: e.date, period_b: e.period, room_a: e.room, room_b: null, subject: e.subject, from: [e] }; };
-    entries.forEach(function(e, i) {
-      if (used.has(i)) return;
-      if (!st[i].ok) { skip(e, st[i].why); return; }
-      const y = st[i].y, x = e.teacher;
-      if (!y) { used.add(i); records.push(cellRec(e, '')); return; }
-      if (e.makeup) {
-        used.add(i);
-        records.push({ type: 'makeup', teacher_a: y, change_date: e.date, period_a: e.period, teacher_b: x, change_date_b: e.date, period_b: e.period, room_a: e.room, room_b: null, from: [e] });
-        return;
-      }
-      // 교체 짝: y가 들어간 칸 중 원래 주인이 x인 것(같은 반 먼저). 다른 반·다른 시간끼리 짝지으면 수업이 엉뚱한 반으로 옮겨진다
-      // (10/22 실제: 11/3·11/4 교체 8건이 그렇게 잘못 들어감).
-      let j = -1;
-      entries.forEach(function(f, k) {
-        if (j >= 0 && entries[j].room === e.room) return;
-        if (k === i || used.has(k) || !st[k].ok || f.makeup || f.teacher !== y || st[k].y !== x) return;
-        if (linkOk(e, f)) j = k;
-      });
-      if (j < 0) { left.push(i); return; }
-      used.add(i); used.add(j);
-      const f = entries[j];
-      // A = 더 이른 칸의 원래 주인
-      const eFirst = e.date < f.date || (e.date === f.date && e.period <= f.period);
-      const A = eFirst ? { t: y, e: e } : { t: x, e: f }, B = eFirst ? { t: x, e: f } : { t: y, e: e };
-      records.push({ type: 'exchange', teacher_a: A.t, change_date: A.e.date, period_a: A.e.period, teacher_b: B.t, change_date_b: B.e.date, period_b: B.e.period, room_a: A.e.room, room_b: B.e.room, from: [e, f] });
+    entries.forEach(function(e) {
+      if (isExam(e)) { skipped.push({ e: e, why: '시험(정기고사)' }); return; }
+      if (isEvent(e)) { skipped.push({ e: e, why: '행사(' + e.subject + ')' }); return; }
+      rows.push({ change_date: e.date, period: e.period, room: e.room, teacher_from: ownersOf(e).join(','), teacher_to: e.teacher, subject: e.subject, source: 'neis' });
     });
-    // ---- 여러 명이 돌아가며 바꾼 교체(10/22 사용자: 2·3학년 선택과목이 묶여 있어 여러 선생님을 한꺼번에 옮김) ----
-    // 칸 e1(원래 Y, 새로 X1) → X1이 비운 칸 e2(원래 X1, 새로 X2) → … → 마지막 칸의 새 선생님이 Y면 한 바퀴.
-    // Y가 수업을 들고 다니며 차례로 교환하면(Y↔X1, Y↔X2, …) 칸마다 나이스와 같아진다. 넣기 전에 기본 시간표로 돌려 보아
-    // 칸마다 나이스와 같을 때만 넣는다(아니면 확인 필요로 남김). 한 바퀴로 닫히지 않는 줄(빈 시간 선생님이 들어옴 등)도 남긴다.
-    const simOk = function(cycle, recs) {
-      const cells = {}, K = function(t, d, p) { return t + '|' + d + '|' + p; };
-      const get = function(t, d, p) {
-        const k = K(t, d, p); if (cells[k]) return cells[k];
-        const wd = wdOf(d), v = (wd >= 1 && wd <= 5 ? ((schedules[t] || [])[(wd - 1) * 7 + p - 1] || '') : '').split('\n');
-        return v[0] ? [{ s: v[0], r: v[1] }] : [];
-      };
-      const pick = function(l, room) { const f = l.filter(function(x) { return x.r === room; }); return f.length ? f[0] : null; };
-      for (let n = 0; n < recs.length; n++) {
-        const c = recs[n], A = get(c.teacher_a, c.change_date, c.period_a), B = get(c.teacher_b, c.change_date_b, c.period_b);
-        const a = pick(A, c.room_a), b = pick(B, c.room_b);
-        if (!a || !b) return false;
-        const wo = function(l, x) { return l.filter(function(y) { return y !== x; }); };
-        if (c.change_date === c.change_date_b && c.period_a === c.period_b) {
-          cells[K(c.teacher_a, c.change_date, c.period_a)] = wo(A, a).concat([b]); cells[K(c.teacher_b, c.change_date_b, c.period_b)] = wo(B, b).concat([a]);
-        } else {
-          cells[K(c.teacher_a, c.change_date, c.period_a)] = wo(A, a); cells[K(c.teacher_a, c.change_date_b, c.period_b)] = get(c.teacher_a, c.change_date_b, c.period_b).concat([a]);
-          cells[K(c.teacher_b, c.change_date_b, c.period_b)] = wo(B, b); cells[K(c.teacher_b, c.change_date, c.period_a)] = get(c.teacher_b, c.change_date, c.period_a).concat([b]);
-        }
-      }
-      return cycle.every(function(i) {
-        const e = entries[i];
-        return get(e.teacher, e.date, e.period).some(function(x) { return x.r === e.room; }) && !get(st[i].y, e.date, e.period).some(function(x) { return x.r === e.room; });
-      });
-    };
-    const inLeft = function(i) { return left.indexOf(i) >= 0 && !used.has(i); };
-    const findCycle = function(path) {
-      const last = entries[path[path.length - 1]];
-      if (path.length >= 3 && last.teacher === st[path[0]].y) return path;
-      if (path.length >= 10) return null;
-      for (let n = 0; n < left.length; n++) {
-        const k = left[n];
-        if (!inLeft(k) || path.indexOf(k) >= 0 || st[k].y !== last.teacher || !linkOk(last, entries[k])) continue;
-        const got = findCycle(path.concat([k])); if (got) return got;
-      }
-      return null;
-    };
-    left.forEach(function(i) {
-      if (!inLeft(i)) return;
-      const cycle = findCycle([i]); if (!cycle) return;
-      const Y = st[i].y, recs = [];
-      let carry = entries[i].room, cur = entries[i];
-      for (let n = 1; n < cycle.length; n++) {
-        const f = entries[cycle[n]], Z = st[cycle[n]].y, sameTime = cur.date === f.date && cur.period === f.period;
-        recs.push({ type: 'exchange', teacher_a: Y, change_date: cur.date, period_a: cur.period, teacher_b: Z, change_date_b: f.date, period_b: f.period, room_a: carry, room_b: f.room, from: n === 1 ? [entries[i], f] : [f], chain: cycle.length });
-        if (sameTime) carry = f.room; // 같은 시간 교환은 반을 맞바꾼다 — Y가 이제 f의 반 수업을 들고 있음
-        cur = f;
-      }
-      if (!simOk(cycle, recs)) return;
-      recs.forEach(function(r) { r.chainId = i; });
-      cycle.forEach(function(k) { used.add(k); });
-      recs.forEach(function(r) { records.push(r); });
-    });
-    // 짝이 나이스 표에 안 보이는 교체(시수 맞추려 다른 요일 수업을 당겨 하는 날, 짝이 조회 기간 밖 등) → 짝을 지어내지 않고 칸 그대로
-    // (10/22 사용자: 나이스에서도 교체로 처리하니 나이스와 칸마다 같게 들어가야 호환이 된다)
-    left.forEach(function(i) { if (!used.has(i)) { used.add(i); records.push(cellRec(entries[i], st[i].y)); } });
-    return { records: records, skipped: skipped };
+    return { rows: rows, skipped: skipped };
   }
 
-  // ----- 확장 프로그램(tools/neis-ext)에서 받기 → 미리 보기 → 넣기 -----
-  // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at, auto }] })로 넘긴다.
-  // auto = 아침 자동 조회(평일 8시 40분 / 놓치면 나이스 로그인 때)로 받은 것 → 확인 창 없이 바로 넣고 알림 카드에 [보기]·[되돌리기].
-  // 선생님이 직접 조회한 것은 미리 보기 창에서 골라 넣는다.
-  // 여러 학년을 따로 조회해도 창 하나에 모인다(같은 학년·날짜·교시·반은 나중 것). 넣거나 닫으면 받은 것을 확인(ack)해서
-  // 확장 프로그램이 다시 보내지 않게 한다. 관리자·수업변경 담당만, 쉬는 창·개인판은 받지 않는다.
-  const neisIn = { ids: [], scopes: {}, entries: {}, built: null, waitTries: 0 };
-  // 넣지 않아도 되는 칸(확인 필요 숫자에서 뺌): 행사·시험·이미 있음·스마트보드 시간표에 자리가 없는 수업
-  const NEIS_QUIET = /^행사|^시험|^이미|^원래 시간표에 그 반 수업이 없음/;
+  // ----- 확장 프로그램에서 받기 → 매일 나이스에 맞추기 -----
+  // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at, auto }] })로 넘긴다
+  // (아침 자동 조회: 평일 8시 40분 / 놓치면 나이스 로그인 때). 확인 없이 바로 맞추고 알림 카드에 [되돌리기].
+  // 조회한 학년·기간 안의 나이스 칸 기록을 오늘 나이스 표와 견줘 같은 것은 그대로, 새로 생긴 칸은 넣고, 없어진 칸은 지운다.
+  // 받은 것을 확인(ack)해서 확장 프로그램이 다시 보내지 않게 한다. 관리자·나이스 시간표 받기 담당만, 쉬는 창·개인판은 받지 않는다.
+  const neisIn = { ids: [], scopes: {}, entries: {}, waitTries: 0, timer: null };
   window.addEventListener('message', function(e) {
     const d = e.data;
     if (e.source !== window || !d || LITE || SB_SLEEP) return;
@@ -11820,184 +10886,100 @@
     if (d.__sbNeis === 'status' && d.ok === false && neisInReady() && neisInAllowed()) neisToast('⚠️ ' + escapeHtmlText(d.msg || '나이스 자동 조회를 끝내지 못했어요.'), []);
   });
   function neisInReady() { return !!(window.currentTeacher && window.currentTeacher.id && window.allSchedules && Object.keys(window.allSchedules).length); }
-  function neisInAllowed() { return isScheduleManager() || !!(window.currentTeacher && window.currentTeacher.is_admin); }
+  function neisInAllowed() { return !!(window.currentTeacher && (window.currentTeacher.is_admin || window.currentTeacher.schedule_manager)); }
   function neisInReceive(reports) {
     if (!neisInReady()) { // 막 연 탭: 로그인·시간표를 받을 때까지 잠깐 기다린다(1분까지)
       if (neisInTriesLeft()) setTimeout(function() { neisInReceive(reports); }, 1500);
       return;
     }
     if (!neisInAllowed()) return;
-    let fresh = 0, auto = false;
+    let fresh = 0;
     reports.forEach(function(r) {
       if (!r || neisIn.ids.indexOf(r.id) >= 0) return;
       const p = neisParseChangeXml(r.xml);
       if (!p.isChange || !p.grade) return;
       neisIn.ids.push(r.id); fresh++;
-      if (r.auto) auto = true;
       neisIn.scopes[p.grade] = p.from + '~' + p.to;
       p.entries.forEach(function(x) { neisIn.entries[x.grade + '|' + x.date + '|' + x.period + '|' + x.room] = x; });
     });
-    if (fresh) { if (auto) neisInAutoApply(); else neisInOpen(); }
+    // 학년을 하나씩 따로 조회해 보내도 한 번에 맞춘다(잠깐 모았다가)
+    if (fresh) { clearTimeout(neisIn.timer); neisIn.timer = setTimeout(neisInSync, 300); }
   }
   function neisInTriesLeft() { neisIn.waitTries++; return neisIn.waitTries <= 40; }
   function neisInAck() {
     if (neisIn.ids.length) window.postMessage({ __sbNeis: 'ack', ids: neisIn.ids.slice() }, '*');
-    neisIn.ids = []; neisIn.scopes = {}; neisIn.entries = {}; neisIn.built = null;
+    neisIn.ids = []; neisIn.scopes = {}; neisIn.entries = {};
   }
-  function neisInTeachersAt() {
-    const map = sccEffectiveMap(sccAllChanges());
-    const names = sccTeacherNames();
-    return function(date, period, room) {
-      return names.filter(function(t) { return map.get(t, date, period).list.some(function(x) { return x.r === room; }); });
-    };
-  }
-  function neisRoomText(r) { r = String(r || ''); return /^\d{3,}$/.test(r) ? r.slice(0, -2) + '-' + (+r.slice(-2)) : r; }
-  // 매일 나이스에 맞추기(10/22 사용자: "매일 읽어 오는 나이스 시간표에 항상 맞게"):
-  // 조회한 학년·기간 안에 모든 칸이 들어가는 "나이스에서 가져온 기록"(source 'neis')은 빼놓고 오늘 나이스 표로 처음부터 다시 계산한다.
-  // 다시 계산한 것과 같은 기록은 그대로 두고(쓰기 없음), 새로 생긴 것만 넣고, 다시 계산에 없는 예전 기록(나이스에서 바뀌었거나 취소됨)은 지운다.
-  // 수업변경 담당이 손으로 넣은 기록(source 없음)은 건드리지 않는다 — 나이스와 다르면 "스마트보드와 다름"(확인 필요)으로만.
-  function neisRecKey(r) {
-    return [r.type, r.change_date, r.period_a, r.teacher_a || '', r.change_date_b || r.change_date, r.period_b, r.teacher_b, r.room_a || '', r.type === 'exchange' ? r.room_b || '' : '', r.type === 'cell' ? r.subject || '' : ''].join('|');
-  }
-  async function neisInBuild() {
-    await fetchScheduleChanges(); // 다른 분이 방금 넣은 것까지 보고 판단
+  function neisRowKey(r) { return [r.change_date, r.period, r.room, r.teacher_to || '', r.subject || ''].join('|'); }
+  function neisRowOf(r) { return { change_date: r.change_date, period: r.period, room: r.room, teacher_from: r.teacher_from || '', teacher_to: r.teacher_to || '', subject: r.subject || '', source: 'neis' }; }
+  // 오늘 나이스 표와 서버 기록 견주기 → { add(새로 넣을 줄), remove(지울 서버 기록), kept, skipped }
+  async function neisInPlan() {
     const entries = Object.keys(neisIn.entries).map(function(k) { return neisIn.entries[k]; })
       .sort(function(a, b) { return a.date.localeCompare(b.date) || a.period - b.period || a.room.localeCompare(b.room); });
-    const scopes = neisIn.scopes;
+    const scopes = neisIn.scopes, built = neisCellRows(entries, window.allSchedules || {});
     const inScope = function(date, room) { const sc = scopes[String(room || '').slice(0, -2)]; if (!sc || !room) return false; const q = sc.split('~'); return date >= q[0] && date <= q[1]; };
-    const all = sccAllChanges();
-    const redo = all.filter(function(c) {
-      if (c.source !== 'neis') return false;
-      const touch = [[c.change_date, c.room_a]].concat(c.type === 'exchange' ? [[c.change_date_b || c.change_date, c.room_b]] : []);
-      return touch.every(function(t) { return inScope(t[0], t[1]); });
-    });
-    const keepList = all.filter(function(c) { return redo.indexOf(c) < 0; });
-    const map = sccEffectiveMap(keepList), names = sccTeacherNames();
-    const teachersAt = function(date, period, room) { return names.filter(function(t) { return map.get(t, date, period).list.some(function(x) { return x.r === room; }); }); };
-    const built = neisVerify(neisBuildChanges(entries, window.allSchedules, teachersAt), entries, keepList);
-    // 예전 기록과 견주기(여러 명 교체 묶음은 묶음 전체가 같을 때만 그대로)
+    const ranges = Object.keys(scopes).map(function(g) { return scopes[g].split('~'); });
+    const from = ranges.map(function(q) { return q[0]; }).sort()[0], to = ranges.map(function(q) { return q[1]; }).sort().pop();
+    const old = [];
+    for (let off = 0; ; off += 1000) {
+      const res = await sb.from('schedule_cell_changes').select('*').gte('change_date', from).lte('change_date', to).order('id', { ascending: true }).range(off, off + 999);
+      if (res.error) throw res.error;
+      (res.data || []).forEach(function(c) { if (inScope(c.change_date, c.room)) old.push(c); });
+      if (!res.data || res.data.length < 1000) break;
+    }
     const oldByKey = {};
-    redo.forEach(function(c) { (oldByKey[neisRecKey(c)] = oldByKey[neisRecKey(c)] || []).push(c); });
-    const taken = new Set(), groups = {};
-    built.records.forEach(function(r, i) { const g = r.chainId != null ? 'c' + r.chainId : 'r' + i; (groups[g] = groups[g] || []).push(r); });
-    const fresh = [];
-    Object.keys(groups).forEach(function(g) {
-      const rs = groups[g], match = [];
-      rs.forEach(function(r) { const m = (oldByKey[neisRecKey(r)] || []).filter(function(c) { return !taken.has(c) && match.indexOf(c) < 0; })[0]; if (m) match.push(m); });
-      if (match.length === rs.length) match.forEach(function(c) { taken.add(c); });
-      else rs.forEach(function(r) { fresh.push(r); });
+    old.forEach(function(c) { (oldByKey[neisRowKey(c)] = oldByKey[neisRowKey(c)] || []).push(c); });
+    const add = [], kept = new Set();
+    built.rows.forEach(function(r) {
+      const m = (oldByKey[neisRowKey(r)] || []).filter(function(c) { return !kept.has(c); })[0];
+      if (m) kept.add(m); else add.push(r);
     });
-    built.kept = taken.size;
-    built.records = built.records.filter(function(r) { return fresh.indexOf(r) >= 0; }); // 새로 넣을 것(만든 차례 그대로)
-    built.removed = redo.filter(function(c) { return !taken.has(c); });              // 지울 것
-    neisIn.built = built;
+    return { add: add, remove: old.filter(function(c) { return !kept.has(c); }), kept: kept.size, skipped: built.skipped };
   }
-  // 마지막 관문(10/22 사용자: "끌어온 시간표대로 우리 시간표가 나오면 되니, 그걸로 검증"): 지금 기록 + 새 기록으로 스마트보드 시간표를
-  // 계산해 ① 나이스 표의 칸마다 적힌 선생님이 그 반에 있고 원래 선생님은 빠졌는지 ② 새 기록이 건드린 칸 중 나이스 표에 없는 칸은
-  // 원래대로인지 본다. 어긋난 칸을 건드린 기록(여러 명 교체는 그 묶음 전체)은 빼고 다시 검사한다.
-  function neisVerify(built, entries, base) {
-    const names = sccTeacherNames();
-    base = base || sccAllChanges();
-    const who = function(map, date, p, room) { return names.filter(function(t) { return map.get(t, date, p).list.some(function(x) { return x.r === room; }); }).sort().join(','); };
-    const before = sccEffectiveMap(base);
-    const bad = new Set(), skippedE = new Set(built.skipped.map(function(x) { return x.e; }));
-    const neisAt = {};
-    entries.forEach(function(e) { neisAt[e.date + '|' + e.period + '|' + e.room] = e; });
-    let recs = built.records.slice();
-    for (let round = 0; round < 6; round++) {
-      const temp = base.concat(recs.map(function(r, i) { return Object.assign({}, r, { id: 'new-' + i, created_at: '9999-12-31T00:00:' + String(i).padStart(6, '0') }); }));
-      const after = sccEffectiveMap(temp);
-      const slots = {};
-      recs.forEach(function(r) {
-        slots[r.change_date + '|' + r.period_a + '|' + r.room_a] = 1;
-        if (r.room_b) slots[(r.change_date_b || r.change_date) + '|' + r.period_b + '|' + r.room_b] = 1;
-        (r.from || []).forEach(function(e) { slots[e.date + '|' + e.period + '|' + e.room] = 1; });
-      });
-      const wrong = Object.keys(slots).filter(function(k) {
-        const q = k.split('|'), e = neisAt[k];
-        if (e && skippedE.has(e)) return false; // 넣지 않기로 한 칸은 비교하지 않음
-        const want = e ? e.teacher : who(before, q[0], +q[1], q[2]);
-        return who(after, q[0], +q[1], q[2]) !== want;
-      });
-      if (!wrong.length) break;
-      const hit = new Set();
-      recs.forEach(function(r, i) {
-        const touch = [r.change_date + '|' + r.period_a + '|' + r.room_a, (r.change_date_b || r.change_date) + '|' + r.period_b + '|' + r.room_b].concat((r.from || []).map(function(e) { return e.date + '|' + e.period + '|' + e.room; }));
-        if (touch.some(function(k) { return wrong.indexOf(k) >= 0; })) hit.add(r.chainId != null ? 'c' + r.chainId : 'r' + i);
-      });
-      const keep = [];
-      recs.forEach(function(r, i) {
-        if (hit.has(r.chainId != null ? 'c' + r.chainId : 'r' + i)) (r.from || []).forEach(function(e) { if (!bad.has(e)) { bad.add(e); built.skipped.push({ e: e, why: '넣어 보니 나이스와 달라짐(확인 필요)' }); skippedE.add(e); } });
-        else keep.push(r);
-      });
-      recs = keep;
-    }
-    built.records = recs;
-    return built;
-  }
-  async function neisInOpen() { await neisInBuild(); neisInRender(); }
-  // 만든 순서 그대로 넣는다 — 여러 명이 돌아가며 바꾼 교체는 앞 교환이 옮겨 놓은 수업을 다음 교환이 이어받으므로 차례가 중요
-  function neisInRows(recs) {
-    return recs.filter(function(r) { return r.type !== 'cell'; }).map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b || r.change_date, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b, source: 'neis' }; });
-  }
-  function neisInCellRows(recs) {
-    return recs.filter(function(r) { return r.type === 'cell'; }).map(function(r) { return { change_date: r.change_date, period: r.period_a, room: r.room_a, teacher_from: r.teacher_a || '', teacher_to: r.teacher_b, subject: r.subject || '', source: 'neis' }; });
-  }
-  // 지울 것(예전 나이스 기록) 지우기 → 지운 기록(되돌리기에서 다시 넣으려고)
   async function neisInRemove(list) {
-    const cellIds = list.filter(function(c) { return c.type === 'cell'; }).map(function(c) { return c.cellId; });
-    const ids = list.filter(function(c) { return c.type !== 'cell'; }).map(function(c) { return c.id; });
-    if (ids.length) { const r = await sb.from('schedule_changes').delete().in('id', ids); if (r && r.error) throw r.error; }
-    if (cellIds.length) { const r = await sb.from('schedule_cell_changes').delete().in('id', cellIds); if (r && r.error) throw r.error; }
-    return list.slice();
+    const ids = list.map(function(c) { return c.id; });
+    if (ids.length) { const r = await sb.from('schedule_cell_changes').delete().in('id', ids); if (r && r.error) throw r.error; }
   }
-  // 나이스에 맞추기 한 번: 지울 것 지우고 새것 넣기 → { ids, cellIds, removed }
+  async function neisInInsert(rows) {
+    if (!rows.length) return [];
+    const r = await sb.from('schedule_cell_changes').insert(rows.map(neisRowOf)).select('id');
+    if (r.error) throw r.error;
+    return (r.data || []).map(function(x) { return x.id; });
+  }
+  // 지울 것 지우고 새것 넣기 → 넣은 id(되돌리기용). 넣기가 실패하면 지운 것을 되살린다.
   async function neisInApply(add, remove) {
-    const removed = remove.length ? await neisInRemove(remove) : [];
-    try { const got = add.length ? await neisInInsert(add) : { ids: [], cellIds: [] }; got.removed = removed; return got; }
-    catch (e) { if (removed.length) { try { await neisInInsert(removed); } catch (e2) {} } throw e; } // 넣기가 실패하면 지운 것을 되살림
-  }
-  // 교환·보강은 schedule_changes에, 칸 그대로는 schedule_cell_changes에 → { ids, cellIds } (되돌리기용)
-  async function neisInInsert(recs) {
-    const out = { ids: [], cellIds: [] }, rows = neisInRows(recs), cells = neisInCellRows(recs);
-    if (rows.length) { const r1 = await sb.from('schedule_changes').insert(rows).select('id'); if (r1.error) throw r1.error; out.ids = (r1.data || []).map(function(x) { return x.id; }); }
-    if (cells.length) {
-      const r2 = await sb.from('schedule_cell_changes').insert(cells).select('id');
-      if (r2.error) { if (out.ids.length) await sb.from('schedule_changes').delete().in('id', out.ids); throw r2.error; } // 반쪽만 들어가지 않게
-      out.cellIds = (r2.data || []).map(function(x) { return x.id; });
-    }
-    return out;
+    if (remove.length) await neisInRemove(remove);
+    try { return await neisInInsert(add); }
+    catch (e) { if (remove.length) { try { await neisInInsert(remove); } catch (e2) {} } throw e; }
   }
   async function neisInRefresh() {
-    await fetchScheduleChanges();
+    await fetchNeisCells();
     loadMyTimetable();
     renderSearchTimetable(true);
-    if (document.getElementById('schedule-change-overlay').style.display === 'flex') sccRenderList();
   }
-  // 자동 조회로 받은 것: 확인 없이 넣고 알림 카드(넣은 기록 id를 들고 있다가 [되돌리기]로 지움)
   let neisLast = null;
-  async function neisInAutoApply() {
-    await neisInBuild();
-    const b = neisIn.built, scopes = Object.assign({}, neisIn.scopes);
-    // 안전장치: 보고서가 이상하게(거의 비어) 와서 지울 것이 많으면 저절로 지우지 않는다 — 새것만 넣고 [보기]에서 확인하게
-    const tooMany = b.removed.length > 20 && b.removed.length > (b.removed.length + b.kept) / 2;
-    const remove = tooMany ? [] : b.removed;
-    let got = { ids: [], cellIds: [], removed: [] };
-    if (b.records.length || remove.length) {
-      try { got = await neisInApply(b.records, remove); }
-      catch (err) { neisInRender(); customAlert('나이스 변경수업을 저절로 맞추지 못했어요: ' + (err && err.message ? err.message : err) + '\n창에서 "넣기"를 눌러 주세요.'); return; }
+  async function neisInSync() {
+    const grades = Object.keys(neisIn.scopes).sort().join('·');
+    let plan;
+    try { plan = await neisInPlan(); }
+    catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err)), []); return; }
+    // 안전장치: 보고서가 이상하게(거의 비어) 와서 지울 것이 많으면 저절로 지우지 않는다
+    const tooMany = plan.remove.length > 20 && plan.remove.length > (plan.remove.length + plan.kept) / 2;
+    const remove = tooMany ? [] : plan.remove;
+    let ids = [];
+    if (plan.add.length || remove.length) {
+      try { ids = await neisInApply(plan.add, remove); }
+      catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err)) + '<br>내일 아침에 다시 맞추거나, 확장 프로그램에서 "지금 해 보기"를 눌러 주세요.', []); neisInAck(); return; }
     }
     neisInAck();
-    neisLast = { built: b, ids: got.ids, cellIds: got.cellIds, removed: got.removed, scopes: scopes };
-    const check = b.skipped.filter(function(x) { return !NEIS_QUIET.test(x.why); }).length;
-    const grades = Object.keys(scopes).sort().join('·'), changed = b.records.length + got.removed.length;
-    neisToast('📥 <b>나이스 변경수업</b> ' + escapeHtmlText(grades) + '학년<br>' +
-      (changed ? (b.records.length ? '보강·교체 <b>' + b.records.length + '건</b>을 넣었어요.' : '') + (got.removed.length ? (b.records.length ? '<br>' : '') + '나이스에서 바뀌거나 없어진 <b>' + got.removed.length + '건</b>을 지웠어요.' : '')
+    neisLast = { ids: ids, removed: remove };
+    const changed = plan.add.length + remove.length;
+    neisToast('📥 <b>나이스 시간표</b> ' + escapeHtmlText(grades) + '학년<br>' +
+      (changed ? (plan.add.length ? '바뀐 칸 <b>' + plan.add.length + '곳</b>을 넣었어요.' : '') + (remove.length ? (plan.add.length ? '<br>' : '') + '나이스에서 없어지거나 바뀐 예전 칸 <b>' + remove.length + '곳</b>을 뺐어요.' : '')
         : '나이스와 같아요 — 바뀐 게 없어요.') +
-      (tooMany ? '<br><span class="neis-toast-warn">지울 것이 ' + b.removed.length + '건이나 돼서 그대로 뒀어요 — 보기에서 확인해 주세요</span>' : '') +
-      (check ? '<br><span class="neis-toast-warn">확인 필요 ' + check + '칸</span>' : ''),
-      [changed || check || tooMany ? ['보기', 'neisLastView()'] : null, changed ? ['되돌리기', 'neisLastUndo()'] : null].filter(Boolean),
-      !changed && !check && !tooMany ? 10000 : 0);
+      (tooMany ? '<br><span class="neis-toast-warn">뺄 칸이 ' + plan.remove.length + '곳이나 돼서 빼지 않았어요 — 나이스 조회가 제대로 됐는지 확인해 주세요</span>' : ''),
+      changed ? [['되돌리기', 'neisLastUndo()']] : [],
+      changed || tooMany ? 0 : 10000);
     if (changed) { try { await neisInRefresh(); } catch (e) {} } // 알림을 먼저 — 시간표 다시 그리기가 막혀도 알림은 보이게
   }
   function neisToast(html, btns, autoHideMs) {
@@ -12011,381 +10993,33 @@
     if (autoHideMs) neisToast.timer = setTimeout(neisToastClose, autoHideMs);
   }
   function neisToastClose() { const el = document.getElementById('neis-toast'); if (el) el.style.display = 'none'; }
-  function neisLastView() {
-    if (!neisLast) return;
-    neisIn.built = Object.assign({}, neisLast.built, { removed: neisLast.removed || [] }); neisIn.scopes = neisLast.scopes;
-    neisInRender(true);
-  }
   async function neisLastUndo() {
-    const n = neisLast ? neisLast.ids.length + (neisLast.cellIds || []).length : 0, back = neisLast ? (neisLast.removed || []) : [];
+    const n = neisLast ? neisLast.ids.length : 0, back = neisLast ? neisLast.removed : [];
     if (!n && !back.length) return;
-    if (!await customConfirm('나이스에 맞춘 것을 되돌릴까요?' + (n ? '\n· 넣은 보강·교체 ' + n + '건을 지워요' : '') + (back.length ? '\n· 지운 ' + back.length + '건을 되살려요' : ''))) return;
-    const res = neisLast.ids.length ? await sb.from('schedule_changes').delete().in('id', neisLast.ids) : null;
+    if (!await customConfirm('나이스에 맞춘 것을 되돌릴까요?' + (n ? '\n· 넣은 칸 ' + n + '곳을 빼요' : '') + (back.length ? '\n· 뺀 칸 ' + back.length + '곳을 되살려요' : ''))) return;
+    const res = n ? await sb.from('schedule_cell_changes').delete().in('id', neisLast.ids) : null;
     if (res && res.error) { customAlert('되돌리지 못했어요: ' + (res.error.message || res.error)); return; }
-    const res2 = (neisLast.cellIds || []).length ? await sb.from('schedule_cell_changes').delete().in('id', neisLast.cellIds) : null;
-    if (res2 && res2.error) { customAlert('되돌리지 못했어요: ' + (res2.error.message || res2.error)); return; }
-    if (back.length) { try { await neisInInsert(back); } catch (e) { customAlert('지운 기록을 되살리지 못했어요: ' + (e && e.message ? e.message : e)); } }
+    if (back.length) { try { await neisInInsert(back); } catch (e) { customAlert('뺀 칸을 되살리지 못했어요: ' + (e && e.message ? e.message : e)); } }
     neisLast = null;
     await neisInRefresh();
     neisToast('↩️ 나이스에 맞춘 것을 되돌렸어요.', [], 8000);
   }
-  function neisInRecordHtml(r, i, viewOnly) {
-    const subj = function(e) { return e ? escapeHtmlText(e.subject) : ''; };
-    let t;
-    if (r.type === 'cell') {
-      t = '🔁 <b>교체</b> <span class="se-muted">(나이스 표 그대로)</span> ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) +
-        ' — ' + escapeHtmlText(r.teacher_a || '빈 시간') + ' → <b>' + escapeHtmlText(r.teacher_b) + '</b> ' + escapeHtmlText(r.subject || '');
-    } else if (r.type === 'makeup') {
-      t = '🩹 <b>보강</b> ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) + ' ' + subj(r.from[0]) +
-        ' — ' + escapeHtmlText(r.teacher_a) + ' → <b>' + escapeHtmlText(r.teacher_b) + '</b>';
-    } else {
-      const ea = r.from.filter(function(e) { return e.teacher === r.teacher_b; })[0], eb = r.from.filter(function(e) { return e.teacher === r.teacher_a; })[0];
-      t = '🔁 <b>교환</b>' + (r.chain ? ' <span class="se-muted">(' + r.chain + '명이 돌아가며)</span>' : '') + ' ' + escapeHtmlText(r.teacher_a) + ' ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) + ' ' + subj(eb) +
-        ' ↔ ' + escapeHtmlText(r.teacher_b) + ' ' + escapeHtmlText(sccSlotText(r.change_date_b, r.period_b)) + ' ' + escapeHtmlText(neisRoomText(r.room_b)) + ' ' + subj(ea);
-    }
-    return '<label class="neis-in-row">' + (viewOnly ? '' : '<input type="checkbox" data-i="' + i + '" checked onchange="neisInCount()"> ') + '<span>' + t + '</span></label>';
-  }
-  function neisInRender(viewOnly) {
-    let ov = document.getElementById('neis-in-overlay');
-    if (!ov) {
-      ov = document.createElement('div');
-      ov.id = 'neis-in-overlay'; ov.className = 'overlay';
-      ov.innerHTML = '<div class="modal-box neis-in-box"><div class="neis-in-title">📥 나이스 변경수업 가져오기</div><div id="neis-in-body"></div>' +
-        '<div class="neis-in-btns"><button type="button" class="top-btn" onclick="neisInClose()">닫기</button><button type="button" class="top-btn accent" id="neis-in-save" onclick="neisInSave()">넣기</button></div></div>';
-      document.body.appendChild(ov);
-    }
-    const b = neisIn.built, recs = b.records;
-    const scopes = Object.keys(neisIn.scopes).sort().map(function(g) { const sc = neisIn.scopes[g].split('~'); return g + '학년 ' + sccMD(sc[0]) + '~' + sccMD(sc[1]); });
-    const missing = viewOnly ? [] : [1, 2, 3].filter(function(g) { return !neisIn.scopes[g]; });
-    let h = '<div class="neis-in-sub">받은 조회: <b>' + escapeHtmlText(scopes.join(' · ')) + '</b>' +
-      (missing.length ? '<br><span class="se-muted">' + missing.join('·') + '학년도 나이스에서 조회하면 이 창에 더해져요(창을 닫지 않아도 돼요).</span>' : '') + '</div>';
-    if (b.kept) h += '<div class="se-muted" style="margin-bottom:6px;">나이스와 같은 예전 기록 ' + b.kept + '건은 그대로 둬요.</div>';
-    h += recs.length
-      ? (viewOnly ? '<div class="neis-in-sec">넣은 것 ' + recs.length + '건</div>' : '<div class="neis-in-sec">새로 넣을 것 ' + recs.length + '건 <span class="se-muted">— 빼고 싶은 건 체크를 끄세요</span></div>') +
-        '<div class="neis-in-list">' + recs.map(function(r, i) { return neisInRecordHtml(r, i, viewOnly); }).join('') + '</div>'
-      : '<div class="neis-in-sec">' + (viewOnly ? '넣은 것이 없어요.' : '새로 넣을 것이 없어요.') + '</div>';
-    const rm = b.removed || [];
-    if (rm.length) {
-      h += '<div class="neis-in-sec">' + (viewOnly ? '지운 것' : '지울 것') + ' ' + rm.length + '건 <span class="se-muted">— 예전에 나이스에서 가져왔는데 오늘 나이스에서 바뀌었거나 없어진 것</span></div><div class="neis-in-list">' +
-        rm.map(function(c, i) {
-          const d = sccDescribe(c), t = (c.type === 'cell' ? '교체' : c.type === 'exchange' ? '교환' : '보강') + ' ' + sccSlotText(c.change_date, c.period_a) + ' ' + (c.teacher_a || '빈 시간') + ' ' + d.classA + (c.type === 'exchange' ? ' ↔ ' : ' → ') + c.teacher_b + (c.type === 'exchange' ? ' ' + sccSlotText(d.dateB, c.period_b) + ' ' + d.classB : c.type === 'cell' ? ' ' + d.classB : '');
-          return '<label class="neis-in-row">' + (viewOnly ? '' : '<input type="checkbox" data-d="' + i + '" checked onchange="neisInCount()"> ') + '<span>🗑 <s>' + escapeHtmlText(t) + '</s></span></label>';
-        }).join('') + '</div>';
-    }
-    const why = {};
-    b.skipped.forEach(function(x) { (why[x.why] = why[x.why] || []).push(x.e); });
-    const keys = Object.keys(why).sort(function(a, c) { return (NEIS_QUIET.test(a) ? 1 : 0) - (NEIS_QUIET.test(c) ? 1 : 0); });
-    if (keys.length) {
-      h += '<details class="neis-in-skip"' + (keys.some(function(k) { return !NEIS_QUIET.test(k); }) ? ' open' : '') + '><summary>넣지 않은 칸 ' + b.skipped.length + '개</summary>' +
-        keys.map(function(k) {
-          const es = why[k];
-          return '<div class="neis-in-why"><b>' + escapeHtmlText(k) + '</b> (' + es.length + ')' +
-            (/^행사|^시험/.test(k) ? '' : '<div class="se-muted">' + es.slice(0, 12).map(function(e) { return escapeHtmlText(sccSlotText(e.date, e.period) + ' ' + neisRoomText(e.room) + ' ' + e.text); }).join('<br>') + (es.length > 12 ? '<br>…' : '') + '</div>') + '</div>';
-        }).join('') + '</details>';
-    }
-    document.getElementById('neis-in-body').innerHTML = h;
-    ov.dataset.view = viewOnly ? '1' : '';
-    document.getElementById('neis-in-save').style.display = viewOnly ? 'none' : '';
-    ov.style.display = 'flex';
-    neisInCount();
-  }
-  function neisInChecked() {
-    return Array.prototype.map.call(document.querySelectorAll('#neis-in-body input[data-i]:checked'), function(x) { return neisIn.built.records[+x.dataset.i]; });
-  }
-  function neisInCheckedRemoved() {
-    return Array.prototype.map.call(document.querySelectorAll('#neis-in-body input[data-d]:checked'), function(x) { return neisIn.built.removed[+x.dataset.d]; });
-  }
-  function neisInCount() {
-    const n = neisIn.built ? neisInChecked().length : 0, m = neisIn.built ? neisInCheckedRemoved().length : 0, btn = document.getElementById('neis-in-save');
-    if (btn) { btn.textContent = n && m ? n + '건 넣고 ' + m + '건 지우기' : m ? m + '건 지우기' : n ? n + '건 넣기' : '넣기'; btn.disabled = !n && !m; }
-  }
-  function neisInClose() {
-    const ov = document.getElementById('neis-in-overlay'); if (!ov) return;
-    ov.style.display = 'none';
-    if (ov.dataset.view) { neisIn.built = null; neisIn.scopes = {}; return; } // 보기만 한 창: 받은 것 확인은 이미 함
-    neisInAck();
-  }
-  async function neisInSave() {
-    const pick = neisInChecked(), drop = neisInCheckedRemoved();
-    if (!pick.length && !drop.length) return;
-    const btn = document.getElementById('neis-in-save'); btn.disabled = true;
-    try {
-      await neisInApply(pick, drop);
-      document.getElementById('neis-in-overlay').style.display = 'none';
-      neisInAck();
-      await neisInRefresh();
-      customAlert('나이스 변경수업에 맞췄어요. 🎉' + (pick.length ? '\n· 넣음 ' + pick.length + '건' : '') + (drop.length ? '\n· 지움 ' + drop.length + '건' : ''));
-    } catch (e) {
-      btn.disabled = false;
-      customAlert('넣지 못했어요: ' + (e && e.message ? e.message : e));
-    }
-  }
 
-  // ----- 변경 내역 -----
-  function sccSetListRange(r) {
-    scc.listRange = r;
-    document.querySelectorAll('#scc-range-btns .tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.range === r); });
-    sccRenderList();
-  }
-
-  const SCC_RANGE_NAMES = { upcoming: '오늘부터', thisweek: '이번 주', nextweek: '다음 주', month: '이번 달', past: '지난 내역', all: '전체' };
-
-  // 지금 고른 기간·구분·이름으로 거른 내역(날짜순, 지난 내역은 최근 것부터)
-  function sccFilteredList() {
-    const myName = localStorage.getItem('my-n');
-    const manager = isScheduleManager();
-    const today = todayYmdDash();
-    const mon = sccMondayOf(today) > today ? sccAddDays(sccMondayOf(today), -7) : sccMondayOf(today);
-    const t = sccParse(today);
-    const ranges = {
-      upcoming: [today, '9999'], thisweek: [mon, sccAddDays(mon, 6)], nextweek: [sccAddDays(mon, 7), sccAddDays(mon, 13)],
-      month: [sccYmd(new Date(t.getFullYear(), t.getMonth(), 1)), sccYmd(new Date(t.getFullYear(), t.getMonth() + 1, 0))], all: ['0000', '9999']
-    };
-    const type = document.getElementById('scc-type-filter').value;
-    const q = document.getElementById('scc-search').value.trim();
-    const list = (window.scheduleChangesAll || window.scheduleChangesRaw || []).filter(function(c) {
-      if (!manager && c.teacher_a !== myName && c.teacher_b !== myName) return false;
-      if (type !== 'all' && c.type !== type) return false;
-      if (q && String(c.teacher_a).indexOf(q) < 0 && String(c.teacher_b).indexOf(q) < 0) return false;
-      const dates = [c.change_date, sccDateB(c)];
-      if (scc.listRange === 'past') return dates.every(function(d) { return d < today; });
-      const r = ranges[scc.listRange] || ranges.all;
-      return dates.some(function(d) { return d >= r[0] && d <= r[1]; });
-    });
-    const past = scc.listRange === 'past';
-    list.sort(function(x, y) {
-      const k = function(c) { return c.change_date + '|' + String(c.period_a).padStart(2, '0') + '|' + String(c.id).padStart(9, '0'); };
-      return (k(x) < k(y) ? -1 : 1) * (past ? -1 : 1);
-    });
-    return list;
-  }
-
-  // 한 건을 사람이 읽는 글로: 원래 수업 / 바뀐 내용
-  function sccDescribe(c) {
-    const dateB = sccDateB(c);
-    const wdA = sccWeekdayOf(c.change_date), wdB = sccWeekdayOf(dateB);
-    const same = dateB === c.change_date && c.period_a === c.period_b;
-    const inf = sccEffectiveMap(sccAllChanges()).info[c.id]; // 그 기록이 실제로 옮긴 수업(앞 기록을 이어받은 것까지)
-    const classA = inf ? inf.classA : sccClassText(c.teacher_a, wdA, c.period_a);
-    const classB = inf ? inf.classB : c.type === 'exchange' ? sccClassText(c.teacher_b, wdB, c.period_b) : c.type === 'cell' ? c.subject + ' ' + c.room_a : '';
-    let note;
-    if (c.type === 'cell') note = '나이스 표 그대로(짝이 안 보이는 교체)';
-    else if (c.type === 'exchange') note = same ? '같은 시간에 서로 반 맞바꿈' : (dateB === c.change_date ? '같은 날 교시 교환' : '다른 날끼리 교환');
-    else note = same ? '같은 시간 보강' : '다른 시간에 보강';
-    return { dateB: dateB, wdA: wdA, wdB: wdB, same: same, classA: classA, classB: classB, note: note };
-  }
-
-  function sccCanDelete(c) {
-    const me = window.currentTeacher || {};
-    return isScheduleManager() || me.is_admin || (c.created_by && c.created_by === me.name);
-  }
-
-  function sccRenderList() {
-    const listEl = document.getElementById('scc-list');
-    const list = sccFilteredList();
-    const today = todayYmdDash();
-    const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length, nCell = list.filter(function(c) { return c.type === 'cell'; }).length;
-    document.getElementById('scc-list-summary').innerText = (isScheduleManager() ? '전체 ' : '내 변경 ') + list.length + '건' + (list.length ? ' (교환 ' + nEx + ' · 보강 ' + (list.length - nEx - nCell) + (nCell ? ' · 교체(나이스 칸) ' + nCell : '') + ')' : '');
-    // 엑셀은 거르기와 상관없이 학기 전체 — 버튼에도 그렇게 적는다.
-    const excelBtn = document.getElementById('scc-excel-btn');
-    excelBtn.innerText = '📥 ' + (window.currentActiveSemester || '이번 학기') + ' 전체 엑셀로 받기';
-    excelBtn.disabled = sccSemesterList().length === 0;
-    if (!list.length) {
-      listEl.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:40px 10px; font-size:13px;">' + escapeHtmlText(SCC_RANGE_NAMES[scc.listRange] || '') + ' 등록된 변경이 없어요.</div>';
-      return;
-    }
-    const counts = {};
-    list.forEach(function(c) { counts[c.change_date] = (counts[c.change_date] || 0) + 1; });
-    let html = '<table class="scc-table"><thead><tr><th>교시</th><th>구분</th><th>원래 수업</th><th>바뀐 내용</th><th>등록</th><th></th></tr></thead><tbody>';
-    let lastDate = '';
-    list.forEach(function(c) {
-      if (c.change_date !== lastDate) {
-        lastDate = c.change_date;
-        const isToday = c.change_date === today;
-        html += '<tr class="scc-day' + (isToday ? ' today' : '') + '"><td colspan="6">' + sccMD(c.change_date) + '(' + SCC_DAYS[sccWeekdayOf(c.change_date)] + ')' + (isToday ? ' · 오늘' : '') + '<span class="cnt">' + counts[c.change_date] + '건</span></td></tr>';
-      }
-      const d = sccDescribe(c);
-      const ex = c.type === 'exchange', cellRec = c.type === 'cell';
-      const changed = cellRec ? '→ <b>' + escapeHtmlText(c.teacher_b) + '</b> ' + escapeHtmlText(d.classB) + ' <span class="sub">(나이스 표 그대로)</span>' : ex
-        ? (d.same ? '↔ <b>' + escapeHtmlText(c.teacher_b) + '</b> ' + escapeHtmlText(d.classB) + ' <span class="sub">(같은 시간 반 맞바꿈)</span>'
-                  : '↔ <b>' + escapeHtmlText(c.teacher_b) + '</b> ' + escapeHtmlText(sccSlotText(d.dateB, c.period_b)) + ' ' + escapeHtmlText(d.classB))
-        : '→ <b>' + escapeHtmlText(c.teacher_b) + '</b>가 대신' + (d.same ? '' : ' <span class="nowrap">(' + escapeHtmlText(sccSlotText(d.dateB, c.period_b)) + '에)</span>');
-      const created = c.created_at ? sccMD(String(c.created_at).slice(0, 10)) : '';
-      html += '<tr><td class="nowrap"><b>' + c.period_a + '교시</b></td>' +
-        '<td><span class="scc-type ' + (ex || cellRec ? 'ex' : 'mk') + '">' + (cellRec ? '교체' : ex ? '교환' : '보강') + '</span></td>' +
-        '<td><b>' + escapeHtmlText(c.teacher_a || '(빈 시간)') + '</b> ' + escapeHtmlText(d.classA) + '</td>' +
-        '<td>' + changed + '</td>' +
-        '<td class="sub nowrap">' + escapeHtmlText(c.created_by || '') + (created ? ' · ' + created : '') + '</td>' +
-        '<td class="nowrap">' + (sccCanDelete(c) ? '<button class="top-btn" style="padding:2px 8px; font-size:11px; color:var(--alert);" onclick="sccDelete(\'' + escapeHtmlAttr(String(c.id)) + '\')">삭제</button>' : '') + '</td></tr>';
-    });
-    listEl.innerHTML = html + '</tbody></table>';
-  }
-
-  async function sccDelete(id) {
-    const deps = sccChainDependents(id); // 이 기록이 옮겨 놓은 수업을 뒤 기록이 이어받았으면(연속 교환) 알려 준다
-    const ok = await customConfirm(deps ? '이 변경 뒤에 이어진 변경이 ' + deps + '건 있어요(이 변경으로 옮겨진 수업을 다시 바꾼 기록).\n지우면 그 뒤 변경은 원래 수업을 옮기는 것으로 바뀌어 시간표가 달라질 수 있어요.\n그래도 삭제할까요?' : '이 변경 내역을 삭제할까요?');
-    if (!ok) return;
-    try {
-      const cellId = /^cell-(\d+)$/.exec(String(id));
-      const { error } = cellId ? await sb.from('schedule_cell_changes').delete().eq('id', Number(cellId[1])) : await sb.from('schedule_changes').delete().eq('id', Number(id));
-      if (error) throw error;
-      await fetchScheduleChanges();
-      loadMyTimetable();
-      renderSearchTimetable(true);
-      sccRenderList();
-    } catch (e) {
-      customAlert('삭제 실패: ' + (e && e.message ? e.message : e));
-    }
-  }
-
-  // ----- 엑셀로 내려받기 -----
+  // ----- 엑셀 도구 -----
   // 디자인(색·테두리·틀 고정·필터)을 넣으려고 ExcelJS를 쓴다. 누를 때만 받아 와서 다른 화면엔 부담 없음.
-  const SCC_EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
-  function sccLoadExcelJS() {
+  const EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+  function loadExcelJS() {
     if (window.ExcelJS) return Promise.resolve();
-    if (!sccLoadExcelJS._p) {
-      sccLoadExcelJS._p = new Promise(function(resolve, reject) {
+    if (!loadExcelJS._p) {
+      loadExcelJS._p = new Promise(function(resolve, reject) {
         const s = document.createElement('script');
-        s.src = SCC_EXCELJS_URL;
+        s.src = EXCELJS_URL;
         s.onload = function() { window.ExcelJS ? resolve() : reject(new Error('엑셀 도구를 불러오지 못했어요.')); };
-        s.onerror = function() { sccLoadExcelJS._p = null; s.remove(); reject(new Error('엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.')); };
+        s.onerror = function() { loadExcelJS._p = null; s.remove(); reject(new Error('엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.')); };
         document.head.appendChild(s);
       });
     }
-    return sccLoadExcelJS._p;
-  }
-
-  // 날짜 문자열 → 엑셀 날짜(ExcelJS는 UTC로 바꾸므로 UTC 자정으로 만들어야 하루 밀리지 않는다)
-  function sccExcelDate(ymd) { const p = ymd.split('-'); return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10))); }
-
-  // 지금 학기(관리자 설정의 학기 날짜): { label: '2026학년도 2학기', start, end } — 학기 날짜가 없으면 start/end 빈 값
-  function sccSemesterInfo() {
-    const sem = window.currentActiveSemester || getActiveSemester() || '';
-    const r = (window.semesterRanges || {})[sem] || {};
-    const base = r.start ? sccParse(r.start) : new Date();
-    const year = base.getMonth() < 2 ? base.getFullYear() - 1 : base.getFullYear(); // 1~2월은 지난 학년도
-    return { label: year + '학년도' + (sem ? ' ' + sem : ''), start: r.start || '', end: r.end || '' };
-  }
-
-  // 엑셀은 화면에서 거른 것과 상관없이 이번 학기 전체(담당은 모두, 일반 교사는 본인 관련)를 날짜순으로.
-  function sccSemesterList() {
-    const myName = localStorage.getItem('my-n');
-    const manager = isScheduleManager();
-    const si = sccSemesterInfo();
-    return (window.scheduleChangesAll || window.scheduleChangesRaw || []).filter(function(c) {
-      if (!manager && c.teacher_a !== myName && c.teacher_b !== myName) return false;
-      if (!si.start || !si.end) return true;
-      return [c.change_date, sccDateB(c)].some(function(d) { return d >= si.start && d <= si.end; });
-    }).sort(function(x, y) {
-      const k = function(c) { return c.change_date + '|' + String(c.period_a).padStart(2, '0') + '|' + String(c.id).padStart(9, '0'); };
-      return k(x) < k(y) ? -1 : 1;
-    });
-  }
-
-  async function sccBuildWorkbook(list) {
-    const wb = new ExcelJS.Workbook();
-    wb.creator = '스마트보드';
-    wb.created = new Date();
-    const ws = wb.addWorksheet('수업 변경 내역', {
-      views: [{ state: 'frozen', xSplit: 0, ySplit: 3, topLeftCell: 'A4', activeCell: 'A4' }],
-      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
-        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }, printTitlesRow: '3:3', horizontalCentered: true },
-      headerFooter: { oddFooter: '&C&P / &N쪽' }
-    });
-    const cols = [
-      { h: '날짜', w: 12 }, { h: '요일', w: 6 }, { h: '교시', w: 6 }, { h: '구분', w: 7 },
-      { h: '원래 선생님', w: 12 }, { h: '과목', w: 14 }, { h: '반·교실', w: 10 },
-      { h: '바뀐 선생님', w: 12 }, { h: '바뀐 날짜', w: 12 }, { h: '바뀐 요일', w: 8 }, { h: '바뀐 교시', w: 8 },
-      { h: '상대 과목', w: 14 }, { h: '상대 반·교실', w: 11 }, { h: '비고', w: 22 },
-      { h: '등록한 사람', w: 12 }, { h: '등록일', w: 12 }
-    ];
-    ws.columns = cols.map(function(c) { return { width: c.w }; });
-    const lastCol = String.fromCharCode(64 + cols.length); // P
-    const si = sccSemesterInfo();
-
-    ws.mergeCells('A1:' + lastCol + '1');
-    const title = ws.getCell('A1');
-    title.value = si.label + ' 수업 변경 내역';
-    title.font = { size: 16, bold: true, color: { argb: 'FF1F3A5F' } };
-    title.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-    ws.getRow(1).height = 32;
-
-    ws.mergeCells('A2:' + lastCol + '2');
-    const nEx = list.filter(function(c) { return c.type === 'exchange'; }).length;
-    const sub = ws.getCell('A2');
-    sub.value = (si.start && si.end ? '기간: ' + si.start + ' ~ ' + si.end + ' · ' : '') +
-      (isScheduleManager() ? '' : localStorage.getItem('my-n') + ' 선생님 관련 · ') +
-      '총 ' + list.length + '건(교환 ' + nEx + ' · 보강 ' + list.filter(function(c) { return c.type === 'makeup'; }).length + (list.some(function(c) { return c.type === 'cell'; }) ? ' · 교체(나이스 칸) ' + list.filter(function(c) { return c.type === 'cell'; }).length : '') + ') · ' + todayYmdDash() + ' 내려받음';
-    sub.font = { size: 10, color: { argb: 'FF767C8C' } };
-    sub.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-    ws.getRow(2).height = 20;
-
-    const thin = { style: 'thin', color: { argb: 'FFD5D9E0' } };
-    const border = { top: thin, left: thin, bottom: thin, right: thin };
-    const head = ws.getRow(3);
-    head.values = cols.map(function(c) { return c.h; });
-    head.height = 24;
-    head.eachCell(function(cell) {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10.5 };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = border;
-    });
-
-    list.forEach(function(c) {
-      const d = sccDescribe(c);
-      const ex = c.type === 'exchange', cellRec = c.type === 'cell';
-      // 과목·반은 그 기록이 실제로 옮긴 수업(연속 교환이면 앞 기록이 옮겨 놓은 수업) — 정규 시간표 칸이 아니라
-      const inf = sccEffectiveMap(sccAllChanges()).info[c.id];
-      const bRoom = cellRec ? [c.subject, c.room_a] : !ex ? ['', ''] : inf ? inf.b : sccRegularCell(c.teacher_b, d.wdB, c.period_b);
-      const aCell = inf ? inf.a : sccRegularCell(c.teacher_a, d.wdA, c.period_a);
-      const row = ws.addRow([
-        sccExcelDate(c.change_date), SCC_DAYS[d.wdA], c.period_a, cellRec ? '교체' : ex ? '교환' : '보강',
-        c.teacher_a, aCell[0], aCell[1],
-        c.teacher_b, sccExcelDate(d.dateB), SCC_DAYS[d.wdB], c.period_b,
-        bRoom[0], bRoom[1], d.note,
-        c.created_by || '', c.created_at ? sccExcelDate(String(c.created_at).slice(0, 10)) : ''
-      ]);
-      row.height = 20;
-      const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ex ? 'FFEEF4FB' : 'FFFFF5EA' } };
-      row.eachCell({ includeEmpty: true }, function(cell, n) {
-        cell.border = border;
-        cell.fill = fill;
-        cell.font = { size: 10.5 };
-        cell.alignment = { vertical: 'middle', horizontal: (n === 14 ? 'left' : 'center') };
-      });
-      row.getCell(1).numFmt = 'yyyy-mm-dd';
-      row.getCell(9).numFmt = 'yyyy-mm-dd';
-      row.getCell(16).numFmt = 'yyyy-mm-dd';
-      row.getCell(4).font = { size: 10.5, bold: true, color: { argb: ex ? 'FF1F5C99' : 'FFA65A12' } };
-      row.getCell(5).font = { size: 10.5, bold: true };
-      row.getCell(8).font = { size: 10.5, bold: true };
-    });
-    ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3 + list.length, column: cols.length } };
-    return wb;
-  }
-
-  async function sccExportExcel() {
-    const list = sccSemesterList();
-    if (!list.length) return customAlert('이번 학기에 등록된 변경 내역이 없어요.');
-    const btn = document.getElementById('scc-excel-btn');
-    const label = btn.innerText;
-    btn.disabled = true; btn.innerText = '⏳ 만드는 중...';
-    try {
-      await sccLoadExcelJS();
-      const wb = await sccBuildWorkbook(list);
-      const buf = await wb.xlsx.writeBuffer();
-      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = '수업변경내역_' + sccSemesterInfo().label.replace(/\s/g, '_') + '.xlsx';
-      a.click();
-      setTimeout(function() { URL.revokeObjectURL(a.href); }, 10000);
-    } catch (e) {
-      customAlert('엑셀 만들기 실패: ' + (e && e.message ? e.message : e));
-    } finally {
-      btn.disabled = false; btn.innerText = label;
-    }
+    return loadExcelJS._p;
   }
 
   let todoCounts = { work: 20, stu: 20 };
@@ -17815,7 +16449,7 @@
   async function seExportExcel() {
     if (!seClassKey() || !seRoster.length) return customAlert('내려받을 자료가 없어요.');
     try {
-      await sccLoadExcelJS();
+      await loadExcelJS();
       const all = seAllAreas(), c = seCfg();
       const wb = new ExcelJS.Workbook();
       const FONT = '맑은 고딕';
@@ -19050,7 +17684,7 @@
     if (!cls || !sub.areas.length) return;
     if (!(await paConfirmIncomplete(sub, cls))) return;
     try {
-      await sccLoadExcelJS();
+      await loadExcelJS();
       const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet('empty0');
       ws.columns = [{ width: 7.14 }, { width: 7.14 }, { width: 7.14 }, { width: 21.43 }].concat(sub.areas.map(function() { return { width: 21.43 }; }));
       const thin = { style: 'thin' }, border = { top: thin, left: thin, bottom: thin, right: thin };
@@ -19113,7 +17747,7 @@
     try {
       const buf = await file.arrayBuffer();
       if (!isXls) {
-        await sccLoadExcelJS();
+        await loadExcelJS();
         wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); ws = wb.worksheets[0];
         for (let r = 1; r <= ws.rowCount; r++) { const row = []; for (let c = 1; c <= Math.max(ws.columnCount, 4); c++) row.push(paCellText(ws.getCell(r, c)).trim()); grid.push(row); }
       } else {
@@ -19262,7 +17896,7 @@
     const picks = paXlPicks();
     if (!picks.length || (!o.sc && !o.nt && !o.sum && !o.sk)) return;
     try {
-      await sccLoadExcelJS();
+      await loadExcelJS();
       const date = new Date().toISOString().slice(0, 10), files = [], empty = [], usedNames = [];
       for (const p of picks) {
         const buf = await paXlBuild(p.sub, p.cls, o);
@@ -19527,7 +18161,7 @@
     if (!files.length) return;
     if (paDemo) return customAlert('설명서 예시 화면에서는 가져올 수 없어요. 설명서를 닫은 뒤 가져와 주세요.');
     const books = [], bad = [];
-    try { await sccLoadExcelJS(); } catch (e) { return customAlert('엑셀을 읽는 도구를 못 받았어요. 인터넷 연결을 확인해 주세요.'); }
+    try { await loadExcelJS(); } catch (e) { return customAlert('엑셀을 읽는 도구를 못 받았어요. 인터넷 연결을 확인해 주세요.'); }
     for (const f of files) {
       try { const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await f.arrayBuffer()); books.push({ name: f.name, wb: wb, info: paXlInfo(wb) }); }
       catch (e) { bad.push(f.name); }
@@ -20634,9 +19268,9 @@
     return m ? '\n\n원인: ' + m.slice(0, 200) : '';
   }
   let fmStage = '';         // 지금 무엇을 기다리는지(오래 걸릴 때 안내용)
-  // 파일 저장 — 수업 변경 엑셀·백업과 똑같이 <a download>로 누르면 바로 내려받는다.
+  // 파일 저장 — 백업과 똑같이 <a download>로 누르면 바로 내려받는다.
   // (판 .3에서 잠깐 "다른 이름으로 저장" 창을 먼저 띄웠으나, 사용자 PC에서 저장 창이 뜨고 파일이 비어 보이는(.crswap 임시 파일이 남는)
-  //  문제가 있어 되돌림 — 사용자: "어제처럼 누르면 내려받게". 이 PC에선 <a download>가 정상(수업 변경·백업이 같은 방식).)
+  //  문제가 있어 되돌림 — 사용자: "어제처럼 누르면 내려받게". 이 PC에선 <a download>가 정상(백업이 같은 방식).)
   function fmSaveNow(blob, name) {
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = name;
@@ -20669,7 +19303,7 @@
     } finally { clearTimeout(timer); btn.disabled = false; fmStage = ''; }
   }
   // 엑셀: 반마다 한 시트, 1단(거르기·정렬하기 좋게). 제목·안내·머리 줄·테두리·번갈아 색·칸 너비·줄 높이·글꼴·정렬은 화면과 같게,
-  // A4 세로 한 쪽 폭에 맞춰 인쇄, 머리 줄은 쪽마다 반복·틀 고정. ExcelJS는 수업 변경 엑셀과 같이 누를 때만 받아 온다.
+  // A4 세로 한 쪽 폭에 맞춰 인쇄, 머리 줄은 쪽마다 반복·틀 고정. ExcelJS는 누를 때만 받아 온다.
   async function fmDownloadXlsx() {
     const btn = document.getElementById('fm-xlsx-btn');
     let timer = null;
@@ -20677,7 +19311,7 @@
       const c = fmCfg(), msg = fmEmptyMsg(c);
       if (msg) return customAlert(msg.replace(/<br>/g, '\n').replace(/<[^>]+>/g, ''));
       btn.disabled = true; timer = fmSlowTimer(); fmStage = '엑셀 도구 받는 중';
-      await sccLoadExcelJS();
+      await loadExcelJS();
       fmStage = '엑셀 파일 만드는 중';
       const L = fmLayout(Object.assign({}, c, { colsN: 1 }));
       const wb = new ExcelJS.Workbook();
@@ -25277,7 +23911,7 @@
     if (!window.classStructure) ensureClassStructureLoaded().then(function() { if (fmIsOpen()) { fmFillForm(); fmRender(); } });
     // 한글 바탕 파일·엑셀 도구를 미리 받아 둔다 — 단추를 누른 뒤 바로 내려받게(오래 걸리면 크롬이 자동 내려받기로 보고 막을 수 있음)
     try { fmSkeleton().catch(function() {}); } catch (e) {}
-    try { sccLoadExcelJS().catch(function() {}); } catch (e) {}
+    try { loadExcelJS().catch(function() {}); } catch (e) {}
   }
   // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다.
   document.addEventListener('DOMContentLoaded', function() {
@@ -26286,7 +24920,7 @@
     if (!window.allSchedules || !window.allSchedules[name]) return;
     document.getElementById('my-tt-name').innerText = name;
     applyScheduleToGrid('my-tt', window.allSchedules[name]);
-    applyChangeOverlayToGrid('my-tt', name);
+    applyNeisToGrid('my-tt', name);
     updateCellColors('my-tt');
   }
 

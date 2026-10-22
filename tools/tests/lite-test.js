@@ -119,7 +119,7 @@ async function openPage(browser) {
   check('담임이면 currentTeacher 담임', await page.evaluate(() => currentTeacher.role === '담임' && currentTeacher.homeroom_grade === 1));
 
   console.log('== 3. 홈: 공용판 요소 숨김, 급식·학사일정·뉴스는 나옴');
-  for (const sel of ['#btn-notice', '#quick-school-btns', '#duty-alert-pill', '#notice-widget', '#search-teacher-picker', '#tab-tt', '#rail-persontt-btn', '.m-tt-change-btn', '#btn-logout']) check('숨김 ' + sel, !(await vis(sel)));
+  for (const sel of ['#btn-notice', '#quick-school-btns', '#duty-alert-pill', '#notice-widget', '#search-teacher-picker', '#tab-tt', '#rail-persontt-btn', '#btn-logout']) check('숨김 ' + sel, !(await vis(sel)));
   for (const sel of ['#rail-settings-btn', '#rail-roster-btn', '#rail-pa-btn', '#rail-absence-btn', '#rail-leavepass-btn', '#my-tt-widget', '#news-widget', '#meal-widget', '#favorites-panel', '#upcoming-schedule-pill']) check('보임 ' + sel, await vis(sel));
   check('기본 탭 = 1/2 캘린더', await page.evaluate(() => currentMainTab === 'halfcal' && document.getElementById('half-cal-wrapper').style.display !== 'none'));
   check('급식 나옴', (await page.textContent('#meal-list')).includes('불고기'));

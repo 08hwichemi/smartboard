@@ -194,7 +194,6 @@ function check(label, cond, detail) {
       browse: w.classList.contains('my-tt-browse'),
       selVis: vis(document.getElementById('m-tt-teacher-select')),
       navVis: [...w.querySelectorAll('.m-tt-nav')].every(vis),
-      changeHidden: !vis(w.querySelector('.m-tt-change-btn')),
       title: w.querySelector('.m-tt-title-mobile').offsetParent !== null && !vis(w.querySelector('.m-tt-title-desktop')),
       first: document.getElementById('m-tt-teacher-select').options[0].text,
       opts: document.getElementById('m-tt-teacher-select').options.length,
@@ -202,7 +201,7 @@ function check(label, cond, detail) {
       editable: document.getElementById('my-tt-1-1-s').getAttribute('contenteditable'),
     };
   });
-  check('시간표 없는 분: 선생님 고르는 목록·◀▶ 보이고, 제목 "시간표", 수업변경 숨김, 빈 칸', st.browse && st.selVis && st.navVis && st.changeHidden && st.title && st.first === '-- 선택 --' && st.opts === 9 && st.cell === '' && st.editable === 'false', st);
+  check('시간표 없는 분: 선생님 고르는 목록·◀▶ 보이고, 제목 "시간표", 빈 칸', st.browse && st.selVis && st.navVis && st.title && st.first === '-- 선택 --' && st.opts === 9 && st.cell === '' && st.editable === 'false', st);
   await P.selectOption('#m-tt-teacher-select', '김교사'); await wait(300);
   check('김교사 고르면 그 시간표가 보임', await P.evaluate(() => document.getElementById('my-tt-1-1-s').innerText) === '국어');
   await P.click('#my-tt-widget .m-tt-nav >> nth=1'); await wait(300);
