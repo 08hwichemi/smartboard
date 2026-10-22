@@ -195,7 +195,7 @@
     .timetable-grid { display: grid; grid-template-columns: 65px repeat(5, 1fr); grid-template-rows: 20px repeat(var(--tt-rows, 7), 1fr); gap: 4px; height: 100%; min-height: 0;} /* --tt-rows: 개인판 교시 수(liteBoot) */
     .tt-header { font-size: 13px; color: var(--text-main); text-align: center; font-weight: 700; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;}
     .tt-cell { border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background-color: var(--tt-bg); border: 1px solid var(--border-color); transition: background-color 0.3s; }
-    .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; padding: 2px; }
+    .tt-subj { flex: 3; display: flex; align-items: center; justify-content: center; font-size: var(--fz-tt); font-weight: 700; text-align: center; word-break: keep-all; overflow-wrap: normal; line-height: 1.2; padding: 2px; min-width: 0; } /* 단어 가운데서 줄 안 바뀜 — 칸보다 긴 단어는 fitSubjCells가 글자를 줄임 */
     .tt-room { flex: 1; display: flex; align-items: center; justify-content: center; font-size: calc(var(--fz-tt) - 2px); font-weight: 600; background: rgba(0,0,0,0.06); text-align: center; }
     .tt-time { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--text-main); }
     .tt-time div { font-size: 12px; opacity: 0.9; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; line-height: 1.2; text-align: center;}
@@ -9180,6 +9180,7 @@
     if(fontSizes[target] > 20) fontSizes[target] = 20; 
     document.documentElement.style.setProperty('--fz-' + target, fontSizes[target] + 'px');
     localStorage.setItem('fz-' + target, fontSizes[target]);
+    scheduleFitSubj();
   }
 
   const BM_SLOTS = LITE ? 8 : 4; // 개인판: 고정 링크 없이 내 링크 8칸
@@ -9772,6 +9773,37 @@
         cell.style.backgroundColor = color; cell.style.color = '#222';
       }
     }
+    scheduleFitSubj();
+  }
+
+  // 시간표 칸 과목명이 "심화영/어Ⅰ"처럼 단어 가운데서 끊기지 않게(10/22 사용자): 줄은 띄어쓰기·<wbr> 자리에서만 바뀌고(CSS),
+  // 그래도 한 단어가 칸보다 넓거나 줄이 넘치면 그 칸만 글자를 조금씩(최대 40%) 줄인다. 글자 크기(A+/A-)·창 크기가 바뀌면 다시 맞춘다.
+  function fitSubjCells() {
+    document.querySelectorAll('.tt-subj').forEach(function(el) {
+      if (el.style.fontSize) el.style.fontSize = '';
+      if (!el.clientWidth || el === document.activeElement || !el.textContent.trim()) return; // 숨은 칸·입력 중인 칸은 그대로
+      const base = parseFloat(getComputedStyle(el).fontSize) || 14;
+      let size = base;
+      const cell = el.parentElement; // 과목 줄이 길어 칸(overflow: hidden) 아래로 밀려 잘리는 것도 본다(예: 세계 문제와 미래 사회 네 줄)
+      const over = function() { return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 || (cell && cell.scrollHeight > cell.clientHeight + 1); };
+      while (over() && size > base * 0.6) {
+        size -= Math.max(0.5, base * 0.05);
+        el.style.fontSize = size + 'px';
+      }
+    });
+  }
+  let fitSubjPending = false;
+  function scheduleFitSubj() {
+    if (fitSubjPending) return;
+    fitSubjPending = true;
+    requestAnimationFrame(function() { fitSubjPending = false; fitSubjCells(); });
+  }
+  window.addEventListener('resize', scheduleFitSubj);
+  document.addEventListener('focusout', function(e) { if (e.target && e.target.classList && e.target.classList.contains('tt-subj')) scheduleFitSubj(); });
+  // 숨어 있던 시간표가 보이게 되거나 칸 크기가 바뀔 때(탭 바꾸기·휴대폰 화면 등)
+  if (window.ResizeObserver) {
+    const ttRo = new ResizeObserver(scheduleFitSubj);
+    document.addEventListener('DOMContentLoaded', function() { document.querySelectorAll('.timetable-grid, #staff-grid').forEach(function(g) { ttRo.observe(g); }); });
   }
 
   async function fetchSchedule() {
@@ -9992,8 +10024,8 @@
     updateCellColors(prefix);
   }
 
-  // 띄어쓰기 없이 긴 과목명이 시간표 칸에서 이상한 위치(글자 하나만 남는 등)에서 줄바꿈되는 것을 막기 위한
-  // 자연스러운 줄바꿈 지점 힌트. 알려진 과목명은 의미 단위로 끊고, 목록에 없는 긴 이름은 가운데쯤에서 끊는다.
+  // 띄어쓰기 없이 긴 과목명의 자연스러운 줄바꿈 지점 힌트(알려진 과목명은 의미 단위로 — "과학탐구실험2"처럼 뒤에 붙은 것도).
+  // 목록에 없는 이름은 끊지 않는다(예전엔 가운데서 끊어 "심화영/어Ⅰ"이 됨) — 칸보다 길면 fitSubjCells가 글자를 줄인다.
   // <wbr>은 화면 표시에서만 줄바꿈 기회를 주는 태그라 innerText로 읽으면 원래 글자만 그대로 남는다.
   const SUBJ_BREAK_HINTS = {
     '과학탐구실험': 4,
@@ -10010,9 +10042,15 @@
   function subjDisplayHtml(text) {
     text = text || '';
     if (!text) return '';
-    let breakAt = SUBJ_BREAK_HINTS[text];
-    if (breakAt === undefined && !/\s/.test(text) && text.length >= 5) {
-      breakAt = Math.ceil(text.length / 2);
+    let breakAt = 0;
+    if (!/\s/.test(text)) {
+      Object.keys(SUBJ_BREAK_HINTS).forEach(function(k) { if (!breakAt && text.indexOf(k) === 0) breakAt = SUBJ_BREAK_HINTS[k]; });
+      const dot = text.indexOf('·');
+      if (!breakAt && dot > 0 && dot < text.length - 1) breakAt = dot + 1; // 자율·/자치활동
+      // 목록에 없는 붙여 쓴 이름: 한글 낱말은 대개 두 글자씩이라 가운데쯤 두 글자 경계에서(통합/과학2, 지구/과학Ⅱ) —
+      // 뒤에 붙은 숫자·로마 숫자는 앞 글자와 함께, 네 글자보다 짧으면 끊지 않음(칸보다 길면 fitSubjCells가 글자를 줄임)
+      const core = text.replace(/[0-9Ⅰ-Ⅻ]+$/, '');
+      if (!breakAt && core.length >= 4 && /^[가-힣]+$/.test(core)) breakAt = 2 * Math.round(core.length / 4);
     }
     if (breakAt) {
       return escapeHtmlText(text.slice(0, breakAt)) + '<wbr>' + escapeHtmlText(text.slice(breakAt));
