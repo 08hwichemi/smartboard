@@ -229,6 +229,10 @@ put('러교사', 3, 2, '물리', '305'); put('머교사', 3, 2, '화학', '306')
 put('버교사', 1, 7, '지구', '306');
 put('쉬교사', 4, 2, '국어', '301'); put('위교사', 4, 3, '수학', '302');      // 다른 반·다른 시간 → 짝짓지 않음(10/22 실제로 잘못 들어갔던 꼴)
 put('키교사', 5, 4, '영어', '301'); put('피교사', 5, 4, '과학', '302');      // 같은 시간에 두 반 맞바꿈 → 교환
+// 여러 명이 돌아가며 바꾼 교체(2학년): 같은 시간에 세 반을 돌림 / 같은 반에서 세 교시를 돌림 / 닫히지 않는 줄 / 시험 칸
+put('감교사', 2, 2, '국어', '201'); put('남교사', 2, 2, '수학', '202'); put('담교사', 2, 2, '영어', '203');
+put('람교사', 3, 1, '물리', '204'); put('맘교사', 3, 2, '화학', '204'); put('밤교사', 3, 3, '생명', '204');
+put('삼교사', 4, 1, '지리', '205'); put('암교사', 4, 4, '지리', '206'); put('잠교사', 1, 1, '국어', '207');
 global.__tt = Object.keys(tt).map((n) => ({ teacher_name: n, cells: tt[n] }));
 // 이미 있는 기록: 보강 아 월4 → 자 / 교환 차 화3 ↔ 카 금3
 changes.push({ id: 1, type: 'makeup', change_date: D[0], period_a: 4, teacher_a: '아교사', change_date_b: D[0], period_b: 4, teacher_b: '자교사', room_a: '101', room_b: null, created_by: '수업계', created_at: '2026-01-01T00:00:00Z' });
@@ -277,6 +281,10 @@ const g3 = mml(3, [[{ date: D[2], cells: { 2: { 5: '[보강]물리(머교사)' }
   { date: D[3], cells: { 2: { 1: '수학(위교사)' }, 3: { 2: '국어(쉬교사)' } } },
   { date: D[4], cells: { 4: { 1: '과학(피교사)', 2: '영어(키교사)' } } }]]);
 
+const g2 = mml(2, [[{ date: D[0], cells: { 1: { 7: '2학기 1차 시험-국어(잠교사)' } } },
+  { date: D[1], cells: { 2: { 1: '수학(남교사)', 2: '영어(담교사)', 3: '국어(감교사)' } } },
+  { date: D[2], cells: { 1: { 4: '화학(맘교사)' }, 2: { 4: '생명(밤교사)' }, 3: { 4: '물리(람교사)' } } },
+  { date: D[3], cells: { 1: { 5: '지리(암교사)' } } }]]);
 const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());
@@ -362,6 +370,25 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log('== 6b. 자동 조회 실패 알림');
   await P.evaluate(() => window.postMessage({ __sbNeis: 'status', ok: false, msg: '나이스 변경수업 자동 조회를 끝내지 못했어요(1학년만 받음).' }, '*')); await wait2(300);
   check('실패하면 알림 카드에 이유', /자동 조회를 끝내지 못했어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)));
+
+  console.log('== 6c. 여러 명이 돌아가며 바꾼 교체 → 교환을 차례로, 시험·닫히지 않는 줄은 빼기');
+  await P.click('#neis-toast .neis-toast-x').catch(() => {});
+  const b6c = changes.length;
+  await P.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'c2', xml: x, at: 9 }] }, '*'), g2);
+  await P.waitForSelector('#neis-in-overlay', { state: 'visible', timeout: 5000 }); await wait2(300);
+  const v6c = await P.evaluate(() => ({ rows: [...document.querySelectorAll('#neis-in-body .neis-in-row')].map((r) => r.innerText), body: document.getElementById('neis-in-body').innerText }));
+  check('세 명 교체 두 줄 → 교환 4건(각 2건, "3명이 돌아가며")', v6c.rows.length === 4 && v6c.rows.every((r) => /3명이 돌아가며/.test(r)), v6c.rows);
+  check('시험 칸은 "시험(정기고사)"로 빼고, 닫히지 않는 줄은 확인 필요', /시험\(정기고사\) — 넣지 않음/.test(v6c.body) && /교체 짝을 못 찾음\(삼교사/.test(v6c.body), v6c.body);
+  await P.click('#neis-in-save'); await wait2(800);
+  await P.click('#custom-alert-ok-btn').catch(() => {}); await wait2(200);
+  check('4건을 만든 차례 그대로 넣음', changes.length === b6c + 4 && changes.slice(b6c).every((c) => c.type === 'exchange'), changes.slice(b6c));
+  const cellsNow = await P.evaluate(([d1, d2]) => {
+    const m = sccEffectiveMap(sccAllChanges()), who = (d, p, room) => sccTeacherNames().filter((t) => m.get(t, d, p).list.some((x) => x.r === room)).join();
+    return [who(d1, 2, '201'), who(d1, 2, '202'), who(d1, 2, '203'), who(d2, 1, '204'), who(d2, 2, '204'), who(d2, 3, '204')];
+  }, [D[1], D[2]]);
+  check('넣은 뒤 칸마다 나이스와 같음(201 남·202 담·203 감 / 204: 1교시 맘·2교시 밤·3교시 람)', JSON.stringify(cellsNow) === JSON.stringify(['남교사', '담교사', '감교사', '맘교사', '밤교사', '람교사']), cellsNow);
+  const subjNow = await P.evaluate((d2) => { const m = sccEffectiveMap(sccAllChanges()); return [m.get('맘교사', d2, 1).text, m.get('밤교사', d2, 2).text, m.get('람교사', d2, 3).text]; }, D[2]);
+  check('같은 반에서 돌린 것은 과목이 따라감(맘 화학·밤 생명·람 물리, 반 204)', JSON.stringify(subjNow) === JSON.stringify(['화학 204', '생명 204', '물리 204']), subjNow);
 
   console.log('== 7. 담당이 아니면 열리지 않음');
   const T = await openDevice(browser, '교사PC', T1);
