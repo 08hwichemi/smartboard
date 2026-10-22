@@ -30,6 +30,13 @@ document.getElementById('log').onclick = function () {
   const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), lastRun: last && last.lastRun, auto: last && last.auto, history: last && last.history }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '나이스자동조회_' + ymd(new Date()) + '.json'; a.click();
 };
+document.getElementById('reports').onclick = function () {
+  chrome.runtime.sendMessage({ t: 'lastReports' }, function (r) {
+    if (!r || !r.reports || !r.reports.length) { alert('남아 있는 보고서가 없어요. 자동 조회를 한 번 한 뒤 눌러 주세요.'); return; }
+    const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), reports: r.reports }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '나이스보고서_' + ymd(new Date()) + '.json'; a.click();
+  });
+};
 document.getElementById('resend').onclick = function () { chrome.runtime.sendMessage({ t: 'resend' }, function () { setTimeout(show, 300); }); };
 document.getElementById('open').onclick = function () { chrome.tabs.create({ url: 'https://08hwichemi.github.io/smartboard/' }); };
 show(); setInterval(show, 2000);

@@ -20,12 +20,12 @@ function summary(xml) {
   return (va.$4 ? va.$4 + '학년 ' : '') + md(va.$6) + '~' + md(va.$7);
 }
 async function load() {
-  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastTryAt: 0, running: null, lastRun: null });
+  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastTryAt: 0, running: null, lastRun: null, lastReports: [] });
   const now = Date.now(); o.pending = o.pending.filter(function (r) { return now - r.at < KEEP_MS; });
   if (o.running && now - o.running.at > RUN_MAX_MS) o.running = null; // 멈춘 채 남은 표시는 버린다
   return o;
 }
-async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastTryAt: o.lastTryAt, running: o.running, lastRun: o.lastRun }); }
+async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastTryAt: o.lastTryAt, running: o.running, lastRun: o.lastRun, lastReports: o.lastReports.slice(-6) }); }
 async function badge(o) {
   const bad = o.lastRun && !o.lastRun.ok && o.lastRun.date === ymd(new Date()) && o.lastAutoDate !== o.lastRun.date;
   await chrome.action.setBadgeText({ text: bad ? '!' : (o.pending.length ? String(o.pending.length) : '') });
@@ -48,7 +48,7 @@ async function maybeRun(reason) {
   const tabs = await chrome.tabs.query({ url: NEIS_MAIN });
   if (!tabs.length) return; // 나이스가 안 열려 있음 — 로그인하면 neis-ready로 다시 온다
   const run = Date.now();
-  o.running = { run: run, at: run, reason: reason }; o.lastTryAt = run;
+  o.running = { run: run, at: run, reason: reason }; o.lastTryAt = run; o.lastReports = [];
   await save(o);
   const from = ymd(addDays(now, -7)), to = ymd(addDays(now, 21));
   try {
@@ -80,6 +80,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       const r = { id: Date.now() + '-' + Math.random().toString(36).slice(2, 8), at: Date.now(), xml: m.xml, what: summary(m.xml), grade: +(vaOf(m.xml).$4 || 0), auto: !!o.running };
       o.pending = o.pending.filter(function (x) { return x.what !== r.what; }).concat([r]); // 같은 학년·기간을 다시 조회하면 새것만
       o.history.push({ at: r.at, what: r.what, auto: r.auto });
+      o.lastReports = o.lastReports.filter(function (x) { return x.what !== r.what; }).concat([{ at: r.at, what: r.what, xml: r.xml }]); // 분석용 사본(스마트보드가 확인해도 남김)
       await save(o); await badge(o);
       if (!o.running) await push(o); // 자동 조회 중이면 끝날 때 한꺼번에
       reply({ ok: true });
@@ -119,6 +120,8 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
     } else if (m.t === 'resetToday') { // 시험용: 오늘 한 기록·기다리는 보고서를 지워 처음 켠 것처럼
       o.lastAutoDate = ''; o.lastRun = null; o.lastTryAt = 0; o.running = null; o.pending = [];
       await save(o); await badge(o); reply({ ok: true });
+    } else if (m.t === 'lastReports') {
+      reply({ reports: o.lastReports });
     } else if (m.t === 'resend') {
       reply({ sent: await push(o) });
     } else if (m.t === 'clear') {
