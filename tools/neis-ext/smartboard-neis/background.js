@@ -4,7 +4,8 @@
 //    로그인하자마자 한다. 실패하면 30분 뒤 알람이나 다음 로그인 때 다시.
 // ② 보고서 보관·전달: 받은 "전체시간표 (변경수업)" 보고서를 스마트보드가 확인(ack)할 때까지(최대 하루) 보관하고 열린 스마트보드 탭으로 넘긴다.
 //    자동 조회 중에 받은 것은 모았다가 끝나면 한꺼번에(auto 표시 — 스마트보드가 확인 없이 바로 넣음).
-const SB_URL = 'https://08hwichemi.github.io/smartboard/*';
+// 스마트보드 = 실제 주소 + main에 올리기 전 시험하는 미리 보기 주소(raw.githack.com의 브랜치)
+const SB_URL = ['https://08hwichemi.github.io/smartboard/*', 'https://raw.githack.com/08hwichemi/smartboard/*'];
 const NEIS_MAIN = 'https://*.neis.go.kr/jsp/main.jsp*';
 const KEEP_MS = 24 * 60 * 60 * 1000;
 const RETRY_MS = 30 * 60 * 1000;
