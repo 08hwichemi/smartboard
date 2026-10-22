@@ -1,15 +1,64 @@
 {
   "manifest_version": 3,
   "name": "스마트보드 나이스 변경수업",
-  "version": "1.0",
-  "description": "나이스 전체시간표 조회(변경수업조회)를 열면 그 표를 같은 크롬의 부광고 스마트보드로 넘겨, 보강·교체를 수업 변경에 넣을 수 있게 합니다.",
-  "permissions": ["storage"],
-  "host_permissions": ["https://08hwichemi.github.io/smartboard/*"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "스마트보드 나이스 변경수업" },
+  "version": "1.1",
+  "description": "평일 아침(기본 8시 40분, 놓치면 나이스에 로그인할 때) 로그인된 나이스에서 전체시간표 변경수업을 1·2·3학년 조회해 같은 크롬의 부광고 스마트보드로 넘깁니다. 스마트보드가 보강·교체를 수업 변경에 넣습니다.",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://08hwichemi.github.io/smartboard/*",
+    "https://*.neis.go.kr/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "스마트보드 나이스 변경수업"
+  },
   "content_scripts": [
-    { "matches": ["https://*.neis.go.kr/*"], "js": ["neis-hook.js"], "world": "MAIN", "run_at": "document_start", "all_frames": true, "match_about_blank": true },
-    { "matches": ["https://*.neis.go.kr/*"], "js": ["neis-relay.js"], "run_at": "document_start", "all_frames": true, "match_about_blank": true },
-    { "matches": ["https://08hwichemi.github.io/smartboard/*"], "js": ["sb-relay.js"], "run_at": "document_idle" }
+    {
+      "matches": [
+        "https://*.neis.go.kr/*"
+      ],
+      "js": [
+        "neis-hook.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "https://*.neis.go.kr/*"
+      ],
+      "js": [
+        "neis-relay.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "https://*.neis.go.kr/jsp/main.jsp*"
+      ],
+      "js": [
+        "neis-auto.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://08hwichemi.github.io/smartboard/*"
+      ],
+      "js": [
+        "sb-relay.js"
+      ],
+      "run_at": "document_idle"
+    }
   ]
 }

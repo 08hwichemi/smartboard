@@ -889,6 +889,10 @@
     .neis-in-skip summary { cursor: pointer; font-weight: 700; }
     .neis-in-why { margin: 6px 0 0 4px; line-height: 1.6; }
     .neis-in-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+    #neis-toast { position: fixed; right: 18px; bottom: 18px; z-index: 1040; display: none; flex-direction: column; gap: 8px; max-width: 360px; padding: 12px 14px; border-radius: 12px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; line-height: 1.55; }
+    .neis-toast-btns { display: flex; justify-content: flex-end; gap: 6px; }
+    .neis-toast-btns .top-btn { font-size: 12px; padding: 4px 10px; }
+    .neis-toast-warn { color: var(--alert); font-weight: 700; }
     /* ===== 새 버전 알림 띠 ===== */
     .updatebar { position: fixed; top: 0; left: 0; right: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: var(--accent-color); color: var(--on-accent); font-size: 12.5px; font-weight: 700; text-align: center; }
     .updatebar[hidden] { display: none; }
@@ -11702,15 +11706,17 @@
   }
 
   // ----- 확장 프로그램(tools/neis-ext)에서 받기 → 미리 보기 → 넣기 -----
-  // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at }] })로 넘긴다.
+  // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at, auto }] })로 넘긴다.
+  // auto = 아침 자동 조회(평일 8시 40분 / 놓치면 나이스 로그인 때)로 받은 것 → 확인 창 없이 바로 넣고 알림 카드에 [보기]·[되돌리기].
+  // 선생님이 직접 조회한 것은 미리 보기 창에서 골라 넣는다.
   // 여러 학년을 따로 조회해도 창 하나에 모인다(같은 학년·날짜·교시·반은 나중 것). 넣거나 닫으면 받은 것을 확인(ack)해서
   // 확장 프로그램이 다시 보내지 않게 한다. 관리자·수업변경 담당만, 쉬는 창·개인판은 받지 않는다.
   const neisIn = { ids: [], scopes: {}, entries: {}, built: null, waitTries: 0 };
   window.addEventListener('message', function(e) {
     const d = e.data;
-    if (e.source !== window || !d || d.__sbNeis !== 'reports' || !Array.isArray(d.reports)) return;
-    if (LITE || SB_SLEEP) return;
-    neisInReceive(d.reports);
+    if (e.source !== window || !d || LITE || SB_SLEEP) return;
+    if (d.__sbNeis === 'reports' && Array.isArray(d.reports)) neisInReceive(d.reports);
+    if (d.__sbNeis === 'status' && d.ok === false && neisInReady() && neisInAllowed()) neisToast('⚠️ ' + escapeHtmlText(d.msg || '나이스 자동 조회를 끝내지 못했어요.'), []);
   });
   function neisInReady() { return !!(window.currentTeacher && window.currentTeacher.id && window.allSchedules && Object.keys(window.allSchedules).length); }
   function neisInAllowed() { return isScheduleManager() || !!(window.currentTeacher && window.currentTeacher.is_admin); }
@@ -11720,16 +11726,17 @@
       return;
     }
     if (!neisInAllowed()) return;
-    let fresh = 0;
+    let fresh = 0, auto = false;
     reports.forEach(function(r) {
       if (!r || neisIn.ids.indexOf(r.id) >= 0) return;
       const p = neisParseChangeXml(r.xml);
       if (!p.isChange || !p.grade) return;
       neisIn.ids.push(r.id); fresh++;
+      if (r.auto) auto = true;
       neisIn.scopes[p.grade] = p.from + '~' + p.to;
       p.entries.forEach(function(x) { neisIn.entries[x.grade + '|' + x.date + '|' + x.period + '|' + x.room] = x; });
     });
-    if (fresh) neisInOpen();
+    if (fresh) { if (auto) neisInAutoApply(); else neisInOpen(); }
   }
   function neisInTriesLeft() { neisIn.waitTries++; return neisIn.waitTries <= 40; }
   function neisInAck() {
@@ -11744,14 +11751,71 @@
     };
   }
   function neisRoomText(r) { r = String(r || ''); return /^\d{3,}$/.test(r) ? r.slice(0, -2) + '-' + (+r.slice(-2)) : r; }
-  async function neisInOpen() {
+  async function neisInBuild() {
     await fetchScheduleChanges(); // 다른 분이 방금 넣은 것까지 보고 판단
     const entries = Object.keys(neisIn.entries).map(function(k) { return neisIn.entries[k]; })
       .sort(function(a, b) { return a.date.localeCompare(b.date) || a.period - b.period || a.room.localeCompare(b.room); });
     neisIn.built = neisBuildChanges(entries, window.allSchedules, neisInTeachersAt());
-    neisInRender();
   }
-  function neisInRecordHtml(r, i) {
+  async function neisInOpen() { await neisInBuild(); neisInRender(); }
+  function neisInRows(recs) {
+    return recs.map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b }; })
+      .sort(function(a, b) { return a.change_date.localeCompare(b.change_date) || a.period_a - b.period_a; });
+  }
+  async function neisInRefresh() {
+    await fetchScheduleChanges();
+    loadMyTimetable();
+    renderSearchTimetable(true);
+    if (document.getElementById('schedule-change-overlay').style.display === 'flex') sccRenderList();
+  }
+  // 자동 조회로 받은 것: 확인 없이 넣고 알림 카드(넣은 기록 id를 들고 있다가 [되돌리기]로 지움)
+  let neisLast = null;
+  async function neisInAutoApply() {
+    await neisInBuild();
+    const b = neisIn.built, scopes = Object.assign({}, neisIn.scopes);
+    let ids = [];
+    if (b.records.length) {
+      const res = await sb.from('schedule_changes').insert(neisInRows(b.records)).select('id');
+      if (res.error) { neisInRender(); customAlert('나이스 변경수업을 저절로 넣지 못했어요: ' + (res.error.message || res.error) + '\n창에서 "넣기"를 눌러 주세요.'); return; }
+      ids = (res.data || []).map(function(x) { return x.id; });
+    }
+    neisInAck();
+    neisLast = { built: b, ids: ids, scopes: scopes };
+    if (b.records.length) await neisInRefresh();
+    const check = b.skipped.filter(function(x) { return !/^행사|^이미/.test(x.why); }).length;
+    const grades = Object.keys(scopes).sort().join('·');
+    neisToast('📥 <b>나이스 변경수업</b> ' + escapeHtmlText(grades) + '학년<br>' +
+      (b.records.length ? '보강·교체 <b>' + b.records.length + '건</b>을 넣었어요.' : '새로 넣을 것이 없어요(이미 다 들어 있어요).') +
+      (check ? '<br><span class="neis-toast-warn">확인 필요 ' + check + '칸</span>' : ''),
+      [b.records.length || check ? ['보기', 'neisLastView()'] : null, ids.length ? ['되돌리기', 'neisLastUndo()'] : null].filter(Boolean),
+      !b.records.length && !check ? 10000 : 0);
+  }
+  function neisToast(html, btns, autoHideMs) {
+    let el = document.getElementById('neis-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'neis-toast'; document.body.appendChild(el); }
+    el.innerHTML = '<div class="neis-toast-msg">' + html + '</div><div class="neis-toast-btns">' +
+      btns.map(function(b) { return '<button type="button" class="top-btn" onclick="' + b[1] + '">' + b[0] + '</button>'; }).join('') +
+      '<button type="button" class="top-btn neis-toast-x" title="닫기" onclick="neisToastClose()">✕</button></div>';
+    el.style.display = 'flex';
+    clearTimeout(neisToast.timer);
+    if (autoHideMs) neisToast.timer = setTimeout(neisToastClose, autoHideMs);
+  }
+  function neisToastClose() { const el = document.getElementById('neis-toast'); if (el) el.style.display = 'none'; }
+  function neisLastView() {
+    if (!neisLast) return;
+    neisIn.built = neisLast.built; neisIn.scopes = neisLast.scopes;
+    neisInRender(true);
+  }
+  async function neisLastUndo() {
+    if (!neisLast || !neisLast.ids.length) return;
+    if (!await customConfirm('나이스에서 저절로 넣은 보강·교체 ' + neisLast.ids.length + '건을 지울까요?')) return;
+    const res = await sb.from('schedule_changes').delete().in('id', neisLast.ids);
+    if (res && res.error) { customAlert('지우지 못했어요: ' + (res.error.message || res.error)); return; }
+    const n = neisLast.ids.length; neisLast = null;
+    await neisInRefresh();
+    neisToast('↩️ 나이스에서 넣은 ' + n + '건을 지웠어요.', [], 8000);
+  }
+  function neisInRecordHtml(r, i, viewOnly) {
     const subj = function(e) { return e ? escapeHtmlText(e.subject) : ''; };
     let t;
     if (r.type === 'makeup') {
@@ -11762,9 +11826,9 @@
       t = '🔁 <b>교환</b> ' + escapeHtmlText(r.teacher_a) + ' ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) + ' ' + subj(eb) +
         ' ↔ ' + escapeHtmlText(r.teacher_b) + ' ' + escapeHtmlText(sccSlotText(r.change_date_b, r.period_b)) + ' ' + escapeHtmlText(neisRoomText(r.room_b)) + ' ' + subj(ea);
     }
-    return '<label class="neis-in-row"><input type="checkbox" data-i="' + i + '" checked onchange="neisInCount()"> <span>' + t + '</span></label>';
+    return '<label class="neis-in-row">' + (viewOnly ? '' : '<input type="checkbox" data-i="' + i + '" checked onchange="neisInCount()"> ') + '<span>' + t + '</span></label>';
   }
-  function neisInRender() {
+  function neisInRender(viewOnly) {
     let ov = document.getElementById('neis-in-overlay');
     if (!ov) {
       ov = document.createElement('div');
@@ -11775,12 +11839,13 @@
     }
     const b = neisIn.built, recs = b.records;
     const scopes = Object.keys(neisIn.scopes).sort().map(function(g) { const sc = neisIn.scopes[g].split('~'); return g + '학년 ' + sccMD(sc[0]) + '~' + sccMD(sc[1]); });
-    const missing = [1, 2, 3].filter(function(g) { return !neisIn.scopes[g]; });
+    const missing = viewOnly ? [] : [1, 2, 3].filter(function(g) { return !neisIn.scopes[g]; });
     let h = '<div class="neis-in-sub">받은 조회: <b>' + escapeHtmlText(scopes.join(' · ')) + '</b>' +
       (missing.length ? '<br><span class="se-muted">' + missing.join('·') + '학년도 나이스에서 조회하면 이 창에 더해져요(창을 닫지 않아도 돼요).</span>' : '') + '</div>';
     h += recs.length
-      ? '<div class="neis-in-sec">새로 넣을 것 ' + recs.length + '건 <span class="se-muted">— 빼고 싶은 건 체크를 끄세요</span></div><div class="neis-in-list">' + recs.map(neisInRecordHtml).join('') + '</div>'
-      : '<div class="neis-in-sec">새로 넣을 것이 없어요 — 스마트보드에 이미 다 들어 있거나 넣을 수 없는 칸이에요.</div>';
+      ? (viewOnly ? '<div class="neis-in-sec">넣은 것 ' + recs.length + '건</div>' : '<div class="neis-in-sec">새로 넣을 것 ' + recs.length + '건 <span class="se-muted">— 빼고 싶은 건 체크를 끄세요</span></div>') +
+        '<div class="neis-in-list">' + recs.map(function(r, i) { return neisInRecordHtml(r, i, viewOnly); }).join('') + '</div>'
+      : '<div class="neis-in-sec">' + (viewOnly ? '넣은 것이 없어요.' : '새로 넣을 것이 없어요 — 스마트보드에 이미 다 들어 있거나 넣을 수 없는 칸이에요.') + '</div>';
     const why = {};
     b.skipped.forEach(function(x) { (why[x.why] = why[x.why] || []).push(x.e); });
     const keys = Object.keys(why).sort(function(a, c) { return (/^행사|^이미/.test(a) ? 1 : 0) - (/^행사|^이미/.test(c) ? 1 : 0); });
@@ -11793,6 +11858,8 @@
         }).join('') + '</details>';
     }
     document.getElementById('neis-in-body').innerHTML = h;
+    ov.dataset.view = viewOnly ? '1' : '';
+    document.getElementById('neis-in-save').style.display = viewOnly ? 'none' : '';
     ov.style.display = 'flex';
     neisInCount();
   }
@@ -11804,7 +11871,9 @@
     if (btn) { btn.textContent = n ? n + '건 넣기' : '넣기'; btn.disabled = !n; }
   }
   function neisInClose() {
-    const ov = document.getElementById('neis-in-overlay'); if (ov) ov.style.display = 'none';
+    const ov = document.getElementById('neis-in-overlay'); if (!ov) return;
+    ov.style.display = 'none';
+    if (ov.dataset.view) { neisIn.built = null; neisIn.scopes = {}; return; } // 보기만 한 창: 받은 것 확인은 이미 함
     neisInAck();
   }
   async function neisInSave() {
@@ -11812,16 +11881,12 @@
     if (!pick.length) return;
     const btn = document.getElementById('neis-in-save'); btn.disabled = true;
     try {
-      const rows = pick.map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b }; })
-        .sort(function(a, b) { return a.change_date.localeCompare(b.change_date) || a.period_a - b.period_a; });
+      const rows = neisInRows(pick);
       const { error } = await sb.from('schedule_changes').insert(rows);
       if (error) throw error;
       document.getElementById('neis-in-overlay').style.display = 'none';
       neisInAck();
-      await fetchScheduleChanges();
-      loadMyTimetable();
-      renderSearchTimetable(true);
-      if (document.getElementById('schedule-change-overlay').style.display === 'flex') sccRenderList();
+      await neisInRefresh();
       customAlert('나이스 변경수업 ' + rows.length + '건을 넣었어요. 🎉');
     } catch (e) {
       btn.disabled = false;

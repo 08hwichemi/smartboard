@@ -77,7 +77,8 @@ async function handleDb(pageInfo, req) {
     return { data: { value: { '1학기': { start: '2000-03-01', end: '2000-07-20' }, '2학기': { start: d(-30), end: d(60) } } }, error: null };
   }
   if (table === 'schedule_changes') {
-    if (op === 'insert') { const r = Array.isArray(rows) ? rows : [rows]; r.forEach(x => changes.push(Object.assign({ id: changes.length + 1, created_by: teachers[pageInfo.uid].name }, x))); return { data: null, error: null }; }
+    if (op === 'insert') { const r = Array.isArray(rows) ? rows : [rows]; const out = []; r.forEach(x => { const row = Object.assign({ id: Math.max(0, ...changes.map(c => c.id)) + 1, created_by: teachers[pageInfo.uid].name }, x); changes.push(row); out.push({ id: row.id }); }); return { data: out, error: null }; }
+    if (op === 'delete') { const f = filters.find(x => x.col === 'id'); const ids = f ? (f.op === 'in' ? f.val : [f.val]) : []; for (let i = changes.length - 1; i >= 0; i--) if (ids.includes(changes[i].id)) changes.splice(i, 1); return { data: null, error: null }; }
     if (op === 'select') { let l = changes.slice().sort((x, y) => x.id - y.id); const r0 = range ? range[0] : 0, r1 = range ? range[1] + 1 : l.length; l = l.slice(r0, Math.min(r1, r0 + 1000)); return { data: l, error: null }; } // 진짜 서버처럼 한 번에 최대 1000줄(max_rows)
     return { data: null, error: null };
   }
@@ -119,7 +120,7 @@ const mockLib = `
       select: function(){ return b; },
       eq: function(c,v){ q.filters.push({op:'eq',col:c,val:v}); return b; },
       gt: function(c,v){ q.filters.push({op:'gt',col:c,val:v}); return b; },
-      gte: function(){ return b; }, lte: function(){ return b; }, in: function(){ return b; }, limit: function(){ return b; },
+      gte: function(){ return b; }, lte: function(){ return b; }, in: function(c,v){ q.filters.push({op:'in',col:c,val:v}); return b; }, limit: function(){ return b; },
       order: function(c){ q.orders.push(c); return b; },
       range: function(a,z){ q.range=[a,z]; return b; },
       single: function(){ q.single=true; return b; },
@@ -332,11 +333,37 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   const acks = await P.evaluate(() => window.__acks);
   check('닫기도 확인(ack r4), 저장은 안 함', JSON.stringify(acks[acks.length - 1]) === '["r4"]' && changes.length === before + 4, [acks, changes.length - before]);
 
-  console.log('== 6. 담당이 아니면 열리지 않음');
+  console.log('== 6. 아침 자동 조회로 받은 것(auto): 확인 없이 바로 넣고 알림 카드 · 보기 · 되돌리기');
+  const b6 = changes.length;
+  await P.evaluate(([x1, x3]) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'a1', xml: x1, at: 5, auto: true }, { id: 'a3', xml: x3, at: 5, auto: true }] }, '*'), [g1, g3]);
+  await P.waitForSelector('#neis-toast', { state: 'visible', timeout: 5000 }); await wait2(300);
+  const added6 = changes.slice(b6);
+  check('창 없이 바로 넣음: 지난번에 뺀 보강 다→라 1건', added6.length === 1 && added6[0].teacher_a === '다교사' && added6[0].teacher_b === '라교사' && !(await P.isVisible('#neis-in-overlay')), added6);
+  const toast = await P.evaluate(() => document.getElementById('neis-toast').innerText);
+  check('알림 카드: 1·3학년, 1건 넣음, 확인 필요 칸 수, 보기·되돌리기', /1·3학년/.test(toast) && /1건을 넣었어요/.test(toast) && /확인 필요 \d+칸/.test(toast) && /보기/.test(toast) && /되돌리기/.test(toast), toast);
+  check('받은 것 확인(ack a1·a3)', JSON.stringify((await P.evaluate(() => window.__acks)).pop()) === '["a1","a3"]');
+  const t6 = await P.evaluate((d0) => sccEffectiveMap(sccAllChanges()).get('라교사', d0, 2).text, D[0]);
+  check('시간표에 바로 반영(라교사 월2 = 영어 102)', t6 === '영어 102', t6);
+  await P.click('#neis-toast button:has-text("보기")'); await wait2(300);
+  const v6 = await P.evaluate(() => ({ vis: getComputedStyle(document.getElementById('neis-in-overlay')).display === 'flex', body: document.getElementById('neis-in-body').innerText, boxes: document.querySelectorAll('#neis-in-body input[type=checkbox]').length, save: getComputedStyle(document.getElementById('neis-in-save')).display }));
+  check('보기: 넣은 것 1건(체크칸·넣기 단추 없이) + 넣지 않은 칸', v6.vis && /넣은 것 1건/.test(v6.body) && v6.boxes === 0 && v6.save === 'none' && /넣지 않은 칸/.test(v6.body), v6);
+  await P.click('#neis-in-overlay .top-btn:not(.accent)'); await wait2(200);
+  const ackN = (await P.evaluate(() => window.__acks)).length;
+  await P.click('#neis-toast button:has-text("되돌리기")'); await wait2(300);
+  check('되돌리기 전에 확인을 물음', /1건을 지울까요/.test(await P.evaluate(() => document.getElementById('custom-confirm-overlay').innerText)));
+  await P.click('#custom-confirm-ok-btn'); await wait2(800);
+  check('되돌리기: 넣은 1건을 지움, 시간표도 돌아감', changes.length === b6 && (await P.evaluate((d0) => sccEffectiveMap(sccAllChanges()).get('라교사', d0, 2).text, D[0])) === '', changes.length - b6);
+  check('되돌린 뒤 알림', /지웠어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)) && (await P.evaluate(() => window.__acks)).length === ackN);
+  console.log('== 6b. 자동 조회 실패 알림');
+  await P.evaluate(() => window.postMessage({ __sbNeis: 'status', ok: false, msg: '나이스 변경수업 자동 조회를 끝내지 못했어요(1학년만 받음).' }, '*')); await wait2(300);
+  check('실패하면 알림 카드에 이유', /자동 조회를 끝내지 못했어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)));
+
+  console.log('== 7. 담당이 아니면 열리지 않음');
   const T = await openDevice(browser, '교사PC', T1);
-  await T.page.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'r9', xml: x, at: 1 }] }, '*'), g1);
+  const b7 = changes.length;
+  await T.page.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'r9', xml: x, at: 1 }, { id: 'r10', xml: x, at: 2, auto: true }] }, '*'), g1);
   await wait2(1200);
-  check('일반 교사 화면엔 창이 안 뜸', !(await T.page.isVisible('#neis-in-overlay').catch(() => false)));
+  check('일반 교사 화면엔 창도 알림도 안 뜨고, 자동이어도 안 넣음', !(await T.page.isVisible('#neis-in-overlay').catch(() => false)) && !(await T.page.isVisible('#neis-toast').catch(() => false)) && changes.length === b7);
 
   const errs = pages.flatMap((p) => p.errors || []);
   check('페이지 오류 없음', errs.length === 0, errs);
