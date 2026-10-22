@@ -1,6 +1,6 @@
 // 나이스 화면(맨 위 창, /jsp/main.jsp): ① 로그인돼 메뉴가 보이면 background에 "준비됨"을 알리고
 // ② background가 "자동 조회"를 보내면 사람이 누르듯 화면 단추를 눌러
-//    교과담임 → 시간표관리 → 전체시간표조회 → 변경수업조회 → 일자(지난주 ~ 3주 뒤) → 학년 1·2·3 차례로 조회한다.
+//    교과담임(큰 메뉴판) → 시간표관리 → 왼쪽 메뉴 전체시간표조회 → 변경수업조회 → 일자(지난주 ~ 3주 뒤) → 학년 1·2·3 차례로 조회한다.
 //    보고서는 neis-hook.js가 잡아 background로 보낸다. 단계마다 기록을 남기고, 못 찾은 단계는 그 근처 화면 정보를 함께 보낸다.
 (function () {
   if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname) || window.__sbNeisAuto) return;
@@ -30,22 +30,37 @@
   const searchBtn = function () { return all('.btn-i-search[aria-label="조회"], .btn-i-search').filter(function (e) { return /조회/.test(txt(e) + (e.getAttribute('aria-label') || '')); })[0] || null; };
   const screenOpen = function () { return gradeBox() && searchBtn() && all('*').some(function (e) { return e.children.length === 0 && txt(e) === '변경수업조회'; }) ? true : null; };
   const byTitle = function (t) { return all('[title="' + t + '"]'); };
+  // 글자가 꼭 맞는 가장 작은 칸(메뉴판 항목 등 title이 없는 것): 링크·메뉴 항목이면 그것, 아니면 글자 칸
+  const byText = function (t) {
+    return all('a, [role="menuitem"], [role="treeitem"], span, div, li').filter(function (e) {
+      return txt(e) === t && !Array.prototype.some.call(e.children, function (c) { return shown(c) && txt(c) === t; });
+    });
+  };
+  const sideLeaf = function () {
+    return byTitle('전체시간표조회').filter(function (e) { return /sidenavigation/.test(e.className); })[0] ||
+      all('.cl-sidenavigation-item, [class*="sidenavigation"] a').filter(function (e) { return /^전체시간표조회/.test(txt(e)); })[0] || null;
+  };
   async function openScreen(log) {
     if (screenOpen()) { log('화면이 이미 열려 있음'); return true; }
     const tab = byTitle('전체시간표조회').filter(function (e) { return !/sidenavigation/.test(e.className); })[0];
     if (tab) { press(tab); log('아래 탭에서 전체시간표조회'); if (await waitFor(screenOpen, 8000)) return true; }
-    let side = byTitle('전체시간표조회').filter(function (e) { return /sidenavigation/.test(e.className); })[0];
+    let side = sideLeaf();
     if (!side) {
+      // 위 메뉴 "교과담임" → 펼쳐지는 큰 메뉴판의 "시간표관리"(교육과정 아래) → 왼쪽 메뉴가 생김
       const top = all('.cl-navigationbar-content').filter(function (e) { return /^교과담임/.test(txt(e)); })[0];
       if (!top) { log('✗ 위 메뉴 "교과담임"을 못 찾음', snap(all('.cl-navigationbar-content'))); return false; }
-      press(top); log('위 메뉴 교과담임');
-      side = await waitFor(function () { return byTitle('전체시간표조회').filter(function (e) { return /sidenavigation/.test(e.className); })[0]; }, 8000);
-      if (!side) {
-        const folder = byTitle('시간표관리')[0];
-        if (folder) { press(folder); log('왼쪽 메뉴 시간표관리 펼침'); }
-        side = await waitFor(function () { return byTitle('전체시간표조회').filter(function (e) { return /sidenavigation/.test(e.className); })[0]; }, 8000);
+      const mega = function () { return byText('시간표관리').filter(function (e) { return !/sidenavigation|cl-folder/.test(e.className); })[0]; };
+      if (!mega()) { press(top); log('위 메뉴 교과담임'); }
+      side = await waitFor(function () { return sideLeaf() || (mega() ? 'mega' : null); }, 8000);
+      if (side === 'mega') {
+        press(mega()); log('메뉴판 시간표관리');
+        side = await waitFor(sideLeaf, 10000);
       }
-      if (!side) { log('✗ 왼쪽 메뉴 "전체시간표조회"를 못 찾음', snap(all('.cl-sidenavigation-item, [class*="sidenavigation"]'))); return false; }
+      if (!side) {
+        const folder = byTitle('시간표관리')[0] || byText('시간표관리').filter(function (e) { return /cl-folder|sidenavigation/.test(e.className); })[0];
+        if (folder) { press(folder); log('왼쪽 메뉴 시간표관리 펼침'); side = await waitFor(sideLeaf, 8000); }
+      }
+      if (!side) { log('✗ 왼쪽 메뉴 "전체시간표조회"를 못 찾음', { menu: snap(byText('시간표관리')), side: snap(all('.cl-sidenavigation-item, [class*="sidenavigation"]')) }); return false; }
     }
     press(side); log('왼쪽 메뉴 전체시간표조회');
     if (await waitFor(screenOpen, 20000)) return true;

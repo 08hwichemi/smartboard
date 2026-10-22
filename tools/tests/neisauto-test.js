@@ -21,9 +21,10 @@ let breakGradeList = false; // 학년 목록이 안 펼쳐지는 경우(실패 �
 // 가짜 나이스 메인 화면
 const neisMain = `<!doctype html><html><head><meta charset="utf-8"><style>.hide{display:none}.cl-combobox-list{position:absolute;background:#fff;border:1px solid #888}</style></head><body>
 <div id="topnav"><a class="cl-navigationbar-content" id="nav-hak">학급담임 <span>0단계 메뉴항목</span></a> <a class="cl-navigationbar-content" id="nav-gyo">교과담임 <span>0단계 메뉴항목</span></a></div>
+<div id="mega" class="hide"><div><span>학교정보</span><a>성적/학생부수정이력</a></div><div><span>교육과정</span><a id="mega-tt">시간표관리</a></div><div><span>학적</span><a>출결관리</a></div></div>
 <div id="side" class="hide">
-  <a class="cl-folder cl-level-1" title="시간표관리" id="fold">시간표관리 2단계 메뉴항목</a>
-  <div id="leafs" class="hide"><a class="cl-leaf cl-level-2 cl-sidenavigation-item" title="교사별시간표조회">교사별시간표조회 3단계</a>
+  <a class="cl-folder cl-level-1 cl-expanded" title="시간표관리" id="fold">시간표관리 2단계 메뉴항목</a>
+  <div id="leafs"><a class="cl-leaf cl-level-2 cl-sidenavigation-item" title="교사별시간표조회">교사별시간표조회 3단계</a>
   <a class="cl-leaf cl-level-2 cl-sidenavigation-item" title="전체시간표조회" id="leaf">전체시간표조회 3단계</a></div>
 </div>
 <div id="screen" class="hide">
@@ -43,8 +44,8 @@ $('d1').value = fmt(new Date()); $('d2').value = fmt(new Date());
 const shift = (inp, n) => () => { const d = parse(inp.value); d.setDate(d.getDate() + n); setTimeout(() => { inp.value = fmt(d); }, 30); };
 $('d1m').addEventListener('mouseup', shift($('d1'), -1)); $('d1p').addEventListener('mouseup', shift($('d1'), 1));
 $('d2m').addEventListener('mouseup', shift($('d2'), -1)); $('d2p').addEventListener('mouseup', shift($('d2'), 1));
-$('nav-gyo').addEventListener('click', () => setTimeout(() => $('side').classList.remove('hide'), 200));
-$('fold').addEventListener('click', () => $('leafs').classList.remove('hide'));
+$('nav-gyo').addEventListener('click', () => setTimeout(() => $('mega').classList.remove('hide'), 200)); // 실제 나이스: 교과담임 → 큰 메뉴판
+$('mega-tt').addEventListener('click', () => { $('mega').classList.add('hide'); setTimeout(() => $('side').classList.remove('hide'), 400); });
 $('leaf').addEventListener('click', () => setTimeout(() => $('screen').classList.remove('hide'), 600));
 $('rchg').addEventListener('mousedown', () => { document.querySelectorAll('[role=radio]').forEach((r) => r.setAttribute('aria-checked', 'false')); $('rchg').setAttribute('aria-checked', 'true'); });
 $('combo').addEventListener('mousedown', () => {
@@ -97,7 +98,7 @@ function reportXml(url) {
   for (let i = 0; i < 60 && !(await status()).lastRun; i++) await wait(500);
   let st = await status();
   check('자동 조회 성공(1·2·3학년)', st.lastRun && st.lastRun.ok && JSON.stringify(st.lastRun.grades) === '[1,2,3]', st.lastRun);
-  check('메뉴를 따라 들어감(교과담임 → 시간표관리 펼침 → 전체시간표조회 → 변경수업조회)', st.lastRun && ['위 메뉴 교과담임', '왼쪽 메뉴 시간표관리 펼침', '왼쪽 메뉴 전체시간표조회', '변경수업조회 고름'].every((s) => st.lastRun.steps.some((x) => x.s === s)), st.lastRun && st.lastRun.steps.map((x) => x.s));
+  check('메뉴를 따라 들어감(교과담임 → 메뉴판 시간표관리 → 왼쪽 전체시간표조회 → 변경수업조회)', st.lastRun && ['위 메뉴 교과담임', '메뉴판 시간표관리', '왼쪽 메뉴 전체시간표조회', '변경수업조회 고름'].every((s) => st.lastRun.steps.some((x) => x.s === s)), st.lastRun && st.lastRun.steps.map((x) => x.s));
   const want = (d) => ymd(d).replace(/-/g, '.') + '.';
   check('일자 = 지난주(7일 전) ~ 3주 뒤', reportsServed.length === 3 && reportsServed.every((q) => decodeURIComponent(q).includes('f=' + want(add(-7))) && decodeURIComponent(q).includes('t=' + want(add(21))) && q.includes('c=1')), reportsServed.map(decodeURIComponent));
   check('학년 1 → 2 → 3 차례로', reportsServed.map((q) => /g=(\d)/.exec(q)[1]).join() === '1,2,3', reportsServed);
