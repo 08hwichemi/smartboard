@@ -5558,7 +5558,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-22.4';
+  var BUILD_ID = '2026-10-22.5';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -10912,7 +10912,8 @@
 
   // ----- 확장 프로그램에서 받기 → 매일 나이스에 맞추기 -----
   // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at, auto }] })로 넘긴다
-  // (아침 자동 조회: 평일 8시 40분 / 놓치면 나이스 로그인 때). 확인 없이 바로 맞추고 알림 카드에 [되돌리기].
+  // (아침 자동 조회: 평일 8시 40분 / 놓치면 나이스 로그인 때). 확인 없이 바로 맞추고 잠깐 알림. 되돌리기는 없다(10/22 사용자) —
+  // 매일 나이스에 다시 맞추니 잘못된 건 나이스에서 고치면 다음 조회 때 바로잡힌다(되돌리면 오히려 나이스와 달라짐).
   // 조회한 학년·기간 안의 나이스 칸 기록을 오늘 나이스 표와 견줘 같은 것은 그대로, 새로 생긴 칸은 넣고, 없어진 칸은 지운다.
   // 받은 것을 확인(ack)해서 확장 프로그램이 다시 보내지 않게 한다. 관리자·나이스 시간표 받기 담당만, 쉬는 창·개인판은 받지 않는다.
   const neisIn = { ids: [], scopes: {}, entries: {}, waitTries: 0, timer: null };
@@ -10920,7 +10921,7 @@
     const d = e.data;
     if (e.source !== window || !d || LITE || SB_SLEEP) return;
     if (d.__sbNeis === 'reports' && Array.isArray(d.reports)) neisInReceive(d.reports);
-    if (d.__sbNeis === 'status' && d.ok === false && neisInReady() && neisInAllowed()) neisToast('⚠️ ' + escapeHtmlText(d.msg || '나이스 자동 조회를 끝내지 못했어요.'), []);
+    if (d.__sbNeis === 'status' && d.ok === false && neisInReady() && neisInAllowed()) neisToast('⚠️ ' + escapeHtmlText(d.msg || '나이스 자동 조회를 끝내지 못했어요.'));
   });
   function neisInReady() { return !!(window.currentTeacher && window.currentTeacher.id && window.allSchedules && Object.keys(window.allSchedules).length); }
   function neisInAllowed() { return !!(window.currentTeacher && (window.currentTeacher.is_admin || window.currentTeacher.schedule_manager)); }
@@ -10983,10 +10984,10 @@
     if (r.error) throw r.error;
     return (r.data || []).map(function(x) { return x.id; });
   }
-  // 지울 것 지우고 새것 넣기 → 넣은 id(되돌리기용). 넣기가 실패하면 지운 것을 되살린다.
+  // 지울 것 지우고 새것 넣기. 넣기가 실패하면 지운 것을 되살린다.
   async function neisInApply(add, remove) {
     if (remove.length) await neisInRemove(remove);
-    try { return await neisInInsert(add); }
+    try { await neisInInsert(add); }
     catch (e) { if (remove.length) { try { await neisInInsert(remove); } catch (e2) {} } throw e; }
   }
   async function neisInRefresh() {
@@ -10994,53 +10995,37 @@
     loadMyTimetable();
     renderSearchTimetable(true);
   }
-  let neisLast = null;
   async function neisInSync() {
     const grades = Object.keys(neisIn.scopes).sort().join('·');
     let plan;
     try { plan = await neisInPlan(); }
-    catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err)), []); return; }
+    catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err))); return; }
     // 안전장치: 보고서가 이상하게(거의 비어) 와서 지울 것이 많으면 저절로 지우지 않는다
     const tooMany = plan.remove.length > 20 && plan.remove.length > (plan.remove.length + plan.kept) / 2;
     const remove = tooMany ? [] : plan.remove;
-    let ids = [];
     if (plan.add.length || remove.length) {
-      try { ids = await neisInApply(plan.add, remove); }
-      catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err)) + '<br>내일 아침에 다시 맞추거나, 확장 프로그램에서 "지금 해 보기"를 눌러 주세요.', []); neisInAck(); return; }
+      try { await neisInApply(plan.add, remove); }
+      catch (err) { neisToast('⚠️ 나이스 시간표를 맞추지 못했어요: ' + escapeHtmlText(err && err.message ? err.message : String(err)) + '<br>내일 아침에 다시 맞추거나, 확장 프로그램에서 "지금 해 보기"를 눌러 주세요.'); neisInAck(); return; }
     }
     neisInAck();
-    neisLast = { ids: ids, removed: remove };
     const changed = plan.add.length + remove.length;
     neisToast('📥 <b>나이스 시간표</b> ' + escapeHtmlText(grades) + '학년<br>' +
       (changed ? (plan.add.length ? '바뀐 칸 <b>' + plan.add.length + '곳</b>을 넣었어요.' : '') + (remove.length ? (plan.add.length ? '<br>' : '') + '나이스에서 없어지거나 바뀐 예전 칸 <b>' + remove.length + '곳</b>을 뺐어요.' : '')
         : '나이스와 같아요 — 바뀐 게 없어요.') +
       (tooMany ? '<br><span class="neis-toast-warn">뺄 칸이 ' + plan.remove.length + '곳이나 돼서 빼지 않았어요 — 나이스 조회가 제대로 됐는지 확인해 주세요</span>' : ''),
-      changed ? [['되돌리기', 'neisLastUndo()']] : [],
-      changed || tooMany ? 0 : 10000);
+      tooMany ? 0 : 10000); // 잘 맞췄으면 10초 뒤 저절로 닫힘, 확인이 필요한 것은 닫을 때까지
     if (changed) { try { await neisInRefresh(); } catch (e) {} } // 알림을 먼저 — 시간표 다시 그리기가 막혀도 알림은 보이게
   }
-  function neisToast(html, btns, autoHideMs) {
+  function neisToast(html, autoHideMs) {
     let el = document.getElementById('neis-toast');
     if (!el) { el = document.createElement('div'); el.id = 'neis-toast'; document.body.appendChild(el); }
     el.innerHTML = '<div class="neis-toast-msg">' + html + '</div><div class="neis-toast-btns">' +
-      btns.map(function(b) { return '<button type="button" class="top-btn" onclick="' + b[1] + '">' + b[0] + '</button>'; }).join('') +
       '<button type="button" class="top-btn neis-toast-x" title="닫기" onclick="neisToastClose()">✕</button></div>';
     el.style.display = 'flex';
     clearTimeout(neisToast.timer);
     if (autoHideMs) neisToast.timer = setTimeout(neisToastClose, autoHideMs);
   }
   function neisToastClose() { const el = document.getElementById('neis-toast'); if (el) el.style.display = 'none'; }
-  async function neisLastUndo() {
-    const n = neisLast ? neisLast.ids.length : 0, back = neisLast ? neisLast.removed : [];
-    if (!n && !back.length) return;
-    if (!await customConfirm('나이스에 맞춘 것을 되돌릴까요?' + (n ? '\n· 넣은 칸 ' + n + '곳을 빼요' : '') + (back.length ? '\n· 뺀 칸 ' + back.length + '곳을 되살려요' : ''))) return;
-    const res = n ? await sb.from('schedule_cell_changes').delete().in('id', neisLast.ids) : null;
-    if (res && res.error) { customAlert('되돌리지 못했어요: ' + (res.error.message || res.error)); return; }
-    if (back.length) { try { await neisInInsert(back); } catch (e) { customAlert('뺀 칸을 되살리지 못했어요: ' + (e && e.message ? e.message : e)); } }
-    neisLast = null;
-    await neisInRefresh();
-    neisToast('↩️ 나이스에 맞춘 것을 되돌렸어요.', [], 8000);
-  }
 
   // ----- 엑셀 도구 -----
   // 디자인(색·테두리·틀 고정·필터)을 넣으려고 ExcelJS를 쓴다. 누를 때만 받아 와서 다른 화면엔 부담 없음.
