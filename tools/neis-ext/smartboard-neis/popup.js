@@ -17,7 +17,8 @@ function show() {
     document.getElementById('stop').style.display = r.running ? '' : 'none';
     const lines = [];
     lines.push(r.pending.length ? '⏳ 스마트보드가 아직 확인 안 한 조회 ' + r.pending.length + '개\n' + r.pending.map(function (x) { return '  · ' + x.what + (x.auto ? ' (자동)' : '') + ' ' + t(x.at); }).join('\n') : '스마트보드로 넘길 것 없음');
-    lines.push(r.tabs ? '스마트보드 탭 ' + r.tabs + '개 열려 있음' : '⚠️ 스마트보드 탭이 없어요 — 열면 넘어가요');
+    if (r.helper && r.pending.length) lines.push(r.helper.shown ? '⚠️ 뒤에서 연 스마트보드 탭이 아직 못 넣었어요 — 그 탭에서 로그인돼 있는지 봐 주세요' : '스마트보드를 뒤에서 열어 넣는 중이에요(다 넣으면 저절로 닫혀요)');
+    else if (r.pending.length) lines.push(r.tabs ? '스마트보드 탭 ' + r.tabs + '개 열려 있음' : '스마트보드 탭이 없으면 뒤에서 열어 넣어요');
     document.getElementById('s').textContent = lines.join('\n');
   });
 }

@@ -182,7 +182,7 @@ async function openDevice(browser, name, uid, opts = {}) {
     if (url.includes('/exceljs@')) { try { return route.fulfill({ body: fs.readFileSync(require.resolve('exceljs/dist/exceljs.min.js')), contentType: 'application/javascript' }); } catch (e) {} }
     return route.abort();
   });
-  await page.goto('http://app.test/?uid=' + uid);
+  await page.goto('http://app.test/?uid=' + uid + (opts.query || ''));
   await page.waitForFunction(() => window.currentTeacher && typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 });
   return info;
 }
@@ -372,6 +372,22 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   await wait2(1200);
   check('일반 교사 화면엔 알림도 안 뜨고 넣지도 않음', !(await T.page.isVisible('#neis-toast').catch(() => false)) && cellChanges.length === b7);
   check('일반 교사 화면도 나이스 칸으로 그림(화2 201은 남교사)', (await T.page.evaluate((dt) => timetableCellAt('남교사', dt, 2).list.map((x) => x.s + ' ' + x.r).join(), D[1])) === '수학 201');
+
+  console.log('== 8. 앱 창으로 쓸 때: 확장이 뒤에서 연 "나이스 받는 창"(?neis=1)은 켜 둔 보드 창을 쉬게 하지 않고 넣기만 · 켜 둔 창은 저절로 다시 그림');
+  const A = await openDevice(browser, '앱 창', MG);
+  await wait2(500);
+  const H = await openDevice(browser, '나이스 받는 창', MG, { context: A.ctx, query: '&neis=1' });
+  await wait2(1500);
+  check('받는 창을 열어도 켜 둔 보드 창은 쉬지 않음(받는 창도 안 쉼)', !/sleep=1/.test(A.page.url()) && !/sleep=1/.test(H.page.url()) && !(await A.page.$('#sb-sleep')), [A.page.url(), H.page.url()]);
+  const atA = (t, dt, p) => A.page.evaluate(([t, dt, p]) => timetableCellAt(t, dt, p).list.map((x) => x.s + ' ' + x.r).join(' / '), [t, dt, p]);
+  const beforeA = await atA('위교사', D[4], 4);
+  const g3b = g3.replace('과학(피교사)', '과학(위교사)'); // 나이스에서 금4 3-1이 피 → 위로 바뀜
+  await H.page.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'h1', xml: x, at: 1, auto: true }] }, '*'), g3b);
+  await H.page.waitForSelector('#neis-toast', { state: 'visible', timeout: 8000 }); await wait2(500);
+  check('받는 창이 넣음(금4 301 위교사)', cellChanges.some((c) => c.change_date === D[4] && c.period === 4 && c.room === '301' && c.teacher_to === '위교사'), cellChanges.filter((c) => c.change_date === D[4] && c.period === 4));
+  check('켜 둔 보드 창은 아직 예전 것(10분마다 다시 받음)', beforeA === '' && (await atA('위교사', D[4], 4)) === '', beforeA);
+  await A.page.evaluate(() => { neisCellsAt = Date.now() - 11 * 60000; return refreshNeisCellsIfStale(10 * 60000); }); await wait2(300);
+  check('10분이 지나면 켜 둔 창도 저절로 다시 받아 그림(위교사 금4 = 과학 301)', (await atA('위교사', D[4], 4)) === '과학 301', await atA('위교사', D[4], 4));
 
   const errs = pages.flatMap((p) => p.errors || []);
   check('페이지 오류 없음', errs.length === 0, errs);

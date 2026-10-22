@@ -4641,13 +4641,16 @@
   // 다른 기기(PC·휴대폰)끼리는 상관없음. 설치한 앱 아이콘을 다시 누르면 manifest.json launch_handler로
   // 새 창 대신 열린 창이 앞으로 온다.
   const SB_SLEEP = /[?&]sleep=1(&|$)/.test(location.search);
+  // 나이스 받는 창(?neis=1): 확장 프로그램이 스마트보드 탭이 없을 때 뒤에서 잠깐 열어 나이스 시간표만 넣고 닫는 탭.
+  // 켜 둔 보드 창(앱)을 쉬게 하지도, 스스로 쉬지도 않고, 로그인 유지(토큰 새로 받기)는 보드 창에 맡긴다.
+  const SB_NEIS_HELPER = /[?&]neis=1(&|$)/.test(location.search);
   const sbWinId = Math.random().toString(36).slice(2);
   const sbWinAt = Date.now();
   let sbWinChan = null;
   let sbWinSleeping = false;
   function sbAppBaseUrl() { return location.href.split('?')[0].split('#')[0]; }
   if (!LITE) try { sbWinChan = new BroadcastChannel('sb-one-window'); } catch (e) {} // 개인판은 서버 사용량이 없어 창 수를 제한하지 않음
-  if (sbWinChan && !SB_SLEEP) {
+  if (sbWinChan && !SB_SLEEP && !SB_NEIS_HELPER) {
     sbWinChan.onmessage = function(e) {
       const m = e.data || {};
       // 나보다 늦게 열린 창이 알려 오면 내가 쉰다(거의 같이 열렸으면 id로 한쪽만).
@@ -4714,7 +4717,7 @@
   const SUPABASE_URL = 'https://pqreeimkjnphupqqwiqo.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_3LTnOme1yT3sNFka2PhUHQ_MWuTPYK1';
   // 쉬는 창(아래 🪟)은 로그인 토큰을 스스로 갱신하지 않는다 — 갱신은 쓰는 창이 한다.
-  const sb = LITE ? liteSbStub() : (SB_SLEEP ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false } }) : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
+  const sb = LITE ? liteSbStub() : (SB_SLEEP || SB_NEIS_HELPER ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false } }) : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
 
   // ===== 📤 개인 데이터 자동 서버 동기화 (localStorage 변경 자동 감지) =====
   // 개인 자료(할 일/메모/D-day/글씨 크기/테마 등)는 localStorage 키 하나하나가 서버
@@ -5559,7 +5562,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-22.5';
+  var BUILD_ID = '2026-10-22.6';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -10804,8 +10807,25 @@
         if (!res.data || res.data.length < 1000) break;
       }
       window.neisCells = data;
-    } catch (e) { window.neisCells = []; }
+      neisCellsAt = Date.now();
+    } catch (e) { if (!window.neisCells) window.neisCells = []; } // 다시 받다가 실패하면 보던 것 그대로
   }
+  // 켜 둔 화면도 나이스에서 새로 들어간 칸을 저절로 보이게(10/23 사용자: 아침에 앱을 저절로 켜 두는데 8:40에 들어간 칸은
+  // 새로 고침해야 보였음) — 10분마다(화면이 보일 때), 다시 보게 되면 5분 지났을 때 이번 주 칸만 다시 받아 바뀌었으면 다시 그린다.
+  let neisCellsAt = 0;
+  async function refreshNeisCellsIfStale(maxAgeMs) {
+    if (LITE || SB_SLEEP || document.hidden || !neisCellsAt || Date.now() - neisCellsAt < maxAgeMs) return;
+    const before = JSON.stringify(window.neisCells || []);
+    await fetchNeisCells();
+    if (JSON.stringify(window.neisCells) !== before) redrawTimetablesWithNeis();
+  }
+  function redrawTimetablesWithNeis() {
+    loadMyTimetable();
+    renderSearchTimetable(true);
+    if (document.getElementById('staff-tt-grid-1')) renderStaffTimetables();
+  }
+  setInterval(function() { refreshNeisCellsIfStale(10 * 60000); }, 60000);
+  document.addEventListener('visibilitychange', function() { refreshNeisCellsIfStale(5 * 60000); });
 
   // 그 날짜·교시에 그 선생님이 실제로 하는 수업 → { list: [{ s, r }], changed }
   // 나이스에 바뀐 칸이 있는 반(날짜·교시·반)은 기본 시간표의 그 반 수업을 빼고, 나이스에 적힌 선생님에게 넣는다.
@@ -10993,8 +11013,7 @@
   }
   async function neisInRefresh() {
     await fetchNeisCells();
-    loadMyTimetable();
-    renderSearchTimetable(true);
+    redrawTimetablesWithNeis();
   }
   async function neisInSync() {
     const grades = Object.keys(neisIn.scopes).sort().join('·');

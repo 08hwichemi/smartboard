@@ -28,6 +28,7 @@ let nextReport = report(3, '20261022', '20261027', true);
   const ex = await ctx.newPage(); await ex.goto('chrome://extensions'); await wait(800);
   const id = await ex.evaluate(() => [...document.querySelector('extensions-manager').shadowRoot.querySelector('extensions-item-list').shadowRoot.querySelectorAll('extensions-item')].map((e) => e.id)[0]);
   const status = async () => { const p = await ctx.newPage(); await p.goto('chrome-extension://' + id + '/popup.html'); await wait(300); const r = await p.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'status' }, res))); await p.close(); return r; };
+  const bgTabs = async () => { const p = await ctx.newPage(); await p.goto('chrome-extension://' + id + '/popup.html'); await wait(200); const r = await p.evaluate(() => new Promise((res) => chrome.tabs.query({}, (ts) => res(ts.map((t) => ({ url: t.url, pendingUrl: t.pendingUrl, active: t.active })))))); await p.close(); return r; };
   const query = async (neis) => { await neis.frame({ url: /crownixhtml/ }).evaluate(() => window.load()); await wait(900); };
 
   console.log('== 1. 스마트보드 탭이 열려 있으면 바로 넘어감');
@@ -49,16 +50,30 @@ let nextReport = report(3, '20261022', '20261027', true);
   st = await status();
   check('반별 조회 보고서는 안 잡음', st.pending.length === 0, st);
 
-  console.log('== 3. 스마트보드 탭이 없을 때 → 나중에 열면 넘어감');
+  console.log('== 3. 스마트보드 탭이 없으면(앱 창으로 쓸 때) 뒤에서 "나이스 받는 창"을 열어 넘기고, 확인하면 닫음');
   await sb.close(); await wait(200);
+  const opened = []; ctx.on('page', (p) => opened.push(p));
   nextReport = report(1, '20261022', '20261028', true); await query(neis);
+  await wait(1200);
+  const helper = () => ctx.pages().find((p) => /smartboard\/\?neis=1/.test(p.url()));
+  const extPages = () => opened.filter((p) => !/^chrome-extension:/.test(p.url()));
+  let hp = extPages()[0];
+  const tabUrl = await bgTabs();
+  check('스마트보드 탭이 없으면 ?neis=1 탭을 뒤에서(활성 아님) 엶', extPages().length === 1 && tabUrl.some((t) => /smartboard\/\?neis=1$/.test(t.pendingUrl || t.url) && !t.active), tabUrl);
+  // 확장이 연 탭의 첫 요청은 테스트의 가짜 서버(route)를 거치지 않아 같은 주소로 다시 연다(탭 id는 그대로)
+  if (hp) { await hp.goto('https://08hwichemi.github.io/smartboard/?neis=1'); await wait(800); }
   nextReport = report(1, '20261022', '20261028', true); await query(neis); // 같은 학년·기간을 다시 조회
   nextReport = report(2, '20261022', '20261028', true); await query(neis);
+  await wait(500);
+  got = hp ? await hp.evaluate(() => window.got) : [];
+  const last = got.length ? got[got.length - 1] : [];
+  check('그 탭이 받음: 1학년(새것 하나)·2학년, 탭은 하나만', last.length === 2 && ctx.pages().filter((p) => /neis=1/.test(p.url())).length === 1, got);
   st = await status();
-  check('탭이 없으면 보관: 1학년(새것 하나)·2학년 = 2개', st.pending.length === 2 && st.tabs === 0 && st.pending.map((x) => x.what).join() === '1학년 10/22~10/28,2학년 10/22~10/28', st);
-  const sb2 = await ctx.newPage(); await sb2.goto('https://08hwichemi.github.io/smartboard/'); await wait(800);
-  got = await sb2.evaluate(() => window.got);
-  check('스마트보드를 열면 기다리던 두 개를 받음', got.length >= 1 && got[0].length === 2, got);
+  check('팝업: 뒤에서 열어 넣는 중', !!st.helper && st.pending.length === 2, st);
+  await hp.evaluate((ids) => window.postMessage({ __sbNeis: 'ack', ids: ids }, '*'), last);
+  await wait(2500);
+  st = await status();
+  check('다 넣으면(ack) 그 탭을 저절로 닫음', st.pending.length === 0 && !st.helper && !helper(), [st, ctx.pages().map((p) => p.url())]);
 
   await ctx.close();
   console.log(failures ? '\n실패 ' + failures + '개' : '\n모든 검사 통과');
