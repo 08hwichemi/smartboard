@@ -873,6 +873,22 @@
     .theme-chip-dot { width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); box-sizing: border-box; }
     .theme-chip-random .theme-chip-dot { background: conic-gradient(from 0deg, #E5484D, #F5A623, #F7D336, #4CAF6D, #3D8BFF, #9B6BD6, #E5484D); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 900; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
 
+    /* ===== 📥 나이스 변경수업 가져오기 창 ===== */
+    #neis-in-overlay { z-index: 1050; }
+    .neis-in-box { width: 640px; max-width: calc(100vw - 24px); max-height: calc(100vh - 40px); display: flex; flex-direction: column; text-align: left; }
+    .neis-in-title { font-weight: 800; font-size: 16px; margin-bottom: 6px; }
+    #neis-in-body { overflow-y: auto; min-height: 0; flex: 1; font-size: 12.5px; }
+    .neis-in-sub { margin-bottom: 10px; line-height: 1.6; }
+    .neis-in-sec { font-weight: 800; margin: 8px 0 6px; }
+    .neis-in-list { display: flex; flex-direction: column; gap: 4px; }
+    .neis-in-row { display: flex; gap: 6px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; line-height: 1.5; }
+    .neis-in-row input { flex: 0 0 auto; width: auto; margin: 3px 0 0; }
+    .neis-in-row span { flex: 1; text-align: left; }
+    .neis-in-box, .neis-in-box summary { text-align: left; }
+    .neis-in-skip { margin-top: 12px; }
+    .neis-in-skip summary { cursor: pointer; font-weight: 700; }
+    .neis-in-why { margin: 6px 0 0 4px; line-height: 1.6; }
+    .neis-in-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
     /* ===== 새 버전 알림 띠 ===== */
     .updatebar { position: fixed; top: 0; left: 0; right: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: var(--accent-color); color: var(--on-accent); font-size: 12.5px; font-weight: 700; text-align: center; }
     .updatebar[hidden] { display: none; }
@@ -11584,6 +11600,232 @@
     } catch (e) {
       sccUpdatePreview();
       customAlert('등록 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  // ===== 🔁 나이스 변경수업 → 수업 변경 =====
+  // 나이스 "전체시간표 조회 → 변경수업조회" 보고서(크라운릭스 MML XML, 확장 프로그램이 넘겨 줌)를 읽어
+  // 보강·교체를 schedule_changes 기록으로 바꾼다. 나이스 표는 칸마다 "새로 들어가는 수업"만 주므로
+  //  보강 [보강]과목(교사) = 그 칸의 원래 수업(기본 시간표에서 반·요일·교시로 찾은 선생님)을 그 교사가 대신
+  //  교체 과목(교사)       = 원래 주인 Y의 자리에 X가 들어옴 → Y가 X의 원래 자리로 간 칸(짝)을 찾아 교환 하나로
+  // 짝·원래 수업을 못 찾거나 이미 다른 변경이 걸린 칸은 넣지 않고 이유와 함께 보여 준다(행사 날 등).
+  function neisXmlText(s) {
+    return String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, function(_, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
+  }
+  function neisParseChangeXml(xml) {
+    xml = String(xml || '');
+    const va = {};
+    xml.replace(/<VA key="([^"]+)">([^<]*)<\/VA>/g, function(_, k, v) { va[k] = neisXmlText(v); return _; });
+    const out = { grade: parseInt(va.$4) || null, from: va.$6 || '', to: va.$7 || '', isChange: /변경수업/.test(xml), entries: [], skipped: [] };
+    const ymd = function(s) { return s && /^\d{8}$/.test(s) ? s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) : ''; };
+    out.from = ymd(out.from); out.to = ymd(out.to);
+    xml.split(/<PG\b/).slice(1).forEach(function(pg) {
+      const heads = {}, cells = [];
+      pg.replace(/<PR\b([^>]*)>([\s\S]*?)<\/PR>/g, function(_, attrs, inner) {
+        const id = /\bid="(\d+)"/.exec(attrs), hd = /\bhd="([\d,]+)"/.exec(attrs);
+        const text = [];
+        inner.replace(/<TL\b[^>]*>([^<]*)<\/TL>/g, function(__, t) { text.push(neisXmlText(t).replace(/\r/g, '')); return __; });
+        const t = text.join('');
+        if (id) heads[id[1]] = t;
+        else if (hd && t.trim()) cells.push({ hd: hd[1].split(','), text: t.trim() });
+        return _;
+      });
+      cells.forEach(function(c) {
+        const g = /^(\d+)학년/.exec(heads[c.hd[0]] || ''), col = (heads[c.hd[1]] || '').trim(), cm = /^(\d+)\(/.exec(col);
+        const dm = /(\d{4})\.(\d{2})\.(\d{2})\./.exec(heads[c.hd[2]] || ''), pm = /^(\d+)교시/.exec((heads[c.hd[3]] || '').trim());
+        const e = { grade: g ? +g[1] : out.grade, col: col, cls: cm ? +cm[1] : null, date: dm ? dm[1] + '-' + dm[2] + '-' + dm[3] : '', period: pm ? +pm[1] : null, text: c.text };
+        if (!e.grade || !e.cls || !e.date || !e.period) { out.skipped.push({ e: e, why: '표에서 반·날짜·교시를 읽지 못함' + (col && !e.cls ? '(' + col + ' 열)' : '') }); return; }
+        e.room = e.grade + String(e.cls).padStart(2, '0');
+        const mk = /^\[보강\]\s*/.exec(e.text), body = mk ? e.text.slice(mk[0].length) : e.text, tm = /^(.*)\(([^()]+)\)\s*$/.exec(body);
+        e.makeup = !!mk; e.subject = tm ? tm[1].trim() : body; e.teacher = tm ? tm[2].replace(/\s/g, '') : '';
+        out.entries.push(e);
+      });
+    });
+    return out;
+  }
+  // entries(여러 학년을 합쳐도 됨) → { records, skipped }
+  //  schedules = { 교사 이름: 35칸 } (기본 시간표), teachersAt(date, period, room) = 지금 등록된 변경까지 반영해
+  //  그 시간에 그 반에 들어가는 선생님들(수업 변경 창이 쓰는 sccEffectiveMap과 같은 결과).
+  //  나이스 칸마다: 이미 그 선생님이 들어가 있으면 "이미 있음", 원래 선생님 수업이 다른 기록으로 옮겨졌으면 "다름(확인)",
+  //  그 밖엔 새로 넣는다. 같은 조회 안의 기록끼리는 서로 막지 않는다(한 교사의 두 교체가 맞물린 경우 — 반(room)으로 구분).
+  function neisBuildChanges(entries, schedules, teachersAt) {
+    const records = [], skipped = [];
+    const wdOf = function(date) { return new Date(date + 'T00:00:00').getDay(); };
+    const ownersOf = function(e) {
+      const wd = wdOf(e.date); if (wd < 1 || wd > 5) return [];
+      return Object.keys(schedules).filter(function(t) { const v = (schedules[t] || [])[(wd - 1) * 7 + e.period - 1] || ''; return v.split('\n')[1] === e.room; });
+    };
+    const skip = function(e, why) { skipped.push({ e: e, why: why }); };
+    const known = function(t) { return Object.prototype.hasOwnProperty.call(schedules, t); };
+    // 행사(동아리활동 등): 같은 학년·날짜·교시에 같은 과목이 세 반 이상 → 교체가 아니라 그날 시간표가 통째로 바뀐 것
+    const evCount = {};
+    entries.forEach(function(e) { if (!e.makeup) { const k = e.grade + '|' + e.date + '|' + e.period + '|' + e.subject; evCount[k] = (evCount[k] || 0) + 1; } });
+    const isEvent = function(e) { return !e.makeup && evCount[e.grade + '|' + e.date + '|' + e.period + '|' + e.subject] >= 3; };
+    // 칸 하나 살피기 → { ok, y(원래 선생님), why }
+    const check = function(e) {
+      if (isEvent(e)) return { why: '행사(' + e.subject + ') — 보강·교체만 넣음' };
+      if (!e.teacher || !known(e.teacher)) return { why: e.teacher ? e.teacher + ' 선생님이 스마트보드 시간표에 없음' : '선생님 이름이 없음' };
+      const now = teachersAt(e.date, e.period, e.room);
+      if (now.indexOf(e.teacher) >= 0) return { why: '이미 스마트보드에 있음' };
+      const owners = ownersOf(e);
+      if (owners.length !== 1) return { why: owners.length ? '원래 수업이 여럿(' + owners.join('·') + ')' : '원래 시간표에 그 반 수업이 없음' };
+      if (owners[0] === e.teacher) return { why: '원래 선생님과 같음' };
+      if (now.indexOf(owners[0]) < 0) return { why: '스마트보드와 다름 — 지금 ' + (now.length ? now.join('·') : '빈 시간') + '(으)로 되어 있음, 확인 필요' };
+      return { ok: true, y: owners[0] };
+    };
+    const st = entries.map(check);
+    const used = new Set();
+    entries.forEach(function(e, i) {
+      if (used.has(i)) return;
+      if (!st[i].ok) { skip(e, st[i].why); return; }
+      const y = st[i].y, x = e.teacher;
+      if (e.makeup) {
+        used.add(i);
+        records.push({ type: 'makeup', teacher_a: y, change_date: e.date, period_a: e.period, teacher_b: x, change_date_b: e.date, period_b: e.period, room_a: e.room, room_b: null, from: [e] });
+        return;
+      }
+      // 교체 짝: y가 들어간 칸 중 원래 주인이 x인 것(같은 반 먼저)
+      let j = -1;
+      entries.forEach(function(f, k) {
+        if (j >= 0 && entries[j].room === e.room) return;
+        if (k !== i && !used.has(k) && st[k].ok && !f.makeup && f.teacher === y && st[k].y === x) j = k;
+      });
+      if (j < 0) { skip(e, '교체 짝을 못 찾음(' + y + ' 선생님 수업이 간 자리 — 조회 기간 밖일 수 있음)'); return; }
+      used.add(i); used.add(j);
+      const f = entries[j];
+      // A = 더 이른 칸의 원래 주인
+      const eFirst = e.date < f.date || (e.date === f.date && e.period <= f.period);
+      const A = eFirst ? { t: y, e: e } : { t: x, e: f }, B = eFirst ? { t: x, e: f } : { t: y, e: e };
+      records.push({ type: 'exchange', teacher_a: A.t, change_date: A.e.date, period_a: A.e.period, teacher_b: B.t, change_date_b: B.e.date, period_b: B.e.period, room_a: A.e.room, room_b: B.e.room, from: [e, f] });
+    });
+    return { records: records, skipped: skipped };
+  }
+
+  // ----- 확장 프로그램(tools/neis-ext)에서 받기 → 미리 보기 → 넣기 -----
+  // 확장 프로그램이 이 탭에 window.postMessage({ __sbNeis: 'reports', reports: [{ id, xml, at }] })로 넘긴다.
+  // 여러 학년을 따로 조회해도 창 하나에 모인다(같은 학년·날짜·교시·반은 나중 것). 넣거나 닫으면 받은 것을 확인(ack)해서
+  // 확장 프로그램이 다시 보내지 않게 한다. 관리자·수업변경 담당만, 쉬는 창·개인판은 받지 않는다.
+  const neisIn = { ids: [], scopes: {}, entries: {}, built: null, waitTries: 0 };
+  window.addEventListener('message', function(e) {
+    const d = e.data;
+    if (e.source !== window || !d || d.__sbNeis !== 'reports' || !Array.isArray(d.reports)) return;
+    if (LITE || SB_SLEEP) return;
+    neisInReceive(d.reports);
+  });
+  function neisInReady() { return !!(window.currentTeacher && window.currentTeacher.id && window.allSchedules && Object.keys(window.allSchedules).length); }
+  function neisInAllowed() { return isScheduleManager() || !!(window.currentTeacher && window.currentTeacher.is_admin); }
+  function neisInReceive(reports) {
+    if (!neisInReady()) { // 막 연 탭: 로그인·시간표를 받을 때까지 잠깐 기다린다(1분까지)
+      if (neisInTriesLeft()) setTimeout(function() { neisInReceive(reports); }, 1500);
+      return;
+    }
+    if (!neisInAllowed()) return;
+    let fresh = 0;
+    reports.forEach(function(r) {
+      if (!r || neisIn.ids.indexOf(r.id) >= 0) return;
+      const p = neisParseChangeXml(r.xml);
+      if (!p.isChange || !p.grade) return;
+      neisIn.ids.push(r.id); fresh++;
+      neisIn.scopes[p.grade] = p.from + '~' + p.to;
+      p.entries.forEach(function(x) { neisIn.entries[x.grade + '|' + x.date + '|' + x.period + '|' + x.room] = x; });
+    });
+    if (fresh) neisInOpen();
+  }
+  function neisInTriesLeft() { neisIn.waitTries++; return neisIn.waitTries <= 40; }
+  function neisInAck() {
+    if (neisIn.ids.length) window.postMessage({ __sbNeis: 'ack', ids: neisIn.ids.slice() }, '*');
+    neisIn.ids = []; neisIn.scopes = {}; neisIn.entries = {}; neisIn.built = null;
+  }
+  function neisInTeachersAt() {
+    const map = sccEffectiveMap(sccAllChanges());
+    const names = sccTeacherNames();
+    return function(date, period, room) {
+      return names.filter(function(t) { return map.get(t, date, period).list.some(function(x) { return x.r === room; }); });
+    };
+  }
+  function neisRoomText(r) { r = String(r || ''); return /^\d{3,}$/.test(r) ? r.slice(0, -2) + '-' + (+r.slice(-2)) : r; }
+  async function neisInOpen() {
+    await fetchScheduleChanges(); // 다른 분이 방금 넣은 것까지 보고 판단
+    const entries = Object.keys(neisIn.entries).map(function(k) { return neisIn.entries[k]; })
+      .sort(function(a, b) { return a.date.localeCompare(b.date) || a.period - b.period || a.room.localeCompare(b.room); });
+    neisIn.built = neisBuildChanges(entries, window.allSchedules, neisInTeachersAt());
+    neisInRender();
+  }
+  function neisInRecordHtml(r, i) {
+    const subj = function(e) { return e ? escapeHtmlText(e.subject) : ''; };
+    let t;
+    if (r.type === 'makeup') {
+      t = '🩹 <b>보강</b> ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) + ' ' + subj(r.from[0]) +
+        ' — ' + escapeHtmlText(r.teacher_a) + ' → <b>' + escapeHtmlText(r.teacher_b) + '</b>';
+    } else {
+      const ea = r.from.filter(function(e) { return e.teacher === r.teacher_b; })[0], eb = r.from.filter(function(e) { return e.teacher === r.teacher_a; })[0];
+      t = '🔁 <b>교환</b> ' + escapeHtmlText(r.teacher_a) + ' ' + escapeHtmlText(sccSlotText(r.change_date, r.period_a)) + ' ' + escapeHtmlText(neisRoomText(r.room_a)) + ' ' + subj(eb) +
+        ' ↔ ' + escapeHtmlText(r.teacher_b) + ' ' + escapeHtmlText(sccSlotText(r.change_date_b, r.period_b)) + ' ' + escapeHtmlText(neisRoomText(r.room_b)) + ' ' + subj(ea);
+    }
+    return '<label class="neis-in-row"><input type="checkbox" data-i="' + i + '" checked onchange="neisInCount()"> <span>' + t + '</span></label>';
+  }
+  function neisInRender() {
+    let ov = document.getElementById('neis-in-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'neis-in-overlay'; ov.className = 'overlay';
+      ov.innerHTML = '<div class="modal-box neis-in-box"><div class="neis-in-title">📥 나이스 변경수업 가져오기</div><div id="neis-in-body"></div>' +
+        '<div class="neis-in-btns"><button type="button" class="top-btn" onclick="neisInClose()">닫기</button><button type="button" class="top-btn accent" id="neis-in-save" onclick="neisInSave()">넣기</button></div></div>';
+      document.body.appendChild(ov);
+    }
+    const b = neisIn.built, recs = b.records;
+    const scopes = Object.keys(neisIn.scopes).sort().map(function(g) { const sc = neisIn.scopes[g].split('~'); return g + '학년 ' + sccMD(sc[0]) + '~' + sccMD(sc[1]); });
+    const missing = [1, 2, 3].filter(function(g) { return !neisIn.scopes[g]; });
+    let h = '<div class="neis-in-sub">받은 조회: <b>' + escapeHtmlText(scopes.join(' · ')) + '</b>' +
+      (missing.length ? '<br><span class="se-muted">' + missing.join('·') + '학년도 나이스에서 조회하면 이 창에 더해져요(창을 닫지 않아도 돼요).</span>' : '') + '</div>';
+    h += recs.length
+      ? '<div class="neis-in-sec">새로 넣을 것 ' + recs.length + '건 <span class="se-muted">— 빼고 싶은 건 체크를 끄세요</span></div><div class="neis-in-list">' + recs.map(neisInRecordHtml).join('') + '</div>'
+      : '<div class="neis-in-sec">새로 넣을 것이 없어요 — 스마트보드에 이미 다 들어 있거나 넣을 수 없는 칸이에요.</div>';
+    const why = {};
+    b.skipped.forEach(function(x) { (why[x.why] = why[x.why] || []).push(x.e); });
+    const keys = Object.keys(why).sort(function(a, c) { return (/^행사|^이미/.test(a) ? 1 : 0) - (/^행사|^이미/.test(c) ? 1 : 0); });
+    if (keys.length) {
+      h += '<details class="neis-in-skip"' + (keys.some(function(k) { return !/^행사|^이미/.test(k); }) ? ' open' : '') + '><summary>넣지 않은 칸 ' + b.skipped.length + '개</summary>' +
+        keys.map(function(k) {
+          const es = why[k];
+          return '<div class="neis-in-why"><b>' + escapeHtmlText(k) + '</b> (' + es.length + ')' +
+            (/^행사/.test(k) ? '' : '<div class="se-muted">' + es.slice(0, 12).map(function(e) { return escapeHtmlText(sccSlotText(e.date, e.period) + ' ' + neisRoomText(e.room) + ' ' + e.text); }).join('<br>') + (es.length > 12 ? '<br>…' : '') + '</div>') + '</div>';
+        }).join('') + '</details>';
+    }
+    document.getElementById('neis-in-body').innerHTML = h;
+    ov.style.display = 'flex';
+    neisInCount();
+  }
+  function neisInChecked() {
+    return Array.prototype.map.call(document.querySelectorAll('#neis-in-body input[data-i]:checked'), function(x) { return neisIn.built.records[+x.dataset.i]; });
+  }
+  function neisInCount() {
+    const n = neisIn.built ? neisInChecked().length : 0, btn = document.getElementById('neis-in-save');
+    if (btn) { btn.textContent = n ? n + '건 넣기' : '넣기'; btn.disabled = !n; }
+  }
+  function neisInClose() {
+    const ov = document.getElementById('neis-in-overlay'); if (ov) ov.style.display = 'none';
+    neisInAck();
+  }
+  async function neisInSave() {
+    const pick = neisInChecked();
+    if (!pick.length) return;
+    const btn = document.getElementById('neis-in-save'); btn.disabled = true;
+    try {
+      const rows = pick.map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b }; })
+        .sort(function(a, b) { return a.change_date.localeCompare(b.change_date) || a.period_a - b.period_a; });
+      const { error } = await sb.from('schedule_changes').insert(rows);
+      if (error) throw error;
+      document.getElementById('neis-in-overlay').style.display = 'none';
+      neisInAck();
+      await fetchScheduleChanges();
+      loadMyTimetable();
+      renderSearchTimetable(true);
+      if (document.getElementById('schedule-change-overlay').style.display === 'flex') sccRenderList();
+      customAlert('나이스 변경수업 ' + rows.length + '건을 넣었어요. 🎉');
+    } catch (e) {
+      btn.disabled = false;
+      customAlert('넣지 못했어요: ' + (e && e.message ? e.message : e));
     }
   }
 
