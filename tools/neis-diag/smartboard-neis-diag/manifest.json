@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "스마트보드 나이스 진단 (읽기만)",
-  "version": "0.1",
+  "version": "0.2",
   "description": "나이스 변경수업조회 화면에서 시간표 글자가 어떻게 오는지 확인만 합니다. 아무 데도 보내지 않고, 버튼을 눌러야 파일로 저장됩니다.",
   "permissions": ["storage", "unlimitedStorage"],
   "action": { "default_popup": "popup.html", "default_title": "스마트보드 나이스 진단" },
