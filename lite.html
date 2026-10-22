@@ -11001,7 +11001,7 @@
   // 당겨 하는 날 등)를 나이스에 적힌 그대로 "이 날 이 교시 이 반은 teacher_b 선생님 subject 과목"으로 담는다(원래 teacher_a, 없으면 '').
   function sccCellRecord(c) {
     return { id: 'cell-' + c.id, cellId: c.id, type: 'cell', change_date: c.change_date, change_date_b: c.change_date, period_a: c.period, period_b: c.period,
-      teacher_a: c.teacher_from || '', teacher_b: c.teacher_to, room_a: c.room, room_b: null, subject: c.subject || '', created_by: c.created_by, created_at: c.created_at };
+      teacher_a: c.teacher_from || '', teacher_b: c.teacher_to, room_a: c.room, room_b: null, subject: c.subject || '', source: c.source || null, created_by: c.created_by, created_at: c.created_at };
   }
   async function fetchScheduleChanges() {
     try {
@@ -11852,17 +11852,52 @@
     };
   }
   function neisRoomText(r) { r = String(r || ''); return /^\d{3,}$/.test(r) ? r.slice(0, -2) + '-' + (+r.slice(-2)) : r; }
+  // 매일 나이스에 맞추기(10/22 사용자: "매일 읽어 오는 나이스 시간표에 항상 맞게"):
+  // 조회한 학년·기간 안에 모든 칸이 들어가는 "나이스에서 가져온 기록"(source 'neis')은 빼놓고 오늘 나이스 표로 처음부터 다시 계산한다.
+  // 다시 계산한 것과 같은 기록은 그대로 두고(쓰기 없음), 새로 생긴 것만 넣고, 다시 계산에 없는 예전 기록(나이스에서 바뀌었거나 취소됨)은 지운다.
+  // 수업변경 담당이 손으로 넣은 기록(source 없음)은 건드리지 않는다 — 나이스와 다르면 "스마트보드와 다름"(확인 필요)으로만.
+  function neisRecKey(r) {
+    return [r.type, r.change_date, r.period_a, r.teacher_a || '', r.change_date_b || r.change_date, r.period_b, r.teacher_b, r.room_a || '', r.type === 'exchange' ? r.room_b || '' : '', r.type === 'cell' ? r.subject || '' : ''].join('|');
+  }
   async function neisInBuild() {
     await fetchScheduleChanges(); // 다른 분이 방금 넣은 것까지 보고 판단
     const entries = Object.keys(neisIn.entries).map(function(k) { return neisIn.entries[k]; })
       .sort(function(a, b) { return a.date.localeCompare(b.date) || a.period - b.period || a.room.localeCompare(b.room); });
-    neisIn.built = neisVerify(neisBuildChanges(entries, window.allSchedules, neisInTeachersAt()), entries);
+    const scopes = neisIn.scopes;
+    const inScope = function(date, room) { const sc = scopes[String(room || '').slice(0, -2)]; if (!sc || !room) return false; const q = sc.split('~'); return date >= q[0] && date <= q[1]; };
+    const all = sccAllChanges();
+    const redo = all.filter(function(c) {
+      if (c.source !== 'neis') return false;
+      const touch = [[c.change_date, c.room_a]].concat(c.type === 'exchange' ? [[c.change_date_b || c.change_date, c.room_b]] : []);
+      return touch.every(function(t) { return inScope(t[0], t[1]); });
+    });
+    const keepList = all.filter(function(c) { return redo.indexOf(c) < 0; });
+    const map = sccEffectiveMap(keepList), names = sccTeacherNames();
+    const teachersAt = function(date, period, room) { return names.filter(function(t) { return map.get(t, date, period).list.some(function(x) { return x.r === room; }); }); };
+    const built = neisVerify(neisBuildChanges(entries, window.allSchedules, teachersAt), entries, keepList);
+    // 예전 기록과 견주기(여러 명 교체 묶음은 묶음 전체가 같을 때만 그대로)
+    const oldByKey = {};
+    redo.forEach(function(c) { (oldByKey[neisRecKey(c)] = oldByKey[neisRecKey(c)] || []).push(c); });
+    const taken = new Set(), groups = {};
+    built.records.forEach(function(r, i) { const g = r.chainId != null ? 'c' + r.chainId : 'r' + i; (groups[g] = groups[g] || []).push(r); });
+    const fresh = [];
+    Object.keys(groups).forEach(function(g) {
+      const rs = groups[g], match = [];
+      rs.forEach(function(r) { const m = (oldByKey[neisRecKey(r)] || []).filter(function(c) { return !taken.has(c) && match.indexOf(c) < 0; })[0]; if (m) match.push(m); });
+      if (match.length === rs.length) match.forEach(function(c) { taken.add(c); });
+      else rs.forEach(function(r) { fresh.push(r); });
+    });
+    built.kept = taken.size;
+    built.records = built.records.filter(function(r) { return fresh.indexOf(r) >= 0; }); // 새로 넣을 것(만든 차례 그대로)
+    built.removed = redo.filter(function(c) { return !taken.has(c); });              // 지울 것
+    neisIn.built = built;
   }
   // 마지막 관문(10/22 사용자: "끌어온 시간표대로 우리 시간표가 나오면 되니, 그걸로 검증"): 지금 기록 + 새 기록으로 스마트보드 시간표를
   // 계산해 ① 나이스 표의 칸마다 적힌 선생님이 그 반에 있고 원래 선생님은 빠졌는지 ② 새 기록이 건드린 칸 중 나이스 표에 없는 칸은
   // 원래대로인지 본다. 어긋난 칸을 건드린 기록(여러 명 교체는 그 묶음 전체)은 빼고 다시 검사한다.
-  function neisVerify(built, entries) {
-    const names = sccTeacherNames(), base = sccAllChanges();
+  function neisVerify(built, entries, base) {
+    const names = sccTeacherNames();
+    base = base || sccAllChanges();
     const who = function(map, date, p, room) { return names.filter(function(t) { return map.get(t, date, p).list.some(function(x) { return x.r === room; }); }).sort().join(','); };
     const before = sccEffectiveMap(base);
     const bad = new Set(), skippedE = new Set(built.skipped.map(function(x) { return x.e; }));
@@ -11903,10 +11938,24 @@
   async function neisInOpen() { await neisInBuild(); neisInRender(); }
   // 만든 순서 그대로 넣는다 — 여러 명이 돌아가며 바꾼 교체는 앞 교환이 옮겨 놓은 수업을 다음 교환이 이어받으므로 차례가 중요
   function neisInRows(recs) {
-    return recs.filter(function(r) { return r.type !== 'cell'; }).map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b }; });
+    return recs.filter(function(r) { return r.type !== 'cell'; }).map(function(r) { return { type: r.type, change_date: r.change_date, period_a: r.period_a, teacher_a: r.teacher_a, change_date_b: r.change_date_b || r.change_date, period_b: r.period_b, teacher_b: r.teacher_b, room_a: r.room_a, room_b: r.room_b, source: 'neis' }; });
   }
   function neisInCellRows(recs) {
-    return recs.filter(function(r) { return r.type === 'cell'; }).map(function(r) { return { change_date: r.change_date, period: r.period_a, room: r.room_a, teacher_from: r.teacher_a || '', teacher_to: r.teacher_b, subject: r.subject || '' }; });
+    return recs.filter(function(r) { return r.type === 'cell'; }).map(function(r) { return { change_date: r.change_date, period: r.period_a, room: r.room_a, teacher_from: r.teacher_a || '', teacher_to: r.teacher_b, subject: r.subject || '', source: 'neis' }; });
+  }
+  // 지울 것(예전 나이스 기록) 지우기 → 지운 기록(되돌리기에서 다시 넣으려고)
+  async function neisInRemove(list) {
+    const cellIds = list.filter(function(c) { return c.type === 'cell'; }).map(function(c) { return c.cellId; });
+    const ids = list.filter(function(c) { return c.type !== 'cell'; }).map(function(c) { return c.id; });
+    if (ids.length) { const r = await sb.from('schedule_changes').delete().in('id', ids); if (r && r.error) throw r.error; }
+    if (cellIds.length) { const r = await sb.from('schedule_cell_changes').delete().in('id', cellIds); if (r && r.error) throw r.error; }
+    return list.slice();
+  }
+  // 나이스에 맞추기 한 번: 지울 것 지우고 새것 넣기 → { ids, cellIds, removed }
+  async function neisInApply(add, remove) {
+    const removed = remove.length ? await neisInRemove(remove) : [];
+    try { const got = add.length ? await neisInInsert(add) : { ids: [], cellIds: [] }; got.removed = removed; return got; }
+    catch (e) { if (removed.length) { try { await neisInInsert(removed); } catch (e2) {} } throw e; } // 넣기가 실패하면 지운 것을 되살림
   }
   // 교환·보강은 schedule_changes에, 칸 그대로는 schedule_cell_changes에 → { ids, cellIds } (되돌리기용)
   async function neisInInsert(recs) {
@@ -11930,22 +11979,26 @@
   async function neisInAutoApply() {
     await neisInBuild();
     const b = neisIn.built, scopes = Object.assign({}, neisIn.scopes);
-    let got = { ids: [], cellIds: [] };
-    if (b.records.length) {
-      try { got = await neisInInsert(b.records); }
-      catch (err) { neisInRender(); customAlert('나이스 변경수업을 저절로 넣지 못했어요: ' + (err && err.message ? err.message : err) + '\n창에서 "넣기"를 눌러 주세요.'); return; }
+    // 안전장치: 보고서가 이상하게(거의 비어) 와서 지울 것이 많으면 저절로 지우지 않는다 — 새것만 넣고 [보기]에서 확인하게
+    const tooMany = b.removed.length > 20 && b.removed.length > (b.removed.length + b.kept) / 2;
+    const remove = tooMany ? [] : b.removed;
+    let got = { ids: [], cellIds: [], removed: [] };
+    if (b.records.length || remove.length) {
+      try { got = await neisInApply(b.records, remove); }
+      catch (err) { neisInRender(); customAlert('나이스 변경수업을 저절로 맞추지 못했어요: ' + (err && err.message ? err.message : err) + '\n창에서 "넣기"를 눌러 주세요.'); return; }
     }
-    const ids = got.ids.concat(got.cellIds);
     neisInAck();
-    neisLast = { built: b, ids: got.ids, cellIds: got.cellIds, scopes: scopes };
+    neisLast = { built: b, ids: got.ids, cellIds: got.cellIds, removed: got.removed, scopes: scopes };
     const check = b.skipped.filter(function(x) { return !NEIS_QUIET.test(x.why); }).length;
-    const grades = Object.keys(scopes).sort().join('·');
+    const grades = Object.keys(scopes).sort().join('·'), changed = b.records.length + got.removed.length;
     neisToast('📥 <b>나이스 변경수업</b> ' + escapeHtmlText(grades) + '학년<br>' +
-      (b.records.length ? '보강·교체 <b>' + b.records.length + '건</b>을 넣었어요.' : '새로 넣을 것이 없어요(이미 다 들어 있어요).') +
+      (changed ? (b.records.length ? '보강·교체 <b>' + b.records.length + '건</b>을 넣었어요.' : '') + (got.removed.length ? (b.records.length ? '<br>' : '') + '나이스에서 바뀌거나 없어진 <b>' + got.removed.length + '건</b>을 지웠어요.' : '')
+        : '나이스와 같아요 — 바뀐 게 없어요.') +
+      (tooMany ? '<br><span class="neis-toast-warn">지울 것이 ' + b.removed.length + '건이나 돼서 그대로 뒀어요 — 보기에서 확인해 주세요</span>' : '') +
       (check ? '<br><span class="neis-toast-warn">확인 필요 ' + check + '칸</span>' : ''),
-      [b.records.length || check ? ['보기', 'neisLastView()'] : null, ids.length ? ['되돌리기', 'neisLastUndo()'] : null].filter(Boolean),
-      !b.records.length && !check ? 10000 : 0);
-    if (b.records.length) { try { await neisInRefresh(); } catch (e) {} } // 알림을 먼저 — 시간표 다시 그리기가 막혀도 알림은 보이게
+      [changed || check || tooMany ? ['보기', 'neisLastView()'] : null, changed ? ['되돌리기', 'neisLastUndo()'] : null].filter(Boolean),
+      !changed && !check && !tooMany ? 10000 : 0);
+    if (changed) { try { await neisInRefresh(); } catch (e) {} } // 알림을 먼저 — 시간표 다시 그리기가 막혀도 알림은 보이게
   }
   function neisToast(html, btns, autoHideMs) {
     let el = document.getElementById('neis-toast');
@@ -11960,20 +12013,21 @@
   function neisToastClose() { const el = document.getElementById('neis-toast'); if (el) el.style.display = 'none'; }
   function neisLastView() {
     if (!neisLast) return;
-    neisIn.built = neisLast.built; neisIn.scopes = neisLast.scopes;
+    neisIn.built = Object.assign({}, neisLast.built, { removed: neisLast.removed || [] }); neisIn.scopes = neisLast.scopes;
     neisInRender(true);
   }
   async function neisLastUndo() {
-    const n = neisLast ? neisLast.ids.length + (neisLast.cellIds || []).length : 0;
-    if (!n) return;
-    if (!await customConfirm('나이스에서 저절로 넣은 보강·교체 ' + n + '건을 지울까요?')) return;
+    const n = neisLast ? neisLast.ids.length + (neisLast.cellIds || []).length : 0, back = neisLast ? (neisLast.removed || []) : [];
+    if (!n && !back.length) return;
+    if (!await customConfirm('나이스에 맞춘 것을 되돌릴까요?' + (n ? '\n· 넣은 보강·교체 ' + n + '건을 지워요' : '') + (back.length ? '\n· 지운 ' + back.length + '건을 되살려요' : ''))) return;
     const res = neisLast.ids.length ? await sb.from('schedule_changes').delete().in('id', neisLast.ids) : null;
-    if (res && res.error) { customAlert('지우지 못했어요: ' + (res.error.message || res.error)); return; }
+    if (res && res.error) { customAlert('되돌리지 못했어요: ' + (res.error.message || res.error)); return; }
     const res2 = (neisLast.cellIds || []).length ? await sb.from('schedule_cell_changes').delete().in('id', neisLast.cellIds) : null;
-    if (res2 && res2.error) { customAlert('지우지 못했어요: ' + (res2.error.message || res2.error)); return; }
+    if (res2 && res2.error) { customAlert('되돌리지 못했어요: ' + (res2.error.message || res2.error)); return; }
+    if (back.length) { try { await neisInInsert(back); } catch (e) { customAlert('지운 기록을 되살리지 못했어요: ' + (e && e.message ? e.message : e)); } }
     neisLast = null;
     await neisInRefresh();
-    neisToast('↩️ 나이스에서 넣은 ' + n + '건을 지웠어요.', [], 8000);
+    neisToast('↩️ 나이스에 맞춘 것을 되돌렸어요.', [], 8000);
   }
   function neisInRecordHtml(r, i, viewOnly) {
     const subj = function(e) { return e ? escapeHtmlText(e.subject) : ''; };
@@ -12005,10 +12059,19 @@
     const missing = viewOnly ? [] : [1, 2, 3].filter(function(g) { return !neisIn.scopes[g]; });
     let h = '<div class="neis-in-sub">받은 조회: <b>' + escapeHtmlText(scopes.join(' · ')) + '</b>' +
       (missing.length ? '<br><span class="se-muted">' + missing.join('·') + '학년도 나이스에서 조회하면 이 창에 더해져요(창을 닫지 않아도 돼요).</span>' : '') + '</div>';
+    if (b.kept) h += '<div class="se-muted" style="margin-bottom:6px;">나이스와 같은 예전 기록 ' + b.kept + '건은 그대로 둬요.</div>';
     h += recs.length
       ? (viewOnly ? '<div class="neis-in-sec">넣은 것 ' + recs.length + '건</div>' : '<div class="neis-in-sec">새로 넣을 것 ' + recs.length + '건 <span class="se-muted">— 빼고 싶은 건 체크를 끄세요</span></div>') +
         '<div class="neis-in-list">' + recs.map(function(r, i) { return neisInRecordHtml(r, i, viewOnly); }).join('') + '</div>'
-      : '<div class="neis-in-sec">' + (viewOnly ? '넣은 것이 없어요.' : '새로 넣을 것이 없어요 — 스마트보드에 이미 다 들어 있거나 넣을 수 없는 칸이에요.') + '</div>';
+      : '<div class="neis-in-sec">' + (viewOnly ? '넣은 것이 없어요.' : '새로 넣을 것이 없어요.') + '</div>';
+    const rm = b.removed || [];
+    if (rm.length) {
+      h += '<div class="neis-in-sec">' + (viewOnly ? '지운 것' : '지울 것') + ' ' + rm.length + '건 <span class="se-muted">— 예전에 나이스에서 가져왔는데 오늘 나이스에서 바뀌었거나 없어진 것</span></div><div class="neis-in-list">' +
+        rm.map(function(c, i) {
+          const d = sccDescribe(c), t = (c.type === 'cell' ? '교체' : c.type === 'exchange' ? '교환' : '보강') + ' ' + sccSlotText(c.change_date, c.period_a) + ' ' + (c.teacher_a || '빈 시간') + ' ' + d.classA + (c.type === 'exchange' ? ' ↔ ' : ' → ') + c.teacher_b + (c.type === 'exchange' ? ' ' + sccSlotText(d.dateB, c.period_b) + ' ' + d.classB : c.type === 'cell' ? ' ' + d.classB : '');
+          return '<label class="neis-in-row">' + (viewOnly ? '' : '<input type="checkbox" data-d="' + i + '" checked onchange="neisInCount()"> ') + '<span>🗑 <s>' + escapeHtmlText(t) + '</s></span></label>';
+        }).join('') + '</div>';
+    }
     const why = {};
     b.skipped.forEach(function(x) { (why[x.why] = why[x.why] || []).push(x.e); });
     const keys = Object.keys(why).sort(function(a, c) { return (NEIS_QUIET.test(a) ? 1 : 0) - (NEIS_QUIET.test(c) ? 1 : 0); });
@@ -12029,9 +12092,12 @@
   function neisInChecked() {
     return Array.prototype.map.call(document.querySelectorAll('#neis-in-body input[data-i]:checked'), function(x) { return neisIn.built.records[+x.dataset.i]; });
   }
+  function neisInCheckedRemoved() {
+    return Array.prototype.map.call(document.querySelectorAll('#neis-in-body input[data-d]:checked'), function(x) { return neisIn.built.removed[+x.dataset.d]; });
+  }
   function neisInCount() {
-    const n = neisIn.built ? neisInChecked().length : 0, btn = document.getElementById('neis-in-save');
-    if (btn) { btn.textContent = n ? n + '건 넣기' : '넣기'; btn.disabled = !n; }
+    const n = neisIn.built ? neisInChecked().length : 0, m = neisIn.built ? neisInCheckedRemoved().length : 0, btn = document.getElementById('neis-in-save');
+    if (btn) { btn.textContent = n && m ? n + '건 넣고 ' + m + '건 지우기' : m ? m + '건 지우기' : n ? n + '건 넣기' : '넣기'; btn.disabled = !n && !m; }
   }
   function neisInClose() {
     const ov = document.getElementById('neis-in-overlay'); if (!ov) return;
@@ -12040,16 +12106,15 @@
     neisInAck();
   }
   async function neisInSave() {
-    const pick = neisInChecked();
-    if (!pick.length) return;
+    const pick = neisInChecked(), drop = neisInCheckedRemoved();
+    if (!pick.length && !drop.length) return;
     const btn = document.getElementById('neis-in-save'); btn.disabled = true;
     try {
-      const rows = pick;
-      await neisInInsert(pick);
+      await neisInApply(pick, drop);
       document.getElementById('neis-in-overlay').style.display = 'none';
       neisInAck();
       await neisInRefresh();
-      customAlert('나이스 변경수업 ' + rows.length + '건을 넣었어요. 🎉');
+      customAlert('나이스 변경수업에 맞췄어요. 🎉' + (pick.length ? '\n· 넣음 ' + pick.length + '건' : '') + (drop.length ? '\n· 지움 ' + drop.length + '건' : ''));
     } catch (e) {
       btn.disabled = false;
       customAlert('넣지 못했어요: ' + (e && e.message ? e.message : e));

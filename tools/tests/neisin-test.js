@@ -382,10 +382,10 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   await P.click('#neis-in-overlay .top-btn:not(.accent)'); await wait2(200);
   const ackN = (await P.evaluate(() => window.__acks)).length;
   await P.click('#neis-toast button:has-text("되돌리기")'); await wait2(300);
-  check('되돌리기 전에 확인을 물음', /1건을 지울까요/.test(await P.evaluate(() => document.getElementById('custom-confirm-overlay').innerText)));
+  check('되돌리기 전에 확인을 물음(넣은 1건을 지워요)', /넣은 보강·교체 1건을 지워요/.test(await P.evaluate(() => document.getElementById('custom-confirm-overlay').innerText)));
   await P.click('#custom-confirm-ok-btn'); await wait2(800);
   check('되돌리기: 넣은 1건을 지움, 시간표도 돌아감', changes.length === b6 && (await P.evaluate((d0) => sccEffectiveMap(sccAllChanges()).get('라교사', d0, 2).text, D[0])) === '', changes.length - b6);
-  check('되돌린 뒤 알림', /지웠어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)) && (await P.evaluate(() => window.__acks)).length === ackN);
+  check('되돌린 뒤 알림', /되돌렸어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)) && (await P.evaluate(() => window.__acks)).length === ackN);
   console.log('== 6b. 자동 조회 실패 알림');
   await P.evaluate(() => window.postMessage({ __sbNeis: 'status', ok: false, msg: '나이스 변경수업 자동 조회를 끝내지 못했어요(1학년만 받음).' }, '*')); await wait2(300);
   check('실패하면 알림 카드에 이유', /자동 조회를 끝내지 못했어요/.test(await P.evaluate(() => document.getElementById('neis-toast').innerText)));
@@ -410,6 +410,30 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   check('넣은 뒤 칸마다 나이스와 같음(201 남·202 담·203 감 / 204: 1교시 맘·2교시 밤·3교시 람)', JSON.stringify(cellsNow) === JSON.stringify(['남교사', '담교사', '감교사', '맘교사', '밤교사', '람교사']), cellsNow);
   const subjNow = await P.evaluate((d2) => { const m = sccEffectiveMap(sccAllChanges()); return [m.get('맘교사', d2, 1).text, m.get('밤교사', d2, 2).text, m.get('람교사', d2, 3).text]; }, D[2]);
   check('같은 반에서 돌린 것은 과목이 따라감(맘 화학·밤 생명·람 물리, 반 204)', JSON.stringify(subjNow) === JSON.stringify(['화학 204', '생명 204', '물리 204']), subjNow);
+
+  console.log('== 6d. 매일 나이스에 맞추기: 같으면 쓰기 0 · 바뀌면 지우고 새로 · 없어지면 지움 · 손으로 넣은 건 그대로 · 되돌리기');
+  const send = async (list, id) => { await P.click('#neis-toast .neis-toast-x').catch(() => {}); await P.evaluate(([xs, id]) => window.postMessage({ __sbNeis: 'reports', reports: xs.map((x, i) => ({ id: id + i, xml: x, at: 1, auto: true })) }, '*'), [list, id]); await P.waitForSelector('#neis-toast', { state: 'visible', timeout: 8000 }); await wait2(600); return P.evaluate(() => document.getElementById('neis-toast').innerText); };
+  await send([g1, g2, g3], 'd1-');
+  const n0 = changes.length, c0 = cellChanges.length;
+  const t1 = await send([g1, g2, g3], 'd2-');
+  check('같은 조회를 다시 받으면 "나이스와 같아요" — 쓰기 0', /나이스와 같아요/.test(t1) && changes.length === n0 && cellChanges.length === c0, [t1, changes.length - n0, cellChanges.length - c0]);
+  check('가져온 기록엔 나이스 표시(source), 손으로 넣은 기록(아교사 보강·차↔카 교환)은 표시 없이 그대로', changes.filter((c) => c.id > 2).every((c) => c.source === 'neis') && cellChanges.every((c) => c.source === 'neis') && changes.some((c) => c.id === 1) && changes.some((c) => c.id === 2));
+  const g1b = g1.replace('[보강]영어(라', '[보강]영어(거'); // 나이스에서 보강 선생님이 라 → 거로 바뀜
+  const t2 = await send([g1b], 'd3-');
+  check('보강 선생님이 바뀌면: 예전 보강(다→라) 지우고 새 보강(다→거) 넣음', !changes.some((c) => c.type === 'makeup' && c.teacher_b === '라교사') && changes.some((c) => c.type === 'makeup' && c.teacher_a === '다교사' && c.teacher_b === '거교사' && c.source === 'neis') && /1건을 넣었어요/.test(t2) && /1건을 지웠어요/.test(t2), [t2, changes.filter((c) => c.teacher_a === '다교사')]);
+  check('다른 기록·다른 학년은 그대로(쓰기는 그 두 건만)', changes.length === n0 && cellChanges.length === c0, [changes.length - n0, cellChanges.length - c0]);
+  const g1c = g1b.replace('<TL tid="3" le="1" to="1">음악(하교사)\r</TL>', ''); // 나이스에서 교체(파→하)가 취소됨
+  const t3 = await send([g1c], 'd4-');
+  check('나이스에서 없어지면 지움(칸 그대로 파→하)', !cellChanges.some((c) => c.teacher_to === '하교사') && /1건을 지웠어요/.test(t3) && changes.length === n0, [t3, cellChanges.map((c) => c.teacher_to)]);
+  check('나이스와 같아짐: 금2 1-3은 다시 파교사', (await P.evaluate((d4) => sccEffectiveMap(sccAllChanges()).get('파교사', d4, 2).text, D[4])) === '음악 103');
+  await P.click('#neis-toast button:has-text("되돌리기")'); await wait2(300);
+  check('되돌리기 확인 글: 지운 1건을 되살려요', /지운 1건을 되살려요/.test(await P.evaluate(() => document.getElementById('custom-confirm-overlay').innerText)));
+  await P.click('#custom-confirm-ok-btn'); await wait2(800);
+  check('되돌리면 지운 칸 기록(파→하)이 되살아남', cellChanges.some((c) => c.teacher_to === '하교사' && c.source === 'neis') && (await P.evaluate((d4) => sccEffectiveMap(sccAllChanges()).get('하교사', d4, 2).text, D[4])) === '음악 103');
+  const t4 = await send([g1], 'd5-'); // 원래 보고서로 다시
+  check('원래대로 받으면 거 → 라로 다시 맞춤', changes.some((c) => c.type === 'makeup' && c.teacher_b === '라교사') && !changes.some((c) => c.type === 'makeup' && c.teacher_b === '거교사'), t4);
+  const t5 = await send([mml(1, [[{ date: D[0], cells: {} }]])], 'd6-'); // 거의 빈 보고서(월요일 하루만) — 범위가 하루라 그 날 것만 맞춤
+  check('조회 기간이 하루면 그 날 기록만 맞춤(다른 날 기록은 그대로)', changes.some((c) => c.teacher_a === '마교사' || c.teacher_b === '마교사'), t5);
 
   console.log('== 7. 담당이 아니면 열리지 않음');
   const T = await openDevice(browser, '교사PC', T1);
