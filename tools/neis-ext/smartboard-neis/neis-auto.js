@@ -160,14 +160,29 @@
     return true;
   }
   // ③ 나이스 로그인 자동 연장(10/23 사용자 — 교사 자리 PC라 괜찮음, background가 평일 7:30~18:00에만 1분마다 물음, 팝업에서 끌 수 있음):
-  //    머리의 남은 시간("59분 41초")이 10분 이하이고 "연장" 단추(글자 또는 이름표, 시간 옆이든 따로 뜬 창이든)가 보이면 누른다. 남은 시간을 못 읽으면(다른 화면 등) 아무것도 안 누름.
+  //    나이스 연장 창("접속유지시간이 10분 남았습니다 … [연장] [종료]")이 보이거나 머리의 남은 시간이 10분 이하면 [연장]을 누른다([종료]는 안 누름).
+  // 남은 시간: 나이스는 "09분 56초"를 글자 조각 여러 개(숫자·분·초)로 나눠 쓸 수 있어 "초" 조각에서 위로 몇 칸 올라가며 합쳐 읽는다
   function remainSec() {
+    const re = /^\s*(\d+)\s*분\s*(\d+)\s*초\s*$/;
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) {
-      const m = /^\s*(\d+)\s*분\s*(\d+)\s*초\s*$/.exec(n.nodeValue);
-      if (m && n.parentElement && shown(n.parentElement)) return +m[1] * 60 + +m[2];
+      if (n.nodeValue.indexOf('초') < 0) continue;
+      for (let el = n.parentElement, k = 0; el && k < 4; el = el.parentElement, k++) {
+        const v = el.textContent || '';
+        if (v.length > 30) break;
+        const m = re.exec(v);
+        if (m && shown(el)) return +m[1] * 60 + +m[2];
+      }
     }
     return null;
+  }
+  // 나이스 연장 창(남은 10분에 뜸): "접속유지시간이 10분 남았습니다 … 접속시간을 연장하시겠습니까? [연장] [종료]"
+  function extendDialogShown() {
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      if (/접속유지시간|접속시간을\s*연장/.test(n.nodeValue) && n.parentElement && shown(n.parentElement)) return true;
+    }
+    return false;
   }
   function extendBtn() {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -177,13 +192,14 @@
     // 글자 없이 그림만 있는 단추(머리의 남은 시간 옆 등): 이름표(aria-label·title)로
     return all('[aria-label*="연장"], [title*="연장"]')[0] || null;
   }
+  // 연장 창이 떠 있으면 남은 시간을 못 읽어도 바로 누르고, 아니면 남은 시간이 10분 이하일 때만 연장 단추를 찾는다
   function keepAlive() {
-    const left = remainSec();
-    if (left == null || left > 600) return { left: left, pressed: false };
+    const dlg = extendDialogShown(), left = remainSec();
+    if (!dlg && (left == null || left > 600)) return { left: left, pressed: false };
     const btn = extendBtn();
     if (!btn) return { left: left, pressed: false, noButton: true };
     press(btn);
-    return { left: left, pressed: true };
+    return { left: left, pressed: true, dialog: dlg };
   }
 
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {

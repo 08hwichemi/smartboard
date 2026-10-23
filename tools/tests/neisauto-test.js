@@ -152,6 +152,14 @@ function reportXml(url) {
   await neis.evaluate(() => { document.getElementById('remain').textContent = '5분 00초'; });
   k = await keep();
   check('단추가 안 보이면 누르지 않고 "못 찾음"으로 알림', k && !k.pressed && k.noButton && (await neis.evaluate(() => window.extended)) === 2, k);
+  // 실제 나이스처럼 남은 시간이 글자 조각 여러 개(숫자·분·초)여도 읽음
+  await neis.evaluate(() => { document.getElementById('remain').innerHTML = '<span>09</span>분 <span>56</span>초'; });
+  k = await keep();
+  check('남은 시간이 "09"·"분"·"56"·"초" 조각으로 나뉘어 있어도 읽음', k && k.left === 9 * 60 + 56, k);
+  // 남은 시간을 못 읽어도(표시가 없거나 모양이 달라도) 연장 창이 떠 있으면 바로 [연장]
+  await neis.evaluate(() => { document.getElementById('remain').textContent = ''; document.getElementById('extdlg').style.display = 'block'; });
+  k = await keep();
+  check('남은 시간을 못 읽어도 "접속유지시간…" 연장 창이 보이면 [연장]을 누름', k && k.pressed && k.dialog && (await neis.evaluate(() => window.extended)) === 3 && !(await neis.evaluate(() => window.quit)), k);
   await bg({ t: 'setAuto', auto: { keepLogin: false } });
   check('팝업에서 끄면 꺼진 것으로 저장', (await status()).auto.keepLogin === false);
 
