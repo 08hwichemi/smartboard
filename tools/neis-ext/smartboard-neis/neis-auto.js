@@ -6,6 +6,7 @@
 (function () {
   if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname)) return;
   // 확장을 업데이트하면 예전 판은 연결이 끊긴 채 남는다 — 살아 있는 판이 이미 있을 때만 건너뛴다
+  try { if (!chrome.runtime || !chrome.runtime.id) return; } catch (e) { return; } // 확장을 새로 고치는 순간의 끊긴 판은 조용히 빠짐
   if (window.__sbNeisAuto && window.__sbNeisAuto()) return;
   window.__sbNeisAuto = function () { try { return !!chrome.runtime.id; } catch (e) { return false; } };
   // 기다리기는 확장 프로그램 본체(background)가 재고 끝나면 깨워 준다 — 나이스 창이 최소화되거나 다른 창에 가려져 5분 넘게 안 보이면
