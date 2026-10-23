@@ -33,6 +33,8 @@ function summary(xml) {
 // 방금 쓴 "마지막 조회 시각"을 옛 값으로 덮어 3시간 규칙이 틀려 조회를 또 하는 일이 생김 → 고치는 일은 모두 이 줄에 세워 차례로.
 let chain = Promise.resolve();
 function locked(fn) { const p = chain.then(fn, fn); chain = p.catch(function () {}); return p; }
+// 탭이 답을 안 하면(화면보호기 뒤 아직 덜 깨어남 등) 몇 초만 기다리고 넘어간다 — 그동안 다른 일이 줄에서 오래 서 있지 않게
+function within(p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
 async function load() {
   const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, running: null, lastRun: null, lastReports: [], helper: null, lastKeep: null, keepCheck: null });
   const now = Date.now(); o.pending = o.pending.filter(function (r) { return now - r.at < KEEP_MS; });
@@ -134,9 +136,9 @@ async function keepLogin(force) {
       }
       try {
         let r = null;
-        try { r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }); } catch (e) {}
+        try { r = await within(chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }), 3000); } catch (e) {}
         if (!r) {
-          try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: [file] }); r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }); } catch (e) {}
+          try { await within(chrome.scripting.executeScript({ target: { tabId: t.id }, files: [file] }), 3000); r = await within(chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }), 3000); } catch (e) {}
         }
         if (!r) { c.noReply = true; continue; }
         if (r.left != null && (c.left == null || r.left < c.left)) { c.left = r.left; c.found = r.found; }
@@ -155,7 +157,10 @@ chrome.tabs.onRemoved.addListener(function (id) { locked(async function () { con
 
 chrome.runtime.onMessage.addListener(function (m, sender, reply) {
   if (m && m.t === 'sleep') { setTimeout(function () { reply({ ok: true }); }, Math.min(+m.ms || 0, 10000)); return true; } // neis-auto.js 기다리기(가려진 창에서도 늦춰지지 않게)
-  locked(async function () {
+  // 읽기만 하는 물음(팝업 상태·보고서 사본·보고서 왔는지)은 줄을 서지 않고 바로 — 화면보호기 뒤 깨어나 탭들이 늦게 답하는 동안
+  // 팝업이 빈 채로 기다리던 것(10/23)
+  const readOnly = m && (m.t === 'status' || m.t === 'lastReports' || m.t === 'reportSince');
+  (readOnly ? function (fn) { return fn(); } : locked)(async function () {
     const o = await load();
     if (m.t === 'report') {
       const r = { id: Date.now() + '-' + Math.random().toString(36).slice(2, 8), at: Date.now(), xml: m.xml, what: summary(m.xml), grade: +(vaOf(m.xml).$4 || 0), auto: !!o.running };
