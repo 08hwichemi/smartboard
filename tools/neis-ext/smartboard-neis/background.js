@@ -109,24 +109,32 @@ async function attachOpenTabs() {
       await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['neis-auto.js'] });
     } catch (e) {}
   }
+  for (const t of await chrome.tabs.query({ url: 'https://*.eduptl.kr/*' })) { try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['portal-keep.js'] }); } catch (e) {} }
   for (const t of await sbTabs()) { try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['sb-relay.js'] }); } catch (e) {} }
 }
 chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); attachOpenTabs(); }); // 붙인 나이스 탭이 보내는 neis-ready도 아래 줄에서 차례로
 chrome.runtime.onStartup.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
 chrome.alarms.onAlarm.addListener(function (a) { if (a.name !== 'tick') return; locked(async function () { await checkHelper(await load()); await keepLogin(); await maybeRun('tick'); }); });
-// 나이스 로그인 자동 연장: 평일 7:30~18:00, 1분마다 나이스 탭에 물어 남은 시간이 10분 이하면 "연장"을 누르게 한다
+// 나이스·업무포털 로그인 자동 연장: 평일 7:30~18:00, 1분마다 탭에 물어 남은 시간이 10분 이하(나이스는 연장 창이 떠도)면 연장을 누르게 한다
 async function keepLogin() {
   const o = await load(), now = new Date(), wd = now.getDay(), hm = now.getHours() * 60 + now.getMinutes();
   if (o.auto.keepLogin === false || wd < 1 || wd > 5 || hm < KEEP_FROM || hm >= KEEP_TO) return;
-  const tabs = await chrome.tabs.query({ url: NEIS_MAIN });
-  let check = { at: Date.now(), tabs: tabs.length };
-  for (const t of tabs) {
-    try {
-      const r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 });
-      check = Object.assign(check, r || { noReply: true });
-      if (r && (r.pressed || r.noButton)) o.lastKeep = { at: Date.now(), pressed: !!r.pressed, left: r.left };
-    } catch (e) { check.noReply = true; }
-  }
+  // 나이스와 업무포털(10/23 사용자: 업무포털도 시간이 다 되면 로그아웃) 탭마다 물어 본다 — 탭이 여럿이면 가장 적게 남은 것을 보여 줌
+  const ask = async function (url, who) {
+    const tabs = await chrome.tabs.query({ url: url }), c = { tabs: tabs.length };
+    for (const t of tabs) {
+      try {
+        const r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 });
+        if (!r) { c.noReply = true; continue; }
+        if (r.left != null && (c.left == null || r.left < c.left)) { c.left = r.left; c.found = r.found; }
+        if (r.found != null && c.found == null) c.found = r.found;
+        if (r.pressed) { c.pressed = true; o.lastKeep = { at: Date.now(), pressed: true, left: r.left, who: who }; }
+        else if (r.noButton) { c.noButton = true; o.lastKeep = { at: Date.now(), pressed: false, left: r.left, who: who }; }
+      } catch (e) { c.noReply = true; }
+    }
+    return c;
+  };
+  const check = { at: Date.now(), neis: await ask(NEIS_MAIN, '나이스'), portal: await ask('https://*.eduptl.kr/*', '업무포털') };
   // 팝업에 "마지막 확인"(안 눌릴 때 이유를 보려고) — 그 두 칸만 저장(그사이 들어온 보고서 등을 덮지 않게)
   await chrome.storage.local.set({ keepCheck: check, lastKeep: o.lastKeep });
 }

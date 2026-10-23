@@ -163,8 +163,9 @@
   // ③ 나이스 로그인 자동 연장(10/23 사용자 — 교사 자리 PC라 괜찮음, background가 평일 7:30~18:00에만 1분마다 물음, 팝업에서 끌 수 있음):
   //    나이스 연장 창("접속유지시간이 10분 남았습니다 … [연장] [종료]")이 보이거나 머리의 남은 시간이 10분 이하면 [연장]을 누른다([종료]는 안 누름).
   // 남은 시간: 나이스는 "09분 56초"를 글자 조각 여러 개(숫자·분·초)로 나눠 쓸 수 있어 "초" 조각에서 위로 몇 칸 올라가며 합쳐 읽는다
+  // 화면에 "○○분 ○○초"가 여러 개면(10/23: 팝업 숫자가 머리 시간과 9분이나 달랐음) 모두 찾아 가장 적게 남은 것을 쓴다 → { sec, count }
   function remainSec() {
-    const re = /^\s*(\d+)\s*분\s*(\d+)\s*초\s*$/;
+    const re = /^\s*(\d+)\s*분\s*(\d+)\s*초\s*$/, seen = [], vals = [];
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) {
       if (n.nodeValue.indexOf('초') < 0) continue;
@@ -172,10 +173,10 @@
         const v = el.textContent || '';
         if (v.length > 30) break;
         const m = re.exec(v);
-        if (m && shown(el)) return +m[1] * 60 + +m[2];
+        if (m && shown(el)) { if (seen.indexOf(el) < 0) { seen.push(el); vals.push(+m[1] * 60 + +m[2]); } break; }
       }
     }
-    return null;
+    return { sec: vals.length ? Math.min.apply(null, vals) : null, count: vals.length };
   }
   // 나이스 연장 창(남은 10분에 뜸): "접속유지시간이 10분 남았습니다 … 접속시간을 연장하시겠습니까? [연장] [종료]"
   function extendDialogShown() {
@@ -195,12 +196,12 @@
   }
   // 연장 창이 떠 있으면 남은 시간을 못 읽어도 바로 누르고, 아니면 남은 시간이 10분 이하일 때만 연장 단추를 찾는다
   function keepAlive() {
-    const dlg = extendDialogShown(), left = remainSec();
-    if (!dlg && (left == null || left > 600)) return { left: left, pressed: false };
+    const dlg = extendDialogShown(), r = remainSec(), left = r.sec;
+    if (!dlg && (left == null || left > 600)) return { left: left, found: r.count, pressed: false };
     const btn = extendBtn();
-    if (!btn) return { left: left, pressed: false, noButton: true };
+    if (!btn) return { left: left, found: r.count, pressed: false, noButton: true };
     press(btn);
-    return { left: left, pressed: true, dialog: dlg };
+    return { left: left, found: r.count, pressed: true, dialog: dlg };
   }
 
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {

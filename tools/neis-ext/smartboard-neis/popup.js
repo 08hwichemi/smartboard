@@ -14,11 +14,18 @@ function show() {
     else if (r.lastAutoDate === today) a.push('✅ 오늘 자동 조회 끝(' + (r.lastRun ? t(r.lastRun.at) : '') + ') — 3시간 지나 나이스에 다시 로그인하면 한 번 더 해요.');
     else a.push('아직 오늘 자동 조회 전 — ' + (r.auto.on ? '평일 ' + r.auto.time + ' 이후 나이스가 로그인돼 있으면 해요.' : '꺼져 있어요.'));
     a.push(r.neisTabs ? '나이스 탭 열려 있음' : '나이스 탭 없음(로그인하면 시작)');
-    if (r.auto.keepLogin !== false && r.keepCheck) {
+    if (r.auto.keepLogin !== false && r.keepCheck && r.keepCheck.neis) {
       const k = r.keepCheck, mm = function (x) { return Math.floor(x / 60) + '분 ' + (x % 60) + '초'; };
-      a.push('🕒 로그인 연장 확인(' + t(k.at) + '): ' + (!k.tabs ? '나이스 탭을 못 찾음' : k.noReply ? '나이스 화면이 답이 없음(나이스 탭을 새로 고침해 주세요)' : k.pressed ? '[연장] 누름' : k.noButton ? '연장할 때인데 [연장] 단추를 못 찾음' : k.left != null ? '남은 시간 ' + mm(k.left) + ' — 아직 아님' : '남은 시간을 못 읽음(연장 창이 뜨면 바로 눌러요)'));
+      const line = function (c, name, more) {
+        if (!c.tabs) return name + ' 탭 없음';
+        if (c.noReply && c.left == null) return name + ' 화면이 답이 없음(새로 고침해 주세요)';
+        if (c.pressed) return name + ' 연장 누름';
+        if (c.noButton) return name + ' 연장할 때인데 단추를 못 찾음';
+        return c.left != null ? name + ' 남은 시간 ' + mm(c.left) + (more && c.found > 1 ? '(시간 글자 ' + c.found + '개 중 가장 적은 것)' : '') : name + ' 남은 시간을 못 읽음' + (more ? '(연장 창이 뜨면 바로 눌러요)' : '');
+      };
+      a.push('🕒 로그인 연장 확인(' + t(k.at) + ')\n   ' + line(k.neis, '나이스', true) + '\n   ' + line(k.portal || {}, '업무포털', false));
     }
-    if (r.lastKeep) a.push(r.lastKeep.pressed ? '🔄 나이스 로그인 연장함(' + t(r.lastKeep.at) + ')' : '⚠️ 로그인 남은 시간이 적은데 연장 단추를 못 찾음(' + t(r.lastKeep.at) + ')');
+    if (r.lastKeep) a.push(r.lastKeep.pressed ? '🔄 ' + (r.lastKeep.who || '나이스') + ' 로그인 연장함(' + t(r.lastKeep.at) + ')' : '⚠️ ' + (r.lastKeep.who || '나이스') + ' 남은 시간이 적은데 연장 단추를 못 찾음(' + t(r.lastKeep.at) + ')');
     document.getElementById('auto').textContent = a.join('\n');
     document.getElementById('stop').style.display = r.running ? '' : 'none';
     const lines = [];

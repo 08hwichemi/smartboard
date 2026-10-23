@@ -71,6 +71,7 @@ function reportXml(url) {
   await ctx.route('**/*', (r) => {
     const u = r.request().url();
     if (u.startsWith('chrome-extension://')) return r.continue();
+    if (u.startsWith('https://ice.eduptl.kr/')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: '<html><body><div class="top"><span id="pt">59:58</span>후에 로그아웃됩니다. <button id="pb" onclick="window.ref=(window.ref||0)+1;document.getElementById(\'pt\').textContent=\'59:59\'"><img alt="" src="data:,"></button> <input placeholder="사용자 이름"> <a id="lo" href="#" onclick="window.out=1">Logout</a></div></body></html>' });
     if (u.startsWith('https://ice.neis.go.kr/jsp/main.jsp')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: neisMain.replace('<script>', '<script>window.breakList=' + breakGradeList + ';') });
     if (u.includes('/thirdparty/crownix/crownixhtml.jsp')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: viewer });
     if (u.includes('/report/service')) { reportsServed.push(new URL(u).search); return r.fulfill({ contentType: 'text/xml;charset=utf-8', body: reportXml(u) }); }
@@ -163,6 +164,21 @@ function reportXml(url) {
   await neis.evaluate(() => { document.getElementById('remain').textContent = ''; document.getElementById('extdlg').style.display = 'block'; });
   k = await keep();
   check('남은 시간을 못 읽어도 "접속유지시간…" 연장 창이 보이면 [연장]을 누름', k && k.pressed && k.dialog && (await neis.evaluate(() => window.extended)) === 3 && !(await neis.evaluate(() => window.quit)), k);
+  // 머리 시간 말고 다른 "○○분 ○○초"가 더 있으면 가장 적은 것
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '51분 08초'; const x = document.createElement('div'); x.id = 'other'; x.textContent = '42분 47초'; document.body.appendChild(x); });
+  k = await keep();
+  check('"○○분 ○○초"가 여러 개면 가장 적게 남은 것(42분 47초)과 개수 2', k && k.left === 42 * 60 + 47 && k.found === 2, k);
+  await neis.evaluate(() => document.getElementById('other').remove());
+
+  console.log('== 6. 업무포털 자동 연장: "○○:○○후에 로그아웃됩니다" 옆 ↻');
+  const portal = await ctx.newPage(); await portal.goto('https://ice.eduptl.kr/bpm_man_mn00_001.do'); await wait(800);
+  const pkeep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.eduptl.kr/*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));
+  let pk = await pkeep();
+  check('남은 시간이 많으면 안 누름(59:58)', pk && pk.left === 59 * 60 + 58 && !pk.pressed && !(await portal.evaluate(() => window.ref)), pk);
+  await portal.evaluate(() => { document.getElementById('pt').textContent = '09:12'; });
+  pk = await pkeep();
+  check('10분 이하면 ↻를 누름(로그아웃은 안 누름)', pk && pk.pressed && (await portal.evaluate(() => window.ref)) === 1 && !(await portal.evaluate(() => window.out)), pk);
+
   await bg({ t: 'setAuto', auto: { keepLogin: false } });
   check('팝업에서 끄면 꺼진 것으로 저장', (await status()).auto.keepLogin === false);
 
