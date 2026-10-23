@@ -29,6 +29,10 @@ function summary(xml) {
   const va = vaOf(xml), md = function (s) { return s && s.length === 8 ? (+s.slice(4, 6)) + '/' + (+s.slice(6, 8)) : ''; };
   return (va.$4 ? va.$4 + '학년 ' : '') + md(va.$6) + '~' + md(va.$7);
 }
+// 저장한 상태는 한 번에 하나씩만 고친다(10/23): 메시지(단계 진행·조회 끝·보고서 등)를 동시에 처리하면 먼저 읽은 쪽이 나중에 통째로 저장해
+// 방금 쓴 "마지막 조회 시각"을 옛 값으로 덮어 3시간 규칙이 틀려 조회를 또 하는 일이 생김 → 고치는 일은 모두 이 줄에 세워 차례로.
+let chain = Promise.resolve();
+function locked(fn) { const p = chain.then(fn, fn); chain = p.catch(function () {}); return p; }
 async function load() {
   const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, running: null, lastRun: null, lastReports: [], helper: null, lastKeep: null, keepCheck: null });
   const now = Date.now(); o.pending = o.pending.filter(function (r) { return now - r.at < KEEP_MS; });
@@ -107,9 +111,9 @@ async function attachOpenTabs() {
   }
   for (const t of await sbTabs()) { try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['sb-relay.js'] }); } catch (e) {} }
 }
-chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); attachOpenTabs(); });
+chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); attachOpenTabs(); }); // 붙인 나이스 탭이 보내는 neis-ready도 아래 줄에서 차례로
 chrome.runtime.onStartup.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
-chrome.alarms.onAlarm.addListener(async function (a) { if (a.name !== 'tick') return; await checkHelper(await load()); await keepLogin(); maybeRun('tick'); });
+chrome.alarms.onAlarm.addListener(function (a) { if (a.name !== 'tick') return; locked(async function () { await checkHelper(await load()); await keepLogin(); await maybeRun('tick'); }); });
 // 나이스 로그인 자동 연장: 평일 7:30~18:00, 1분마다 나이스 탭에 물어 남은 시간이 10분 이하면 "연장"을 누르게 한다
 async function keepLogin() {
   const o = await load(), now = new Date(), wd = now.getDay(), hm = now.getHours() * 60 + now.getMinutes();
@@ -126,11 +130,11 @@ async function keepLogin() {
   // 팝업에 "마지막 확인"(안 눌릴 때 이유를 보려고) — 그 두 칸만 저장(그사이 들어온 보고서 등을 덮지 않게)
   await chrome.storage.local.set({ keepCheck: check, lastKeep: o.lastKeep });
 }
-chrome.tabs.onRemoved.addListener(async function (id) { const o = await load(); if (o.helper && o.helper.id === id) { o.helper = null; await save(o); } });
+chrome.tabs.onRemoved.addListener(function (id) { locked(async function () { const o = await load(); if (o.helper && o.helper.id === id) { o.helper = null; await save(o); } }); });
 
 chrome.runtime.onMessage.addListener(function (m, sender, reply) {
   if (m && m.t === 'sleep') { setTimeout(function () { reply({ ok: true }); }, Math.min(+m.ms || 0, 10000)); return true; } // neis-auto.js 기다리기(가려진 창에서도 늦춰지지 않게)
-  (async function () {
+  locked(async function () {
     const o = await load();
     if (m.t === 'report') {
       const r = { id: Date.now() + '-' + Math.random().toString(36).slice(2, 8), at: Date.now(), xml: m.xml, what: summary(m.xml), grade: +(vaOf(m.xml).$4 || 0), auto: !!o.running };
@@ -167,7 +171,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
     } else if (m.t === 'ack') {
       o.pending = o.pending.filter(function (x) { return (m.ids || []).indexOf(x.id) < 0; });
       await save(o); await badge(o); reply({ ok: true });
-      if (o.helper && !o.pending.length) setTimeout(async function () { await checkHelper(await load()); }, 1500); // 나이스 받는 창은 다 넣었으면 닫음
+      if (o.helper && !o.pending.length) setTimeout(function () { locked(async function () { await checkHelper(await load()); }); }, 1500); // 나이스 받는 창은 다 넣었으면 닫음
     } else if (m.t === 'status') {
       reply({ pending: o.pending.map(function (x) { return { at: x.at, what: x.what, auto: x.auto }; }), history: o.history.slice(-5), tabs: (await sbTabs()).length, helper: o.helper, lastKeep: o.lastKeep, keepCheck: o.keepCheck, neisTabs: (await chrome.tabs.query({ url: NEIS_MAIN })).length, auto: o.auto, lastAutoDate: o.lastAutoDate, running: o.running, lastRun: o.lastRun });
     } else if (m.t === 'setAuto') {
@@ -184,6 +188,6 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
     } else if (m.t === 'clear') {
       o.pending = []; await save(o); await badge(o); reply({ ok: true });
     }
-  })();
+  });
   return true;
 });

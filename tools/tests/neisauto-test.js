@@ -104,6 +104,9 @@ function reportXml(url) {
   check('일자 = 이번 주 월 ~ 금', reportsServed.length === 3 && reportsServed.every((q) => decodeURIComponent(q).includes('f=' + want(add(monOff))) && decodeURIComponent(q).includes('t=' + want(add(monOff + 4))) && q.includes('c=1')), reportsServed.map(decodeURIComponent));
   check('학년 1 → 2 → 3 차례로', reportsServed.map((q) => /g=(\d)/.exec(q)[1]).join() === '1,2,3', reportsServed);
   check('오늘 한 것으로 기록', st.lastAutoDate === ymd(new Date()), st.lastAutoDate);
+  await wait(1500); // 마지막 단계 소식(autoStep)이 조회 끝(autoDone)보다 늦게 처리돼도 "마지막 조회 시각"이 옛 값으로 덮이지 않음
+  const la = await pop.evaluate(() => chrome.storage.local.get(['lastAutoAt', 'running']));
+  check('마지막 조회 시각이 방금으로 남고 "조회 중" 표시도 지워짐(동시에 온 소식이 서로 덮지 않음)', Date.now() - la.lastAutoAt < 120000 && !la.running, la);
   await wait(800);
   const got = await sb.evaluate(() => window.got);
   check('스마트보드엔 끝난 뒤 한꺼번에(3개, 자동 표시) — 하나씩 따로 오지 않음', got.length >= 1 && got.every((g) => g.length === 3) && got[0].every((r) => r.auto), got);
