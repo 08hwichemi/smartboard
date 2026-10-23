@@ -112,6 +112,7 @@ chrome.alarms.onAlarm.addListener(async function (a) { if (a.name !== 'tick') re
 chrome.tabs.onRemoved.addListener(async function (id) { const o = await load(); if (o.helper && o.helper.id === id) { o.helper = null; await save(o); } });
 
 chrome.runtime.onMessage.addListener(function (m, sender, reply) {
+  if (m && m.t === 'sleep') { setTimeout(function () { reply({ ok: true }); }, Math.min(+m.ms || 0, 10000)); return true; } // neis-auto.js 기다리기(가려진 창에서도 늦춰지지 않게)
   (async function () {
     const o = await load();
     if (m.t === 'report') {

@@ -7,7 +7,13 @@
   // 확장을 업데이트하면 예전 판은 연결이 끊긴 채 남는다 — 살아 있는 판이 이미 있을 때만 건너뛴다
   if (window.__sbNeisAuto && window.__sbNeisAuto()) return;
   window.__sbNeisAuto = function () { try { return !!chrome.runtime.id; } catch (e) { return false; } };
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // 기다리기는 확장 프로그램 본체(background)가 재고 끝나면 깨워 준다 — 나이스 창이 최소화되거나 다른 창에 가려져 5분 넘게 안 보이면
+  // 크롬이 그 화면의 setTimeout을 1분에 한 번꼴로 늦춰 아침 자동 조회가 멈춘 것처럼 됨(10/23). 메시지 답은 늦추지 않는다.
+  const sleep = (ms) => new Promise((r) => {
+    let done = false; const fin = function () { if (!done) { done = true; r(); } };
+    try { chrome.runtime.sendMessage({ t: 'sleep', ms: ms }, function () { void chrome.runtime.lastError; fin(); }); } catch (e) {}
+    setTimeout(fin, ms + 3000); // 본체가 답을 못 하면(확장을 다시 불러온 직후 등) 이 화면 시계로
+  });
   const shown = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   const txt = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
   function all(sel) { return Array.prototype.filter.call(document.querySelectorAll(sel), shown); }
