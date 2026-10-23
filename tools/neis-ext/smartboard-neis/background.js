@@ -116,15 +116,28 @@ chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick'
 chrome.runtime.onStartup.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
 chrome.alarms.onAlarm.addListener(function (a) { if (a.name !== 'tick') return; locked(async function () { await checkHelper(await load()); await keepLogin(); await maybeRun('tick'); }); });
 // 나이스·업무포털 로그인 자동 연장: 평일 7:30~18:00, 1분마다 탭에 물어 남은 시간이 10분 이하(나이스는 연장 창이 떠도)면 연장을 누르게 한다
-async function keepLogin() {
+async function keepLogin(force) {
   const o = await load(), now = new Date(), wd = now.getDay(), hm = now.getHours() * 60 + now.getMinutes();
-  if (o.auto.keepLogin === false || wd < 1 || wd > 5 || hm < KEEP_FROM || hm >= KEEP_TO) return;
+  if (!force && (o.auto.keepLogin === false || wd < 1 || wd > 5 || hm < KEEP_FROM || hm >= KEEP_TO)) return;
   // 나이스와 업무포털(10/23 사용자: 업무포털도 시간이 다 되면 로그아웃) 탭마다 물어 본다 — 탭이 여럿이면 가장 적게 남은 것을 보여 줌
-  const ask = async function (url, who) {
+  // 크롬 메모리 절약 모드가 오래 안 본 탭을 잠재우면(discarded) 화면이 없어 답을 못 하고 연장도 못 함(10/23 업무포털 "답이 없음") →
+  // 이 탭들은 잠재우지 못하게 하고, 이미 잠든 업무포털은 첫 화면이라 다시 불러와 깨운다(다시 불러오면 업무포털 시간도 새로 시작).
+  // 나이스는 작업하던 화면이 날아갈 수 있어 다시 불러오지 않고 "잠들어 있음"으로만 알린다. 답이 없으면 화면 쪽 스크립트를 다시 붙여 한 번 더 묻는다.
+  const ask = async function (url, who, file, wake) {
     const tabs = await chrome.tabs.query({ url: url }), c = { tabs: tabs.length };
     for (const t of tabs) {
+      try { if (t.autoDiscardable !== false) await chrome.tabs.update(t.id, { autoDiscardable: false }); } catch (e) {}
+      if (t.discarded) {
+        c.asleep = true;
+        if (wake) { try { await chrome.tabs.reload(t.id); c.woke = true; o.lastKeep = { at: Date.now(), pressed: true, left: null, who: who, woke: true }; } catch (e) {} }
+        continue;
+      }
       try {
-        const r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 });
+        let r = null;
+        try { r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }); } catch (e) {}
+        if (!r) {
+          try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: [file] }); r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }); } catch (e) {}
+        }
         if (!r) { c.noReply = true; continue; }
         if (r.left != null && (c.left == null || r.left < c.left)) { c.left = r.left; c.found = r.found; }
         if (r.found != null && c.found == null) c.found = r.found;
@@ -134,7 +147,7 @@ async function keepLogin() {
     }
     return c;
   };
-  const check = { at: Date.now(), neis: await ask(NEIS_MAIN, '나이스'), portal: await ask('https://*.eduptl.kr/*', '업무포털') };
+  const check = { at: Date.now(), neis: await ask(NEIS_MAIN, '나이스', 'neis-auto.js', false), portal: await ask('https://*.eduptl.kr/*', '업무포털', 'portal-keep.js', true) };
   // 팝업에 "마지막 확인"(안 눌릴 때 이유를 보려고) — 그 두 칸만 저장(그사이 들어온 보고서 등을 덮지 않게)
   await chrome.storage.local.set({ keepCheck: check, lastKeep: o.lastKeep });
 }
@@ -189,6 +202,8 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
     } else if (m.t === 'resetToday') { // 시험용: 오늘 한 기록·기다리는 보고서를 지워 처음 켠 것처럼
       o.lastAutoDate = ''; o.lastAutoAt = 0; o.lastRun = null; o.lastTryAt = 0; o.running = null; o.pending = [];
       await save(o); await badge(o); reply({ ok: true });
+    } else if (m.t === 'keepNow') { // 시험용: 시각과 상관없이 지금 한 번 확인
+      await keepLogin(true); reply((await chrome.storage.local.get('keepCheck')).keepCheck);
     } else if (m.t === 'lastReports') {
       reply({ reports: o.lastReports });
     } else if (m.t === 'resend') {

@@ -18,6 +18,8 @@ function show() {
       const k = r.keepCheck, mm = function (x) { return Math.floor(x / 60) + '분 ' + (x % 60) + '초'; };
       const line = function (c, name, more) {
         if (!c.tabs) return name + ' 탭 없음';
+        if (c.woke) return name + ' 탭이 크롬 메모리 절약으로 잠들어 있어 다시 불러와 깨움(시간 새로 시작)';
+        if (c.asleep) return name + ' 탭이 크롬 메모리 절약으로 잠들어 있음 — 그 탭을 한 번 눌러 주세요(이제부터는 안 잠들게 해 둠)';
         if (c.noReply && c.left == null) return name + ' 화면이 답이 없음(새로 고침해 주세요)';
         if (c.pressed) return name + ' 연장 누름';
         if (c.noButton) return name + ' 연장할 때인데 단추를 못 찾음';
@@ -25,7 +27,7 @@ function show() {
       };
       a.push('🕒 로그인 연장 확인(' + t(k.at) + ')\n   ' + line(k.neis, '나이스', true) + '\n   ' + line(k.portal || {}, '업무포털', false));
     }
-    if (r.lastKeep) a.push(r.lastKeep.pressed ? '🔄 ' + (r.lastKeep.who || '나이스') + ' 로그인 연장함(' + t(r.lastKeep.at) + ')' : '⚠️ ' + (r.lastKeep.who || '나이스') + ' 남은 시간이 적은데 연장 단추를 못 찾음(' + t(r.lastKeep.at) + ')');
+    if (r.lastKeep) a.push(r.lastKeep.pressed ? '🔄 ' + (r.lastKeep.who || '나이스') + (r.lastKeep.woke ? ' 잠든 탭을 깨워 연장함(' : ' 로그인 연장함(') + t(r.lastKeep.at) + ')' : '⚠️ ' + (r.lastKeep.who || '나이스') + ' 남은 시간이 적은데 연장 단추를 못 찾음(' + t(r.lastKeep.at) + ')');
     document.getElementById('auto').textContent = a.join('\n');
     document.getElementById('stop').style.display = r.running ? '' : 'none';
     const lines = [];

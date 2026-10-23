@@ -179,8 +179,17 @@ function reportXml(url) {
   pk = await pkeep();
   check('10분 이하면 ↻를 누름(로그아웃은 안 누름)', pk && pk.pressed && (await portal.evaluate(() => window.ref)) === 1 && !(await portal.evaluate(() => window.out)), pk);
 
-  await bg({ t: 'setAuto', auto: { keepLogin: false } });
-  check('팝업에서 끄면 꺼진 것으로 저장', (await status()).auto.keepLogin === false);
+  console.log('== 7. 나이스·업무포털 탭은 크롬 메모리 절약이 잠재우지 못하게(잠든 탭 깨우기는 시험 도구가 탭을 잠재우면 끊겨 실제 크롬에서만 확인)');
+  await portal.evaluate(() => { document.getElementById('pt').textContent = '30:00'; });
+  const pop3 = await ctx.newPage(); await pop3.goto('chrome-extension://' + id + '/popup.html'); await wait(300);
+  const kc = await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'keepNow' }, res)));
+  const after = await pop3.evaluate(() => new Promise((res) => chrome.tabs.query({}, (ts) => res(ts.filter((t) => /eduptl|neis\.go\.kr\/jsp/.test(t.url || t.pendingUrl || '')).map((t) => ({ u: (t.url || t.pendingUrl).slice(8, 30), ad: t.autoDiscardable }))))));
+  check('나이스·업무포털 탭은 이제 크롬이 잠재우지 못함', after.length >= 2 && after.every((t) => t.ad === false), after);
+  check('업무포털도 그대로 확인(남은 30분)', kc && kc.portal && kc.portal.left === 1800 && !kc.portal.noReply, kc && kc.portal);
+  check('나이스는 그대로 확인(답함)', kc && kc.neis && kc.neis.tabs >= 1 && !kc.neis.noReply, kc && kc.neis);
+  await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'setAuto', auto: { keepLogin: false } }, res)));
+  check('팝업에서 끄면 꺼진 것으로 저장', (await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'status' }, res)))).auto.keepLogin === false);
+
 
   await ctx.close();
   console.log(failures ? '\n실패 ' + failures + '개' : '\n모든 검사 통과');
