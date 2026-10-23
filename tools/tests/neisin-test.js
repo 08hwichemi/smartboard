@@ -31,6 +31,7 @@ const pages = []; // {page, name, offline, realtimeDown}
 function seed(teacherId, obj) {
   for (const [k, v] of Object.entries(obj)) items.set(teacherId + '|' + k, { teacher_id: teacherId, key: k, value: v, updated_at: nowIso() });
 }
+async function fireCells() { for (const p of pages) { if (p.page.isClosed()) continue; try { await p.page.evaluate(() => window.__fireRealtime && window.__fireRealtime('schedule_cell_changes')); } catch (e) {} } }
 function serverVal(teacherId, key) { const r = items.get(teacherId + '|' + key); return r ? r.value : undefined; }
 
 async function fireRealtime(teacherId) {
@@ -385,9 +386,11 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   await H.page.evaluate((x) => window.postMessage({ __sbNeis: 'reports', reports: [{ id: 'h1', xml: x, at: 1, auto: true }] }, '*'), g3b);
   await H.page.waitForSelector('#neis-toast', { state: 'visible', timeout: 8000 }); await wait2(500);
   check('받는 창이 넣음(금4 301 위교사)', cellChanges.some((c) => c.change_date === D[4] && c.period === 4 && c.room === '301' && c.teacher_to === '위교사'), cellChanges.filter((c) => c.change_date === D[4] && c.period === 4));
-  check('켜 둔 보드 창은 아직 예전 것(10분마다 다시 받음)', beforeA === '' && (await atA('위교사', D[4], 4)) === '', beforeA);
-  await A.page.evaluate(() => { neisCellsAt = Date.now() - 11 * 60000; return refreshNeisCellsIfStale(10 * 60000); }); await wait2(300);
-  check('10분이 지나면 켜 둔 창도 저절로 다시 받아 그림(위교사 금4 = 과학 301)', (await atA('위교사', D[4], 4)) === '과학 301', await atA('위교사', D[4], 4));
+  check('넣기 전 켜 둔 보드 창은 예전 것', beforeA === '', beforeA);
+  await fireCells(); await wait2(2500);
+  check('서버가 알려 주면(실시간) 켜 둔 창이 곧바로 다시 받아 그림(위교사 금4 = 과학 301)', (await atA('위교사', D[4], 4)) === '과학 301', await atA('위교사', D[4], 4));
+  const T2 = pages.find((p) => p.name === '교사PC');
+  check('다른 선생님 보드도 곧바로(금4 301 위교사)', (await T2.page.evaluate((dt) => timetableCellAt('위교사', dt, 4).list.map((x) => x.s + ' ' + x.r).join(), D[4])) === '과학 301');
 
   const errs = pages.flatMap((p) => p.errors || []);
   check('페이지 오류 없음', errs.length === 0, errs);

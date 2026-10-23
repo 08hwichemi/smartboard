@@ -5562,7 +5562,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-22.6';
+  var BUILD_ID = '2026-10-23.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7223,7 +7223,7 @@
     renderNewsTabs(); fetchNews(); setInterval(function() { if (document.visibilityState === 'visible') fetchNews(); }, 30 * 60 * 1000);
     document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') fetchNews(); });
 
-    if (!LITE) { checkNotice(); startNoticeWatcher(); checkAllDuties(); }
+    if (!LITE) { checkNotice(); startNoticeWatcher(); checkAllDuties(); if (!SB_NEIS_HELPER) startNeisCellsWatcher(); }
     renderBigCalendar();
     loadUpcomingScheduleTeaser();
 
@@ -10810,22 +10810,38 @@
       neisCellsAt = Date.now();
     } catch (e) { if (!window.neisCells) window.neisCells = []; } // 다시 받다가 실패하면 보던 것 그대로
   }
-  // 켜 둔 화면도 나이스에서 새로 들어간 칸을 저절로 보이게(10/23 사용자: 아침에 앱을 저절로 켜 두는데 8:40에 들어간 칸은
-  // 새로 고침해야 보였음) — 10분마다(화면이 보일 때), 다시 보게 되면 5분 지났을 때 이번 주 칸만 다시 받아 바뀌었으면 다시 그린다.
+  // 켜 둔 화면도 나이스에서 새로 들어간 칸을 바로 보이게(10/23 사용자: 아침에 앱을 저절로 켜 두는데 8:40에 들어간 칸이 안 보임 →
+  // 10분마다 묻기보다 "서버가 알려 주기"로): schedule_cell_changes가 바뀌면 서버(실시간)가 켜 둔 보드마다 알려 주고,
+  // 보드는 잠깐(1.5초 — 한 번에 수십 줄이 들어옴) 모았다가 이번 주 칸만 다시 받아 바뀌었으면 다시 그린다.
+  // 실시간 연결이 끊겼던 동안 놓친 것은 다시 연결될 때·화면을 오래 안 보다가 다시 볼 때·30분마다(보일 때) 받아 메운다.
   let neisCellsAt = 0;
-  async function refreshNeisCellsIfStale(maxAgeMs) {
-    if (LITE || SB_SLEEP || document.hidden || !neisCellsAt || Date.now() - neisCellsAt < maxAgeMs) return;
+  let neisCellsTimer = null;
+  async function refreshNeisCells() {
+    if (LITE || SB_SLEEP || !neisCellsAt) return;
     const before = JSON.stringify(window.neisCells || []);
     await fetchNeisCells();
     if (JSON.stringify(window.neisCells) !== before) redrawTimetablesWithNeis();
+  }
+  function scheduleNeisCellsRefresh() {
+    clearTimeout(neisCellsTimer);
+    neisCellsTimer = setTimeout(function() { neisCellsTimer = null; refreshNeisCells(); }, 1500);
+  }
+  function startNeisCellsWatcher() {
+    try {
+      sb.channel('neis-cells-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedule_cell_changes' }, scheduleNeisCellsRefresh)
+        .subscribe(function(status) { if (status === 'SUBSCRIBED') scheduleNeisCellsRefresh(); });
+    } catch (e) {}
+    setInterval(function() { if (document.visibilityState === 'visible') refreshNeisCells(); }, 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible' && pageWasHiddenLong()) scheduleNeisCellsRefresh();
+    });
   }
   function redrawTimetablesWithNeis() {
     loadMyTimetable();
     renderSearchTimetable(true);
     if (document.getElementById('staff-tt-grid-1')) renderStaffTimetables();
   }
-  setInterval(function() { refreshNeisCellsIfStale(10 * 60000); }, 60000);
-  document.addEventListener('visibilitychange', function() { refreshNeisCellsIfStale(5 * 60000); });
 
   // 그 날짜·교시에 그 선생님이 실제로 하는 수업 → { list: [{ s, r }], changed }
   // 나이스에 바뀐 칸이 있는 반(날짜·교시·반)은 기본 시간표의 그 반 수업을 빼고, 나이스에 적힌 선생님에게 넣는다.
