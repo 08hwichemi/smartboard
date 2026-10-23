@@ -1,6 +1,7 @@
 // 나이스 화면(맨 위 창, /jsp/main.jsp): ① 로그인돼 메뉴가 보이면 background에 "준비됨"을 알리고
 // ② background가 "자동 조회"를 보내면 사람이 누르듯 화면 단추를 눌러
-//    교과담임(큰 메뉴판) → 시간표관리 → 왼쪽 메뉴 전체시간표조회 → 변경수업조회 → 일자(지난주 ~ 3주 뒤) → 학년 1·2·3 차례로 조회한다.
+//    교과담임(큰 메뉴판) → 시간표관리 → 왼쪽 메뉴 전체시간표조회 → 변경수업조회 → 일자(이번 주 월~금) → 학년 1·2·3 차례로 조회한다.
+// ③ 로그인 남은 시간이 10분 이하면 "연장"을 누른다(아래).
 //    보고서는 neis-hook.js가 잡아 background로 보낸다. 단계마다 기록을 남기고, 못 찾은 단계는 그 근처 화면 정보를 함께 보낸다.
 (function () {
   if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname)) return;
@@ -158,7 +159,35 @@
     log(g + '학년 보고서 받음');
     return true;
   }
+  // ③ 나이스 로그인 자동 연장(10/23 사용자 — 교사 자리 PC라 괜찮음, background가 평일 7:30~18:00에만 1분마다 물음, 팝업에서 끌 수 있음):
+  //    머리의 남은 시간("59분 41초")이 10분 이하이고 "연장" 단추(글자 또는 이름표, 시간 옆이든 따로 뜬 창이든)가 보이면 누른다. 남은 시간을 못 읽으면(다른 화면 등) 아무것도 안 누름.
+  function remainSec() {
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      const m = /^\s*(\d+)\s*분\s*(\d+)\s*초\s*$/.exec(n.nodeValue);
+      if (m && n.parentElement && shown(n.parentElement)) return +m[1] * 60 + +m[2];
+    }
+    return null;
+  }
+  function extendBtn() {
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      if (/^\s*(로그인\s*)?(시간\s*)?연장(하기)?\s*$/.test(n.nodeValue) && n.parentElement && shown(n.parentElement)) return n.parentElement;
+    }
+    // 글자 없이 그림만 있는 단추(머리의 남은 시간 옆 등): 이름표(aria-label·title)로
+    return all('[aria-label*="연장"], [title*="연장"]')[0] || null;
+  }
+  function keepAlive() {
+    const left = remainSec();
+    if (left == null || left > 600) return { left: left, pressed: false };
+    const btn = extendBtn();
+    if (!btn) return { left: left, pressed: false, noButton: true };
+    press(btn);
+    return { left: left, pressed: true };
+  }
+
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {
+    if (m && m.t === 'keepAlive') { reply(keepAlive()); return; }
     if (m && m.t === 'autoStop') { cancelled = true; reply({ ok: true }); return; }
     if (!m || m.t !== 'autoQuery') return;
     reply({ started: true });

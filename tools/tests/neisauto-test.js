@@ -20,7 +20,7 @@ let breakGradeList = false; // 학년 목록이 안 펼쳐지는 경우(실패 �
 
 // 가짜 나이스 메인 화면
 const neisMain = `<!doctype html><html><head><meta charset="utf-8"><style>.hide{display:none}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.cl-combobox-list{position:absolute;background:#fff;border:1px solid #888}</style></head><body>
-<div id="topnav"><a class="cl-navigationbar-content" id="nav-hak">학급담임 <span>0단계 메뉴항목</span></a> <a class="cl-navigationbar-content" id="nav-gyo">교과담임 <span>0단계 메뉴항목</span></a></div>
+<div id="sess"><span id="remain">59분 41초</span></div><div id="extdlg" style="display:none"><div class="cl-text">로그인 시간이 얼마 남지 않았습니다.</div><a class="cl-button" onclick="window.extended=(window.extended||0)+1;document.getElementById('remain').textContent='60분 00초';document.getElementById('extdlg').style.display='none'"><div class="cl-text">연장</div></a></div><div id="topnav"><a class="cl-navigationbar-content" id="nav-hak">학급담임 <span>0단계 메뉴항목</span></a> <a class="cl-navigationbar-content" id="nav-gyo">교과담임 <span>0단계 메뉴항목</span></a></div>
 <div id="mega" class="hide"><div><span>학교정보</span><a data-role="menuitem">성적/학생부수정이력<span class="sr">1단계 메뉴항목</span></a></div><div><span>교육과정</span><a data-role="menuitem" id="mega-tt"><div class="cl-text">시간표관리</div><span class="sr">1단계 메뉴항목</span></a></div><div><span>학적</span><a data-role="menuitem">출결관리<span class="sr">1단계 메뉴항목</span></a></div></div>
 <div id="side" class="hide cl-sidenavigation">
   <a class="cl-folder cl-level-1 cl-expanded" title="시간표관리" id="fold">시간표관리 2단계 메뉴항목</a>
@@ -138,6 +138,22 @@ function reportXml(url) {
   const pop2 = await ctx.newPage(); await pop2.goto('chrome-extension://' + id + '/popup.html'); await wait(1000);
   const popText = await pop2.evaluate(() => document.getElementById('auto').innerText);
   check('팝업에 마지막 실패와 이유(오늘 아침 것은 끝났다고)', /❌ 마지막 자동 조회 실패/.test(popText) && /2학년을 고르지 못함/.test(popText) && /오늘 아침 조회는 끝났어요/.test(popText), popText);
+
+  console.log('== 5. 나이스 로그인 자동 연장: 남은 시간이 10분 이하이고 "연장" 단추가 보일 때만 누름');
+  const keep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.neis.go.kr/jsp/main.jsp*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));
+  let k = await keep();
+  check('남은 시간이 많으면 안 누름(59분 41초)', k && k.left === 59 * 60 + 41 && !k.pressed && !(await neis.evaluate(() => window.extended)), k);
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '9분 30초'; document.getElementById('extdlg').style.display = 'block'; });
+  k = await keep();
+  check('10분 이하 + 연장 단추가 보이면 누름 → 남은 시간이 다시 60분', k && k.pressed && (await neis.evaluate(() => window.extended)) === 1 && (await neis.evaluate(() => document.getElementById('remain').textContent)) === '60분 00초', k);
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '8분 10초'; const b = document.createElement('a'); b.id = 'iconext'; b.setAttribute('aria-label', '로그인 시간 연장'); b.innerHTML = '<i>⟳</i>'; b.onclick = function () { window.extended++; document.getElementById('remain').textContent = '60분 00초'; b.remove(); }; document.getElementById('sess').appendChild(b); });
+  k = await keep();
+  check('글자 없는 그림 단추(시간 옆, 이름표 "로그인 시간 연장")도 누름', k && k.pressed && (await neis.evaluate(() => window.extended)) === 2, k);
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '5분 00초'; });
+  k = await keep();
+  check('단추가 안 보이면 누르지 않고 "못 찾음"으로 알림', k && !k.pressed && k.noButton && (await neis.evaluate(() => window.extended)) === 2, k);
+  await bg({ t: 'setAuto', auto: { keepLogin: false } });
+  check('팝업에서 끄면 꺼진 것으로 저장', (await status()).auto.keepLogin === false);
 
   await ctx.close();
   console.log(failures ? '\n실패 ' + failures + '개' : '\n모든 검사 통과');

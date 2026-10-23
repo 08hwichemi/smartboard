@@ -16,7 +16,8 @@ const HELPER_WAIT_MS = 3 * 60 * 1000;
 const KEEP_MS = 24 * 60 * 60 * 1000;
 const RETRY_MS = 30 * 60 * 1000;
 const RUN_MAX_MS = 3 * 60 * 1000; // 이만큼 단계 소식이 없으면 멈춘 것으로 본다
-const DEFAULT_AUTO = { on: true, time: '08:40' };
+const DEFAULT_AUTO = { on: true, time: '08:40', keepLogin: true };
+const KEEP_FROM = 7 * 60 + 30, KEEP_TO = 18 * 60; // 나이스 로그인 자동 연장은 평일 이 시각 사이만(퇴근 뒤엔 원래대로 로그아웃)
 const AGAIN_MS = 3 * 60 * 60 * 1000; // 이만큼 지나 다시 로그인하면 한 번 더
 
 function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -29,12 +30,12 @@ function summary(xml) {
   return (va.$4 ? va.$4 + '학년 ' : '') + md(va.$6) + '~' + md(va.$7);
 }
 async function load() {
-  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, running: null, lastRun: null, lastReports: [], helper: null });
+  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, running: null, lastRun: null, lastReports: [], helper: null, lastKeep: null });
   const now = Date.now(); o.pending = o.pending.filter(function (r) { return now - r.at < KEEP_MS; });
   if (o.running && now - o.running.at > RUN_MAX_MS) o.running = null; // 멈춘 채 남은 표시는 버린다
   return o;
 }
-async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastAutoAt: o.lastAutoAt, lastTryAt: o.lastTryAt, helper: o.helper, running: o.running, lastRun: o.lastRun, lastReports: o.lastReports.slice(-6) }); }
+async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastAutoAt: o.lastAutoAt, lastTryAt: o.lastTryAt, helper: o.helper, lastKeep: o.lastKeep, running: o.running, lastRun: o.lastRun, lastReports: o.lastReports.slice(-6) }); }
 async function badge(o) {
   const bad = o.lastRun && !o.lastRun.ok && o.lastRun.date === ymd(new Date()) && o.lastAutoDate !== o.lastRun.date;
   await chrome.action.setBadgeText({ text: bad ? '!' : (o.pending.length ? String(o.pending.length) : '') });
@@ -108,7 +109,18 @@ async function attachOpenTabs() {
 }
 chrome.runtime.onInstalled.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); attachOpenTabs(); });
 chrome.runtime.onStartup.addListener(function () { chrome.alarms.create('tick', { periodInMinutes: 1 }); });
-chrome.alarms.onAlarm.addListener(async function (a) { if (a.name !== 'tick') return; await checkHelper(await load()); maybeRun('tick'); });
+chrome.alarms.onAlarm.addListener(async function (a) { if (a.name !== 'tick') return; await checkHelper(await load()); await keepLogin(); maybeRun('tick'); });
+// 나이스 로그인 자동 연장: 평일 7:30~18:00, 1분마다 나이스 탭에 물어 남은 시간이 10분 이하면 "연장"을 누르게 한다
+async function keepLogin() {
+  const o = await load(), now = new Date(), wd = now.getDay(), hm = now.getHours() * 60 + now.getMinutes();
+  if (o.auto.keepLogin === false || wd < 1 || wd > 5 || hm < KEEP_FROM || hm >= KEEP_TO) return;
+  for (const t of await chrome.tabs.query({ url: NEIS_MAIN })) {
+    try {
+      const r = await chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 });
+      if (r && (r.pressed || r.noButton)) { o.lastKeep = { at: Date.now(), pressed: !!r.pressed, left: r.left }; await save(o); }
+    } catch (e) {}
+  }
+}
 chrome.tabs.onRemoved.addListener(async function (id) { const o = await load(); if (o.helper && o.helper.id === id) { o.helper = null; await save(o); } });
 
 chrome.runtime.onMessage.addListener(function (m, sender, reply) {
@@ -152,7 +164,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       await save(o); await badge(o); reply({ ok: true });
       if (o.helper && !o.pending.length) setTimeout(async function () { await checkHelper(await load()); }, 1500); // 나이스 받는 창은 다 넣었으면 닫음
     } else if (m.t === 'status') {
-      reply({ pending: o.pending.map(function (x) { return { at: x.at, what: x.what, auto: x.auto }; }), history: o.history.slice(-5), tabs: (await sbTabs()).length, helper: o.helper, neisTabs: (await chrome.tabs.query({ url: NEIS_MAIN })).length, auto: o.auto, lastAutoDate: o.lastAutoDate, running: o.running, lastRun: o.lastRun });
+      reply({ pending: o.pending.map(function (x) { return { at: x.at, what: x.what, auto: x.auto }; }), history: o.history.slice(-5), tabs: (await sbTabs()).length, helper: o.helper, lastKeep: o.lastKeep, neisTabs: (await chrome.tabs.query({ url: NEIS_MAIN })).length, auto: o.auto, lastAutoDate: o.lastAutoDate, running: o.running, lastRun: o.lastRun });
     } else if (m.t === 'setAuto') {
       o.auto = Object.assign({}, o.auto, m.auto); await save(o); reply({ ok: true });
     } else if (m.t === 'runNow') {

@@ -6,6 +6,7 @@ function show() {
     if (!r) return;
     last = r;
     document.getElementById('on').checked = !!r.auto.on;
+    document.getElementById('keep').checked = r.auto.keepLogin !== false;
     if (document.activeElement !== document.getElementById('time')) document.getElementById('time').value = r.auto.time;
     const today = ymd(new Date()), a = [];
     if (r.running) a.push('⏳ 지금 나이스에서 조회하는 중…' + (r.running.step ? '\n   지금 단계: ' + r.running.step : '\n   (나이스 화면을 고르는 중)'));
@@ -13,6 +14,7 @@ function show() {
     else if (r.lastAutoDate === today) a.push('✅ 오늘 자동 조회 끝(' + (r.lastRun ? t(r.lastRun.at) : '') + ') — 3시간 지나 나이스에 다시 로그인하면 한 번 더 해요.');
     else a.push('아직 오늘 자동 조회 전 — ' + (r.auto.on ? '평일 ' + r.auto.time + ' 이후 나이스가 로그인돼 있으면 해요.' : '꺼져 있어요.'));
     a.push(r.neisTabs ? '나이스 탭 열려 있음' : '나이스 탭 없음(로그인하면 시작)');
+    if (r.lastKeep) a.push(r.lastKeep.pressed ? '🔄 나이스 로그인 연장함(' + t(r.lastKeep.at) + ')' : '⚠️ 로그인 남은 시간이 적은데 연장 단추를 못 찾음(' + t(r.lastKeep.at) + ')');
     document.getElementById('auto').textContent = a.join('\n');
     document.getElementById('stop').style.display = r.running ? '' : 'none';
     const lines = [];
@@ -22,6 +24,7 @@ function show() {
     document.getElementById('s').textContent = lines.join('\n');
   });
 }
+document.getElementById('keep').onchange = function () { chrome.runtime.sendMessage({ t: 'setAuto', auto: { keepLogin: this.checked } }, show); };
 document.getElementById('on').onchange = function () { chrome.runtime.sendMessage({ t: 'setAuto', auto: { on: this.checked } }, show); };
 document.getElementById('time').onchange = function () { if (/^\d\d:\d\d$/.test(this.value)) chrome.runtime.sendMessage({ t: 'setAuto', auto: { time: this.value } }, show); };
 document.getElementById('stop').onclick = function () { chrome.runtime.sendMessage({ t: 'autoStop' }, function () { setTimeout(show, 300); }); };
