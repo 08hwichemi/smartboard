@@ -327,6 +327,12 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   await P.evaluate(() => { const s = document.getElementById('search-select'); if (![...s.options].some((o) => o.value === '나교사')) s.add(new Option('나교사', '나교사')); s.value = '나교사'; renderSearchTimetable(true); });
   const grid = await P.evaluate(() => [document.getElementById('search-tt-1-1-s').innerText, document.getElementById('search-tt-1-1-r').innerText, document.getElementById('search-tt-3-3-s').innerText.trim()]);
   check('검색 시간표(이번 주): 나교사 월1에 수학 101, 수3(교체로 빠짐)은 빈 칸', /수학/.test(grid[0]) && grid[1] === '101' && grid[2] === '', grid);
+  const borders = await P.evaluate(() => ['1-1', '3-3', '2-1'].map((k) => document.getElementById('search-tt-' + k.split('-')[0] + '-' + k.split('-')[1] + '-s').parentElement.classList.contains('tt-changed')));
+  check('바뀐 칸(월1 들어옴·수3 빠짐)만 빨간 테두리, 안 바뀐 칸(월2)은 없음', borders[0] && borders[1] && !borders[2], borders);
+  const red = await P.evaluate(() => getComputedStyle(document.getElementById('search-tt-1-1-s').parentElement).boxShadow);
+  check('테두리는 빨간색 안쪽 3px', /229, 72, 77/.test(red) && /3px/.test(red), red);
+  await P.evaluate(() => { const s = document.getElementById('search-select'); if (![...s.options].some((o) => o.value === '거교사')) s.add(new Option('거교사', '거교사')); s.value = '거교사'; renderSearchTimetable(true); });
+  check('다른 선생님(바뀐 칸 없음)으로 바꾸면 테두리가 남지 않음', await P.evaluate(() => !document.querySelector('#search-timetable-grid .tt-changed')));
 
   console.log('== 4. 여러 학년을 한꺼번에 받기 · 같은 것을 다시 받으면 쓰기 0');
   const c4 = cellChanges.length;
