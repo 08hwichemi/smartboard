@@ -3568,8 +3568,8 @@
       </div>
 
       <div id="ab-pane-hol" class="ab-pane" style="display:none;">
-        <div class="ab-muted" style="margin-bottom:8px; line-height:1.6;">결석 일수는 <b>토·일요일과 아래 휴일</b>을 빼고 셉니다. 학사일정(나이스)의 휴업일·공휴일은 자동으로 들어오고,
-          빠진 날(재량휴업일 등)은 직접 더하세요. 직접 더한 날은 <span class="school-only">내 계정에만</span><span class="lite-only">이 브라우저에만</span> 저장돼요.</div>
+        <div class="ab-muted" style="margin-bottom:8px; line-height:1.6;">결석 일수는 <b>토·일요일과 아래 휴일</b>을 빼고 셉니다. 학사일정(나이스)의 휴업일·공휴일은 자동으로 들어오고(한 학년만 쉬는 날은 그 학년 반에만),
+          빠진 날은 직접 더하고, 이 반이 수업한 날은 <b>수업함</b>으로 빼세요. 직접 더하거나 뺀 날은 <span class="school-only">내 계정에만</span><span class="lite-only">이 브라우저에만</span> 저장돼요.</div>
         <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
           <input type="date" id="ab-hol-date" class="lp-input" style="width:150px;">
           <input type="text" id="ab-hol-name" class="lp-input" style="width:160px;" placeholder="이름 (예: 재량휴업일)">
@@ -5563,7 +5563,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-10-25.1';
+  var BUILD_ID = '2026-10-25.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -13793,10 +13793,10 @@
     '2027-01-01': '신정', '2027-02-06': '설날', '2027-02-07': '설날', '2027-02-08': '설날', '2027-02-09': '대체공휴일'
   };
   const AB_REC_PREFIX = 'ab-r-';
-  const AB_CFG_KEY = 'ab-cfg';   // { g, c, hol: { 'YYYY-MM-DD': '이름' } } — 고른 반·직접 더한 휴일
+  const AB_CFG_KEY = 'ab-cfg';   // { g, c, hol: { 'YYYY-MM-DD': '이름' }, off: { 'YYYY-MM-DD': true } } — 고른 반·직접 더한 휴일·수업한 날(학사일정·기본 휴일에서 뺌)
   let abForms = null, abFormsLoading = null;
   let abRoster = [], abRosterKey = '';
-  let abNeisHol = {}, abNeisYear = null;
+  let abNeisHol = {}, abNeisHolGrades = {}, abNeisYear = null; // abNeisHolGrades[날짜] = 그날 쉬는 학년들(비면 전체)
   let abSelId = null, abEditId = null, abFilterNum = null, abTab = 'input';
 
   function abCfg() {
@@ -13835,8 +13835,16 @@
   function abIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function abIsWeekend(iso) { const w = new Date(iso + 'T00:00:00').getDay(); return w === 0 || w === 6; }
   function abSchoolYear(d) { const t = d ? new Date(d + 'T00:00:00') : new Date(); return t.getMonth() + 1 >= 3 ? t.getFullYear() : t.getFullYear() - 1; }
+  // 학사일정 휴일 중 지금 반 학년이 쉬는 날만(10/26 "재량휴업일 ②"는 2학년만 — 1·3학년은 정상 수업, 10/25 사용자)
+  function abNeisHolForClass() {
+    const g = +abCfg().g || 0, out = {};
+    Object.keys(abNeisHol).forEach(function(d) { const gs = abNeisHolGrades[d] || []; if (!g || !gs.length || gs.indexOf(g) >= 0) out[d] = abNeisHol[d]; });
+    return out;
+  }
   function abHolidays() {
-    return Object.assign({}, AB_BASE_HOLIDAYS, abNeisHol, abCfg().hol || {});
+    const c = abCfg(), all = Object.assign({}, AB_BASE_HOLIDAYS, abNeisHolForClass());
+    Object.keys(c.off || {}).forEach(function(d) { delete all[d]; }); // 이 반이 수업한 날(직접 뺌)
+    return Object.assign(all, c.hol || {});
   }
   async function abLoadNeisHolidays() {
     const y = abSchoolYear();
@@ -13847,16 +13855,22 @@
         '&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + y + '0301&AA_TO_YMD=' + (y + 1) + '0228';
       const res = await fetch(url);
       const data = await res.json();
-      const out = {};
+      const out = {}, grades = {};
       if (data.SchoolSchedule && data.SchoolSchedule[1] && data.SchoolSchedule[1].row) {
         data.SchoolSchedule[1].row.forEach(function(r) {
           const ev = r.EVENT_NM || '', kind = r.SBTR_DD_SC_NM || '', iso = neisDateToIso(r.AA_YMD);
           if (abIsWeekend(iso)) return; // 토요휴업일 등 주말은 어차피 빼고 셈
           if (/방학식|개학|종업|졸업|입학/.test(ev)) return; // 방학식·개학식 날은 등교함
-          if (kind === '휴업일' || kind === '공휴일' || /휴업|휴일|공휴|방학/.test(ev)) out[iso] = ev || kind;
+          if (kind === '휴업일' || kind === '공휴일' || /휴업|휴일|공휴|방학/.test(ev)) {
+            // 몇 학년 행사인지(나이스 ONE/TW/THREE_GRADE_EVENT_YN) — 하나도 표시가 없으면 전체로 본다. 같은 날 여러 줄이면 합침.
+            const gs = [['ONE', 1], ['TW', 2], ['THREE', 3]].filter(function(x) { return r[x[0] + '_GRADE_EVENT_YN'] === 'Y'; }).map(function(x) { return x[1]; });
+            const prev = grades[iso];
+            grades[iso] = prev === undefined ? gs : (!prev.length || !gs.length ? [] : prev.concat(gs.filter(function(x) { return prev.indexOf(x) < 0; })));
+            out[iso] = ev || kind;
+          }
         });
       }
-      abNeisHol = out;
+      abNeisHol = out; abNeisHolGrades = grades;
     } catch (e) { abNeisYear = null; /* 못 받으면 기본 휴일로 셈 */ }
   }
   // 엑셀 NETWORKDAYS와 같음: 시작~종료일 중 토·일·휴일을 뺀 날 수.
@@ -14216,29 +14230,57 @@
   }
   function abRenderHolidays() {
     const y = abSchoolYear(), from = y + '-03-01', to = (y + 1) + '-02-28';
-    const mine = abCfg().hol || {};
+    const c = abCfg(), mine = c.hol || {}, off = c.off || {}, g = +c.g || 0;
     const all = abHolidays();
+    const inYear = function(d) { return d >= from && d <= to && !abIsWeekend(d); };
+    const gradeNote = function(d) { const gs = abNeisHolGrades[d] || []; return abNeisHol[d] && gs.length && gs.length < 3 ? '(' + gs.join('·') + '학년만)' : ''; };
     // 토·일요일 휴일은 어차피 결석 일수에서 빠지므로 목록에도 안 보인다(엑셀 NETWORKDAYS와 같음).
-    const days = Object.keys(all).filter(function(d) { return d >= from && d <= to && !abIsWeekend(d); }).sort();
+    const days = Object.keys(all).filter(inYear).sort();
     const wd = ['일', '월', '화', '수', '목', '금', '토'];
     const srcOf = function(d) { return mine[d] ? '직접 더함' : abNeisHol[d] ? '학사일정' : '기본 공휴일'; };
     // 바로 다음 평일로 이어지고 이름·출처가 같으면 한 줄로 묶는다 — 여름·겨울방학이 날마다 한 줄씩 수십 줄이 되지 않게.
     const nextWeekday = function(d) { const t = new Date(d + 'T00:00:00'); do { t.setDate(t.getDate() + 1); } while (t.getDay() === 0 || t.getDay() === 6); return abIso(t); };
-    const groups = [];
-    days.forEach(function(d) {
-      const g = groups[groups.length - 1];
-      if (g && nextWeekday(g.days[g.days.length - 1]) === d && all[d] === g.name && srcOf(d) === g.src) g.days.push(d);
-      else groups.push({ name: all[d], src: srcOf(d), days: [d] });
-    });
+    const group = function(list, nameOf, srcFn) {
+      const groups = [];
+      list.forEach(function(d) {
+        const gr = groups[groups.length - 1];
+        if (gr && nextWeekday(gr.days[gr.days.length - 1]) === d && nameOf(d) === gr.name && srcFn(d) === gr.src) gr.days.push(d);
+        else groups.push({ name: nameOf(d), src: srcFn(d), days: [d] });
+      });
+      return groups;
+    };
     const lab = function(d) { return abShort(d) + '(' + wd[new Date(d + 'T00:00:00').getDay()] + ')'; };
+    const range = function(gr) { const a = gr.days[0], b = gr.days[gr.days.length - 1]; return lab(a) + (b !== a ? ' ~ ' + lab(b) : ''); };
     let h = '<table class="ab-table"><thead><tr><th>날짜</th><th>이름</th><th>평일 수</th><th>어디서</th><th></th></tr></thead><tbody>';
-    groups.forEach(function(g) {
-      const first = g.days[0], last = g.days[g.days.length - 1];
-      h += '<tr style="cursor:default;"><td style="white-space:nowrap;">' + lab(first) + (last !== first ? ' ~ ' + lab(last) : '') + '</td>' +
-        '<td class="ab-l">' + escapeHtmlAttr(g.name) + '</td><td>' + g.days.length + '일</td><td class="ab-muted">' + g.src + '</td>' +
-        '<td>' + (g.src === '직접 더함' ? '<button class="ab-icon-btn" onclick="abRemoveHoliday(\'' + g.days.join(',') + '\')">🗑</button>' : '') + '</td></tr>';
+    group(days, function(d) { return all[d] + gradeNote(d); }, srcOf).forEach(function(gr) {
+      const btn = gr.src === '직접 더함'
+        ? '<button class="ab-icon-btn" title="지우기" onclick="abRemoveHoliday(\'' + gr.days.join(',') + '\')">🗑</button>'
+        : '<button class="top-btn" style="padding:2px 8px; font-size:11.5px;" title="이 반은 이날 수업했어요 — 결석 일수에 셈" onclick="abSetHolidayOff(\'' + gr.days.join(',') + '\', true)">수업함</button>';
+      h += '<tr style="cursor:default;"><td style="white-space:nowrap;">' + range(gr) + '</td>' +
+        '<td class="ab-l">' + escapeHtmlAttr(gr.name) + '</td><td>' + gr.days.length + '일</td><td class="ab-muted">' + gr.src + '</td><td>' + btn + '</td></tr>';
     });
-    document.getElementById('ab-hol-list').innerHTML = h + '</tbody></table>';
+    h += '</tbody></table>';
+    // 수업함으로 뺀 날(되돌리기) · 다른 학년만 쉬는 날(이 반은 수업 — 알려만 줌)
+    const offDays = Object.keys(off).filter(function(d) { return inYear(d) && !mine[d] && (AB_BASE_HOLIDAYS[d] || abNeisHol[d]); }).sort();
+    const baseName = function(d) { return (abNeisHol[d] || AB_BASE_HOLIDAYS[d]) + gradeNote(d); };
+    if (offDays.length) {
+      h += '<div class="ab-muted" style="margin-top:10px; line-height:1.9;">이 반이 수업한 날(휴일에서 뺌): ' + group(offDays, baseName, function() { return ''; }).map(function(gr) {
+        return range(gr) + ' ' + escapeHtmlAttr(gr.name) + ' <button class="top-btn" style="padding:1px 7px; font-size:11px;" onclick="abSetHolidayOff(\'' + gr.days.join(',') + '\', false)">되돌리기</button>';
+      }).join(' · ') + '</div>';
+    }
+    if (g) {
+      const others = Object.keys(abNeisHol).filter(function(d) { const gs = abNeisHolGrades[d] || []; return inYear(d) && gs.length && gs.indexOf(g) < 0 && !mine[d]; }).sort();
+      if (others.length) h += '<div class="ab-muted" style="margin-top:6px; line-height:1.9;">다른 학년만 쉬는 날(' + g + '학년은 수업 — 결석 일수에 셈): ' +
+        group(others, baseName, function() { return ''; }).map(function(gr) { return range(gr) + ' ' + escapeHtmlAttr(gr.name); }).join(' · ') + '</div>';
+    }
+    document.getElementById('ab-hol-list').innerHTML = h;
+  }
+  // 학사일정·기본 공휴일인데 이 반은 수업한 날 → 결석 일수에 세기(on) / 되돌리기(off)
+  function abSetHolidayOff(list, on) {
+    const off = Object.assign({}, abCfg().off || {});
+    String(list).split(',').forEach(function(d) { if (on) off[d] = true; else delete off[d]; });
+    abSetCfg({ off: off });
+    abRenderAll();
   }
   function abAddHoliday() {
     const d = document.getElementById('ab-hol-date').value, n = document.getElementById('ab-hol-name').value.trim() || '휴일';

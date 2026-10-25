@@ -182,6 +182,9 @@ async function openDevice(browser, name, uid, opts = {}) {
       const row = [];
       const add = (ymd, ev, kind) => row.push({ AA_YMD: ymd, EVENT_NM: ev, SBTR_DD_SC_NM: kind });
       add('20260721', '여름방학식', '해당없음');
+      // 10/26 재량휴업일은 2학년만(나이스 학년 표시) — 1·3학년은 정상 수업(10/25 사용자) / 12/3 재량휴업일은 학년 표시 없음 = 전체
+      row.push({ AA_YMD: '20261026', EVENT_NM: '재량휴업일', SBTR_DD_SC_NM: '휴업일', ONE_GRADE_EVENT_YN: 'N', TW_GRADE_EVENT_YN: 'Y', THREE_GRADE_EVENT_YN: 'N' });
+      row.push({ AA_YMD: '20261203', EVENT_NM: '재량휴업일', SBTR_DD_SC_NM: '휴업일', ONE_GRADE_EVENT_YN: 'N', TW_GRADE_EVENT_YN: 'N', THREE_GRADE_EVENT_YN: 'N' });
       for (let d = new Date('2026-07-22T00:00:00'); d <= new Date('2026-08-16T00:00:00'); d.setDate(d.getDate() + 1)) {
         const ymd = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
         add(ymd, d.getDay() === 6 ? '토요휴업일' : '여름방학', '휴업일');
@@ -374,8 +377,21 @@ function check(label, cond, detail) {
   check('한 줄 🗑 → 3일 모두 지움', !Object.keys(JSON.parse(await ls(pc, 'ab-cfg')).hol || {}).some(d => d.startsWith('2026-12-2') || d === '2026-12-30'));
   await P.fill('#ab-hol-date', '2026-04-07'); await P.fill('#ab-hol-name', '재량휴업일'); await P.click('#ab-pane-hol button:has-text("휴일 더하기")'); await wait(150);
   check('직접 더한 휴일 → 체험학습 4/6~8은 2일, 계정 자료에 저장', await P.evaluate(() => abDays(abClassRecords().find(r => r.from === '2026-04-06'))) === 2 && JSON.parse(await ls(pc, 'ab-cfg')).hol['2026-04-07'] === '재량휴업일');
-  await P.click('#ab-hol-list button'); await wait(150);
+  await P.click('#ab-hol-list tr:has-text("4/7") button'); await wait(150);
   check('지우면 다시 3일', await P.evaluate(() => abDays(abClassRecords().find(r => r.from === '2026-04-06'))) === 3);
+
+  // 한 학년만 쉬는 날·수업함(10/25 사용자: 10/26은 2학년만 재량휴업일)
+  check('3학년 반: 2학년만 쉬는 10/26은 휴일 아님 → 그날 결석 1일', await P.evaluate(() => abCountDays('2026-10-26', '2026-10-26')) === 1);
+  const hl3 = await P.innerText('#ab-hol-list');
+  check('목록엔 안 나오고 아래에 "다른 학년만 쉬는 날(3학년은 수업) 10/26 재량휴업일(2학년만)"', !/10\/26\(월\)\s*\|/.test(hl3) && /다른 학년만 쉬는 날\(3학년은 수업[^)]*\): 10\/26\(월\) 재량휴업일\(2학년만\)/.test(hl3), hl3);
+  check('2학년 반이면 10/26은 휴일 → 0일', await P.evaluate(() => { const g = abCfg().g; abSetCfg({ g: '2' }); const n = abCountDays('2026-10-26', '2026-10-26'); abSetCfg({ g: g }); return n; }) === 0);
+  check('학년 표시가 없는 학사일정 휴일(12/3)은 모든 학년에 휴일', await P.evaluate(() => abCountDays('2026-12-03', '2026-12-03')) === 0);
+  await P.evaluate(() => abRenderHolidays());
+  await P.click('#ab-hol-list tr:has-text("12/3") button:has-text("수업함")'); await wait(150);
+  check('학사일정 휴일도 "수업함"으로 뺄 수 있음 → 그날 결석 1일, 계정 자료에 저장', await P.evaluate(() => abCountDays('2026-12-03', '2026-12-03')) === 1 && JSON.parse(await ls(pc, 'ab-cfg')).off['2026-12-03'] === true);
+  check('뺀 날은 "이 반이 수업한 날"에 되돌리기와 함께', /이 반이 수업한 날\(휴일에서 뺌\): 12\/3\(목\) 재량휴업일/.test(await P.innerText('#ab-hol-list')));
+  await P.click('#ab-hol-list button:has-text("되돌리기")'); await wait(150);
+  check('되돌리면 다시 휴일', await P.evaluate(() => abCountDays('2026-12-03', '2026-12-03')) === 0 && !JSON.parse(await ls(pc, 'ab-cfg')).off['2026-12-03']);
 
   // 저장: 한 건 = 키 하나, 서버엔 내 것으로만
   await wait(1500);
