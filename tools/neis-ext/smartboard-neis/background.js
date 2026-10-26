@@ -143,6 +143,8 @@ async function keepLogin(force) {
         if (!r) { c.noReply = true; continue; }
         if (r.left != null && (c.left == null || r.left < c.left)) { c.left = r.left; c.found = r.found; }
         if (r.found != null && c.found == null) c.found = r.found;
+        if (r.dialog) c.dialog = true;
+        if (r.hidden) c.hidden = true;
         if (r.pressed) { c.pressed = true; o.lastKeep = { at: Date.now(), pressed: true, left: r.left, who: who }; }
         else if (r.noButton) { c.noButton = true; o.lastKeep = { at: Date.now(), pressed: false, left: r.left, who: who }; }
       } catch (e) { c.noReply = true; }
@@ -151,7 +153,14 @@ async function keepLogin(force) {
   };
   const check = { at: Date.now(), neis: await ask(NEIS_MAIN, '나이스', 'neis-auto.js', false), portal: await ask('https://*.eduptl.kr/*', '업무포털', 'portal-keep.js', true) };
   // 팝업에 "마지막 확인"(안 눌릴 때 이유를 보려고) — 그 두 칸만 저장(그사이 들어온 보고서 등을 덮지 않게)
-  await chrome.storage.local.set({ keepCheck: check, lastKeep: o.lastKeep });
+  // 1분마다 확인한 결과를 몇 시간치 남긴다(10/26: 화면보호기 동안 로그아웃 — PC가 잠들었는지(기록이 빔), 탭이 답을 못 했는지, 시계가 늦었는지 보려고).
+  // 한 줄 = "시:분 나이스 남은분(표시) 업무포털 남은분(표시)" — 표시: 누름 / 창(연장 창 보임) / 답없음 / 잠듦 / 단추없음 / 숨음(화면이 안 보이는 상태)
+  const fl = function (c) { return c ? [c.tabs ? '' : '탭없음', c.pressed ? '누름' : '', c.dialog ? '창' : '', c.noReply ? '답없음' : '', c.asleep ? '잠듦' : '', c.noButton ? '단추없음' : '', c.hidden ? '숨음' : ''].filter(Boolean).join(',') : ''; };
+  const mn = function (c) { return c && c.left != null ? Math.floor(c.left / 60) + '분' : '-'; };
+  const tm = new Date(check.at), line = String(tm.getMonth() + 1) + '/' + tm.getDate() + ' ' + String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0') +
+    ' 나이스 ' + mn(check.neis) + (fl(check.neis) ? '(' + fl(check.neis) + ')' : '') + ' · 업무포털 ' + mn(check.portal) + (fl(check.portal) ? '(' + fl(check.portal) + ')' : '');
+  const keepLog = ((await chrome.storage.local.get({ keepLog: [] })).keepLog || []).concat([line]).slice(-480); // 8시간치
+  await chrome.storage.local.set({ keepCheck: check, lastKeep: o.lastKeep, keepLog: keepLog });
 }
 chrome.tabs.onRemoved.addListener(function (id) { locked(async function () { const o = await load(); if (o.helper && o.helper.id === id) { o.helper = null; await save(o); } }); });
 

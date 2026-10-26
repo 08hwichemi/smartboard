@@ -187,6 +187,8 @@ function reportXml(url) {
   check('나이스·업무포털 탭은 이제 크롬이 잠재우지 못함', after.length >= 2 && after.every((t) => t.ad === false), after);
   check('업무포털도 그대로 확인(남은 30분)', kc && kc.portal && kc.portal.left === 1800 && !kc.portal.noReply, kc && kc.portal);
   check('나이스는 그대로 확인(답함)', kc && kc.neis && kc.neis.tabs >= 1 && !kc.neis.noReply, kc && kc.neis);
+  const klog = await pop3.evaluate(() => new Promise((res) => chrome.storage.local.get({ keepLog: [] }, (st) => res(st.keepLog))));
+  check('1분 확인 기록이 한 줄씩 남음("시:분 나이스 ○분 · 업무포털 ○분")', klog.length >= 1 && /나이스 \d+분.* · 업무포털 30분/.test(klog[klog.length - 1]), klog.slice(-2));
   await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'setAuto', auto: { keepLogin: false } }, res)));
   check('팝업에서 끄면 꺼진 것으로 저장', (await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'status' }, res)))).auto.keepLogin === false);
 

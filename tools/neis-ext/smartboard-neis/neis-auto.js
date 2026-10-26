@@ -197,11 +197,12 @@
   // 연장 창이 떠 있으면 남은 시간을 못 읽어도 바로 누르고, 아니면 남은 시간이 10분 이하일 때만 연장 단추를 찾는다
   function keepAlive() {
     const dlg = extendDialogShown(), r = remainSec(), left = r.sec;
-    if (!dlg && (left == null || left > 600)) return { left: left, found: r.count, pressed: false };
+    const hidden = document.hidden; // 기록용: 화면이 안 보이는 상태(최소화·가려짐·화면 잠김)였는지
+    if (!dlg && (left == null || left > 600)) return { left: left, found: r.count, pressed: false, hidden: hidden };
     const btn = extendBtn();
-    if (!btn) return { left: left, found: r.count, pressed: false, noButton: true };
+    if (!btn) return { left: left, found: r.count, pressed: false, noButton: true, dialog: dlg, hidden: hidden };
     press(btn);
-    return { left: left, found: r.count, pressed: true, dialog: dlg };
+    return { left: left, found: r.count, pressed: true, dialog: dlg, hidden: hidden };
   }
 
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {

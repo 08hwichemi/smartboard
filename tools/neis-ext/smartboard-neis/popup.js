@@ -44,8 +44,10 @@ document.getElementById('stop').onclick = function () { chrome.runtime.sendMessa
 document.getElementById('reset').onclick = function () { if (confirm('오늘 자동 조회 기록과 기다리는 보고서를 지울까요?\n(나이스에 다시 로그인하면 처음 켠 것처럼 자동 조회해요)')) chrome.runtime.sendMessage({ t: 'resetToday' }, show); };
 document.getElementById('now').onclick = function () { chrome.runtime.sendMessage({ t: 'runNow' }, function () { setTimeout(show, 500); }); };
 document.getElementById('log').onclick = function () {
-  const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), lastRun: last && last.lastRun, auto: last && last.auto, history: last && last.history }, null, 1)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '나이스자동조회_' + ymd(new Date()) + '.json'; a.click();
+  chrome.storage.local.get({ keepLog: [] }, function (st) {
+    const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), lastRun: last && last.lastRun, auto: last && last.auto, history: last && last.history, keepCheck: last && last.keepCheck, lastKeep: last && last.lastKeep, keepLog: st.keepLog }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '나이스자동조회_' + ymd(new Date()) + '.json'; a.click();
+  });
 };
 document.getElementById('reports').onclick = function () {
   chrome.runtime.sendMessage({ t: 'lastReports' }, function (r) {
