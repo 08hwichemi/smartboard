@@ -170,6 +170,12 @@ function reportXml(url) {
   check('"○○분 ○○초"가 여러 개면 가장 적게 남은 것(42분 47초)과 개수 2', k && k.left === 42 * 60 + 47 && k.found === 2, k);
   await neis.evaluate(() => document.getElementById('other').remove());
 
+  // 나이스 화면에 스크립트가 다시 붙으면(확장이 "답없음"일 때 다시 붙임) 가장 새 판이 맡아 답함 — 예전 판이 막고 있지 않음
+  await pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.neis.go.kr/jsp/main.jsp*' }, (ts) => chrome.scripting.executeScript({ target: { tabId: ts[0].id }, files: ['neis-auto.js'] }, () => res()))));
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '33분 00초'; });
+  k = await keep();
+  check('다시 붙인 새 판이 답함(남은 33분)', k && k.left === 33 * 60, k);
+
   console.log('== 6. 업무포털 자동 연장: "○○:○○후에 로그아웃됩니다" 옆 ↻');
   const portal = await ctx.newPage(); await portal.goto('https://ice.eduptl.kr/bpm_man_mn00_001.do'); await wait(800);
   const pkeep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.eduptl.kr/*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));

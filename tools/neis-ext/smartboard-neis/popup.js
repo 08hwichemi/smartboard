@@ -20,7 +20,7 @@ function show() {
         if (!c.tabs) return name + ' 탭 없음';
         if (c.woke) return name + ' 탭이 크롬 메모리 절약으로 잠들어 있어 다시 불러와 깨움(시간 새로 시작)';
         if (c.asleep) return name + ' 탭이 크롬 메모리 절약으로 잠들어 있음 — 그 탭을 한 번 눌러 주세요(이제부터는 안 잠들게 해 둠)';
-        if (c.noReply && c.left == null) return name + ' 화면이 답이 없음(새로 고침해 주세요)';
+        if (c.noReply && c.left == null) return name + ' 화면이 답이 없음' + (c.why ? '(' + c.why + ')' : '') + ' — 새로 고침해 주세요';
         if (c.pressed) return name + ' 연장 누름';
         if (c.noButton) return name + ' 연장할 때인데 단추를 못 찾음';
         return c.left != null ? name + ' 남은 시간 ' + mm(c.left) + (more && c.found > 1 ? '(시간 글자 ' + c.found + '개 중 가장 적은 것)' : '') : name + ' 남은 시간을 못 읽음' + (more ? '(연장 창이 뜨면 바로 눌러요)' : '');

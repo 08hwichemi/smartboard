@@ -135,12 +135,19 @@ async function keepLogin(force) {
         continue;
       }
       try {
-        let r = null;
-        try { r = await within(chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }), 3000); } catch (e) {}
+        // 답이 없으면 왜 없는지 남긴다: 연결없음(화면에 스크립트가 없음)·무응답(있지만 답 안 함)·시간초과(3초)·화면오류 / 다시 붙이기 실패 사유
+        let r = null, why = '';
+        const askOnce = async function () {
+          try { const x = await within(chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }), 3000); if (x === null) { why = '시간초과'; return null; } if (!x) { why = '무응답'; return null; } if (x.err) { why = '화면오류:' + x.err; return null; } return x; }
+          catch (e) { why = /Receiving end|establish connection/i.test(String(e && e.message)) ? '연결없음' : '오류:' + String(e && e.message || e).slice(0, 60); return null; }
+        };
+        r = await askOnce();
         if (!r) {
-          try { await within(chrome.scripting.executeScript({ target: { tabId: t.id }, files: [file] }), 3000); r = await within(chrome.tabs.sendMessage(t.id, { t: 'keepAlive' }, { frameId: 0 }), 3000); } catch (e) {}
+          const first = why;
+          try { const inj = await within(chrome.scripting.executeScript({ target: { tabId: t.id }, files: [file] }), 3000); if (inj === null) why = first + '→붙이기시간초과'; else { r = await askOnce(); if (!r) why = first + '→다시붙여도 ' + why; } }
+          catch (e) { why = first + '→붙이기실패:' + String(e && e.message || e).slice(0, 60); }
         }
-        if (!r) { c.noReply = true; continue; }
+        if (!r) { c.noReply = true; c.why = why; continue; }
         if (r.left != null && (c.left == null || r.left < c.left)) { c.left = r.left; c.found = r.found; }
         if (r.found != null && c.found == null) c.found = r.found;
         if (r.dialog) c.dialog = true;
@@ -155,7 +162,7 @@ async function keepLogin(force) {
   // 팝업에 "마지막 확인"(안 눌릴 때 이유를 보려고) — 그 두 칸만 저장(그사이 들어온 보고서 등을 덮지 않게)
   // 1분마다 확인한 결과를 몇 시간치 남긴다(10/26: 화면보호기 동안 로그아웃 — PC가 잠들었는지(기록이 빔), 탭이 답을 못 했는지, 시계가 늦었는지 보려고).
   // 한 줄 = "시:분 나이스 남은분(표시) 업무포털 남은분(표시)" — 표시: 누름 / 창(연장 창 보임) / 답없음 / 잠듦 / 단추없음 / 숨음(화면이 안 보이는 상태)
-  const fl = function (c) { return c ? [c.tabs ? '' : '탭없음', c.pressed ? '누름' : '', c.dialog ? '창' : '', c.noReply ? '답없음' : '', c.asleep ? '잠듦' : '', c.noButton ? '단추없음' : '', c.hidden ? '숨음' : ''].filter(Boolean).join(',') : ''; };
+  const fl = function (c) { return c ? [c.tabs ? '' : '탭없음', c.pressed ? '누름' : '', c.dialog ? '창' : '', c.noReply ? '답없음' + (c.why ? '(' + c.why + ')' : '') : '', c.asleep ? '잠듦' : '', c.noButton ? '단추없음' : '', c.hidden ? '숨음' : ''].filter(Boolean).join(',') : ''; };
   const mn = function (c) { return c && c.left != null ? Math.floor(c.left / 60) + '분' : '-'; };
   const tm = new Date(check.at), line = String(tm.getMonth() + 1) + '/' + tm.getDate() + ' ' + String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0') +
     ' 나이스 ' + mn(check.neis) + (fl(check.neis) ? '(' + fl(check.neis) + ')' : '') + ' · 업무포털 ' + mn(check.portal) + (fl(check.portal) ? '(' + fl(check.portal) + ')' : '');

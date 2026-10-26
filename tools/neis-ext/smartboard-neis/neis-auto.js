@@ -7,8 +7,11 @@
   if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname)) return;
   // 확장을 업데이트하면 예전 판은 연결이 끊긴 채 남는다 — 살아 있는 판이 이미 있을 때만 건너뛴다
   try { if (!chrome.runtime || !chrome.runtime.id) return; } catch (e) { return; } // 확장을 새로 고치는 순간의 끊긴 판은 조용히 빠짐
-  if (window.__sbNeisAuto && window.__sbNeisAuto()) return;
-  window.__sbNeisAuto = function () { try { return !!chrome.runtime.id; } catch (e) { return false; } };
+  // 붙을 때마다 세대 번호를 올리고 가장 새 판만 일한다(10/26: 예전 판이 "살아 있음" 표시만 남기고 답을 못 해, 다시 붙여도
+  // 새 판이 그냥 빠져 1시간 넘게 "답없음"이었음 → 이제 background가 다시 붙이면 새 판이 맡는다)
+  const myGen = (window.__sbNeisGen || 0) + 1;
+  window.__sbNeisGen = myGen;
+  const current = function () { return window.__sbNeisGen === myGen; };
   // 기다리기는 확장 프로그램 본체(background)가 재고 끝나면 깨워 준다 — 나이스 창이 최소화되거나 다른 창에 가려져 5분 넘게 안 보이면
   // 크롬이 그 화면의 setTimeout을 1분에 한 번꼴로 늦춰 아침 자동 조회가 멈춘 것처럼 됨(10/23). 메시지 답은 늦추지 않는다.
   const sleep = (ms) => new Promise((r) => {
@@ -206,7 +209,8 @@
   }
 
   chrome.runtime.onMessage.addListener(function (m, sender, reply) {
-    if (m && m.t === 'keepAlive') { reply(keepAlive()); return; }
+    if (!current()) return; // 더 새 판이 붙었으면 그쪽이 답함
+    if (m && m.t === 'keepAlive') { try { reply(keepAlive()); } catch (e) { reply({ err: String(e && e.message || e).slice(0, 80) }); } return; }
     if (m && m.t === 'autoStop') { cancelled = true; reply({ ok: true }); return; }
     if (!m || m.t !== 'autoQuery') return;
     reply({ started: true });
