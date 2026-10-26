@@ -1,10 +1,10 @@
-// 나이스 화면(맨 위 창, /jsp/main.jsp): ① 로그인돼 메뉴가 보이면 background에 "준비됨"을 알리고
+// 나이스 화면(맨 위 창 — 주소 /jsp/main.jsp 또는 다시 로그인한 뒤 첫 주소): ① 로그인돼 메뉴가 보이면 background에 "준비됨"을 알리고
 // ② background가 "자동 조회"를 보내면 사람이 누르듯 화면 단추를 눌러
 //    교과담임(큰 메뉴판) → 시간표관리 → 왼쪽 메뉴 전체시간표조회 → 변경수업조회 → 일자(이번 주 월~금) → 학년 1·2·3 차례로 조회한다.
 // ③ 로그인 남은 시간이 10분 이하면 "연장"을 누른다(아래).
 //    보고서는 neis-hook.js가 잡아 background로 보낸다. 단계마다 기록을 남기고, 못 찾은 단계는 그 근처 화면 정보를 함께 보낸다.
 (function () {
-  if (window.top !== window || !/\/jsp\/main\.jsp/.test(location.pathname)) return;
+  if (window.top !== window || /^(open|www)\./.test(location.hostname)) return; // 나이스 맨 위 창(주소가 /jsp/main.jsp든 첫 주소든)
   // 확장을 업데이트하면 예전 판은 연결이 끊긴 채 남는다 — 살아 있는 판이 이미 있을 때만 건너뛴다
   try { if (!chrome.runtime || !chrome.runtime.id) return; } catch (e) { return; } // 확장을 새로 고치는 순간의 끊긴 판은 조용히 빠짐
   // 붙을 때마다 세대 번호를 올리고 가장 새 판만 일한다(10/26: 예전 판이 "살아 있음" 표시만 남기고 답을 못 해, 다시 붙여도

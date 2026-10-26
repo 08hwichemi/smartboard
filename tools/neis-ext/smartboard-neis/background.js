@@ -10,7 +10,14 @@
 //    자동 조회 중에 받은 것은 모았다가 끝나면 한꺼번에(auto 표시 — 스마트보드가 확인 없이 바로 넣음).
 // 스마트보드 = 실제 주소 + main에 올리기 전 시험하는 미리 보기 주소(raw.githack.com의 브랜치)
 const SB_URL = ['https://08hwichemi.github.io/smartboard/*', 'https://raw.githack.com/08hwichemi/smartboard/*'];
-const NEIS_MAIN = 'https://*.neis.go.kr/jsp/main.jsp*';
+// 나이스 탭: 주소가 /jsp/main.jsp일 때도, 다시 로그인한 뒤 첫 주소(https://ice.neis.go.kr/)일 때도 있다(10/26 — main.jsp만 찾다가
+// "탭없음"으로 1시간 넘게 연장을 못 함). 나이스 교육정보 개방 포털(open.neis.go.kr) 같은 다른 곳은 뺀다.
+const NEIS_MAIN = 'https://*.neis.go.kr/*';
+const NEIS_OTHER = /^https:\/\/(open|www)\.neis\.go\.kr\//;
+async function neisTabs() {
+  const main = function (t) { return /^https:\/\/[^/]+\.neis\.go\.kr\/(jsp\/main\.jsp|$|\?|#)/.test(t.url || '') ? 0 : 1; }; // 나이스 본 화면이 앞(따로 뜬 창은 뒤)
+  return (await chrome.tabs.query({ url: NEIS_MAIN })).filter(function (t) { return !NEIS_OTHER.test(t.url || t.pendingUrl || ''); }).sort(function (a, b) { return main(a) - main(b); });
+}
 const SB_HELPER_URL = 'https://08hwichemi.github.io/smartboard/?neis=1';
 const HELPER_WAIT_MS = 3 * 60 * 1000;
 const KEEP_MS = 24 * 60 * 60 * 1000;
@@ -58,7 +65,7 @@ async function push(o) {
 // 스마트보드 탭이 없을 때: 나이스 탭이 있는 창에 스마트보드를 뒤에서(보이지 않게) 연다 — 열리면 sb-relay가 pull로 받아 간다
 async function openHelper(o) {
   if (o.helper) { try { await chrome.tabs.get(o.helper.id); return; } catch (e) { o.helper = null; } }
-  const neis = (await chrome.tabs.query({ url: NEIS_MAIN }))[0];
+  const neis = (await neisTabs())[0];
   try {
     const t = await chrome.tabs.create({ url: SB_HELPER_URL, active: false, windowId: neis ? neis.windowId : undefined });
     o.helper = { id: t.id, at: Date.now(), shown: false };
@@ -89,7 +96,7 @@ async function maybeRun(reason) {
     if (wd < 1 || wd > 5 || now.getHours() * 60 + now.getMinutes() < (+hm[0]) * 60 + (+hm[1])) return;
     if (reason === 'tick' && Date.now() - o.lastTryAt < RETRY_MS) return; // 실패한 뒤엔 30분 쉬었다가(로그인하면 바로)
   } else if (o.running) return;
-  const tabs = await chrome.tabs.query({ url: NEIS_MAIN });
+  const tabs = await neisTabs();
   if (!tabs.length) return; // 나이스가 안 열려 있음 — 로그인하면 neis-ready로 다시 온다
   const run = Date.now();
   o.running = { run: run, at: run, reason: reason }; o.lastTryAt = run; o.lastReports = [];
@@ -126,7 +133,7 @@ async function keepLogin(force) {
   // 이 탭들은 잠재우지 못하게 하고, 이미 잠든 업무포털은 첫 화면이라 다시 불러와 깨운다(다시 불러오면 업무포털 시간도 새로 시작).
   // 나이스는 작업하던 화면이 날아갈 수 있어 다시 불러오지 않고 "잠들어 있음"으로만 알린다. 답이 없으면 화면 쪽 스크립트를 다시 붙여 한 번 더 묻는다.
   const ask = async function (url, who, file, wake) {
-    const tabs = await chrome.tabs.query({ url: url }), c = { tabs: tabs.length };
+    const tabs = url === NEIS_MAIN ? await neisTabs() : await chrome.tabs.query({ url: url }), c = { tabs: tabs.length };
     for (const t of tabs) {
       try { if (t.autoDiscardable !== false) await chrome.tabs.update(t.id, { autoDiscardable: false }); } catch (e) {}
       if (t.discarded) {
@@ -190,7 +197,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       if (o.running && o.running.run === m.run) { o.running.step = m.s; o.running.at = Date.now(); await save(o); } // 단계가 진행되는 동안은 멈춘 것으로 보지 않음
       reply({ ok: true });
     } else if (m.t === 'autoStop') {
-      const tabs = await chrome.tabs.query({ url: NEIS_MAIN });
+      const tabs = await neisTabs();
       for (const t of tabs) { try { await chrome.tabs.sendMessage(t.id, { t: 'autoStop' }, { frameId: 0 }); } catch (e) {} }
       if (o.running) { o.lastRun = { at: Date.now(), date: ymd(new Date()), ok: false, grades: [], steps: [{ s: '✗ 멈춤(팝업에서 멈추기)' + (o.running.step ? ' — 마지막 단계: ' + o.running.step : '') }] }; o.running = null; await save(o); await badge(o); }
       reply({ ok: true });
@@ -215,7 +222,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
       await save(o); await badge(o); reply({ ok: true });
       if (o.helper && !o.pending.length) setTimeout(function () { locked(async function () { await checkHelper(await load()); }); }, 1500); // 나이스 받는 창은 다 넣었으면 닫음
     } else if (m.t === 'status') {
-      reply({ pending: o.pending.map(function (x) { return { at: x.at, what: x.what, auto: x.auto }; }), history: o.history.slice(-5), tabs: (await sbTabs()).length, helper: o.helper, lastKeep: o.lastKeep, keepCheck: o.keepCheck, neisTabs: (await chrome.tabs.query({ url: NEIS_MAIN })).length, auto: o.auto, lastAutoDate: o.lastAutoDate, running: o.running, lastRun: o.lastRun });
+      reply({ pending: o.pending.map(function (x) { return { at: x.at, what: x.what, auto: x.auto }; }), history: o.history.slice(-5), tabs: (await sbTabs()).length, helper: o.helper, lastKeep: o.lastKeep, keepCheck: o.keepCheck, neisTabs: (await neisTabs()).length, auto: o.auto, lastAutoDate: o.lastAutoDate, running: o.running, lastRun: o.lastRun });
     } else if (m.t === 'setAuto') {
       o.auto = Object.assign({}, o.auto, m.auto); await save(o); reply({ ok: true });
     } else if (m.t === 'runNow') {

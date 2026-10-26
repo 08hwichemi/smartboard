@@ -72,7 +72,7 @@ function reportXml(url) {
     const u = r.request().url();
     if (u.startsWith('chrome-extension://')) return r.continue();
     if (u.startsWith('https://ice.eduptl.kr/')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: '<html><body><div class="top"><span id="pt">59:58</span>후에 로그아웃됩니다. <button id="pb" onclick="window.ref=(window.ref||0)+1;document.getElementById(\'pt\').textContent=\'59:59\'"><img alt="" src="data:,"></button> <input placeholder="사용자 이름"> <a id="lo" href="#" onclick="window.out=1">Logout</a></div></body></html>' });
-    if (u.startsWith('https://ice.neis.go.kr/jsp/main.jsp')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: neisMain.replace('<script>', '<script>window.breakList=' + breakGradeList + ';') });
+    if (u.startsWith('https://ice.neis.go.kr/jsp/main.jsp') || u === 'https://ice.neis.go.kr/') return r.fulfill({ contentType: 'text/html; charset=utf-8', body: neisMain.replace('<script>', '<script>window.breakList=' + breakGradeList + ';') });
     if (u.includes('/thirdparty/crownix/crownixhtml.jsp')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: viewer });
     if (u.includes('/report/service')) { reportsServed.push(new URL(u).search); return r.fulfill({ contentType: 'text/xml;charset=utf-8', body: reportXml(u) }); }
     if (u.startsWith('https://08hwichemi.github.io/smartboard/')) return r.fulfill({ contentType: 'text/html; charset=utf-8', body: '<html><body>스마트보드<script>window.got=[];window.st=[];window.addEventListener("message",function(e){var d=e.data||{};if(d.__sbNeis==="reports")window.got.push(d.reports.map(function(r){return {id:r.id,what:r.what,auto:r.auto};}));if(d.__sbNeis==="status")window.st.push(d.msg);});</script></body></html>' });
@@ -144,7 +144,7 @@ function reportXml(url) {
   check('팝업에 마지막 실패와 이유(오늘 아침 것은 끝났다고)', /❌ 마지막 자동 조회 실패/.test(popText) && /2학년을 고르지 못함/.test(popText) && /오늘 아침 조회는 끝났어요/.test(popText), popText);
 
   console.log('== 5. 나이스 로그인 자동 연장: 남은 시간이 10분 이하이고 "연장" 단추가 보일 때만 누름');
-  const keep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.neis.go.kr/jsp/main.jsp*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));
+  const keep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.neis.go.kr/*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));
   let k = await keep();
   check('남은 시간이 많으면 안 누름(59분 41초)', k && k.left === 59 * 60 + 41 && !k.pressed && !(await neis.evaluate(() => window.extended)), k);
   await neis.evaluate(() => { document.getElementById('remain').textContent = '9분 30초'; document.getElementById('extdlg').style.display = 'block'; });
@@ -176,6 +176,14 @@ function reportXml(url) {
   k = await keep();
   check('다시 붙인 새 판이 답함(남은 33분)', k && k.left === 33 * 60, k);
 
+  // 다시 로그인하면 나이스가 첫 주소(https://ice.neis.go.kr/)로 열림 — 그래도 나이스 탭으로 찾아 연장(10/26: main.jsp만 찾아 "탭없음")
+  await neis.goto('https://ice.neis.go.kr/'); await wait(1500);
+  await neis.evaluate(() => { document.getElementById('remain').textContent = '8분 00초'; document.getElementById('extdlg').style.display = 'block'; });
+  const pop4 = await ctx.newPage(); await pop4.goto('chrome-extension://' + id + '/popup.html'); await wait(300);
+  const kc4 = await pop4.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'keepNow' }, res)));
+  check('나이스 주소가 첫 주소여도 나이스 탭으로 찾아 [연장]을 누름', kc4 && kc4.neis && kc4.neis.tabs === 1 && kc4.neis.pressed, kc4 && kc4.neis);
+  await pop4.close();
+
   console.log('== 6. 업무포털 자동 연장: "○○:○○후에 로그아웃됩니다" 옆 ↻');
   const portal = await ctx.newPage(); await portal.goto('https://ice.eduptl.kr/bpm_man_mn00_001.do'); await wait(800);
   const pkeep = () => pop.evaluate(() => new Promise((res) => chrome.tabs.query({ url: 'https://*.eduptl.kr/*' }, (ts) => chrome.tabs.sendMessage(ts[0].id, { t: 'keepAlive' }, { frameId: 0 }, res))));
@@ -189,7 +197,7 @@ function reportXml(url) {
   await portal.evaluate(() => { document.getElementById('pt').textContent = '30:00'; });
   const pop3 = await ctx.newPage(); await pop3.goto('chrome-extension://' + id + '/popup.html'); await wait(300);
   const kc = await pop3.evaluate(() => new Promise((res) => chrome.runtime.sendMessage({ t: 'keepNow' }, res)));
-  const after = await pop3.evaluate(() => new Promise((res) => chrome.tabs.query({}, (ts) => res(ts.filter((t) => /eduptl|neis\.go\.kr\/jsp/.test(t.url || t.pendingUrl || '')).map((t) => ({ u: (t.url || t.pendingUrl).slice(8, 30), ad: t.autoDiscardable }))))));
+  const after = await pop3.evaluate(() => new Promise((res) => chrome.tabs.query({}, (ts) => res(ts.filter((t) => /eduptl|ice\.neis\.go\.kr/.test(t.url || t.pendingUrl || '')).map((t) => ({ u: (t.url || t.pendingUrl).slice(8, 30), ad: t.autoDiscardable }))))));
   check('나이스·업무포털 탭은 이제 크롬이 잠재우지 못함', after.length >= 2 && after.every((t) => t.ad === false), after);
   check('업무포털도 그대로 확인(남은 30분)', kc && kc.portal && kc.portal.left === 1800 && !kc.portal.noReply, kc && kc.portal);
   check('나이스는 그대로 확인(답함)', kc && kc.neis && kc.neis.tabs >= 1 && !kc.neis.noReply, kc && kc.neis);
