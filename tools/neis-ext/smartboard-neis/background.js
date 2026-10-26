@@ -1,7 +1,7 @@
 // 확장 프로그램의 두뇌.
 // ① 자동 조회: 평일 8시 40분(설정)이 지났고 오늘 아직 안 했으면, 로그인된 나이스 탭에 "자동 조회"를 시킨다.
 //    1분마다 알람으로 보고, 나이스에 로그인하는 순간(neis-auto.js의 neis-ready)에도 본다 — 8시 40분에 로그아웃돼 있었으면
-//    로그인하자마자 한다. 실패하면 30분 뒤 알람이나 다음 로그인 때 다시.
+//    로그인하자마자 한다. 실패하면 5분 뒤 다시(그날 세 번 실패한 뒤로는 30분마다) 알람이나 다음 로그인 때 다시.
 //    조회 기간은 이번 주 월~금(스마트보드가 이번 주만 보여 줌). 오늘 이미 했어도 3시간 넘게 지나 나이스에 다시 로그인하면
 //    한 번 더 한다(수업계가 낮에 나이스에서 바꾼 것 — 나이스는 한 시간쯤 안 쓰면 로그아웃되니 시각을 정하지 않고 로그인 때).
 // ② 보고서 보관·전달: 받은 "전체시간표 (변경수업)" 보고서를 스마트보드가 확인(ack)할 때까지(최대 하루) 보관하고 열린 스마트보드 탭으로 넘긴다.
@@ -22,6 +22,7 @@ const SB_HELPER_URL = 'https://08hwichemi.github.io/smartboard/?neis=1';
 const HELPER_WAIT_MS = 3 * 60 * 1000;
 const KEEP_MS = 24 * 60 * 60 * 1000;
 const RETRY_MS = 30 * 60 * 1000;
+const RETRY_SOON_MS = 5 * 60 * 1000, RETRY_SOON_N = 4; // 실패하면 세 번까지는 5분 뒤 바로 다시(10/27 — 나이스가 숨은 채라 메뉴가 안 열려 실패, 30분은 너무 김)
 const RUN_MAX_MS = 3 * 60 * 1000; // 이만큼 단계 소식이 없으면 멈춘 것으로 본다
 const DEFAULT_AUTO = { on: true, time: '08:40', keepLogin: true };
 const KEEP_FROM = 7 * 60 + 30, KEEP_TO = 18 * 60; // 나이스 로그인 자동 연장은 평일 이 시각 사이만(퇴근 뒤엔 원래대로 로그아웃)
@@ -43,12 +44,12 @@ function locked(fn) { const p = chain.then(fn, fn); chain = p.catch(function () 
 // 탭이 답을 안 하면(화면보호기 뒤 아직 덜 깨어남 등) 몇 초만 기다리고 넘어간다 — 그동안 다른 일이 줄에서 오래 서 있지 않게
 function within(p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
 async function load() {
-  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, running: null, lastRun: null, lastReports: [], helper: null, lastKeep: null, keepCheck: null });
+  const o = await chrome.storage.local.get({ pending: [], history: [], auto: DEFAULT_AUTO, lastAutoDate: '', lastAutoAt: 0, lastTryAt: 0, tries: 0, triesDate: '', running: null, lastRun: null, lastReports: [], helper: null, lastKeep: null, keepCheck: null });
   const now = Date.now(); o.pending = o.pending.filter(function (r) { return now - r.at < KEEP_MS; });
   if (o.running && now - o.running.at > RUN_MAX_MS) o.running = null; // 멈춘 채 남은 표시는 버린다
   return o;
 }
-async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastAutoAt: o.lastAutoAt, lastTryAt: o.lastTryAt, helper: o.helper, lastKeep: o.lastKeep, keepCheck: o.keepCheck, running: o.running, lastRun: o.lastRun, lastReports: o.lastReports.slice(-6) }); }
+async function save(o) { await chrome.storage.local.set({ pending: o.pending, history: o.history.slice(-20), auto: o.auto, lastAutoDate: o.lastAutoDate, lastAutoAt: o.lastAutoAt, lastTryAt: o.lastTryAt, tries: o.tries, triesDate: o.triesDate, helper: o.helper, lastKeep: o.lastKeep, keepCheck: o.keepCheck, running: o.running, lastRun: o.lastRun, lastReports: o.lastReports.slice(-6) }); }
 async function badge(o) {
   const bad = o.lastRun && !o.lastRun.ok && o.lastRun.date === ymd(new Date()) && o.lastAutoDate !== o.lastRun.date;
   await chrome.action.setBadgeText({ text: bad ? '!' : (o.pending.length ? String(o.pending.length) : '') });
@@ -94,12 +95,13 @@ async function maybeRun(reason) {
     if (o.lastAutoDate === ymd(now) && !(reason === 'login' && Date.now() - o.lastAutoAt >= AGAIN_MS)) return; // 오늘 했음(3시간 지나 다시 로그인하면 한 번 더)
     const wd = now.getDay(), hm = o.auto.time.split(':');
     if (wd < 1 || wd > 5 || now.getHours() * 60 + now.getMinutes() < (+hm[0]) * 60 + (+hm[1])) return;
-    if (reason === 'tick' && Date.now() - o.lastTryAt < RETRY_MS) return; // 실패한 뒤엔 30분 쉬었다가(로그인하면 바로)
+    if (o.triesDate !== ymd(now)) { o.tries = 0; o.triesDate = ymd(now); }
+    if (reason === 'tick' && Date.now() - o.lastTryAt < (o.tries < RETRY_SOON_N ? RETRY_SOON_MS : RETRY_MS)) return; // 실패한 뒤엔 5분(세 번 넘으면 30분) 쉬었다가(로그인하면 바로)
   } else if (o.running) return;
   const tabs = await neisTabs();
   if (!tabs.length) return; // 나이스가 안 열려 있음 — 로그인하면 neis-ready로 다시 온다
   const run = Date.now();
-  o.running = { run: run, at: run, reason: reason }; o.lastTryAt = run; o.lastReports = [];
+  o.running = { run: run, at: run, reason: reason }; o.lastTryAt = run; o.tries = (o.triesDate === ymd(now) ? o.tries : 0) + 1; o.triesDate = ymd(now); o.lastReports = [];
   await save(o);
   const mon = mondayOf(now), from = ymd(mon), to = ymd(addDays(mon, 4));
   try {
@@ -228,7 +230,7 @@ chrome.runtime.onMessage.addListener(function (m, sender, reply) {
     } else if (m.t === 'runNow') {
       reply({ ok: true }); await maybeRun('now');
     } else if (m.t === 'resetToday') { // 시험용: 오늘 한 기록·기다리는 보고서를 지워 처음 켠 것처럼
-      o.lastAutoDate = ''; o.lastAutoAt = 0; o.lastRun = null; o.lastTryAt = 0; o.running = null; o.pending = [];
+      o.lastAutoDate = ''; o.lastAutoAt = 0; o.lastRun = null; o.lastTryAt = 0; o.tries = 0; o.running = null; o.pending = [];
       await save(o); await badge(o); reply({ ok: true });
     } else if (m.t === 'keepNow') { // 시험용: 시각과 상관없이 지금 한 번 확인
       await keepLogin(true); reply((await chrome.storage.local.get('keepCheck')).keepCheck);

@@ -10,7 +10,7 @@ function show() {
     if (document.activeElement !== document.getElementById('time')) document.getElementById('time').value = r.auto.time;
     const today = ymd(new Date()), a = [];
     if (r.running) a.push('⏳ 지금 나이스에서 조회하는 중…' + (r.running.step ? '\n   지금 단계: ' + r.running.step : '\n   (나이스 화면을 고르는 중)'));
-    else if (r.lastRun && r.lastRun.date === today && !r.lastRun.ok) a.push('❌ 마지막 자동 조회 실패(' + t(r.lastRun.at) + ') — ' + ((r.lastRun.steps || []).filter(function (s) { return /^✗/.test(s.s); }).map(function (s) { return s.s; })[0] || '') + (r.lastAutoDate === today ? '\n(오늘 아침 조회는 끝났어요)' : '\n30분 뒤나 다음 나이스 로그인 때 다시 해요.'));
+    else if (r.lastRun && r.lastRun.date === today && !r.lastRun.ok) a.push('❌ 마지막 자동 조회 실패(' + t(r.lastRun.at) + ') — ' + ((r.lastRun.steps || []).filter(function (s) { return /^✗/.test(s.s); }).map(function (s) { return s.s; })[0] || '') + (r.lastAutoDate === today ? '\n(오늘 아침 조회는 끝났어요)' : '\n5분 뒤(세 번 넘게 실패하면 30분 뒤)나 다음 나이스 로그인 때 다시 해요.'));
     else if (r.lastAutoDate === today) a.push('✅ 오늘 자동 조회 끝(' + (r.lastRun ? t(r.lastRun.at) : '') + ') — 3시간 지나 나이스에 다시 로그인하면 한 번 더 해요.');
     else a.push('아직 오늘 자동 조회 전 — ' + (r.auto.on ? '평일 ' + r.auto.time + ' 이후 나이스가 로그인돼 있으면 해요.' : '꺼져 있어요.'));
     a.push(r.neisTabs ? '나이스 탭 열려 있음' : '나이스 탭 없음(로그인하면 시작)');

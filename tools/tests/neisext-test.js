@@ -1,6 +1,7 @@
 // 🔁 크롬 확장 프로그램(tools/neis-ext/smartboard-neis) 전달: 가짜 나이스 화면(보고서 뷰어 프레임이 /report/service를 XHR로 받음)에서
 // "전체시간표 (변경수업)" 보고서만 잡아 → background가 보관 → 열린 스마트보드 탭에 넘기고, 스마트보드가 확인(ack)하면 지운다.
 // 스마트보드 탭이 없을 때 조회한 것은 나중에 탭을 열면 넘어간다. 다른 보고서(반별 조회 등)는 무시. 같은 학년·기간을 다시 조회하면 새것 하나만.
+// 숨은 창에서도 나이스가 멈추지 않게(hidden 감추기·rAF를 타이머로).
 // 실행: cd tools/tests && NODE_PATH=/opt/node22/lib/node_modules node neisext-test.js
 const { chromium } = require('playwright');
 const path = require('path');
@@ -74,6 +75,38 @@ let nextReport = report(3, '20261022', '20261027', true);
   await wait(2500);
   st = await status();
   check('다 넣으면(ack) 그 탭을 저절로 닫음', st.pending.length === 0 && !st.helper && !helper(), [st, ctx.pages().map((p) => p.url())]);
+
+  console.log('== 4. 숨은 창에서도 나이스가 멈추지 않게(neis-hook.js ①): 나이스 쪽엔 늘 "보이는 중", 숨으면 requestAnimationFrame을 타이머로');
+  check('나이스 화면(페이지 쪽): document.hidden=false, visibilityState=visible', await neis.evaluate(() => document.hidden === false && document.visibilityState === 'visible'));
+  // 실제로 숨는 상황은 헤드리스에서 못 만드니, 숨음 상태를 조절할 수 있는 가짜 크롬(숨으면 rAF가 안 돎) 위에 hook을 직접 올려 본다
+  const vp = await ctx.newPage(); await vp.goto('https://08hwichemi.github.io/smartboard/vis-test'); await wait(300);
+  await vp.evaluate(() => {
+    window.__H = false; Object.defineProperty(Document.prototype, 'hidden', { configurable: true, get: function () { return window.__H; } });
+    let n = 0; const q = new Map();
+    window.requestAnimationFrame = function (cb) { q.set(++n, cb); return n; };
+    window.cancelAnimationFrame = function (id) { q.delete(id); };
+    setInterval(function () { if (window.__H) return; const a = [...q]; q.clear(); a.forEach(([, cb]) => cb(performance.now())); }, 16); // 보일 때만 그림
+    window.niceSaw = 0; document.addEventListener('visibilitychange', function () { window.niceSaw++; });
+  });
+  await vp.addScriptTag({ path: path.join(EXT, 'neis-hook.js') });
+  const vis = await vp.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const r = {};
+    let early = 0; requestAnimationFrame(() => early++); // 보일 때 걸어 둔 것
+    window.__H = true; document.dispatchEvent(new Event('visibilitychange')); // 이제 숨음
+    r.hiddenSeen = document.hidden; r.state = document.visibilityState;
+    let loops = 0; (function f() { loops++; if (loops < 1000) requestAnimationFrame(f); })(); // 나이스의 남은 시간 표시처럼 계속 도는 것
+    let canceled = 0; const cid = requestAnimationFrame(() => canceled++); cancelAnimationFrame(cid);
+    await sleep(400);
+    r.early = early; r.loops = loops; r.canceled = canceled; r.niceSaw = window.niceSaw;
+    window.__H = false; document.dispatchEvent(new Event('visibilitychange')); // 다시 보임
+    const before = loops; await sleep(200); r.visibleLoops = loops - before;
+    return r;
+  });
+  check('숨어도 나이스 쪽엔 hidden=false·visible, visibilitychange를 못 봄', vis.hiddenSeen === false && vis.state === 'visible' && vis.niceSaw === 0, vis);
+  check('숨은 동안에도 rAF로 도는 화면이 계속 돎(숨기 직전에 걸어 둔 것도)', vis.loops > 5 && vis.early === 1, vis);
+  check('cancelAnimationFrame은 그대로 됨, 다시 보이면 원래 rAF로 돎', vis.canceled === 0 && vis.visibleLoops > 3, vis);
+  await vp.close();
 
   await ctx.close();
   console.log(failures ? '\n실패 ' + failures + '개' : '\n모든 검사 통과');
