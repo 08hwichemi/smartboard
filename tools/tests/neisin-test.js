@@ -331,6 +331,18 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   check('바뀐 칸(월1 들어옴·수3 빠짐)만 빨간 테두리, 안 바뀐 칸(월2)은 없음', borders[0] && borders[1] && !borders[2], borders);
   const red = await P.evaluate(() => getComputedStyle(document.getElementById('search-tt-1-1-s').parentElement).boxShadow);
   check('테두리는 빨간색 안쪽 3px', /229, 72, 77/.test(red) && /3px/.test(red), red);
+  // 11/3 사용자: 켜 둔 화면에서 보이던 테두리가 갑자기 사라짐 — 다른 기기·탭의 개인 자료를 반영하며 칸을 새로 만들 때 나이스 칸을 다시 덮지 않았음
+  const afterRemote = await P.evaluate(() => {
+    const prevN = localStorage.getItem('my-n');
+    localStorage.setItem('my-n', '나교사'); loadMyTimetable();
+    refreshDashboardFromLocalStorage();
+    const r = { search: ['1-1', '3-3'].map((k) => document.getElementById('search-tt-' + k + '-s').parentElement.classList.contains('tt-changed')),
+      searchText: document.getElementById('search-tt-1-1-s').innerText, my: document.getElementById('my-tt-1-1-s').parentElement.classList.contains('tt-changed'), myText: document.getElementById('my-tt-1-1-s').innerText };
+    if (prevN === null) localStorage.removeItem('my-n'); else localStorage.setItem('my-n', prevN);
+    loadMyTimetable();
+    return r;
+  });
+  check('다른 기기 자료를 반영해 칸을 새로 그려도 바뀐 칸·테두리가 남음(검색·내 시간표)', afterRemote.search[0] && afterRemote.search[1] && /수학/.test(afterRemote.searchText) && afterRemote.my && /수학/.test(afterRemote.myText), afterRemote);
   await P.evaluate(() => { const s = document.getElementById('search-select'); if (![...s.options].some((o) => o.value === '거교사')) s.add(new Option('거교사', '거교사')); s.value = '거교사'; renderSearchTimetable(true); });
   check('다른 선생님(바뀐 칸 없음)으로 바꾸면 테두리가 남지 않음', await P.evaluate(() => !document.querySelector('#search-timetable-grid .tt-changed')));
 
