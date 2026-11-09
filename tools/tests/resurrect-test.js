@@ -181,7 +181,11 @@ function check(label, cond, detail) {
 
   const pc = await openDevice(browser, 'PC', T1);
   const phone = await openDevice(browser, '휴대폰', T1, { mobile: true });
-  const today = new Date(); const dStr = today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + '15';
+  // 반쪽 캘린더는 토·일 칸을 만들지 않으므로, 이번 달 15일이 주말이면 가까운 평일(토→금 14일, 일→월 16일)로 옮긴다
+  const today = new Date();
+  const dDay = new Date(today.getFullYear(), today.getMonth(), 15);
+  if (dDay.getDay() === 6) dDay.setDate(14); else if (dDay.getDay() === 0) dDay.setDate(16);
+  const dStr = dDay.getFullYear() + String(dDay.getMonth()+1).padStart(2,'0') + String(dDay.getDate()).padStart(2,'0');
   const key = 'cal-memo-' + dStr;
   // 사용자처럼 편집: 포커스 → 내용 바꾸고 input 이벤트 → blur
   async function typeInto(page, sel, text) {
