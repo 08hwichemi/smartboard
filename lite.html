@@ -5563,7 +5563,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-03.1';
+  var BUILD_ID = '2026-11-09.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6430,18 +6430,28 @@
       const to = new Date(today); to.setDate(to.getDate() + 90);
       const fmt = function(d) { return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); };
       const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + fmt(today) + '&AA_TO_YMD=' + fmt(to);
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!data.SchoolSchedule) { teaserEl.innerText = '없음'; return; }
+      const ym = function(d) { return fmt(d).slice(0, 6); };
+      const [data, home] = await Promise.all([
+        fetch(url).then(function(r) { return r.json(); }).catch(function() { return {}; }),
+        fetchSchoolHomeEvents(ym(today), ym(to))
+      ]);
       const days = ['일','월','화','수','목','금','토'];
-      const items = data.SchoolSchedule[1].row
+      const label = function(ymd) { const mo = parseInt(ymd.slice(4,6)), da = parseInt(ymd.slice(6,8)); return mo + '/' + da + '(' + days[new Date(+ymd.slice(0,4), mo-1, da).getDay()] + ')'; };
+      const list = ((data.SchoolSchedule && data.SchoolSchedule[1].row) || [])
         .filter(function(r) { return r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일'; })
-        .slice(0, 8)
-        .map(function(r) {
-          const y = r.AA_YMD.slice(0,4), mo = parseInt(r.AA_YMD.slice(4,6)), da = parseInt(r.AA_YMD.slice(6,8));
-          const dObj = new Date(y, mo-1, da);
-          return mo + '/' + da + '(' + days[dObj.getDay()] + ') ' + r.EVENT_NM;
-        });
+        .map(function(r) { return { d: r.AA_YMD, t: label(r.AA_YMD) + ' ' + r.EVENT_NM, name: r.EVENT_NM }; });
+      // 학교 홈페이지 행사일정: 아직 안 끝난 것만, 여러 날이면 "10/22(목)~10/24(토)". 같은 기간에 나이스에 이미 있으면 뺌.
+      const todayYmd = fmt(today), toYmd = fmt(to);
+      home.forEach(function(ev) {
+        const ds = schoolEvDays(ev); if (!ds.length) return;
+        const s = ds[0], e = ds[ds.length - 1];
+        if (e < todayYmd || s > toYmd) return;
+        const nearby = list.filter(function(x) { return x.name && x.d >= s && x.d <= e; }).map(function(x) { return x.name; });
+        if (schoolEvCovered(ev.t, nearby)) return;
+        list.push({ d: s < todayYmd ? todayYmd : s, t: label(s) + (e !== s ? '~' + label(e) : '') + ' ' + ev.t });
+      });
+      if (!list.length && !data.SchoolSchedule) { teaserEl.innerText = '없음'; return; }
+      const items = list.sort(function(a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }).slice(0, 8).map(function(x) { return x.t; });
       teaserEl.innerHTML = items.length ? items.map(function(t, i) { return '<span class="upcoming-schedule-chip ' + (i % 2 === 0 ? 'chip-a' : 'chip-b') + '">' + escapeHtmlAttr(t) + '</span>'; }).join('') : '없음';
       updateScheduleMarqueeState();
     } catch(e) { teaserEl.innerText = '불러오기 실패'; }
@@ -6965,6 +6975,72 @@
   let mealOffset = 0; let currentNoticeId = 0;
   let bigCalOffset = 0;
   let neisDataCache = {};
+  // 한 달 학사일정 { 'YYYYMMDD': [일정 이름] } — 나이스 학사일정 + 학교 홈페이지 행사일정(공용판만, 11/9 사용자: 홈페이지가 더 다양함).
+  // 달력들(반쪽·큰·실무사·월간일정표)이 모두 이것을 쓴다. 같은 달을 여러 화면이 동시에 불러도 한 번만 받는다.
+  const neisMonthPending = {};
+  function neisMonthEvents(monthKey) {
+    if (neisDataCache[monthKey]) return Promise.resolve(neisDataCache[monthKey]);
+    if (neisMonthPending[monthKey]) return neisMonthPending[monthKey];
+    neisMonthPending[monthKey] = (async function() {
+      const events = {};
+      try {
+        const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + monthKey + '01&AA_TO_YMD=' + monthKey + '31';
+        const data = await (await fetch(url)).json();
+        if (data.SchoolSchedule) {
+          data.SchoolSchedule[1].row.forEach(function(r) {
+            if (r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') (events[r.AA_YMD] = events[r.AA_YMD] || []).push(r.EVENT_NM);
+          });
+        }
+      } catch (e) {}
+      (await fetchSchoolHomeEvents(monthKey)).forEach(function(ev) {
+        schoolEvDays(ev).forEach(function(d) {
+          if (d.slice(0, 6) !== monthKey) return;
+          const list = events[d] = events[d] || [];
+          if (!schoolEvCovered(ev.t, list)) list.push(ev.t);
+        });
+      });
+      neisDataCache[monthKey] = events;
+      delete neisMonthPending[monthKey];
+      return events;
+    })();
+    return neisMonthPending[monthKey];
+  }
+  // 학교 홈페이지 "행사일정"(bg.icehs.kr) — 브라우저에서 바로는 막혀(CORS) 서버 함수 school-events가 대신 받아 준다.
+  // 못 받으면(함수 오류·홈페이지 개편 등) 빈 목록 — 나이스 학사일정만 보인다. 개인판은 학교마다 홈페이지가 달라 쓰지 않는다.
+  const schoolHomeCache = {};
+  function fetchSchoolHomeEvents(fromYm, toYm) {
+    if (LITE) return Promise.resolve([]);
+    const k = fromYm + '-' + (toYm || fromYm);
+    if (!schoolHomeCache[k]) {
+      schoolHomeCache[k] = fetch(SUPABASE_URL + '/functions/v1/school-events?from=' + fromYm + '&to=' + (toYm || fromYm), { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) { return d && Array.isArray(d.events) ? d.events : []; })
+        .catch(function() { delete schoolHomeCache[k]; return []; });
+    }
+    return schoolHomeCache[k];
+  }
+  // 홈페이지 일정 { s, e: 'YYYY-MM-DD', t } → 그 기간의 날짜들 ['YYYYMMDD', …] (여러 날 행사는 날마다)
+  function schoolEvDays(ev) {
+    const out = [], s = String(ev.s || ''), e = String(ev.e || ev.s || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return out;
+    const d = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+    for (let i = 0; i < 62; i++) {
+      const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      if (v > e && i > 0) break;
+      out.push(v.replace(/-/g, ''));
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }
+  // 같은 날 나이스에 이미 있는 일정이면 홈페이지 것은 빼고 하나만 보인다 — 띄어쓰기·괄호 내용·끝의 "일"은 무시하고 한쪽이 다른 쪽을 품으면 같은 것
+  // (예: 나이스 "대학수학능력시험" = 홈페이지 "대학수학능력시험일"). "동아리활동/수능성적 통지일"처럼 / 로 묶인 것은 조각이 모두 있어야 같은 것.
+  function schoolEvName(t) { return String(t || '').replace(/\([^)]*\)/g, '').replace(/\s/g, '').replace(/일$/, ''); }
+  function schoolEvCovered(t, names) {
+    return String(t).split('/').every(function(part) {
+      const a = schoolEvName(part);
+      return !a || names.some(function(n) { const b = schoolEvName(n); return !!b && (a.indexOf(b) >= 0 || b.indexOf(a) >= 0); });
+    });
+  }
   let currentMainTab = 'tt';
 
   window.allSchedules = {};
@@ -7426,24 +7502,7 @@
     const grid = document.getElementById('half-cal-grid');
 
     const monthKey = y + m;
-    if (!neisDataCache[monthKey]) {
-      try {
-        const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + y + m + '01&AA_TO_YMD=' + y + m + '31';
-        const res = await fetch(url);
-        const data = await res.json();
-        let events = {};
-        if (data.SchoolSchedule) {
-          data.SchoolSchedule[1].row.forEach(function(r) {
-            const dStr = r.AA_YMD;
-            if(r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') {
-              if(!events[dStr]) events[dStr] = [];
-              events[dStr].push(r.EVENT_NM);
-            }
-          });
-        }
-        neisDataCache[monthKey] = events;
-      } catch(e) { neisDataCache[monthKey] = {}; }
-    }
+    await neisMonthEvents(monthKey);
 
     const firstDay = new Date(y, bD.getMonth(), 1).getDay();
     const daysInMonth = new Date(y, bD.getMonth() + 1, 0).getDate();
@@ -7504,24 +7563,7 @@
     const grid = document.getElementById('big-cal-grid');
     
     const monthKey = y + m;
-    if (!neisDataCache[monthKey]) {
-      try {
-        const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + y + m + '01&AA_TO_YMD=' + y + m + '31';
-        const res = await fetch(url);
-        const data = await res.json();
-        let events = {};
-        if (data.SchoolSchedule) {
-          data.SchoolSchedule[1].row.forEach(function(r) {
-            const dStr = r.AA_YMD; 
-            if(r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') {
-              if(!events[dStr]) events[dStr] = [];
-              events[dStr].push(r.EVENT_NM);
-            }
-          });
-        }
-        neisDataCache[monthKey] = events;
-      } catch(e) { neisDataCache[monthKey] = {}; }
-    }
+    await neisMonthEvents(monthKey);
 
     const firstDay = new Date(y, bD.getMonth(), 1).getDay(); 
     const daysInMonth = new Date(y, bD.getMonth() + 1, 0).getDate();
@@ -9978,24 +10020,7 @@
     const m = String(bD.getMonth() + 1).padStart(2, '0');
     document.getElementById('staff-cal-label').innerText = y + '년 ' + (bD.getMonth() + 1) + '월';
     const monthKey = y + m;
-    if (!neisDataCache[monthKey]) {
-      try {
-        const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + y + m + '01&AA_TO_YMD=' + y + m + '31';
-        const res = await fetch(url);
-        const data = await res.json();
-        const events = {};
-        if (data.SchoolSchedule) {
-          data.SchoolSchedule[1].row.forEach(function(r) {
-            if (r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') {
-              if (!events[r.AA_YMD]) events[r.AA_YMD] = [];
-              events[r.AA_YMD].push(r.EVENT_NM);
-            }
-          });
-        }
-        neisDataCache[monthKey] = events;
-      } catch (e) { neisDataCache[monthKey] = {}; }
-    }
-    const events = neisDataCache[monthKey] || {};
+    const events = await neisMonthEvents(monthKey);
     const firstDow = new Date(y, bD.getMonth(), 1).getDay();
     const days = new Date(y, bD.getMonth() + 1, 0).getDate();
     const today = new Date();
@@ -12933,26 +12958,7 @@
   // 이 앱은 학교가 이미 고정돼 있어서(NEIS_KEY/EDU_CODE/SCH_CODE), 대시보드 큰
   // 캘린더(renderBigCalendar)가 쓰는 것과 같은 neisDataCache를 그대로 재사용한다
   // (같은 달을 두 화면에서 각자 또 불러오지 않아도 됨).
-  async function msFetchNeisHolidays(monthKey) {
-    if (neisDataCache[monthKey]) return neisDataCache[monthKey];
-    try {
-      const url = 'https://open.neis.go.kr/hub/SchoolSchedule?KEY=' + NEIS_KEY + '&Type=json&ATPT_OFCDC_SC_CODE=' + EDU_CODE + '&SD_SCHUL_CODE=' + SCH_CODE + '&AA_FROM_YMD=' + monthKey + '01&AA_TO_YMD=' + monthKey + '31';
-      const res = await fetch(url);
-      const data = await res.json();
-      let events = {};
-      if (data.SchoolSchedule) {
-        data.SchoolSchedule[1].row.forEach(function(r) {
-          const dStr = r.AA_YMD;
-          if (r.EVENT_NM !== '토요휴업일' && r.EVENT_NM !== '휴업일') {
-            if (!events[dStr]) events[dStr] = [];
-            events[dStr].push(r.EVENT_NM);
-          }
-        });
-      }
-      neisDataCache[monthKey] = events;
-    } catch (e) { neisDataCache[monthKey] = {}; }
-    return neisDataCache[monthKey];
-  }
+  function msFetchNeisHolidays(monthKey) { return neisMonthEvents(monthKey); }
 
   async function msRenderCalendar() {
     document.getElementById('ms-nav-month-text').innerText = msCurYear + '. ' + String(msCurMonth).padStart(2, '0');
