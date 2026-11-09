@@ -181,6 +181,19 @@ async function openDevice(browser, name, uid, opts = {}) {
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
     if (url.includes('/exceljs@')) { try { return route.fulfill({ body: fs.readFileSync(require.resolve('exceljs/dist/exceljs.min.js')), contentType: 'application/javascript' }); } catch (e) {} }
+    // 9절: 나이스 학사일정(global.__neisSched)과 학교 홈페이지 행사일정 서버 함수(global.__homeEv, __homeDown이면 오류)
+    if (url.includes('open.neis.go.kr/hub/SchoolSchedule')) {
+      const q = new URL(url).searchParams, f = q.get('AA_FROM_YMD'), t = q.get('AA_TO_YMD');
+      const row = (global.__neisSched || []).filter((r) => r.AA_YMD >= f && r.AA_YMD <= t);
+      return route.fulfill({ body: JSON.stringify(row.length ? { SchoolSchedule: [{ head: [] }, { row }] } : { RESULT: { CODE: 'INFO-200' } }), contentType: 'application/json' });
+    }
+    if (url.includes('/functions/v1/school-events')) {
+      global.__homeCalls = (global.__homeCalls || 0) + 1;
+      if (global.__homeDown) return route.fulfill({ status: 500, body: '' });
+      const q = new URL(url).searchParams, f = q.get('from'), t = q.get('to');
+      const events = (global.__homeEv || []).filter((e) => { const m = e.s.replace(/-/g, '').slice(0, 6); return m >= f && m <= t; });
+      return route.fulfill({ body: JSON.stringify({ events, ok: [], failed: [] }), contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid + (opts.query || ''));
@@ -409,6 +422,39 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   check('서버가 알려 주면(실시간) 켜 둔 창이 곧바로 다시 받아 그림(위교사 금4 = 과학 301)', (await atA('위교사', D[4], 4)) === '과학 301', await atA('위교사', D[4], 4));
   const T2 = pages.find((p) => p.name === '교사PC');
   check('다른 선생님 보드도 곧바로(금4 301 위교사)', (await T2.page.evaluate((dt) => timetableCellAt('위교사', dt, 4).list.map((x) => x.s + ' ' + x.r).join(), D[4])) === '과학 301');
+
+  console.log('== 9. 학사일정 = 나이스 + 학교 홈페이지 행사일정(다가오는 학사일정 띠·달력)');
+  const dd = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  const ymd8 = (s) => s.replace(/-/g, '');
+  global.__neisSched = [{ AA_YMD: ymd8(dd(2)), EVENT_NM: '대학수학능력시험' }, { AA_YMD: ymd8(dd(4)), EVENT_NM: '수능성적 통지일' }, { AA_YMD: ymd8(dd(9)), EVENT_NM: '휴업일' }];
+  global.__homeEv = [
+    { s: dd(2), e: dd(2), t: '대학수학능력시험일' },           // 나이스와 같은 것 → 하나만
+    { s: dd(4), e: dd(4), t: '동아리활동/수능성적 통지일' },    // 동아리활동은 나이스에 없음 → 보임
+    { s: dd(6), e: dd(7), t: '수학여행(2학년)' },              // 이틀짜리
+    { s: dd(-40), e: dd(-40), t: '지난 행사' },
+  ];
+  global.__homeCalls = 0;
+  const C = await openDevice(browser, '학사일정 PC', T1);
+  await wait2(1500);
+  const monthOf = (s) => s.slice(0, 7).replace('-', '');
+  const evAt = (s) => C.page.evaluate(([mk, d]) => neisMonthEvents(mk).then((m) => m[d] || []), [monthOf(s), ymd8(s)]);
+  check('같은 날 나이스에 있는 일정은 하나만(대학수학능력시험 / 홈페이지 "…시험일"은 뺌)', JSON.stringify(await evAt(dd(2))) === '["대학수학능력시험"]', await evAt(dd(2)));
+  check('/ 로 묶인 것은 나이스에 없는 조각이 있으면 보임', JSON.stringify(await evAt(dd(4))) === '["수능성적 통지일","동아리활동/수능성적 통지일"]', await evAt(dd(4)));
+  check('여러 날 행사는 날마다(수학여행 이틀)', (await evAt(dd(6))).includes('수학여행(2학년)') && (await evAt(dd(7))).includes('수학여행(2학년)'));
+  const teaser = await C.page.evaluate(() => document.getElementById('upcoming-schedule-teaser').innerText);
+  check('다가오는 학사일정 띠: 홈페이지 일정이 날짜 순으로 섞이고, 여러 날은 ~로 한 번, 겹치는 것·지난 것·휴업일은 없음',
+    /대학수학능력시험/.test(teaser) && !/시험일/.test(teaser) && /동아리활동\/수능성적 통지일/.test(teaser) && (teaser.match(/수학여행/g) || []).length === 1 && /~/.test(teaser) && !/지난 행사/.test(teaser) && !/휴업일/.test(teaser) &&
+    teaser.indexOf('대학수학능력시험') < teaser.indexOf('수학여행'), teaser);
+  const big = await C.page.evaluate(async (mk) => { const n = new Date(); bigCalOffset = (+mk.slice(0, 4) * 12 + +mk.slice(4) - 1) - (n.getFullYear() * 12 + n.getMonth()); await renderBigCalendar(); return document.getElementById('big-cal-grid').innerText; }, monthOf(dd(6)));
+  check('큰 달력에 홈페이지 행사일정이 보임', /수학여행\(2학년\)/.test(big), big.slice(0, 200));
+  check('같은 달은 서버 함수를 한 번만 부름(여러 달력이 같이 써도)', await C.page.evaluate((mk) => Object.keys(schoolHomeCache).filter((k) => k === mk + '-' + mk).length === 1, monthOf(dd(2))));
+  global.__homeDown = true;
+  const C2 = await openDevice(browser, '홈페이지 함수 오류 PC', T1);
+  await wait2(1500);
+  const t2txt = await C2.page.evaluate(() => document.getElementById('upcoming-schedule-teaser').innerText);
+  const ev2 = await C2.page.evaluate(([mk, d]) => neisMonthEvents(mk).then((m) => m[d] || []), [monthOf(dd(4)), ymd8(dd(4))]);
+  check('홈페이지 함수가 안 되면 나이스 학사일정만 그대로', /대학수학능력시험/.test(t2txt) && !/동아리활동/.test(t2txt) && JSON.stringify(ev2) === '["수능성적 통지일"]', [t2txt, ev2]);
+  global.__homeDown = false;
 
   const errs = pages.flatMap((p) => p.errors || []);
   check('페이지 오류 없음', errs.length === 0, errs);
