@@ -1171,7 +1171,7 @@
     .trip-board .c-name { text-align: left; padding-left: 6px; }
     .trip-board td.c-name { display: table-cell; }
     .trip-board td.c-name .nm { display: inline-block; max-width: 60px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-    .trip-board td.c-name .nm-btns { margin-left: 4px; white-space: nowrap; vertical-align: middle; }
+    .trip-board td.c-name .nm-btns { float: right; margin: 3px 4px 0 10px; white-space: nowrap; }
     .trip-board .c-pre { color: var(--text-sub); }
     .trip-board td.c-pre.ed { cursor: text; }
     .trip-board td.c-pre.ed:hover { background: var(--accent-soft); color: var(--accent-color); }
@@ -1185,7 +1185,7 @@
     .trip-pr.del:hover { background: var(--alert-bg); box-shadow: 0 0 0 1px var(--alert); }
     /* 회차 칸(인쇄물처럼 이름 다음): 기간 · 일수 · 🖨️ · 🗑 */
     .trip-board th.rc-h { text-align: left; padding-left: 8px; font-size: 10.5px; }
-    .trip-board th.rc-first, .trip-board td.rc-first { border-left: 1px solid var(--text-sub); }
+    .trip-board th.rc-first, .trip-board td.rc-first { border-left: 1px solid var(--border-color); }
     .trip-board td.rc { text-align: left; padding: 0 2px 0 6px; white-space: nowrap; cursor: pointer; box-shadow: inset 3px 0 0 var(--bc); font-size: 11.5px; }
     .trip-board td.rc.empty { cursor: default; box-shadow: none; }
     .trip-board td.rc:hover:not(.empty) { background: var(--accent-soft); }
@@ -1212,7 +1212,8 @@
     .trip-board tr.cls th { background: var(--accent-soft); color: var(--accent-color); font-weight: 800; text-align: left; padding-left: 8px; height: 24px; position: sticky; left: 0; z-index: 1; }
     .trip-board tbody tr:hover td.fix { background: var(--accent-soft); }
     .trip-board tfoot td { background: var(--tt-bg); font-weight: 800; color: var(--text-sub); position: sticky; bottom: 0; }
-    .trip-board tfoot td.fix { background: var(--tt-bg); }
+    .trip-board tfoot td.fix { background: var(--tt-bg); box-shadow: none; }
+    .trip-board tfoot td.fix.c-last { box-shadow: 2px 0 0 var(--border-color); }
     .trip-pop { position: absolute; z-index: 20; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); padding: 10px 12px; font-size: 12px; min-width: 250px; color: var(--text-main); }
     .trip-pop .trip-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
     .trip-pop .k { color: var(--text-sub); font-weight: 600; }
@@ -5683,7 +5684,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.8';
+  var BUILD_ID = '2026-11-10.9';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -14789,7 +14790,7 @@
   // - 기존사용 = 첫 기간 전에 끝난 올해 기록의 일수(자동) + 직접 적은 일수(trip_prior, 결석계에 안 넣은 과거분 보정).
   // - 일수는 학년 공통 휴일(기본 공휴일 + 학사일정 + trip_holidays)로 센다 — 계정마다 다른 "직접 더한 휴일"을 쓰면 보는 사람마다 숫자가 달라져서.
   // - 인쇄: 띠를 고르지 않았으면 신청 현황표(가로 A4, 전체 보기는 반마다 한 장), 골랐으면 지금처럼 신청서 + 결과보고서.
-  const TRIP_DEFAULT_PERIODS = [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }];
+  const TRIP_DEFAULT_PERIODS = [{ from: '2026-11-23', to: '2026-11-30' }, { from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }]; // 11/23부터(사용자 11/10)
   const TRIP_LIMIT = 19; // 본교 학칙 연간 출석인정 일수
   const TRIP_COLORS = ['#3D6EA5', '#2E8F6E', '#E07A3D', '#8A5BB5', '#C24B6E']; // 화면 띠(회차)
   const TRIP_PCOL = ['#4F7FBF', '#3BA27E', '#E8894F', '#9B6FC4', '#D2607F'];   // 인쇄 띠
@@ -15057,13 +15058,12 @@
     // (오른쪽 끝에 두었더니 "출력 미리보기와 다르고 자리를 너무 먹는다" — 11/10 사용자) 회차 칸은 3칸, 4·5회가 있으면 늘어남.
     let nr = 3; shown.forEach(function(grp) { grp.students.forEach(function(s) { if (s.recs.length > nr) nr = Math.min(5, s.recs.length); }); });
     const W = { num: 40, name: 112, rc: 114, pre: 44, tot: 48, all: 32 };
-    const L = { num: 0, name: W.num }; L.rc = L.name + W.name; L.pre = L.rc + W.rc * nr; L.tot = L.pre + W.pre; L.all = L.tot + W.tot;
+    const L = { num: 0, name: W.num }; L.pre = L.name + W.name; L.tot = L.pre + W.pre; L.all = L.tot + W.tot; L.rc = L.all + (canEdit ? W.all : 0);
     const fx = function(cls, left, w) { return 'class="fix ' + cls + '" style="left:' + left + 'px; width:' + w + 'px; min-width:' + w + 'px;"'; };
-    const lastFix = canEdit ? 'c-all' : 'c-tot'; // 날짜 띠 바로 앞 칸(구분선)
     let t = '<table class="trip-board"><thead><tr><th ' + fx('c-num', L.num, W.num) + ' rowspan="3">번호</th><th ' + fx('c-name', L.name, W.name) + ' rowspan="3">이름</th>';
-    for (let k = 0; k < nr; k++) t += '<th ' + fx('rc-h' + (k ? '' : ' rc-first'), L.rc + W.rc * k, W.rc) + ' rowspan="3"><i class="trip-sw" style="background:' + TRIP_COLORS[k] + '"></i>' + (k + 1) + '회 <span style="font-weight:600; opacity:0.8;">기간 · 일수</span></th>';
-    t += '<th ' + fx('c-pre', L.pre, W.pre) + ' rowspan="3" title="첫 기간 전에 쓴 일수 = 올해 기록 자동 + 직접 적은 것' + (canEdit ? ' · 누르면 직접 적기' : '') + '">기존</th><th ' + fx('c-tot' + (canEdit ? '' : ' c-last'), L.tot, W.tot) + ' rowspan="3">총일수</th>' +
-      (canEdit ? '<th ' + fx('c-all c-last', L.all, W.all) + ' rowspan="3" title="📌 쓰는 기간 전부 넣기(' + escapeHtmlAttr(perAll) + ') — 한 번도 안 쓴 학생에게 한 번에">📌</th>' : '');
+    t += '<th ' + fx('c-pre', L.pre, W.pre) + ' rowspan="3" title="첫 기간 전에 쓴 일수 = 올해 기록 자동 + 직접 적은 것' + (canEdit ? ' · 누르면 직접 적기' : '') + '">기존</th><th ' + fx('c-tot', L.tot, W.tot) + ' rowspan="3">총일수</th>' +
+      (canEdit ? '<th ' + fx('c-all', L.all, W.all) + ' rowspan="3" title="📌 쓰는 기간 전부 넣기(' + escapeHtmlAttr(perAll) + ') — 한 번도 안 쓴 학생에게 한 번에">📌</th>' : '');
+    for (let k = 0; k < nr; k++) t += '<th ' + fx('rc-h' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), L.rc + W.rc * k, W.rc) + ' rowspan="3"><i class="trip-sw" style="background:' + TRIP_COLORS[k] + '"></i>' + (k + 1) + '회 <span style="font-weight:600; opacity:0.8;">기간 · 일수</span></th>';
     periods.forEach(function(p, pi) { const n = days.filter(function(x) { return x.p === pi; }).length; if (n) t += '<th colspan="' + n + '" class="' + (pi ? 'pst' : '') + '">' + tripRangeLabel(p.from, p.to) + '</th>'; });
     t += '</tr><tr>' + days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hol ' : '') + (x.pst && x.p ? 'pst' : x.wk ? 'wk' : '') + '" title="' + escapeHtmlAttr(hol[x.d] || '') + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr><tr>' +
       days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hol ' : '') + (x.pst && x.p ? 'pst' : x.wk ? 'wk' : '') + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
@@ -15077,19 +15077,19 @@
           '<td ' + fx('c-name', L.name, W.name) + ' title="' + escapeHtmlAttr(s.name) + '"><span class="nm">' + escapeHtmlAttr(s.name) + '</span>' + (s.recs.length ? '<span class="nm-btns">' +
             '<button class="trip-pr" title="' + escapeHtmlAttr(s.name) + ' 신청서 전부 인쇄 (' + s.recs.length + '회 × 2장)" onclick="event.stopPropagation(); tripPrintStudentNow(' + grp.cno + ', ' + s.num + ')">🖨️</button>' +
             (canEdit ? '<button class="trip-pr del" title="' + escapeHtmlAttr(s.name) + ' 기록 ' + s.recs.length + '건 모두 지우기" onclick="event.stopPropagation(); tripDeleteStudent(' + grp.cno + ', ' + s.num + ')">🗑</button>' : '') + '</span>' : '') + '</td>';
+        t += '<td ' + fx('c-pre' + (canEdit ? ' ed' : ''), L.pre, W.pre) + ' title="자동 ' + s.auto + ' + 직접 ' + s.man + (s.memo ? ' (' + escapeHtmlAttr(s.memo) + ')' : '') + '">' + (s.pre || '') + (s.man ? '<span class="hand">✎</span>' : '') + '</td>' +
+          '<td ' + fx('c-tot' + tc, L.tot, W.tot) + '>' + (s.tot || '') + '</td>';
+        if (canEdit) {
+          const left = periods.filter(function(p) { return !s.recs.some(function(r) { return p.from <= (r.to || r.from) && p.to >= r.from; }); }).length;
+          t += '<td ' + fx('c-all', L.all, W.all) + '>' + (left ? '<button class="ab-icon-btn trip-all-btn" title="' + escapeHtmlAttr(s.name) + ': 쓰는 기간 ' + (left === periods.length ? '전부' : '남은 ' + left + '개') + ' 넣기 (' + escapeHtmlAttr(perAll) + ')" onclick="event.stopPropagation(); tripFillAll(' + grp.cno + ', ' + s.num + ')">📌</button>' : '') + '</td>';
+        }
         for (let k = 0; k < nr; k++) {
           const r = s.recs[k], left = L.rc + W.rc * k;
-          if (!r) { t += '<td ' + fx('rc empty' + (k ? '' : ' rc-first'), left, W.rc) + '></td>'; continue; }
-          t += '<td class="fix rc' + (k ? '' : ' rc-first') + (abSelId === r.id ? ' pick' : '') + '" style="left:' + left + 'px; width:' + W.rc + 'px; min-width:' + W.rc + 'px; --bc:' + TRIP_COLORS[Math.min(k, 4)] + '" data-id="' + r.id + '" title="' + (r.detail ? escapeHtmlAttr(r.detail) + ' · ' : '') + '누르면 고치기 상자">' +
+          if (!r) { t += '<td ' + fx('rc empty' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), left, W.rc) + '></td>'; continue; }
+          t += '<td class="fix rc' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : '') + (abSelId === r.id ? ' pick' : '') + '" style="left:' + left + 'px; width:' + W.rc + 'px; min-width:' + W.rc + 'px; --bc:' + TRIP_COLORS[Math.min(k, 4)] + '" data-id="' + r.id + '" title="' + (r.detail ? escapeHtmlAttr(r.detail) + ' · ' : '') + '누르면 고치기 상자">' +
             '<span class="rc-t">' + tripRangeLabel(r.from, r.to || r.from) + '</span><b class="rc-d">' + abDays(r) + '</b>' +
             '<span class="rc-btns"><button class="trip-pr" title="이 신청서 인쇄 (신청서 + 결과보고서 2장)" onclick="event.stopPropagation(); tripPrintRecordNow(\'' + r.id + '\')">🖨️</button>' +
             (canEdit ? '<button class="trip-pr del" title="이 기록 지우기" onclick="event.stopPropagation(); abDelete(\'' + r.id + '\')">🗑</button>' : '') + '</span></td>';
-        }
-        t += '<td ' + fx('c-pre' + (canEdit ? ' ed' : ''), L.pre, W.pre) + ' title="자동 ' + s.auto + ' + 직접 ' + s.man + (s.memo ? ' (' + escapeHtmlAttr(s.memo) + ')' : '') + '">' + (s.pre || '') + (s.man ? '<span class="hand">✎</span>' : '') + '</td>' +
-          '<td ' + fx('c-tot' + tc + (canEdit ? '' : ' c-last'), L.tot, W.tot) + '>' + (s.tot || '') + '</td>';
-        if (canEdit) {
-          const left = periods.filter(function(p) { return !s.recs.some(function(r) { return p.from <= (r.to || r.from) && p.to >= r.from; }); }).length;
-          t += '<td ' + fx('c-all c-last', L.all, W.all) + '>' + (left ? '<button class="ab-icon-btn trip-all-btn" title="' + escapeHtmlAttr(s.name) + ': 쓰는 기간 ' + (left === periods.length ? '전부' : '남은 ' + left + '개') + ' 넣기 (' + escapeHtmlAttr(perAll) + ')" onclick="event.stopPropagation(); tripFillAll(' + grp.cno + ', ' + s.num + ')">📌</button>' : '') + '</td>';
         }
         days.forEach(function(x, di) {
           const sep = (x.pst && x.p ? ' pst' : x.wk ? ' wk' : '');
@@ -15110,7 +15110,9 @@
       if (!grp.students.length) t += '<tr><td colspan="' + (4 + nr + (canEdit ? 1 : 0) + days.length) + '" class="ab-empty" style="cursor:default;">이 반 명렬표가 비어 있어요.</td></tr>';
     });
     t += '</tbody>';
-    t += '<tfoot><tr><td ' + fx('c-num', 0, W.num + W.name + W.rc * nr) + ' colspan="' + (2 + nr) + '" style="left:0; width:' + (W.num + W.name + W.rc * nr) + 'px; min-width:' + (W.num + W.name + W.rc * nr) + 'px; text-align:right; padding-right:10px;">' + (c.all && tripAllCls ? tripAllCls + '반 합계' : '합계') + '</td><td ' + fx('c-pre', L.pre, W.pre) + '></td><td ' + fx('c-tot' + (canEdit ? '' : ' c-last'), L.tot, W.tot) + '>' + grand + '</td>' + (canEdit ? '<td ' + fx('c-all c-last', L.all, W.all) + '></td>' : '') + '<td colspan="' + days.length + '" style="text-align:left; padding-left:8px;">신청 ' + grandN + '명 · ' + (TRIP_LIMIT + 1) + '일 이상 ' + over + '명</td></tr></tfoot>';
+    let fsum = '<td ' + fx('c-num', 0, W.num + W.name) + ' colspan="2" style="left:0; width:' + (W.num + W.name) + 'px; min-width:' + (W.num + W.name) + 'px;">' + (c.all && tripAllCls ? tripAllCls + '반 합계' : '합계') + '</td><td ' + fx('c-pre', L.pre, W.pre) + '></td><td ' + fx('c-tot', L.tot, W.tot) + '>' + grand + '</td>' + (canEdit ? '<td ' + fx('c-all', L.all, W.all) + '></td>' : '');
+    for (let k = 0; k < nr; k++) fsum += '<td ' + fx('rc empty' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), L.rc + W.rc * k, W.rc) + '></td>';
+    t += '<tfoot><tr>' + fsum + '<td colspan="' + days.length + '" style="text-align:left; padding-left:8px;">신청 ' + grandN + '명 · ' + (TRIP_LIMIT + 1) + '일 이상 ' + over + '명</td></tr></tfoot>';
     grid.innerHTML = t + '</table>';
     if (prevPop && prevPop.__anchor) { const at = grid.querySelector(prevPop.__anchor); if (at) tripPopAt(prevPop, at); }
     foot.innerHTML = (canEdit ? '빈 칸을 누르면 시작일, 한 번 더 누르면 종료일 → 바로 추가. 띠를 누르면 상자에서 날짜·사유 고치기·지우기. 📌 = 쓰는 기간 전부 넣기, 기존 칸 = 직접 적기. 회차 칸의 🖨️·🗑 = 그 신청서 인쇄·지우기, 이름 옆 🖨️·🗑 = 그 학생 전부. ' : '띠나 회차 칸을 누르면 그 학생 신청서가 보여요. 🖨️ = 인쇄(회차 칸은 그 신청서, 이름 옆은 전부). ') +
@@ -15452,22 +15454,21 @@
     let h = '<div class="tps"><div class="p-head"><div class="p-title"><small>학교장허가 교외체험학습</small>신청 현황</div>' +
       '<div class="p-meta"><b>' + g + '학년 ' + grp.cno + '반</b>' + periods.map(function(p) { return tripRangeLabel(p.from, p.to); }).join(' · ') + ' · 연간 출석인정 한도 ' + TRIP_LIMIT + '일 · 출력 ' + today.getFullYear() + '.' + (today.getMonth() + 1) + '.' + today.getDate() + '</div></div>';
     let rcols = ''; for (let k = 0; k < nr; k++) rcols += '<col style="width:16.5mm"><col style="width:6mm">';
-    h += '<table class="pt" style="--rh:' + rh.toFixed(2) + 'mm"><colgroup><col style="width:7mm"><col style="width:15mm">' + rcols + '<col style="width:8mm"><col style="width:9mm">' + days.map(function() { return '<col>'; }).join('') + '</colgroup>';
-    h += '<thead><tr><th rowspan="3"></th><th rowspan="3" style="text-align:left; padding-left:1.5mm;">이름</th>';
+    h += '<table class="pt" style="--rh:' + rh.toFixed(2) + 'mm"><colgroup><col style="width:7mm"><col style="width:15mm"><col style="width:8mm"><col style="width:9mm">' + rcols + days.map(function() { return '<col>'; }).join('') + '</colgroup>';
+    h += '<thead><tr><th rowspan="3"></th><th rowspan="3" style="text-align:left; padding-left:1.5mm;">이름</th><th rowspan="3" class="grp">기존</th><th rowspan="3" class="grp">총일수</th>';
     for (let k = 0; k < nr; k++) h += '<th class="grp" colspan="2" rowspan="3"><i style="background:' + TRIP_PCOL[k] + '"></i>' + (k + 1) + '회 기간 · 일수</th>';
-    h += '<th rowspan="3" class="grp">기존</th><th rowspan="3" class="grp">총일수</th>';
     periods.forEach(function(p, pi) { const n = days.filter(function(x) { return x.p === pi; }).length; if (n) h += '<th class="per" colspan="' + n + '" style="--mc:' + TRIP_MTINT[pi % 4] + '">' + tripRangeLabel(p.from, p.to) + ' · ' + tripCountDays(p.from, p.to, g) + '일</th>'; });
     const sep = function(x) { return x.pst && x.p ? ' pst' : x.wk ? ' wk' : ''; };
     h += '</tr><tr>' + days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hd' : '') + sep(x) + '" style="background:' + TRIP_MTINT2[x.p % 4] + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr>';
     h += '<tr>' + days.map(function(x) { return '<th class="dw' + (hol[x.d] ? ' hd' : '') + sep(x) + '" style="background:' + TRIP_MTINT2[x.p % 4] + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
     all.forEach(function(s) {
       h += '<tr><td class="n">' + s.num + '</td><td class="l nm">' + escapeHtmlAttr(s.name) + '</td>';
+      h += '<td class="n" style="border-left:0.8pt solid #C9CED8;">' + (s.pre || '') + '</td><td class="tot' + (s.tot > TRIP_LIMIT ? ' over' : s.tot >= TRIP_LIMIT - 2 ? ' near' : '') + '">' + (s.tot || '') + '</td>';
       for (let k = 0; k < nr; k++) {
         const r = s.recs[k];
         if (r) h += '<td class="rp">' + tripRangeLabel(r.from, r.to || r.from) + '</td><td class="rd" style="--tc:' + TRIP_PTINT[k] + '">' + abDays(r) + '</td>';
         else h += '<td class="rp empty">·</td><td class="rd"></td>';
       }
-      h += '<td class="n" style="border-left:0.8pt solid #C9CED8;">' + (s.pre || '') + '</td><td class="tot' + (s.tot > TRIP_LIMIT ? ' over' : s.tot >= TRIP_LIMIT - 2 ? ' near' : '') + '">' + (s.tot || '') + '</td>';
       days.forEach(function(x, di) {
         const cls = (di === 0 ? ' first' : '') + sep(x);
         if (hol[x.d]) { h += '<td class="d hol' + cls + '"></td>'; return; }
