@@ -1193,7 +1193,7 @@
     .trip-board td.rc:hover:not(.empty) { background: var(--accent-soft); }
     .trip-board td.rc.pick { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--bc), inset 0 0 0 1px var(--accent-color); }
     .trip-board td.rc .rc-t { font-variant-numeric: tabular-nums; }
-    .trip-board td.rc .rc-d { margin: 0 0 0 3px; font-size: 11px; }
+    .trip-board td.rc .rc-d { display: inline-block; min-width: 16px; margin: 0 1px 0 3px; padding: 0 3px; border-radius: 4px; background: var(--bt, var(--tt-bg)); color: #1B1F2A; font-size: 10.5px; line-height: 16px; text-align: center; box-shadow: inset 0 0 0 1px var(--bc); } /* 일수 배지(회차 색) — 기간 글자와 구별(11/10 사용자) */
     .trip-board td.rc .rc-btns { white-space: nowrap; }
     .trip-board td.day, .trip-board th.dcol, .trip-board td.dcnt { width: var(--dw, 26px); min-width: var(--dw, 26px); max-width: var(--dw, 26px); }
     .trip-board td.day { cursor: cell; position: relative; }
@@ -5696,7 +5696,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.13';
+  var BUILD_ID = '2026-11-10.14';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -15158,8 +15158,8 @@
         for (let k = 0; k < nr; k++) {
           const r = s.recs[k], left = L.rc + W.rc * k;
           if (!r) { t += '<td ' + fx('rc empty' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), left, W.rc) + '></td>'; continue; }
-          t += '<td class="fix rc' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : '') + (abSelId === r.id ? ' pick' : '') + '" style="left:' + left + 'px; width:' + W.rc + 'px; min-width:' + W.rc + 'px; --bc:' + TRIP_COLORS[Math.min(k, 4)] + '" data-id="' + r.id + '" title="' + (r.detail ? escapeHtmlAttr(r.detail) + ' · ' : '') + '누르면 고치기 상자">' +
-            '<span class="rc-t">' + tripRangeLabel(r.from, r.to || r.from) + '</span><b class="rc-d">' + abDays(r) + '</b>' +
+          t += '<td class="fix rc' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : '') + (abSelId === r.id ? ' pick' : '') + '" style="left:' + left + 'px; width:' + W.rc + 'px; min-width:' + W.rc + 'px; --bc:' + TRIP_COLORS[Math.min(k, 4)] + '; --bt:' + TRIP_PTINT[Math.min(k, 4)] + '" data-id="' + r.id + '" title="' + (r.detail ? escapeHtmlAttr(r.detail) + ' · ' : '') + abDays(r) + '일 · 누르면 고치기 상자">' +
+            '<span class="rc-t">' + tripRangeLabel(r.from, r.to || r.from) + '</span><b class="rc-d" title="' + abDays(r) + '일">' + abDays(r) + '</b>' +
             '<span class="rc-btns"><button class="trip-pr" title="이 신청서 인쇄 (신청서 + 결과보고서 2장)" onclick="event.stopPropagation(); tripPrintRecordNow(\'' + r.id + '\')">🖨️</button>' +
             (canEdit ? '<button class="trip-pr del" title="이 기록 지우기" onclick="event.stopPropagation(); abDelete(\'' + r.id + '\')">🗑</button>' : '') + '</span></td>';
         }
