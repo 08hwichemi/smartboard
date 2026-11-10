@@ -3678,7 +3678,7 @@
 
       <div id="ab-pane-trip" class="ab-pane" style="display:none;">
         <div id="trip-ctrl" style="display:flex; align-items:center; gap:8px 14px; flex-wrap:wrap; margin-bottom:8px; font-size:12px;"></div>
-        <div id="trip-bulk" class="trip-bulk" style="display:none;"></div>
+        <div id="trip-panel" class="trip-bulk" style="display:none;"></div>
         <div id="trip-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
         <div id="trip-grid" class="ab-scroll" style="position:relative; overflow:auto; border:1px solid var(--border-color); border-radius:8px;"></div>
         <div id="trip-foot" class="ab-muted" style="margin-top:6px; line-height:1.7;"></div>
@@ -5669,7 +5669,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.3';
+  var BUILD_ID = '2026-11-10.4';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -14007,7 +14007,8 @@
   let abSelId = null, abEditId = null, abFilterNum = null, abTab = 'input';
   // 🗓 교외체험학습 현황판(아래 "===== 🗓" 부분): 쓰는 학년의 교외체험학습 기록은 서버 표(trip_records)에 함께 둔다.
   let tripRecs = [], tripRecsKey = '', tripPrior = {}, tripHol = {}, tripRosters = {}, tripLoadError = '';
-  let tripPick = null, tripBulk = null, tripTimer = null, tripWatching = false;
+  let tripPick = null, tripTimer = null, tripWatching = false;
+  let tripPrintSet = null, tripPrintPanel = null; // 🖨️ 신청서 모아 출력: 기록 id 목록 · 고르기 칸 { sel: {번호: true}, rounds: {회차: true} }
   let tripAllCls = null, tripPrintAll = false; // 전체 보기(부장): 지금 보는 반 · 인쇄를 모든 반으로
 
   function abCfg() {
@@ -14178,7 +14179,7 @@
     abSetCfg({ g: g, c: k, all: all });
     abFillClassSelects();
     tripApplyVisibility();
-    abSelId = null; abEditId = null; abFilterNum = null; tripPick = null; tripBulk = null;
+    abSelId = null; abEditId = null; abFilterNum = null; tripPick = null; tripPrintSet = null; tripPrintPanel = null;
     if (all && abTab !== 'trip') { abTab = 'trip'; abApplyTab(); } // 전체 보기는 현황판에서만 뜻이 있다
     abRenderAll(true);
     await Promise.all([abLoadRoster(), tripLoad()]);
@@ -14663,7 +14664,7 @@
   function abRenderPreview() {
     const paper = document.getElementById('ab-paper'), label = document.getElementById('ab-prev-label');
     // 🗓 현황 탭에서 띠를 고르지 않았으면 미리보기 = 신청 현황표(가로 A4)
-    if (abTab === 'trip' && !abSelId) return tripRenderSheet();
+    if (abTab === 'trip' && !abSelId) return tripPrintSet ? tripRenderForms() : tripRenderSheet();
     tripClearSheet();
     const r = abAllRecords().find(function(x) { return x.id === abSelId; });
     const recs = r ? abClassRecordsOf(r.g, r.c) : [];
@@ -14742,11 +14743,18 @@
     if (abTab === 'trip' && !abSelId) { // 신청 현황표(가로)
       const c = abCfg();
       if (!c.g || !tripOn(c.g) || (!c.c && !c.all)) return customAlert('현황판을 쓰는 학년의 반(또는 전체)을 먼저 고르세요.');
-      tripRenderSheet();
       let st = document.getElementById('ab-page-style');
       if (!st) { st = document.createElement('style'); st.id = 'ab-page-style'; document.head.appendChild(st); }
-      const d = TRIP_PAPERS[tripPaper()];
-      st.textContent = '@media print { @page { size: ' + d[0] + 'mm ' + d[1] + 'mm; margin: 0; } }'; // 가로 A4·B4·A3
+      if (tripPrintSet) { // 🖨️ 신청서 모아 출력(세로 A4, 학생마다 신청서 + 결과보고서)
+        if (!tripPrintSet.length) return customAlert('출력할 학생을 먼저 고르세요.');
+        if (!abForms) { try { await abLoadForms(); } catch (e) { return customAlert('양식을 못 불러왔어요. 인터넷 연결을 확인해 주세요.'); } }
+        tripRenderForms();
+        st.textContent = '@media print { @page { size: A4 portrait; margin: 0; } }';
+      } else {
+        tripRenderSheet();
+        const d = TRIP_PAPERS[tripPaper()];
+        st.textContent = '@media print { @page { size: ' + d[0] + 'mm ' + d[1] + 'mm; margin: 0; } }'; // 가로 A4·B4·A3
+      }
       const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
       window.addEventListener('afterprint', done);
       window.print();
@@ -14999,16 +15007,17 @@
     const pane = document.getElementById('ab-pane-trip');
     if (!pane || pane.style.display === 'none') return;
     const c = abCfg(), g = Number(c.g) || 0;
-    const ctrl = document.getElementById('trip-ctrl'), grid = document.getElementById('trip-grid'), foot = document.getElementById('trip-foot'), bulk = document.getElementById('trip-bulk');
-    tripClosePop();
-    if (!g || (!c.c && !c.all)) { ctrl.innerHTML = ''; bulk.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = abNeedClassHtml(); return; }
-    if (!tripOn(g)) { ctrl.innerHTML = ''; bulk.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = '<div class="ab-empty">' + g + '학년은 교외체험학습 현황판을 쓰지 않아요.<br>관리자 설정 → 👤 계정 관리 → 🗓 교외체험학습 현황판에서 쓰는 학년과 기간을 고를 수 있어요.</div>'; return; }
+    const ctrl = document.getElementById('trip-ctrl'), grid = document.getElementById('trip-grid'), foot = document.getElementById('trip-foot'), panel = document.getElementById('trip-panel');
+    // 열려 있던 작은 상자(지우기·추가·기존)는 다시 그린 뒤 같은 칸에 도로 붙인다 — 실시간으로 다시 받을 때 상자가 사라지던 것(11/10 사용자)
+    const prevPop = grid.querySelector('.trip-pop'); if (prevPop) prevPop.remove();
+    if (!g || (!c.c && !c.all)) { ctrl.innerHTML = ''; panel.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = abNeedClassHtml(); return; }
+    if (!tripOn(g)) { ctrl.innerHTML = ''; panel.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = '<div class="ab-empty">' + g + '학년은 교외체험학습 현황판을 쓰지 않아요.<br>관리자 설정 → 👤 계정 관리 → 🗓 교외체험학습 현황판에서 쓰는 학년과 기간을 고를 수 있어요.</div>'; return; }
     const canEdit = !c.all && tripCanEdit(g, c.c);
     const days = tripDayList(g), hol = tripHolidays(g), periods = tripPeriods(g), groups = tripGroups();
     // 머리줄: 기간 · 👥 · 📤 · 범례 · 보기만
     const perTxt = periods.map(function(p) { return tripRangeLabel(p.from, p.to) + '(' + tripCountDays(p.from, p.to, g) + '일)'; }).join(' · ');
     let h = '<span style="font-weight:700;">쓰는 기간</span><span class="ab-muted" title="관리자 설정 → 계정 관리 → 🗓 현황판에서 고쳐요">' + escapeHtmlAttr(perTxt) + '</span>';
-    if (canEdit) h += '<button class="top-btn" style="font-size:11.5px; padding:4px 10px;" onclick="tripToggleBulk()">👥 여러 명 같은 기간</button>';
+    h += '<button class="top-btn' + (tripPrintPanel ? ' theme-active' : '') + '" style="font-size:11.5px; padding:4px 10px;" onclick="tripTogglePrintPanel()" title="학생(과 회차)을 골라 신청서+결과보고서를 한 번에 인쇄">🖨️ 신청서 모아 출력</button>';
     const pend = tripLocalPending();
     if (canEdit && pend.length) h += '<button class="top-btn" style="font-size:11.5px; padding:4px 10px; border-color:var(--accent-color); color:var(--accent-color);" onclick="tripMigrate()" title="현황판 전에 내 계정 자료로 넣어 둔 교외체험학습 기록을 서버로 옮겨 함께 봐요">📤 서버로 옮기기 (' + pend.length + '건)</button>';
     h += '<span class="trip-legend">' + TRIP_COLORS.map(function(col, k) { return '<span><i class="trip-sw" style="background:' + col + '"></i>' + (k + 1) + '회</span>'; }).join('') +
@@ -15026,7 +15035,7 @@
     }
     ctrl.innerHTML = h;
     // 👥 여러 명 같은 기간
-    if (tripBulk && canEdit) { bulk.style.display = ''; tripRenderBulk(groups[0]); } else { bulk.style.display = 'none'; tripBulk = null; }
+    if (tripPrintPanel) { panel.style.display = ''; tripRenderPrintPanel(shown[0]); } else panel.style.display = 'none';
     // 격자
     if (tripLoadError) { grid.innerHTML = '<div class="ab-empty">서버에서 교외체험학습 기록을 못 받았어요: ' + escapeHtmlAttr(tripLoadError) + '<br>인터넷 연결을 확인하고 다시 열어 주세요.</div>'; foot.innerHTML = ''; return; }
     const perAll = periods.map(function(p) { return tripRangeLabel(p.from, p.to); }).join(' · ');
@@ -15041,7 +15050,7 @@
       grp.students.forEach(function(s) {
         sum += s.tot; if (s.recs.length) cnt++; if (s.tot > TRIP_LIMIT) over++;
         const tc = s.tot > TRIP_LIMIT ? ' tot-over' : s.tot >= TRIP_LIMIT - 2 ? ' tot-near' : '';
-        t += '<tr class="' + (tripBulk && tripBulk.sel[s.num] ? 'bsel' : '') + '" data-c="' + grp.cno + '" data-n="' + s.num + '"><td class="fix c-num">' + s.num + '</td><td class="fix c-name" title="' + escapeHtmlAttr(s.name) + '">' + escapeHtmlAttr(s.name) + '</td>' +
+        t += '<tr class="' + (tripPrintPanel && tripPrintPanel.sel[s.num] ? 'bsel' : '') + '" data-c="' + grp.cno + '" data-n="' + s.num + '"><td class="fix c-num">' + s.num + '</td><td class="fix c-name" title="' + escapeHtmlAttr(s.name) + '">' + escapeHtmlAttr(s.name) + '</td>' +
           '<td class="fix c-pre' + (canEdit ? ' ed' : '') + '" title="자동 ' + s.auto + ' + 직접 ' + s.man + (s.memo ? ' (' + escapeHtmlAttr(s.memo) + ')' : '') + '">' + (s.pre || '') + (s.man ? '<span class="hand">✎</span>' : '') + '</td><td class="fix c-tot' + tc + '">' + (s.tot || '') + '</td>';
         if (canEdit) {
           const left = periods.filter(function(p) { return !s.recs.some(function(r) { return p.from <= (r.to || r.from) && p.to >= r.from; }); }).length;
@@ -15068,6 +15077,7 @@
     t += '</tbody>';
     t += '<tfoot><tr><td class="fix c-num" colspan="2" style="left:0; width:114px; min-width:114px;">' + (c.all && tripAllCls ? tripAllCls + '반 합계' : '합계') + '</td><td class="fix c-pre"></td><td class="fix c-tot">' + grand + '</td>' + (canEdit ? '<td class="fix c-all"></td>' : '') + '<td colspan="' + days.length + '" style="text-align:left; padding-left:8px;">신청 ' + grandN + '명 · ' + (TRIP_LIMIT + 1) + '일 이상 ' + over + '명</td></tr></tfoot>';
     grid.innerHTML = t + '</table>';
+    if (prevPop && prevPop.__anchor) { const at = grid.querySelector(prevPop.__anchor); if (at) tripPopAt(prevPop, at); }
     foot.innerHTML = (canEdit ? '빈 칸을 누르면 시작일, 한 번 더 누르면 종료일 → 바로 추가. 띠를 누르면 오른쪽에 신청서, 두 번 누르면 ✏️ 입력 탭에서 고치기. 기존 칸을 누르면 직접 적기. ' : '띠를 누르면 오른쪽에 그 학생 신청서가 보여요. ') +
       '일수는 토·일과 학년 공통 휴일(공휴일·학사일정 + 아래 더한 날)을 뺀 날 수, 연간 출석인정 한도 ' + TRIP_LIMIT + '일.<br>' + tripHolLine(g, canEdit || tripCanEditGrade(g));
   }
@@ -15083,13 +15093,18 @@
 
   // ----- 누르기: 띠(미리보기·고치기) · 빈 칸 두 번(한 명 추가) · 기존(직접 적기) -----
   function tripClosePop() { const o = document.querySelector('#trip-grid .trip-pop'); if (o) o.remove(); }
-  function tripPlacePop(td, html) {
+  function tripPopAt(pop, td) {
     const box = document.getElementById('trip-grid'), rect = td.getBoundingClientRect(), br = box.getBoundingClientRect();
-    const pop = document.createElement('div'); pop.className = 'trip-pop';
     const z = parseFloat(getComputedStyle(document.getElementById('ab-pane-trip')).zoom) || 1;
     pop.style.left = Math.max(0, Math.min((rect.left - br.left) / z + box.scrollLeft, box.scrollWidth - 270)) + 'px';
     pop.style.top = ((rect.bottom - br.top) / z + box.scrollTop + 4) + 'px';
-    pop.innerHTML = html; box.appendChild(pop);
+    const tr = td.closest('tr[data-c]');
+    pop.__anchor = (tr ? 'tr[data-c="' + tr.dataset.c + '"][data-n="' + tr.dataset.n + '"] ' : '') + (td.dataset.id ? 'td.bar[data-id="' + td.dataset.id + '"]' : td.dataset.d ? 'td.day[data-d="' + td.dataset.d + '"]' : td.classList.contains('c-pre') ? 'td.c-pre' : 'td');
+    box.appendChild(pop);
+  }
+  function tripPlacePop(td, html) {
+    const pop = document.createElement('div'); pop.className = 'trip-pop'; pop.innerHTML = html;
+    tripPopAt(pop, td);
     return pop;
   }
   document.addEventListener('DOMContentLoaded', function() {
@@ -15104,7 +15119,7 @@
       const td = ev.target.closest('td.day'); if (!td || td.classList.contains('hol')) return;
       tripClosePop();
       if (td.classList.contains('bar')) { // 띠 → 그 기록 신청서 미리보기 + (담임) 고치기·지우기 상자
-        tripPick = null; abSelId = td.dataset.id;
+        tripPick = null; abSelId = td.dataset.id; tripPrintSet = null;
         document.querySelectorAll('#trip-grid td.bar.pick').forEach(function(x) { x.classList.remove('pick'); });
         td.closest('tr').querySelectorAll('td.bar[data-id="' + td.dataset.id + '"]').forEach(function(x) { x.classList.add('pick'); });
         abRenderPreview();
@@ -15127,7 +15142,7 @@
     document.addEventListener('keydown', function(e) {
       if (e.key !== 'Escape' || abTab !== 'trip' || document.getElementById('absence-page').style.display === 'none') return;
       if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && !e.target.closest('#trip-grid')) return;
-      tripPick = null; abSelId = null; tripClosePop(); tripRender(); abRenderPreview(); tripMsg('');
+      tripPick = null; abSelId = null; tripPrintSet = null; tripPrintPanel = null; tripClosePop(); tripRender(); abRenderPreview(); tripMsg('');
     });
   });
   // 📌 이 학생에게 쓰는 기간 전부(이미 겹치는 기간은 빼고) — 관리자가 정한 공식 날짜를 그대로 붙여 넣듯(11/10 사용자).
@@ -15148,12 +15163,14 @@
   // 띠를 누르면: 그 기록 요약 + 🗑 지우기 · ✎ 고치기(✏️ 입력 탭). 잘못 넣은 것을 바로 지울 수 있게(11/10 사용자).
   function tripBarPop(td, id) {
     const r = abAllRecords().find(function(x) { return x.id === id; }); if (!r) return;
-    const k = tripStudentRecs(r.g, r.c, r.num).findIndex(function(x) { return x.id === id; });
+    const mine = tripStudentRecs(r.g, r.c, r.num), k = mine.findIndex(function(x) { return x.id === id; }), n = mine.length;
     const pop = tripPlacePop(td, '<div><b>' + r.num + '번 ' + escapeHtmlAttr(r.name || '') + '</b> · ' + (k + 1) + '회 · ' + tripRangeLabel(r.from, r.to || r.from) + ' · <b>' + abDays(r) + '일</b>' + (r.detail ? ' <span class="k">' + escapeHtmlAttr(r.detail) + '</span>' : '') + '</div>' +
-      '<div class="trip-row"><button class="top-btn" style="font-size:12px; padding:4px 10px; color:var(--alert); border-color:var(--alert);" id="trip-bar-del">🗑 이 기록 지우기</button><button class="top-btn" style="font-size:12px; padding:4px 10px;" id="trip-bar-edit">✎ 고치기</button><button class="top-btn" style="font-size:12px; padding:4px 10px;" id="trip-bar-close">닫기</button></div>' +
-      '<div class="ab-muted" style="margin-top:6px;">오른쪽 미리보기가 이 기록의 신청서예요. 이 학생의 다른 회차는 그 띠를 누르세요.</div>');
+      '<div class="trip-row"><button class="top-btn" style="font-size:12px; padding:4px 10px; color:var(--alert); border-color:var(--alert);" id="trip-bar-del">🗑 이 기록 지우기</button><button class="top-btn" style="font-size:12px; padding:4px 10px;" id="trip-bar-edit">✎ 고치기</button>' +
+      '<button class="top-btn" style="font-size:12px; padding:4px 10px;" id="trip-bar-all" title="이 학생의 신청서 + 결과보고서를 회차마다 모두 오른쪽에 모아요">🖨️ 이 학생 신청서 전부 (' + n + '회)</button><button class="top-btn" style="font-size:12px; padding:4px 10px;" id="trip-bar-close">닫기</button></div>' +
+      '<div class="ab-muted" style="margin-top:6px;">오른쪽 미리보기가 이 기록의 신청서예요 — 🖨️ 출력을 누르면 이것만 2장. 다른 회차는 그 띠를 누르세요.</div>');
     pop.querySelector('#trip-bar-del').onclick = function() { tripClosePop(); abDelete(id); };
     pop.querySelector('#trip-bar-edit').onclick = function() { tripClosePop(); abEdit(id); };
+    pop.querySelector('#trip-bar-all').onclick = function() { tripPrintStudent(r.c, r.num); };
     pop.querySelector('#trip-bar-close').onclick = function() { tripClosePop(); };
   }
   function tripAddPop(td, g, cno, num, a, b) {
@@ -15195,81 +15212,90 @@
     pop.querySelectorAll('input').forEach(function(el) { el.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); ok(); } if (e.key === 'Escape') { e.stopPropagation(); tripClosePop(); } }; });
   }
 
-  // ----- 👥 여러 명 같은 기간 -----
-  // 기간 여러 개 × 학생 여러 명 → 학생마다 기간마다 기록 한 건(요청 한 번). 쓰는 기간은 칩으로 켜고 끄고, 직접 더한 기간도 칩으로.
-  // 이미 겹치는 기간은 그 학생에게서만 뺀다(겹침 n). "○번처럼"은 그 학생의 회차를 그대로 기간으로 — 아직 한 번도 안 쓴 학생들에게
-  // 같은 패턴(쓰는 기간 전부 등)을 넣을 때 기간을 하나씩 다시 고르지 않게(11/10 사용자: 한 명씩·기간 하나씩은 너무 불편).
-  function tripToggleBulk() {
-    if (tripBulk) tripBulk = null;
-    else { tripBulk = { periods: tripPeriods(abCfg().g).map(function(p) { return { from: p.from, to: p.to, on: true }; }), sel: {}, detail: '' }; tripPick = null; }
-    tripRender();
+  // ----- 🖨️ 신청서 모아 출력 -----
+  // 띠를 하나씩 눌러 찍지 않고, 학생(과 회차)을 골라 신청서 + 결과보고서를 오른쪽에 차례로 쌓아 🖨️ 출력 한 번에(11/10 사용자: 창을 옮기지 않고 여기서 바로).
+  // 👥 "여러 명 같은 기간"은 뺐다 — 쓰는 기간은 📌으로 넣고, 다른 날짜는 빈 칸 두 번이면 돼서(11/10 사용자).
+  function tripShownGroup() { const c = abCfg(), groups = tripGroups(); return (c.all ? groups.find(function(x) { return x.cno === tripAllCls; }) : groups[0]) || null; }
+  function tripTogglePrintPanel() {
+    if (tripPrintPanel) { tripPrintPanel = null; tripPrintSet = null; }
+    else {
+      const grp = tripShownGroup(), sel = {}, rounds = {};
+      let maxR = 1;
+      (grp ? grp.students : []).forEach(function(s) { if (s.recs.length) { sel[s.num] = true; maxR = Math.max(maxR, s.recs.length); } });
+      for (let k = 1; k <= maxR; k++) rounds[k] = true;
+      tripPrintPanel = { sel: sel, rounds: rounds };
+      tripPick = null; abSelId = null; tripClosePop();
+      tripPrintSet = tripPrintIds();
+    }
+    tripRender(); abRenderPreview();
   }
-  function tripBulkPeriods() {
-    if (!tripBulk) return [];
-    return tripBulk.periods.filter(function(p) { return p.on && p.from; }).map(function(p) { return { from: p.from, to: p.to && p.to >= p.from ? p.to : p.from }; });
+  function tripPrintIds() {
+    const grp = tripShownGroup(), ids = [];
+    if (!grp || !tripPrintPanel) return ids;
+    grp.students.forEach(function(s) { if (!tripPrintPanel.sel[s.num]) return; s.recs.forEach(function(r, k) { if (tripPrintPanel.rounds[k + 1]) ids.push(r.id); }); });
+    return ids;
   }
-  // 이 학생에게 넣을 기간(이미 겹치는 것은 뺌)
-  function tripBulkPlan(s) {
-    const c = abCfg(), recs = tripStudentRecs(c.g, c.c, s.num), ok = [], skip = [];
-    tripBulkPeriods().forEach(function(p) { (recs.some(function(r) { return p.from <= (r.to || r.from) && p.to >= r.from; }) ? skip : ok).push(p); });
-    return { ok: ok, skip: skip, days: ok.reduce(function(a, p) { return a + tripCountDays(p.from, p.to, c.g); }, 0) };
-  }
-  function tripRenderBulk(grp) {
-    const box = document.getElementById('trip-bulk'), g = Number(abCfg().g), students = grp ? grp.students : [];
-    const pers = tripBulkPeriods(), perDays = pers.reduce(function(a, p) { return a + tripCountDays(p.from, p.to, g); }, 0);
-    const selNums = Object.keys(tripBulk.sel).map(Number);
-    let recCount = 0; selNums.forEach(function(n) { const s = students.find(function(x) { return x.num === n; }); if (s) recCount += tripBulkPlan(s).ok.length; });
-    const withRounds = students.filter(function(s) { return s.recs.length; });
-    let h = '<div class="trip-row"><b>👥 여러 명에게 쓰는 기간 넣기</b><span class="ab-muted">관리자가 정한 쓰는 기간이 그대로 들어가요(빼고 싶은 기간은 칩을 끄세요). 학생을 고르고 ➕ 추가 — 학생마다 기간마다 기록 한 건씩(신청서도 각자).</span><span style="flex:1"></span><button class="top-btn" style="font-size:12px; padding:4px 10px;" onclick="tripToggleBulk()">닫기</button></div>';
-    // ① 기간
-    h += '<div class="trip-row"><span style="font-weight:800; min-width:44px;">기간</span><span class="trip-chips">' + tripBulk.periods.map(function(p, i) {
-      const d = p.from ? tripCountDays(p.from, p.to && p.to >= p.from ? p.to : p.from, g) : 0;
-      return '<label class="trip-chip trip-per' + (p.on ? ' on' : '') + '"><input type="checkbox"' + (p.on ? ' checked' : '') + ' onchange="tripBulkTogglePeriod(' + i + ', this.checked)">' + (p.from ? tripRangeLabel(p.from, p.to && p.to >= p.from ? p.to : p.from) : '?') + ' <span style="font-weight:600; opacity:0.8;">' + d + '일</span>' +
-        '</label>';
-    }).join('') + '</span>' +
-      '<span class="ab-muted">→ 학생마다 ' + pers.length + '건 · ' + perDays + '일</span></div>';
-    // ② 학생
-    h += '<div class="trip-row"><span style="font-weight:800; min-width:44px;">학생</span>' +
-      '<button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripBulkAll(\'empty\')" title="아직 교외체험학습 기록이 하나도 없는 학생만 고르기">아직 기록 없는 학생</button>' +
-      '<button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripBulkAll(\'all\')">전체 선택</button><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripBulkAll(\'none\')">해제</button>' +
-      '<span class="ab-muted">겹치는 기간은 그 학생에게서만 빠져요(겹침 n). 한도(' + TRIP_LIMIT + '일)를 넘으면 빨간 숫자.</span></div>' +
-      '<div class="trip-chips">' + students.map(function(s) {
-        const plan = tripBulkPlan(s), on = !!tripBulk.sel[s.num], none = pers.length > 0 && !plan.ok.length, tot = s.tot + plan.days;
-        return '<label class="trip-chip' + (on ? ' on' : '') + (none ? ' warn' : '') + '" title="' + (none ? '고른 기간이 모두 이미 있는 기록과 겹쳐요' : '총일수 ' + s.tot + ' → ' + tot + (plan.skip.length ? ' (겹치는 ' + plan.skip.length + '개 기간은 뺌)' : '')) + '"><input type="checkbox"' + (on ? ' checked' : '') + (none ? ' disabled' : '') + ' onchange="tripBulkPick(' + s.num + ', this.checked)">' + s.num + ' ' + escapeHtmlAttr(s.name) +
-          (none ? '<span class="t">겹침</span>' : (plan.skip.length ? '<span class="t" style="color:var(--text-sub);">겹침 ' + plan.skip.length + '</span>' : '') + (tot > TRIP_LIMIT ? '<span class="t">' + tot + '일</span>' : '')) + '</label>';
-      }).join('') + '</div>';
-    // ③ 추가
-    h += '<div class="trip-row"><span style="font-weight:800; min-width:44px;"></span><input type="text" id="trip-b-detail" class="ab-in" style="width:220px;" placeholder="구체적인 사유 (모두 같게, 비워도 돼요)" value="' + escapeHtmlAttr(tripBulk.detail || '') + '" oninput="tripBulk.detail = this.value">' +
-      '<span style="flex:1"></span><button class="top-btn accent" style="font-size:12px; padding:4px 12px;" onclick="tripBulkAdd()"' + (!recCount ? ' disabled' : '') + '>➕ ' + selNums.length + '명 · ' + recCount + '건 추가</button></div>';
+  function tripPrintApply() { tripPrintSet = tripPrintIds(); tripRender(); abRenderPreview(); }
+  function tripRenderPrintPanel(grp) {
+    const box = document.getElementById('trip-panel'), students = (grp ? grp.students : []).filter(function(s) { return s.recs.length; });
+    let maxR = 1; students.forEach(function(s) { maxR = Math.max(maxR, s.recs.length); });
+    const ids = tripPrintIds(), nSel = students.filter(function(s) { return tripPrintPanel.sel[s.num]; }).length;
+    let h = '<div class="trip-row"><b>🖨️ 신청서 모아 출력</b><span class="ab-muted">고른 학생의 신청서 + 결과보고서가 오른쪽에 차례로 쌓여요. 🖨️ 출력 한 번이면 모두 인쇄돼요(세로 A4).</span><span style="flex:1"></span><button class="top-btn" style="font-size:12px; padding:4px 10px;" onclick="tripTogglePrintPanel()">닫기</button></div>';
+    const rc = []; for (let k = 1; k <= maxR; k++) rc.push('<label class="trip-chip' + (tripPrintPanel.rounds[k] ? ' on' : '') + '"><input type="checkbox"' + (tripPrintPanel.rounds[k] ? ' checked' : '') + ' onchange="tripPrintRound(' + k + ', this.checked)">' + k + '회</label>');
+    h += '<div class="trip-row"><span style="font-weight:800; min-width:44px;">회차</span><span class="trip-chips">' + rc.join('') + '</span><span style="flex:1"></span>' +
+      '<button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripPrintSelAll(true)">전체 선택</button><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripPrintSelAll(false)">해제</button></div>';
+    h += '<div class="trip-chips">' + students.map(function(s) {
+      const on = !!tripPrintPanel.sel[s.num];
+      return '<label class="trip-chip' + (on ? ' on' : '') + '" title="' + s.recs.map(function(r, k) { return (k + 1) + '회 ' + tripRangeLabel(r.from, r.to || r.from); }).join(' · ') + '"><input type="checkbox"' + (on ? ' checked' : '') + ' onchange="tripPrintPick(' + s.num + ', this.checked)">' + s.num + ' ' + escapeHtmlAttr(s.name) + ' <span style="font-weight:600; opacity:0.75;">' + s.recs.length + '회</span></label>';
+    }).join('') + (students.length ? '' : '<span class="ab-muted">기록이 있는 학생이 없어요.</span>') + '</div>';
+    h += '<div class="trip-row"><span class="ab-muted">띠를 누르면 그 기록 하나만 미리보기로 바뀌어요(Esc로 돌아옴).</span><span style="flex:1"></span><b>' + nSel + '명 · ' + ids.length + '건 · ' + (ids.length * 2) + '장</b>' +
+      '<button class="top-btn accent" style="font-size:12px; padding:4px 12px;" onclick="abPrint()"' + (!ids.length ? ' disabled' : '') + '>🖨️ 출력</button></div>';
     box.innerHTML = h;
   }
-  function tripBulkTogglePeriod(i, on) { if (tripBulk && tripBulk.periods[i]) { tripBulk.periods[i].on = !!on; tripRender(); } }
-  function tripBulkPick(num, on) { if (!tripBulk) return; if (on) tripBulk.sel[num] = true; else delete tripBulk.sel[num]; tripRender(); }
-  function tripBulkAll(mode) {
-    if (!tripBulk) return;
-    tripBulk.sel = {};
-    if (mode !== 'none') { const grp = tripGroups()[0]; (grp ? grp.students : []).forEach(function(s) { if (mode === 'empty' ? !tripStudentRecs(abCfg().g, abCfg().c, s.num).length : tripBulkPlan(s).ok.length) tripBulk.sel[s.num] = true; }); }
-    tripRender();
+  function tripPrintPick(num, on) { if (!tripPrintPanel) return; if (on) tripPrintPanel.sel[num] = true; else delete tripPrintPanel.sel[num]; tripPrintApply(); }
+  function tripPrintRound(k, on) { if (!tripPrintPanel) return; tripPrintPanel.rounds[k] = !!on; tripPrintApply(); }
+  function tripPrintSelAll(on) {
+    if (!tripPrintPanel) return;
+    tripPrintPanel.sel = {};
+    if (on) (tripShownGroup() || { students: [] }).students.forEach(function(s) { if (s.recs.length) tripPrintPanel.sel[s.num] = true; });
+    tripPrintApply();
   }
-  function tripBulkAdd() {
-    const c = abCfg(), g = Number(c.g), cno = Number(c.c);
-    if (!tripBulk) return;
-    const grp = tripGroups()[0], nums = Object.keys(tripBulk.sel).map(Number).sort(function(a, b) { return a - b; }), list = [];
+  // 띠 상자의 "이 학생 신청서 전부"
+  function tripPrintStudent(cno, num) {
+    const recs = tripStudentRecs(abCfg().g, cno, num);
+    if (!recs.length) return;
+    tripPrintPanel = null; tripPrintSet = recs.map(function(r) { return r.id; });
+    tripPick = null; abSelId = null; tripClosePop();
+    tripRender(); abRenderPreview();
+    tripMsg('🖨️ ' + num + '번 ' + escapeHtmlAttr(tripNameOf(abCfg().g, cno, num)) + ' 신청서 ' + recs.length + '건(' + recs.length * 2 + '장)을 오른쪽에 모았어요. 🖨️ 출력을 누르세요. (Esc로 현황표로)');
+  }
+  // 오른쪽 미리보기에 신청서 + 결과보고서를 차례로(세로 A4 여러 장)
+  function tripRenderForms() {
+    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper'), paper2 = document.getElementById('ab-paper2'), label = document.getElementById('ab-prev-label');
+    paper2.style.display = 'none'; paper2.innerHTML = ''; box.classList.remove('ab-two');
+    tripClearSheet();
+    const recs = (tripPrintSet || []).map(function(id) { return abAllRecords().find(function(x) { return x.id === id; }); }).filter(Boolean);
+    if (!recs.length) { paper.innerHTML = '<div class="ab-paper-empty">출력할 학생을 고르면<br>여기에 신청서가 차례로 쌓여요.</div>'; label.textContent = '🖨️ 신청서 모아 출력 · 0장'; abFitPaper(); return; }
+    if (!abForms) {
+      paper.innerHTML = '<div class="ab-paper-empty">양식을 불러오는 중…</div>'; label.textContent = '';
+      abLoadForms().then(abRenderPreview).catch(function() { paper.innerHTML = '<div class="ab-paper-empty">양식을 못 불러왔어요.<br>인터넷 연결을 확인하고 다시 열어 주세요.</div>'; });
+      abFitPaper(); return;
+    }
     let i = 0;
-    nums.forEach(function(num) {
-      const s = (grp ? grp.students : []).find(function(x) { return x.num === num; }) || { num: num, name: tripNameOf(g, cno, num) };
-      tripBulkPlan(s).ok.forEach(function(p) {
-        list.push({ id: abNewId() + (i++).toString(36), created: Date.now() + i, g: g, c: cno, num: num, name: s.name, reason: '교외체험학습', detail: (tripBulk.detail || '').trim(), from: p.from, to: p.to, written: p.to, proof: AB_PROOFS['교외체험학습'][0] });
+    recs.forEach(function(r) {
+      const fv = abFormValues(r), pages = [[fv.form, fv.v]];
+      if (fv.form2 && abForms[fv.form2]) pages.push([fv.form2, fv.v2]);
+      pages.forEach(function(pg) {
+        let pp = paper;
+        if (i) { pp = document.createElement('div'); pp.className = 'ab-paper ab-extra'; box.appendChild(pp); }
+        abFillPaper(pp, abForms[pg[0]], pg[1]);
+        i++;
       });
     });
-    if (!list.length) return;
-    tripBulk = null;
-    tripUpsert(list); // 요청 한 번에 여러 건
-    abSelId = null;
-    abRenderAll(true);
-    tripMsg('✅ ' + nums.length + '명에게 기록 ' + list.length + '건을 넣었어요. 띠를 누르면 그 학생 신청서를 찍거나 🗑 지울 수 있어요.');
+    label.innerHTML = '🖨️ 신청서 모아 출력 · ' + recs.length + '건 · ' + i + '장 <span class="ab-muted">(학생마다 신청서 + 결과보고서, 세로 A4)</span>';
+    abFitPaper();
   }
-  function tripPickClass(n) { tripAllCls = Number(n); tripPick = null; abSelId = null; tripClosePop(); tripRender(); abRenderPreview(); }
+  function tripPickClass(n) { tripAllCls = Number(n); tripPick = null; abSelId = null; tripPrintSet = null; tripPrintPanel = null; tripClosePop(); tripRender(); abRenderPreview(); }
 
   // ----- 🖨️ 신청 현황표(가로) -----
   // 용지 A4·B4·A3(가로): 현황표는 A4 가로 기준(297×210mm)으로 짜고 큰 용지는 그만큼 키운다(zoom) — 글씨·띠가 같이 커진다.

@@ -269,29 +269,25 @@ function check(label, cond, detail) {
   await P.fill('#trip-pre-in', '12'); await P.fill('#trip-pre-memo', '1학기'); await P.press('#trip-pre-in', 'Enter'); await wait(400);
   check('서버 trip_prior 1건(12, 메모), 칸에 12✎, 총일수 12', tripPrior.size === 1 && [...tripPrior.values()][0].days === 12 && [...tripPrior.values()][0].memo === '1학기' && await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="1"] td.c-pre').textContent) === '12✎' && (await tot(P, 1))[0] === '12', [...tripPrior.values()]);
 
-  console.log('[5] 📌 쓰는 기간 전부 넣기 · 👥 여러 명');
-  check('담임 줄마다 📌 단추(쓰는 기간 전부 넣기), 머리에도', await P.evaluate(() => document.querySelectorAll('#trip-grid td.c-all .trip-all-btn').length === 5 && /📌/.test(document.querySelector('#trip-grid th.c-all').textContent) && /12\/1~11 · 12\/18~30 · 2\/1~2/.test(document.querySelector('#trip-grid th.c-all').title)));
+  console.log('[5] 📌 쓰는 기간 전부 넣기');
+  check('담임 줄마다 📌 단추(쓰는 기간 전부 넣기), 머리에도, 👥 단추는 없음', await P.evaluate(() => document.querySelectorAll('#trip-grid td.c-all .trip-all-btn').length === 5 && /📌/.test(document.querySelector('#trip-grid th.c-all').textContent) && /12\/1~11 · 12\/18~30 · 2\/1~2/.test(document.querySelector('#trip-grid th.c-all').title) && ![...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent))));
   await P.click(gridRow(3) + ' .trip-all-btn'); await wait(500);
   check('3번 📌 → 기록 3건(기간마다 한 건, 요청 1번), 띠 1·2·3회, 총일수 19(노랑), 안내 글', tripRecords.size === 5 && [...tripRecords.values()].filter(r => r.num === 3).length === 3 && writes.filter(w => w[0] === 'trip_records' && w[1] === 'upsert').some(w => w[2] === 3) &&
     JSON.stringify([...new Set(await bars(P, 3).then(b => b.map(x => x[0])))]) === '["1","2","3"]' && JSON.stringify(await tot(P, 3)) === '["19","tot-near"]' && /📌 3번 사아자에게 쓰는 기간 3개\(19일\)/.test(await P.innerText('#trip-msg')), [tripRecords.size, await bars(P, 3), await tot(P, 3), await P.innerText('#trip-msg')]);
   check('이미 다 들어간 학생은 📌 단추 없음', await P.evaluate(() => !document.querySelector('#trip-grid tr[data-n="3"] .trip-all-btn') && !!document.querySelector('#trip-grid tr[data-n="2"] .trip-all-btn')));
-  await P.click('#trip-ctrl button:has-text("여러 명")'); await wait(200);
-  check('👥: 기간 칩 = 쓰는 기간 3개 모두 켜짐, 학생 칩 5개, 2번은 "겹침 1"(1회 기간만 빠짐), 3번은 모두 겹쳐 꺼짐', await P.evaluate(() => { const per = [...document.querySelectorAll('#trip-bulk .trip-per')]; const ch = [...document.querySelectorAll('#trip-bulk .trip-chip:not(.trip-per)')]; return per.length === 3 && per.every(x => x.querySelector('input').checked) && ch.length === 5 && /겹침 1/.test(ch[1].textContent) && !ch[1].querySelector('input').disabled && ch[2].classList.contains('warn') && ch[2].querySelector('input').disabled; }));
-  // 1회 기간만 넣기: 2·3회 기간 칩 끄기
-  await P.click('#trip-bulk .trip-per:nth-child(2) input'); await wait(150);
-  await P.click('#trip-bulk .trip-per:nth-child(3) input'); await wait(150);
-  check('기간 칩을 끄면 2번은 겹침으로 꺼짐', await P.evaluate(() => { const ch = [...document.querySelectorAll('#trip-bulk .trip-chip:not(.trip-per)')]; return ch[1].querySelector('input').disabled && /겹침/.test(ch[1].textContent); }));
-  await P.click('#trip-bulk button:has-text("전체 선택")'); await wait(200);
-  check('전체 선택 → 겹치는 2·3번 빼고 3명, 1번은 12+9=21일 경고, 단추 "3명 · 3건 추가"', await P.evaluate(() => document.querySelectorAll('#trip-bulk .trip-chip:not(.trip-per).on').length === 3 && /21일/.test(document.querySelectorAll('#trip-bulk .trip-chip:not(.trip-per)')[0].textContent) && /3명 · 3건 추가/.test(document.querySelector('#trip-bulk button.accent').textContent) && document.querySelectorAll('#trip-grid tr.bsel').length === 3), await P.evaluate(() => document.querySelector('#trip-bulk button.accent').textContent));
-  await P.fill('#trip-b-detail', '수능 후 가족 여행');
-  await P.click('#trip-bulk button.accent'); await wait(500);
-  check('한 번에 3건 저장(요청 1번), 서버 8건, 각자 기록(사유 같음)', tripRecords.size === 8 && [...tripRecords.values()].filter(r => r.detail === '수능 후 가족 여행').length === 3, writes);
-  check('👥 칸 닫힘, 1번 총일수 21 → 빨강(tot-over), 4번 9', await P.evaluate(() => document.getElementById('trip-bulk').style.display === 'none') && JSON.stringify(await tot(P, 1)) === '["21","tot-over"]' && (await tot(P, 4))[0] === '9', [await tot(P, 1), await tot(P, 4)]);
+  // 1·4·5번에게 1회 기간(12/1~11)만: 빈 칸 두 번
+  for (const n of [1, 4, 5]) {
+    await P.click(gridRow(n) + ' td.day[data-d="2026-12-01"]'); await wait(120);
+    await P.click(gridRow(n) + ' td.day[data-d="2026-12-11"]'); await wait(200);
+    await P.fill('#trip-add-detail', '수능 후 가족 여행'); await P.press('#trip-add-detail', 'Enter'); await wait(350);
+  }
+  check('서버 8건, 1번 총일수 21 → 빨강(tot-over), 4번 9', tripRecords.size === 8 && [...tripRecords.values()].filter(r => r.detail === '수능 후 가족 여행').length === 3 && JSON.stringify(await tot(P, 1)) === '["21","tot-over"]' && (await tot(P, 4))[0] === '9', [tripRecords.size, await tot(P, 1), await tot(P, 4)]);
   check('합계 줄: 신청 5명 · 20일 이상 1명', /신청 5명 · 20일 이상 1명/.test(await P.innerText('#trip-grid tfoot')), await P.innerText('#trip-grid tfoot'));
-  await P.click('#trip-ctrl button:has-text("여러 명")'); await wait(200);
-  await P.click('#trip-bulk button:has-text("아직 기록 없는 학생")'); await wait(150);
-  check('"아직 기록 없는 학생"은 지금 0명(모두 기록 있음)', await P.evaluate(() => document.querySelectorAll('#trip-bulk .trip-chip:not(.trip-per).on').length === 0));
-  await P.click('#trip-bulk button:has-text("닫기")'); await wait(150);
+  // 상자는 다시 그려도 그 자리에(실시간으로 다시 받을 때 사라지던 것)
+  await P.click(gridRow(2) + ' td.bar'); await wait(200);
+  await P.evaluate(() => { tripRecsKey = ''; return tripLoad().then(() => abRenderAll()); }); await wait(300);
+  check('띠 상자를 연 채 다시 받아 그려도 상자가 그대로(같은 칸 아래)', await P.evaluate(() => { const pop = document.querySelector('#trip-grid .trip-pop'); const td = document.querySelector('#trip-grid tr[data-n="2"] td.bar'); return !!pop && !!document.getElementById('trip-bar-del') && Math.abs(parseFloat(pop.style.left) - (td.getBoundingClientRect().left - document.getElementById('trip-grid').getBoundingClientRect().left)) < 2; }));
+  await P.keyboard.press('Escape'); await wait(200);
   await P.locator('#absence-page').screenshot({ path: 'trip-board.png' });
 
   console.log('[6] 학년 공통 휴일');
@@ -314,6 +310,26 @@ function check(label, cond, detail) {
   const pr = await P.evaluate(() => { const p = document.getElementById('ab-paper').getBoundingClientRect(); return { w: Math.round(p.width), h: Math.round(p.height), left: getComputedStyle(document.getElementById('ab-left')).display }; });
   check('인쇄 화면: 가로 A4 원래 크기(1123×794px), 입력 칸 숨김', Math.abs(pr.w - 1123) <= 2 && Math.abs(pr.h - 794) <= 2 && pr.left === 'none', pr);
   await P.emulateMedia({ media: 'screen' }); await wait(200);
+
+  console.log('[7b] 🖨️ 신청서 모아 출력');
+  await P.click('#trip-ctrl button:has-text("신청서 모아 출력")'); await wait(900);
+  const pp = await P.evaluate(() => ({ chips: [...document.querySelectorAll('#trip-panel .trip-chips')].pop().querySelectorAll('.trip-chip.on').length, rounds: [...document.querySelectorAll('#trip-panel .trip-chips')][0].querySelectorAll('.trip-chip').length, sum: [...document.querySelectorAll('#trip-panel b')].pop().textContent,
+    pages: [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length, land: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, forms: [...document.querySelectorAll('#ab-paper-box .ab-paper table.xf')].slice(0, 4).map(t => t.dataset.form), label: document.getElementById('ab-prev-label').textContent }));
+  check('모아 출력: 기록 있는 5명 모두 고름, 회차 칩 3개, 8건 · 16장', pp.chips === 5 && pp.rounds === 3 && /5명 · 8건 · 16장/.test(pp.sum), pp);
+  check('미리보기에 세로 16장(신청서·결과보고서 번갈아)', pp.pages === 16 && pp.land === 0 && pp.forms.join('|') === 'trip|report|trip|report' && /8건 · 16장/.test(pp.label), pp);
+  await P.click('#trip-panel .trip-row:nth-child(2) .trip-chip:nth-child(2) input'); await wait(400);
+  await P.click('#trip-panel .trip-row:nth-child(2) .trip-chip:nth-child(3) input'); await wait(400);
+  check('2·3회 끄면 1회만 5건 · 10장', await P.evaluate(() => /5명 · 5건 · 10장/.test([...document.querySelectorAll('#trip-panel b')].pop().textContent) && [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length === 10));
+  await P.click('#trip-panel button.accent'); await wait(400);
+  check('패널의 🖨️ 출력 → 세로 A4 @page', await P.evaluate(() => window.__printed === 2 && /A4 portrait/.test((document.getElementById('ab-page-style') || {}).textContent || '')));
+  await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await P.click('#trip-panel button:has-text("닫기")'); await wait(300);
+  check('닫으면 현황표로', await P.evaluate(() => document.getElementById('trip-panel').style.display === 'none' && document.getElementById('ab-paper').classList.contains('ab-land')));
+  await P.click(gridRow(3) + ' td.bar'); await wait(200);
+  await P.click('#trip-bar-all'); await wait(600);
+  check('띠 상자 "이 학생 신청서 전부 (3회)" → 3건 · 6장', await P.evaluate(() => /3건 · 6장/.test(document.getElementById('ab-prev-label').textContent) && [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length === 6));
+  await P.keyboard.press('Escape'); await wait(300);
+  check('Esc → 현황표', await P.evaluate(() => document.getElementById('ab-paper').classList.contains('ab-land')));
 
   console.log('[8] 띠 → 신청서, 두 번 → 고치기, 사유 바꾸면 내 계정으로, 지우기');
   await P.click(gridRow(4) + ' td.bar'); await wait(300);
