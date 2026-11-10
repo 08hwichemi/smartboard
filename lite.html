@@ -1171,9 +1171,10 @@
     .trip-board thead th.fix { z-index: 3; background: var(--tt-bg); }
     .trip-board .c-name { text-align: left; padding-left: 5px; }
     .trip-board th.c-num, .trip-board td.c-num { font-size: 11px; }
+    .trip-board td.c-name { font-size: 11.5px; letter-spacing: -0.2px; }
     .trip-board td.c-name { display: table-cell; }
-    .trip-board td.c-name .nm { display: inline-block; max-width: 56px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-    .trip-board td.c-name .nm-btns { float: right; margin: 4px 2px 0 6px; white-space: nowrap; }
+    .trip-board td.c-name .nm { display: inline-block; max-width: 48px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .trip-board td.c-name .nm-btns { float: right; margin: 4px 1px 0 3px; white-space: nowrap; }
     .trip-board .c-pre { color: var(--text-sub); }
     .trip-board td.c-pre.ed { cursor: text; }
     .trip-board td.c-pre.ed:hover { background: var(--accent-soft); color: var(--accent-color); }
@@ -1182,22 +1183,22 @@
     .trip-board .c-last { box-shadow: 2px 0 0 var(--border-color); }
     .trip-all-btn { padding: 1px 5px; font-size: 12px; line-height: 1.2; }
     .trip-all-btn:hover { background: var(--accent-soft); }
-    .trip-pr { border: 0; background: transparent; border-radius: 4px; padding: 0; font-size: 11px; line-height: 16px; cursor: pointer; color: var(--text-main); white-space: nowrap; font-family: inherit; }
+    .trip-pr { border: 0; background: transparent; border-radius: 3px; padding: 0; font-size: 10.5px; line-height: 16px; width: 13px; text-align: center; cursor: pointer; color: var(--text-main); white-space: nowrap; font-family: inherit; }
     .trip-pr:hover { background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-color); }
     .trip-pr.del:hover { background: var(--alert-bg); box-shadow: 0 0 0 1px var(--alert); }
     /* 회차 칸(인쇄물처럼 이름 다음): 기간 · 일수 · 🖨️ · 🗑 */
-    .trip-board th.rc-h { text-align: left; padding-left: 5px; font-size: 10px; }
+    .trip-board th.rc-h { text-align: left; padding-left: 4px; font-size: 10px; letter-spacing: -0.3px; }
     .trip-board th.rc-first, .trip-board td.rc-first { border-left: 1px solid var(--border-color); }
-    .trip-board td.rc { text-align: left; padding: 0 1px 0 5px; white-space: nowrap; cursor: pointer; box-shadow: inset 3px 0 0 var(--bc); font-size: 11px; letter-spacing: -0.2px; }
+    .trip-board td.rc { text-align: left; padding: 0 0 0 4px; white-space: nowrap; cursor: pointer; box-shadow: inset 3px 0 0 var(--bc); font-size: 10.5px; letter-spacing: -0.3px; }
     .trip-board td.rc.empty { cursor: default; box-shadow: none; }
     .trip-board td.rc:hover:not(.empty) { background: var(--accent-soft); }
     .trip-board td.rc.pick { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--bc), inset 0 0 0 1px var(--accent-color); }
     .trip-board td.rc .rc-t { font-variant-numeric: tabular-nums; }
-    .trip-board td.rc .rc-d { margin: 0 1px 0 4px; font-size: 11.5px; }
+    .trip-board td.rc .rc-d { margin: 0 0 0 3px; font-size: 11px; }
     .trip-board td.rc .rc-btns { white-space: nowrap; }
     .trip-board td.day, .trip-board th.dcol, .trip-board td.dcnt { width: var(--dw, 26px); min-width: var(--dw, 26px); max-width: var(--dw, 26px); }
     .trip-board td.day { cursor: cell; position: relative; }
-    .trip-board.tight thead th.dcol { font-size: 10px; }
+    .trip-board.tight thead th.dcol { font-size: 9.5px; letter-spacing: -0.3px; }
     .trip-board.tight td.bar.s::before { font-size: 9px; left: 2px; }
     .trip-board.tight tfoot tr.trip-dayrow td.dcnt { font-size: 10px; }
     .trip-board td.day:hover { background: var(--accent-soft); }
@@ -5696,7 +5697,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.12';
+  var BUILD_ID = '2026-11-10.13';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -15120,17 +15121,19 @@
     // (오른쪽 끝에 두었더니 "출력 미리보기와 다르고 자리를 너무 먹는다" — 11/10 사용자) 회차 칸은 3칸, 4·5회가 있으면 늘어남.
     let nr = 3; shown.forEach(function(grp) { grp.students.forEach(function(s) { if (s.recs.length > nr) nr = Math.min(5, s.recs.length); }); });
     // 고정 칸은 되도록 좁게, 날짜 칸은 남은 폭에 맞춰 18~26px — 가로 스크롤이 거의 안 생기게(11/10 사용자)
-    const W = { num: 30, name: 94, rc: 96, pre: 34, tot: 40, all: 26 };
+    const W = { num: 26, name: 78, rc: 86, pre: 30, tot: 36, all: 24 };
     const L = { num: 0, name: W.num }; L.pre = L.name + W.name; L.tot = L.pre + W.pre; L.all = L.tot + W.tot; L.rc = L.all + (canEdit ? W.all : 0);
     const fixedW = W.num + W.name + W.pre + W.tot + (canEdit ? W.all : 0) + W.rc * nr;
     const gapN = days.filter(function(x) { return x.gap; }).length, dayN = days.length - gapN;
-    const availW = (grid.clientWidth || 1000) - fixedW - gapN * 16 - 2;
-    const dayW = Math.max(18, Math.min(26, Math.floor(availW / Math.max(dayN, 1))));
+    const gridW = grid.clientWidth || grid.getBoundingClientRect().width;
+    if (!gridW && !tripRender.__retry) { tripRender.__retry = true; requestAnimationFrame(function() { tripRender.__retry = false; tripRender(); }); } // 아직 폭이 안 잡혔으면 한 프레임 뒤 다시
+    const availW = (gridW || 1000) - fixedW - gapN * 16 - 2;
+    const dayW = Math.max(16, Math.min(26, Math.floor(availW / Math.max(dayN, 1))));
     const fx = function(cls, left, w, extra) { return 'class="fix ' + cls + '" style="left:' + left + 'px; width:' + w + 'px; min-width:' + w + 'px;' + (extra || '') + '"'; };
     let t = '<table class="trip-board' + (dayW < 22 ? ' tight' : '') + '" style="--dw:' + dayW + 'px"><thead><tr><th ' + fx('c-num', L.num, W.num) + ' rowspan="3">번호</th><th ' + fx('c-name', L.name, W.name) + ' rowspan="3">이름</th>';
     t += '<th ' + fx('c-pre', L.pre, W.pre) + ' rowspan="3" title="첫 기간 전에 쓴 일수 = 올해 기록 자동 + 직접 적은 것' + (canEdit ? ' · 누르면 직접 적기' : '') + '">기존</th><th ' + fx('c-tot', L.tot, W.tot) + ' rowspan="3">총일수</th>' +
       (canEdit ? '<th ' + fx('c-all', L.all, W.all) + ' rowspan="3" title="📌 추천 기간 넣기(' + escapeHtmlAttr(perAll) + ') — 한 번도 안 쓴 학생에게 한 번에">📌</th>' : '');
-    for (let k = 0; k < nr; k++) t += '<th ' + fx('rc-h' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), L.rc + W.rc * k, W.rc) + ' rowspan="3" title="' + (k + 1) + '회 기간 · 일수 · 🖨️ 인쇄 · 🗑 지우기"><i class="trip-sw" style="background:' + TRIP_COLORS[k] + '"></i>' + (k + 1) + '회 <span style="font-weight:600; opacity:0.8;">기간·일수</span></th>';
+    for (let k = 0; k < nr; k++) t += '<th ' + fx('rc-h' + (k ? '' : ' rc-first') + (k === nr - 1 ? ' c-last' : ''), L.rc + W.rc * k, W.rc) + ' rowspan="3" title="' + (k + 1) + '회 기간 · 일수 · 🖨️ 인쇄 · 🗑 지우기"><i class="trip-sw" style="background:' + TRIP_COLORS[k] + '; width:10px;"></i>' + (k + 1) + '회 <span style="font-weight:600; opacity:0.8;">기간·일</span></th>';
     tripHeadGroups(days).forEach(function(gr, gi) {
       if (gr.gap) t += '<th class="gap' + (gi ? ' pst' : '') + '" title="' + tripRangeLabel(gr.from, gr.to) + ' 평일 ' + gr.days + '일 — 추천 기간 사이가 길어서 접어 둠(방학 등)">…</th>';
       else t += '<th colspan="' + gr.n + '" class="' + (gi ? 'pst' : '') + '">' + (+gr.m.slice(5)) + '월</th>';
