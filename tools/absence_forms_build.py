@@ -117,6 +117,7 @@ for sheet, rng, key in (('출력미리보기', 'A1:M31', 'confirm'), ('교외체
     ws = wb[sheet]
     t, dyn = build(ws, rng, key)
     t = close_frame(t)
+    t = t.replace('연간(14일)', '연간(19일)')  # 옛 엑셀엔 14일 — 본교 학칙 연간 출석인정 일수는 19일(11/10 사용자)
     pm = ws.page_margins
     res[key] = {'html': t, 'dyn': dyn, 'scale': ws.page_setup.scale,
                 'margin_in': [pm.top, pm.right, pm.bottom, pm.left], 'hcenter': ws.print_options.horizontalCentered}
