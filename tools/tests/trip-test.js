@@ -230,7 +230,7 @@ function check(label, cond, detail) {
   check('명렬표 5명 모두 줄', await P.evaluate(() => document.querySelectorAll('#trip-grid tbody tr[data-n]').length) === 5);
   check('예전 내 계정 기록 1건 → 📤 옮기기 단추', /📤 서버로 옮기기 \(1건\)/.test(await P.innerText('#trip-ctrl')));
   check('옮기기 전엔 예전 기록이 기존(자동)에 셈: 5번 기존 2', await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="5"] td.c-pre').textContent) === '2');
-  check('띠를 안 골랐을 땐 미리보기 = 가로 현황표 1장', await P.evaluate(() => document.getElementById('ab-paper').classList.contains('ab-land') && !!document.querySelector('#ab-paper .tps') && document.querySelectorAll('#ab-paper-box .ab-paper.ab-extra').length === 0 && /현황표 · 가로 A4 1장/.test(document.getElementById('ab-prev-label').textContent)));
+  check('띠를 안 골랐을 땐 미리보기 = 가로 현황표 1장', await P.evaluate(() => document.getElementById('ab-paper').classList.contains('ab-land') && !!document.querySelector('#ab-paper .tps') && document.querySelectorAll('#ab-paper-box .ab-paper.ab-extra').length === 0 && /신청 현황표[\s\S]*1장/.test(document.getElementById('ab-prev-label').textContent) && document.querySelector('#ab-prev-label select').value === 'A4'));
 
   console.log('[2] ✏️ 입력 탭에서 교외체험학습 → 서버 표');
   await P.click('#ab-tabs [data-tab="input"]'); await wait(200);
@@ -295,7 +295,7 @@ function check(label, cond, detail) {
   check('회차 칸: 2번 = 12/1~3 | 12/7~9 | · , 일수 칸 가운데 숫자 + 회차 색', sheet.rounds[1] === '12/1~3|12/7~9|·' && sheet.rd[0] === '3@#DCE7F5' && sheet.rd[1] === '3@#D5EFE4', sheet);
   check('총일수: 1번 20(한도 19 넘어 빨강), 2번 6, 휴일 빗금 2칸(12/10·12/25), 주 구분선 3·기간 구분선 2', sheet.tot[0] === '20!' && sheet.tot[1] === '6' && sheet.hol === 2 && sheet.wk === 3 && sheet.pst === 2, sheet);
   await P.click('#ab-page-header button:has-text("출력")'); await wait(300);
-  check('🖨️ 출력(띠 안 고름) → 인쇄 호출 + 가로 @page', await P.evaluate(() => window.__printed === 1 && /landscape/.test((document.getElementById('ab-page-style') || {}).textContent || '')));
+  check('🖨️ 출력(띠 안 고름) → 인쇄 호출 + 가로 A4 @page(297mm 210mm)', await P.evaluate(() => window.__printed === 1 && /297mm 210mm/.test((document.getElementById('ab-page-style') || {}).textContent || '')));
   await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await P.emulateMedia({ media: 'print' }); await wait(200);
   const pr = await P.evaluate(() => { const p = document.getElementById('ab-paper').getBoundingClientRect(); return { w: Math.round(p.width), h: Math.round(p.height), left: getComputedStyle(document.getElementById('ab-left')).display }; });
@@ -331,13 +331,27 @@ function check(label, cond, detail) {
   await H.selectOption('#ab-grade', '3'); await H.dispatchEvent('#ab-grade', 'change'); await wait(300);
   check('3학년 고르면 반 목록 맨 위에 "전체"', await H.evaluate(() => document.querySelectorAll('#ab-class option')[1].value === 'all' && document.querySelectorAll('#ab-class option')[1].textContent === '전체'));
   await H.selectOption('#ab-class', 'all'); await H.dispatchEvent('#ab-class', 'change'); await wait(800);
-  const hv = await H.evaluate(() => ({ tab: document.getElementById('ab-pane-trip').style.display === '', cls: [...document.querySelectorAll('#trip-grid tr.cls th')].map(t => t.textContent), rows: document.querySelectorAll('#trip-grid tr[data-n]').length, ro: /보기만/.test(document.getElementById('trip-ctrl').textContent), bulk: [...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent)), bars: document.querySelectorAll('#trip-grid td.bar').length, sums: [...document.querySelectorAll('#trip-grid tbody tr:not([data-n]):not(.cls)')].map(tr => tr.textContent.replace(/\s+/g, ' ').trim()), pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, label: document.getElementById('ab-prev-label').textContent, other: document.getElementById('ab-list').textContent }));
-  check('전체 → 🗓 탭으로, 반 머리 3개(1·2·3반), 학생 5+3+2=10줄, "보기만", 👥 없음', hv.tab && hv.cls.join('|') === '3학년 1반|3학년 2반|3학년 3반' && hv.rows === 10 && hv.ro && !hv.bulk, hv);
-  check('담임이 넣은 띠가 보임(1반: 1번·2번·5번 신청 3명), 반 합계 줄 3개', hv.bars > 0 && hv.sums.length === 3 && /신청 3명/.test(hv.sums[0]), hv.sums);
-  check('미리보기 = 반마다 한 장(3장)', hv.pages === 3 && /3장/.test(hv.label), [hv.pages, hv.label]);
+  const hv = await H.evaluate(() => ({ tab: document.getElementById('ab-pane-trip').style.display === '', tabs: [...document.querySelectorAll('#trip-cls-tabs button')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.classList.contains('theme-active') ? '*' : '')), rows: document.querySelectorAll('#trip-grid tr[data-n]').length, ro: /보기만/.test(document.getElementById('trip-ctrl').textContent), bulk: [...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent)), bars: document.querySelectorAll('#trip-grid td.bar').length, foot: document.querySelector('#trip-grid tfoot').textContent.replace(/\s+/g, ' ').trim(), pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, label: document.getElementById('ab-prev-label').textContent, other: document.getElementById('ab-list').textContent }));
+  check('전체 → 🗓 탭으로, 반 단추 3개(요약: 1반 3명·⚠1 / 2반 0명 / 3반 0명), 기록 있는 1반이 먼저 골라짐', hv.tab && hv.tabs.join('|') === '1반 3명 · ⚠1*|2반 0명|3반 0명', hv.tabs);
+  check('한 번에 한 반만(1반 5줄, 반 머리 줄 없음), "보기만", 👥 없음, 1반 합계 줄', hv.rows === 5 && hv.ro && !hv.bulk && /1반 합계/.test(hv.foot) && /신청 3명 · 20일 이상 1명/.test(hv.foot), hv);
+  check('담임이 넣은 띠가 보임', hv.bars > 0, hv.bars);
+  check('미리보기 = 지금 보는 반 1장 + "모든 반" 체크', hv.pages === 1 && /1장/.test(hv.label) && /모든 반/.test(hv.label), [hv.pages, hv.label]);
   check('다른 탭은 반을 고르라는 안내(전체는 현황판에서만)', /학년·반/.test(hv.other));
+  await H.click('#trip-cls-tabs button[data-cls="2"]'); await wait(300);
+  check('2반 단추 → 2반 3줄, 2반 합계, 미리보기도 2반', await H.evaluate(() => document.querySelectorAll('#trip-grid tr[data-n]').length === 3 && /2반 합계/.test(document.querySelector('#trip-grid tfoot').textContent) && /3학년 2반/.test(document.querySelector('#ab-paper .p-meta').textContent) && document.querySelector('#trip-cls-tabs button.theme-active').dataset.cls === '2'));
+  await H.click('#ab-prev-label input[type="checkbox"]'); await wait(300);
+  check('"모든 반" 체크 → 반마다 한 장(3장)', await H.evaluate(() => document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length === 3 && /3장/.test(document.getElementById('ab-prev-label').textContent)));
+  await H.click('#ab-prev-label input[type="checkbox"]'); await wait(200);
+  await H.selectOption('#ab-prev-label select', 'A3'); await wait(300);
+  const a3 = await H.evaluate(() => { const p = document.getElementById('ab-paper'); return { w: p.style.width, h: p.style.height, zoom: p.querySelector('.tps').style.zoom, pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, saved: localStorage.getItem('trip-paper') }; });
+  check('용지 A3 가로 → 종이 420×297mm, 현황표 1.414배(글씨·띠 같이 커짐), 내 계정에 기억', a3.w === '420mm' && a3.h === '297mm' && Math.abs(parseFloat(a3.zoom) - 1.414) < 0.01 && a3.pages === 1 && a3.saved === 'A3', a3);
+  await H.click('#ab-page-header button:has-text("출력")'); await wait(300);
+  check('출력 → @page 420mm 297mm', /420mm 297mm/.test((await H.evaluate(() => (document.getElementById('ab-page-style') || {}).textContent)) || ''));
+  await H.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await H.selectOption('#ab-prev-label select', 'A4'); await wait(200);
+  await H.click('#trip-cls-tabs button[data-cls="1"]'); await wait(300);
   await H.click('#trip-grid tr[data-c="1"][data-n="3"] td.day[data-d="2026-12-18"]'); await wait(200);
-  check('빈 칸을 눌러도 입력 안 됨(보기만 안내)', /보기만/.test(await H.innerText('#trip-msg')) && await H.evaluate(() => !document.querySelector('#trip-grid td.pick') && !document.querySelector('#trip-grid .trip-pop')));
+  check('빈 칸을 눌러도 입력 안 됨(보기만 안내)', /보기만/.test(await H.innerText('#trip-msg')) && await H.evaluate(() => !document.querySelector('#trip-grid td.pick') && !document.querySelector('#trip-grid .trip-pop')), await H.innerText('#trip-msg'));
   check('기존 칸을 눌러도 상자 없음', (await H.click('#trip-grid tr[data-c="1"][data-n="1"] td.c-pre'), await wait(150), await H.evaluate(() => !document.querySelector('#trip-grid .trip-pop'))));
   await H.locator('#absence-page').screenshot({ path: 'trip-head.png' });
   // 실시간: 담임이 넣으면 부장 화면에 바로
