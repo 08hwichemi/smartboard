@@ -1147,6 +1147,92 @@
     .ab-paper-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #888; font-size: 15px; text-align: center; line-height: 1.7; padding: 30px; }
     .ab-muted { font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
     #ab-pane-input, #ab-pane-stat, #ab-pane-hol { max-width: 1180px; }
+    /* ----- 🗓 교외체험학습 현황판(결석계 넷째 탭) ----- */
+    .ab-paper.ab-land { width: 297mm; height: 210mm; }
+    .trip-legend { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-sub); font-weight: 600; }
+    .trip-sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 3px; }
+    .trip-ro { display: inline-flex; align-items: center; gap: 5px; background: var(--alert-bg); color: var(--alert); font-weight: 800; padding: 3px 9px; border-radius: 12px; font-size: 11.5px; }
+    .trip-bulk { border: 1px solid var(--border-color); border-left: 3px solid var(--accent-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: var(--card-bg); display: flex; flex-direction: column; gap: 8px; }
+    .trip-bulk .trip-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 12px; }
+    .trip-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .trip-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 12px; cursor: pointer; user-select: none; background: var(--card-bg); font-variant-numeric: tabular-nums; }
+    .trip-chip input { margin: 0; }
+    .trip-chip.on { background: var(--accent-soft); border-color: var(--accent-color); color: var(--accent-color); font-weight: 800; }
+    .trip-chip.warn { border-color: var(--alert); opacity: 0.8; }
+    .trip-chip .t { font-size: 10.5px; color: var(--alert); font-weight: 700; }
+    table.trip-board { border-collapse: separate; border-spacing: 0; font-size: 12px; background: var(--card-bg); font-variant-numeric: tabular-nums; }
+    .trip-board th, .trip-board td { border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); text-align: center; padding: 0; height: 26px; white-space: nowrap; box-sizing: border-box; }
+    .trip-board thead th { position: sticky; background: var(--tt-bg); color: var(--text-sub); font-size: 11px; font-weight: 800; z-index: 2; }
+    .trip-board thead tr:nth-child(1) th { top: 0; height: 22px; }
+    .trip-board thead tr:nth-child(2) th { top: 22px; height: 20px; }
+    .trip-board thead tr:nth-child(3) th { top: 42px; height: 18px; font-weight: 600; }
+    .trip-board th.fix, .trip-board td.fix { position: sticky; background: var(--card-bg); z-index: 1; }
+    .trip-board thead th.fix { z-index: 3; background: var(--tt-bg); }
+    .trip-board .c-num { left: 0; width: 40px; min-width: 40px; }
+    .trip-board .c-name { left: 40px; width: 74px; min-width: 74px; text-align: left; padding-left: 6px; }
+    .trip-board .c-pre { left: 114px; width: 46px; min-width: 46px; color: var(--text-sub); }
+    .trip-board td.c-pre.ed { cursor: text; }
+    .trip-board td.c-pre.ed:hover { background: var(--accent-soft); color: var(--accent-color); }
+    .trip-board td.c-pre .hand { font-size: 9px; color: var(--accent-color); font-weight: 800; vertical-align: top; margin-left: 1px; }
+    .trip-board .c-tot { left: 160px; width: 48px; min-width: 48px; font-weight: 800; box-shadow: 2px 0 0 var(--border-color); }
+    .trip-board td.day { width: 26px; min-width: 26px; cursor: cell; position: relative; }
+    .trip-board td.day:hover { background: var(--accent-soft); }
+    .trip-board td.hol, .trip-board th.hol { background: var(--tt-bg) !important; color: var(--text-sub); opacity: 0.75; cursor: default; }
+    .trip-board td.day.ro { cursor: default; }
+    .trip-board td.wk, .trip-board th.wk { border-left: 1px solid var(--text-sub); }
+    .trip-board td.pst, .trip-board th.pst { border-left: 3px double var(--text-sub); }
+    .trip-board td.bar { background: var(--bc); cursor: pointer; }
+    .trip-board td.bar.s { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+    .trip-board td.bar.e { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+    .trip-board td.bar.s::before { content: attr(data-n); color: #fff; font-size: 10px; font-weight: 800; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); }
+    .trip-board td.bar:hover { filter: brightness(1.08); }
+    .trip-board td.pick { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent-color); }
+    .trip-board td.bar.pick { box-shadow: inset 0 0 0 2px var(--text-main); }
+    .trip-board tr.bsel td.fix { background: var(--accent-soft); }
+    .trip-board td.tot-over { color: var(--alert); background: var(--alert-bg); }
+    .trip-board td.tot-near { color: #9A6B12; background: #FBF0D6; }
+    .trip-board tr.cls th { background: var(--accent-soft); color: var(--accent-color); font-weight: 800; text-align: left; padding-left: 8px; height: 24px; position: sticky; left: 0; z-index: 1; }
+    .trip-board tbody tr:hover td.fix { background: var(--accent-soft); }
+    .trip-board tfoot td { background: var(--tt-bg); font-weight: 800; color: var(--text-sub); position: sticky; bottom: 0; }
+    .trip-board tfoot td.fix { background: var(--tt-bg); }
+    .trip-pop { position: absolute; z-index: 20; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); padding: 10px 12px; font-size: 12px; min-width: 250px; color: var(--text-main); }
+    .trip-pop .trip-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .trip-pop .k { color: var(--text-sub); font-weight: 600; }
+    /* 인쇄물(가로 A4): 요약 상자·결재 칸 없이 머리 한 줄 + 표. 회차 칸을 세로 줄로 나누고 일수 칸은 회차 색, 기간마다 머리 색, 주 구분선 */
+    .tps { background: #fff; color: #1B1F2A; width: 297mm; height: 210mm; padding: 10mm 11mm 8mm; box-sizing: border-box; font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .tps .p-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1.8pt solid #1F3A5F; padding-bottom: 2mm; margin-bottom: 3mm; }
+    .tps .p-title { font-size: 17pt; font-weight: 800; color: #1F3A5F; letter-spacing: -0.01em; }
+    .tps .p-title small { font-size: 9pt; font-weight: 700; color: #6B7280; letter-spacing: 0.14em; margin-right: 4mm; }
+    .tps .p-meta { font-size: 9pt; color: #4B5563; }
+    .tps .p-meta b { font-size: 13pt; color: #1B1F2A; margin-right: 4mm; }
+    .tps table.pt { width: 100%; border-collapse: collapse; font-size: 8.5pt; font-variant-numeric: tabular-nums; table-layout: fixed; }
+    .tps .pt th { font-size: 7.5pt; font-weight: 800; color: #4B5563; padding: 0; height: 4.6mm; border-bottom: 1pt solid #1F3A5F; background: #F5F6F9; white-space: nowrap; overflow: hidden; }
+    .tps .pt th.grp { border-left: 0.8pt solid #C9CED8; }
+    .tps .pt th.grp i { font-style: normal; display: inline-block; width: 2.4mm; height: 2.4mm; border-radius: 0.5mm; vertical-align: -0.3mm; margin-right: 1mm; }
+    .tps .pt th.per { text-align: center; color: #1F3A5F; border-bottom: none; border-left: 0.8pt solid #B9BFCA; height: 4.2mm; background: var(--mc); font-size: 7.5pt; }
+    .tps .pt th.dw { height: 3.6mm; font-weight: 600; color: #9AA1AE; }
+    .tps .pt th.hd { color: #B6BCC7; }
+    .tps .pt td { height: var(--rh, 5.2mm); padding: 0; border-bottom: 0.5pt solid #E3E6EC; text-align: center; white-space: nowrap; }
+    .tps .pt tbody tr:nth-child(5n) td { border-bottom-color: #B9BFCA; }
+    .tps .pt td.l { text-align: left; padding-left: 1.5mm; }
+    .tps .pt td.nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+    .tps .pt td.n { color: #6B7280; }
+    .tps .pt td.rp { text-align: right; padding-right: 1.2mm; border-left: 0.8pt solid #C9CED8; color: #1B1F2A; font-size: 7.8pt; letter-spacing: -0.02em; overflow: hidden; }
+    .tps .pt td.rp.empty { color: #D1D5DB; }
+    .tps .pt td.rd { font-weight: 800; color: #1B1F2A; text-align: center; background: var(--tc, transparent); }
+    .tps .pt td.tot { font-weight: 800; font-size: 9.5pt; border-left: 0.8pt solid #C9CED8; }
+    .tps .pt td.tot.over { color: #A03A22; background: #FBEAE5; }
+    .tps .pt td.tot.near { color: #9A6B12; }
+    .tps .pt td.d { border-left: 0.4pt solid #EEF0F4; position: relative; }
+    .tps .pt td.d.first, .tps .pt td.d.pst, .tps .pt th.pst { border-left: 0.8pt solid #8A8F9C; }
+    .tps .pt td.d.wk, .tps .pt th.wk { border-left: 0.8pt solid #B9BFCA; }
+    .tps .pt td.d.hol { background: repeating-linear-gradient(135deg, #F3F4F7 0 1.2mm, #E9EBF0 1.2mm 2.4mm); }
+    .tps .pt td.d.b { background: var(--bc); }
+    .tps .pt td.d.b.s { border-top-left-radius: 1.6mm; border-bottom-left-radius: 1.6mm; }
+    .tps .pt td.d.b.e { border-top-right-radius: 1.6mm; border-bottom-right-radius: 1.6mm; }
+    .tps .pt td.d.b.s::before { content: attr(data-n); position: absolute; left: 1mm; top: 50%; transform: translateY(-50%); font-size: 6.5pt; font-weight: 800; color: #fff; }
+    .tps .p-foot { margin-top: auto; display: flex; gap: 5mm; align-items: center; flex-wrap: wrap; font-size: 7.5pt; color: #6B7280; padding-top: 2mm; }
+    .tps .p-foot i { font-style: normal; display: inline-block; width: 4mm; height: 2.4mm; border-radius: 0.6mm; vertical-align: -0.3mm; margin-right: 1mm; }
     .ab-in { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12.5px; background: var(--card-bg); color: var(--text-main); font-family: inherit; outline: none; min-width: 0; }
     .ab-in:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-soft); }
     .ab-in[type="date"] { padding: 4px 2px; font-size: 12px; letter-spacing: -0.2px; }
@@ -1187,12 +1273,13 @@
     #ab-filter { margin-bottom: 8px; font-size: 12px; font-weight: 700; }
     .ab-empty { text-align: center; color: var(--text-sub); font-size: 12.5px; padding: 26px 10px; line-height: 1.7; }
     @media print {
-      #ab-page-header, #ab-left, #ab-right > div:first-child { display: none !important; }
+      #ab-page-header, #ab-left, #ab-right > div:first-child, #trip-big { display: none !important; }
       body[data-print-target="absence"] #absence-page, body[data-print-target="absence"] #ab-body, body[data-print-target="absence"] #ab-right, body[data-print-target="absence"] #ab-prev-scroll { display: block !important; height: auto !important; overflow: visible !important; width: auto !important; border: 0 !important; padding: 0 !important; background: #fff !important; }
       #ab-paper-box { width: auto !important; height: auto !important; overflow: visible !important; }
       .ab-paper { transform: none !important; box-shadow: none !important; break-after: avoid; break-inside: avoid; }
       #ab-paper-box.ab-two #ab-paper { break-after: page; }
       #ab-paper2 { margin-top: 0 !important; break-before: page; }
+      .ab-paper.ab-extra { margin-top: 0 !important; break-before: page; } /* 현황표: 반마다 한 장 */
     }
 
     /* ===== 🏷️ 이름표 (게시판·사물함·분리수거함) — 10/5부터 📄 양식 만들기의 둘째 탭(시정표 뒤): 왼쪽 = #fm-left 안의 #nt-guide(지금 할 일)·#nt-grid, 미리보기 = 공용 #fm-pages ===== */
@@ -2998,6 +3085,12 @@
             <button class="top-btn accent" style="font-size:11px; padding:4px 10px;" onclick="addTeacherAccountUI()">+ 계정 추가</button>
           </div>
         </div>
+        <div class="admin-card" style="max-width:none;">
+          <div style="font-size:12.5px; font-weight:800; margin-bottom:4px;">🗓 교외체험학습 현황판 <span style="color:var(--text-sub); font-weight:600; font-size:11.5px;">결석계의 넷째 탭. 체크한 학년의 <b>교외체험학습</b> 기록은 그 반 담임·관리자·아래 "👁 학년 전체 보기" 선생님이 함께 봐요(담임은 입력, 전체 보기는 보기만). 질병·인정·기타결석은 그대로 각자 계정에만.</span></div>
+          <div id="trip-board-grades" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:12px; margin-top:6px;"></div>
+          <div id="trip-board-periods"></div>
+          <div class="admin-card-actions"><button class="top-btn accent" onclick="saveTripBoardUI()">현황판 설정 저장</button></div>
+        </div>
         <div id="teacher-account-list" style="border:1px solid var(--border-color); border-radius:12px; background:var(--card-bg); max-height:calc(100vh - 230px); overflow-y:auto;"></div>
       </div>
 
@@ -3537,7 +3630,8 @@
       <select id="ab-class" class="mini-select" style="width:64px;" onchange="abOnClassChange('class')"></select>
       <button class="top-btn" style="font-size:11px; padding:4px 10px; cursor:pointer; margin:0;" title="예전에 쓰던 결석계 엑셀 파일(.xlsm)의 결석 현황을 그대로 가져옵니다" onclick="this.nextElementSibling.click()">📥 엑셀 가져오기</button><input type="file" id="ab-import-input" accept=".xlsm,.xlsx" style="display:none;" onchange="abImportExcel(this.files[0]); this.value='';">
       <button class="top-btn" style="font-size:11px; padding:4px 10px;" onclick="abResetClass()" title="지금 고른 반의 결석 기록을 모두 지웁니다">🗑 초기화</button>
-      <span style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b class="school-only">내 계정에만</b><b class="lite-only">이 컴퓨터의 브라우저에만</b> 저장돼요<span class="school-only">(다른 선생님·관리자 화면엔 안 보임)</span><span class="lite-only">(💾 백업 파일에도 들어가요)</span>.</span>
+      <span id="ab-share-note" style="font-size:11px; color:var(--text-sub); display:none;"></span>
+      <span id="ab-private-note" style="font-size:11px; color:var(--text-sub);">🔒 결석 기록은 <b class="school-only">내 계정에만</b><b class="lite-only">이 컴퓨터의 브라우저에만</b> 저장돼요<span class="school-only">(다른 선생님·관리자 화면엔 안 보임)</span><span class="lite-only">(💾 백업 파일에도 들어가요)</span>.</span>
     </div>
     <button class="top-btn accent" style="font-size:12px; padding:5px 14px;" onclick="abPrint()" title="미리보기에 보이는 양식을 인쇄합니다">🖨️ 출력</button>
   </div>
@@ -3548,6 +3642,7 @@
         <button class="top-btn theme-active" data-tab="input" onclick="abSetTab('input')">✏️ 결석 현황 입력</button>
         <button class="top-btn" data-tab="stat" onclick="abSetTab('stat')">📊 학생별 현황</button>
         <button class="top-btn" data-tab="hol" onclick="abSetTab('hol')">📅 휴일</button>
+        <button class="top-btn" data-tab="trip" style="display:none;" onclick="abSetTab('trip')" title="교외체험학습 신청 현황판 — 쓰는 기간의 날짜마다 학생별 색 띠, 신청서·현황표 출력">🗓 체험학습 현황</button>
       </div>
       <div id="ab-zoom-group" title="화면 크기 — 아래 입력 표·안내 글을 같은 비율로 키우거나 줄여요(미리보기는 그대로, 내 계정에 기억)">
         <span style="font-size:12px;">🔍</span><button class="top-btn" onclick="abZoomBy(-1)" title="작게">−</button><span id="ab-zoom-text" onclick="abZoomBy(0)" title="눌러서 100%로">100%</span><button class="top-btn" onclick="abZoomBy(1)" title="크게">+</button>
@@ -3575,6 +3670,14 @@
           <button class="top-btn" style="padding:6px 12px;" onclick="abAddHoliday()">➕ 휴일 더하기</button>
         </div>
         <div id="ab-hol-list" class="ab-scroll"></div>
+      </div>
+
+      <div id="ab-pane-trip" class="ab-pane" style="display:none;">
+        <div id="trip-ctrl" style="display:flex; align-items:center; gap:8px 14px; flex-wrap:wrap; margin-bottom:8px; font-size:12px;"></div>
+        <div id="trip-bulk" class="trip-bulk" style="display:none;"></div>
+        <div id="trip-msg" class="ab-muted" style="min-height:16px; margin-bottom:4px;"></div>
+        <div id="trip-grid" class="ab-scroll" style="position:relative; overflow:auto; border:1px solid var(--border-color); border-radius:8px;"></div>
+        <div id="trip-foot" class="ab-muted" style="margin-top:6px; line-height:1.7;"></div>
       </div>
     </div>
 
@@ -4942,7 +5045,7 @@
     const gate = document.getElementById('login-gate-overlay'); if (gate) gate.style.display = 'none';
     const mTitle = document.querySelector('#m-header .m-title'); if (mTitle) mTitle.textContent = '🧳 ' + LITE_APP_NAME;
     const hr = !!(s.hrGrade && s.hrClass);
-    window.currentTeacher = { id: 'lite', name: s.name || '선생님', is_admin: false, must_change_password: false, role: hr ? '담임' : '교사', homeroom_grade: hr ? s.hrGrade : null, homeroom_class: hr ? s.hrClass : null, schedule_manager: false };
+    window.currentTeacher = { id: 'lite', name: s.name || '선생님', is_admin: false, must_change_password: false, role: hr ? '담임' : '교사', homeroom_grade: hr ? s.hrGrade : null, homeroom_class: hr ? s.hrClass : null, schedule_manager: false, trip_viewer: false };
     liteApplySchool(s);
     document.documentElement.style.setProperty('--tt-rows', String((Array.isArray(s.classTimes) && s.classTimes.length) || 7));
     const nm = s.name || '선생님';
@@ -5562,7 +5665,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-09.1';
+  var BUILD_ID = '2026-11-10.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -5812,7 +5915,7 @@
     // 이 기기뿐 아니라 같은 계정의 다른 기기까지 로그인이 풀렸다. 계정 줄이 정말 없을 때(지워진 계정, PGRST116)만 이 기기 토큰을 지운다.
     let data = null, error = null;
     for (let n = 0; n < 3; n++) {
-      const r = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager').eq('id', session.user.id).single();
+      const r = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager, trip_viewer').eq('id', session.user.id).single();
       data = r.data; error = r.error;
       if (!error && data) break;
       if (error && error.code === 'PGRST116') break;
@@ -6489,10 +6592,11 @@
     listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--text-sub);">불러오는 중...</div>';
     try {
       await ensureClassStructureLoaded();
-      const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager').order('name');
+      const { data, error } = await sb.from('teachers').select('id, name, is_admin, must_change_password, role, homeroom_grade, homeroom_class, schedule_manager, trip_viewer').order('name');
       if (error) throw error;
       window.__teacherAccounts = data || [];
       renderTeacherAccountList();
+      ensureTripBoardLoaded(true).then(renderTripBoardUI);
     } catch (e) {
       listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:#E5484D;">불러오기 실패: ' + escapeHtmlAttr(e && e.message ? e.message : e) + '</div>';
     }
@@ -6559,10 +6663,93 @@
         '</span>' +
         '<label style="display:inline-flex; align-items:center; gap:3px; margin-left:10px; font-size:11px; cursor:pointer;" title="체크하면 이 선생님이 로그인한 스마트보드가 확장 프로그램에서 받은 나이스 시간표(바뀐 칸)를 모두에게 넣어요">' +
         '<input type="checkbox" id="scc-mgr-' + t.id + '" onchange="void 0"' + (t.schedule_manager ? ' checked' : '') + '>📥 나이스 시간표 받기</label>' +
+        '<label style="display:inline-flex; align-items:center; gap:3px; margin-left:10px; font-size:11px; cursor:pointer;" title="체크하면 결석계 🗓 체험학습 현황 탭에서 현황판을 쓰는 학년의 모든 반 교외체험학습 기록을 볼 수 있어요(보기만 — 입력은 그 반 담임). 예: 학년부장">' +
+        '<input type="checkbox" id="trip-viewer-' + t.id + '" onchange="void 0"' + (t.trip_viewer ? ' checked' : '') + '>👁 체험학습 현황 학년 전체 보기</label>' +
         '</div>' +
         '</div>';
     });
     listEl.innerHTML = html;
+  }
+
+  // ----- 🗓 교외체험학습 현황판 설정(관리자) — app_settings 'trip_board' = { grades: [3], periods: { '3': [{ from, to }] } } -----
+  function tripBoardCfgFromUI() {
+    const cs = window.classStructure || { gradeCount: 3 };
+    const cur = window.tripBoard || { grades: [], periods: {} };
+    const grades = [], periods = {};
+    for (let g = 1; g <= (cs.gradeCount || 3); g++) {
+      const chk = document.getElementById('trip-grade-' + g);
+      if (chk && chk.checked) grades.push(g);
+      const rows = document.querySelectorAll('#trip-periods-' + g + ' .trip-period-row');
+      const list = [];
+      rows.forEach(function(row) {
+        const f = row.querySelector('.tp-from').value, t = row.querySelector('.tp-to').value;
+        if (f) list.push({ from: f, to: t && t >= f ? t : f });
+      });
+      if (rows.length) periods[g] = list; else if (cur.periods && cur.periods[g]) periods[g] = cur.periods[g];
+    }
+    return { grades: grades, periods: periods };
+  }
+  function renderTripBoardUI() {
+    const box = document.getElementById('trip-board-grades'); if (!box) return;
+    const cs = window.classStructure || { gradeCount: 3 };
+    const tb = window.tripBoard || { grades: [], periods: {} };
+    let h = '<span style="font-weight:700;">쓰는 학년</span>';
+    for (let g = 1; g <= (cs.gradeCount || 3); g++) {
+      h += '<label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="trip-grade-' + g + '"' + (tb.grades.indexOf(g) >= 0 ? ' checked' : '') + ' onchange="renderTripBoardPeriods()">' + g + '학년</label>';
+    }
+    box.innerHTML = h;
+    renderTripBoardPeriods();
+  }
+  function renderTripBoardPeriods() {
+    const box = document.getElementById('trip-board-periods'); if (!box) return;
+    const cs = window.classStructure || { gradeCount: 3 };
+    const cur = tripBoardCfgFromUI(); // 적던 기간을 잃지 않게 화면 값에서
+    const tb = window.tripBoard || { grades: [], periods: {} };
+    let h = '';
+    for (let g = 1; g <= (cs.gradeCount || 3); g++) {
+      const chk = document.getElementById('trip-grade-' + g);
+      if (!chk || !chk.checked) continue;
+      const list = cur.periods[g] || (tb.periods && tb.periods[g]) || TRIP_DEFAULT_PERIODS;
+      h += '<div style="margin-top:8px;"><div style="font-size:11.5px; font-weight:700; margin-bottom:4px;">' + g + '학년 쓰는 기간 <span style="color:var(--text-sub); font-weight:600;">— 현황판에 이 날짜들만 보여요(방학 등 안 쓰는 날짜는 빼고). 평일 합계 ' +
+        '<b id="trip-period-sum-' + g + '"></b></span></div><div id="trip-periods-' + g + '" style="display:flex; flex-direction:column; gap:4px;">';
+      list.forEach(function(p) { h += tripPeriodRowHtml(g, p); });
+      h += '</div><button class="top-btn" style="font-size:11px; padding:3px 9px; margin-top:4px;" onclick="tripBoardAddPeriod(' + g + ')">➕ 기간 더하기</button></div>';
+    }
+    box.innerHTML = h;
+    for (let g = 1; g <= (cs.gradeCount || 3); g++) tripBoardSum(g);
+  }
+  function tripPeriodRowHtml(g, p) {
+    return '<div class="trip-period-row" style="display:flex; align-items:center; gap:6px; font-size:12px;">' +
+      '<input type="date" class="admin-input tp-from" value="' + (p.from || '') + '" onchange="tripBoardSum(' + g + ')"> ~ <input type="date" class="admin-input tp-to" value="' + (p.to || '') + '" onchange="tripBoardSum(' + g + ')">' +
+      '<span class="tp-days" style="color:var(--text-sub); min-width:40px;"></span>' +
+      '<button class="ab-icon-btn" title="이 기간 빼기" onclick="this.parentNode.remove(); tripBoardSum(' + g + ')">🗑</button></div>';
+  }
+  function tripBoardAddPeriod(g) {
+    const box = document.getElementById('trip-periods-' + g); if (!box) return;
+    box.insertAdjacentHTML('beforeend', tripPeriodRowHtml(g, {}));
+    tripBoardSum(g);
+  }
+  // 기간마다 평일 수(토·일·기본 공휴일만 뺀 것 — 학사일정 휴일은 결석계 화면에서 셈)
+  function tripBoardSum(g) {
+    let sum = 0;
+    document.querySelectorAll('#trip-periods-' + g + ' .trip-period-row').forEach(function(row) {
+      const f = row.querySelector('.tp-from').value, t = row.querySelector('.tp-to').value, out = row.querySelector('.tp-days');
+      if (!f) { out.textContent = ''; return; }
+      let n = 0; const d = new Date(f + 'T00:00:00'), e = new Date((t && t >= f ? t : f) + 'T00:00:00');
+      for (let i = 0; d <= e && i < 400; i++) { const w = d.getDay(); if (w && w !== 6 && !AB_BASE_HOLIDAYS[abIso(d)]) n++; d.setDate(d.getDate() + 1); }
+      out.textContent = n + '일'; sum += n;
+    });
+    const s = document.getElementById('trip-period-sum-' + g); if (s) s.textContent = sum + '일';
+  }
+  async function saveTripBoardUI() {
+    const value = tripBoardCfgFromUI();
+    if (value.grades.some(function(g) { return !(value.periods[g] || []).length; })) return customAlert('쓰는 학년마다 기간을 하나 이상 넣어 주세요.');
+    try {
+      const { error } = await sb.from('app_settings').upsert({ key: 'trip_board', value: value });
+      if (error) throw error;
+      window.tripBoard = value;
+      customAlert('교외체험학습 현황판 설정을 저장했습니다.' + (value.grades.length ? ' (' + value.grades.join('·') + '학년)' : ' (쓰는 학년 없음)'));
+    } catch (e) { customAlert('저장 실패: ' + (e && e.message ? e.message : e)); }
   }
 
   // 계정마다 따로 "역할 저장"을 누르지 않고, 여러 선생님 역할을 한꺼번에 바꾼 뒤
@@ -6586,7 +6773,9 @@
         (role === '담임' && (grade !== (t.homeroom_grade || null) || cls !== (t.homeroom_class || null)));
       const mgrChk = document.getElementById('scc-mgr-' + t.id);
       const mgrChanged = !!mgrChk && mgrChk.checked !== !!t.schedule_manager;
-      if (!roleChanged && !mgrChanged) continue;
+      const tvChk = document.getElementById('trip-viewer-' + t.id);
+      const tvChanged = !!tvChk && tvChk.checked !== !!t.trip_viewer;
+      if (!roleChanged && !mgrChanged && !tvChanged) continue;
       try {
         if (roleChanged) {
           const { error } = await sb.rpc('admin_set_teacher_role', { p_teacher_id: t.id, p_role: role, p_grade: grade, p_class: cls });
@@ -6594,6 +6783,10 @@
         }
         if (mgrChanged) {
           const r = await sb.rpc('admin_set_schedule_manager', { p_teacher_id: t.id, p_on: mgrChk.checked });
+          if (r.error) throw r.error;
+        }
+        if (tvChanged) {
+          const r = await sb.rpc('admin_set_trip_viewer', { p_teacher_id: t.id, p_on: tvChk.checked });
           if (r.error) throw r.error;
         }
         savedCount++;
@@ -13808,6 +14001,9 @@
   let abRoster = [], abRosterKey = '';
   let abNeisHol = {}, abNeisHolGrades = {}, abNeisYear = null; // abNeisHolGrades[날짜] = 그날 쉬는 학년들(비면 전체)
   let abSelId = null, abEditId = null, abFilterNum = null, abTab = 'input';
+  // 🗓 교외체험학습 현황판(아래 "===== 🗓" 부분): 쓰는 학년의 교외체험학습 기록은 서버 표(trip_records)에 함께 둔다.
+  let tripRecs = [], tripRecsKey = '', tripPrior = {}, tripHol = {}, tripRosters = {}, tripLoadError = '';
+  let tripPick = null, tripBulk = null, tripTimer = null, tripWatching = false;
 
   function abCfg() {
     try { const v = JSON.parse(localStorage.getItem(AB_CFG_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
@@ -13825,16 +14021,27 @@
       if (!k || k.indexOf(AB_REC_PREFIX) !== 0) continue;
       try { const r = JSON.parse(localStorage.getItem(k)); if (r && r.id) out.push(r); } catch (e) {}
     }
+    // 서버에 함께 두는 교외체험학습 기록(srv: true) — 지금 고른 학년·반(또는 학년 전체) 것만 받아 둔다
+    for (let j = 0; j < tripRecs.length; j++) out.push(tripRecs[j]);
     return out;
   }
-  // 지금 고른 반의 기록 — 시작일 순(같으면 입력한 순). 연번은 이 순서대로 1부터.
-  function abClassRecords() {
-    const c = abCfg();
-    if (!c.g || !c.c) return [];
-    return abAllRecords().filter(function(r) { return r.g === c.g && r.c === c.c; })
+  // 그 반의 기록 — 시작일 순(같으면 입력한 순). 연번은 이 순서대로 1부터.
+  function abClassRecordsOf(g, c) {
+    if (!g || !c) return [];
+    return abAllRecords().filter(function(r) { return Number(r.g) === Number(g) && Number(r.c) === Number(c); })
       .sort(function(a, b) { return (a.from || '') < (b.from || '') ? -1 : (a.from || '') > (b.from || '') ? 1 : (a.created || 0) - (b.created || 0); });
   }
+  function abClassRecords() { const c = abCfg(); return abClassRecordsOf(c.g, c.c); }
+  // 교외체험학습 + 현황판을 쓰는 학년이면 서버 표로, 그 밖에는 지금처럼 내 계정 자료로. 사유를 바꾸면 그쪽으로 옮긴다.
   function abSaveRecord(r) {
+    const old = abAllRecords().find(function(x) { return x.id === r.id; });
+    if (r.reason === '교외체험학습' && tripOn(r.g)) {
+      if (old && !old.srv) { try { localStorage.removeItem(AB_REC_PREFIX + r.id); } catch (e) {} scheduleBackupWrite(); }
+      tripUpsert([r]);
+      return true;
+    }
+    if (old && old.srv) tripDeleteIds([r.id]);
+    delete r.srv;
     try { localStorage.setItem(AB_REC_PREFIX + r.id, JSON.stringify(r)); } catch (e) { customAlert('저장하지 못했습니다: ' + (e && e.message ? e.message : e)); return false; }
     scheduleBackupWrite();
     return true;
@@ -13897,7 +14104,8 @@
     }
     return n;
   }
-  function abDays(r) { return r.dm ? (Number(r.days) || 0) : abCountDays(r.from, r.to); }
+  // 서버에 함께 두는 교외체험학습 기록은 학년 공통 휴일로 센다(보는 사람마다 일수가 달라지지 않게).
+  function abDays(r) { return r.dm ? (Number(r.days) || 0) : r.srv ? tripCountDays(r.from, r.to, r.g) : abCountDays(r.from, r.to); }
   function abKDate(s) { if (!s) return ''; const p = s.split('-').map(Number); return p[0] + '년 ' + p[1] + '월 ' + p[2] + '일'; }
   function abDotDate(s) { if (!s) return ''; const p = s.split('-').map(Number); return p[0] + '.' + p[1] + '.' + p[2] + '.'; }
   function abShort(s) { if (!s) return ''; const p = s.split('-').map(Number); return p[1] + '/' + p[2]; }
@@ -13930,10 +14138,13 @@
 
     // 반: 기억한 반 → 담임이면 담임 반. 담임이 아니면 고를 때까지 비워 둠(아무 반이나 띄우지 않음).
     const t = window.currentTeacher || {};
-    if (!abHasClass() && t.role === '담임' && t.homeroom_grade && t.homeroom_class) abSetCfg({ g: t.homeroom_grade, c: t.homeroom_class });
+    if (!abHasClass() && t.role === '담임' && t.homeroom_grade && t.homeroom_class) abSetCfg({ g: t.homeroom_grade, c: t.homeroom_class, all: false });
     // 학년별 반 수(관리자 설정 "학급 구성")를 먼저 받아야 반 목록이 다 나온다 — 안 받으면 "1반"만 보였다.
     await ensureClassStructureLoaded();
+    await ensureTripBoardLoaded();
+    if (abCfg().all && !tripAllAllowed(abCfg().g)) abSetCfg({ all: false }); // 전체 보기 권한이 없어졌으면
     abFillClassSelects();
+    tripApplyVisibility();
     if (!window.__abInited) {
       window.__abInited = true;
       window.addEventListener('resize', function() { abFitPaper(); abFitStat(); });
@@ -13941,25 +14152,31 @@
     abApplyTab();
     abApplyZoom();
     abRenderAll();
-    await Promise.all([abLoadRoster(), abLoadNeisHolidays(), abLoadForms().catch(function() {})]);
+    tripStartWatcher();
+    await Promise.all([abLoadRoster(), abLoadNeisHolidays(), tripLoad(), abLoadForms().catch(function() {})]);
     abRenderAll();
   }
   function abFillClassSelects() {
     const c = abCfg();
     document.getElementById('ab-grade').innerHTML = '<option value="">학년</option>' + gradeOptionsHtml(c.g);
-    document.getElementById('ab-class').innerHTML = '<option value="">반</option>' + (c.g ? classOptionsHtml(c.g, c.c) : '');
+    // 현황판 "학년 전체 보기" 권한(부장·관리자)이 있으면 반 목록 맨 위에 "전체"
+    document.getElementById('ab-class').innerHTML = '<option value="">반</option>' + (c.g ? (tripAllAllowed(c.g) ? '<option value="all">전체</option>' : '') + classOptionsHtml(c.g, c.c) : '');
     document.getElementById('ab-grade').value = c.g ? String(c.g) : '';
-    document.getElementById('ab-class').value = c.g && c.c ? String(c.c) : '';
+    document.getElementById('ab-class').value = c.g && c.all ? 'all' : c.g && c.c ? String(c.c) : '';
   }
   async function abOnClassChange(which) {
     const g = parseInt(document.getElementById('ab-grade').value) || null;
-    let k = parseInt(document.getElementById('ab-class').value) || null;
+    const raw = document.getElementById('ab-class').value;
+    const all = which !== 'grade' && raw === 'all' && tripAllAllowed(g);
+    let k = all ? null : parseInt(raw) || null;
     if (which === 'grade') k = null; // 학년을 바꾸면 반을 다시 고르게
-    abSetCfg({ g: g, c: k });
+    abSetCfg({ g: g, c: k, all: all });
     abFillClassSelects();
-    abSelId = null; abEditId = null; abFilterNum = null;
+    tripApplyVisibility();
+    abSelId = null; abEditId = null; abFilterNum = null; tripPick = null; tripBulk = null;
+    if (all && abTab !== 'trip') { abTab = 'trip'; abApplyTab(); } // 전체 보기는 현황판에서만 뜻이 있다
     abRenderAll(true);
-    await abLoadRoster();
+    await Promise.all([abLoadRoster(), tripLoad()]);
     abRenderAll(true);
   }
   async function abLoadRoster() {
@@ -13987,7 +14204,7 @@
   function abZoomGet() { let z = 100; try { z = parseInt(localStorage.getItem('zoom-ab'), 10) || 100; } catch (e) {} return AB_ZOOMS.indexOf(z) >= 0 ? z : 100; }
   function abApplyZoom() {
     const z = abZoomGet();
-    ['ab-pane-input', 'ab-pane-stat', 'ab-pane-hol'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
+    ['ab-pane-input', 'ab-pane-stat', 'ab-pane-hol', 'ab-pane-trip'].forEach(function(id) { const el = document.getElementById(id); if (el) el.style.zoom = z === 100 ? '' : String(z / 100); });
     const t = document.getElementById('ab-zoom-text'); if (t) t.textContent = z + '%';
     abFitStat();
   }
@@ -14001,9 +14218,11 @@
   // ----- 탭 -----
   function abSetTab(tab) { abTab = tab; abApplyTab(); abRenderAll(); }
   function abApplyTab() {
+    const tb = document.querySelector('#ab-tabs [data-tab="trip"]');
+    if (abTab === 'trip' && tb && tb.style.display === 'none') abTab = 'input'; // 현황판을 안 쓰는 학년이면
     const tab = abTab;
     document.querySelectorAll('#ab-tabs .top-btn').forEach(function(b) { b.classList.toggle('theme-active', b.dataset.tab === tab); });
-    ['input', 'stat', 'hol'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
+    ['input', 'stat', 'hol', 'trip'].forEach(function(t) { document.getElementById('ab-pane-' + t).style.display = t === tab ? '' : 'none'; });
     if (tab === 'stat') abFitStat();
   }
 
@@ -14026,7 +14245,7 @@
   function abRowCells(p, r) {
     r = r || {};
     const reason = r.reason || AB_REASONS[0];
-    const days = r.dm ? r.days : (r.from ? abCountDays(r.from, r.to) : '');
+    const days = r.dm ? r.days : (r.from ? (r.srv ? tripCountDays(r.from, r.to, r.g) : abCountDays(r.from, r.to)) : '');
     const on = ' onkeydown="abRowKey(event, \'' + p + '\')"';
     return '<td><select id="' + p + 'num" class="ab-in"' + on + '>' + abNumOptions(r.num) + '</select></td>' +
       '<td><select id="' + p + 'reason" class="ab-in" onchange="abRowReason(\'' + p + '\')"' + on + '>' +
@@ -14049,19 +14268,27 @@
     const proof = document.getElementById(p + 'proof');
     // 교외체험학습은 증빙이 하나뿐이라 비어 있으면 채워 둔다
     if (r === '교외체험학습' && !proof.value) proof.value = AB_PROOFS['교외체험학습'][0];
+    // 사유에 따라 세는 휴일이 다르면(교외체험학습 = 학년 공통 휴일) 자동 일수를 다시
+    const d = document.getElementById(p + 'days'), f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to');
+    if (d && !d.dataset.touched && f.value) d.value = abRowCount(p, f.value, t.value);
+  }
+  // 입력 줄의 자동 일수: 교외체험학습이고 현황판을 쓰는 학년이면 학년 공통 휴일로, 그 밖엔 내 휴일 목록으로
+  function abRowCount(p, f, t) {
+    const rs = document.getElementById(p + 'reason'), g = abCfg().g;
+    return rs && rs.value === '교외체험학습' && tripOn(g) ? tripCountDays(f, t, g) : abCountDays(f, t);
   }
   function abRowDate(p, which) {
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to');
     if (which === 'from' && f.value && (!t.value || t.value < f.value)) t.value = f.value;
     if (which === 'to' && t.value && f.value && t.value < f.value) f.value = t.value;
     const d = document.getElementById(p + 'days');
-    if (!d.dataset.touched) d.value = f.value ? abCountDays(f.value, t.value) : '';
+    if (!d.dataset.touched) d.value = f.value ? abRowCount(p, f.value, t.value) : '';
     const w = document.getElementById(p + 'written');
     if (!w.dataset.touched) w.value = t.value || f.value || ''; // 작성 일자는 종료 일자와 같게(직접 고치면 그대로)
   }
   function abRowDaysInput(p) {
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
-    d.dataset.touched = d.value !== '' && Number(d.value) !== abCountDays(f.value, t.value) ? '1' : '';
+    d.dataset.touched = d.value !== '' && Number(d.value) !== abRowCount(p, f.value, t.value) ? '1' : '';
   }
   function abMsg(t) { const m = document.getElementById('ab-f-msg'); if (m) m.innerHTML = t; }
   function abSaveRow(p) {
@@ -14103,8 +14330,8 @@
     if (!r) return;
     const ok = await customConfirm(r.num + '번 ' + (r.name || '') + ' · ' + r.reason + ' (' + abRange(r) + ') 기록을 지울까요?');
     if (!ok) return;
-    localStorage.removeItem(AB_REC_PREFIX + id);
-    scheduleBackupWrite();
+    if (r.srv) tripDeleteIds([id]);
+    else { localStorage.removeItem(AB_REC_PREFIX + id); scheduleBackupWrite(); }
     if (abSelId === id) abSelId = null;
     if (abEditId === id) abEditId = null;
     abRenderAll();
@@ -14117,7 +14344,9 @@
     if (!recs.length) return customAlert(c.g + '학년 ' + c.c + '반에는 지울 결석 기록이 없어요.');
     if (!(await customConfirm(c.g + '학년 ' + c.c + '반 결석 기록 ' + recs.length + '건을 모두 지울까요?\n(다른 반 기록과 직접 더한 휴일은 그대로 둬요)'))) return;
     if (!(await customConfirm('정말 지울까요? 지운 기록은 되돌릴 수 없어요.\n(필요하면 먼저 위 💾 백업 또는 엑셀로 남겨 두세요)'))) return;
-    recs.forEach(function(r) { localStorage.removeItem(AB_REC_PREFIX + r.id); });
+    recs.forEach(function(r) { if (!r.srv) localStorage.removeItem(AB_REC_PREFIX + r.id); });
+    const srvIds = recs.filter(function(r) { return r.srv; }).map(function(r) { return r.id; });
+    if (srvIds.length) tripDeleteIds(srvIds);
     scheduleBackupWrite();
     abSelId = null; abEditId = null; abFilterNum = null;
     abRenderAll(true);
@@ -14140,7 +14369,7 @@
   // reset: 새 줄을 비울지(추가·반 바꿈). 아니면 적던 내용을 다시 넣어 준다.
   function abRenderAll(reset) {
     if (document.getElementById('absence-page').style.display === 'none') return;
-    abRenderList(reset); abRenderStat(); abRenderHolidays(); abRenderPreview();
+    abRenderList(reset); abRenderStat(); abRenderHolidays(); tripRender(); abRenderPreview();
   }
   function abNeedClassHtml() { return '<div class="ab-empty">위에서 <b>학년·반</b>을 고르세요. (담임 선생님은 담임 반이 자동으로 골라져요.)</div>'; }
   function abRenderList(reset) {
@@ -14406,7 +14635,7 @@
     const days = abDays(r);
     if (r.reason === '교외체험학습') {
       // 엑셀: 이 학생의 교외체험학습 중 연번이 앞선 것들의 일수 합(이전 누적) / 이번 것까지 합(담임확인칸)
-      const recs = abClassRecords(), me = recs.findIndex(function(x) { return x.id === r.id; });
+      const recs = abClassRecordsOf(r.g, r.c), me = recs.findIndex(function(x) { return x.id === r.id; });
       const before = recs.slice(0, me).filter(function(x) { return x.num === r.num && x.reason === '교외체험학습'; })
         .reduce(function(a, x) { return a + abDays(x); }, 0);
       // 둘째 장 = 결과보고서(한글 양식): 성명·학년 반 번·기간·총 사용일수(이번 것까지)·학생 이름만 채우고, 장소·학습 형태·제목·날짜·보호자는 학생이 손으로 씀.
@@ -14428,8 +14657,11 @@
   }
   function abRenderPreview() {
     const paper = document.getElementById('ab-paper'), label = document.getElementById('ab-prev-label');
-    const recs = abClassRecords();
-    const r = recs.find(function(x) { return x.id === abSelId; });
+    // 🗓 현황 탭에서 띠를 고르지 않았으면 미리보기 = 신청 현황표(가로 A4)
+    if (abTab === 'trip' && !abSelId) return tripRenderSheet();
+    tripClearSheet();
+    const r = abAllRecords().find(function(x) { return x.id === abSelId; });
+    const recs = r ? abClassRecordsOf(r.g, r.c) : [];
     if (!r) {
       paper.innerHTML = '<div class="ab-paper-empty">왼쪽 목록에서 기록을 누르면<br>여기에 출력할 양식이 보여요.</div>';
       label.textContent = ''; abFitPaper(); return;
@@ -14484,22 +14716,576 @@
       Array.prototype.forEach.call(t.rows, function(tr, i) { if (rowsPx[i] > 0) tr.style.height = (rowsPx[i] * k) + 'px'; });
     }
   }
-  // 미리보기 칸 폭에 맞게 A4를 줄여 보여 줌(인쇄 때는 원래 크기).
+  // 미리보기 칸 폭에 맞게 A4를 줄여 보여 줌(인쇄 때는 원래 크기). 세로(양식)·가로(현황표, .ab-land) 종이가 여러 장일 수 있다.
   function abFitPaper() {
-    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper'), paper2 = document.getElementById('ab-paper2'), sc = document.getElementById('ab-prev-scroll');
+    const box = document.getElementById('ab-paper-box'), sc = document.getElementById('ab-prev-scroll');
     if (!box || !sc.clientWidth) return;
-    const pw = 210 / 25.4 * 96, ph = 296.5 / 25.4 * 96;
-    const k = Math.min(1, (sc.clientWidth - 4) / pw);
-    paper.style.transform = 'scale(' + k + ')';
-    const two = paper2 && paper2.style.display !== 'none';
-    if (two) { paper2.style.transform = 'scale(' + k + ')'; paper2.style.marginTop = (14 - ph * (1 - k)) + 'px'; } // 줄인 만큼 첫 장이 차지하는 빈 자리를 당김
-    box.style.width = Math.ceil(pw * k) + 'px'; box.style.height = Math.ceil(ph * k * (two ? 2 : 1) + (two ? 14 : 0)) + 'px';
+    const papers = Array.prototype.filter.call(box.querySelectorAll('.ab-paper'), function(p) { return p.style.display !== 'none'; });
+    let w = 0, h = 0, prevGap = 0;
+    papers.forEach(function(p, i) {
+      const land = p.classList.contains('ab-land');
+      const pw = (land ? 297 : 210) / 25.4 * 96, ph = (land ? 210 : 296.5) / 25.4 * 96;
+      const k = Math.min(1, (sc.clientWidth - 4) / pw);
+      p.style.transform = 'scale(' + k + ')';
+      p.style.marginTop = i === 0 ? '' : (14 - prevGap) + 'px'; // 앞 장을 줄인 만큼 차지하는 빈 자리를 당김
+      prevGap = ph * (1 - k);
+      w = Math.max(w, pw * k); h += ph * k + (i ? 14 : 0);
+    });
+    box.style.width = Math.ceil(w) + 'px'; box.style.height = Math.ceil(h) + 'px';
   }
   async function abPrint() {
-    const r = abClassRecords().find(function(x) { return x.id === abSelId; });
+    if (abTab === 'trip' && !abSelId) { // 신청 현황표(가로)
+      const c = abCfg();
+      if (!c.g || !tripOn(c.g) || (!c.c && !c.all)) return customAlert('현황판을 쓰는 학년의 반(또는 전체)을 먼저 고르세요.');
+      tripRenderSheet();
+      let st = document.getElementById('ab-page-style');
+      if (!st) { st = document.createElement('style'); st.id = 'ab-page-style'; document.head.appendChild(st); }
+      st.textContent = '@media print { @page { size: A4 landscape; margin: 0; } }';
+      const done = function() { st.textContent = ''; window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
+      window.print();
+      return;
+    }
+    const r = abAllRecords().find(function(x) { return x.id === abSelId; });
     if (!r) return customAlert('출력할 기록을 왼쪽 목록에서 먼저 눌러 주세요.');
     if (!abForms) { try { await abLoadForms(); abRenderPreview(); } catch (e) { return customAlert('양식을 못 불러왔어요. 인터넷 연결을 확인해 주세요.'); } }
     window.print();
+  }
+
+  // ===== 🗓 교외체험학습 현황판 (결석계 넷째 탭, 11/10) =====
+  // 예전 엑셀 "교외체험학습 신청 현황"(반 하나, 학생 × 평일 칸에 회차별 색 띠, 기존사용·총일수)을 옮긴 것.
+  // - 관리자 설정 trip_board = { grades: [3], periods: { '3': [{ from, to }, …] } }: 쓰는 학년과 "쓰는 기간"(수능 뒤 12/1~11 · 12/18~30 · 2/1~2처럼
+  //   학교가 정한 날짜만 — 방학 등 안 쓰는 날짜는 아예 안 보인다. 기간 합이 연간 한도 19일).
+  // - 쓰는 학년의 교외체험학습 기록은 개인 자료 대신 서버 표 trip_records에(그 반 담임·관리자가 넣고 고침, "학년 전체 보기" 체크한 선생님은 보기만).
+  //   결석계 ✏️ 입력 탭에서 사유를 교외체험학습으로 저장해도, 이 탭에서 띠의 빈 칸을 두 번 눌러도, 👥 여러 명 같은 기간으로 넣어도 같은 기록이다.
+  // - 기존사용 = 첫 기간 전에 끝난 올해 기록의 일수(자동) + 직접 적은 일수(trip_prior, 결석계에 안 넣은 과거분 보정).
+  // - 일수는 학년 공통 휴일(기본 공휴일 + 학사일정 + trip_holidays)로 센다 — 계정마다 다른 "직접 더한 휴일"을 쓰면 보는 사람마다 숫자가 달라져서.
+  // - 인쇄: 띠를 고르지 않았으면 신청 현황표(가로 A4, 전체 보기는 반마다 한 장), 골랐으면 지금처럼 신청서 + 결과보고서.
+  const TRIP_DEFAULT_PERIODS = [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }];
+  const TRIP_LIMIT = 19; // 본교 학칙 연간 출석인정 일수
+  const TRIP_COLORS = ['#3D6EA5', '#2E8F6E', '#E07A3D', '#8A5BB5', '#C24B6E']; // 화면 띠(회차)
+  const TRIP_PCOL = ['#4F7FBF', '#3BA27E', '#E8894F', '#9B6FC4', '#D2607F'];   // 인쇄 띠
+  const TRIP_PTINT = ['#DCE7F5', '#D5EFE4', '#FBE4D4', '#E9DEF4', '#F8DAE3'];  // 인쇄 일수 칸 바탕
+  const TRIP_MTINT = ['#E3EAF4', '#FBEBDD', '#E2F1E9', '#ECE4F4'], TRIP_MTINT2 = ['#F1F4F9', '#FDF5EE', '#F0F8F4', '#F5F1F9']; // 인쇄 기간 머리(기간마다 번갈아)
+  const TRIP_WD = ['일', '월', '화', '수', '목', '금', '토'];
+
+  async function ensureTripBoardLoaded(force) {
+    if (LITE) { window.tripBoard = { grades: [], periods: {} }; return window.tripBoard; }
+    if (window.tripBoard && !force) return window.tripBoard;
+    let v = null;
+    try { const { data, error } = await sb.from('app_settings').select('value').eq('key', 'trip_board').maybeSingle(); if (!error && data && data.value) v = data.value; } catch (e) {}
+    window.tripBoard = v && typeof v === 'object' ? { grades: (v.grades || []).map(Number), periods: v.periods || {} } : { grades: [], periods: {} };
+    return window.tripBoard;
+  }
+  function tripOn(g) { return !LITE && !!window.tripBoard && window.tripBoard.grades.indexOf(Number(g)) >= 0; }
+  function tripCanEdit(g, c) { const t = window.currentTeacher || {}; return !!(t.is_admin || (t.role === '담임' && Number(t.homeroom_grade) === Number(g) && Number(t.homeroom_class) === Number(c))); }
+  function tripCanEditGrade(g) { const t = window.currentTeacher || {}; return !!(t.is_admin || (t.role === '담임' && Number(t.homeroom_grade) === Number(g))); }
+  function tripAllAllowed(g) { const t = window.currentTeacher || {}; return !!g && tripOn(g) && !!(t.is_admin || t.trip_viewer); }
+  // 쓰는 기간(시작일 순). 관리자가 아직 안 넣었으면 이번 주 월요일부터 4주.
+  function tripPeriods(g) {
+    const tb = window.tripBoard || {};
+    let list = ((tb.periods && tb.periods[g]) || []).filter(function(p) { return p && p.from; })
+      .map(function(p) { return { from: p.from, to: p.to && p.to >= p.from ? p.to : p.from }; })
+      .sort(function(a, b) { return a.from < b.from ? -1 : 1; });
+    if (!list.length) { const d = new Date(); d.setDate(d.getDate() - (d.getDay() + 6) % 7); const a = abIso(d); d.setDate(d.getDate() + 27); list = [{ from: a, to: abIso(d) }]; }
+    return list;
+  }
+  // 학년 공통 휴일: 기본 공휴일 + 학사일정(그 학년이 쉬는 날) + 학년 공통으로 더한 날
+  function tripHolidays(g) {
+    g = Number(g);
+    const out = Object.assign({}, AB_BASE_HOLIDAYS);
+    Object.keys(abNeisHol).forEach(function(d) { const gs = abNeisHolGrades[d] || []; if (!gs.length || gs.indexOf(g) >= 0) out[d] = abNeisHol[d]; });
+    return Object.assign(out, tripHol[g] || {});
+  }
+  function tripCountDays(from, to, g) {
+    if (!from) return 0;
+    if (!to || to < from) to = from;
+    const hol = tripHolidays(g);
+    let n = 0;
+    const d = new Date(from + 'T00:00:00'), end = new Date(to + 'T00:00:00');
+    for (let guard = 0; d <= end && guard < 400; guard++) {
+      const wd = d.getDay();
+      if (wd !== 0 && wd !== 6 && !hol[abIso(d)]) n++;
+      d.setDate(d.getDate() + 1);
+    }
+    return n;
+  }
+  // 현황판 가로축: 쓰는 기간 안의 평일(토·일 뺌, 휴일은 넣고 회색으로). [{ d, p: 기간 번호, pst: 기간 첫날, wk: 월요일 }]
+  function tripDayList(g) {
+    const out = [];
+    tripPeriods(g).forEach(function(p, pi) {
+      const d = new Date(p.from + 'T00:00:00'), e = new Date(p.to + 'T00:00:00');
+      let first = true;
+      for (let i = 0; d <= e && i < 400; i++) {
+        const w = d.getDay();
+        if (w && w !== 6) { out.push({ d: abIso(d), p: pi, pst: first, wk: w === 1 && !first }); first = false; }
+        d.setDate(d.getDate() + 1);
+      }
+    });
+    return out;
+  }
+  function tripShort(s) { const p = s.split('-').map(Number); return p[1] + '/' + p[2]; }
+  function tripRangeLabel(a, b) { return a === b ? tripShort(a) : tripShort(a) + '~' + (a.slice(0, 7) === b.slice(0, 7) ? String(+b.slice(8)) : tripShort(b)); }
+
+  // ----- 서버 표 ↔ 결석계 기록 -----
+  function tripToAb(row) {
+    const r = { id: String(row.id), g: Number(row.grade), c: Number(row.class_no), num: Number(row.num), name: row.name || '', reason: '교외체험학습', detail: row.detail || '',
+      from: row.from_date, to: row.to_date || row.from_date, written: row.written || row.to_date || row.from_date, proof: row.proof || '', created: row.created_at ? Date.parse(row.created_at) || 0 : 0, srv: true };
+    if (row.days != null) { r.dm = true; r.days = Number(row.days); }
+    return r;
+  }
+  function abToTrip(r) {
+    return { id: r.id, grade: Number(r.g), class_no: Number(r.c), num: Number(r.num), name: r.name || '', from_date: r.from, to_date: r.to || r.from,
+      days: r.dm ? (Number(r.days) || 0) : null, written: r.written || null, detail: r.detail || '', proof: r.proof || '', updated_at: new Date().toISOString() };
+  }
+  async function tripLoad(force) {
+    const c = abCfg(), g = Number(c.g) || 0;
+    if (!g || !tripOn(g) || (!c.all && !c.c)) { tripRecs = []; tripRecsKey = ''; tripLoadError = ''; return; }
+    const key = g + '-' + (c.all ? 'all' : c.c);
+    if (!force && tripRecsKey === key) return;
+    try {
+      let q = sb.from('trip_records').select('*').eq('grade', g); if (!c.all) q = q.eq('class_no', c.c);
+      let qp = sb.from('trip_prior').select('*').eq('grade', g); if (!c.all) qp = qp.eq('class_no', c.c);
+      const rs = await Promise.all([q, qp, sb.from('trip_holidays').select('*').eq('grade', g)]);
+      rs.forEach(function(r) { if (r.error) throw r.error; });
+      tripRecs = (rs[0].data || []).map(tripToAb);
+      tripPrior = {};
+      (rs[1].data || []).forEach(function(p) { tripPrior[p.grade + '-' + p.class_no + '-' + p.num] = { days: Number(p.days) || 0, memo: p.memo || '' }; });
+      const hol = {}; (rs[2].data || []).forEach(function(h) { hol[h.day] = h.name || '휴일'; }); tripHol[g] = hol;
+      if (c.all && !tripRosters[g]) { // 전체 보기: 학년의 모든 반 명렬표(번호·이름)
+        const cs = window.classStructure || { classCounts: [] }, n = (cs.classCounts && cs.classCounts[g - 1]) || 1, list = [];
+        for (let i = 1; i <= n; i++) list.push(i);
+        const res = await rosterRows(g, list);
+        const by = {}; (res.data || []).forEach(function(s) { (by[Number(s.class_no)] = by[Number(s.class_no)] || []).push({ num: Number(s.number), name: s.name }); });
+        tripRosters[g] = by;
+      }
+      tripRecsKey = key; tripLoadError = '';
+    } catch (e) { tripRecs = []; tripRecsKey = ''; tripLoadError = e && e.message ? e.message : String(e); }
+  }
+  // 담임이 넣으면 켜 둔 부장·관리자 화면에 바로(실시간). 내 기기에서 넣은 것도 같은 길로 다시 받는다(짧게 모아서).
+  function tripStartWatcher() {
+    if (tripWatching || LITE) return;
+    tripWatching = true;
+    try {
+      sb.channel('trip-board-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_records' }, tripScheduleRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_prior' }, tripScheduleRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_holidays' }, tripScheduleRefresh)
+        .subscribe();
+    } catch (e) {}
+  }
+  function tripScheduleRefresh() {
+    clearTimeout(tripTimer);
+    tripTimer = setTimeout(function() {
+      tripTimer = null; tripRecsKey = '';
+      if (document.getElementById('absence-page').style.display !== 'none') tripLoad().then(function() { abRenderAll(); });
+    }, 800);
+  }
+  function tripUpsert(list) {
+    list.forEach(function(r) { r.srv = true; const i = tripRecs.findIndex(function(x) { return x.id === r.id; }); if (i >= 0) tripRecs[i] = r; else tripRecs.push(r); });
+    if (LITE) return Promise.resolve();
+    return sb.from('trip_records').upsert(list.map(abToTrip)).then(function(res) { if (res.error) throw res.error; })
+      .catch(function(e) {
+        customAlert('교외체험학습 기록을 서버에 저장하지 못했어요: ' + (e && e.message ? e.message : e) + '\n(그 반 담임·관리자만 넣고 고칠 수 있어요)');
+        tripRecsKey = ''; return tripLoad().then(function() { abRenderAll(); });
+      });
+  }
+  function tripDeleteIds(ids) {
+    tripRecs = tripRecs.filter(function(r) { return ids.indexOf(r.id) < 0; });
+    if (LITE) return Promise.resolve();
+    return sb.from('trip_records').delete().in('id', ids).then(function(res) { if (res.error) throw res.error; })
+      .catch(function(e) { customAlert('지우지 못했어요: ' + (e && e.message ? e.message : e)); tripRecsKey = ''; return tripLoad().then(function() { abRenderAll(); }); });
+  }
+  function tripPriorOf(g, c, num) { return tripPrior[g + '-' + c + '-' + num] || { days: 0, memo: '' }; }
+  async function tripSetPrior(g, c, num, days, memo) {
+    const key = g + '-' + c + '-' + num;
+    tripPrior[key] = { days: days, memo: memo || '' };
+    abRenderAll();
+    try {
+      const { error } = await sb.from('trip_prior').upsert({ grade: g, class_no: c, num: num, days: days, memo: memo || '', updated_at: new Date().toISOString() });
+      if (error) throw error;
+    } catch (e) { customAlert('기존사용을 저장하지 못했어요: ' + (e && e.message ? e.message : e)); tripRecsKey = ''; await tripLoad(); abRenderAll(); }
+  }
+  async function tripAddHoliday() {
+    const g = Number(abCfg().g), d = document.getElementById('trip-hol-date').value, n = (document.getElementById('trip-hol-name').value || '').trim() || '휴일';
+    if (!d) return customAlert('날짜를 고르세요.');
+    if (abIsWeekend(d)) return customAlert('토·일요일은 휴일로 더하지 않아도 일수에서 빠져요.');
+    (tripHol[g] = tripHol[g] || {})[d] = n;
+    abRenderAll();
+    try { const { error } = await sb.from('trip_holidays').upsert({ grade: g, day: d, name: n }); if (error) throw error; }
+    catch (e) { customAlert('학년 공통 휴일을 저장하지 못했어요: ' + (e && e.message ? e.message : e)); tripRecsKey = ''; await tripLoad(); abRenderAll(); }
+  }
+  async function tripRemoveHoliday(d) {
+    const g = Number(abCfg().g);
+    if (tripHol[g]) delete tripHol[g][d];
+    abRenderAll();
+    try { const { error } = await sb.from('trip_holidays').delete().eq('grade', g).eq('day', d); if (error) throw error; }
+    catch (e) { customAlert('지우지 못했어요: ' + (e && e.message ? e.message : e)); tripRecsKey = ''; await tripLoad(); abRenderAll(); }
+  }
+  // 📤 이 반의 내 계정 자료에 남아 있는 교외체험학습 기록(현황판 전에 넣은 것) → 서버로
+  function tripLocalPending() {
+    const c = abCfg();
+    if (!c.g || !c.c || !tripOn(c.g)) return [];
+    return abAllRecords().filter(function(r) { return !r.srv && r.reason === '교외체험학습' && Number(r.g) === Number(c.g) && Number(r.c) === Number(c.c); });
+  }
+  async function tripMigrate() {
+    const list = tripLocalPending(), c = abCfg();
+    if (!list.length) return;
+    if (!(await customConfirm(c.g + '학년 ' + c.c + '반 교외체험학습 기록 ' + list.length + '건을 내 계정 자료에서 서버(현황판)로 옮길까요?\n옮기면 이 반 담임·관리자·학년 전체 보기 선생님이 함께 봐요.'))) return;
+    list.forEach(function(r) { try { localStorage.removeItem(AB_REC_PREFIX + r.id); } catch (e) {} });
+    scheduleBackupWrite();
+    await tripUpsert(list.map(function(r) { return Object.assign({}, r); }));
+    abRenderAll(true);
+    tripMsg('✅ ' + list.length + '건을 서버로 옮겼어요.');
+  }
+
+  // ----- 탭 보이기·머리 안내 -----
+  function tripApplyVisibility() {
+    const c = abCfg(), g = Number(c.g) || 0, tb = window.tripBoard || { grades: [] };
+    const show = !LITE && tb.grades.length > 0 && (!g || tripOn(g));
+    const btn = document.querySelector('#ab-tabs [data-tab="trip"]'); if (btn) btn.style.display = show ? '' : 'none';
+    const sn = document.getElementById('ab-share-note'), pn = document.getElementById('ab-private-note');
+    if (sn && pn) {
+      if (g && tripOn(g)) { sn.style.display = ''; sn.innerHTML = '🔒 질병·인정·기타결석은 내 계정에만 · <b>교외체험학습은 ' + g + '학년 담임·관리자·학년 전체 보기 선생님이 함께 봐요</b>'; pn.style.display = 'none'; }
+      else { sn.style.display = 'none'; pn.style.display = ''; }
+    }
+  }
+  function tripMsg(t, warn) { const m = document.getElementById('trip-msg'); if (!m) return; m.innerHTML = t || ''; m.style.color = warn ? 'var(--alert)' : 'var(--accent-color)'; }
+
+  // ----- 자료 묶기 -----
+  // 반마다 { cls(전체 보기일 때 이름), cno, students: [{ num, name, recs, auto, man, pre, cur, tot }] }
+  function tripStudentRecs(g, cno, num) {
+    return abAllRecords().filter(function(r) { return r.reason === '교외체험학습' && Number(r.g) === Number(g) && Number(r.c) === Number(cno) && Number(r.num) === Number(num); })
+      .sort(function(a, b) { return (a.from || '') < (b.from || '') ? -1 : (a.from || '') > (b.from || '') ? 1 : (a.created || 0) - (b.created || 0); });
+  }
+  function tripGroups() {
+    const c = abCfg(), g = Number(c.g) || 0;
+    if (!g) return [];
+    const start = tripPeriods(g)[0].from;
+    const build = function(cno, roster) {
+      const nums = {}; roster.forEach(function(s) { nums[s.num] = s.name; });
+      abAllRecords().forEach(function(r) { if (r.reason === '교외체험학습' && Number(r.g) === g && Number(r.c) === Number(cno) && nums[r.num] === undefined) nums[r.num] = r.name || ''; }); // 명렬표에서 빠진 학생(전학 등)
+      return Object.keys(nums).map(Number).sort(function(a, b) { return a - b; }).map(function(num) {
+        const recs = tripStudentRecs(g, cno, num), pr = tripPriorOf(g, cno, num);
+        let auto = 0, cur = 0;
+        const rounds = [];
+        recs.forEach(function(r) { const d = abDays(r); if ((r.to || r.from) < start) auto += d; else { cur += d; rounds.push(r); } });
+        return { num: num, name: nums[num], recs: rounds, auto: auto, man: pr.days || 0, memo: pr.memo || '', pre: auto + (pr.days || 0), cur: cur, tot: auto + (pr.days || 0) + cur };
+      });
+    };
+    if (c.all) {
+      const cs = window.classStructure || { classCounts: [] }, n = (cs.classCounts && cs.classCounts[g - 1]) || 1, out = [];
+      for (let i = 1; i <= n; i++) out.push({ cls: g + '학년 ' + i + '반', cno: i, students: build(i, (tripRosters[g] && tripRosters[g][i]) || []) });
+      return out;
+    }
+    if (!c.c) return [];
+    return [{ cls: null, cno: Number(c.c), students: build(Number(c.c), abRoster) }];
+  }
+  function tripNameOf(g, cno, num) {
+    const c = abCfg();
+    if (!c.all) return abNameOf(num);
+    const s = ((tripRosters[g] && tripRosters[g][cno]) || []).find(function(x) { return x.num === Number(num); });
+    return s ? s.name : '';
+  }
+
+  // ----- 화면 -----
+  function tripRender() {
+    const pane = document.getElementById('ab-pane-trip');
+    if (!pane || pane.style.display === 'none') return;
+    const c = abCfg(), g = Number(c.g) || 0;
+    const ctrl = document.getElementById('trip-ctrl'), grid = document.getElementById('trip-grid'), foot = document.getElementById('trip-foot'), bulk = document.getElementById('trip-bulk');
+    tripClosePop();
+    if (!g || (!c.c && !c.all)) { ctrl.innerHTML = ''; bulk.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = abNeedClassHtml(); return; }
+    if (!tripOn(g)) { ctrl.innerHTML = ''; bulk.style.display = 'none'; foot.innerHTML = ''; grid.innerHTML = '<div class="ab-empty">' + g + '학년은 교외체험학습 현황판을 쓰지 않아요.<br>관리자 설정 → 👤 계정 관리 → 🗓 교외체험학습 현황판에서 쓰는 학년과 기간을 고를 수 있어요.</div>'; return; }
+    const canEdit = !c.all && tripCanEdit(g, c.c);
+    const days = tripDayList(g), hol = tripHolidays(g), periods = tripPeriods(g), groups = tripGroups();
+    // 머리줄: 기간 · 👥 · 📤 · 범례 · 보기만
+    const perTxt = periods.map(function(p) { return tripRangeLabel(p.from, p.to) + '(' + tripCountDays(p.from, p.to, g) + '일)'; }).join(' · ');
+    let h = '<span style="font-weight:700;">쓰는 기간</span><span class="ab-muted" title="관리자 설정 → 계정 관리 → 🗓 현황판에서 고쳐요">' + escapeHtmlAttr(perTxt) + '</span>';
+    if (canEdit) h += '<button class="top-btn" style="font-size:11.5px; padding:4px 10px;" onclick="tripToggleBulk()">👥 여러 명 같은 기간</button>';
+    const pend = tripLocalPending();
+    if (canEdit && pend.length) h += '<button class="top-btn" style="font-size:11.5px; padding:4px 10px; border-color:var(--accent-color); color:var(--accent-color);" onclick="tripMigrate()" title="현황판 전에 내 계정 자료로 넣어 둔 교외체험학습 기록을 서버로 옮겨 함께 봐요">📤 서버로 옮기기 (' + pend.length + '건)</button>';
+    h += '<span class="trip-legend">' + TRIP_COLORS.map(function(col, k) { return '<span><i class="trip-sw" style="background:' + col + '"></i>' + (k + 1) + '회</span>'; }).join('') +
+      '<span><i class="trip-sw" style="background:var(--tt-bg); border:1px solid var(--border-color);"></i>휴일</span><span style="color:var(--alert)">■ ' + (TRIP_LIMIT + 1) + '일 이상</span><span style="color:#9A6B12">■ ' + (TRIP_LIMIT - 2) + '~' + TRIP_LIMIT + '일</span></span>';
+    if (!canEdit) h += '<span class="trip-ro">👁 보기만' + (c.all ? ' · 입력은 각 반 담임이' : tripAllAllowed(g) || (window.currentTeacher || {}).is_admin ? '' : ' · 이 반 담임·관리자·학년 전체 보기 선생님만 볼 수 있어요') + '</span>';
+    ctrl.innerHTML = h;
+    // 👥 여러 명 같은 기간
+    if (tripBulk && canEdit) { bulk.style.display = ''; tripRenderBulk(groups[0]); } else { bulk.style.display = 'none'; tripBulk = null; }
+    // 격자
+    if (tripLoadError) { grid.innerHTML = '<div class="ab-empty">서버에서 교외체험학습 기록을 못 받았어요: ' + escapeHtmlAttr(tripLoadError) + '<br>인터넷 연결을 확인하고 다시 열어 주세요.</div>'; foot.innerHTML = ''; return; }
+    let t = '<table class="trip-board"><thead><tr><th class="fix c-num" rowspan="3">번호</th><th class="fix c-name" rowspan="3">이름</th><th class="fix c-pre" rowspan="3" title="첫 기간 전에 쓴 일수 = 올해 기록 자동 + 직접 적은 것' + (canEdit ? ' · 누르면 직접 적기' : '') + '">기존</th><th class="fix c-tot" rowspan="3">총일수</th>';
+    periods.forEach(function(p, pi) { const n = days.filter(function(x) { return x.p === pi; }).length; if (n) t += '<th colspan="' + n + '" class="' + (pi ? 'pst' : '') + '">' + tripRangeLabel(p.from, p.to) + '</th>'; });
+    t += '</tr><tr>' + days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hol ' : '') + (x.pst && x.p ? 'pst' : x.wk ? 'wk' : '') + '" title="' + escapeHtmlAttr(hol[x.d] || '') + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr><tr>' +
+      days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hol ' : '') + (x.pst && x.p ? 'pst' : x.wk ? 'wk' : '') + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    let grand = 0, grandN = 0, over = 0;
+    groups.forEach(function(grp) {
+      if (grp.cls) t += '<tr class="cls"><th colspan="' + (4 + days.length) + '">' + escapeHtmlAttr(grp.cls) + '</th></tr>';
+      let sum = 0, cnt = 0;
+      grp.students.forEach(function(s) {
+        sum += s.tot; if (s.recs.length) cnt++; if (s.tot > TRIP_LIMIT) over++;
+        const tc = s.tot > TRIP_LIMIT ? ' tot-over' : s.tot >= TRIP_LIMIT - 2 ? ' tot-near' : '';
+        t += '<tr class="' + (tripBulk && tripBulk.sel[s.num] ? 'bsel' : '') + '" data-c="' + grp.cno + '" data-n="' + s.num + '"><td class="fix c-num">' + s.num + '</td><td class="fix c-name" title="' + escapeHtmlAttr(s.name) + '">' + escapeHtmlAttr(s.name) + '</td>' +
+          '<td class="fix c-pre' + (canEdit ? ' ed' : '') + '" title="자동 ' + s.auto + ' + 직접 ' + s.man + (s.memo ? ' (' + escapeHtmlAttr(s.memo) + ')' : '') + '">' + (s.pre || '') + (s.man ? '<span class="hand">✎</span>' : '') + '</td><td class="fix c-tot' + tc + '">' + (s.tot || '') + '</td>';
+        days.forEach(function(x, di) {
+          const sep = (x.pst && x.p ? ' pst' : x.wk ? ' wk' : '');
+          if (hol[x.d]) { t += '<td class="day hol' + sep + '" title="' + escapeHtmlAttr(hol[x.d]) + '"></td>'; return; }
+          let ri = -1; s.recs.forEach(function(r, k) { if (x.d >= r.from && x.d <= (r.to || r.from)) ri = k; });
+          if (ri >= 0) {
+            const r = s.recs[ri], prev = days[di - 1], next = days[di + 1];
+            const st = !prev || prev.d < r.from, en = !next || next.d > (r.to || r.from);
+            t += '<td class="day bar' + (st ? ' s' : '') + (en ? ' e' : '') + (abSelId === r.id ? ' pick' : '') + sep + '" style="--bc:' + TRIP_COLORS[Math.min(ri, 4)] + '" data-n="' + (ri + 1) + '" data-id="' + r.id + '" title="' + (ri + 1) + '회 ' + tripRangeLabel(r.from, r.to || r.from) + ' · ' + abDays(r) + '일' + (r.detail ? ' · ' + escapeHtmlAttr(r.detail) : '') + '"></td>';
+          } else {
+            const pk = tripPick && tripPick.c === grp.cno && tripPick.n === s.num && tripPick.d === x.d;
+            t += '<td class="day' + (canEdit ? '' : ' ro') + (pk ? ' pick' : '') + sep + '" data-d="' + x.d + '"></td>';
+          }
+        });
+        t += '</tr>';
+      });
+      grand += sum; grandN += cnt;
+      if (grp.cls) t += '<tr><td class="fix c-num" colspan="2" style="left:0; width:114px; min-width:114px; color:var(--text-sub); font-weight:800;">반 합계</td><td class="fix c-pre"></td><td class="fix c-tot">' + sum + '</td><td colspan="' + days.length + '" style="text-align:left; padding-left:8px; color:var(--text-sub); font-weight:600;">신청 ' + cnt + '명 · ' + sum + '일</td></tr>';
+      if (!grp.students.length) t += '<tr><td colspan="' + (4 + days.length) + '" class="ab-empty" style="cursor:default;">이 반 명렬표가 비어 있어요.</td></tr>';
+    });
+    t += '</tbody>';
+    if (!c.all) t += '<tfoot><tr><td class="fix c-num" colspan="2" style="left:0; width:114px; min-width:114px;">합계</td><td class="fix c-pre"></td><td class="fix c-tot">' + grand + '</td><td colspan="' + days.length + '" style="text-align:left; padding-left:8px;">신청 ' + grandN + '명 · ' + (TRIP_LIMIT + 1) + '일 이상 ' + over + '명</td></tr></tfoot>';
+    grid.innerHTML = t + '</table>';
+    foot.innerHTML = (canEdit ? '빈 칸을 누르면 시작일, 한 번 더 누르면 종료일 → 바로 추가. 띠를 누르면 오른쪽에 신청서, 두 번 누르면 ✏️ 입력 탭에서 고치기. 기존 칸을 누르면 직접 적기. ' : '띠를 누르면 오른쪽에 그 학생 신청서가 보여요. ') +
+      '일수는 토·일과 학년 공통 휴일(공휴일·학사일정 + 아래 더한 날)을 뺀 날 수, 연간 출석인정 한도 ' + TRIP_LIMIT + '일.<br>' + tripHolLine(g, canEdit || tripCanEditGrade(g));
+  }
+  // 학년 공통 휴일 줄(학교 지정 체험학습일 등 — 학사일정에 없는 날)
+  function tripHolLine(g, canEdit) {
+    const mine = tripHol[g] || {}, keys = Object.keys(mine).sort();
+    let h = '<span style="font-weight:700;">학년 공통 휴일</span> ' + (keys.length ? keys.map(function(d) {
+      return '<span style="white-space:nowrap;">' + tripShort(d) + '(' + TRIP_WD[new Date(d + 'T00:00:00').getDay()] + ') ' + escapeHtmlAttr(mine[d]) + (canEdit ? ' <button class="ab-icon-btn" style="padding:0 4px;" title="지우기" onclick="tripRemoveHoliday(\'' + d + '\')">🗑</button>' : '') + '</span>';
+    }).join(' · ') : '<span>없음</span>');
+    if (canEdit) h += ' <span style="white-space:nowrap; display:inline-flex; gap:4px; align-items:center; margin-left:6px;"><input type="date" id="trip-hol-date" class="ab-in" style="width:138px; padding:2px 4px;"><input type="text" id="trip-hol-name" class="ab-in" style="width:130px; padding:2px 6px;" placeholder="이름 (예: 학년 체험학습일)"><button class="top-btn" style="padding:2px 8px; font-size:11px;" onclick="tripAddHoliday()">➕ 더하기</button></span>';
+    return h;
+  }
+
+  // ----- 누르기: 띠(미리보기·고치기) · 빈 칸 두 번(한 명 추가) · 기존(직접 적기) -----
+  function tripClosePop() { const o = document.querySelector('#trip-grid .trip-pop'); if (o) o.remove(); }
+  function tripPlacePop(td, html) {
+    const box = document.getElementById('trip-grid'), rect = td.getBoundingClientRect(), br = box.getBoundingClientRect();
+    const pop = document.createElement('div'); pop.className = 'trip-pop';
+    const z = parseFloat(getComputedStyle(document.getElementById('ab-pane-trip')).zoom) || 1;
+    pop.style.left = Math.max(0, Math.min((rect.left - br.left) / z + box.scrollLeft, box.scrollWidth - 270)) + 'px';
+    pop.style.top = ((rect.bottom - br.top) / z + box.scrollTop + 4) + 'px';
+    pop.innerHTML = html; box.appendChild(pop);
+    return pop;
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    const grid = document.getElementById('trip-grid'); if (!grid) return;
+    grid.addEventListener('click', function(ev) {
+      if (ev.target.closest('.trip-pop')) return;
+      const c = abCfg(), g = Number(c.g) || 0;
+      const tr = ev.target.closest('tr[data-c]'); if (!tr) return;
+      const cno = Number(tr.dataset.c), num = Number(tr.dataset.n), canEdit = !c.all && tripCanEdit(g, cno);
+      const tdp = ev.target.closest('td.c-pre');
+      if (tdp) { if (canEdit) tripPriorPop(tdp, g, cno, num); return; }
+      const td = ev.target.closest('td.day'); if (!td || td.classList.contains('hol')) return;
+      tripClosePop();
+      if (td.classList.contains('bar')) { // 띠 → 그 기록 신청서 미리보기
+        tripPick = null; abSelId = td.dataset.id;
+        document.querySelectorAll('#trip-grid td.bar.pick').forEach(function(x) { x.classList.remove('pick'); });
+        td.closest('tr').querySelectorAll('td.bar[data-id="' + td.dataset.id + '"]').forEach(function(x) { x.classList.add('pick'); });
+        abRenderPreview();
+        tripMsg(canEdit ? '띠를 골랐어요 — 오른쪽이 이 학생 신청서예요. 두 번 누르면 ✏️ 입력 탭에서 고치고, Esc를 누르면 현황표로 돌아가요.' : '오른쪽에 이 학생 신청서가 보여요. Esc를 누르면 현황표로 돌아가요.');
+        return;
+      }
+      if (!canEdit) { tripMsg('보기만 할 수 있어요. 입력은 그 반 담임이 해요.', true); return; }
+      const d = td.dataset.d;
+      if (!tripPick || tripPick.c !== cno || tripPick.n !== num) { tripPick = { c: cno, n: num, d: d }; abSelId = null; tripRender(); abRenderPreview(); tripMsg('시작일 ' + tripShort(d) + '(' + TRIP_WD[new Date(d + 'T00:00:00').getDay()] + ') · 같은 줄에서 종료일을 누르세요. (하루면 같은 칸을 한 번 더)'); return; }
+      const a = tripPick.d < d ? tripPick.d : d, b = tripPick.d < d ? d : tripPick.d;
+      tripAddPop(td, g, cno, num, a, b);
+    });
+    grid.addEventListener('dblclick', function(ev) {
+      const td = ev.target.closest('td.bar'); if (!td) return;
+      const c = abCfg(); if (c.all || !tripCanEdit(c.g, td.closest('tr').dataset.c)) return;
+      tripClosePop(); tripPick = null;
+      abEdit(td.dataset.id);
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape' || abTab !== 'trip' || document.getElementById('absence-page').style.display === 'none') return;
+      if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && !e.target.closest('#trip-grid')) return;
+      tripPick = null; abSelId = null; tripClosePop(); tripRender(); abRenderPreview(); tripMsg('');
+    });
+  });
+  function tripAddPop(td, g, cno, num, a, b) {
+    const recs = tripStudentRecs(g, cno, num), name = tripNameOf(g, cno, num);
+    const overlap = recs.some(function(r) { return a <= (r.to || r.from) && b >= r.from; });
+    const dd = tripCountDays(a, b, g), st = (tripGroups().find(function(x) { return x.cno === cno; }) || { students: [] }).students.find(function(s) { return s.num === num; }), tot = st ? st.tot : 0;
+    const pop = tripPlacePop(td, '<div><b>' + num + '번 ' + escapeHtmlAttr(name) + '</b> · ' + (recs.length + 1) + '회</div>' +
+      '<div style="margin-top:4px;"><span class="k">기간</span> ' + tripShort(a) + '(' + TRIP_WD[new Date(a + 'T00:00:00').getDay()] + ') ~ ' + tripShort(b) + '(' + TRIP_WD[new Date(b + 'T00:00:00').getDay()] + ') · <b>' + dd + '일</b></div>' +
+      '<div><span class="k">총일수</span> ' + tot + ' → <b' + (tot + dd > TRIP_LIMIT ? ' style="color:var(--alert)"' : '') + '>' + (tot + dd) + '일</b>' + (tot + dd > TRIP_LIMIT ? ' ⚠️ 연간 ' + TRIP_LIMIT + '일 넘음' : '') + '</div>' +
+      '<div style="margin-top:6px;"><input id="trip-add-detail" class="ab-in" placeholder="구체적인 사유 (예: 가족 여행) — 비워도 돼요" style="width:100%;"></div>' +
+      (overlap ? '<div style="color:var(--alert); font-weight:700; margin-top:4px;">⚠️ 이미 있는 기간과 겹쳐요</div>' : '') +
+      '<div class="trip-row"><button class="top-btn accent" style="padding:4px 10px; font-size:12px;" id="trip-add-ok"' + (overlap ? ' disabled' : '') + '>➕ 추가 (결석계에 저장)</button><button class="top-btn" style="padding:4px 10px; font-size:12px;" id="trip-add-no">취소</button></div>' +
+      '<div class="ab-muted" style="margin-top:6px;">✏️ 입력 탭 목록에도 같은 기록이 생기고, 바로 신청서를 찍을 수 있어요.</div>');
+    const inp = pop.querySelector('#trip-add-detail'); inp.focus();
+    const go = function() {
+      const r = { id: abNewId(), created: Date.now(), g: g, c: cno, num: num, name: name, reason: '교외체험학습', detail: inp.value.trim(), from: a, to: b, written: b, proof: AB_PROOFS['교외체험학습'][0] };
+      tripPick = null; tripClosePop();
+      abSaveRecord(r); abSelId = r.id;
+      abRenderAll(true);
+      tripMsg('✅ ' + num + '번 ' + escapeHtmlAttr(name) + ' ' + tripRangeLabel(a, b) + ' ' + dd + '일 추가 — 오른쪽 신청서를 확인하고 🖨️ 출력을 누르세요.');
+    };
+    pop.querySelector('#trip-add-ok').onclick = go;
+    pop.querySelector('#trip-add-no').onclick = function() { tripPick = null; tripClosePop(); tripRender(); tripMsg(''); };
+    inp.onkeydown = function(e) { if (e.key === 'Enter' && !overlap) { e.preventDefault(); go(); } if (e.key === 'Escape') { e.stopPropagation(); tripPick = null; tripClosePop(); tripRender(); tripMsg(''); } };
+  }
+  function tripPriorPop(td, g, cno, num) {
+    tripClosePop(); tripPick = null;
+    const st = (tripGroups().find(function(x) { return x.cno === cno; }) || { students: [] }).students.find(function(s) { return s.num === num; }) || { auto: 0, man: 0, memo: '', name: tripNameOf(g, cno, num) };
+    const pop = tripPlacePop(td, '<div><b>' + num + '번 ' + escapeHtmlAttr(st.name) + '</b> · 기존사용</div>' +
+      '<div style="margin-top:4px;"><span class="k">올해 기록에서 자동</span> ' + st.auto + '일 <span class="k">(첫 기간 전에 끝난 교외체험학습)</span></div>' +
+      '<div class="trip-row"><span class="k">직접 적는 일수</span><input type="number" id="trip-pre-in" class="ab-in" min="0" max="99" value="' + st.man + '" style="width:64px;"><input type="text" id="trip-pre-memo" class="ab-in" value="' + escapeHtmlAttr(st.memo) + '" placeholder="메모 (예: 1학기 사용분)" style="width:150px;"></div>' +
+      '<div class="trip-row"><span class="k">기존 합계</span> <b id="trip-pre-sum">' + (st.auto + st.man) + '일</b></div>' +
+      '<div class="trip-row"><button class="top-btn accent" style="padding:4px 10px; font-size:12px;" id="trip-pre-ok">저장</button><button class="top-btn" style="padding:4px 10px; font-size:12px;" id="trip-pre-no">취소</button></div>');
+    const inp = pop.querySelector('#trip-pre-in'); inp.focus(); inp.select();
+    inp.oninput = function() { pop.querySelector('#trip-pre-sum').textContent = (st.auto + (Math.max(0, parseInt(inp.value, 10) || 0))) + '일'; };
+    const ok = function() { const v = Math.max(0, parseInt(inp.value, 10) || 0), memo = pop.querySelector('#trip-pre-memo').value.trim(); tripClosePop(); tripSetPrior(g, cno, num, v, memo); tripMsg('✅ ' + escapeHtmlAttr(st.name) + ' 기존사용 = 자동 ' + st.auto + ' + 직접 ' + v + ' = ' + (st.auto + v) + '일'); };
+    pop.querySelector('#trip-pre-ok').onclick = ok;
+    pop.querySelector('#trip-pre-no').onclick = tripClosePop;
+    pop.querySelectorAll('input').forEach(function(el) { el.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); ok(); } if (e.key === 'Escape') { e.stopPropagation(); tripClosePop(); } }; });
+  }
+
+  // ----- 👥 여러 명 같은 기간 -----
+  function tripToggleBulk() {
+    const c = abCfg();
+    if (tripBulk) tripBulk = null;
+    else { const p = tripPeriods(c.g)[0]; tripBulk = { from: p.from, to: p.to, sel: {} }; tripPick = null; }
+    tripRender();
+  }
+  function tripBulkRange() { if (!tripBulk || !tripBulk.from) return null; return [tripBulk.from, tripBulk.to && tripBulk.to >= tripBulk.from ? tripBulk.to : tripBulk.from]; }
+  function tripBulkConflict(s) { const rg = tripBulkRange(); if (!rg) return false; return s.recs.some(function(r) { return rg[0] <= (r.to || r.from) && rg[1] >= r.from; }) || tripStudentRecs(abCfg().g, abCfg().c, s.num).some(function(r) { return rg[0] <= (r.to || r.from) && rg[1] >= r.from; }); }
+  function tripRenderBulk(grp) {
+    const box = document.getElementById('trip-bulk'), g = Number(abCfg().g), rg = tripBulkRange(), dd = rg ? tripCountDays(rg[0], rg[1], g) : 0;
+    const students = grp ? grp.students : [];
+    const n = Object.keys(tripBulk.sel).length;
+    box.innerHTML = '<div class="trip-row"><b>👥 여러 명 같은 기간</b>' +
+      '<label style="display:inline-flex; align-items:center; gap:5px;">시작 <input type="date" id="trip-b-from" class="ab-in" style="width:140px;" value="' + (tripBulk.from || '') + '" onchange="tripBulkDates()"></label>' +
+      '<label style="display:inline-flex; align-items:center; gap:5px;">종료 <input type="date" id="trip-b-to" class="ab-in" style="width:140px;" value="' + (tripBulk.to || '') + '" onchange="tripBulkDates()"></label>' +
+      '<span class="ab-muted">' + (rg ? tripShort(rg[0]) + '(' + TRIP_WD[new Date(rg[0] + 'T00:00:00').getDay()] + ') ~ ' + tripShort(rg[1]) + '(' + TRIP_WD[new Date(rg[1] + 'T00:00:00').getDay()] + ') · ' + dd + '일' : '') + '</span>' +
+      '<input type="text" id="trip-b-detail" class="ab-in" style="width:180px;" placeholder="구체적인 사유 (모두 같게, 비워도 돼요)" value="' + escapeHtmlAttr(tripBulk.detail || '') + '" oninput="tripBulk.detail = this.value">' +
+      '<span style="flex:1"></span><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripBulkAll(true)">전체 선택</button><button class="top-btn" style="font-size:11px; padding:3px 9px;" onclick="tripBulkAll(false)">해제</button></div>' +
+      '<div class="trip-chips">' + students.map(function(s) {
+        const cf = tripBulkConflict(s), on = !!tripBulk.sel[s.num], tot = s.tot + dd;
+        return '<label class="trip-chip' + (on ? ' on' : '') + (cf ? ' warn' : '') + '" title="' + (cf ? '이 기간에 이미 기록이 있어요' : '총일수 ' + s.tot + ' → ' + tot) + '"><input type="checkbox"' + (on ? ' checked' : '') + (cf ? ' disabled' : '') + ' onchange="tripBulkPick(' + s.num + ', this.checked)">' + s.num + ' ' + escapeHtmlAttr(s.name) + (cf ? '<span class="t">겹침</span>' : tot > TRIP_LIMIT ? '<span class="t">' + tot + '일</span>' : '') + '</label>';
+      }).join('') + '</div>' +
+      '<div class="trip-row"><span class="ab-muted">학생 이름을 눌러 고르세요. 이미 그 기간에 기록이 있는 학생은 빨간 테두리로 표시되고 빠져요. 저장되면 학생마다 기록 한 건씩 생겨 신청서도 각자 찍어요.</span><span style="flex:1"></span>' +
+      '<button class="top-btn accent" style="font-size:12px; padding:4px 12px;" onclick="tripBulkAdd()"' + (!n || !rg ? ' disabled' : '') + '>➕ ' + n + '명 추가 (각 ' + dd + '일)</button><button class="top-btn" style="font-size:12px; padding:4px 10px;" onclick="tripToggleBulk()">닫기</button></div>';
+  }
+  function tripBulkDates() {
+    const f = document.getElementById('trip-b-from').value, t = document.getElementById('trip-b-to').value;
+    tripBulk.from = f; tripBulk.to = t && f && t >= f ? t : f; tripBulk.sel = {};
+    tripRender();
+  }
+  function tripBulkPick(num, on) { if (!tripBulk) return; if (on) tripBulk.sel[num] = true; else delete tripBulk.sel[num]; tripRender(); }
+  function tripBulkAll(on) {
+    if (!tripBulk) return;
+    tripBulk.sel = {};
+    if (on) { const grp = tripGroups()[0]; (grp ? grp.students : []).forEach(function(s) { if (!tripBulkConflict(s)) tripBulk.sel[s.num] = true; }); }
+    tripRender();
+  }
+  function tripBulkAdd() {
+    const rg = tripBulkRange(), c = abCfg(), g = Number(c.g), cno = Number(c.c);
+    if (!rg || !tripBulk) return;
+    const grp = tripGroups()[0], nums = Object.keys(tripBulk.sel).map(Number).sort(function(a, b) { return a - b; });
+    const list = nums.map(function(num, i) {
+      const s = (grp ? grp.students : []).find(function(x) { return x.num === num; });
+      return { id: abNewId() + i.toString(36), created: Date.now() + i, g: g, c: cno, num: num, name: s ? s.name : tripNameOf(g, cno, num), reason: '교외체험학습', detail: (tripBulk.detail || '').trim(), from: rg[0], to: rg[1], written: rg[1], proof: AB_PROOFS['교외체험학습'][0] };
+    });
+    if (!list.length) return;
+    const dd = tripCountDays(rg[0], rg[1], g);
+    tripBulk = null;
+    tripUpsert(list); // 요청 한 번에 여러 건
+    abSelId = null;
+    abRenderAll(true);
+    tripMsg('✅ ' + list.length + '명에게 ' + tripRangeLabel(rg[0], rg[1]) + ' ' + dd + '일을 넣었어요. 학생마다 기록 한 건씩 생겼고, 띠를 누르면 그 학생 신청서를 찍을 수 있어요.');
+  }
+
+  // ----- 🖨️ 신청 현황표(가로 A4) -----
+  function tripClearSheet() {
+    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper');
+    if (!box || !paper) return;
+    paper.classList.remove('ab-land');
+    box.querySelectorAll('.ab-extra').forEach(function(e) { e.remove(); });
+  }
+  function tripRenderSheet() {
+    const box = document.getElementById('ab-paper-box'), paper = document.getElementById('ab-paper'), paper2 = document.getElementById('ab-paper2'), label = document.getElementById('ab-prev-label');
+    paper2.style.display = 'none'; paper2.innerHTML = ''; box.classList.remove('ab-two');
+    box.querySelectorAll('.ab-extra').forEach(function(e) { e.remove(); });
+    paper.classList.add('ab-land');
+    const c = abCfg(), g = Number(c.g) || 0;
+    if (!g || !tripOn(g) || (!c.c && !c.all)) {
+      paper.innerHTML = '<div class="ab-paper-empty">현황판을 쓰는 학년의 반을 고르면<br>여기에 신청 현황표가 보여요.</div>'; label.textContent = ''; abFitPaper(); return;
+    }
+    const groups = tripGroups();
+    groups.forEach(function(grp, i) {
+      let p = paper;
+      if (i) { p = document.createElement('div'); p.className = 'ab-paper ab-land ab-extra'; box.appendChild(p); }
+      p.innerHTML = tripSheetHtml(g, grp);
+    });
+    label.innerHTML = '교외체험학습 신청 현황표 · 가로 A4 ' + groups.length + '장' + (groups.length > 1 ? '(반마다 한 장)' : '') +
+      ' <button class="top-btn" style="font-size:11px; padding:2px 8px; margin-left:4px;" onclick="tripOpenBig()" title="현황표를 실제 크기로 크게 봐요">🔍 크게 보기</button>';
+    abFitPaper();
+  }
+  // 🔍 현황표를 실제 크기로(덮개). 인쇄 전에 숫자·띠를 확인하기 좋게.
+  function tripOpenBig() {
+    let ov = document.getElementById('trip-big');
+    if (!ov) {
+      ov = document.createElement('div'); ov.id = 'trip-big';
+      ov.style.cssText = 'position:fixed; inset:0; z-index:9000; background:rgba(10,14,22,0.72); display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px; box-sizing:border-box;';
+      ov.innerHTML = '<div style="display:flex; gap:10px; align-items:center; color:#fff; font-weight:700; font-size:13px;"><span>신청 현황표 · 실제 크기 (Esc로 닫기)</span><button class="top-btn" style="font-size:12px;" onclick="tripCloseBig()">✕ 닫기</button></div><div id="trip-big-pages" style="overflow:auto; max-width:100%; flex:1; min-height:0; display:flex; flex-direction:column; gap:14px; align-items:center;"></div>';
+      ov.addEventListener('click', function(e) { if (e.target === ov) tripCloseBig(); });
+      document.body.appendChild(ov);
+    }
+    const pages = document.getElementById('trip-big-pages'); pages.innerHTML = '';
+    document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').forEach(function(p) { if (p.style.display === 'none') return; const d = document.createElement('div'); d.className = 'ab-paper ab-land'; d.style.cssText = 'flex:0 0 auto; transform:none;'; d.innerHTML = p.innerHTML; pages.appendChild(d); });
+    ov.style.display = 'flex';
+    document.addEventListener('keydown', tripBigEsc);
+  }
+  function tripBigEsc(e) { if (e.key === 'Escape') { e.stopPropagation(); tripCloseBig(); } }
+  function tripCloseBig() { const ov = document.getElementById('trip-big'); if (ov) ov.style.display = 'none'; document.removeEventListener('keydown', tripBigEsc); }
+  function tripSheetHtml(g, grp) {
+    const days = tripDayList(g), hol = tripHolidays(g), periods = tripPeriods(g), all = grp.students;
+    let nr = 3; all.forEach(function(s) { if (s.recs.length > nr) nr = Math.min(5, s.recs.length); }); // 회차 칸: 3칸, 4·5회가 있으면 늘림
+    const rh = Math.max(4.2, Math.min(6.2, 158 / Math.max(all.length, 1))); // 줄 높이: 28명이면 5.2mm쯤, 적으면 6.2mm까지
+    const today = new Date();
+    let h = '<div class="tps"><div class="p-head"><div class="p-title"><small>학교장허가 교외체험학습</small>신청 현황</div>' +
+      '<div class="p-meta"><b>' + g + '학년 ' + grp.cno + '반</b>' + periods.map(function(p) { return tripRangeLabel(p.from, p.to); }).join(' · ') + ' · 연간 출석인정 한도 ' + TRIP_LIMIT + '일 · 출력 ' + today.getFullYear() + '.' + (today.getMonth() + 1) + '.' + today.getDate() + '</div></div>';
+    let rcols = ''; for (let k = 0; k < nr; k++) rcols += '<col style="width:16.5mm"><col style="width:6mm">';
+    h += '<table class="pt" style="--rh:' + rh.toFixed(2) + 'mm"><colgroup><col style="width:7mm"><col style="width:15mm">' + rcols + '<col style="width:8mm"><col style="width:9mm">' + days.map(function() { return '<col>'; }).join('') + '</colgroup>';
+    h += '<thead><tr><th rowspan="3"></th><th rowspan="3" style="text-align:left; padding-left:1.5mm;">이름</th>';
+    for (let k = 0; k < nr; k++) h += '<th class="grp" colspan="2" rowspan="3"><i style="background:' + TRIP_PCOL[k] + '"></i>' + (k + 1) + '회 기간 · 일수</th>';
+    h += '<th rowspan="3" class="grp">기존</th><th rowspan="3" class="grp">총일수</th>';
+    periods.forEach(function(p, pi) { const n = days.filter(function(x) { return x.p === pi; }).length; if (n) h += '<th class="per" colspan="' + n + '" style="--mc:' + TRIP_MTINT[pi % 4] + '">' + tripRangeLabel(p.from, p.to) + ' · ' + tripCountDays(p.from, p.to, g) + '일</th>'; });
+    const sep = function(x) { return x.pst && x.p ? ' pst' : x.wk ? ' wk' : ''; };
+    h += '</tr><tr>' + days.map(function(x) { return '<th class="' + (hol[x.d] ? 'hd' : '') + sep(x) + '" style="background:' + TRIP_MTINT2[x.p % 4] + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr>';
+    h += '<tr>' + days.map(function(x) { return '<th class="dw' + (hol[x.d] ? ' hd' : '') + sep(x) + '" style="background:' + TRIP_MTINT2[x.p % 4] + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    all.forEach(function(s) {
+      h += '<tr><td class="n">' + s.num + '</td><td class="l nm">' + escapeHtmlAttr(s.name) + '</td>';
+      for (let k = 0; k < nr; k++) {
+        const r = s.recs[k];
+        if (r) h += '<td class="rp">' + tripRangeLabel(r.from, r.to || r.from) + '</td><td class="rd" style="--tc:' + TRIP_PTINT[k] + '">' + abDays(r) + '</td>';
+        else h += '<td class="rp empty">·</td><td class="rd"></td>';
+      }
+      h += '<td class="n" style="border-left:0.8pt solid #C9CED8;">' + (s.pre || '') + '</td><td class="tot' + (s.tot > TRIP_LIMIT ? ' over' : s.tot >= TRIP_LIMIT - 2 ? ' near' : '') + '">' + (s.tot || '') + '</td>';
+      days.forEach(function(x, di) {
+        const cls = (di === 0 ? ' first' : '') + sep(x);
+        if (hol[x.d]) { h += '<td class="d hol' + cls + '"></td>'; return; }
+        let ri = -1; s.recs.forEach(function(r, k) { if (x.d >= r.from && x.d <= (r.to || r.from)) ri = k; });
+        if (ri >= 0) {
+          const r = s.recs[ri], prev = days[di - 1], next = days[di + 1];
+          const st = !prev || prev.d < r.from, en = !next || next.d > (r.to || r.from);
+          h += '<td class="d b' + (st ? ' s' : '') + (en ? ' e' : '') + cls + '" style="--bc:' + TRIP_PCOL[Math.min(ri, 4)] + '" data-n="' + (ri + 1) + '"></td>';
+        } else h += '<td class="d' + cls + '"></td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    h += '<div class="p-foot">' + TRIP_PCOL.slice(0, nr).map(function(col, k) { return '<span><i style="background:' + col + '"></i>' + (k + 1) + '회</span>'; }).join('') +
+      '<span><i style="background:repeating-linear-gradient(135deg,#F3F4F7 0 1mm,#E3E6EC 1mm 2mm)"></i>휴일 · 토일은 빼고 셈</span><span>기존 = 첫 기간 전에 쓴 일수</span><span>총일수 ' + (TRIP_LIMIT + 1) + ' 이상은 붉게</span>' + (nr < 5 ? '<span>4·5회가 있으면 칸이 늘어남</span>' : '') + '</div></div>';
+    return h;
   }
 
   // 펴 둔 채 왼쪽 메뉴의 다른 버튼을 누르면 닫는다.
