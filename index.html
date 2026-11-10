@@ -1241,6 +1241,9 @@
     .tps .pt th.dw { height: 3.6mm; font-weight: 600; color: #9AA1AE; }
     .tps .pt th.hd { color: #B6BCC7; }
     .tps .pt td { height: var(--rh, 5.2mm); padding: 0; border-bottom: 0.5pt solid #E3E6EC; text-align: center; white-space: nowrap; }
+    .tps.dense .pt td { font-size: 7.5pt; }
+    .tps.dense .pt td.rp { font-size: 7pt; }
+    .tps.dense .pt td.tot { font-size: 8.5pt; }
     .tps .pt tbody tr:nth-child(5n) td { border-bottom-color: #B9BFCA; }
     .tps .pt td.l { text-align: left; padding-left: 1.5mm; }
     .tps .pt td.nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
@@ -5696,7 +5699,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.14';
+  var BUILD_ID = '2026-11-10.15';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -15556,9 +15559,10 @@
   function tripSheetHtml(g, grp) {
     const days = tripDayList(g), hol = tripHolidays(g), periods = tripPeriods(g), all = grp.students;
     let nr = 3; all.forEach(function(s) { if (s.recs.length > nr) nr = Math.min(5, s.recs.length); }); // 회차 칸: 3칸, 4·5회가 있으면 늘림
-    const rh = Math.max(4.2, Math.min(6.2, 158 / Math.max(all.length, 1))); // 줄 높이: 28명이면 5.2mm쯤, 적으면 6.2mm까지
+    // 줄 높이: 종이 210mm − 위아래 여백 18 − 머리 12 − 표 머리 12.5 − 일자별 인원 4.6 − 범례 7 ≈ 156mm를 학생 수로 나눔(여유 두고 148). 28명이면 5.3mm, 적으면 6.2mm까지 — 아래가 잘리지 않게(11/10 사용자)
+    const rh = Math.max(3.8, Math.min(6.2, 148 / Math.max(all.length, 1)));
     const today = new Date();
-    let h = '<div class="tps"><div class="p-head"><div class="p-title"><small>학교장허가 교외체험학습</small>신청 현황</div>' +
+    let h = '<div class="tps' + (rh < 4.6 ? ' dense' : '') + '"><div class="p-head"><div class="p-title"><small>학교장허가 교외체험학습</small>신청 현황</div>' +
       '<div class="p-meta"><b>' + g + '학년 ' + grp.cno + '반</b>' + tripRangeLabel(days[0].d, days[days.length - 1].to || days[days.length - 1].d) + ' · 연간 출석인정 한도 ' + TRIP_LIMIT + '일 · 출력 ' + today.getFullYear() + '.' + (today.getMonth() + 1) + '.' + today.getDate() + '</div></div>';
     let rcols = ''; for (let k = 0; k < nr; k++) rcols += '<col style="width:16.5mm"><col style="width:6mm">';
     h += '<table class="pt" style="--rh:' + rh.toFixed(2) + 'mm"><colgroup><col style="width:7mm"><col style="width:15mm"><col style="width:8mm"><col style="width:9mm">' + rcols + days.map(function(x) { return x.gap ? '<col style="width:3.5mm">' : '<col>'; }).join('') + '</colgroup>';
