@@ -327,13 +327,38 @@ function check(label, cond, detail) {
   check('닫으면 현황표로', await P.evaluate(() => document.getElementById('trip-panel').style.display === 'none' && document.getElementById('ab-paper').classList.contains('ab-land')));
   await P.click(gridRow(3) + ' td.bar'); await wait(200);
   await P.click('#trip-bar-all'); await wait(600);
-  check('띠 상자 "이 학생 신청서 전부 (3회)" → 3건 · 6장', await P.evaluate(() => /3건 · 6장/.test(document.getElementById('ab-prev-label').textContent) && [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length === 6));
+  check('띠 상자 "이 학생 전부 (3회)" → 3건 · 6장 + 바로 인쇄', await P.evaluate(() => /3건 · 6장/.test(document.getElementById('ab-prev-label').textContent) && [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length === 6 && window.__printed === 3));
+  await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   await P.keyboard.press('Escape'); await wait(300);
   check('Esc → 현황표', await P.evaluate(() => document.getElementById('ab-paper').classList.contains('ab-land')));
 
   console.log('[8] 띠 → 신청서, 두 번 → 고치기, 사유 바꾸면 내 계정으로, 지우기');
   await P.click(gridRow(4) + ' td.bar'); await wait(300);
-  check('띠 누르면 미리보기 = 그 학생 신청서(차카타, 8일간) + 🗑 지우기·✎ 고치기 상자', await cell('C6') === '차카타' && await cell('L7') === '(8 일간)' && /차카타/.test(await P.innerText('#ab-prev-label')) && await P.evaluate(() => !!document.getElementById('trip-bar-del') && /4번 차카타 · 1회 · 12\/1~11 · 8일/.test(document.querySelector('#trip-grid .trip-pop').textContent)), [await cell('C6'), await cell('L7'), await P.evaluate(() => (document.querySelector('#trip-grid .trip-pop') || {}).textContent)]);
+  check('띠 누르면 미리보기 = 그 학생 신청서(차카타, 8일간) + 고치기·지우기 상자', await cell('C6') === '차카타' && await cell('L7') === '(8 일간)' && /차카타/.test(await P.innerText('#ab-prev-label')) && await P.evaluate(() => !!document.getElementById('trip-bar-del') && /4번 차카타 · 1회 · 12\/1~11 · 8일/.test(document.querySelector('#trip-grid .trip-pop').textContent)), [await cell('C6'), await cell('L7'), await P.evaluate(() => (document.querySelector('#trip-grid .trip-pop') || {}).textContent)]);
+  // 상자 안에서 바로 고치기: 12/1~11 → 12/2~9 (6일)
+  check('상자에 기간·사유 입력칸', await P.evaluate(() => document.getElementById('trip-bar-from').value === '2026-12-01' && document.getElementById('trip-bar-to').value === '2026-12-11' && document.getElementById('trip-bar-detail').value === '수능 후 가족 여행'));
+  await P.fill('#trip-bar-from', '2026-12-02'); await P.dispatchEvent('#trip-bar-from', 'change');
+  await P.fill('#trip-bar-to', '2026-12-09'); await P.dispatchEvent('#trip-bar-to', 'change'); await wait(100);
+  check('날짜를 바꾸면 일수 미리 셈(6일)', await P.evaluate(() => document.getElementById('trip-bar-days').textContent) === '6일');
+  await P.fill('#trip-bar-detail', '가족 여행(고침)'); await P.press('#trip-bar-detail', 'Enter'); await wait(500);
+  check('💾 저장 → 서버 기록이 12/2~9·6일·사유 바뀜, 띠 6칸, 미리보기 6일간', [...tripRecords.values()].some(r => r.num === 4 && r.from_date === '2026-12-02' && r.to_date === '2026-12-09' && r.detail === '가족 여행(고침)' && r.written === '2026-12-09') && (await bars(P, 4)).length === 6 && await cell('L7') === '(6 일간)', [[...tripRecords.values()].filter(r => r.num === 4), await bars(P, 4), await cell('L7')]);
+  // 겹치면 저장 안 됨
+  await P.click(gridRow(2) + ' td.bar'); await wait(200);
+  await P.fill('#trip-bar-to', '2026-12-08'); await P.dispatchEvent('#trip-bar-to', 'change'); await wait(100);
+  check('다른 회차와 겹치게 고치면 경고(2번 1회를 12/8까지 → 2회 12/7~9와 겹침)', await P.evaluate(() => document.getElementById('trip-bar-warn').style.display !== 'none' && /겹쳐요/.test(document.getElementById('trip-bar-warn').textContent)));
+  await P.click('#trip-bar-save'); await wait(300);
+  check('겹친 채로는 저장 안 됨(상자 그대로, 서버 그대로)', await P.evaluate(() => !!document.getElementById('trip-bar-save')) && [...tripRecords.values()].some(r => r.num === 2 && r.from_date === '2026-12-01' && r.to_date === '2026-12-03'));
+  await P.keyboard.press('Escape'); await wait(200);
+  // 바로 인쇄 단추: 띠 끝 🖨(그 기록), 이름 옆 🖨️(그 학생 전부)
+  check('이름 옆 🖨️는 기록 있는 학생에게만(5명), 띠 끝마다 🖨', await P.evaluate(() => document.querySelectorAll('#trip-grid td.c-name .trip-pr').length === 5 && document.querySelectorAll('#trip-grid td.bar.e .trip-bar-pr').length === 8 && !document.querySelector('#trip-grid td.bar:not(.e) .trip-bar-pr')));
+  await P.click(gridRow(4) + ' td.bar.e .trip-bar-pr'); await wait(600);
+  check('띠 끝 🖨 → 그 기록 신청서(차카타) 미리보기 + 바로 인쇄(세로)', await P.evaluate(() => window.__printed === 4) && await cell('C6') === '차카타' && await P.evaluate(() => !document.getElementById('ab-paper').classList.contains('ab-land')), await P.evaluate(() => [window.__printed, document.getElementById('ab-prev-label').textContent, document.getElementById('ab-paper').className, abSelId, document.querySelectorAll('#trip-grid td.bar.e .trip-bar-pr').length]));
+  await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await P.click(gridRow(3) + ' td.c-name .trip-pr'); await wait(800);
+  check('이름 옆 🖨️ → 그 학생 신청서 전부(3건 · 6장) + 바로 인쇄', await P.evaluate(() => window.__printed === 5 && /3건 · 6장/.test(document.getElementById('ab-prev-label').textContent) && /A4 portrait/.test(document.getElementById('ab-page-style').textContent)), await P.evaluate(() => [window.__printed, document.getElementById('ab-prev-label').textContent, (document.getElementById('ab-page-style')||{}).textContent]));
+  await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await P.keyboard.press('Escape'); await wait(200);
+  await P.click(gridRow(4) + ' td.bar'); await wait(300);
   await P.dblclick(gridRow(4) + ' td.bar'); await wait(300);
   check('두 번 누르면 ✏️ 입력 탭에서 그 줄 고치기', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && !!document.querySelector('#ab-list tr.ab-editrow') && document.getElementById('ab-e-num').value === '4'));
   await P.selectOption('#ab-e-reason', '질병결석'); await P.dispatchEvent('#ab-e-reason', 'change');
