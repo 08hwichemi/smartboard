@@ -18,7 +18,7 @@ const teachers = {
   [T2]: { id: T2, name: '박부장', is_admin: false, must_change_password: false, role: '교사', homeroom_grade: null, homeroom_class: null, schedule_manager: false, trip_viewer: true },
   [T3]: { id: T3, name: '이담임', is_admin: false, must_change_password: false, role: '담임', homeroom_grade: 1, homeroom_class: 1, schedule_manager: false, trip_viewer: false },
 };
-const TRIP_BOARD = { grades: [3], periods: { 3: [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }] } };
+const TRIP_BOARD = { grades: [3], periods: { 3: [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }] }, start: { 3: '2026-11-23' } };
 const students = [];
 [['가나다', '라마바', '사아자', '차카타', '파하가'], ['강민수', '구진모', '김규민'], ['문채원', '배준서']].forEach((names, ci) => names.forEach((n, i) => students.push({ grade: 3, class_no: ci + 1, number: i + 1, name: n })));
 ['일학년가', '일학년나', '일학년다'].forEach((n, i) => students.push({ grade: 1, class_no: 1, number: i + 1, name: n }));
@@ -223,9 +223,9 @@ function check(label, cond, detail) {
     const rows = [...document.querySelectorAll('#trip-grid thead tr')];
     return { periods: [...rows[0].querySelectorAll('th:not(.fix):not(.rc-h):not(.st-h)')].map(t => t.textContent), days: [...rows[1].querySelectorAll('th')].map(t => t.textContent), hol: rows[1].querySelectorAll('th.hol').length, pst: rows[1].querySelectorAll('th.pst').length, wk: rows[1].querySelectorAll('th.wk').length, wd: [...rows[2].querySelectorAll('th')].map(t => t.textContent).join('') };
   });
-  check('머리: 12월 · …(방학 접음) · 2월 — 추천 기간 사이 평일도 보통 칸', head.periods.join('|') === '12월|…|2월', head.periods);
-  check('날짜 칸 25개(12/1~30 평일 22 + 접은 칸 1 + 2/1~2), 성탄절 1칸 휴, 구간 구분선 2(접은 칸·2월), 주 구분선(월요일) 4', head.days.length === 25 && head.hol === 1 && head.pst === 2 && head.wk === 4, head);
-  check('요일 줄: 12월 평일 전부(12/25 휴) | (접음) | 월화 (12/23 2학년만 쉬는 날은 3학년엔 휴일 아님)', head.wd === '화수목금월화수목금월화수목금월화수목휴월화수월화', head.wd);
+  check('머리: 11월(시작날짜 11/23부터) · 12월 · …(방학 접음) · 2월 — 추천 기간 사이 평일도 보통 칸', head.periods.join('|') === '11월|12월|…|2월', head.periods);
+  check('날짜 칸 31개(11/23~30 6 + 12/1~30 평일 22 + 접은 칸 1 + 2/1~2), 성탄절 1칸 휴, 구간 구분선 3(12월·접은 칸·2월), 주 구분선(월요일) 5', head.days.length === 31 && head.hol === 1 && head.pst === 3 && head.wk === 5, head);
+  check('요일 줄: 12월 평일 전부(12/25 휴) | (접음) | 월화 (12/23 2학년만 쉬는 날은 3학년엔 휴일 아님)', head.wd === '월화수목금월화수목금월화수목금월화수목금월화수목휴월화수월화', head.wd);
   check('📌 추천 기간 요약 9일·8일·2일', /추천 기간/.test(await P.innerText('#trip-ctrl')) && /12\/1~11\(9일\) · 12\/18~30\(8일\) · 2\/1~2\(2일\)/.test(await P.innerText('#trip-ctrl')), await P.innerText('#trip-ctrl'));
   check('명렬표 5명 모두 줄', await P.evaluate(() => document.querySelectorAll('#trip-grid tbody tr[data-n]').length) === 5);
   check('예전 내 계정 기록 1건 → 📤 옮기기 단추', /📤 서버로 옮기기 \(1건\)/.test(await P.innerText('#trip-ctrl')));
@@ -266,8 +266,8 @@ function check(label, cond, detail) {
   console.log('[4] 기존사용 직접 적기');
   await P.click(gridRow(1) + ' td.c-pre'); await wait(200);
   check('기존 상자: 자동 0일 + 직접 적는 칸', /올해 기록에서 자동\s*0일/.test(await P.innerText('#trip-grid .trip-pop')) && await P.evaluate(() => document.activeElement.id === 'trip-pre-in'));
-  await P.fill('#trip-pre-in', '12'); await P.fill('#trip-pre-memo', '1학기'); await P.press('#trip-pre-in', 'Enter'); await wait(400);
-  check('서버 trip_prior 1건(12, 메모), 칸에 12✎, 총일수 12', tripPrior.size === 1 && [...tripPrior.values()][0].days === 12 && [...tripPrior.values()][0].memo === '1학기' && await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="1"] td.c-pre').textContent) === '12✎' && (await tot(P, 1))[0] === '12', [...tripPrior.values()]);
+  await P.fill('#trip-pre-in', '7'); await P.fill('#trip-pre-memo', '1학기'); await P.press('#trip-pre-in', 'Enter'); await wait(400);
+  check('서버 trip_prior 1건(7, 메모), 칸에 7✎, 총일수 7', tripPrior.size === 1 && [...tripPrior.values()][0].days === 7 && [...tripPrior.values()][0].memo === '1학기' && await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="1"] td.c-pre').textContent) === '7✎' && (await tot(P, 1))[0] === '7', [...tripPrior.values()]);
 
   console.log('[5] 📌 쓰는 기간 전부 넣기');
   check('담임 줄마다 📌 단추(추천 기간 넣기), 머리에도, 👥 단추는 없음', await P.evaluate(() => document.querySelectorAll('#trip-grid td.c-all .trip-all-btn').length === 5 && /📌/.test(document.querySelector('#trip-grid th.c-all').textContent) && /12\/1~11 · 12\/18~30 · 2\/1~2/.test(document.querySelector('#trip-grid th.c-all').title) && ![...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent))));
@@ -281,20 +281,34 @@ function check(label, cond, detail) {
     await P.click(gridRow(n) + ' td.day[data-d="2026-12-11"]'); await wait(200);
     await P.fill('#trip-add-detail', '수능 후 가족 여행'); await P.press('#trip-add-detail', 'Enter'); await wait(350);
   }
-  check('서버 8건, 1번 총일수 21 → 빨강(tot-over), 4번 9', tripRecords.size === 8 && [...tripRecords.values()].filter(r => r.detail === '수능 후 가족 여행').length === 3 && JSON.stringify(await tot(P, 1)) === '["21","tot-over"]' && (await tot(P, 4))[0] === '9', [tripRecords.size, await tot(P, 1), await tot(P, 4)]);
-  check('합계 줄: 신청 5명 · 20일 이상 1명', /신청 5명 · 20일 이상 1명/.test(await P.innerText('#trip-grid tfoot')), await P.innerText('#trip-grid tfoot'));
+  check('서버 8건, 1번 총일수 7+9=16, 4번 9', tripRecords.size === 8 && [...tripRecords.values()].filter(r => r.detail === '수능 후 가족 여행').length === 3 && (await tot(P, 1))[0] === '16' && (await tot(P, 4))[0] === '9', [tripRecords.size, await tot(P, 1), await tot(P, 4)]);
+  // 연간 19일 한도: 1번(16일, 3일 남음)에게 12/18~30(8일)은 못 넣음
+  await P.click(gridRow(1) + ' td.day[data-d="2026-12-18"]'); await wait(120);
+  await P.click(gridRow(1) + ' td.day[data-d="2026-12-30"]'); await wait(200);
+  check('한도 넘는 기간: 상자에 "연간 19일을 넘어서 넣을 수 없어요(3일 남음)" + 추가 단추 꺼짐', /19일을 넘어서 넣을 수 없어요/.test(await P.innerText('#trip-grid .trip-pop')) && /3일 남음/.test(await P.innerText('#trip-grid .trip-pop')) && await P.evaluate(() => document.getElementById('trip-add-ok').disabled), await P.innerText('#trip-grid .trip-pop'));
+  await P.keyboard.press('Escape'); await wait(150);
+  await P.click(gridRow(1) + ' .trip-all-btn'); await wait(500);
+  check('📌도 한도 안에 드는 기간만: 1번은 2/1~2(2일)만 들어가고 12/18~30은 뺐다고 알림 → 총 18(노랑), 서버 9건', tripRecords.size === 9 && JSON.stringify(await tot(P, 1)) === '["18","tot-near"]' && /12\/18~30은 연간 19일을 넘어 뺐어요/.test(await P.innerText('#trip-msg')), [tripRecords.size, await tot(P, 1), await P.innerText('#trip-msg')]);
+  await P.click('#ab-tabs [data-tab="input"]'); await wait(200);
+  await P.selectOption('#ab-n-num', '1'); await P.selectOption('#ab-n-reason', '교외체험학습'); await P.dispatchEvent('#ab-n-reason', 'change');
+  await P.fill('#ab-n-from', '2026-12-21'); await P.dispatchEvent('#ab-n-from', 'change'); await P.fill('#ab-n-to', '2026-12-22'); await P.dispatchEvent('#ab-n-to', 'change');
+  await P.press('#ab-n-detail', 'Enter'); await wait(400);
+  check('✏️ 입력 탭에서도 한도 넘으면 안 넣고 알림(1번 1일 남음에 2일)', tripRecords.size === 9 && /19일 중 1일 남아서 2일을 넣을 수 없어요/.test(await P.innerText('#ab-f-msg')), await P.innerText('#ab-f-msg'));
+  await P.fill('#ab-n-from', ''); await P.fill('#ab-n-to', ''); await P.selectOption('#ab-n-num', '');
+  await P.click('#ab-tabs [data-tab="trip"]'); await wait(300);
+  check('합계 줄: 신청 5명 · 20일 이상 0명', /신청 5명 · 20일 이상 0명/.test(await P.innerText('#trip-grid tfoot')), await P.innerText('#trip-grid tfoot'));
   const dcnt = await P.evaluate(() => [...document.querySelectorAll('#trip-grid tfoot tr.trip-dayrow td.dcnt')].map(td => td.textContent));
-  check('일자별 인원 줄: 12/1 5명, 12/4 4명(2번 빠짐), 12/15 0, 12/18 1명(3번), 접은 칸 빈칸', dcnt[0] === '5' && dcnt[3] === '4' && dcnt[10] === '' && dcnt[13] === '1' && dcnt[22] === '', dcnt);
+  check('일자별 인원 줄: 11/23 0, 12/1 5명, 12/4 4명(2번 빠짐), 12/15 0, 12/18 1명(3번), 접은 칸 빈칸, 2/1 2명(3번·1번)', dcnt[0] === '' && dcnt[6] === '5' && dcnt[9] === '4' && dcnt[16] === '' && dcnt[19] === '1' && dcnt[28] === '' && dcnt[29] === '2', dcnt);
   // 상자는 다시 그려도 그 자리에(실시간으로 다시 받을 때 사라지던 것)
   await P.click(gridRow(2) + ' td.bar'); await wait(200);
   await P.evaluate(() => { tripRecsKey = ''; return tripLoad().then(() => abRenderAll()); }); await wait(300);
-  check('띠 상자를 연 채 다시 받아 그려도 상자가 그대로(같은 칸 아래)', await P.evaluate(() => { const pop = document.querySelector('#trip-grid .trip-pop'); const td = document.querySelector('#trip-grid tr[data-n="2"] td.bar'); return !!pop && !!document.getElementById('trip-bar-del') && Math.abs(parseFloat(pop.style.left) - (td.getBoundingClientRect().left - document.getElementById('trip-grid').getBoundingClientRect().left)) < 2; }));
+  check('띠 상자를 연 채 다시 받아 그려도 상자가 그대로(같은 칸 아래)', await P.evaluate(() => { const pop = document.querySelector('#trip-grid .trip-pop'); const td = document.querySelector('#trip-grid tr[data-n="2"] td.bar'); const g = document.getElementById('trip-grid'); return !!pop && !!document.getElementById('trip-bar-del') && Math.abs(parseFloat(pop.style.left) - (td.getBoundingClientRect().left - g.getBoundingClientRect().left + g.scrollLeft)) < 2; }), await P.evaluate(() => { const pop = document.querySelector('#trip-grid .trip-pop'); const td = document.querySelector('#trip-grid tr[data-n="2"] td.bar'); const g = document.getElementById('trip-grid'); return [pop && pop.style.left, td && td.getBoundingClientRect().left - g.getBoundingClientRect().left, g.scrollLeft, g.scrollWidth, g.clientWidth]; }));
   await P.keyboard.press('Escape'); await wait(200);
   await P.locator('#absence-page').screenshot({ path: 'trip-board.png' });
 
   console.log('[6] 학년 공통 휴일');
   await P.fill('#trip-hol-date', '2026-12-10'); await P.fill('#trip-hol-name', '학년 체험학습일'); await P.click('#trip-foot button:has-text("더하기")'); await wait(400);
-  check('서버 trip_holidays 1건, 12/10 칸이 휴, 1회 기간 12/1~11은 8일로 → 4번 총일수 8, 1번 20', tripHol.size === 1 && await P.evaluate(() => document.querySelector('#trip-grid thead tr:nth-child(2) th.hol[title="학년 체험학습일"]') !== null) && (await tot(P, 4))[0] === '8' && (await tot(P, 1))[0] === '20', [tripHol.size, await tot(P, 4), await tot(P, 1)]);
+  check('서버 trip_holidays 1건, 12/10 칸이 휴, 1회 기간 12/1~11은 8일로 → 4번 총일수 8, 1번 17', tripHol.size === 1 && await P.evaluate(() => document.querySelector('#trip-grid thead tr:nth-child(2) th.hol[title="학년 체험학습일"]') !== null) && (await tot(P, 4))[0] === '8' && (await tot(P, 1))[0] === '17', [tripHol.size, await tot(P, 4), await tot(P, 1)]);
   check('✏️ 입력 탭 일수도 같은 휴일로(서버 기록 abDays)', await P.evaluate(() => abDays(abClassRecords().find(r => r.num === 4)) === 8));
 
   console.log('[7] 현황표 인쇄');
@@ -302,10 +316,10 @@ function check(label, cond, detail) {
     const s = document.querySelector('#ab-paper .tps');
     return { per: [...s.querySelectorAll('th.per')].map(t => t.textContent), rounds: [...s.querySelectorAll('tbody tr')].map(tr => [...tr.querySelectorAll('td.rp')].map(td => td.textContent).join('|')), rd: [...s.querySelectorAll('tbody tr:nth-child(2) td.rd')].map(td => td.textContent + '@' + td.style.getPropertyValue('--tc')), tot: [...s.querySelectorAll('tbody td.tot')].map(td => td.textContent + (td.classList.contains('over') ? '!' : '')), hol: s.querySelectorAll('tbody tr:first-child td.d.hol').length, wk: s.querySelectorAll('thead tr:nth-child(2) th.wk').length, pst: s.querySelectorAll('thead tr:nth-child(2) th.pst').length, title: s.querySelector('.p-meta').textContent };
   });
-  check('인쇄물에도 일자별 인원 줄(12/1 5명)', await P.evaluate(() => { const tr = document.querySelector('#ab-paper .tps tr.dsum'); return !!tr && /일자별 인원/.test(tr.textContent) && tr.querySelectorAll('td')[1].textContent === '5'; }));
-  check('현황표 머리: 12월 · … · 2월, 3학년 1반, 기간 12/1~2/2', sheet.per.join('|') === '12월|…|2월' && /3학년 1반/.test(sheet.title) && /12\/1~2\/2/.test(sheet.title), sheet);
+  check('인쇄물에도 일자별 인원 줄(12/1 5명)', await P.evaluate(() => { const tr = document.querySelector('#ab-paper .tps tr.dsum'); return !!tr && /일자별 인원/.test(tr.textContent) && tr.querySelectorAll('td')[7].textContent === '5'; }));
+  check('현황표 머리: 11월 · 12월 · … · 2월, 3학년 1반, 기간 11/23~2/2', sheet.per.join('|') === '11월|12월|…|2월' && /3학년 1반/.test(sheet.title) && /11\/23~2\/2/.test(sheet.title), sheet);
   check('회차 칸: 2번 = 12/1~3 | 12/7~9 | · , 일수 칸 가운데 숫자 + 회차 색', sheet.rounds[1] === '12/1~3|12/7~9|·' && sheet.rd[0] === '3@#DCE7F5' && sheet.rd[1] === '3@#D5EFE4', sheet);
-  check('총일수: 1번 20(한도 19 넘어 빨강), 2번 6, 휴일 빗금 2칸(12/10·12/25), 주 구분선 3·기간 구분선 2', sheet.tot[0] === '20!' && sheet.tot[1] === '6' && sheet.hol === 2 && sheet.wk === 4 && sheet.pst === 2, sheet);
+  check('총일수: 1번 17, 2번 6, 휴일 빗금 2칸(12/10·12/25), 주 구분선 5·구간 구분선 3', sheet.tot[0] === '17' && sheet.tot[1] === '6' && sheet.hol === 2 && sheet.wk === 5 && sheet.pst === 3, sheet);
   await P.click('#ab-page-header button:has-text("출력")'); await wait(300);
   check('🖨️ 출력(띠 안 고름) → 인쇄 호출 + 가로 A4 @page(297mm 210mm)', await P.evaluate(() => window.__printed === 1 && /297mm 210mm/.test((document.getElementById('ab-page-style') || {}).textContent || '')));
   await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
@@ -318,8 +332,8 @@ function check(label, cond, detail) {
   await P.click('#trip-ctrl button:has-text("신청서 모아 출력")'); await wait(900);
   const pp = await P.evaluate(() => ({ chips: [...document.querySelectorAll('#trip-panel .trip-chips')].pop().querySelectorAll('.trip-chip.on').length, rounds: [...document.querySelectorAll('#trip-panel .trip-chips')][0].querySelectorAll('.trip-chip').length, sum: [...document.querySelectorAll('#trip-panel b')].pop().textContent,
     pages: [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length, land: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, forms: [...document.querySelectorAll('#ab-paper-box .ab-paper table.xf')].slice(0, 4).map(t => t.dataset.form), label: document.getElementById('ab-prev-label').textContent }));
-  check('모아 출력: 기록 있는 5명 모두 고름, 회차 칩 3개, 8건 · 16장', pp.chips === 5 && pp.rounds === 3 && /5명 · 8건 · 16장/.test(pp.sum), pp);
-  check('미리보기에 세로 16장(신청서·결과보고서 번갈아)', pp.pages === 16 && pp.land === 0 && pp.forms.join('|') === 'trip|report|trip|report' && /8건 · 16장/.test(pp.label), pp);
+  check('모아 출력: 기록 있는 5명 모두 고름, 회차 칩 3개, 9건 · 18장', pp.chips === 5 && pp.rounds === 3 && /5명 · 9건 · 18장/.test(pp.sum), pp);
+  check('미리보기에 세로 18장(신청서·결과보고서 번갈아)', pp.pages === 18 && pp.land === 0 && pp.forms.join('|') === 'trip|report|trip|report' && /9건 · 18장/.test(pp.label), pp);
   await P.click('#trip-panel .trip-row:nth-child(2) .trip-chip:nth-child(2) input'); await wait(400);
   await P.click('#trip-panel .trip-row:nth-child(2) .trip-chip:nth-child(3) input'); await wait(400);
   check('2·3회 끄면 1회만 5건 · 10장', await P.evaluate(() => /5명 · 5건 · 10장/.test([...document.querySelectorAll('#trip-panel b')].pop().textContent) && [...document.querySelectorAll('#ab-paper-box .ab-paper')].filter(p => p.style.display !== 'none').length === 10));
@@ -353,8 +367,8 @@ function check(label, cond, detail) {
   check('겹친 채로는 저장 안 됨(상자 그대로, 서버 그대로)', await P.evaluate(() => !!document.getElementById('trip-bar-save')) && [...tripRecords.values()].some(r => r.num === 2 && r.from_date === '2026-12-01' && r.to_date === '2026-12-03'));
   await P.keyboard.press('Escape'); await wait(200);
   // 바로 인쇄 단추: 띠 끝 🖨(그 기록), 이름 옆 🖨️(그 학생 전부)
-  const rcs = await P.evaluate(() => ({ heads: [...document.querySelectorAll('#trip-grid thead th.fix')].map(t => t.textContent.trim().replace(/\s*기간 · 일수/, '')), filled: document.querySelectorAll('#trip-grid td.rc[data-id]').length, prs: document.querySelectorAll('#trip-grid td.rc .trip-pr:not(.del)').length, dels: document.querySelectorAll('#trip-grid td.rc .trip-pr.del').length, st: document.querySelectorAll('#trip-grid td.c-name .nm-btns .trip-pr').length, lefts: [...document.querySelectorAll('#trip-grid tbody tr:first-child td.fix')].map(td => td.getBoundingClientRect().left - document.getElementById('trip-grid').getBoundingClientRect().left), r4: document.querySelector('#trip-grid tr[data-n="4"] td.rc').textContent.replace(/\s+/g, ' ').trim(), noBarIcon: !document.querySelector('#trip-grid td.bar .trip-pr') && !document.querySelector('#trip-grid td.st') }));
-  check('고정 칸 차례 = 인쇄물처럼 번호·이름·기존·총일수·📌·1회·2회·3회, 기록 8건마다 기간·일수·🖨️·🗑, 이름 옆에 🖨️·🗑(5명), 칸 폭이 붙어 있음', rcs.heads.join('|') === '번호|이름|기존|총일수|📌|1회|2회|3회' && rcs.filled === 8 && rcs.prs === 8 && rcs.dels === 8 && rcs.st === 10 && /12\/2~9 ?6/.test(rcs.r4) && rcs.noBarIcon && rcs.lefts.every((x, i, arr) => i === 0 || x > arr[i - 1]), rcs);
+  const rcs = await P.evaluate(() => ({ heads: [...document.querySelectorAll('#trip-grid thead th.fix')].map(t => t.textContent.trim().replace(/\s*기간\s*·\s*일수/, '')), filled: document.querySelectorAll('#trip-grid td.rc[data-id]').length, prs: document.querySelectorAll('#trip-grid td.rc .trip-pr:not(.del)').length, dels: document.querySelectorAll('#trip-grid td.rc .trip-pr.del').length, st: document.querySelectorAll('#trip-grid td.c-name .nm-btns .trip-pr').length, lefts: [...document.querySelectorAll('#trip-grid tbody tr:first-child td.fix')].map(td => td.getBoundingClientRect().left - document.getElementById('trip-grid').getBoundingClientRect().left), r4: document.querySelector('#trip-grid tr[data-n="4"] td.rc').textContent.replace(/\s+/g, ' ').trim(), noBarIcon: !document.querySelector('#trip-grid td.bar .trip-pr') && !document.querySelector('#trip-grid td.st') }));
+  check('고정 칸 차례 = 인쇄물처럼 번호·이름·기존·총일수·📌·1회·2회·3회, 기록 9건마다 기간·일수·🖨️·🗑, 이름 옆에 🖨️·🗑(5명), 칸 폭이 붙어 있음', rcs.heads.join('|') === '번호|이름|기존|총일수|📌|1회|2회|3회' && rcs.filled === 9 && rcs.prs === 9 && rcs.dels === 9 && rcs.st === 10 && /12\/2~9 ?6/.test(rcs.r4) && rcs.noBarIcon && rcs.lefts.every((x, i, arr) => i === 0 || x > arr[i - 1]), rcs);
   await P.click(gridRow(4) + ' td.rc .trip-pr:not(.del)'); await wait(600);
   check('회차 칸 🖨️ → 그 기록 신청서(차카타) 미리보기 + 바로 인쇄(세로)', await P.evaluate(() => window.__printed === 4) && await cell('C6') === '차카타' && await P.evaluate(() => !document.getElementById('ab-paper').classList.contains('ab-land')), await P.evaluate(() => [window.__printed, document.getElementById('ab-prev-label').textContent]));
   await P.evaluate(() => window.dispatchEvent(new Event('afterprint')));
@@ -371,7 +385,7 @@ function check(label, cond, detail) {
   check('두 번 누르면 ✏️ 입력 탭에서 그 줄 고치기', await P.evaluate(() => document.getElementById('ab-pane-input').style.display === '' && !!document.querySelector('#ab-list tr.ab-editrow') && document.getElementById('ab-e-num').value === '4'));
   await P.selectOption('#ab-e-reason', '질병결석'); await P.dispatchEvent('#ab-e-reason', 'change');
   await P.press('#ab-e-detail', 'Enter'); await wait(400);
-  check('사유를 질병결석으로 바꾸면 서버 표에서 빠지고 이 기기 내 계정 자료로', tripRecords.size === 7 && await P.evaluate(() => abClassRecords().filter(r => !r.srv && r.reason === '질병결석').length === 1 && [...Array(localStorage.length).keys()].some(i => localStorage.key(i).startsWith('ab-r-'))), [tripRecords.size]);
+  check('사유를 질병결석으로 바꾸면 서버 표에서 빠지고 이 기기 내 계정 자료로', tripRecords.size === 8 && await P.evaluate(() => abClassRecords().filter(r => !r.srv && r.reason === '질병결석').length === 1 && [...Array(localStorage.length).keys()].some(i => localStorage.key(i).startsWith('ab-r-'))), [tripRecords.size]);
   await wait(1600);
   check('그 기록은 내 계정 자료(user_data_items ab-r-)로 올라감', [...items.keys()].filter(k => k.startsWith(T1 + '|ab-r-') && !k.includes('oldlocal')).length === 1, [...items.keys()]);
   await P.click('#ab-tabs [data-tab="trip"]'); await wait(300);
@@ -379,20 +393,20 @@ function check(label, cond, detail) {
   await P.click(gridRow(3) + ' td.bar'); await wait(200);
   await P.click('#trip-bar-del'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")').catch(() => {}); await wait(400);
-  check('띠 상자 🗑 → 확인 → 서버에서도 지움(6건), 3번엔 2·3회만 남음', tripRecords.size === 6 && !tripRecords.has(sid) && JSON.stringify([...new Set((await bars(P, 3)).map(x => x[0]))]) === '["1","2"]', [tripRecords.size, await bars(P, 3)]);
+  check('띠 상자 🗑 → 확인 → 서버에서도 지움(7건), 3번엔 2·3회만 남음', tripRecords.size === 7 && !tripRecords.has(sid) && JSON.stringify([...new Set((await bars(P, 3)).map(x => x[0]))]) === '["1","2"]', [tripRecords.size, await bars(P, 3)]);
 
   console.log('[9] 📤 서버로 옮기기');
   await P.click('#ab-tabs [data-tab="trip"]'); await wait(300);
   await P.click('#trip-ctrl button:has-text("서버로 옮기기")'); await wait(200);
   await P.click('#custom-confirm-overlay button:has-text("확인")').catch(() => {}); await wait(500);
-  check('옮김: 서버 7건(oldlocal1 포함, id 그대로), 내 계정 자료에서 빠짐, 단추 사라짐, 5번 기존 2 그대로(자동)', tripRecords.has('oldlocal1') && tripRecords.size === 7 && !(await P.evaluate(() => localStorage.getItem('ab-r-oldlocal1'))) && !/옮기기/.test(await P.innerText('#trip-ctrl')) && await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="5"] td.c-pre').textContent) === '2', [tripRecords.size, await P.innerText('#trip-ctrl')]);
+  check('옮김: 서버 8건(oldlocal1 포함, id 그대로), 내 계정 자료에서 빠짐, 단추 사라짐, 5번 기존 2 그대로(자동)', tripRecords.has('oldlocal1') && tripRecords.size === 8 && !(await P.evaluate(() => localStorage.getItem('ab-r-oldlocal1'))) && !/옮기기/.test(await P.innerText('#trip-ctrl')) && await P.evaluate(() => document.querySelector('#trip-grid tr[data-n="5"] td.c-pre').textContent) === '2', [tripRecords.size, await P.innerText('#trip-ctrl')]);
 
   await P.click(gridRow(5) + ' td.c-name .nm-btns .trip-pr.del'); await wait(200);
   check('이름 옆 🗑 → 확인 창: 현황판 기록 1건만, 첫 기간 전 기록(11/2~3) 1건은 그대로', /5번 파하가 학생의 현황판 기록 1건/.test(await P.innerText('#custom-confirm-overlay')) && /첫 기간 전에 쓴 기록 1건은 그대로/.test(await P.innerText('#custom-confirm-overlay')) && !/11\/2~3/.test(await P.innerText('#custom-confirm-overlay')), await P.innerText('#custom-confirm-overlay'));
   await P.click('#custom-confirm-overlay button:has-text("확인")'); await wait(500);
-  check('현황판 기록만 지워짐(서버 6건, 8월 oldlocal1 남음), 5번 기존 2 그대로, 📌 다시 생김, ↩ 되돌리기 단추', tripRecords.size === 6 && tripRecords.has('oldlocal1') && await P.evaluate(() => !document.querySelector('#trip-grid tr[data-n="5"] td.rc[data-id]') && !!document.querySelector('#trip-grid tr[data-n="5"] .trip-all-btn') && document.querySelector('#trip-grid tr[data-n="5"] td.c-pre').textContent === '2' && /되돌리기/.test(document.getElementById('trip-msg').textContent)), tripRecords.size);
+  check('현황판 기록만 지워짐(서버 7건, 8월 oldlocal1 남음), 5번 기존 2 그대로, 📌 다시 생김, ↩ 되돌리기 단추', tripRecords.size === 7 && tripRecords.has('oldlocal1') && await P.evaluate(() => !document.querySelector('#trip-grid tr[data-n="5"] td.rc[data-id]') && !!document.querySelector('#trip-grid tr[data-n="5"] .trip-all-btn') && document.querySelector('#trip-grid tr[data-n="5"] td.c-pre').textContent === '2' && /되돌리기/.test(document.getElementById('trip-msg').textContent)), tripRecords.size);
   await P.click('#trip-msg button'); await wait(500);
-  check('↩ 되돌리기 → 서버 7건, 5번 띠 다시', tripRecords.size === 7 && (await bars(P, 5)).length > 0, tripRecords.size);
+  check('↩ 되돌리기 → 서버 8건, 5번 띠 다시', tripRecords.size === 8 && (await bars(P, 5)).length > 0, tripRecords.size);
   await P.click(gridRow(5) + ' td.c-pre'); await wait(200);
   check('기존 상자에 첫 기간 전 기록 목록(11/2~3 2일)', /11\/2~3 2일/.test(await P.innerText('#trip-grid .trip-pop')), await P.innerText('#trip-grid .trip-pop'));
   await P.keyboard.press('Escape'); await wait(150);
@@ -406,8 +420,8 @@ function check(label, cond, detail) {
   check('3학년 고르면 반 목록 맨 위에 "전체"', await H.evaluate(() => document.querySelectorAll('#ab-class option')[1].value === 'all' && document.querySelectorAll('#ab-class option')[1].textContent === '전체'));
   await H.selectOption('#ab-class', 'all'); await H.dispatchEvent('#ab-class', 'change'); await wait(800);
   const hv = await H.evaluate(() => ({ tab: document.getElementById('ab-pane-trip').style.display === '', tabs: [...document.querySelectorAll('#trip-cls-tabs button')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.classList.contains('theme-active') ? '*' : '')), rows: document.querySelectorAll('#trip-grid tr[data-n]').length, ro: /보기만/.test(document.getElementById('trip-ctrl').textContent), bulk: [...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent)), pin: document.querySelectorAll('#trip-grid .trip-all-btn, #trip-grid th.c-all').length, bars: document.querySelectorAll('#trip-grid td.bar').length, foot: document.querySelector('#trip-grid tfoot').textContent.replace(/\s+/g, ' ').trim(), pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, label: document.getElementById('ab-prev-label').textContent, other: document.getElementById('ab-list').textContent }));
-  check('전체 → 🗓 탭으로, 반 단추 3개(요약: 1반 4명·⚠1 / 2반 0명 / 3반 0명), 기록 있는 1반이 먼저 골라짐', hv.tab && hv.tabs.join('|') === '1반 4명 · ⚠1*|2반 0명|3반 0명', hv.tabs);
-  check('한 번에 한 반만(1반 5줄, 반 머리 줄 없음, 📌 없음), "보기만", 👥 없음, 1반 합계 줄', hv.rows === 5 && hv.ro && !hv.bulk && /1반 합계/.test(hv.foot) && /신청 4명 · 20일 이상 1명/.test(hv.foot) && hv.pin === 0, hv);
+  check('전체 → 🗓 탭으로, 반 단추 3개(요약: 1반 4명 / 2반 0명 / 3반 0명), 기록 있는 1반이 먼저 골라짐', hv.tab && hv.tabs.join('|') === '1반 4명*|2반 0명|3반 0명', hv.tabs);
+  check('한 번에 한 반만(1반 5줄, 반 머리 줄 없음, 📌 없음), "보기만", 👥 없음, 1반 합계 줄', hv.rows === 5 && hv.ro && !hv.bulk && /1반 합계/.test(hv.foot) && /신청 4명 · 20일 이상 0명/.test(hv.foot) && hv.pin === 0, hv);
   check('담임이 넣은 띠가 보임', hv.bars > 0, hv.bars);
   check('미리보기 = 지금 보는 반 1장 + "모든 반" 체크', hv.pages === 1 && /1장/.test(hv.label) && /모든 반/.test(hv.label), [hv.pages, hv.label]);
   check('다른 탭은 반을 고르라는 안내(전체는 현황판에서만)', /학년·반/.test(hv.other));
