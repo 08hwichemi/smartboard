@@ -5700,7 +5700,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-10.16';
+  var BUILD_ID = '2026-11-12.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -7237,17 +7237,41 @@
   }
   // 학교 홈페이지 "행사일정"(bg.icehs.kr) — 브라우저에서 바로는 막혀(CORS) 서버 함수 school-events가 대신 받아 준다.
   // 못 받으면(함수 오류·홈페이지 개편 등) 빈 목록 — 나이스 학사일정만 보인다. 개인판은 학교마다 홈페이지가 달라 쓰지 않는다.
+  // 11/12: 한 번 못 받으면 그 창을 새로고침할 때까지 빈 목록으로 굳던 것(받기 실패·일부 달 실패를 그대로 기억) →
+  //  실패는 기억하지 않고(다음에 다시 받음), 전에 받아 둔 것(device-schoolev-…, 이 컴퓨터에만)을 대신 쓰고, 2분 뒤 한 번 다시 받아 화면을 고친다.
   const schoolHomeCache = {};
+  let schoolHomeRetryTimer = null;
   function fetchSchoolHomeEvents(fromYm, toYm) {
     if (LITE) return Promise.resolve([]);
-    const k = fromYm + '-' + (toYm || fromYm);
+    const k = fromYm + '-' + (toYm || fromYm), lsKey = 'device-schoolev-' + k;
     if (!schoolHomeCache[k]) {
+      const fail = function() {
+        delete schoolHomeCache[k];
+        if (!schoolHomeRetryTimer) schoolHomeRetryTimer = setTimeout(function() { schoolHomeRetryTimer = null; schoolHomeRefresh(); }, 2 * 60 * 1000);
+        try { const v = JSON.parse(localStorage.getItem(lsKey) || 'null'); if (v && Array.isArray(v.events)) return v.events; } catch (e) {}
+        return [];
+      };
       schoolHomeCache[k] = fetch(SUPABASE_URL + '/functions/v1/school-events?from=' + fromYm + '&to=' + (toYm || fromYm), { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } })
         .then(function(r) { return r.ok ? r.json() : null; })
-        .then(function(d) { return d && Array.isArray(d.events) ? d.events : []; })
-        .catch(function() { delete schoolHomeCache[k]; return []; });
+        .then(function(d) {
+          if (!d || !Array.isArray(d.events) || (Array.isArray(d.failed) && d.failed.length)) return fail(); // 함수 오류·일부 달을 못 받음
+          try { rawSetItem(lsKey, JSON.stringify({ at: Date.now(), events: d.events })); } catch (e) {}
+          return d.events;
+        })
+        .catch(fail);
     }
     return schoolHomeCache[k];
+  }
+  // 못 받았던 달의 학사일정을 다시 받아 보이는 달력·띠를 고친다
+  function schoolHomeRefresh() {
+    neisDataCache = {};
+    try { loadUpcomingScheduleTeaser(); } catch (e) {}
+    // 달력 칸에 메모를 적는 중이면 건드리지 않는다(다음에 달을 넘기거나 새로 열 때 반영)
+    const ae = document.activeElement;
+    if (ae && ae.closest && ae.closest('#half-cal-grid, #big-cal-grid, #staff-cal-grid, .half-cal-cell, .big-cal-cell')) return;
+    try { if (document.getElementById('half-cal-month-label')) renderHalfCalendar(); } catch (e) {}
+    try { if (document.getElementById('big-cal-month-label')) renderBigCalendar(); } catch (e) {}
+    try { if (document.getElementById('staff-cal-grid')) renderStaffCalendar(); } catch (e) {}
   }
   // 홈페이지 일정 { s, e: 'YYYY-MM-DD', t } → 그 기간의 날짜들 ['YYYYMMDD', …] (여러 날 행사는 날마다)
   function schoolEvDays(ev) {
@@ -9946,30 +9970,74 @@
   // 함수를 부르면 한 번에 로그가 3~4줄씩 쌓였다(10/8: 하루 약 620번).
   var NEWS_REFRESH_MS = 30 * 60 * 1000;
   var NEWS_CACHE_KEY = 'device-news-cache';
+  // 11/12: 함수가 서울 지역 서버에서 돌 때 구글 뉴스가 10초 뒤 빈 응답을 줘서(구글이 그 서버 주소를 막음 — 도쿄·미국 지역은 정상)
+  // "뉴스가 없습니다"가 떴고, 그 빈 결과를 30분 동안 넣어 둬서 새로고침해도 그대로였다. 그래서:
+  //  ① 빈 결과는 넣어 두지 않는다 ② 비었으면 다른 지역(?forceFunctionRegion=)에서 다시 받는다 — 된 지역은 6시간 기억
+  //  ③ 그래도 못 받으면 전에 받아 둔 뉴스를 그대로 보여 주고 3분 뒤 다시 해 본다(분류 하나만 비어도 그 분류는 전 것을 씀)
+  var NEWS_REGIONS = ['ap-northeast-1', 'us-east-1'];
+  var NEWS_REGION_KEY = 'device-news-region';
+  var newsRetryTimer = null;
+  function newsHasItems(d) {
+    const c = d && d.categories;
+    return !!c && Object.keys(c).some(function(k) { return Array.isArray(c[k]) && c[k].length > 0; });
+  }
+  function newsCall(region) {
+    const timeout = new Promise(function(_, rej) { setTimeout(function() { rej(new Error('news timeout')); }, 9000); });
+    let call;
+    if (!region && !LITE) call = sb.functions.invoke('news').then(function(res) { if (res.error) throw res.error; return res.data; });
+    else call = fetch(SUPABASE_URL + '/functions/v1/news' + (region ? '?forceFunctionRegion=' + region : ''), { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } })
+      .then(function(r) { if (!r.ok) throw new Error('news ' + r.status); return r.json(); });
+    return Promise.race([call, timeout]);
+  }
+  async function newsFetchFresh() {
+    let pref = null;
+    try { const v = JSON.parse(localStorage.getItem(NEWS_REGION_KEY) || 'null'); if (v && v.r && Date.now() - v.at >= 0 && Date.now() - v.at < 6 * 3600 * 1000) pref = v.r; } catch (e) {}
+    // 차례: 전에 된 지역 → 기본(가까운 지역) → 나머지 지역
+    const order = (pref ? [pref] : []).concat([null]).concat(NEWS_REGIONS.filter(function(r) { return r !== pref; }));
+    let last = null, lastErr = null;
+    for (let i = 0; i < order.length; i++) {
+      try {
+        const d = await newsCall(order[i]);
+        last = d || last;
+        if (newsHasItems(d)) {
+          try { if (order[i]) rawSetItem(NEWS_REGION_KEY, JSON.stringify({ r: order[i], at: Date.now() })); else localStorage.removeItem(NEWS_REGION_KEY); } catch (e) {}
+          return d;
+        }
+      } catch (e) { lastErr = e; }
+    }
+    if (!last && lastErr) throw lastErr;
+    return last; // 모두 비었음
+  }
   async function fetchNews() {
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null'); } catch (e) {}
+    const old = cached && cached.data && cached.data.categories ? cached.data : null;
     try {
-      let cached = null;
-      try { cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null'); } catch (e) {}
       let data;
-      if (cached && cached.data && Date.now() - cached.at >= 0 && Date.now() - cached.at < NEWS_REFRESH_MS) {
-        data = cached.data;
+      if (old && newsHasItems(old) && Date.now() - cached.at >= 0 && Date.now() - cached.at < NEWS_REFRESH_MS) {
+        data = old;
       } else {
-        let res;
-        if (LITE) { // 개인판: 로그인 없이 공개 함수(verify_jwt=false)를 직접 부른다 — 뉴스만 공용 서버를 빌려 씀
-          const r = await fetch(SUPABASE_URL + '/functions/v1/news', { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
-          if (!r.ok) throw new Error('news ' + r.status);
-          res = { data: await r.json(), error: null };
-        } else res = await sb.functions.invoke('news');
-        if (res.error) throw res.error;
-        data = res.data;
-        try { if (data && data.categories) rawSetItem(NEWS_CACHE_KEY, JSON.stringify({ at: Date.now(), data: data })); } catch (e) {}
+        if (old && newsHasItems(old) && !newsData) { newsData = old.categories; renderNewsTabs(); renderNewsList(); } // 받는 동안 전 것을 먼저
+        data = await newsFetchFresh();
+        if (newsHasItems(data)) {
+          // 분류 하나만 비어 왔으면 그 분류는 전에 받은 것을 그대로
+          if (old) Object.keys(old.categories).forEach(function(k) { const v = data.categories[k]; if ((!Array.isArray(v) || !v.length) && Array.isArray(old.categories[k]) && old.categories[k].length) data.categories[k] = old.categories[k]; });
+          try { rawSetItem(NEWS_CACHE_KEY, JSON.stringify({ at: Date.now(), data: data })); } catch (e) {}
+        } else {
+          throw new Error('news empty');
+        }
       }
       newsData = (data && data.categories) || null;
       renderNewsTabs();
       renderNewsList();
     } catch (e) {
-      const listEl = document.getElementById('news-list');
-      if (listEl && !newsData) listEl.innerHTML = '<li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">뉴스를 불러오지 못했습니다.</li>';
+      // 못 받았으면 전에 받아 둔 뉴스(오래됐어도)를 보여 주고 3분 뒤 다시
+      if (old && newsHasItems(old)) { newsData = old.categories; renderNewsTabs(); renderNewsList(); }
+      else {
+        const listEl = document.getElementById('news-list');
+        if (listEl && !newsData) listEl.innerHTML = '<li style="color:var(--text-sub); text-align:center; padding:10px; border-bottom:none;">뉴스를 잠시 못 받았어요. 조금 뒤 다시 받아 볼게요.</li>';
+      }
+      if (!newsRetryTimer) newsRetryTimer = setTimeout(function() { newsRetryTimer = null; if (document.visibilityState === 'visible') fetchNews(); }, 3 * 60 * 1000);
     }
   }
 

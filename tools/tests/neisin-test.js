@@ -190,6 +190,7 @@ async function openDevice(browser, name, uid, opts = {}) {
     if (url.includes('/functions/v1/school-events')) {
       global.__homeCalls = (global.__homeCalls || 0) + 1;
       if (global.__homeDown) return route.fulfill({ status: 500, body: '' });
+      if (global.__homePartial) return route.fulfill({ body: JSON.stringify({ events: [], ok: [], failed: [{ ym: '202611', why: 'timeout' }] }), contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' } }); // 200인데 일부 달을 못 받음
       const q = new URL(url).searchParams, f = q.get('from'), t = q.get('to');
       const events = (global.__homeEv || []).filter((e) => { const m = e.s.replace(/-/g, '').slice(0, 6); return m >= f && m <= t; });
       return route.fulfill({ body: JSON.stringify({ events, ok: [], failed: [] }), contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' } });
@@ -455,6 +456,20 @@ const wait2 = (ms) => new Promise((r) => setTimeout(r, ms));
   const ev2 = await C2.page.evaluate(([mk, d]) => neisMonthEvents(mk).then((m) => m[d] || []), [monthOf(dd(4)), ymd8(dd(4))]);
   check('홈페이지 함수가 안 되면 나이스 학사일정만 그대로', /대학수학능력시험/.test(t2txt) && !/동아리활동/.test(t2txt) && JSON.stringify(ev2) === '["수능성적 통지일"]', [t2txt, ev2]);
   global.__homeDown = false;
+  // 11/12: 한 번 못 받은 것이 새로고침할 때까지 굳던 것 — 실패는 기억하지 않고 다시 받음
+  check('못 받은 호출은 기억하지 않음(다음에 다시 부름) + 다시 받기 예약', await C2.page.evaluate(() => Object.keys(schoolHomeCache).length === 0 && schoolHomeRetryTimer !== null));
+  await C2.page.evaluate(() => schoolHomeRefresh()); await wait2(1200);
+  const t3txt = await C2.page.evaluate(() => document.getElementById('upcoming-schedule-teaser').innerText);
+  const ev3 = await C2.page.evaluate(([mk, d]) => neisMonthEvents(mk).then((m) => m[d] || []), [monthOf(dd(4)), ymd8(dd(4))]);
+  check('다시 받기(2분 뒤 자동으로 도는 것) → 띠·달력에 홈페이지 행사일정이 돌아옴', /동아리활동/.test(t3txt) && JSON.stringify(ev3) === '["수능성적 통지일","동아리활동/수능성적 통지일"]', [t3txt, ev3]);
+  // 전에 받아 둔 것이 있으면(이 컴퓨터) 함수가 안 될 때 그것을 씀
+  check('받은 행사일정을 이 컴퓨터에 넣어 둠(서버로 안 올림)', await C.page.evaluate(() => { const ks = Object.keys(localStorage).filter((k) => k.indexOf('device-schoolev-') === 0); return ks.length >= 1 && ks.every((k) => isLocalOnlyKey(k) && Array.isArray(JSON.parse(localStorage.getItem(k)).events)); }));
+  for (const mode of ['__homeDown', '__homePartial']) {
+    global[mode] = true;
+    const evF = await C.page.evaluate(([mk, d]) => { Object.keys(schoolHomeCache).forEach((k) => delete schoolHomeCache[k]); neisDataCache = {}; return neisMonthEvents(mk).then((m) => m[d] || []); }, [monthOf(dd(6)), ymd8(dd(6))]);
+    check((mode === '__homeDown' ? '함수 오류(500)' : '200인데 일부 달 실패') + ' → 전에 받아 둔 행사일정으로 보임(수학여행)', evF.includes('수학여행(2학년)'), evF);
+    global[mode] = false;
+  }
 
   const errs = pages.flatMap((p) => p.errors || []);
   check('페이지 오류 없음', errs.length === 0, errs);

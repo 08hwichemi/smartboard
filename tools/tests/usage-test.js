@@ -29,9 +29,12 @@ async function handleDb(pageInfo, req) {
   if (op === 'select') return { data: single || maybe ? null : [], error: null };
   return { data: null, error: null };
 }
+// 11/12: 기본 지역(서울)에서 구글 뉴스가 비어 오는 경우 흉내 — newsEmpty면 기본 호출은 빈 목록, 다른 지역(?forceFunctionRegion=)은 regionOk일 때만 뉴스
+let newsEmpty = false, regionOk = true; const regionCalls = [];
 async function handleFn(pageInfo, name) {
   if (name !== 'news') return { data: null, error: { message: 'mock' } };
   n.news++;
+  if (newsEmpty) return { data: { fetchedAt: new Date().toISOString(), categories: { '종합': [], '경제': [] } }, error: null };
   return { data: { fetchedAt: new Date().toISOString(), categories: { '종합': [{ title: '뉴스 ' + n.news, link: 'http://x', pubDate: '', source: '' }] } }, error: null };
 }
 
@@ -106,6 +109,11 @@ async function openDevice(browser, name, uid, ctx) {
       return route.fulfill({ status: 404, body: '' });
     }
     if (url.includes('@supabase/supabase-js')) return route.fulfill({ body: mockLib, contentType: 'application/javascript' });
+    if (url.includes('/functions/v1/news')) {
+      const rg = (url.match(/forceFunctionRegion=([a-z0-9-]+)/) || [])[1] || '';
+      regionCalls.push(rg);
+      return route.fulfill({ contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ fetchedAt: new Date().toISOString(), categories: { '종합': regionOk ? [{ title: rg + ' 지역 뉴스 ' + regionCalls.length, link: 'http://x', pubDate: '', source: '' }] : [], '경제': [] } }) });
+    }
     return route.abort();
   });
   await page.goto('http://app.test/?uid=' + uid);
@@ -178,6 +186,26 @@ function check(label, cond, detail) {
   await hideShow(pc, 300);
   check('30분 지난 뒤 화면이 보이면 새로 받음', n.news === b.news + 1, { before: b, after: { ...n } });
   check('새 뉴스가 보임', await pc.page.evaluate(() => document.getElementById('news-list').innerText.includes('뉴스 ' + 2)), await pc.page.evaluate(() => document.getElementById('news-list').innerText));
+
+  console.log('\n[5b] 기본 지역에서 뉴스가 비어 오면: 다른 지역에서 다시 받고, 빈 결과는 넣어 두지 않고, 다 안 되면 전 뉴스 그대로');
+  const expireNews = () => pc.page.evaluate(() => { const c = JSON.parse(localStorage.getItem('device-news-cache')); c.at = Date.now() - 31 * 60 * 1000; rawSetItem('device-news-cache', JSON.stringify(c)); });
+  const newsText = () => pc.page.evaluate(() => document.getElementById('news-list').innerText);
+  newsEmpty = true; regionOk = true;
+  await expireNews(); b = { ...n };
+  await hideShow(pc, 300); await wait(600);
+  check('기본 호출이 비어 오면 도쿄 지역으로 다시 받아 보여 줌', n.news === b.news + 1 && regionCalls.length === 1 && regionCalls[0] === 'ap-northeast-1' && (await newsText()).includes('ap-northeast-1 지역 뉴스 1'), { n: { ...n }, regionCalls, text: await newsText() });
+  check('된 지역을 이 컴퓨터에 기억(서버로 안 올림), 넣어 둔 뉴스는 빈 것이 아님', await pc.page.evaluate(() => JSON.parse(localStorage.getItem('device-news-region')).r === 'ap-northeast-1' && isLocalOnlyKey('device-news-region') && JSON.parse(localStorage.getItem('device-news-cache')).data.categories['종합'].length === 1));
+  await expireNews(); b = { ...n };
+  await hideShow(pc, 300); await wait(600);
+  check('다음엔 기억한 지역부터(기본 지역은 안 부름)', n.news === b.news && regionCalls.length === 2 && regionCalls[1] === 'ap-northeast-1' && (await newsText()).includes('지역 뉴스 2'), { n: { ...n }, regionCalls, text: await newsText() });
+  regionOk = false;
+  await expireNews(); b = { ...n };
+  await hideShow(pc, 300); await wait(900);
+  check('모든 지역이 비어 와도 전에 받은 뉴스가 그대로 보임("뉴스가 없습니다" 아님)', (await newsText()).includes('지역 뉴스 2') && !(await newsText()).includes('없습니다'), await newsText());
+  check('빈 결과로 넣어 둔 뉴스를 덮지 않음', await pc.page.evaluate(() => JSON.parse(localStorage.getItem('device-news-cache')).data.categories['종합'].length === 1));
+  check('그때 기본 → 나머지 지역까지 차례로 해 봄', n.news === b.news + 1 && regionCalls.slice(2).join(',') === 'ap-northeast-1,us-east-1', { n: { ...n }, regionCalls });
+  newsEmpty = false; regionOk = true;
+  await pc.page.evaluate(() => localStorage.removeItem('device-news-region'));
 
   console.log('\n[6] 휴대폰은 잠깐 꺼졌다 켜져도 받음(화면이 꺼지면 연결이 소리 없이 죽을 수 있음)');
   const phone = await openDevice(browser, '휴대폰', T1);
