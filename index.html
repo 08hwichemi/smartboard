@@ -1206,6 +1206,20 @@
     .trip-board tfoot tr.trip-dayrow td { font-size: 11px; font-weight: 700; color: var(--accent-color); height: 26px; }
     .trip-board tfoot tr.trip-dayrow td.dcnt:empty { color: transparent; }
     .trip-board td.day.ro { cursor: default; }
+    /* 📊 통계(전체 보기): 반마다 일자별 체험학습 인원 · 합계 · 출석 인원 */
+    .trip-board.trip-stat td.c-cls { font-weight: 800; text-align: left; padding-left: 8px; }
+    .trip-board.trip-stat td.c-k { color: var(--text-sub); }
+    .trip-board.trip-stat td.sc { width: var(--dw, 26px); min-width: var(--dw, 26px); max-width: var(--dw, 26px); }
+    .trip-board.trip-stat td.sc.z { color: var(--border-color); }
+    .trip-board.trip-stat td.sc.v1 { background: color-mix(in srgb, var(--accent-color) 12%, transparent); }
+    .trip-board.trip-stat td.sc.v2 { background: color-mix(in srgb, var(--accent-color) 24%, transparent); }
+    .trip-board.trip-stat td.sc.v3 { background: color-mix(in srgb, var(--accent-color) 40%, transparent); font-weight: 800; }
+    .trip-board.trip-stat tr.st-sum td { border-top: 2px solid var(--text-main); font-weight: 800; }
+    .trip-board.trip-stat tr.st-att td { font-weight: 800; color: var(--accent-color); }
+    .trip-board.trip-stat td.hol { font-size: 10px; }
+    .trip-seg { display: inline-flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
+    .trip-seg button { font: inherit; font-size: 11.5px; padding: 3px 9px; border: 0; background: var(--tt-bg); color: var(--text-main); cursor: pointer; }
+    .trip-seg button.on { background: var(--accent-color); color: #fff; font-weight: 700; }
     .trip-board td.wk, .trip-board th.wk { border-left: 1px solid var(--text-sub); }
     .trip-board td.pst, .trip-board th.pst { border-left: 3px double var(--text-sub); }
     .trip-board td.bar { background: var(--bc); cursor: pointer; }
@@ -1265,6 +1279,13 @@
     .tps .pt td.d.b.s { border-top-left-radius: 1.6mm; border-bottom-left-radius: 1.6mm; }
     .tps .pt td.d.b.e { border-top-right-radius: 1.6mm; border-bottom-right-radius: 1.6mm; }
     .tps .pt td.d.b.s::before { content: attr(data-n); position: absolute; left: 1mm; top: 50%; transform: translateY(-50%); font-size: 6.5pt; font-weight: 800; color: #fff; }
+    .tps .pt.ps td { font-size: 10.5pt; }
+    .tps .pt.ps td.l { font-weight: 800; }
+    .tps .pt.ps td.k { color: #4B5563; border-left: 0.8pt solid #C9CED8; font-size: 9.5pt; }
+    .tps .pt.ps td.z { color: #D1D5DB; }
+    .tps .pt.ps td.d.hol { color: #9AA1AE; font-size: 7.5pt; }
+    .tps .pt.ps tr.ssum td { border-top: 1.2pt solid #1F3A5F; font-weight: 800; background: #F5F6F9; }
+    .tps .pt.ps tr.satt td { font-weight: 800; color: #1F3A5F; border-bottom: 1pt solid #1F3A5F; }
     .tps .p-foot { margin-top: auto; display: flex; gap: 5mm; align-items: center; flex-wrap: wrap; font-size: 7.5pt; color: #6B7280; padding-top: 2mm; }
     .tps .p-foot i { font-style: normal; display: inline-block; width: 4mm; height: 2.4mm; border-radius: 0.6mm; vertical-align: -0.3mm; margin-right: 1mm; }
     .ab-in { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12.5px; background: var(--card-bg); color: var(--text-main); font-family: inherit; outline: none; min-width: 0; }
@@ -5699,7 +5720,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-12.1';
+  var BUILD_ID = '2026-11-22.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -14110,6 +14131,7 @@
   let tripRecs = [], tripRecsKey = '', tripPrior = {}, tripHol = {}, tripRosters = {}, tripLoadError = '';
   let tripPick = null, tripTimer = null, tripWatching = false;
   let tripPrintSet = null, tripPrintPanel = null; // 🖨️ 신청서 모아 출력: 기록 id 목록 · 고르기 칸 { sel: {번호: true}, rounds: {회차: true} }
+  let tripStatView = false; // 전체 보기의 📊 통계(반마다 일자별 인원)
   let tripAllCls = null, tripPrintAll = false; // 전체 보기(부장): 지금 보는 반 · 인쇄를 모든 반으로
   let tripUndo = null; // 마지막으로 지운 기록(↩ 되돌리기)
 
@@ -15165,7 +15187,8 @@
     // 머리줄: 기간 · 👥 · 📤 · 범례 · 보기만
     const perTxt = periods.map(function(p) { return tripRangeLabel(p.from, p.to) + '(' + tripCountDays(p.from, p.to, g) + '일)'; }).join(' · ');
     let h = '<span style="font-weight:700;">📌 추천 기간</span><span class="ab-muted" title="📌을 누르면 들어가는 날짜(추천일 뿐 — 다른 날도 빈 칸을 눌러 넣을 수 있어요). 관리자 설정 → 계정 관리 → 🗓 현황판에서 고쳐요">' + escapeHtmlAttr(perTxt) + '</span>';
-    h += '<button class="top-btn' + (tripPrintPanel ? ' theme-active' : '') + '" style="font-size:11.5px; padding:4px 10px;" onclick="tripTogglePrintPanel()" title="학생(과 회차)을 골라 신청서+결과보고서를 한 번에 인쇄">🖨️ 신청서 모아 출력</button>';
+    const statOn = !!(c.all && tripStatView);
+    if (!statOn) h += '<button class="top-btn' + (tripPrintPanel ? ' theme-active' : '') + '" style="font-size:11.5px; padding:4px 10px;" onclick="tripTogglePrintPanel()" title="학생(과 회차)을 골라 신청서+결과보고서를 한 번에 인쇄">🖨️ 신청서 모아 출력</button>';
     const pend = tripLocalPending();
     if (canEdit && pend.length) h += '<button class="top-btn" style="font-size:11.5px; padding:4px 10px; border-color:var(--accent-color); color:var(--accent-color);" onclick="tripMigrate()" title="현황판 전에 내 계정 자료로 넣어 둔 교외체험학습 기록을 서버로 옮겨 함께 봐요">📤 서버로 옮기기 (' + pend.length + '건)</button>';
     h += '<span class="trip-legend">' + TRIP_COLORS.map(function(col, k) { return '<span><i class="trip-sw" style="background:' + col + '"></i>' + (k + 1) + '회</span>'; }).join('') +
@@ -15176,12 +15199,20 @@
     if (c.all) {
       if (!groups.some(function(x) { return x.cno === tripAllCls; })) { const first = groups.find(function(x) { return x.students.some(function(s) { return s.recs.length; }); }) || groups[0]; tripAllCls = first ? first.cno : null; }
       shown = groups.filter(function(x) { return x.cno === tripAllCls; });
-      h += '<span style="flex-basis:100%; height:0;"></span><span style="font-weight:700;">반</span><span class="top-btn-cluster" id="trip-cls-tabs" style="flex-wrap:wrap;">' + groups.map(function(grp) {
+      h += '<span style="flex-basis:100%; height:0;"></span><span style="font-weight:700;">반</span><span class="top-btn-cluster" id="trip-cls-tabs" style="flex-wrap:wrap;"><button class="top-btn' + (statOn ? ' theme-active' : '') + '" id="trip-stat-btn" style="font-size:12px; padding:4px 10px; line-height:1.3;" onclick="tripPickStat()" title="반마다 일자별 체험학습 인원 · 합계 · 출석 인원">📊 통계</button>' + groups.map(function(grp) {
         const cnt = grp.students.filter(function(s) { return s.recs.length; }).length, ov = grp.students.filter(function(s) { return s.tot > TRIP_LIMIT; }).length;
-        return '<button class="top-btn' + (grp.cno === tripAllCls ? ' theme-active' : '') + '" data-cls="' + grp.cno + '" style="font-size:12px; padding:4px 10px; line-height:1.3;" onclick="tripPickClass(' + grp.cno + ')" title="' + grp.cno + '반 · 신청 ' + cnt + '명' + (ov ? ' · ' + (TRIP_LIMIT + 1) + '일 이상 ' + ov + '명' : '') + '">' + grp.cno + '반 <span style="font-size:10.5px; font-weight:600; color:' + (ov ? 'var(--alert)' : 'var(--text-sub)') + ';">' + cnt + '명' + (ov ? ' · ⚠' + ov : '') + '</span></button>';
+        return '<button class="top-btn' + (!statOn && grp.cno === tripAllCls ? ' theme-active' : '') + '" data-cls="' + grp.cno + '" style="font-size:12px; padding:4px 10px; line-height:1.3;" onclick="tripPickClass(' + grp.cno + ')" title="' + grp.cno + '반 · 신청 ' + cnt + '명' + (ov ? ' · ' + (TRIP_LIMIT + 1) + '일 이상 ' + ov + '명' : '') + '">' + grp.cno + '반 <span style="font-size:10.5px; font-weight:600; color:' + (ov ? 'var(--alert)' : 'var(--text-sub)') + ';">' + cnt + '명' + (ov ? ' · ⚠' + ov : '') + '</span></button>';
       }).join('') + '</span>';
+      if (statOn) { const md = tripStatMode(); h += '<span style="font-weight:700; margin-left:6px;">반 줄 숫자</span><span class="trip-seg"><button class="' + (md === 'trip' ? 'on' : '') + '" onclick="tripSetStatMode(\'trip\')">체험 인원</button><button class="' + (md === 'att' ? 'on' : '') + '" onclick="tripSetStatMode(\'att\')">출석 인원</button></span>'; }
     }
     ctrl.innerHTML = h;
+    if (statOn) {
+      panel.style.display = 'none';
+      if (tripLoadError) { grid.innerHTML = '<div class="ab-empty">서버에서 교외체험학습 기록을 못 받았어요: ' + escapeHtmlAttr(tripLoadError) + '<br>인터넷 연결을 확인하고 다시 열어 주세요.</div>'; foot.innerHTML = ''; return; }
+      grid.innerHTML = tripStatScreenHtml(g, grid);
+      foot.innerHTML = '칸 숫자 = 그날 교외체험학습 중인 학생 수(반 줄은 위 단추로 출석 인원으로 바꿔 볼 수 있어요). 출석 인원 = 재적(명렬표 학생 수) − 그날 체험학습 인원 — 질병·기타 결석은 들어가지 않아요. 신청 = 현황판 기간에 한 번이라도 신청한 학생, 연인원 = 그 일수 합. 휴일은 "휴", 긴 방학은 "…"로 접음.';
+      return;
+    }
     // 👥 여러 명 같은 기간
     if (tripPrintPanel) { panel.style.display = ''; tripRenderPrintPanel(shown[0]); } else panel.style.display = 'none';
     // 격자
@@ -15562,7 +15593,90 @@
     label.innerHTML = '🖨️ 신청서 모아 출력 · ' + recs.length + '건 · ' + i + '장 <span class="ab-muted">(학생마다 신청서 + 결과보고서, 세로 A4)</span>';
     abFitPaper();
   }
-  function tripPickClass(n) { tripAllCls = Number(n); tripPick = null; abSelId = null; tripPrintSet = null; tripPrintPanel = null; tripClosePop(); tripRender(); abRenderPreview(); }
+  function tripPickClass(n) { tripStatView = false; tripAllCls = Number(n); tripPick = null; abSelId = null; tripPrintSet = null; tripPrintPanel = null; tripClosePop(); tripRender(); abRenderPreview(); }
+
+  // ----- 📊 통계: 반마다 일자별 체험학습 인원 · 체험 합계 · 출석 인원(재적 − 체험) — 전체 보기에서(11/22 사용자) -----
+  function tripStatMode() { try { return localStorage.getItem('trip-stat-mode') === 'att' ? 'att' : 'trip'; } catch (e) { return 'trip'; } }
+  function tripSetStatMode(m) { try { if (m === 'att') localStorage.setItem('trip-stat-mode', 'att'); else localStorage.removeItem('trip-stat-mode'); } catch (e) {} scheduleBackupWrite(); tripRender(); abRenderPreview(); }
+  function tripPickStat() { tripStatView = true; tripPick = null; abSelId = null; tripPrintSet = null; tripPrintPanel = null; tripClosePop(); tripRender(); abRenderPreview(); }
+  function tripStatData(g) {
+    const days = tripDayList(g), hol = tripHolidays(g);
+    const rows = tripGroups().map(function(grp) {
+      const reg = ((tripRosters[g] && tripRosters[g][grp.cno]) || []).length;
+      let apply = 0, man = 0; grp.students.forEach(function(s) { if (s.recs.length) apply++; man += s.cur; });
+      const dc = tripDayCounts(days, grp.students).map(function(n, i) { const x = days[i]; return x.gap || hol[x.d] ? null : n; });
+      return { cno: grp.cno, reg: reg, apply: apply, man: man, dc: dc };
+    });
+    const sum = function(f) { return rows.reduce(function(a, r) { return a + f(r); }, 0); };
+    const tot = days.map(function(x, i) { return x.gap || hol[x.d] ? null : sum(function(r) { return r.dc[i] || 0; }); });
+    return { days: days, hol: hol, rows: rows, tot: tot, reg: sum(function(r) { return r.reg; }), apply: sum(function(r) { return r.apply; }), man: sum(function(r) { return r.man; }) };
+  }
+  function tripStatScreenHtml(g, grid) {
+    const S = tripStatData(g), days = S.days, hol = S.hol, md = tripStatMode();
+    const W = { cls: 46, reg: 34, apply: 34, man: 44 }, L = { cls: 0 }; L.reg = W.cls; L.apply = L.reg + W.reg; L.man = L.apply + W.apply;
+    const fixedW = L.man + W.man, gapN = days.filter(function(x) { return x.gap; }).length, dayN = days.length - gapN;
+    const gridW = (grid && (grid.clientWidth || grid.getBoundingClientRect().width)) || 1000;
+    const dayW = Math.max(16, Math.min(30, Math.floor((gridW - fixedW - gapN * 16 - 2) / Math.max(dayN, 1))));
+    const fx = function(cls, k, extra) { return 'class="fix ' + cls + '" style="left:' + L[k] + 'px; width:' + W[k] + 'px; min-width:' + W[k] + 'px;' + (extra || '') + '"'; };
+    let t = '<table class="trip-board trip-stat' + (dayW < 22 ? ' tight' : '') + '" style="--dw:' + dayW + 'px"><thead><tr>' +
+      '<th ' + fx('c-cls', 'cls') + ' rowspan="3">반</th><th ' + fx('c-k', 'reg') + ' rowspan="3" title="명렬표 학생 수">재적</th><th ' + fx('c-k', 'apply') + ' rowspan="3" title="현황판 기간에 한 번이라도 신청한 학생 수">신청</th><th ' + fx('c-k c-last', 'man') + ' rowspan="3" title="현황판 기간에 신청한 체험학습 일수 합">연인원</th>';
+    tripHeadGroups(days).forEach(function(gr, gi) {
+      if (gr.gap) t += '<th class="gap' + (gi ? ' pst' : '') + '" title="' + tripRangeLabel(gr.from, gr.to) + ' 평일 ' + gr.days + '일 — 접어 둠(방학 등)">…</th>';
+      else t += '<th colspan="' + gr.n + '" class="' + (gi ? 'pst' : '') + '">' + (+gr.m.slice(5)) + '월</th>';
+    });
+    t += '</tr><tr>' + days.map(function(x) { return x.gap ? '<th class="gap' + tripSep(x) + '"></th>' : '<th class="dcol ' + (hol[x.d] ? 'hol' : '') + tripSep(x) + '" title="' + escapeHtmlAttr(hol[x.d] || '') + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr><tr>' +
+      days.map(function(x) { return x.gap ? '<th class="gap' + tripSep(x) + '"></th>' : '<th class="dcol ' + (hol[x.d] ? 'hol' : '') + tripSep(x) + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    const cells = function(vals, heat, title) {
+      return days.map(function(x, i) {
+        const sep = tripSep(x);
+        if (x.gap) return '<td class="gap' + sep + '"></td>';
+        if (hol[x.d]) return '<td class="hol' + sep + '" title="' + escapeHtmlAttr(hol[x.d]) + '">휴</td>';
+        const v = vals[i], n = heat ? heat[i] : 0;
+        return '<td class="sc' + (heat && !n ? ' z' : '') + (heat && n >= 5 ? ' v3' : heat && n >= 3 ? ' v2' : heat && n ? ' v1' : '') + sep + '" title="' + tripShort(x.d) + ' ' + title + ' ' + v + '명">' + (heat && !n ? '·' : v) + '</td>';
+      }).join('');
+    };
+    S.rows.forEach(function(r) {
+      t += '<tr><td ' + fx('c-cls', 'cls') + '>' + r.cno + '반</td><td ' + fx('c-k', 'reg') + '>' + (r.reg || '') + '</td><td ' + fx('c-k', 'apply') + '>' + r.apply + '</td><td ' + fx('c-k c-last', 'man') + '>' + r.man + '</td>' +
+        (md === 'att' && r.reg ? cells(r.dc.map(function(n) { return n === null ? null : r.reg - n; }), null, r.cno + '반 출석') : cells(r.dc, r.dc, r.cno + '반 체험학습')) + '</tr>';
+    });
+    t += '<tr class="st-sum"><td ' + fx('c-cls', 'cls') + '>체험 합계</td><td ' + fx('c-k', 'reg') + '>' + S.reg + '</td><td ' + fx('c-k', 'apply') + '>' + S.apply + '</td><td ' + fx('c-k c-last', 'man') + '>' + S.man + '</td>' + cells(S.tot, null, '체험학습') + '</tr>';
+    t += '<tr class="st-att"><td ' + fx('c-cls', 'cls') + '>출석 인원</td><td ' + fx('c-k', 'reg') + ' colspan="1">' + S.reg + '</td><td ' + fx('c-k', 'apply') + '></td><td ' + fx('c-k c-last', 'man') + '></td>' + cells(S.tot.map(function(n) { return n === null ? null : S.reg - n; }), null, '출석') + '</tr>';
+    return t + '</tbody></table>';
+  }
+  function tripStatSheetHtml(g) {
+    const S = tripStatData(g), days = S.days, hol = S.hol, md = tripStatMode(), today = new Date();
+    const rh = Math.max(6, Math.min(11, 130 / Math.max(S.rows.length + 2, 1)));
+    const first = days[0], last = days[days.length - 1];
+    let h = '<div class="tps"><div class="p-head"><div class="p-title"><small>학교장허가 교외체험학습</small>일자별 인원 통계</div>' +
+      '<div class="p-meta"><b>' + g + '학년 1~' + S.rows.length + '반</b>' + (first ? tripRangeLabel(first.d, last.to || last.d) : '') + ' · 연간 출석인정 한도 ' + TRIP_LIMIT + '일 · 출력 ' + today.getFullYear() + '.' + (today.getMonth() + 1) + '.' + today.getDate() + '</div></div>';
+    h += '<table class="pt ps" style="--rh:' + rh.toFixed(2) + 'mm"><colgroup><col style="width:18mm"><col style="width:10mm"><col style="width:10mm"><col style="width:12mm">' + days.map(function(x) { return x.gap ? '<col style="width:3.5mm">' : '<col>'; }).join('') + '</colgroup>';
+    h += '<thead><tr><th rowspan="3" style="text-align:left; padding-left:1.5mm;">반</th><th rowspan="3" class="grp">재적</th><th rowspan="3" class="grp">신청</th><th rowspan="3" class="grp">연인원</th>';
+    const mIdx = {}; let mi = 0;
+    tripHeadGroups(days).forEach(function(gr, gi) {
+      if (gr.gap) h += '<th class="per gap' + (gi ? ' pst' : '') + '" style="--mc:#F3F4F7">…</th>';
+      else { if (mIdx[gr.m] === undefined) mIdx[gr.m] = mi++; h += '<th class="per' + (gi ? ' pst' : '') + '" colspan="' + gr.n + '" style="--mc:' + TRIP_MTINT[mIdx[gr.m] % 4] + '">' + (+gr.m.slice(5)) + '월</th>'; }
+    });
+    const sep = tripSep, bg = function(x) { return TRIP_MTINT2[(mIdx[x.d.slice(0, 7)] || 0) % 4]; };
+    h += '</tr><tr>' + days.map(function(x) { return x.gap ? '<th class="gap' + sep(x) + '"></th>' : '<th class="' + (hol[x.d] ? 'hd' : '') + sep(x) + '" style="background:' + bg(x) + '">' + (+x.d.slice(8)) + '</th>'; }).join('') + '</tr>';
+    h += '<tr>' + days.map(function(x) { return x.gap ? '<th class="gap' + sep(x) + '"></th>' : '<th class="dw' + (hol[x.d] ? ' hd' : '') + sep(x) + '" style="background:' + bg(x) + '">' + (hol[x.d] ? '휴' : TRIP_WD[new Date(x.d + 'T00:00:00').getDay()]) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    const cells = function(vals, dots) {
+      return days.map(function(x, i) {
+        const cls = (i === 0 ? ' first' : '') + sep(x);
+        if (x.gap) return '<td class="d gap' + cls + '"></td>';
+        if (hol[x.d]) return '<td class="d hol' + cls + '">휴</td>';
+        const v = vals[i];
+        return dots && !v ? '<td class="d z' + cls + '">·</td>' : '<td class="d' + cls + '">' + v + '</td>';
+      }).join('');
+    };
+    S.rows.forEach(function(r) {
+      h += '<tr><td class="l">' + r.cno + '반</td><td class="k">' + (r.reg || '') + '</td><td class="k">' + r.apply + '</td><td class="k">' + r.man + '</td>' +
+        (md === 'att' && r.reg ? cells(r.dc.map(function(n) { return n === null ? null : r.reg - n; }), false) : cells(r.dc, true)) + '</tr>';
+    });
+    h += '<tr class="ssum"><td class="l">체험 합계</td><td class="k">' + S.reg + '</td><td class="k">' + S.apply + '</td><td class="k">' + S.man + '</td>' + cells(S.tot, false) + '</tr>';
+    h += '<tr class="satt"><td class="l">출석 인원</td><td class="k">' + S.reg + '</td><td class="k"></td><td class="k"></td>' + cells(S.tot.map(function(n) { return n === null ? null : S.reg - n; }), false) + '</tr>';
+    h += '</tbody></table><div class="p-foot"><span>' + (md === 'att' ? '반 줄 = 그날 출석 인원' : '반 줄 = 그날 교외체험학습 중인 학생 수') + '</span><span>출석 인원 = 재적 − 체험학습 인원(질병·기타 결석은 빼지 않음)</span><span>연인원 = 신청한 체험 일수 합</span><span><i style="background:repeating-linear-gradient(135deg,#F3F4F7 0 1mm,#E3E6EC 1mm 2mm)"></i>휴일 · … 방학</span></div></div>';
+    return h;
+  }
 
   // ----- 🖨️ 신청 현황표(가로) -----
   // 용지 A4·B4·A3(가로): 현황표는 A4 가로 기준(297×210mm)으로 짜고 큰 용지는 그만큼 키운다(zoom) — 글씨·띠가 같이 커진다.
@@ -15592,6 +15706,13 @@
       tripSizePaper(paper);
       paper.innerHTML = '<div class="ab-paper-empty">현황판을 쓰는 학년의 반을 고르면<br>여기에 신청 현황표가 보여요.</div>'; label.textContent = ''; abFitPaper(); return;
     }
+    const paperSel0 = function() { return '<select class="mini-select" style="font-size:11px; padding:1px 4px;" onchange="tripSetPaper(this.value)" title="인쇄 용지(가로). 큰 용지는 글씨가 같이 커져요. 수동 용지함 같은 프린터 설정은 인쇄 창에서 고르세요">' +
+      Object.keys(TRIP_PAPERS).map(function(k) { return '<option value="' + k + '"' + (k === tripPaper() ? ' selected' : '') + '>' + k + ' 가로</option>'; }).join('') + '</select>'; };
+    if (c.all && tripStatView) {
+      paper.innerHTML = tripStatSheetHtml(g); tripSizePaper(paper);
+      label.innerHTML = '일자별 인원 통계 ' + paperSel0() + ' 1장 <button class="top-btn" style="font-size:11px; padding:2px 8px; margin-left:4px;" onclick="tripOpenBig()" title="통계표를 실제 크기로 크게 봐요">🔍 크게 보기</button>';
+      abFitPaper(); return;
+    }
     let groups = tripGroups();
     if (c.all && !tripPrintAll) groups = groups.filter(function(x) { return x.cno === tripAllCls; }); // 전체 보기: 지금 보는 반만(모든 반은 체크했을 때)
     groups.forEach(function(grp, i) {
@@ -15613,7 +15734,7 @@
     if (!ov) {
       ov = document.createElement('div'); ov.id = 'trip-big';
       ov.style.cssText = 'position:fixed; inset:0; z-index:9000; background:rgba(10,14,22,0.72); display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px; box-sizing:border-box;';
-      ov.innerHTML = '<div style="display:flex; gap:10px; align-items:center; color:#fff; font-weight:700; font-size:13px;"><span>신청 현황표 · 실제 크기 (Esc로 닫기)</span><button class="top-btn" style="font-size:12px;" onclick="tripCloseBig()">✕ 닫기</button></div><div id="trip-big-pages" style="overflow:auto; max-width:100%; flex:1; min-height:0; display:flex; flex-direction:column; gap:14px; align-items:center;"></div>';
+      ov.innerHTML = '<div style="display:flex; gap:10px; align-items:center; color:#fff; font-weight:700; font-size:13px;"><span>실제 크기 (Esc로 닫기)</span><button class="top-btn" style="font-size:12px;" onclick="tripCloseBig()">✕ 닫기</button></div><div id="trip-big-pages" style="overflow:auto; max-width:100%; flex:1; min-height:0; display:flex; flex-direction:column; gap:14px; align-items:center;"></div>';
       ov.addEventListener('click', function(e) { if (e.target === ov) tripCloseBig(); });
       document.body.appendChild(ov);
     }

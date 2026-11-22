@@ -419,7 +419,7 @@ function check(label, cond, detail) {
   await H.selectOption('#ab-grade', '3'); await H.dispatchEvent('#ab-grade', 'change'); await wait(300);
   check('3학년 고르면 반 목록 맨 위에 "전체"', await H.evaluate(() => document.querySelectorAll('#ab-class option')[1].value === 'all' && document.querySelectorAll('#ab-class option')[1].textContent === '전체'));
   await H.selectOption('#ab-class', 'all'); await H.dispatchEvent('#ab-class', 'change'); await wait(800);
-  const hv = await H.evaluate(() => ({ tab: document.getElementById('ab-pane-trip').style.display === '', tabs: [...document.querySelectorAll('#trip-cls-tabs button')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.classList.contains('theme-active') ? '*' : '')), rows: document.querySelectorAll('#trip-grid tr[data-n]').length, ro: /보기만/.test(document.getElementById('trip-ctrl').textContent), bulk: [...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent)), pin: document.querySelectorAll('#trip-grid .trip-all-btn, #trip-grid th.c-all').length, bars: document.querySelectorAll('#trip-grid td.bar').length, foot: document.querySelector('#trip-grid tfoot').textContent.replace(/\s+/g, ' ').trim(), pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, label: document.getElementById('ab-prev-label').textContent, other: document.getElementById('ab-list').textContent }));
+  const hv = await H.evaluate(() => ({ tab: document.getElementById('ab-pane-trip').style.display === '', tabs: [...document.querySelectorAll('#trip-cls-tabs button[data-cls]')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.classList.contains('theme-active') ? '*' : '')), rows: document.querySelectorAll('#trip-grid tr[data-n]').length, ro: /보기만/.test(document.getElementById('trip-ctrl').textContent), bulk: [...document.querySelectorAll('#trip-ctrl button')].some(b => /여러 명/.test(b.textContent)), pin: document.querySelectorAll('#trip-grid .trip-all-btn, #trip-grid th.c-all').length, bars: document.querySelectorAll('#trip-grid td.bar').length, foot: document.querySelector('#trip-grid tfoot').textContent.replace(/\s+/g, ' ').trim(), pages: document.querySelectorAll('#ab-paper-box .ab-paper.ab-land').length, label: document.getElementById('ab-prev-label').textContent, other: document.getElementById('ab-list').textContent }));
   check('전체 → 🗓 탭으로, 반 단추 3개(요약: 1반 4명 / 2반 0명 / 3반 0명), 기록 있는 1반이 먼저 골라짐', hv.tab && hv.tabs.join('|') === '1반 4명*|2반 0명|3반 0명', hv.tabs);
   check('한 번에 한 반만(1반 5줄, 반 머리 줄 없음, 📌 없음), "보기만", 👥 없음, 1반 합계 줄', hv.rows === 5 && hv.ro && !hv.bulk && /1반 합계/.test(hv.foot) && /신청 4명 · 20일 이상 0명/.test(hv.foot) && hv.pin === 0, hv);
   check('담임이 넣은 띠가 보임', hv.bars > 0, hv.bars);
@@ -450,6 +450,37 @@ function check(label, cond, detail) {
   await P.click('#trip-add-ok'); await wait(1600);
   const after = await H.evaluate(() => document.querySelectorAll('#trip-grid td.bar').length);
   check('담임이 넣은 2칸이 부장 화면에 바로(실시간)', after === before + 2, [before, after]);
+  // 📊 통계: 반마다 일자별 체험학습 인원 · 체험 합계 · 출석 인원(재적 − 체험), 인쇄 한 장
+  check('반 단추 줄 맨 앞에 📊 통계', await H.evaluate(() => { const b = document.querySelector('#trip-cls-tabs button'); return b && b.id === 'trip-stat-btn'; }));
+  await H.click('#trip-stat-btn'); await wait(400);
+  const sv = await H.evaluate(() => {
+    const t = document.querySelector('#trip-grid table.trip-stat'); if (!t) return null;
+    const rows = [...t.querySelectorAll('tbody tr')].map(tr => [...tr.children].map(td => td.textContent.trim()));
+    const dates = [...t.querySelectorAll('thead tr:nth-child(2) th')].map(th => th.textContent.trim());
+    return { rows, dates, active: document.querySelector('#trip-cls-tabs button.theme-active').id, label: document.getElementById('ab-prev-label').textContent, meta: (document.querySelector('#ab-paper .p-meta') || {}).textContent, prow: document.querySelectorAll('#ab-paper table.ps tbody tr').length, seg: !!document.querySelector('#trip-ctrl .trip-seg'), bulk: /신청서 모아/.test(document.getElementById('trip-ctrl').textContent) };
+  });
+  check('📊 통계 → 반 3줄 + 체험 합계 + 출석 인원, 단추 눌림, 신청서 모아 출력 단추 없음, 반 줄 숫자 고르기', sv && sv.rows.length === 5 && sv.rows[0][0] === '1반' && sv.rows[3][0] === '체험 합계' && sv.rows[4][0] === '출석 인원' && sv.active === 'trip-stat-btn' && !sv.bulk && sv.seg, sv && [sv.rows.map(r => r.slice(0, 4).join(',')), sv.active]);
+  const btn1 = await H.evaluate(() => (document.querySelector('#trip-cls-tabs button[data-cls="1"] span').textContent.match(/\d+/) || [])[0]);
+  check('재적 = 명렬표(5·3·2명, 합 10), 신청 = 반 단추 수(1반 ' + btn1 + '명)', sv && sv.rows.map(r => r[1]).join(',') === '5,3,2,10,10' && sv.rows[0][2] === btn1 && sv.rows[3][2] === btn1, sv && sv.rows.map(r => r.slice(1, 4).join('/')));
+  if (sv) {
+    let okSum = true, okAtt = true, some = 0;
+    for (let i = 4; i < sv.rows[3].length; i++) {
+      const v = sv.rows.slice(0, 3).map(r => r[i]);
+      if (v.some(x => x === '휴' || x === '')) continue;
+      const n = v.reduce((a, x) => a + (x === '·' ? 0 : Number(x)), 0); if (n) some++;
+      if (String(n) !== sv.rows[3][i]) okSum = false;
+      if (String(10 - n) !== sv.rows[4][i]) okAtt = false;
+    }
+    check('날짜마다 체험 합계 = 반 합, 출석 인원 = 10 − 합계 (체험 있는 날 있음)', okSum && okAtt && some > 0, [okSum, okAtt, some]);
+  }
+  check('미리보기 = 일자별 인원 통계 1장(3학년 1~3반, 표 5줄)', sv && /일자별 인원 통계/.test(sv.label) && /1장/.test(sv.label) && /3학년 1~3반/.test(sv.meta) && sv.prow === 5, sv && [sv.label, sv.meta, sv.prow]);
+  await H.click('#trip-ctrl .trip-seg button:nth-child(2)'); await wait(300);
+  const sv2 = await H.evaluate(() => ({ r1: [...document.querySelectorAll('#trip-grid table.trip-stat tbody tr')][0].textContent, att: [...document.querySelectorAll('#trip-grid table.trip-stat tbody tr')].map(tr => [...tr.children].map(td => td.textContent.trim())), mode: localStorage.getItem('trip-stat-mode'), pfoot: document.querySelector('#ab-paper .p-foot').textContent }));
+  check('출석 인원 단추 → 반 줄이 출석 수(재적 − 체험, "·" 없음), 인쇄물도, 기억', sv2.mode === 'att' && !/·/.test(sv2.att[0].slice(4).join('')) && sv2.att[0].slice(4).every((x, i) => x === '휴' || x === '' || Number(x) === 5 - (sv.rows[0][i + 4] === '·' ? 0 : Number(sv.rows[0][i + 4]))) && /출석 인원/.test(sv2.pfoot), sv2.att[0].slice(0, 12));
+  await H.click('#trip-ctrl .trip-seg button:nth-child(1)'); await wait(200);
+  await H.locator('#absence-page').screenshot({ path: 'trip-stat.png' });
+  await H.click('#trip-cls-tabs button[data-cls="1"]'); await wait(300);
+  check('1반 단추 → 다시 학생 표(5줄)', await H.evaluate(() => document.querySelectorAll('#trip-grid tr[data-n]').length === 5 && !document.querySelector('#trip-grid table.trip-stat')));
   // 부장이 반 하나를 고르면 그 반만(보기만)
   await H.selectOption('#ab-class', '2'); await H.dispatchEvent('#ab-class', 'change'); await wait(500);
   check('부장이 2반을 고르면 2반 3명만, 보기만', await H.evaluate(() => document.querySelectorAll('#trip-grid tr[data-n]').length === 3 && !document.querySelector('#trip-grid tr.cls') && /보기만/.test(document.getElementById('trip-ctrl').textContent)));
