@@ -5721,7 +5721,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-22.1';
+  var BUILD_ID = '2026-11-23.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -14385,7 +14385,8 @@
       '<td><input type="date" id="' + p + 'from" class="ab-in" value="' + (r.from || '') + '" onchange="abRowDate(\'' + p + '\', \'from\')"' + on + '></td>' +
       '<td><input type="date" id="' + p + 'to" class="ab-in" value="' + (r.to || '') + '" onchange="abRowDate(\'' + p + '\', \'to\')"' + on + '></td>' +
       '<td><input type="number" id="' + p + 'days" class="ab-in ab-days" min="0" step="1" value="' + days + '" data-touched="' + (r.dm ? '1' : '') + '" oninput="abRowDaysInput(\'' + p + '\')" title="토·일·휴일을 빼고 자동으로 셈 — 직접 고칠 수도 있어요"' + on + '></td>' +
-      '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + (r.written || '') + '" data-touched="' + (r.written && r.written !== (r.to || r.from) ? '1' : '') + '" oninput="this.dataset.touched = this.value ? \'1\' : \'\'" title="종료 일자와 같게 자동 — 직접 고칠 수도 있어요"' + on + '></td>' +
+      (reason === '교외체험학습' && r.from ? '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + tripApplyDate(r) + '" data-touched="' + (r.written && r.written < r.from ? '1' : '') + '" oninput="this.dataset.touched = this.value ? \'1\' : \'\'" title="교외체험학습 = 신청일: 시작일 3일 전(토·공휴일·재량휴업일 빼고) 자동 — 직접 고칠 수도 있어요"' + on + '></td>' :
+      '<td><input type="date" id="' + p + 'written" class="ab-in" value="' + (r.written || '') + '" data-touched="' + (r.written && r.written !== (r.to || r.from) ? '1' : '') + '" oninput="this.dataset.touched = this.value ? \'1\' : \'\'" title="종료 일자와 같게 자동(교외체험학습은 시작일 3일 전) — 직접 고칠 수도 있어요"' + on + '></td>') +
       '<td><input id="' + p + 'proof" class="ab-in" list="' + p + 'proofs" placeholder="목록/직접" value="' + escapeHtmlAttr(r.proof || '') + '"' + on + '>' +
         '<datalist id="' + p + 'proofs">' + (AB_PROOFS[reason] || []).map(function(x) { return '<option value="' + escapeHtmlAttr(x) + '">'; }).join('') + '</datalist></td>';
   }
@@ -14402,6 +14403,12 @@
     // 사유에 따라 세는 휴일이 다르면(교외체험학습 = 학년 공통 휴일) 자동 일수를 다시
     const d = document.getElementById(p + 'days'), f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to');
     if (d && !d.dataset.touched && f.value) d.value = abRowCount(p, f.value, t.value);
+    const w = document.getElementById(p + 'written');
+    if (w && !w.dataset.touched && f.value) w.value = abRowWritten(p, f.value, t.value);
+  }
+  function abRowWritten(p, f, t) {
+    const rs = document.getElementById(p + 'reason');
+    return rs && rs.value === '교외체험학습' && f ? tripApplyDefault(f, abCfg().g) : (t || f || '');
   }
   // 입력 줄의 자동 일수: 교외체험학습이고 현황판을 쓰는 학년이면 학년 공통 휴일로, 그 밖엔 내 휴일 목록으로
   function abRowCount(p, f, t) {
@@ -14415,7 +14422,7 @@
     const d = document.getElementById(p + 'days');
     if (!d.dataset.touched) d.value = f.value ? abRowCount(p, f.value, t.value) : '';
     const w = document.getElementById(p + 'written');
-    if (!w.dataset.touched) w.value = t.value || f.value || ''; // 작성 일자는 종료 일자와 같게(직접 고치면 그대로)
+    if (!w.dataset.touched) w.value = abRowWritten(p, f.value, t.value); // 작성 일자는 종료 일자와 같게, 교외체험학습은 시작일 3일 전(직접 고치면 그대로)
   }
   function abRowDaysInput(p) {
     const f = document.getElementById(p + 'from'), t = document.getElementById(p + 'to'), d = document.getElementById(p + 'days');
@@ -14543,7 +14550,7 @@
         '<td>' + idx[r.id] + '</td><td class="ab-l" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><b class="ab-num">' + r.num + '번</b><span style="margin-left:7px;">' + escapeHtmlAttr(r.name || '') + '</span></td>' +
         '<td><span class="ab-reason" data-r="' + escapeHtmlAttr(r.reason) + '">' + escapeHtmlAttr(r.reason) + '</span></td>' +
         '<td class="ab-l" title="' + escapeHtmlAttr(r.detail || '') + '">' + escapeHtmlAttr(r.detail || '') + '</td><td>' + abShort(r.from) + '</td><td>' + (r.to && r.to !== r.from ? abShort(r.to) : '') + '</td>' +
-        '<td>' + abDays(r) + (r.dm ? '<span title="직접 고친 일수">✎</span>' : '') + '</td><td>' + abShort(r.written) + '</td>' +
+        '<td>' + abDays(r) + (r.dm ? '<span title="직접 고친 일수">✎</span>' : '') + '</td><td>' + abShort(r.reason === '교외체험학습' ? tripApplyDate(r) : r.written) + '</td>' +
         '<td class="ab-l" style="font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escapeHtmlAttr(r.proof || '') + '">' + escapeHtmlAttr(r.proof || '') + '</td>' +
         '<td style="white-space:nowrap;"><button class="ab-icon-btn" title="이 자리에서 고치기" onclick="event.stopPropagation(); abEdit(\'' + r.id + '\')">✎</button> ' +
         '<button class="ab-icon-btn" title="지우기" onclick="event.stopPropagation(); abDelete(\'' + r.id + '\')">🗑</button></td></tr>';
@@ -14780,7 +14787,7 @@
       return { form: 'trip', v: {
         I4: (before + days) + '일', C6: r.name || '', F6: r.g + '학년', G6: r.c + '반', H6: r.num,
         E7: abKDate(r.from), I7: abKDate(r.to), L7: '(' + days + ' 일간)', L8: before,
-        F24: '(' + abDotDate(r.from), I24: abDotDate(r.to) + ')', E28: abKDate(r.written), L30: r.name || '' },
+        F24: '(' + abDotDate(r.from), I24: abDotDate(r.to) + ')', E28: abKDate(tripApplyDate(r)), L30: r.name || '' },
         form2: 'report', v2: { name: r.name || '', cls: '제 ' + r.g + ' 학년 ' + r.c + ' 반 ' + r.num + ' 번', period: period, total: before + days,
           date: (tp ? tp[0] : new Date().getFullYear()) + '.      .      .', guardian: '', student: r.name || '' } };
     }
@@ -14953,6 +14960,16 @@
     Object.keys(abNeisHol).forEach(function(d) { const gs = abNeisHolGrades[d] || []; if (!gs.length || gs.indexOf(g) >= 0) out[d] = abNeisHol[d]; });
     return Object.assign(out, tripHol[g] || {});
   }
+  // 교외체험학습 신청서 날짜: 양식 안내 "신청서 제출 기한은 체험학습 3일전(토요일, 공휴일, 재량휴업일 제외)"(11/23 사용자).
+  // 시작일에서 수업일(토·일·학년 휴일 = 공휴일·학사일정·학년 공통 휴일 뺌) 3일 앞. 직접 적은 날짜가 시작일보다 앞이면 그것을 씀
+  // — 예전 기록은 작성일이 종료일로 들어가 있어(옛 기본값) 신청서에 체험학습 끝난 날이 찍혔음.
+  function tripApplyDefault(from, g) {
+    if (!from) return '';
+    const hol = tripHolidays(g), d = new Date(from + 'T00:00:00');
+    for (let n = 0, guard = 0; n < 3 && guard < 60; guard++) { d.setDate(d.getDate() - 1); const wd = d.getDay(); if (wd && wd !== 6 && !hol[abIso(d)]) n++; }
+    return abIso(d);
+  }
+  function tripApplyDate(r) { return r.written && r.from && r.written < r.from ? r.written : tripApplyDefault(r.from, r.g) || r.written || ''; }
   function tripCountDays(from, to, g) {
     if (!from) return 0;
     if (!to || to < from) to = from;

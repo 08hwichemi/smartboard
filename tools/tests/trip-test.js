@@ -352,6 +352,7 @@ function check(label, cond, detail) {
   console.log('[8] 띠 → 신청서, 두 번 → 고치기, 사유 바꾸면 내 계정으로, 지우기');
   await P.click(gridRow(4) + ' td.bar'); await wait(300);
   check('띠 누르면 미리보기 = 그 학생 신청서(차카타, 8일간) + 고치기·지우기 상자', await cell('C6') === '차카타' && await cell('L7') === '(8 일간)' && /차카타/.test(await P.innerText('#ab-prev-label')) && await P.evaluate(() => !!document.getElementById('trip-bar-del') && /4번 차카타 · 1회 · 12\/1~11 · 8일/.test(document.querySelector('#trip-grid .trip-pop').textContent)), [await cell('C6'), await cell('L7'), await P.evaluate(() => (document.querySelector('#trip-grid .trip-pop') || {}).textContent)]);
+  check('신청서 날짜 = 시작일(12/1 화) 3일 전, 토·일 빼고 → 11/26(목) (예전엔 종료일이 찍힘)', await cell('E28') === '2026년 11월 26일', await cell('E28'));
   // 상자 안에서 바로 고치기: 12/1~11 → 12/2~9 (6일)
   check('상자에 기간·사유 입력칸', await P.evaluate(() => document.getElementById('trip-bar-from').value === '2026-12-01' && document.getElementById('trip-bar-to').value === '2026-12-11' && document.getElementById('trip-bar-detail').value === '수능 후 가족 여행'));
   await P.fill('#trip-bar-from', '2026-12-02'); await P.dispatchEvent('#trip-bar-from', 'change');

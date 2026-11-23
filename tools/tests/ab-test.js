@@ -299,7 +299,7 @@ function check(label, cond, detail) {
   check('결과보고서 고정 글자(제목·장소·학습 형태·보호자·학교장 귀하·제출 기한) 그대로, 장소·제목은 빈칸', await P.evaluate(() => { const t = document.getElementById('ab-paper2').innerText; return /학교장허가 교외체험학습 결과보고서/.test(t) && /교외체험학습 장소/.test(t) && /현장체험학습/.test(t) && /보호자 :/.test(t) && /부광고등학교장\s+귀하/.test(t) && /제출 기한/.test(t); }));
   check('신청서 값: 이전 누적 3, 담임확인 5일, 기간·일수',
     await cell('L8') === '3' && await cell('I4') === '5일' && await cell('C6') === '차카타' && await cell('H6') === '4' && await cell('F6') === '3학년' &&
-    await cell('E7') === '2026년 5월 4일' && await cell('L7') === '(2 일간)' && await cell('F24') === '(2026.5.4.' && await cell('I24') === '2026.5.6.)' && await cell('L30') === '차카타',
+    await cell('E7') === '2026년 5월 4일' && await cell('L7') === '(2 일간)' && await cell('F24') === '(2026.5.4.' && await cell('I24') === '2026.5.6.)' && await cell('L30') === '차카타' && await cell('E28') === '2026년 4월 28일',
     await P.evaluate(() => [...document.querySelectorAll('#ab-paper [data-c]')].map(t => t.dataset.c + '=' + t.textContent)));
   check('숫자 칸은 엑셀처럼 오른쪽 정렬', await P.evaluate(() => document.querySelector('#ab-paper [data-c="L8"]').style.textAlign === 'right'));
   await P.locator('#absence-page').screenshot({ path: 'ab-trip.png' });
