@@ -5720,7 +5720,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-23.1';
+  var BUILD_ID = '2026-11-25.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -25864,6 +25864,14 @@
     document.getElementById('pt-excel-upload').value = '';
   });
 
+  // 교시 줄 수 = 자동: 지금 그리는 시간표들(내 시간표 / 고른 학생·반 전체)에 수업이 있는 마지막 교시까지
+  // — 3학년은 6교시까지만이라 빈 7교시 줄이 나오던 것(11/25 사용자). 학생은 고른 반 전체 기준(카드마다 같은 줄 수). 수업이 하나도 없으면 일과 시간 전부.
+  let ptRows = 0;
+  function ptSetRows(persons) {
+    let last = 0;
+    (persons || []).forEach(function(p) { ((p && p.schedule) || []).forEach(function(s) { if (s.subject && s.period > last) last = s.period; }); });
+    ptRows = last ? Math.min(last, currentTimes.length) : 0;
+  }
   function ptCreateCardHTML(person, isTeacherCard) {
     const school = document.getElementById('pt-cfg-school').value;
     const term = document.getElementById('pt-cfg-term').value;
@@ -25886,7 +25894,7 @@
         '<div class="pt-row pt-h-row"><div class="pt-col-time" style="background:transparent;"></div>' +
           days.map(function(d) { return '<div class="pt-col-day">' + d + '</div>'; }).join('') +
         '</div>';
-    for (let p = 1; p <= currentTimes.length; p++) {
+    for (let p = 1, n = ptRows || currentTimes.length; p <= n; p++) {
       const t = currentTimes[p - 1];
       if (!t) continue;
       const timeStr = t.s + '<br>~ ' + t.e;
@@ -25952,6 +25960,7 @@
     if (ptCurrentTab === 'me') {
       document.getElementById('pt-page-nav').style.display = 'none';
       const me = ptBuildMyPerson();
+      ptSetRows([me]);
       if (layout === 'card') { ptTotalPages = 1; area.innerHTML = ptCreateCardHTML(me, true); }
       else if (layout === 'mobile') { ptTotalPages = 1; area.innerHTML = '<div class="pt-mobile-bg-view">' + ptCreateCardHTML(me, true) + '</div>'; }
       else {
@@ -25969,6 +25978,7 @@
     }
 
     const list = ptTargetStudents();
+    ptSetRows(ptFilteredStudents()); // 이 학생만이어도 그 반 기준 — 카드 모양이 반 전체와 같게
     const perPage = (layout === 'card' || layout === 'mobile') ? 1 : parseInt(layout);
     ptTotalPages = Math.max(1, Math.ceil(list.length / perPage));
     if (ptCurrentPage > ptTotalPages) ptCurrentPage = ptTotalPages;
@@ -25992,6 +26002,7 @@
     const area = document.getElementById('pt-render-area');
     const layout = document.getElementById('pt-print-layout').value;
     const list = ptTargetStudents();
+    ptSetRows(ptFilteredStudents());
     if (layout === 'card') {
       area.innerHTML = list.map(function(p) { return '<div class="pt-card-page">' + ptCreateCardHTML(p, false) + '</div>'; }).join('');
       return;

@@ -65,7 +65,7 @@ async function handleDb(pageInfo, req) {
     return { data: list.map(r => ({ key: r.key, value: r.value, updated_at: r.updated_at })), error: null };
   }
   if (table === 'student_timetable_card' && op === 'select') {
-    const mk = (cls, n) => ({ num: '2' + String(cls).padStart(2,'0') + String(n).padStart(2,'0'), name: '학생' + cls + '-' + n, motto: '', schedule: [{ day: '월', period: 1, subject: '국어', teacher: '김', room: '201' }] });
+    const mk = (cls, n) => ({ num: '2' + String(cls).padStart(2,'0') + String(n).padStart(2,'0'), name: '학생' + cls + '-' + n, motto: '', schedule: [{ day: '월', period: 1, subject: '국어', teacher: '김', room: '201' }].concat(cls === 1 && n === 2 ? [{ day: '화', period: 6, subject: '수학', teacher: '이', room: '202' }] : []) });
     const students = []; for (let c = 1; c <= 2; c++) for (let n = 1; n <= 5; n++) students.push(mk(c, n));
     return { data: [{ grade: 2, students, updated_at: new Date().toISOString() }], error: null };
   }
@@ -188,10 +188,13 @@ function check(label, cond, detail) {
   await P.selectOption('#pt-student-class', '1'); await wait(300);
   const cards = () => P.evaluate(() => document.querySelectorAll('#pt-render-area .pt-card').length);
   check('이 학생만(카드): 1장', await cards() === 1);
+  const rowsOf = () => P.evaluate(() => [...document.querySelectorAll('#pt-render-area .pt-card')].map(c => c.querySelectorAll('.pt-row:not(.pt-h-row)').length));
+  check('교시 줄 자동: 이 반에서 수업 있는 마지막 교시(6)까지 — 이 학생은 1교시뿐이어도 6줄(7교시 빈 줄 없음)', JSON.stringify(await rowsOf()) === '[6]', await rowsOf());
   await P.click('#pt-scope-class-btn'); await wait(300);
   check('반 전체(카드): 쪽 넘김 5쪽', await P.evaluate(() => document.getElementById('pt-page-text').innerText) === '1 / 5', await P.evaluate(() => document.getElementById('pt-page-text').innerText));
   await P.selectOption('#pt-print-layout', '4'); await wait(300);
   check('반 전체(A4 2x2): 첫 쪽 4명, 2쪽', await cards() === 4 && await P.evaluate(() => document.getElementById('pt-page-text').innerText) === '1 / 2');
+  check('반 전체도 카드마다 6줄', JSON.stringify(await rowsOf()) === '[6,6,6,6]', await rowsOf());
   await P.evaluate(() => ptRenderAllPagesForPrint()); 
   check('반 전체 인쇄용: 5명 모두', await cards() === 5);
   await P.selectOption('#pt-print-layout', 'card'); await wait(200);
