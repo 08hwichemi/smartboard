@@ -10,6 +10,13 @@ if a.exists() and b.exists():
     gap = 16
     im = Image.new('RGB', (max(ia.width, ib.width), ia.height + ib.height + gap), '#E9ECF1')
     im.paste(ia, (0, 0)); im.paste(ib, (0, ia.height + gap)); im.save(d / 'home-top.png'); a.unlink(); b.unlink()
+# 캘린더·½캘린더는 옆으로 나란히 한 장으로(home-cal)
+a, b = d / 'home-cal-a.png', d / 'home-cal-b.png'
+if a.exists() and b.exists():
+    ia, ib = Image.open(a).convert('RGB'), Image.open(b).convert('RGB')
+    gap = 16
+    im = Image.new('RGB', (ia.width + ib.width + gap, max(ia.height, ib.height)), '#E9ECF1')
+    im.paste(ia, (0, 0)); im.paste(ib, (ia.width + gap, 0)); im.save(d / 'home-cal.png'); a.unlink(); b.unlink()
 for p in sorted(x for x in d.glob('*.png') if x.name != 'qr.png'):  # qr.png는 그대로
     im = Image.open(p).convert('RGB')
     if im.width > 1400:

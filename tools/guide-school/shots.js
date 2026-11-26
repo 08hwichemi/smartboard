@@ -1,4 +1,4 @@
-// 학교판 설치 안내(guide.html) 그림 — index.html에 가짜 서버(홍길동 선생님·2학년 3반 예시 자료)를 붙여 찍고, 크롬·윈도우·휴대폰 화면은 mocks.html로 흉내 낸다.
+// 학교판 설치 안내(guide.html) 그림 — index.html에 가짜 서버(홍길동 선생님·3학년 3반 예시 자료)를 붙여 찍고, 크롬·윈도우·휴대폰 화면은 mocks.html로 흉내 낸다.
 // 실행: NODE_PATH=/opt/node22/lib/node_modules node tools/guide-school/shots.js → guide/school/*.png
 // 그 뒤 png→webp: python3 tools/guide-school/to_webp.py (Pillow). 장면 글은 guide.html의 S 배열.
 const { chromium } = require('playwright');
@@ -14,7 +14,7 @@ const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const T1 = '11111111-1111-1111-1111-111111111111';
 const T2 = '22222222-2222-2222-2222-222222222222';
 const teachers = {
-  [T1]: { id: T1, name: '홍길동', is_admin: false, must_change_password: false, role: '담임', homeroom_grade: 2, homeroom_class: 3, schedule_manager: false, trip_viewer: false },
+  [T1]: { id: T1, name: '홍길동', is_admin: false, must_change_password: false, role: '담임', homeroom_grade: 3, homeroom_class: 3, schedule_manager: false, trip_viewer: false },
   [T2]: { id: T2, name: '홍길동', is_admin: false, must_change_password: true, role: '교사', homeroom_grade: null, homeroom_class: null },
 };
 const items = new Map(); // teacher|key -> {teacher_id,key,value,updated_at}
@@ -172,7 +172,7 @@ const ymd = (d) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') +
 const dash = (d) => ymd(d).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
 const addD = (n) => { const d = new Date(today); d.setDate(d.getDate() + n); return d; };
 const NAMES = ['강하람', '김도윤', '김서연', '박지호', '서예린', '이준서', '정민재', '최유나', '한서준', '홍채원', '윤지안', '임하준'];
-const STUDENTS = NAMES.map((n, i) => ({ grade: 2, class_no: 3, number: i + 1, name: n, student_phone: '010-0000-' + String(1001 + i), mother_phone: '010-0000-' + String(2001 + i), father_phone: '' }));
+const STUDENTS = NAMES.map((n, i) => ({ grade: 3, class_no: 3, number: i + 1, name: n, student_phone: '010-0000-' + String(1001 + i), mother_phone: '010-0000-' + String(2001 + i), father_phone: '' }));
 // 내 시간표: 칸 번호 = (요일-1)*7 + (교시-1), 값 = "과목\n교실"
 const TT = Array(35).fill('');
 [[1, 1, '화학Ⅰ', '2-3'], [1, 2, '화학Ⅰ', '2-5'], [1, 4, '통합과학', '1-2'], [2, 1, '화학Ⅰ', '2-1'], [2, 3, '통합과학', '1-4'], [2, 5, '화학Ⅰ', '2-3'],
@@ -183,9 +183,9 @@ const NOTICES = [
   { id: 2, created_at: new Date(Date.now() - 86400e3).toISOString(), msg: '2학년 담임 선생님들께: 교외체험학습 결과보고서 이번 주 금요일까지 받아 주세요.', likes: 3, hearts: 0, author: '2학년부' },
   { id: 1, created_at: new Date(Date.now() - 3 * 86400e3).toISOString(), msg: '도서관 신간 안내 — 선생님 대출도 됩니다.', likes: 2, hearts: 2, author: '도서부' },
 ];
-// 교외체험학습 현황판 예시(2학년 3반)
+// 교외체험학습 현황판 예시(3학년 3반 — 현황판은 지금 3학년만 씀)
 const TRIPS = [[2, '2026-12-01', '2026-12-04', '가족 여행'], [4, '2026-12-07', '2026-12-11', '친척 방문'], [4, '2026-12-21', '2026-12-23', '가족 여행'], [5, '2026-12-01', '2026-12-11', '해외 체험'],
-  [8, '2026-12-14', '2026-12-16', '진로 탐방'], [10, '2026-12-28', '2026-12-30', '가족 여행'], [11, '2027-02-01', '2027-02-02', '가족 여행']].map(([n, f, t, d], i) => ({ id: 'g' + i, grade: 2, class_no: 3, num: n, name: NAMES[n - 1], from_date: f, to_date: t, detail: d, written: null, proof: '교외체험학습 신청서', days: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
+  [8, '2026-12-14', '2026-12-16', '진로 탐방'], [10, '2026-12-28', '2026-12-30', '가족 여행'], [11, '2027-02-01', '2027-02-02', '가족 여행']].map(([n, f, t, d], i) => ({ id: 'g' + i, grade: 3, class_no: 3, num: n, name: NAMES[n - 1], from_date: f, to_date: t, detail: d, written: null, proof: '교외체험학습 신청서', days: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
 function extraTable(table, op, filters, single, maybe) {
   const fv = (c) => { const f = filters.find((x) => x.col === c); return f ? f.val : undefined; };
   if (op !== 'select') return null;
@@ -195,7 +195,7 @@ function extraTable(table, op, filters, single, maybe) {
   if (table === 'app_settings') {
     const k = fv('key');
     if (k === 'class_structure') return { data: { value: { gradeCount: 3, classCounts: [8, 8, 7] } }, error: null };
-    if (k === 'trip_board') return { data: { value: { grades: [2], periods: { 2: [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }] }, start: { 2: '2026-11-23' } } }, error: null };
+    if (k === 'trip_board') return { data: { value: { grades: [3], periods: { 3: [{ from: '2026-12-01', to: '2026-12-11' }, { from: '2026-12-18', to: '2026-12-30' }, { from: '2027-02-01', to: '2027-02-02' }] }, start: { 3: '2026-11-23' } } }, error: null };
     return { data: single || maybe ? null : [], error: null };
   }
   if (table === 'trip_records') return { data: TRIPS.filter((r) => fv('grade') === undefined || String(r.grade) === String(fv('grade'))), error: null };
@@ -229,6 +229,9 @@ function seedUser() {
     'bookmarks': JSON.stringify([{ name: '나이스', url: 'https://www.neis.go.kr' }, { name: '업무포털', url: 'https://example.com' }, { name: '학교 홈페이지', url: 'https://example.com' }, { name: '에듀넷', url: 'https://www.edunet.net' }]),
     // 캘린더 메모 키 = cal-memo-YYYYMMDD(이번 달 평일에)
     ...Object.fromEntries([[-7, '학년 협의회 15:30'], [-2, '수행평가 채점 마감'], [1, '2-3 상담 (박지호 어머니) 16:00'], [6, '동아리 발표회 준비']].map(([n, t]) => { const d = addD(n); while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1); return ['cal-memo-' + ymd(d), t]; })),
+    // 결석계 예시(내 계정 자료 ab-r-…)
+    ...Object.fromEntries([['a1', 2, '질병결석', '감기', '2026-11-03', '2026-11-04', '진료확인서'], ['a2', 7, '질병결석', '장염', '2026-11-10', '2026-11-10', '처방전'], ['a3', 4, '인정결석', '경조사(조부 상)', '2026-11-12', '2026-11-14', '부고장'], ['a4', 9, '기타결석', '가정 사정', '2026-11-18', '2026-11-18', '학부모 의견서'], ['a5', 2, '질병결석', '병원 진료', '2026-11-24', '2026-11-24', '진료확인서']]
+      .map(([id, n, reason, detail, from, to, proof], i) => ['ab-r-' + id, JSON.stringify({ id, created: 1700000000000 + i, g: 3, c: 3, num: n, name: NAMES[n - 1], reason, detail, from, to, written: to, proof })])),
     'work-txt-1': '수행평가 채점 마감(금)', 'work-txt-2': '교외체험학습 결과보고서 확인', 'work-txt-3': '2학기 독서활동 입력', 'work-chk-3': 'true',
   });
 }
@@ -277,16 +280,22 @@ async function bare(browser, uid, vw) {
   await shot(P, 'home-tt', { clip: { x: 72, y: 305, width: 440, height: 690 } });
   await shot(P, 'home-right', { clip: { x: 945, y: 125, width: 655, height: 870 } });
   await P.evaluate(() => switchMainTab('cal')); await wait(500);
-  await shot(P, 'home-cal', { clip: { x: 72, y: 305, width: 870, height: 690 } });
+  await shot(P, 'home-cal-a', { clip: { x: 72, y: 305, width: 870, height: 690 } });
+  await P.evaluate(() => switchMainTab('halfcal')); await wait(500);
+  await shot(P, 'home-cal-b', { clip: { x: 515, y: 305, width: 425, height: 690 } });
   await P.evaluate(() => switchMainTab('tt')); await wait(300);
   // 기능 화면
   const closeAlerts = async () => { for (let k = 0; k < 3; k++) { const v = await P.evaluate(() => { const o = document.getElementById('custom-alert-overlay'); return o && getComputedStyle(o).display !== 'none'; }); if (!v) break; console.log('  (알림: ' + (await P.evaluate(() => document.getElementById('custom-alert-msg').innerText)).slice(0, 60) + ')'); await P.click('#custom-alert-ok-btn').catch(() => {}); await wait(300); } };
   const open = async (btn, ms) => { await closeAlerts(); await P.click(btn); await wait(ms || 900); await closeAlerts(); };
   await open('#rail-roster-btn', 900); await shot(P, 'roster', { clip: { x: 60, y: 0, width: 440, height: 1000 } }); await P.keyboard.press('Escape'); await wait(300);
   await P.click('#rail-home-btn').catch(() => {}); await wait(400);
+  await open('#rail-hwpkeys-btn', 700); await shot(P, 'hwpkeys', { clip: { x: 68, y: 0, width: 400, height: 1000 } }); await P.keyboard.press('Escape'); await wait(300);
+  await P.click('#rail-home-btn').catch(() => {}); await wait(400);
   await open('#rail-seatchart-btn', 1200); await P.evaluate(() => { const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; }; set('sc-cfg-rows', 3); set('sc-cfg-groups', 3); set('sc-cfg-seats', 2); }); await P.click('#sc-build-btn').catch(() => {}); await wait(500); await closeAlerts(); await P.click('#sc-arr-seq').catch(() => {}); await wait(500); await closeAlerts(); await shot(P, 'seatchart');
   await open('#rail-persontt-btn', 1000); await shot(P, 'persontt');
   await open('#rail-absence-btn', 1200);
+  await P.evaluate(() => { try { abSelect('a3'); } catch (e) {} }); await wait(600); await shot(P, 'absence');
+  await P.evaluate(() => { try { abSelId = null; } catch (e) {} });
   await P.click('#ab-tabs [data-tab="trip"]').catch((e) => console.log('trip tab?', String(e).slice(0, 80))); await wait(1200); await closeAlerts(); await shot(P, 'trip');
   await open('#rail-leavepass-btn', 900); await shot(P, 'leavepass');
   await open('#rail-pa-btn', 1000); await shot(P, 'pa');
