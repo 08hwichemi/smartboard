@@ -295,8 +295,6 @@ async function bare(browser, uid, vw) {
   await open('#rail-persontt-btn', 1000); await shot(P, 'persontt');
   await open('#rail-absence-btn', 1200);
   await P.evaluate(() => { try { abSelect('a3'); } catch (e) {} }); await wait(600); await shot(P, 'absence');
-  await P.evaluate(() => { try { abSelId = null; } catch (e) {} });
-  await P.click('#ab-tabs [data-tab="trip"]').catch((e) => console.log('trip tab?', String(e).slice(0, 80))); await wait(1200); await closeAlerts(); await shot(P, 'trip');
   await open('#rail-leavepass-btn', 900); await shot(P, 'leavepass');
   await open('#rail-pa-btn', 1000); await shot(P, 'pa');
   await open('#rail-sgb-btn', 700); await shot(P, 'sgb');
