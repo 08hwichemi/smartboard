@@ -254,6 +254,37 @@ function show(name, seen) {
   await P.screenshot({ path: 'present.png' });
   await P.keyboard.press('Control+Shift+KeyP'); await wait(100);
   check('Ctrl+Shift+P 다시 → 꺼짐', !(await st()).on);
+
+  console.log('[5] 발표 모드 = 저장 안 함');
+  // 발표 전에 적어 둔 진짜 자료
+  await P.evaluate(() => localStorage.setItem('work-txt-1', '진짜 할 일'));
+  await wait(2200);
+  check('발표 전 자료는 서버에 저장됨', serverVal(T1, 'work-txt-1') === '진짜 할 일', serverVal(T1, 'work-txt-1'));
+  await P.keyboard.press('Control+Shift+KeyP'); await wait(150);
+  await P.evaluate(() => { localStorage.setItem('work-txt-1', '발표하며 고침'); localStorage.setItem('cal-memo-20261130', '발표용 메모'); localStorage.removeItem('work-txt-1x'); });
+  await wait(2200);
+  const d5 = await P.evaluate(() => ({ dirty: getSyncDirtyKeys(), undo: JSON.parse(localStorage.getItem('device-present-undo') || 'null'), bar: document.getElementById('pm-save').textContent, now: localStorage.getItem('work-txt-1') }));
+  check('발표 중 고친 것은 화면(이 컴퓨터)엔 보이지만 서버로 안 감', d5.now === '발표하며 고침' && serverVal(T1, 'work-txt-1') === '진짜 할 일' && serverVal(T1, 'cal-memo-20261130') === undefined && !d5.dirty.includes('work-txt-1'), [d5, serverVal(T1, 'work-txt-1')]);
+  check('고치기 전 값을 적어 둠(이 컴퓨터에만) + 막대에 "고친 것 2개"', d5.undo && d5.undo.keys['work-txt-1'] === '진짜 할 일' && d5.undo.keys['cal-memo-20261130'] === null && /고친 것 2개/.test(d5.bar), d5);
+  const blk = await P.evaluate(async () => { const a = await sb.from('notices').insert({ msg: '발표 연습 공지', author: '김교사' }); const b = await sb.rpc('bump_reaction', { notice_id: 1, kind: 'like', delta: 1 }); const c = await sb.from('user_data_items').upsert([{ teacher_id: 'x', key: 'k', value: 'v' }]); return [a.error && a.error.code, b.error && b.error.code, c.error && c.error.code]; });
+  check('학교 서버 표 쓰기(공지·반응·내 자료 올리기)는 막힘', blk.every((x) => x === 'PRESENT_MODE'), blk);
+  // 발표 중에 새로고침(창이 닫혔다 다시 열린 것과 같음) → 발표 전으로
+  await P.reload(); await P.waitForFunction(() => window.currentTeacher && typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 }); await wait(800);
+  const r5 = await P.evaluate(() => ({ w: localStorage.getItem('work-txt-1'), m: localStorage.getItem('cal-memo-20261130'), undo: localStorage.getItem('device-present-undo'), on: pmOn }));
+  check('발표 중 새로고침 → 발표 전 값으로 되돌아감, 발표 모드는 꺼짐', r5.w === '진짜 할 일' && r5.m === null && r5.undo === null && !r5.on, r5);
+  // 다시 켜고 고친 뒤 ✕ 끄기 → 되돌리고 다시 불러옴 + 알림
+  await P.keyboard.press('Control+Shift+KeyP'); await wait(150);
+  await P.evaluate(() => localStorage.setItem('work-txt-1', '또 고침'));
+  await P.evaluate(() => { document.getElementById('pm-bar').style.opacity = 1; });
+  await Promise.all([P.waitForNavigation(), P.click('#pm-off')]);
+  await P.waitForFunction(() => window.currentTeacher && typeof syncAppStarted !== 'undefined' && syncAppStarted === true, null, { timeout: 15000 }); await wait(1500);
+  const o5 = await P.evaluate(() => ({ w: localStorage.getItem('work-txt-1'), msg: (document.getElementById('custom-alert-msg') || {}).innerText || '' }));
+  check('✕ 끄기 → 다시 불러와 발표 전 값 + "되돌렸어요" 알림', o5.w === '진짜 할 일' && /되돌렸어요/.test(o5.msg) && serverVal(T1, 'work-txt-1') === '진짜 할 일', o5);
+  await P.click('#custom-alert-ok-btn').catch(() => {});
+  // 고친 게 없으면 다시 불러오지 않음
+  await P.keyboard.press('Control+Shift+KeyP'); await wait(100);
+  const nav = await Promise.race([P.waitForNavigation({ timeout: 1500 }).then(() => true).catch(() => false), (async () => { await P.keyboard.press('Control+Shift+KeyP'); await wait(1400); return false; })()]);
+  check('고친 게 없으면 끌 때 다시 불러오지 않음', !nav && !(await P.evaluate(() => pmOn)));
   check('페이지 오류 없음', pc.errors.length === 0, pc.errors);
   await browser.close();
   console.log(failures ? '실패 ' + failures + '건' : '모든 검사 통과');

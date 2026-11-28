@@ -774,6 +774,7 @@
     #pm-bar label:has(input:checked) { background: #E8590C; }
     #pm-bar input[type=checkbox] { margin: 0; accent-color: #E8590C; }
     #pm-bar input[type=range] { width: 70px; }
+    #pm-save { padding: 4px 9px; border-radius: 999px; background: #2E7D4F; white-space: nowrap; }
     #pm-bar button { border: none; border-radius: 999px; padding: 5px 12px; font: inherit; cursor: pointer; background: #fff; color: #1B1F2A; }
     @media (prefers-reduced-motion: reduce) { #pm-box, #pm-spot { transition: none; } .pm-ring { animation-duration: .01s; } }
     #user-menu-dropdown .um-btn { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
@@ -4920,6 +4921,10 @@
   const syncLocalEditAt = {}; // 키별로 이 기기에서 마지막으로 고친 시각(서버 자료 받기와 겹칠 때 판단용)
   let syncPushTimer = null;
   let rawSetItem, rawRemoveItem;
+  // 🎤 발표 모드 = 저장 안 함(11/28 사용자 "발표하면서 고친 게 저장되면 안 됨"): 켜져 있는 동안 고친 키는 고치기 전 값을
+  // pmUndo에 적어 두고(이 컴퓨터에만 device-present-undo) 서버로 보내지 않는다. 끄면(또는 발표 중 새로고침·창 닫힘 뒤 다시 열면) 그 값으로 되돌린다.
+  var pmUndo = null;
+  const PM_UNDO_KEY = 'device-present-undo';
   (function() {
     const _origSetItem = localStorage.setItem.bind(localStorage);
     const _origRemoveItem = localStorage.removeItem.bind(localStorage);
@@ -4930,15 +4935,63 @@
     rawRemoveItem = _origRemoveItem;
     localStorage.setItem = function(key, value) {
       const before = _origGetItem(key);
+      if (pmUndo && before !== String(value) && !isLocalOnlyKey(key)) { pmNote(key, before); _origSetItem(key, value); return; } // 발표 모드: 서버로 안 보냄
       _origSetItem(key, value);
       if (before !== String(value)) markSyncDirty(key);
     };
     localStorage.removeItem = function(key) {
       const before = _origGetItem(key);
+      if (pmUndo && before !== null && !isLocalOnlyKey(key)) { pmNote(key, before); _origRemoveItem(key); return; }
       _origRemoveItem(key);
       if (before !== null) markSyncDirty(key);
     };
   })();
+  function pmNote(key, before) {
+    if (Object.prototype.hasOwnProperty.call(pmUndo.keys, key)) return; // 처음 고치기 전 값만
+    pmUndo.keys[key] = before;
+    try { rawSetItem(PM_UNDO_KEY, JSON.stringify(pmUndo)); } catch (e) {}
+    if (typeof pmShowCount === 'function') pmShowCount();
+  }
+  // 발표 전 값으로 되돌리기 — 발표 모드를 끌 때, 그리고 페이지를 열 때(발표 중 새로고침·창 닫힘 대비) 동기화보다 먼저.
+  // 받아오기 기준 시각도 발표 시작 때로 돌려, 그사이 다른 기기에서 바뀐 것은 다시 받아오게 한다.
+  function pmRecover() {
+    let u = null;
+    try { u = JSON.parse(localStorage.getItem(PM_UNDO_KEY) || 'null'); } catch (e) {}
+    if (!u || !u.keys) { try { rawRemoveItem(PM_UNDO_KEY); } catch (e) {} return 0; }
+    const ks = Object.keys(u.keys);
+    ks.forEach(function(k) { try { if (u.keys[k] === null) rawRemoveItem(k); else rawSetItem(k, u.keys[k]); } catch (e) {} });
+    if (ks.length && u.cursor !== undefined) { try { if (u.cursor === null) rawRemoveItem(SYNC_CURSOR_KEY); else rawSetItem(SYNC_CURSOR_KEY, u.cursor); } catch (e) {} }
+    try { rawRemoveItem(PM_UNDO_KEY); } catch (e) {}
+    return ks.length;
+  }
+  pmRecover();
+  // 발표 모드 동안 학교 서버 표에 바로 쓰는 것(공지·체험학습·감독표·관리자 기능 등)과 내 자료 올리기를 막는다. 읽기는 그대로.
+  const PM_BLOCK_MSG = '발표 모드에서는 저장하지 않아요(끄면 발표 전으로 돌아가요).';
+  let pmBlocked = 0;
+  function pmBlockedQuery() {
+    pmBlocked++;
+    const res = { data: null, error: { message: PM_BLOCK_MSG, code: 'PRESENT_MODE' } };
+    const pr = Promise.resolve(res);
+    const q = new Proxy(function() {}, { get: function(t, k) {
+      if (k === 'then') return pr.then.bind(pr);
+      if (k === 'catch') return pr.catch.bind(pr);
+      if (k === 'finally') return pr.finally.bind(pr);
+      return function() { return q; };
+    } });
+    return q;
+  }
+  if (!LITE && sb && typeof sb.from === 'function') {
+    const _from = sb.from.bind(sb), _rpc = sb.rpc.bind(sb);
+    sb.from = function(table) {
+      const q = _from(table);
+      ['insert', 'upsert', 'update', 'delete'].forEach(function(m) {
+        const orig = q[m];
+        if (typeof orig === 'function') q[m] = function() { return pmUndo ? pmBlockedQuery() : orig.apply(q, arguments); };
+      });
+      return q;
+    };
+    sb.rpc = function() { return pmUndo ? pmBlockedQuery() : _rpc.apply(null, arguments); }; // rpc는 모두 쓰기(관리자·반응·비밀번호)
+  }
 
   function getSyncDirtyKeys() {
     try {
@@ -5740,7 +5793,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-28.1';
+  var BUILD_ID = '2026-11-28.2';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6566,6 +6619,7 @@
   // 효과: ① 노란 동그라미 ② 누르면 빨간 물결 ③ 테두리 ④ 이름표 ⑤ 나머지 어둡게 — 테두리·이름표·어둡게는 마우스 아래 "작은 것"(단추·입력칸·표 칸·제목)만.
   // 큰 칸(위젯 전체)은 잡지 않음(사용자: 큰 칸이 자꾸 잡혀 테두리가 크게 왔다 갔다 함). 단추 사이 빈틈은 0.35초 그대로 둬 깜빡이지 않게.
   // 고른 효과는 이 컴퓨터에만(device-present) — 다른 기기·선생님 화면엔 영향 없음. 켜짐 여부는 새로고침하면 꺼짐.
+  // 저장 안 함: 켜 있는 동안 고친 것은 서버로 안 보내고, 끄면 발표 전 값으로 되돌린 뒤 다시 불러옴(pmUndo·pmRecover·pmBlockedQuery — 위 동기화 가로채기 옆).
   const PM_KEY = 'device-present';
   let pmOn = false, pmOpt = null, pmLast = null, pmLeaveAt = 0, pmX = -500, pmY = -500, pmTimer = null;
   function pmLoad() {
@@ -6580,7 +6634,9 @@
     const bar = mk('pm-bar', '');
     const opts = [['halo', '① 동그라미'], ['click', '② 물결'], ['box', '③ 테두리'], ['tag', '④ 이름표'], ['dim', '⑤ 어둡게']];
     bar.innerHTML = '<span>🎤 발표 모드</span>' + opts.map(function(o) { return '<label><input type="checkbox" data-pm="' + o[0] + '">' + o[1] + '</label>'; }).join('') +
-      '<label title="동그라미 크기">크기 <input type="range" id="pm-size" min="40" max="140"></label><button type="button" id="pm-off" title="발표 모드 끄기 (Ctrl+Shift+P)">✕ 끄기</button>';
+      '<label title="동그라미 크기">크기 <input type="range" id="pm-size" min="40" max="140"></label>' +
+      '<span id="pm-save" title="발표 모드 동안 고친 내용은 서버에 저장하지 않아요. 끄면 발표 전 상태로 되돌리고 다시 불러와요.">💾 저장 안 함</span>' +
+      '<button type="button" id="pm-off" title="발표 모드 끄기 (Ctrl+Shift+P) — 고친 내용은 발표 전으로 되돌려요">✕ 끄기</button>';
     bar.querySelectorAll('input[data-pm]').forEach(function(inp) { inp.addEventListener('change', function() { pmOpt[inp.dataset.pm] = inp.checked; pmSave(); pmPaint(); }); });
     document.getElementById('pm-size').addEventListener('input', function(e) { pmOpt.size = +e.target.value; pmSave(); pmApplySize(); });
     document.getElementById('pm-off').addEventListener('click', function() { pmSet(false); });
@@ -6589,17 +6645,47 @@
   function pmSet(on) {
     if (!pmOpt) pmLoad();
     pmEls();
-    pmOn = !!on;
+    on = !!on;
+    if (on && !pmOn) {
+      // 켜기 전에 적던 칸을 먼저 저장(진짜 저장) — 그다음부터 고친 것만 되돌림 대상
+      if (document.activeElement && document.activeElement !== document.body && document.activeElement.blur) document.activeElement.blur();
+      pmBlocked = 0;
+      pmUndo = { keys: {}, cursor: localStorage.getItem(SYNC_CURSOR_KEY), at: Date.now() };
+      try { rawSetItem(PM_UNDO_KEY, JSON.stringify(pmUndo)); } catch (e) {}
+    }
+    if (!on && pmOn) {
+      if (document.activeElement && document.activeElement !== document.body && document.activeElement.blur) document.activeElement.blur(); // 적던 칸도 되돌림 대상에 넣고
+      const changed = pmUndo ? Object.keys(pmUndo.keys).length : 0, blocked = pmBlocked;
+      pmUndo = null;
+      const n = pmRecover();
+      if (changed || n || blocked) { // 고친 게 있으면 발표 전 자료로 화면을 다시 그린다
+        try { sessionStorage.setItem('pm-restored', String(changed || n)); } catch (e) {}
+        location.reload();
+        return;
+      }
+    }
+    pmOn = on;
     const bar = document.getElementById('pm-bar');
     bar.style.display = pmOn ? 'flex' : 'none';
     bar.querySelectorAll('input[data-pm]').forEach(function(inp) { inp.checked = !!pmOpt[inp.dataset.pm]; });
     document.getElementById('pm-size').value = pmOpt.size || 70;
     pmApplySize();
     pmLast = null;
+    pmShowCount();
     const b = document.getElementById('btn-present'); if (b) b.textContent = pmOn ? '🎤 발표 모드 끄기' : '🎤 발표 모드';
     pmPaint();
   }
   function pmToggle() { pmSet(!pmOn); }
+  function pmShowCount() {
+    const el = document.getElementById('pm-save'); if (!el || !pmUndo) return;
+    const n = Object.keys(pmUndo.keys).length;
+    el.textContent = '💾 저장 안 함' + (n ? ' · 고친 것 ' + n + '개는 끄면 되돌림' : '');
+  }
+  // 끄고 다시 불러온 뒤 한 번 알림
+  document.addEventListener('DOMContentLoaded', function() {
+    let n = null; try { n = sessionStorage.getItem('pm-restored'); sessionStorage.removeItem('pm-restored'); } catch (e) {}
+    if (n) setTimeout(function() { if (typeof customAlert === 'function') customAlert('🎤 발표 모드를 껐어요. 발표하면서 고친 내용(' + n + '개)은 저장하지 않고 발표 전 상태로 되돌렸어요.'); }, 800);
+  });
   // 마우스 아래 "작은 것": 누를 수 있는 것·입력칸·표 칸·목록 한 줄·제목. 너무 크면(칸 전체 같은 것) 잡지 않음.
   const PM_SEL = 'button, a, input, select, textarea, label, summary, [role="button"], [onclick], .rail-item, .tab-btn, .top-btn, td, th, li, h1, h2, h3, h4, .widget-title';
   function pmPick(el) {
