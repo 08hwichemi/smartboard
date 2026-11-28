@@ -758,6 +758,25 @@
     .user-chip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 9px 4px 4px; cursor: pointer; background: var(--card-bg); position: relative; }
     .user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-color); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
     #user-menu-dropdown { display: none; position: absolute; top: 42px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 6px; width: 170px; z-index: 200; }
+    /* 🎤 발표 모드(빔프로젝터 설명용, 11/28 사용자): 노란 동그라미 · 누르면 빨간 물결 · 마우스 아래 작은 것(단추·칸·제목)만 테두리+이름표 · 나머지 어둡게 */
+    .pm-fx { position: fixed; pointer-events: none; z-index: 2147483000; }
+    #pm-halo { width: var(--pm-hs, 70px); height: var(--pm-hs, 70px); border-radius: 50%; background: rgba(255, 214, 10, 0.4); border: 3px solid rgba(232, 140, 0, 0.9); transform: translate(-50%, -50%); left: -500px; top: -500px; }
+    #pm-box { box-sizing: border-box; border-radius: 8px; border: 3px solid #E8590C; left: -9999px; transition: left .12s, top .12s, width .12s, height .12s; }
+    #pm-box.nob { border-color: transparent; }
+    #pm-tag { position: absolute; left: -3px; top: -31px; background: #E8590C; color: #fff; font: 800 15px/1.3 'Pretendard', 'Malgun Gothic', sans-serif; padding: 3px 10px; border-radius: 8px 8px 8px 0; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+    #pm-box.below #pm-tag { top: auto; bottom: -31px; border-radius: 0 8px 8px 8px; }
+    #pm-spot { box-sizing: border-box; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(10, 16, 28, 0.55); left: -9999px; z-index: 2147482990; transition: left .12s, top .12s, width .12s, height .12s; }
+    .pm-ring { position: fixed; pointer-events: none; z-index: 2147483001; width: 24px; height: 24px; border-radius: 50%; border: 4px solid #D7263D; transform: translate(-50%, -50%); animation: pm-ring .6s ease-out forwards; }
+    @keyframes pm-ring { to { transform: translate(-50%, -50%) scale(4); opacity: 0; } }
+    #pm-bar { position: fixed; z-index: 2147483002; left: 50%; bottom: 14px; transform: translateX(-50%); display: none; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px);
+      background: #1B1F2A; color: #fff; border-radius: 999px; padding: 6px 8px 6px 14px; font: 700 13px/1.2 'Pretendard', 'Malgun Gothic', sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: .35; transition: opacity .2s; }
+    #pm-bar:hover, #pm-bar:focus-within { opacity: 1; }
+    #pm-bar label { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,.1); cursor: pointer; white-space: nowrap; }
+    #pm-bar label:has(input:checked) { background: #E8590C; }
+    #pm-bar input[type=checkbox] { margin: 0; accent-color: #E8590C; }
+    #pm-bar input[type=range] { width: 70px; }
+    #pm-bar button { border: none; border-radius: 999px; padding: 5px 12px; font: inherit; cursor: pointer; background: #fff; color: #1B1F2A; }
+    @media (prefers-reduced-motion: reduce) { #pm-box, #pm-spot { transition: none; } .pm-ring { animation-duration: .01s; } }
     #user-menu-dropdown .um-btn { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; padding: 8px 8px; border-radius: 8px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
     #user-menu-dropdown .um-btn:hover { background: var(--bg-color); }
 
@@ -2362,6 +2381,7 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--text-sub);"><path d="M6 9.5 12 15l6-5.5"/></svg>
 
           <div id="user-menu-dropdown">
+            <button class="um-btn" id="btn-present" onclick="event.stopPropagation(); document.getElementById('user-menu-dropdown').style.display = 'none'; pmToggle()" title="빔프로젝터로 설명할 때 마우스 위치·가리키는 단추를 크게 보여 줘요 (Ctrl+Shift+P)">🎤 발표 모드</button>
             <button class="um-btn" id="btn-logout" onclick="event.stopPropagation(); logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h9"/><path d="M11 12h9M17 8l4 4-4 4"/></svg>로그아웃</button>
           </div>
         </div>
@@ -5721,7 +5741,7 @@
   // 잠시 캐시에 쥐고 있을 수 있어서, 화면에 박아 둔 BUILD_ID와 저장소의 version.txt를
   // 주기적으로 견줘서 다르면 맨 위에 새로고침 띠를 띄운다.
   // 새 판을 올릴 때는 이 값과 version.txt를 함께 tools/판올리기.py로 맞춘다.
-  var BUILD_ID = '2026-11-25.1';
+  var BUILD_ID = '2026-11-28.1';
   var UPDATE_SHOWN = false;
   var SERVER_VERSION = null;
 
@@ -6541,6 +6561,100 @@
       await renderStudentTimetableUploadRows();
     }
   }
+
+  // ===== 🎤 발표 모드 (빔프로젝터 설명용, 11/28 사용자 시안 https://claude.ai/artifact/1ZwWugnxrRxke96VtGg7hH) =====
+  // 켜기·끄기: 오른쪽 위 내 이름 메뉴 또는 Ctrl+Shift+P(Esc는 창 닫기에 쓰여서 끄기에 안 씀), 아래 막대의 ✕.
+  // 효과: ① 노란 동그라미 ② 누르면 빨간 물결 ③ 테두리 ④ 이름표 ⑤ 나머지 어둡게 — 테두리·이름표·어둡게는 마우스 아래 "작은 것"(단추·입력칸·표 칸·제목)만.
+  // 큰 칸(위젯 전체)은 잡지 않음(사용자: 큰 칸이 자꾸 잡혀 테두리가 크게 왔다 갔다 함). 단추 사이 빈틈은 0.35초 그대로 둬 깜빡이지 않게.
+  // 고른 효과는 이 컴퓨터에만(device-present) — 다른 기기·선생님 화면엔 영향 없음. 켜짐 여부는 새로고침하면 꺼짐.
+  const PM_KEY = 'device-present';
+  let pmOn = false, pmOpt = null, pmLast = null, pmLeaveAt = 0, pmX = -500, pmY = -500, pmTimer = null;
+  function pmLoad() {
+    let o = {}; try { o = JSON.parse(localStorage.getItem(PM_KEY) || '{}') || {}; } catch (e) {}
+    pmOpt = Object.assign({ halo: true, click: true, box: true, tag: true, dim: false, size: 70 }, o);
+  }
+  function pmSave() { try { localStorage.setItem(PM_KEY, JSON.stringify(pmOpt)); } catch (e) {} }
+  function pmEls() {
+    if (document.getElementById('pm-bar')) return;
+    const mk = (id, cls) => { const d = document.createElement('div'); d.id = id; d.className = cls === undefined ? 'pm-fx' : cls; document.body.appendChild(d); return d; }; // 막대(pm-bar)는 pm-fx 없이 — pm-fx는 눌리지 않게 막음
+    mk('pm-spot'); const box = mk('pm-box'); box.innerHTML = '<span id="pm-tag"></span>'; mk('pm-halo');
+    const bar = mk('pm-bar', '');
+    const opts = [['halo', '① 동그라미'], ['click', '② 물결'], ['box', '③ 테두리'], ['tag', '④ 이름표'], ['dim', '⑤ 어둡게']];
+    bar.innerHTML = '<span>🎤 발표 모드</span>' + opts.map(function(o) { return '<label><input type="checkbox" data-pm="' + o[0] + '">' + o[1] + '</label>'; }).join('') +
+      '<label title="동그라미 크기">크기 <input type="range" id="pm-size" min="40" max="140"></label><button type="button" id="pm-off" title="발표 모드 끄기 (Ctrl+Shift+P)">✕ 끄기</button>';
+    bar.querySelectorAll('input[data-pm]').forEach(function(inp) { inp.addEventListener('change', function() { pmOpt[inp.dataset.pm] = inp.checked; pmSave(); pmPaint(); }); });
+    document.getElementById('pm-size').addEventListener('input', function(e) { pmOpt.size = +e.target.value; pmSave(); pmApplySize(); });
+    document.getElementById('pm-off').addEventListener('click', function() { pmSet(false); });
+  }
+  function pmApplySize() { document.documentElement.style.setProperty('--pm-hs', (pmOpt.size || 70) + 'px'); }
+  function pmSet(on) {
+    if (!pmOpt) pmLoad();
+    pmEls();
+    pmOn = !!on;
+    const bar = document.getElementById('pm-bar');
+    bar.style.display = pmOn ? 'flex' : 'none';
+    bar.querySelectorAll('input[data-pm]').forEach(function(inp) { inp.checked = !!pmOpt[inp.dataset.pm]; });
+    document.getElementById('pm-size').value = pmOpt.size || 70;
+    pmApplySize();
+    pmLast = null;
+    const b = document.getElementById('btn-present'); if (b) b.textContent = pmOn ? '🎤 발표 모드 끄기' : '🎤 발표 모드';
+    pmPaint();
+  }
+  function pmToggle() { pmSet(!pmOn); }
+  // 마우스 아래 "작은 것": 누를 수 있는 것·입력칸·표 칸·목록 한 줄·제목. 너무 크면(칸 전체 같은 것) 잡지 않음.
+  const PM_SEL = 'button, a, input, select, textarea, label, summary, [role="button"], [onclick], .rail-item, .tab-btn, .top-btn, td, th, li, h1, h2, h3, h4, .widget-title';
+  function pmPick(el) {
+    const c = el && el.closest ? el.closest(PM_SEL) : null;
+    if (!c || c === document.body || c.closest('#pm-bar')) return null;
+    const r = c.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.width <= Math.min(560, innerWidth * 0.45) && r.height <= Math.min(240, innerHeight * 0.4) ? c : null;
+  }
+  function pmName(el) {
+    const t = (el.getAttribute('aria-label') || '').trim();
+    let s = t;
+    if (!s && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) s = el.placeholder || (el.labels && el.labels[0] ? el.labels[0].innerText : '') || el.title || (el.tagName === 'SELECT' && el.selectedOptions[0] ? el.selectedOptions[0].text : '');
+    if (!s) s = (el.innerText || el.textContent || '').trim();
+    if (!s) s = el.title || '';
+    s = s.replace(/\s+/g, ' ').trim();
+    return s.length > 30 ? s.slice(0, 29) + '…' : s;
+  }
+  function pmPlace(d, r, pad) { d.style.left = (r.left - pad) + 'px'; d.style.top = (r.top - pad) + 'px'; d.style.width = (r.width + pad * 2) + 'px'; d.style.height = (r.height + pad * 2) + 'px'; }
+  function pmPaint() {
+    const halo = document.getElementById('pm-halo'); if (!halo) return;
+    const box = document.getElementById('pm-box'), spot = document.getElementById('pm-spot'), tag = document.getElementById('pm-tag');
+    halo.style.display = pmOn && pmOpt.halo ? '' : 'none';
+    halo.style.left = pmX + 'px'; halo.style.top = pmY + 'px';
+    const now = Date.now();
+    const tgt = pmOn ? (pmCur || (pmLast && now - pmLeaveAt < 350 && pmLast.isConnected ? pmLast : null)) : null;
+    if (tgt) {
+      const r = tgt.getBoundingClientRect();
+      if (pmOpt.dim) pmPlace(spot, r, 6); else spot.style.left = '-9999px';
+      if (pmOpt.box || pmOpt.tag) {
+        pmPlace(box, r, 3); box.classList.toggle('nob', !pmOpt.box); box.classList.toggle('below', r.top < 40);
+        const nm = pmName(tgt); tag.textContent = nm; tag.style.display = pmOpt.tag && nm ? '' : 'none';
+      } else box.style.left = '-9999px';
+    } else { box.style.left = '-9999px'; spot.style.left = '-9999px'; }
+    clearTimeout(pmTimer);
+    if (pmOn && !pmCur && tgt) pmTimer = setTimeout(pmPaint, 360);
+  }
+  let pmCur = null;
+  document.addEventListener('mousemove', function(e) {
+    if (!pmOn) return;
+    pmX = e.clientX; pmY = e.clientY;
+    const c = pmPick(e.target);
+    if (pmCur && !c) { pmLast = pmCur; pmLeaveAt = Date.now(); } // 0.35초는 단추를 떠난 순간부터
+    pmCur = c;
+    pmPaint();
+  }, true);
+  document.addEventListener('scroll', function() { if (pmOn) pmPaint(); }, true);
+  document.addEventListener('mousedown', function(e) {
+    if (!pmOn || !pmOpt.click || (e.target.closest && e.target.closest('#pm-bar'))) return;
+    const r = document.createElement('div'); r.className = 'pm-ring'; r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px';
+    document.body.appendChild(r); setTimeout(function() { r.remove(); }, 700);
+  }, true);
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && !e.altKey && (e.key === 'P' || e.key === 'p' || e.code === 'KeyP')) { e.preventDefault(); pmToggle(); }
+  }, true);
 
   function toggleUserMenu() {
     if (LITE) { liteOpenSettings(); return; }
